@@ -11,16 +11,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Switch } from '@/components/ui/switch'
 import { Moon, Sun, Search, Bell, Menu } from 'lucide-react'
 import { useTheme } from '@/hooks'
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
-  const { theme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark')
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
   }
 
   return (
@@ -50,16 +49,11 @@ export function Header() {
             </Badge>
           </Button>
 
-          <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5">
-            <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} className="h-4 w-4" />
-            {theme === 'dark' ? (
-              <Moon className="h-4 w-4" />
-            ) : theme === 'light' ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <span className="text-xs font-medium">A</span>
-            )}
-          </div>
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="relative h-9 w-9">
+            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Toggle theme</span>
+          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

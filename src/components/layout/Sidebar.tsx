@@ -13,6 +13,7 @@ import {
   Activity,
   Settings,
   HelpCircle,
+  Table,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -45,7 +46,10 @@ const navGroups: NavGroup[] = [
   {
     title: 'Data',
     icon: BarChart3,
-    items: [{ title: 'Events', href: '/events', icon: Activity }],
+    items: [
+      { title: 'Events', href: '/events', icon: Activity },
+      { title: 'Sandbox', href: '/pivot', icon: Table },
+    ],
   },
 ]
 

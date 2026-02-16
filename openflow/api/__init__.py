@@ -6,6 +6,7 @@ from .retention import router as retention_router
 from .sessions import router as sessions_router
 from .paths import router as paths_router
 from .conversion import router as conversion_router
+from .pivot import router as pivot_router
 
 __all__ = [
     "events_router",
@@ -14,4 +15,5 @@ __all__ = [
     "sessions_router",
     "paths_router",
     "conversion_router",
+    "pivot_router",
 ]

@@ -6,6 +6,12 @@ export interface DateRange {
 export interface TrendData {
   date: string
   count: number
+  unique_users: number
+}
+
+export interface TrendResponse {
+  total_unique_users: number
+  data: TrendData[]
 }
 
 export interface TrendResponse {
@@ -23,6 +29,10 @@ export interface Event {
 
 export interface EventsResponse {
   events: string[]
+}
+
+export interface TopEventsResponse {
+  data: Array<{ name: string; count: number }>
 }
 
 export interface RawEventsResponse {
@@ -95,6 +105,47 @@ export interface PathsResponse {
   data: PathData[]
 }
 
+export interface PathAnalysisData {
+  path: string
+  path_length: number
+  occurrence_count: number
+  unique_users: number
+  percentage_of_total: number
+  avg_time_to_complete: number | null
+  median_time_to_complete: number | null
+}
+
+export interface PathAnalysisResponse {
+  start_event: string | null
+  end_event: string | null
+  min_path_length: number
+  max_path_length: number
+  max_time_between_events: number | null
+  time_unit: string
+  group_by: string
+  date_range: [string, string] | null
+  event_filters: Record<string, Record<string, unknown>> | null
+  total_paths: number
+  data: PathAnalysisData[]
+}
+
+export interface FunnelStepData {
+  step: number
+  event: string
+  occurrences: number
+  users: number
+  step_conversion_rate: number
+  overall_conversion_rate: number
+  dropoff_rate: number
+  dropoff_users: number
+}
+
+export interface PathFunnelResponse {
+  events: string[]
+  total_steps: number
+  data: FunnelStepData[]
+}
+
 export interface ConversionData {
   total_users: number
   converted_users: number
@@ -115,4 +166,17 @@ export interface MetricCard {
   change: number
   changeType: 'positive' | 'negative' | 'neutral'
   description: string
+}
+
+export interface PivotOptionsResponse {
+  dimensions: Array<{ value: string; label: string }>
+  measures: Array<{ value: string; label: string }>
+  event_names: string[]
+}
+
+export interface PivotResponse {
+  dimensions: string[]
+  measures: string[]
+  data: Array<Record<string, unknown>>
+  error?: string
 }

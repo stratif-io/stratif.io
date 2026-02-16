@@ -22,6 +22,43 @@ def get_events(
     return {"events": [row[0] for row in result]}
 
 
+@router.get("/events/top")
+def get_top_events(
+    limit: int = Query(5, description="Number of top events to return", ge=1, le=20),
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    db: Database = Depends(get_db),
+    _: str = Depends(verify_api_key),
+) -> dict:
+    """Get top events by occurrence count within date range."""
+    where_clauses = []
+    params = []
+    if start_date:
+        where_clauses.append("timestamp >= ?")
+        params.append(f"{start_date} 00:00:00")
+    if end_date:
+        where_clauses.append("timestamp <= ?")
+        params.append(f"{end_date} 23:59:59")
+
+    where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+    query = transpile_sql(f"""
+        SELECT 
+            event_name,
+            COUNT(*) as count
+        FROM events
+        {where_clause}
+        GROUP BY event_name
+        ORDER BY count DESC
+        LIMIT ?
+    """)
+    params.append(limit)
+
+    result = db.execute(query, params)
+
+    return {"data": [{"name": row[0], "count": row[1]} for row in result]}
+
+
 @router.get("/raw/events")
 def get_raw_events(
     limit: int = Query(100, description="Number of rows to return", ge=1, le=1000),

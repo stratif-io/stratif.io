@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { LucideIcon } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { HelpCircle, LucideIcon } from 'lucide-react'
 
 export interface MetricCardProps {
   title: string
@@ -11,6 +12,7 @@ export interface MetricCardProps {
   icon: LucideIcon
   description: string
   loading?: boolean
+  tooltip?: string
 }
 
 export function MetricCard({
@@ -21,6 +23,7 @@ export function MetricCard({
   icon: Icon,
   description,
   loading,
+  tooltip,
 }: MetricCardProps) {
   return (
     <Card>
@@ -51,6 +54,16 @@ export function MetricCard({
                 {Math.abs(change)}%
               </Badge>
               <p className="text-xs text-muted-foreground">{description}</p>
+              {tooltip && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>{tooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           </>
         )}

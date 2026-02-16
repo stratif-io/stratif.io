@@ -16,6 +16,7 @@ from openflow.api import (
     sessions_router,
     paths_router,
     conversion_router,
+    pivot_router,
 )
 
 settings = get_settings()
@@ -40,9 +41,9 @@ async def lifespan(app: FastAPI):
     # Create views
     create_views(db)
     print("🚀 Analytics API ready!")
-    
+
     yield  # Application runs here
-    
+
     # Shutdown
     print("👋 Shutting down...")
 
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
     app.include_router(sessions_router)
     app.include_router(paths_router)
     app.include_router(conversion_router)
+    app.include_router(pivot_router)
 
     @app.get("/")
     def root():

@@ -1,12 +1,17 @@
 import {
   TrendResponse,
   EventsResponse,
+  TopEventsResponse,
   RawEventsResponse,
   SessionsResponse,
   SessionsSummaryResponse,
   RetentionResponse,
   PathsResponse,
+  PathAnalysisResponse,
+  PathFunnelResponse,
   ConversionResponse,
+  PivotOptionsResponse,
+  PivotResponse,
 } from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -47,6 +52,19 @@ export const fetchTrend = (params: {
 }
 
 export const fetchEvents = () => fetchApi<EventsResponse>('/api/events')
+
+export const fetchTopEvents = (params: {
+  limit?: number
+  start_date?: string
+  end_date?: string
+}) => {
+  const searchParams = new URLSearchParams()
+  if (params.limit) searchParams.set('limit', String(params.limit))
+  if (params.start_date) searchParams.set('start_date', params.start_date)
+  if (params.end_date) searchParams.set('end_date', params.end_date)
+
+  return fetchApi<TopEventsResponse>(`/api/events/top?${searchParams}`)
+}
 
 export const fetchRawEvents = (params: {
   limit?: number
@@ -106,10 +124,72 @@ export const fetchPaths = (params: {
   return fetchApi<PathsResponse>(`/api/paths?${searchParams}`)
 }
 
+export const fetchPathAnalysis = (params: {
+  start_event?: string
+  end_event?: string
+  min_path_length?: number
+  max_path_length?: number
+  max_time_between_events?: number
+  time_unit?: string
+  top_n?: number
+  group_by?: string
+  start_date?: string
+  end_date?: string
+  event_filters?: Record<string, Record<string, unknown>>
+}) => {
+  const searchParams = new URLSearchParams()
+  if (params.start_event) searchParams.set('start_event', params.start_event)
+  if (params.end_event) searchParams.set('end_event', params.end_event)
+  if (params.min_path_length) searchParams.set('min_path_length', String(params.min_path_length))
+  if (params.max_path_length) searchParams.set('max_path_length', String(params.max_path_length))
+  if (params.max_time_between_events)
+    searchParams.set('max_time_between_events', String(params.max_time_between_events))
+  if (params.time_unit) searchParams.set('time_unit', params.time_unit)
+  if (params.top_n) searchParams.set('top_n', String(params.top_n))
+  if (params.group_by) searchParams.set('group_by', params.group_by)
+  if (params.start_date) searchParams.set('start_date', params.start_date)
+  if (params.end_date) searchParams.set('end_date', params.end_date)
+  if (params.event_filters) searchParams.set('event_filters', JSON.stringify(params.event_filters))
+
+  return fetchApi<PathAnalysisResponse>(`/api/path-analysis?${searchParams}`)
+}
+
+export const fetchPathFunnel = (params: {
+  events: string[]
+  start_date?: string
+  end_date?: string
+}) => {
+  const searchParams = new URLSearchParams()
+  searchParams.set('events', params.events.join(','))
+  if (params.start_date) searchParams.set('start_date', params.start_date)
+  if (params.end_date) searchParams.set('end_date', params.end_date)
+
+  return fetchApi<PathFunnelResponse>(`/api/path-funnel?${searchParams}`)
+}
+
 export const fetchConversion = (params: { start_date?: string; end_date?: string }) => {
   const searchParams = new URLSearchParams()
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
 
   return fetchApi<ConversionResponse>(`/api/conversion?${searchParams}`)
+}
+
+export const fetchPivotOptions = () => fetchApi<PivotOptionsResponse>('/api/pivot/options')
+
+export const fetchPivot = (params: {
+  row_dimensions: string[]
+  measures: string[]
+  start_date?: string
+  end_date?: string
+  event_filter?: string
+}) => {
+  const searchParams = new URLSearchParams()
+  searchParams.set('row_dimensions', params.row_dimensions.join(','))
+  searchParams.set('measures', params.measures.join(','))
+  if (params.start_date) searchParams.set('start_date', params.start_date)
+  if (params.end_date) searchParams.set('end_date', params.end_date)
+  if (params.event_filter) searchParams.set('event_filter', params.event_filter)
+
+  return fetchApi<PivotResponse>(`/api/pivot?${searchParams}`)
 }

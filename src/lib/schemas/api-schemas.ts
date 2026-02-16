@@ -11,9 +11,11 @@ export const TrendDataSchema = z.object({
     .datetime()
     .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
   count: z.number().int().nonnegative(),
+  unique_users: z.number().int().nonnegative(),
 })
 
 export const TrendResponseSchema = z.object({
+  total_unique_users: z.number().int().nonnegative(),
   data: z.array(TrendDataSchema),
 })
 
@@ -95,6 +97,47 @@ export const PathsResponseSchema = z.object({
   data: z.array(PathDataSchema),
 })
 
+export const PathAnalysisDataSchema = z.object({
+  path: z.string(),
+  path_length: z.number().int().min(2),
+  occurrence_count: z.number().int().nonnegative(),
+  unique_users: z.number().int().nonnegative(),
+  percentage_of_total: z.number().min(0).max(100),
+  avg_time_to_complete: z.number().nullable(),
+  median_time_to_complete: z.number().nullable(),
+})
+
+export const PathAnalysisResponseSchema = z.object({
+  start_event: z.string().nullable(),
+  end_event: z.string().nullable(),
+  min_path_length: z.number().int().min(2),
+  max_path_length: z.number().int().min(2),
+  max_time_between_events: z.number().nullable(),
+  time_unit: z.string(),
+  group_by: z.string(),
+  date_range: z.array(z.string()).length(2).nullable(),
+  event_filters: z.record(z.unknown()).nullable(),
+  total_paths: z.number().int().nonnegative(),
+  data: z.array(PathAnalysisDataSchema),
+})
+
+export const FunnelStepDataSchema = z.object({
+  step: z.number().int().positive(),
+  event: z.string(),
+  occurrences: z.number().int().nonnegative(),
+  users: z.number().int().nonnegative(),
+  step_conversion_rate: z.number().min(0).max(100),
+  overall_conversion_rate: z.number().min(0).max(100),
+  dropoff_rate: z.number().min(0).max(100),
+  dropoff_users: z.number().int().nonnegative(),
+})
+
+export const PathFunnelResponseSchema = z.object({
+  events: z.array(z.string()),
+  total_steps: z.number().int().positive(),
+  data: z.array(FunnelStepDataSchema),
+})
+
 export const ConversionDataSchema = z.object({
   total_users: z.number().int().nonnegative(),
   converted_users: z.number().int().nonnegative(),
@@ -131,6 +174,10 @@ export type RetentionCohortType = z.infer<typeof RetentionCohortSchema>
 export type RetentionResponseType = z.infer<typeof RetentionResponseSchema>
 export type PathDataType = z.infer<typeof PathDataSchema>
 export type PathsResponseType = z.infer<typeof PathsResponseSchema>
+export type PathAnalysisDataType = z.infer<typeof PathAnalysisDataSchema>
+export type PathAnalysisResponseType = z.infer<typeof PathAnalysisResponseSchema>
+export type FunnelStepDataType = z.infer<typeof FunnelStepDataSchema>
+export type PathFunnelResponseType = z.infer<typeof PathFunnelResponseSchema>
 export type ConversionDataType = z.infer<typeof ConversionDataSchema>
 export type ConversionResponseType = z.infer<typeof ConversionResponseSchema>
 export type ApiErrorType = z.infer<typeof ApiErrorSchema>

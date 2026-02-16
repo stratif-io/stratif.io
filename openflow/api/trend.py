@@ -22,9 +22,8 @@ def get_trend(
     _: str = Depends(verify_api_key),
 ) -> dict:
     """
-    Return trend data: Date vs Count.
+    Return trend data: Date vs Count and Unique Users.
     """
-    # Build WHERE clause
     where_clauses = []
     params = []
     if event_name:
@@ -39,7 +38,6 @@ def get_trend(
 
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
-    # Determine date truncation
     date_trunc = (
         "DATE_TRUNC('day', timestamp)"
         if granularity == "day"
@@ -49,7 +47,8 @@ def get_trend(
     query = transpile_sql(f"""
         SELECT 
             {date_trunc} as date,
-            COUNT(*) as count
+            COUNT(*) as count,
+            COUNT(DISTINCT user_id) as unique_users
         FROM events
         {where_clause}
         GROUP BY {date_trunc}
@@ -58,14 +57,23 @@ def get_trend(
 
     result = db.execute(query, params)
 
+    total_unique_query = transpile_sql(f"""
+        SELECT COUNT(DISTINCT user_id)
+        FROM events
+        {where_clause}
+    """)
+    total_unique = db.execute(total_unique_query, params)[0][0]
+
     return {
+        "total_unique_users": total_unique,
         "data": [
             {
                 "date": row[0].isoformat()
                 if isinstance(row[0], datetime)
                 else str(row[0]),
                 "count": row[1],
+                "unique_users": row[2],
             }
             for row in result
-        ]
+        ],
     }

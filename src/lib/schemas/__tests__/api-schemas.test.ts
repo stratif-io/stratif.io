@@ -13,6 +13,10 @@ import {
   RetentionResponseSchema,
   PathDataSchema,
   PathsResponseSchema,
+  PathAnalysisDataSchema,
+  PathAnalysisResponseSchema,
+  FunnelStepDataSchema,
+  PathFunnelResponseSchema,
   ConversionDataSchema,
   ConversionResponseSchema,
   ApiErrorSchema,
@@ -492,6 +496,181 @@ describe('PathsResponseSchema', () => {
       data: [],
     })
     expect(result.success).toBe(true)
+  })
+})
+
+describe('PathAnalysisDataSchema', () => {
+  it('validates valid path analysis data', () => {
+    const result = PathAnalysisDataSchema.safeParse({
+      path: 'Home -> Products -> Purchase',
+      path_length: 3,
+      occurrence_count: 100,
+      unique_users: 50,
+      percentage_of_total: 25.5,
+      avg_time_to_complete: 120,
+      median_time_to_complete: 100,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts null time values', () => {
+    const result = PathAnalysisDataSchema.safeParse({
+      path: 'Home -> Purchase',
+      path_length: 2,
+      occurrence_count: 10,
+      unique_users: 5,
+      percentage_of_total: 10,
+      avg_time_to_complete: null,
+      median_time_to_complete: null,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects path_length less than 2', () => {
+    const result = PathAnalysisDataSchema.safeParse({
+      path: 'Home',
+      path_length: 1,
+      occurrence_count: 10,
+      unique_users: 5,
+      percentage_of_total: 10,
+      avg_time_to_complete: null,
+      median_time_to_complete: null,
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects negative occurrence_count', () => {
+    const result = PathAnalysisDataSchema.safeParse({
+      path: 'Home -> Purchase',
+      path_length: 2,
+      occurrence_count: -1,
+      unique_users: 5,
+      percentage_of_total: 10,
+      avg_time_to_complete: null,
+      median_time_to_complete: null,
+    })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('PathAnalysisResponseSchema', () => {
+  it('validates valid path analysis response', () => {
+    const result = PathAnalysisResponseSchema.safeParse({
+      start_event: 'Home',
+      end_event: 'Purchase',
+      min_path_length: 2,
+      max_path_length: 5,
+      max_time_between_events: 60,
+      time_unit: 'minutes',
+      group_by: 'user_id',
+      date_range: ['2026-01-01', '2026-01-31'],
+      event_filters: null,
+      total_paths: 10,
+      data: [],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts null values for optional fields', () => {
+    const result = PathAnalysisResponseSchema.safeParse({
+      start_event: null,
+      end_event: null,
+      min_path_length: 2,
+      max_path_length: 5,
+      max_time_between_events: null,
+      time_unit: 'seconds',
+      group_by: 'user_id',
+      date_range: null,
+      event_filters: null,
+      total_paths: 0,
+      data: [],
+    })
+    expect(result.success).toBe(true)
+  })
+})
+
+describe('FunnelStepDataSchema', () => {
+  it('validates valid funnel step data', () => {
+    const result = FunnelStepDataSchema.safeParse({
+      step: 1,
+      event: 'Home',
+      occurrences: 100,
+      users: 50,
+      step_conversion_rate: 100,
+      overall_conversion_rate: 100,
+      dropoff_rate: 0,
+      dropoff_users: 0,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects conversion rate over 100', () => {
+    const result = FunnelStepDataSchema.safeParse({
+      step: 1,
+      event: 'Home',
+      occurrences: 100,
+      users: 50,
+      step_conversion_rate: 101,
+      overall_conversion_rate: 100,
+      dropoff_rate: 0,
+      dropoff_users: 0,
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects step zero', () => {
+    const result = FunnelStepDataSchema.safeParse({
+      step: 0,
+      event: 'Home',
+      occurrences: 100,
+      users: 50,
+      step_conversion_rate: 100,
+      overall_conversion_rate: 100,
+      dropoff_rate: 0,
+      dropoff_users: 0,
+    })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('PathFunnelResponseSchema', () => {
+  it('validates valid path funnel response', () => {
+    const result = PathFunnelResponseSchema.safeParse({
+      events: ['Home', 'Products', 'Purchase'],
+      total_steps: 3,
+      data: [
+        {
+          step: 1,
+          event: 'Home',
+          occurrences: 100,
+          users: 50,
+          step_conversion_rate: 100,
+          overall_conversion_rate: 100,
+          dropoff_rate: 0,
+          dropoff_users: 0,
+        },
+        {
+          step: 2,
+          event: 'Products',
+          occurrences: 60,
+          users: 30,
+          step_conversion_rate: 60,
+          overall_conversion_rate: 60,
+          dropoff_rate: 40,
+          dropoff_users: 20,
+        },
+      ],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('requires at least one step', () => {
+    const result = PathFunnelResponseSchema.safeParse({
+      events: ['Home'],
+      total_steps: 0,
+      data: [],
+    })
+    expect(result.success).toBe(false)
   })
 })
 
