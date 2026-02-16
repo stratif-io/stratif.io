@@ -1,0 +1,5 @@
+export { DashboardPage } from './DashboardPage'
+export { MetricCard } from './components/MetricCard'
+export { ActivityChart } from './components/ActivityChart'
+export { TopEvents } from './components/TopEvents'
+export { useDashboardMetrics } from './hooks/useDashboardMetrics'

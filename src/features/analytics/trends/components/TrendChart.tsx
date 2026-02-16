@@ -1,0 +1,136 @@
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ReferenceLine,
+  Brush,
+} from 'recharts'
+import type { TrendDataItem } from '../hooks/useTrendData'
+
+interface TrendChartProps {
+  data: TrendDataItem[]
+  chartType: 'area' | 'line'
+  averageValue: number
+  eventName: string
+}
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: Array<{ name: string; value: number; color: string }>
+  label?: string
+}) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-popover border rounded-lg shadow-lg p-3">
+        <p className="font-semibold text-sm mb-1">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {entry.value?.toLocaleString()}
+          </p>
+        ))}
+      </div>
+    )
+  }
+  return null
+}
+
+export function TrendChart({ data, chartType, averageValue, eventName }: TrendChartProps) {
+  if (!data.length) {
+    return (
+      <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+        No data available
+      </div>
+    )
+  }
+
+  const chartProps = {
+    data,
+    margin: { top: 10, right: 30, left: 0, bottom: 0 },
+  }
+
+  if (chartType === 'line') {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart {...chartProps}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+          <YAxis
+            tickFormatter={(val) => val.toLocaleString()}
+            tick={{ fontSize: 12 }}
+            stroke="hsl(var(--muted-foreground))"
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          <ReferenceLine
+            y={averageValue}
+            stroke="hsl(var(--muted-foreground))"
+            strokeDasharray="3 3"
+          />
+          <Line
+            type="monotone"
+            dataKey="count"
+            stroke="hsl(var(--primary))"
+            strokeWidth={2}
+            dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+            activeDot={{ r: 6, strokeWidth: 0 }}
+            name={eventName || 'All Events'}
+          />
+          <Brush dataKey="date" height={30} stroke="hsl(var(--primary))" />
+        </LineChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <AreaChart {...chartProps}>
+        <defs>
+          <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+        <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+        <YAxis
+          tickFormatter={(val) => val.toLocaleString()}
+          tick={{ fontSize: 12 }}
+          stroke="hsl(var(--muted-foreground))"
+        />
+        <Tooltip content={<CustomTooltip />} />
+        <Legend />
+        <ReferenceLine
+          y={averageValue}
+          stroke="hsl(var(--muted-foreground))"
+          strokeDasharray="3 3"
+          label={{
+            value: `Avg: ${averageValue.toLocaleString()}`,
+            position: 'right',
+            fill: 'hsl(var(--muted-foreground))',
+          }}
+        />
+        <Area
+          type="monotone"
+          dataKey="count"
+          stroke="hsl(var(--primary))"
+          strokeWidth={2}
+          fillOpacity={1}
+          fill="url(#colorCount)"
+          name={eventName || 'All Events'}
+        />
+        <Brush dataKey="date" height={30} stroke="hsl(var(--primary))" />
+      </AreaChart>
+    </ResponsiveContainer>
+  )
+}
