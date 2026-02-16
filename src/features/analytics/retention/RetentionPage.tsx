@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { DateRangePicker } from '@/components/DateRangePicker'
 import { Users } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { useRetentionData } from './hooks/useRetentionData'
@@ -7,7 +6,7 @@ import { RetentionChart } from './components/RetentionChart'
 import { RetentionTable } from './components/RetentionTable'
 
 export function RetentionPage() {
-  const { dateRange, setDateRange } = useAppStore()
+  const { dateRange } = useAppStore()
 
   const { retentionData, chartData, isLoading, avgDay1, avgDay7, avgDay30, totalCohorts } =
     useRetentionData({
@@ -16,12 +15,9 @@ export function RetentionPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Retention Analysis</h1>
-          <p className="text-muted-foreground mt-1">User retention by signup cohort</p>
-        </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Retention Analysis</h1>
+        <p className="text-muted-foreground mt-1">User retention by signup cohort</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

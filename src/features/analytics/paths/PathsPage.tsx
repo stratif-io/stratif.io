@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { DateRangePicker } from '@/components/DateRangePicker'
 import { Route } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { usePathsData } from './hooks/usePathsData'
@@ -15,7 +14,7 @@ import { PathsChart } from './components/PathsChart'
 import { PathsTable } from './components/PathsTable'
 
 export function PathsPage() {
-  const { dateRange, setDateRange, selectedEvent, setSelectedEvent } = useAppStore()
+  const { dateRange, selectedEvent, setSelectedEvent } = useAppStore()
   const [deviceType, setDeviceType] = useState<string>('')
   const [targetEvent, setTargetEvent] = useState<string>(selectedEvent || 'Purchase')
 
@@ -32,12 +31,9 @@ export function PathsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Path Analysis</h1>
-          <p className="text-muted-foreground mt-1">Discover user journeys leading to key events</p>
-        </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Path Analysis</h1>
+        <p className="text-muted-foreground mt-1">Discover user journeys leading to key events</p>
       </div>
 
       <Card>

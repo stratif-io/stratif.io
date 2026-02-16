@@ -5,7 +5,6 @@ import { useAppStore } from '@/stores'
 import { fetchSessions } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { DateRangePicker } from '@/components/DateRangePicker'
 import {
   Table,
   TableBody,
@@ -17,7 +16,7 @@ import {
 import { Clock, Users } from 'lucide-react'
 
 export default function SessionsPage() {
-  const { dateRange, setDateRange } = useAppStore()
+  const { dateRange } = useAppStore()
   const [page, setPage] = useState(1)
   const limit = 20
 
@@ -41,12 +40,9 @@ export default function SessionsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sessions</h1>
-          <p className="text-muted-foreground mt-1">Browse individual user sessions.</p>
-        </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Sessions</h1>
+        <p className="text-muted-foreground mt-1">Browse individual user sessions.</p>
       </div>
 
       <Card>

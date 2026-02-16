@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { DateRangePicker } from '@/components/DateRangePicker'
 import { Table, RotateCcw, Plus, X } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { fetchPivot, fetchPivotOptions } from '@/lib/api'
@@ -19,10 +18,13 @@ import { fetchPivot, fetchPivotOptions } from '@/lib/api'
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export function PivotPage() {
-  const { dateRange, setDateRange } = useAppStore()
+  const { dateRange } = useAppStore()
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>(['event_name'])
   const [selectedMeasures, setSelectedMeasures] = useState<string[]>(['count'])
   const [eventFilter, setEventFilter] = useState<string>('all')
+  const [countryFilter, setCountryFilter] = useState<string>('all')
+  const [browserFilter, setBrowserFilter] = useState<string>('all')
+  const [productCategoryFilter, setProductCategoryFilter] = useState<string>('all')
 
   const startDate = format(dateRange.from, 'yyyy-MM-dd')
   const endDate = format(dateRange.to, 'yyyy-MM-dd')
@@ -40,6 +42,9 @@ export function PivotPage() {
       startDate,
       endDate,
       eventFilter,
+      countryFilter,
+      browserFilter,
+      productCategoryFilter,
     ],
     queryFn: () =>
       fetchPivot({
@@ -48,6 +53,10 @@ export function PivotPage() {
         start_date: startDate,
         end_date: endDate,
         event_filter: eventFilter === 'all' ? undefined : eventFilter,
+        country_filter: countryFilter === 'all' ? undefined : countryFilter,
+        browser_filter: browserFilter === 'all' ? undefined : browserFilter,
+        product_category_filter:
+          productCategoryFilter === 'all' ? undefined : productCategoryFilter,
       }),
     enabled: selectedDimensions.length > 0 && selectedMeasures.length > 0,
   })
@@ -56,6 +65,9 @@ export function PivotPage() {
     setSelectedDimensions(['event_name'])
     setSelectedMeasures(['count'])
     setEventFilter('all')
+    setCountryFilter('all')
+    setBrowserFilter('all')
+    setProductCategoryFilter('all')
   }
 
   const addDimension = (dim: string) => {
@@ -113,14 +125,11 @@ export function PivotPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sandbox</h1>
-          <p className="text-muted-foreground mt-1">
-            Explore event data with flexible dimensions and measures
-          </p>
-        </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Sandbox</h1>
+        <p className="text-muted-foreground mt-1">
+          Explore event data with flexible dimensions and measures
+        </p>
       </div>
 
       <Card>
@@ -219,20 +228,76 @@ export function PivotPage() {
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-sm font-medium">Event Filter (Optional)</h4>
-            <Select value={eventFilter} onValueChange={setEventFilter}>
-              <SelectTrigger className="w-full md:w-64">
-                <SelectValue placeholder="All events" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All events</SelectItem>
-                {options?.event_names.map((event) => (
-                  <SelectItem key={event} value={event}>
-                    {event}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <h4 className="text-sm font-medium">Filters</h4>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">Event</label>
+                <Select value={eventFilter} onValueChange={setEventFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All events" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All events</SelectItem>
+                    {options?.event_names.map((event) => (
+                      <SelectItem key={event} value={event}>
+                        {event}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">Country</label>
+                <Select value={countryFilter} onValueChange={setCountryFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All countries" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All countries</SelectItem>
+                    {options?.countries.map((country) => (
+                      <SelectItem key={country} value={country}>
+                        {country}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">Browser</label>
+                <Select value={browserFilter} onValueChange={setBrowserFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All browsers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All browsers</SelectItem>
+                    {options?.browsers.map((browser) => (
+                      <SelectItem key={browser} value={browser}>
+                        {browser}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">Product Category</label>
+                <Select value={productCategoryFilter} onValueChange={setProductCategoryFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All categories</SelectItem>
+                    {options?.product_categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

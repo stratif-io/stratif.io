@@ -1,5 +1,4 @@
 import { useAppStore } from '@/stores'
-import { DateRangePicker } from '@/components/DateRangePicker'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { MetricCard } from './components/MetricCard'
 import { ActivityChart } from './components/ActivityChart'
@@ -8,7 +7,7 @@ import { useDashboardMetrics } from './hooks/useDashboardMetrics'
 import { MousePointerClick, Users, Clock, Target } from 'lucide-react'
 
 export function DashboardPage() {
-  const { dateRange, setDateRange } = useAppStore()
+  const { dateRange } = useAppStore()
   const { metrics, isLoading, eventsLoading } = useDashboardMetrics({ dateRange })
 
   return (
@@ -21,7 +20,6 @@ export function DashboardPage() {
               Welcome back! Here's what's happening with your product.
             </p>
           </div>
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

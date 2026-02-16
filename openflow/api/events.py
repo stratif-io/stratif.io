@@ -27,6 +27,8 @@ def get_top_events(
     limit: int = Query(5, description="Number of top events to return", ge=1, le=20),
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    country: Optional[str] = Query(None, description="Filter by country"),
+    browser: Optional[str] = Query(None, description="Filter by browser"),
     db: Database = Depends(get_db),
     _: str = Depends(verify_api_key),
 ) -> dict:
@@ -39,6 +41,12 @@ def get_top_events(
     if end_date:
         where_clauses.append("timestamp <= ?")
         params.append(f"{end_date} 23:59:59")
+    if country:
+        where_clauses.append("json_extract_string(properties, 'country') = ?")
+        params.append(country)
+    if browser:
+        where_clauses.append("json_extract_string(properties, 'browser') = ?")
+        params.append(browser)
 
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 

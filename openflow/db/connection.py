@@ -13,6 +13,7 @@ class Database:
     def __init__(self, db_path: Optional[str] = None):
         settings = get_settings()
         self.db_path = db_path or settings.db_path
+        self._conn: Optional[duckdb.DuckDBPyConnection] = None
 
     @contextmanager
     def connection(self):
@@ -23,6 +24,18 @@ class Database:
         finally:
             conn.close()
 
+    def _get_connection(self) -> duckdb.DuckDBPyConnection:
+        """Get or create a persistent connection."""
+        if self._conn is None:
+            self._conn = duckdb.connect(self.db_path)
+        return self._conn
+
+    def close(self):
+        """Close the persistent connection."""
+        if self._conn is not None:
+            self._conn.close()
+            self._conn = None
+
     def execute(self, query: str, params: Optional[list] = None) -> list[tuple]:
         """Execute a query and return results."""
         with self.connection() as conn:
@@ -32,16 +45,16 @@ class Database:
 
     def execute_many(self, query: str, params: list) -> None:
         """Execute a query with multiple parameter sets."""
-        with self.connection() as conn:
-            conn.executemany(query, params)
+        conn = self._get_connection()
+        conn.executemany(query, params)
 
     def execute_write(self, query: str, params: Optional[list] = None) -> None:
         """Execute a write query (INSERT, UPDATE, CREATE)."""
-        with self.connection() as conn:
-            if params:
-                conn.execute(query, params)
-            else:
-                conn.execute(query)
+        conn = self._get_connection()
+        if params:
+            conn.execute(query, params)
+        else:
+            conn.execute(query)
 
     def table_exists(self, table_name: str) -> bool:
         """Check if a table exists."""
@@ -59,7 +72,6 @@ class Database:
             return result[0] if result else 0
 
 
-# Default database instance
 _db: Optional[Database] = None
 
 

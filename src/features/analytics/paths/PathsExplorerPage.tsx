@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { DateRangePicker } from '@/components/DateRangePicker'
 import { Route, Search, RotateCcw } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { usePathExplorer } from './hooks/usePathExplorer'
@@ -30,7 +29,7 @@ const GROUP_BY_OPTIONS = [
 ] as const
 
 export function PathsExplorerPage() {
-  const { dateRange, setDateRange } = useAppStore()
+  const { dateRange } = useAppStore()
   const [startEvent, setStartEvent] = useState<string>('')
   const [endEvent, setEndEvent] = useState<string>('')
   const [minPathLength, setMinPathLength] = useState<number>(2)
@@ -65,14 +64,11 @@ export function PathsExplorerPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Path Explorer</h1>
-          <p className="text-muted-foreground mt-1">
-            Discover and analyze user journeys through your application
-          </p>
-        </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Path Explorer</h1>
+        <p className="text-muted-foreground mt-1">
+          Discover and analyze user journeys through your application
+        </p>
       </div>
 
       <Card>

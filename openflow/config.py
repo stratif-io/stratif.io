@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     db_path: str = "openflow.duckdb"
 
     # Seeding
-    seed_users: int = 100
+    seed_users: int = 80000
     seed_days: int = 60
 
     @property

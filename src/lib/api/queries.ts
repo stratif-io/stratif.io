@@ -41,12 +41,16 @@ export const fetchTrend = (params: {
   granularity?: string
   start_date?: string
   end_date?: string
+  country?: string
+  browser?: string
 }) => {
   const searchParams = new URLSearchParams()
   if (params.event_name) searchParams.set('event_name', params.event_name)
   if (params.granularity) searchParams.set('granularity', params.granularity)
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
+  if (params.country) searchParams.set('country', params.country)
+  if (params.browser) searchParams.set('browser', params.browser)
 
   return fetchApi<TrendResponse>(`/api/trend?${searchParams}`)
 }
@@ -57,11 +61,15 @@ export const fetchTopEvents = (params: {
   limit?: number
   start_date?: string
   end_date?: string
+  country?: string
+  browser?: string
 }) => {
   const searchParams = new URLSearchParams()
   if (params.limit) searchParams.set('limit', String(params.limit))
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
+  if (params.country) searchParams.set('country', params.country)
+  if (params.browser) searchParams.set('browser', params.browser)
 
   return fetchApi<TopEventsResponse>(`/api/events/top?${searchParams}`)
 }
@@ -183,6 +191,9 @@ export const fetchPivot = (params: {
   start_date?: string
   end_date?: string
   event_filter?: string
+  country_filter?: string
+  browser_filter?: string
+  product_category_filter?: string
 }) => {
   const searchParams = new URLSearchParams()
   searchParams.set('row_dimensions', params.row_dimensions.join(','))
@@ -190,6 +201,10 @@ export const fetchPivot = (params: {
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
   if (params.event_filter) searchParams.set('event_filter', params.event_filter)
+  if (params.country_filter) searchParams.set('country_filter', params.country_filter)
+  if (params.browser_filter) searchParams.set('browser_filter', params.browser_filter)
+  if (params.product_category_filter)
+    searchParams.set('product_category_filter', params.product_category_filter)
 
   return fetchApi<PivotResponse>(`/api/pivot?${searchParams}`)
 }

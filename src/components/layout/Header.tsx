@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Moon, Sun, Search, Bell, Menu } from 'lucide-react'
 import { useTheme } from '@/hooks'
+import { GlobalFilters } from '@/components/GlobalFilters'
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
@@ -35,9 +36,8 @@ export function Header() {
         </Button>
 
         <div className="flex-1">
-          <div className="relative max-w-md hidden md:block">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input type="search" placeholder="Search..." className="pl-9 w-full md:w-64 lg:w-80" />
+          <div className="flex items-center gap-4">
+            <GlobalFilters />
           </div>
         </div>
 

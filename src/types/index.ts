@@ -14,10 +14,6 @@ export interface TrendResponse {
   data: TrendData[]
 }
 
-export interface TrendResponse {
-  data: TrendData[]
-}
-
 export interface Event {
   user_id: string
   event_name: string
@@ -172,6 +168,9 @@ export interface PivotOptionsResponse {
   dimensions: Array<{ value: string; label: string }>
   measures: Array<{ value: string; label: string }>
   event_names: string[]
+  countries: string[]
+  browsers: string[]
+  product_categories: string[]
 }
 
 export interface PivotResponse {

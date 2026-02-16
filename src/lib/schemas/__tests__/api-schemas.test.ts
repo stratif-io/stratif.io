@@ -60,6 +60,7 @@ describe('TrendDataSchema', () => {
     const result = TrendDataSchema.safeParse({
       date: '2024-01-01T00:00:00Z',
       count: 100,
+      unique_users: 50,
     })
     expect(result.success).toBe(true)
   })
@@ -68,6 +69,7 @@ describe('TrendDataSchema', () => {
     const result = TrendDataSchema.safeParse({
       date: '2024-01-01',
       count: 50,
+      unique_users: 25,
     })
     expect(result.success).toBe(true)
   })
@@ -76,6 +78,7 @@ describe('TrendDataSchema', () => {
     const result = TrendDataSchema.safeParse({
       date: '01/01/2024',
       count: 100,
+      unique_users: 50,
     })
     expect(result.success).toBe(false)
   })
@@ -84,6 +87,7 @@ describe('TrendDataSchema', () => {
     const result = TrendDataSchema.safeParse({
       date: '2024-01-01',
       count: -1,
+      unique_users: 50,
     })
     expect(result.success).toBe(false)
   })
@@ -92,6 +96,7 @@ describe('TrendDataSchema', () => {
     const result = TrendDataSchema.safeParse({
       date: '2024-01-01',
       count: 1.5,
+      unique_users: 50,
     })
     expect(result.success).toBe(false)
   })
@@ -100,6 +105,7 @@ describe('TrendDataSchema', () => {
     const result = TrendDataSchema.safeParse({
       date: '2024-01-01',
       count: 0,
+      unique_users: 0,
     })
     expect(result.success).toBe(true)
   })
@@ -108,16 +114,17 @@ describe('TrendDataSchema', () => {
 describe('TrendResponseSchema', () => {
   it('validates valid trend response', () => {
     const result = TrendResponseSchema.safeParse({
+      total_unique_users: 100,
       data: [
-        { date: '2024-01-01', count: 100 },
-        { date: '2024-01-02', count: 150 },
+        { date: '2024-01-01', count: 100, unique_users: 50 },
+        { date: '2024-01-02', count: 150, unique_users: 75 },
       ],
     })
     expect(result.success).toBe(true)
   })
 
   it('validates empty data array', () => {
-    const result = TrendResponseSchema.safeParse({ data: [] })
+    const result = TrendResponseSchema.safeParse({ total_unique_users: 0, data: [] })
     expect(result.success).toBe(true)
   })
 

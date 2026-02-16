@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { fetchTrend, fetchTopEvents, fetchSessionsSummary, fetchConversion } from '@/lib/api'
+import { useAppStore } from '@/stores'
 import type { DateRange } from '@/types'
 
 export interface DashboardMetrics {
@@ -28,15 +29,30 @@ export function useDashboardMetrics({
 }: UseDashboardMetricsOptions): UseDashboardMetricsReturn {
   const startDate = format(dateRange.from, 'yyyy-MM-dd')
   const endDate = format(dateRange.to, 'yyyy-MM-dd')
+  const { selectedCountry, selectedBrowser } = useAppStore()
 
   const { data: currentTrend, isLoading: currentLoading } = useQuery({
-    queryKey: ['trend', startDate, endDate],
-    queryFn: () => fetchTrend({ start_date: startDate, end_date: endDate, granularity: 'day' }),
+    queryKey: ['trend', startDate, endDate, selectedCountry, selectedBrowser],
+    queryFn: () =>
+      fetchTrend({
+        start_date: startDate,
+        end_date: endDate,
+        granularity: 'day',
+        country: selectedCountry || undefined,
+        browser: selectedBrowser || undefined,
+      }),
   })
 
   const { data: topEventsData, isLoading: eventsLoading } = useQuery({
-    queryKey: ['topEvents', startDate, endDate],
-    queryFn: () => fetchTopEvents({ limit: 5, start_date: startDate, end_date: endDate }),
+    queryKey: ['topEvents', startDate, endDate, selectedCountry, selectedBrowser],
+    queryFn: () =>
+      fetchTopEvents({
+        limit: 5,
+        start_date: startDate,
+        end_date: endDate,
+        country: selectedCountry || undefined,
+        browser: selectedBrowser || undefined,
+      }),
   })
 
   const { data: sessionsSummary } = useQuery({

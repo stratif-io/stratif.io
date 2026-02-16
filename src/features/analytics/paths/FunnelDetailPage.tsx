@@ -21,7 +21,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Skeleton } from '@/components/ui/skeleton'
 import { fetchPathFunnel } from '@/lib/api'
 import { useAppStore } from '@/stores'
-import { DateRangePicker } from '@/components/DateRangePicker'
 
 export function FunnelDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -126,7 +125,6 @@ export function FunnelDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <DateRangePicker value={dateRange} onChange={setDateRange} />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="icon" onClick={copyPermalink}>

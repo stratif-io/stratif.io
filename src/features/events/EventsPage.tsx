@@ -4,7 +4,6 @@ import { format } from 'date-fns'
 import { useAppStore } from '@/stores'
 import { fetchRawEvents, fetchEvents } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { DateRangePicker } from '@/components/DateRangePicker'
 import { MousePointerClick } from 'lucide-react'
 import { DataTable } from '@/components/data-table'
 import { ColumnDef } from '@tanstack/react-table'
@@ -53,7 +52,7 @@ const columns: ColumnDef<RawEvent>[] = [
 ]
 
 export function EventsPage() {
-  const { dateRange, setDateRange } = useAppStore()
+  const { dateRange } = useAppStore()
   const [page, setPage] = useState(1)
   const limit = 50
 
@@ -86,12 +85,9 @@ export function EventsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Events</h1>
-          <p className="text-muted-foreground mt-1">Browse individual events.</p>
-        </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Events</h1>
+        <p className="text-muted-foreground mt-1">Browse individual events.</p>
       </div>
 
       <Card>

@@ -17,6 +17,12 @@ interface AppState {
 
   selectedDevice: string | null
   setSelectedDevice: (device: string | null) => void
+
+  selectedCountry: string | null
+  setSelectedCountry: (country: string | null) => void
+
+  selectedBrowser: string | null
+  setSelectedBrowser: (browser: string | null) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -39,6 +45,12 @@ export const useAppStore = create<AppState>()(
 
       selectedDevice: null,
       setSelectedDevice: (selectedDevice) => set({ selectedDevice }),
+
+      selectedCountry: null,
+      setSelectedCountry: (selectedCountry) => set({ selectedCountry }),
+
+      selectedBrowser: null,
+      setSelectedBrowser: (selectedBrowser) => set({ selectedBrowser }),
     }),
     {
       name: 'openflow-storage',

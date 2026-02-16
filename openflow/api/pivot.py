@@ -30,6 +30,9 @@ class PivotRequest(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     event_filter: Optional[str] = None
+    country_filter: Optional[str] = None
+    browser_filter: Optional[str] = None
+    product_category_filter: Optional[str] = None
 
 
 AVAILABLE_DIMENSIONS = {
@@ -38,6 +41,14 @@ AVAILABLE_DIMENSIONS = {
     "hour": "Hour of Day",
     "day_of_week": "Day of Week",
     "user_id": "User ID",
+    "country": "Country",
+    "city": "City",
+    "device_type": "Device Type",
+    "browser": "Browser",
+    "os": "Operating System",
+    "referrer": "Referrer",
+    "product_category": "Product Category",
+    "product_name": "Product Name",
 }
 
 
@@ -49,6 +60,15 @@ def get_pivot_options(
     """Get available dimensions, measures, and filter options for pivot table."""
 
     events = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
+    countries = db.execute(
+        "SELECT DISTINCT json_extract_string(properties, 'country') FROM events WHERE json_extract_string(properties, 'country') IS NOT NULL ORDER BY json_extract_string(properties, 'country')"
+    )
+    browsers = db.execute(
+        "SELECT DISTINCT json_extract_string(properties, 'browser') FROM events WHERE json_extract_string(properties, 'browser') IS NOT NULL ORDER BY json_extract_string(properties, 'browser')"
+    )
+    product_categories = db.execute(
+        "SELECT DISTINCT json_extract_string(properties, 'product_category') FROM events WHERE json_extract_string(properties, 'product_category') IS NOT NULL ORDER BY json_extract_string(properties, 'product_category')"
+    )
 
     return {
         "dimensions": [
@@ -59,6 +79,9 @@ def get_pivot_options(
             {"value": "unique_users", "label": "Unique Users"},
         ],
         "event_names": [row[0] for row in events],
+        "countries": [row[0] for row in countries],
+        "browsers": [row[0] for row in browsers],
+        "product_categories": [row[0] for row in product_categories],
     }
 
 
@@ -71,13 +94,19 @@ def get_pivot(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     event_filter: Optional[str] = Query(None, description="Filter by event name"),
+    country_filter: Optional[str] = Query(None, description="Filter by country"),
+    browser_filter: Optional[str] = Query(None, description="Filter by browser"),
+    product_category_filter: Optional[str] = Query(
+        None, description="Filter by product category"
+    ),
     db: Database = Depends(get_db),
     _: str = Depends(verify_api_key),
 ) -> dict:
     """
     Get pivot table data with flexible dimensions and measures.
 
-    Dimensions: event_name, date, hour, day_of_week, user_id
+    Dimensions: event_name, date, hour, day_of_week, user_id, country, city,
+                device_type, browser, os, referrer, product_category, product_name
     Measures: count, unique_users
     """
     row_dims = [d.strip() for d in row_dimensions.split(",") if d.strip()]
@@ -110,6 +139,15 @@ def get_pivot(
     if event_filter:
         where_clauses.append("event_name = ?")
         params.append(event_filter)
+    if country_filter:
+        where_clauses.append("json_extract_string(properties, 'country') = ?")
+        params.append(country_filter)
+    if browser_filter:
+        where_clauses.append("json_extract_string(properties, 'browser') = ?")
+        params.append(browser_filter)
+    if product_category_filter:
+        where_clauses.append("json_extract_string(properties, 'product_category') = ?")
+        params.append(product_category_filter)
 
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
@@ -124,6 +162,17 @@ def get_pivot(
             return "EXTRACT(DAYOFWEEK FROM timestamp)::INTEGER"
         elif dim == "user_id":
             return "user_id"
+        elif dim in (
+            "country",
+            "city",
+            "device_type",
+            "browser",
+            "os",
+            "referrer",
+            "product_category",
+            "product_name",
+        ):
+            return f"json_extract_string(properties, '{dim}')"
         return dim
 
     def get_measure_expr(measure: str) -> str:

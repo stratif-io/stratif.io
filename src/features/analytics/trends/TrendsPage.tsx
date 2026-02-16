@@ -8,14 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { DateRangePicker } from '@/components/DateRangePicker'
 import { TrendingUp, BarChart3, LineChart as LineChartIcon } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendChart } from './components/TrendChart'
 
 export function TrendsPage() {
-  const { dateRange, setDateRange } = useAppStore()
+  const { dateRange } = useAppStore()
   const [selectedEvent, setSelectedEvent] = useState<string>('')
   const [granularity, setGranularity] = useState<'day' | 'week'>('day')
   const [chartType, setChartType] = useState<'area' | 'line'>('area')
@@ -28,12 +27,9 @@ export function TrendsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Trend Analysis</h1>
-          <p className="text-muted-foreground mt-1">Analyze event trends over time</p>
-        </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Trend Analysis</h1>
+        <p className="text-muted-foreground mt-1">Analyze event trends over time</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
