@@ -27,6 +27,7 @@ Thumbs.db
 # Database
 *.duckdb
 *.duckdb.wal
+*.sqlite
 
 # Logs
 *.log
