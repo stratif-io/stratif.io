@@ -159,8 +159,8 @@ export function PathsExplorerPage() {
   const { dateRange } = useAppStore()
   const [startEvent, setStartEvent] = useState<string>('')
   const [endEvent, setEndEvent] = useState<string>('')
-  const [minPathLength, setMinPathLength] = useState<number>(2)
-  const [maxPathLength, setMaxPathLength] = useState<number>(5)
+  const [minPathLength, setMinPathLength] = useState<number | null>(null)
+  const [maxPathLength, setMaxPathLength] = useState<number | null>(null)
   const [maxTimeBetweenEvents, setMaxTimeBetweenEvents] = useState<number | null>(null)
   const [timeUnit, setTimeUnit] = useState<'seconds' | 'minutes' | 'hours' | 'days'>('minutes')
   const [groupBy, setGroupBy] = useState<'user_id' | 'session_id'>('user_id')
@@ -169,12 +169,16 @@ export function PathsExplorerPage() {
   const [selectedPath, setSelectedPath] = useState<PathAnalysisData | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
+  const pathLengthActive = minPathLength !== null || maxPathLength !== null
+  const effectiveMin = minPathLength ?? 2
+  const effectiveMax = maxPathLength ?? 20
+
   const { pathData, events, isLoading, eventsLoading, totalPaths } = usePathExplorer({
     dateRange,
     startEvent: startEvent || null,
     endEvent: endEvent || null,
-    minPathLength,
-    maxPathLength,
+    minPathLength: effectiveMin,
+    maxPathLength: effectiveMax,
     maxTimeBetweenEvents,
     timeUnit,
     groupBy,
@@ -184,8 +188,8 @@ export function PathsExplorerPage() {
   const handleReset = () => {
     setStartEvent('')
     setEndEvent('')
-    setMinPathLength(2)
-    setMaxPathLength(5)
+    setMinPathLength(null)
+    setMaxPathLength(null)
     setMaxTimeBetweenEvents(null)
     setTimeUnit('minutes')
     setGroupBy('user_id')
@@ -195,8 +199,7 @@ export function PathsExplorerPage() {
   const hasActiveFilters =
     startEvent ||
     endEvent ||
-    minPathLength !== 2 ||
-    maxPathLength !== 5 ||
+    pathLengthActive ||
     maxTimeBetweenEvents !== null
 
   const maxCount = pathData[0]?.occurrence_count ?? 1
@@ -273,12 +276,12 @@ export function PathsExplorerPage() {
                 className={cn(
                   segTrigger,
                   'flex items-center gap-1.5',
-                  (minPathLength !== 2 || maxPathLength !== 5) && 'text-foreground'
+                  pathLengthActive && 'text-foreground'
                 )}
               >
-                <Layers className="h-3.5 w-3.5 shrink-0" />
+                <Layers className={cn('h-3.5 w-3.5 shrink-0', pathLengthActive && 'text-primary')} />
                 <span>
-                  {minPathLength}–{maxPathLength} steps
+                  {pathLengthActive ? `${effectiveMin}–${effectiveMax} steps` : 'Any steps'}
                 </span>
               </PopoverTrigger>
               <PopoverContent className="w-52 p-3 space-y-3" align="start">
@@ -292,10 +295,12 @@ export function PathsExplorerPage() {
                       type="number"
                       min={2}
                       max={20}
-                      value={minPathLength}
-                      onChange={(e) =>
-                        setMinPathLength(Math.max(2, parseInt(e.target.value) || 2))
-                      }
+                      placeholder="2"
+                      value={minPathLength ?? ''}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value)
+                        setMinPathLength(isNaN(val) ? null : Math.max(2, val))
+                      }}
                       className="h-8 text-sm text-center"
                     />
                   </div>
@@ -304,18 +309,26 @@ export function PathsExplorerPage() {
                     <label className="text-xs text-muted-foreground">Max</label>
                     <Input
                       type="number"
-                      min={minPathLength}
+                      min={effectiveMin}
                       max={20}
-                      value={maxPathLength}
-                      onChange={(e) =>
-                        setMaxPathLength(
-                          Math.max(minPathLength, parseInt(e.target.value) || minPathLength)
-                        )
-                      }
+                      placeholder="Any"
+                      value={maxPathLength ?? ''}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value)
+                        setMaxPathLength(isNaN(val) ? null : Math.max(effectiveMin, val))
+                      }}
                       className="h-8 text-sm text-center"
                     />
                   </div>
                 </div>
+                {pathLengthActive && (
+                  <button
+                    onClick={() => { setMinPathLength(null); setMaxPathLength(null) }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Clear length filter
+                  </button>
+                )}
               </PopoverContent>
             </Popover>
 
