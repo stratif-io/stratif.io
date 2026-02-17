@@ -1,0 +1,186 @@
+import { useEffect, useState } from 'react'
+import { Plus, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { LoadingState } from '@/components/ui/loading-state'
+import { useSchemaConfig, useUpsertSchemaConfig } from '../hooks/useConnectionsData'
+import type { CustomProperty, PropertyType } from '@/types'
+
+const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
+
+interface Props {
+  connId: string
+}
+
+export function SchemaConfigTab({ connId }: Props) {
+  const { data, isLoading } = useSchemaConfig(connId)
+  const upsert = useUpsertSchemaConfig(connId)
+
+  const [userIdField, setUserIdField] = useState('user_id')
+  const [timestampField, setTimestampField] = useState('timestamp')
+  const [eventNameField, setEventNameField] = useState('event_name')
+  const [customProps, setCustomProps] = useState<CustomProperty[]>([])
+
+  useEffect(() => {
+    if (data) {
+      setUserIdField(data.user_id_field)
+      setTimestampField(data.timestamp_field)
+      setEventNameField(data.event_name_field)
+      setCustomProps(data.custom_properties)
+    }
+  }, [data])
+
+  function addProp() {
+    setCustomProps((prev) => [...prev, { name: '', path: '', type: 'string', flatten: false }])
+  }
+
+  function removeProp(idx: number) {
+    setCustomProps((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  function updateProp(idx: number, patch: Partial<CustomProperty>) {
+    setCustomProps((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
+  }
+
+  function handleSave() {
+    upsert.mutate({
+      user_id_field: userIdField,
+      timestamp_field: timestampField,
+      event_name_field: eventNameField,
+      custom_properties: customProps,
+    })
+  }
+
+  if (isLoading) return <LoadingState message="Loading schema config…" />
+
+  return (
+    <div className="space-y-6">
+      {/* Core field mappings */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold">Core Field Mappings</h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="user_id_field">User ID Column</Label>
+            <Input
+              id="user_id_field"
+              value={userIdField}
+              onChange={(e) => setUserIdField(e.target.value)}
+              placeholder="user_id"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="timestamp_field">Timestamp Column</Label>
+            <Input
+              id="timestamp_field"
+              value={timestampField}
+              onChange={(e) => setTimestampField(e.target.value)}
+              placeholder="timestamp"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="event_name_field">Event Name Column</Label>
+            <Input
+              id="event_name_field"
+              value={eventNameField}
+              onChange={(e) => setEventNameField(e.target.value)}
+              placeholder="event_name"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Custom properties */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Custom Properties</h3>
+          <Button size="sm" variant="outline" onClick={addProp}>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Add Property
+          </Button>
+        </div>
+
+        {customProps.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center border rounded-md">
+            No custom properties defined.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {/* Header */}
+            <div className="hidden sm:grid grid-cols-[1fr_1.5fr_100px_72px_32px] gap-2 px-1">
+              {['Name', 'Path', 'Type', 'Flatten', ''].map((h) => (
+                <span key={h} className="text-xs font-medium text-muted-foreground">
+                  {h}
+                </span>
+              ))}
+            </div>
+
+            {customProps.map((prop, idx) => (
+              <div
+                key={idx}
+                className="grid grid-cols-[1fr_1.5fr_100px_72px_32px] gap-2 items-center"
+              >
+                <Input
+                  value={prop.name}
+                  onChange={(e) => updateProp(idx, { name: e.target.value })}
+                  placeholder="campaign_source"
+                  className="h-8 text-sm"
+                />
+                <Input
+                  value={prop.path}
+                  onChange={(e) => updateProp(idx, { path: e.target.value })}
+                  placeholder="context.campaign.source"
+                  className="h-8 text-sm font-mono"
+                />
+                <Select
+                  value={prop.type}
+                  onValueChange={(v) => updateProp(idx, { type: v as PropertyType })}
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROPERTY_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center justify-center">
+                  <Switch
+                    checked={prop.flatten}
+                    onCheckedChange={(v) => updateProp(idx, { flatten: v })}
+                  />
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeProp(idx)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {upsert.isError && (
+        <p className="text-sm text-destructive">{upsert.error?.message}</p>
+      )}
+      {upsert.isSuccess && (
+        <p className="text-sm text-green-600">Schema config saved.</p>
+      )}
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={upsert.isPending}>
+          {upsert.isPending ? 'Saving…' : 'Save Schema Config'}
+        </Button>
+      </div>
+    </div>
+  )
+}

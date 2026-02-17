@@ -1,10 +1,16 @@
 """Authentication module for OpenFlow Analytics API."""
 
+import uuid
 from typing import Optional
 
 from fastapi import Header, HTTPException, Depends, status
 
 from openflow.config import get_settings
+
+
+def derive_user_id(api_key: str) -> str:
+    """Derive a stable UUID v5 from the API key."""
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"openflow.user.{api_key}"))
 
 
 async def verify_api_key(x_api_key: Optional[str] = Header(None)) -> str:

@@ -22,12 +22,11 @@ import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export function PivotPage() {
-  const { dateRange, selectedCountry, selectedBrowser } = useAppStore()
+  const { dateRange, activeFilters, activeConnectionId } = useAppStore()
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>([])
   const [selectedColumnDimensions, setSelectedColumnDimensions] = useState<string[]>([])
   const [selectedMeasures, setSelectedMeasures] = useState<string[]>(['count', 'unique_users'])
   const [eventFilter, setEventFilter] = useState<string>('all')
-  const [productCategoryFilter, setProductCategoryFilter] = useState<string>('all')
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
@@ -35,8 +34,8 @@ export function PivotPage() {
   const endDate = format(dateRange.to, 'yyyy-MM-dd')
 
   const { data: options, isLoading: optionsLoading } = useQuery({
-    queryKey: ['pivot-options'],
-    queryFn: fetchPivotOptions,
+    queryKey: ['pivot-options', activeConnectionId],
+    queryFn: () => fetchPivotOptions(activeConnectionId ?? undefined),
   })
 
   const { data: pivotData, isLoading: pivotLoading } = useQuery({
@@ -48,9 +47,7 @@ export function PivotPage() {
       startDate,
       endDate,
       eventFilter,
-      selectedCountry,
-      selectedBrowser,
-      productCategoryFilter,
+      activeFilters,
     ],
     queryFn: () =>
       fetchPivot({
@@ -60,10 +57,7 @@ export function PivotPage() {
         start_date: startDate,
         end_date: endDate,
         event_filter: eventFilter === 'all' ? undefined : eventFilter,
-        country_filter: selectedCountry || undefined,
-        browser_filter: selectedBrowser || undefined,
-        product_category_filter:
-          productCategoryFilter === 'all' ? undefined : productCategoryFilter,
+        filters: activeFilters,
       }),
     enabled: selectedMeasures.length > 0,
   })
@@ -73,7 +67,6 @@ export function PivotPage() {
     setSelectedColumnDimensions([])
     setSelectedMeasures(['count', 'unique_users'])
     setEventFilter('all')
-    setProductCategoryFilter('all')
     setSortKey(null)
     setSortDirection('desc')
   }
@@ -381,22 +374,6 @@ export function PivotPage() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground">Product Category</label>
-                <Select value={productCategoryFilter} onValueChange={setProductCategoryFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All categories</SelectItem>
-                    {options?.product_categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
           </div>
         </CardContent>

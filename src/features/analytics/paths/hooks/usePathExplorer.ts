@@ -38,11 +38,11 @@ export function usePathExplorer({
 }: UsePathExplorerOptions): UsePathExplorerReturn {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
-  const { selectedCountry, selectedBrowser } = useAppStore()
+  const { activeFilters, activeConnectionId } = useAppStore()
 
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => fetchEvents(),
+    queryKey: ['events', activeConnectionId],
+    queryFn: () => fetchEvents(activeConnectionId ?? undefined),
   })
 
   const { data: pathResponse, isLoading } = useQuery({
@@ -58,8 +58,8 @@ export function usePathExplorer({
       topN,
       startDate,
       endDate,
-      selectedCountry,
-      selectedBrowser,
+      activeFilters,
+      activeConnectionId,
     ],
     queryFn: () =>
       fetchPathAnalysis({
@@ -73,8 +73,8 @@ export function usePathExplorer({
         top_n: topN,
         start_date: startDate,
         end_date: endDate,
-        country: selectedCountry || undefined,
-        browser: selectedBrowser || undefined,
+        filters: activeFilters,
+        connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!startDate && !!endDate,
   })

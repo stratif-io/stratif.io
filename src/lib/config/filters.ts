@@ -1,30 +1,6 @@
-export interface DimensionFilterConfig {
-  id: string
-  label: string
-  icon: 'Globe' | 'Chrome' | 'Monitor' | 'Building' | 'Tag' | 'Layers'
-  apiParam: string
-  optionsEndpoint?: string
-  optionsPath?: string
-  staticOptions?: string[]
-}
-
-export const DIMENSION_FILTERS: DimensionFilterConfig[] = [
-  {
-    id: 'country',
-    label: 'Country',
-    icon: 'Globe',
-    apiParam: 'country',
-    optionsEndpoint: '/api/pivot/options',
-    optionsPath: 'countries',
-  },
-  {
-    id: 'browser',
-    label: 'Browser',
-    icon: 'Chrome',
-    apiParam: 'browser',
-    optionsEndpoint: '/api/pivot/options',
-    optionsPath: 'browsers',
-  },
-]
-
+/**
+ * Static filter UI configuration.
+ * Dimension filters are no longer hardcoded here — they are configured per connection
+ * in the connection's filter config (connection_filter_configs) and loaded dynamically.
+ */
 export const ENABLE_DATE_FILTER = true

@@ -1,13 +1,12 @@
 """Trend API endpoints."""
 
+import json
 from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from openflow.core import verify_api_key
-from openflow.db import get_db, Database
-from openflow.services import transpile_sql
+from openflow.services import transpile_sql, get_analytics_db
 
 router = APIRouter(prefix="/api", tags=["trends"])
 
@@ -18,14 +17,10 @@ def get_trend(
     granularity: str = Query("day", description="day or week"),
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    country: Optional[str] = Query(None, description="Filter by country"),
-    browser: Optional[str] = Query(None, description="Filter by browser"),
-    db: Database = Depends(get_db),
-    _: str = Depends(verify_api_key),
+    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters, e.g. {"country":"US"}'),
+    db=Depends(get_analytics_db),
 ) -> dict:
-    """
-    Return trend data: Date vs Count and Unique Users.
-    """
+    """Return trend data: Date vs Count and Unique Users."""
     where_clauses = []
     params = []
     if event_name:
@@ -37,12 +32,11 @@ def get_trend(
     if end_date:
         where_clauses.append("timestamp <= ?")
         params.append(f"{end_date} 23:59:59")
-    if country:
-        where_clauses.append("json_extract_string(properties, 'country') = ?")
-        params.append(country)
-    if browser:
-        where_clauses.append("json_extract_string(properties, 'browser') = ?")
-        params.append(browser)
+
+    if filters:
+        filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+        where_clauses.extend(filter_clauses)
+        params.extend(filter_params)
 
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
@@ -53,7 +47,7 @@ def get_trend(
     )
 
     query = transpile_sql(f"""
-        SELECT 
+        SELECT
             {date_trunc} as date,
             COUNT(*) as count,
             COUNT(DISTINCT user_id) as unique_users

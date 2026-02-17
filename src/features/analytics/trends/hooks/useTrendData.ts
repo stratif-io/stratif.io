@@ -34,11 +34,11 @@ export function useTrendData({
 }: UseTrendDataOptions): UseTrendDataReturn {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
-  const { selectedCountry, selectedBrowser } = useAppStore()
+  const { activeFilters, activeConnectionId } = useAppStore()
 
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => fetchEvents(),
+    queryKey: ['events', activeConnectionId],
+    queryFn: () => fetchEvents(activeConnectionId ?? undefined),
   })
 
   const { data: trendResponse, isLoading } = useQuery({
@@ -48,8 +48,8 @@ export function useTrendData({
       granularity,
       startDate,
       endDate,
-      selectedCountry,
-      selectedBrowser,
+      activeFilters,
+      activeConnectionId,
     ],
     queryFn: () =>
       fetchTrend({
@@ -57,8 +57,8 @@ export function useTrendData({
         granularity,
         start_date: startDate,
         end_date: endDate,
-        country: selectedCountry || undefined,
-        browser: selectedBrowser || undefined,
+        filters: activeFilters,
+        connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!startDate && !!endDate,
   })

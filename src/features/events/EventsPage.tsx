@@ -53,7 +53,7 @@ const columns: ColumnDef<RawEvent>[] = [
 ]
 
 export function EventsPage() {
-  const { dateRange, selectedCountry, selectedBrowser } = useAppStore()
+  const { dateRange, activeFilters, activeConnectionId } = useAppStore()
   const [page, setPage] = useState(1)
   const limit = 50
 
@@ -61,15 +61,15 @@ export function EventsPage() {
   const endDate = format(dateRange.to, 'yyyy-MM-dd')
 
   const { data: rawEventsData, isLoading } = useQuery({
-    queryKey: ['rawEvents', page, startDate, endDate, selectedCountry, selectedBrowser],
+    queryKey: ['rawEvents', page, startDate, endDate, activeFilters, activeConnectionId],
     queryFn: () =>
       fetchRawEvents({
         limit,
         offset: (page - 1) * limit,
         start_date: startDate,
         end_date: endDate,
-        country: selectedCountry || undefined,
-        browser: selectedBrowser || undefined,
+        filters: activeFilters,
+        connection_id: activeConnectionId ?? undefined,
       }),
   })
 

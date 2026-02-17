@@ -1,5 +1,6 @@
 """Pivot table API endpoint."""
 
+import json
 from datetime import datetime
 from typing import Optional, List
 from enum import Enum
@@ -7,9 +8,7 @@ from enum import Enum
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from openflow.core import verify_api_key
-from openflow.db import get_db, Database
-from openflow.services import transpile_sql
+from openflow.services import transpile_sql, get_analytics_db
 
 router = APIRouter(prefix="/api", tags=["pivot"])
 
@@ -23,16 +22,6 @@ class Measure(BaseModel):
     type: MeasureType
     alias: str
 
-
-class PivotRequest(BaseModel):
-    row_dimensions: List[str]
-    measures: List[Measure]
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    event_filter: Optional[str] = None
-    country_filter: Optional[str] = None
-    browser_filter: Optional[str] = None
-    product_category_filter: Optional[str] = None
 
 
 AVAILABLE_DIMENSIONS = {
@@ -54,34 +43,27 @@ AVAILABLE_DIMENSIONS = {
 
 @router.get("/pivot/options")
 def get_pivot_options(
-    db: Database = Depends(get_db),
-    _: str = Depends(verify_api_key),
+    db=Depends(get_analytics_db),
 ) -> dict:
     """Get available dimensions, measures, and filter options for pivot table."""
 
     events = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
-    countries = db.execute(
-        "SELECT DISTINCT json_extract_string(properties, 'country') FROM events WHERE json_extract_string(properties, 'country') IS NOT NULL ORDER BY json_extract_string(properties, 'country')"
-    )
-    browsers = db.execute(
-        "SELECT DISTINCT json_extract_string(properties, 'browser') FROM events WHERE json_extract_string(properties, 'browser') IS NOT NULL ORDER BY json_extract_string(properties, 'browser')"
-    )
-    product_categories = db.execute(
-        "SELECT DISTINCT json_extract_string(properties, 'product_category') FROM events WHERE json_extract_string(properties, 'product_category') IS NOT NULL ORDER BY json_extract_string(properties, 'product_category')"
-    )
+
+    # Merge static dimensions with dynamic filter fields from the active connection
+    dynamic_dimensions = {ff["field"]: ff["label"] for ff in db.get_filter_fields()}
+    dimensions = {**AVAILABLE_DIMENSIONS, **dynamic_dimensions}
+
+    # Build filter options dynamically from connection filter config
+    filter_options = db.get_filter_options()
 
     return {
-        "dimensions": [
-            {"value": k, "label": v} for k, v in AVAILABLE_DIMENSIONS.items()
-        ],
+        "dimensions": [{"value": k, "label": v} for k, v in dimensions.items()],
         "measures": [
             {"value": "count", "label": "Event Count"},
             {"value": "unique_users", "label": "Unique Users"},
         ],
         "event_names": [row[0] for row in events],
-        "countries": [row[0] for row in countries],
-        "browsers": [row[0] for row in browsers],
-        "product_categories": [row[0] for row in product_categories],
+        **filter_options,
     }
 
 
@@ -89,19 +71,12 @@ def get_pivot_options(
 def get_pivot(
     row_dimensions: str = Query("", description="Comma-separated list of row dimensions (optional)"),
     column_dimensions: str = Query("", description="Comma-separated list of column dimensions (optional)"),
-    measures: str = Query(
-        ..., description="Comma-separated list of measures (count, unique_users)"
-    ),
+    measures: str = Query(..., description="Comma-separated list of measures (count, unique_users)"),
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     event_filter: Optional[str] = Query(None, description="Filter by event name"),
-    country_filter: Optional[str] = Query(None, description="Filter by country"),
-    browser_filter: Optional[str] = Query(None, description="Filter by browser"),
-    product_category_filter: Optional[str] = Query(
-        None, description="Filter by product category"
-    ),
-    db: Database = Depends(get_db),
-    _: str = Depends(verify_api_key),
+    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
+    db=Depends(get_analytics_db),
 ) -> dict:
     """
     Get pivot table data with flexible row/column dimensions and measures.
@@ -145,17 +120,19 @@ def get_pivot(
     if event_filter:
         where_clauses.append("event_name = ?")
         params.append(event_filter)
-    if country_filter:
-        where_clauses.append("json_extract_string(properties, 'country') = ?")
-        params.append(country_filter)
-    if browser_filter:
-        where_clauses.append("json_extract_string(properties, 'browser') = ?")
-        params.append(browser_filter)
-    if product_category_filter:
-        where_clauses.append("json_extract_string(properties, 'product_category') = ?")
-        params.append(product_category_filter)
+    if filters:
+        filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+        where_clauses.extend(filter_clauses)
+        params.extend(filter_params)
 
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+    # Build filter_exprs from the active connection for dynamic dimension resolution
+    raw_filter_exprs: dict = getattr(db, '_filter_exprs', {})
+    connection_filter_exprs = {
+        ff["field"]: raw_filter_exprs.get(ff["field"], f'"{ff["field"]}"')
+        for ff in db.get_filter_fields()
+    }
 
     def get_dimension_expr(dim: str) -> str:
         if dim == "event_name":
@@ -168,18 +145,11 @@ def get_pivot(
             return "EXTRACT(DAYOFWEEK FROM timestamp)::INTEGER"
         elif dim == "user_id":
             return "user_id"
-        elif dim in (
-            "country",
-            "city",
-            "device_type",
-            "browser",
-            "os",
-            "referrer",
-            "product_category",
-            "product_name",
-        ):
+        elif dim in connection_filter_exprs:
+            return connection_filter_exprs[dim]
+        elif dim in ("city", "device_type", "os", "referrer", "product_category", "product_name"):
             return f"json_extract_string(properties, '{dim}')"
-        return dim
+        return f'"{dim}"'
 
     def get_measure_expr(measure: str) -> str:
         if measure == "count":

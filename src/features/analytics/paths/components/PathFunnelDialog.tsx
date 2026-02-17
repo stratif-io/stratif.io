@@ -41,22 +41,21 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
   const [copied, setCopied] = useState(false)
   const [deviceType, setDeviceType] = useState<string>('')
   const navigate = useNavigate()
-  const { selectedCountry, selectedBrowser } = useAppStore()
+  const { activeFilters } = useAppStore()
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
 
   const events = path?.path.split(' -> ') || []
 
   const { data: funnelData, isLoading, error } = useQuery({
-    queryKey: ['path-funnel', events.join(','), startDate, endDate, deviceType, selectedCountry, selectedBrowser],
+    queryKey: ['path-funnel', events.join(','), startDate, endDate, deviceType, activeFilters],
     queryFn: () =>
       fetchPathFunnel({
         events,
         start_date: startDate,
         end_date: endDate,
         device_type: deviceType || undefined,
-        country: selectedCountry || undefined,
-        browser: selectedBrowser || undefined,
+        filters: activeFilters,
       }),
     enabled: open && events.length >= 2,
   })

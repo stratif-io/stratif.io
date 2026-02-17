@@ -6,6 +6,7 @@ from .path_analyzer import (
     PathAnalyzerError,
     generate_path_analysis_query,
 )
+from .connection_executor import get_analytics_db, AnalyticsDatabase
 
 __all__ = [
     "transpile_sql",
@@ -14,4 +15,6 @@ __all__ = [
     "PathAnalyzer",
     "PathAnalyzerError",
     "generate_path_analysis_query",
+    "get_analytics_db",
+    "AnalyticsDatabase",
 ]

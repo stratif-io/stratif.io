@@ -18,11 +18,13 @@ interface AppState {
   selectedDevice: string | null
   setSelectedDevice: (device: string | null) => void
 
-  selectedCountry: string | null
-  setSelectedCountry: (country: string | null) => void
+  /** Generic dimension filters keyed by field name, driven by connection filter config. */
+  activeFilters: Record<string, string | null>
+  setActiveFilter: (field: string, value: string | null) => void
+  clearAllFilters: () => void
 
-  selectedBrowser: string | null
-  setSelectedBrowser: (browser: string | null) => void
+  activeConnectionId: string | null
+  setActiveConnectionId: (id: string | null) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -46,11 +48,15 @@ export const useAppStore = create<AppState>()(
       selectedDevice: null,
       setSelectedDevice: (selectedDevice) => set({ selectedDevice }),
 
-      selectedCountry: null,
-      setSelectedCountry: (selectedCountry) => set({ selectedCountry }),
+      activeFilters: {},
+      setActiveFilter: (field, value) =>
+        set((state) => ({
+          activeFilters: { ...state.activeFilters, [field]: value },
+        })),
+      clearAllFilters: () => set({ activeFilters: {} }),
 
-      selectedBrowser: null,
-      setSelectedBrowser: (selectedBrowser) => set({ selectedBrowser }),
+      activeConnectionId: null,
+      setActiveConnectionId: (activeConnectionId) => set({ activeConnectionId }),
     }),
     {
       name: 'openflow-storage',
@@ -58,6 +64,8 @@ export const useAppStore = create<AppState>()(
         theme: state.theme,
         dateRange: state.dateRange,
         sidebarOpen: state.sidebarOpen,
+        activeConnectionId: state.activeConnectionId,
+        activeFilters: state.activeFilters,
       }),
     }
   )

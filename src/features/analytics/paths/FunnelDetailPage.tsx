@@ -38,7 +38,7 @@ const segTrigger =
 export function FunnelDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { dateRange, setDateRange, selectedCountry, selectedBrowser } = useAppStore()
+  const { dateRange, setDateRange, activeFilters } = useAppStore()
   const [methodologyOpen, setMethodologyOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -98,15 +98,14 @@ export function FunnelDetailPage() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['path-funnel', events.join(','), startDate, endDate, deviceType, selectedCountry, selectedBrowser],
+    queryKey: ['path-funnel', events.join(','), startDate, endDate, deviceType, activeFilters],
     queryFn: () =>
       fetchPathFunnel({
         events,
         start_date: startDate,
         end_date: endDate,
         device_type: deviceType || undefined,
-        country: selectedCountry || undefined,
-        browser: selectedBrowser || undefined,
+        filters: activeFilters,
       }),
     enabled: events.length >= 2,
   })

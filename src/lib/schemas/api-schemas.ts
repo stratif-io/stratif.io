@@ -182,3 +182,52 @@ export type ConversionDataType = z.infer<typeof ConversionDataSchema>
 export type ConversionResponseType = z.infer<typeof ConversionResponseSchema>
 export type ApiErrorType = z.infer<typeof ApiErrorSchema>
 export type MetricCardType = z.infer<typeof MetricCardSchema>
+
+// Connections
+
+export const DbTypeSchema = z.enum(['duckdb', 'databricks', 'postgresql', 'sqlite'])
+
+export const PropertyTypeSchema = z.enum(['string', 'number', 'boolean', 'timestamp'])
+
+export const CustomPropertySchema = z.object({
+  name: z.string().min(1),
+  path: z.string().regex(/^[a-zA-Z_][a-zA-Z0-9_.]*$/),
+  type: PropertyTypeSchema,
+  flatten: z.boolean(),
+})
+
+export const ConnectionSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  db_type: DbTypeSchema,
+  created_at: z.string(),
+  updated_at: z.string(),
+})
+
+export const SchemaConfigSchema = z.object({
+  id: z.string().uuid(),
+  connection_id: z.string().uuid(),
+  user_id_field: z.string().min(1),
+  timestamp_field: z.string().min(1),
+  event_name_field: z.string().min(1),
+  custom_properties: z.array(CustomPropertySchema),
+  updated_at: z.string(),
+})
+
+export const FilterFieldSchema = z.object({
+  field: z.string(),
+  label: z.string(),
+  icon: z.string(),
+})
+
+export const FilterConfigSchema = z.object({
+  id: z.string().uuid(),
+  connection_id: z.string().uuid(),
+  filter_fields: z.array(FilterFieldSchema),
+  updated_at: z.string(),
+})
+
+export type ConnectionType = z.infer<typeof ConnectionSchema>
+export type SchemaConfigType = z.infer<typeof SchemaConfigSchema>
+export type FilterConfigType = z.infer<typeof FilterConfigSchema>
+export type CustomPropertyType = z.infer<typeof CustomPropertySchema>

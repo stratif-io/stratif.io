@@ -5,9 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from openflow.core import verify_api_key
-from openflow.db import get_db, Database
-from openflow.services import transpile_sql
+from openflow.services import transpile_sql, get_analytics_db
 
 router = APIRouter(prefix="/api", tags=["sessions"])
 
@@ -16,8 +14,7 @@ router = APIRouter(prefix="/api", tags=["sessions"])
 def get_raw_sessions(
     limit: int = Query(100, description="Number of rows to return", ge=1, le=1000),
     offset: int = Query(0, description="Offset for pagination", ge=0),
-    db: Database = Depends(get_db),
-    _: str = Depends(verify_api_key),
+    db=Depends(get_analytics_db),
 ) -> dict:
     """Get derived session data."""
     # Get total count
@@ -60,8 +57,7 @@ def get_raw_sessions(
 def get_sessions_summary(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    db: Database = Depends(get_db),
-    _: str = Depends(verify_api_key),
+    db=Depends(get_analytics_db),
 ) -> dict:
     """
     Get summary statistics for sessions.

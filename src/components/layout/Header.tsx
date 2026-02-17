@@ -12,6 +12,7 @@ import {
 import { Moon, Sun, Bell, Menu } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
+import { ConnectionSelector } from './ConnectionSelector'
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
@@ -34,6 +35,9 @@ export function Header() {
         >
           <Menu className="h-4 w-4" />
         </Button>
+
+        {/* Connection selector */}
+        <ConnectionSelector />
 
         {/* Filters — takes remaining space */}
         <div className="flex-1 min-w-0">

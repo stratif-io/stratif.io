@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { fetchPaths, fetchEvents } from '@/lib/api'
+import { useAppStore } from '@/stores'
 import type { DateRange, PathData } from '@/types'
 
 export interface UsePathsDataOptions {
@@ -25,13 +26,15 @@ export function usePathsData({
 }: UsePathsDataOptions): UsePathsDataReturn {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
+  const { activeConnectionId } = useAppStore()
+
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => fetchEvents(),
+    queryKey: ['events', activeConnectionId],
+    queryFn: () => fetchEvents(activeConnectionId ?? undefined),
   })
 
   const { data: pathsResponse, isLoading } = useQuery({
-    queryKey: ['paths', targetEvent, deviceType, startDate, endDate],
+    queryKey: ['paths', targetEvent, deviceType, startDate, endDate, activeConnectionId],
     queryFn: () =>
       fetchPaths({
         target_event: targetEvent,
@@ -39,6 +42,7 @@ export function usePathsData({
         limit: 5,
         start_date: startDate,
         end_date: endDate,
+        connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!targetEvent && !!startDate && !!endDate,
   })

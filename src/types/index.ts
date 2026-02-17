@@ -168,9 +168,8 @@ export interface PivotOptionsResponse {
   dimensions: Array<{ value: string; label: string }>
   measures: Array<{ value: string; label: string }>
   event_names: string[]
-  countries: string[]
-  browsers: string[]
-  product_categories: string[]
+  /** Dynamic filter options keyed by field name, e.g. { country: [...], browser: [...] } */
+  [key: string]: string[] | Array<{ value: string; label: string }>
 }
 
 export interface PivotResponse {
@@ -193,4 +192,71 @@ export interface SandboxField {
 export interface SandboxDataResponse {
   data: Array<Record<string, unknown>>
   fields: SandboxField[]
+}
+
+// Connections
+
+export type DbType = 'duckdb' | 'databricks' | 'postgresql' | 'sqlite'
+export type PropertyType = 'string' | 'number' | 'boolean' | 'timestamp'
+
+export interface CustomProperty {
+  name: string
+  path: string
+  type: PropertyType
+  flatten: boolean
+}
+
+export interface Connection {
+  id: string
+  name: string
+  db_type: DbType
+  created_at: string
+  updated_at: string
+}
+
+export interface SchemaConfig {
+  id: string
+  connection_id: string
+  user_id_field: string
+  timestamp_field: string
+  event_name_field: string
+  custom_properties: CustomProperty[]
+  updated_at: string
+}
+
+export interface FilterField {
+  field: string
+  label: string
+  icon: string
+}
+
+export type FilterOptionsResponse = Record<string, string[]>
+
+export interface FilterConfig {
+  id: string
+  connection_id: string
+  filter_fields: FilterField[]
+  updated_at: string
+}
+
+export interface ConnectionCreate {
+  name: string
+  db_type: DbType
+  credentials: Record<string, unknown>
+}
+
+export interface ConnectionUpdate {
+  name?: string
+  credentials?: Record<string, unknown>
+}
+
+export interface SchemaConfigBody {
+  user_id_field: string
+  timestamp_field: string
+  event_name_field: string
+  custom_properties: CustomProperty[]
+}
+
+export interface FilterConfigBody {
+  filter_fields: FilterField[]
 }

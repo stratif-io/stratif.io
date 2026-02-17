@@ -42,6 +42,12 @@ const SettingsPage = lazy(() =>
 const HelpPage = lazy(() =>
   import('@/pages/PlaceholderPages').then((m) => ({ default: m.HelpPage }))
 )
+const ConnectionsPage = lazy(() =>
+  import('@/features/connections').then((m) => ({ default: m.ConnectionsPage }))
+)
+const ConnectionDetailPage = lazy(() =>
+  import('@/features/connections').then((m) => ({ default: m.ConnectionDetailPage }))
+)
 
 function PageLoader() {
   return (
@@ -70,6 +76,8 @@ function App() {
           <Route path="/sessions" element={<SessionsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/help" element={<HelpPage />} />
+          <Route path="/connections" element={<ConnectionsPage />} />
+          <Route path="/connections/:id" element={<ConnectionDetailPage />} />
         </Route>
       </Routes>
     </Suspense>

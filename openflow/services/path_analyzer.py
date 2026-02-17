@@ -37,8 +37,7 @@ class PathAnalyzer:
         date_range: Optional[Tuple[str, str]] = None,
         sql_dialect: str = "duckdb",
         return_type: str = "string",
-        country: Optional[str] = None,
-        browser: Optional[str] = None,
+        extra_where_conditions: Optional[List[str]] = None,
     ) -> Union[str, exp.Expression]:
         """
         Generate SQL query to analyze event paths and identify popular sequences.
@@ -57,6 +56,7 @@ class PathAnalyzer:
             date_range: Optional tuple of (start_date, end_date)
             sql_dialect: Target SQL dialect
             return_type: "string" or "ast"
+            extra_where_conditions: Additional pre-built SQL WHERE conditions (e.g. from filter config)
 
         Returns:
             SQL query as string or SQLGlot AST object
@@ -78,8 +78,7 @@ class PathAnalyzer:
             max_path_length=effective_max_length,
             top_n=top_n,
             date_range=date_range,
-            country=country,
-            browser=browser,
+            extra_where_conditions=extra_where_conditions,
         )
 
         if return_type == "ast":
@@ -130,13 +129,12 @@ class PathAnalyzer:
         max_path_length: int,
         top_n: int,
         date_range: Optional[Tuple[str, str]],
-        country: Optional[str] = None,
-        browser: Optional[str] = None,
+        extra_where_conditions: Optional[List[str]] = None,
     ) -> str:
         """Build the complete path analysis query as SQL string."""
 
         where_conditions = self._build_where_conditions(
-            date_range, event_filters, table_name, country, browser
+            date_range, event_filters, table_name, extra_where_conditions
         )
 
         where_clause = ""
@@ -231,8 +229,7 @@ LIMIT {top_n}
         date_range: Optional[Tuple[str, str]],
         event_filters: Optional[Dict[str, Dict[str, Any]]],
         table_name: str,
-        country: Optional[str] = None,
-        browser: Optional[str] = None,
+        extra_where_conditions: Optional[List[str]] = None,
     ) -> List[str]:
         """Build WHERE clause conditions."""
         conditions = []
@@ -243,11 +240,8 @@ LIMIT {top_n}
                 f"timestamp BETWEEN '{start_date} 00:00:00' AND '{end_date} 23:59:59'"
             )
 
-        if country:
-            conditions.append(f"json_extract_string(properties, 'country') = '{country}'")
-
-        if browser:
-            conditions.append(f"json_extract_string(properties, 'browser') = '{browser}'")
+        if extra_where_conditions:
+            conditions.extend(extra_where_conditions)
 
         if event_filters:
             filter_conditions = self._build_event_filter_sql(event_filters)
@@ -346,8 +340,7 @@ def generate_path_analysis_query(
     date_range: Optional[Tuple[str, str]] = None,
     sql_dialect: str = "duckdb",
     return_type: str = "string",
-    country: Optional[str] = None,
-    browser: Optional[str] = None,
+    extra_where_conditions: Optional[List[str]] = None,
 ) -> Union[str, exp.Expression]:
     """
     Generate SQL query to analyze event paths and identify popular sequences.
@@ -369,6 +362,7 @@ def generate_path_analysis_query(
         date_range: Optional tuple of (start_date, end_date)
         sql_dialect: Target SQL dialect
         return_type: "string" or "ast"
+        extra_where_conditions: Additional pre-built SQL WHERE conditions from filter config
 
     Returns:
         SQL query as string or SQLGlot AST object
@@ -388,6 +382,5 @@ def generate_path_analysis_query(
         date_range=date_range,
         sql_dialect=sql_dialect,
         return_type=return_type,
-        country=country,
-        browser=browser,
+        extra_where_conditions=extra_where_conditions,
     )

@@ -7,6 +7,7 @@ from .sessions import router as sessions_router
 from .paths import router as paths_router
 from .conversion import router as conversion_router
 from .pivot import router as pivot_router
+from .connections import router as connections_router
 
 __all__ = [
     "events_router",
@@ -16,4 +17,5 @@ __all__ = [
     "paths_router",
     "conversion_router",
     "pivot_router",
+    "connections_router",
 ]

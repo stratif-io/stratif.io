@@ -29,40 +29,50 @@ export function useDashboardMetrics({
 }: UseDashboardMetricsOptions): UseDashboardMetricsReturn {
   const startDate = format(dateRange.from, 'yyyy-MM-dd')
   const endDate = format(dateRange.to, 'yyyy-MM-dd')
-  const { selectedCountry, selectedBrowser } = useAppStore()
+  const { activeFilters, activeConnectionId } = useAppStore()
 
   const { data: currentTrend, isLoading: currentLoading } = useQuery({
-    queryKey: ['trend', startDate, endDate, selectedCountry, selectedBrowser],
+    queryKey: ['trend', startDate, endDate, activeFilters, activeConnectionId],
     queryFn: () =>
       fetchTrend({
         start_date: startDate,
         end_date: endDate,
         granularity: 'day',
-        country: selectedCountry || undefined,
-        browser: selectedBrowser || undefined,
+        filters: activeFilters,
+        connection_id: activeConnectionId ?? undefined,
       }),
   })
 
   const { data: topEventsData, isLoading: eventsLoading } = useQuery({
-    queryKey: ['topEvents', startDate, endDate, selectedCountry, selectedBrowser],
+    queryKey: ['topEvents', startDate, endDate, activeFilters, activeConnectionId],
     queryFn: () =>
       fetchTopEvents({
         limit: 5,
         start_date: startDate,
         end_date: endDate,
-        country: selectedCountry || undefined,
-        browser: selectedBrowser || undefined,
+        filters: activeFilters,
+        connection_id: activeConnectionId ?? undefined,
       }),
   })
 
   const { data: sessionsSummary } = useQuery({
-    queryKey: ['sessionsSummary', startDate, endDate],
-    queryFn: () => fetchSessionsSummary({ start_date: startDate, end_date: endDate }),
+    queryKey: ['sessionsSummary', startDate, endDate, activeConnectionId],
+    queryFn: () =>
+      fetchSessionsSummary({
+        start_date: startDate,
+        end_date: endDate,
+        connection_id: activeConnectionId ?? undefined,
+      }),
   })
 
   const { data: conversion } = useQuery({
-    queryKey: ['conversion', startDate, endDate],
-    queryFn: () => fetchConversion({ start_date: startDate, end_date: endDate }),
+    queryKey: ['conversion', startDate, endDate, activeConnectionId],
+    queryFn: () =>
+      fetchConversion({
+        start_date: startDate,
+        end_date: endDate,
+        connection_id: activeConnectionId ?? undefined,
+      }),
   })
 
   const chartData = useMemo(() => {

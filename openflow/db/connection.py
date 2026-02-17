@@ -71,6 +71,23 @@ class Database:
             result = conn.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()
             return result[0] if result else 0
 
+    # ------------------------------------------------------------------
+    # Filter interface — fallback with no active filter dimensions.
+    # AnalyticsDatabase overrides these with connection-specific logic.
+    # ------------------------------------------------------------------
+
+    def build_filter_clauses(self, filters: dict) -> tuple[list[str], list]:
+        """Return (where_clauses, params) for the given filter dict."""
+        return [], []
+
+    def get_filter_fields(self) -> list[dict]:
+        """Return enabled filter field descriptors for the active connection."""
+        return []
+
+    def get_filter_options(self) -> dict[str, list[str]]:
+        """Return distinct values per enabled filter field."""
+        return {}
+
 
 _db: Optional[Database] = None
 

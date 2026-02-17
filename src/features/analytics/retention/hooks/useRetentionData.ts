@@ -32,16 +32,16 @@ export interface UseRetentionDataReturn {
 export function useRetentionData({ dateRange }: UseRetentionDataOptions): UseRetentionDataReturn {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
-  const { selectedCountry, selectedBrowser } = useAppStore()
+  const { activeFilters, activeConnectionId } = useAppStore()
 
   const { data: retentionResponse, isLoading } = useQuery({
-    queryKey: ['retention', startDate, endDate, selectedCountry, selectedBrowser],
+    queryKey: ['retention', startDate, endDate, activeFilters, activeConnectionId],
     queryFn: () =>
       fetchRetention({
         start_date: startDate,
         end_date: endDate,
-        country: selectedCountry || undefined,
-        browser: selectedBrowser || undefined,
+        filters: activeFilters,
+        connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!startDate && !!endDate,
   })

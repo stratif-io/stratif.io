@@ -4,9 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from openflow.core import verify_api_key
-from openflow.db import get_db, Database
-from openflow.services import transpile_sql
+from openflow.services import transpile_sql, get_analytics_db
 
 router = APIRouter(prefix="/api", tags=["conversion"])
 
@@ -15,8 +13,7 @@ router = APIRouter(prefix="/api", tags=["conversion"])
 def get_conversion(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    db: Database = Depends(get_db),
-    _: str = Depends(verify_api_key),
+    db=Depends(get_analytics_db),
 ) -> dict:
     """
     Calculate conversion rate for Home -> Purchase funnel.
