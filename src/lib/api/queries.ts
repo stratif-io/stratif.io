@@ -21,6 +21,7 @@ import {
   SchemaConfigBody,
   FilterConfig,
   FilterConfigBody,
+  SchemaDetectResponse,
 } from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -313,3 +314,6 @@ export const upsertFilterConfig = (connId: string, body: FilterConfigBody) =>
 
 export const fetchFilterOptions = (connId: string) =>
   fetchApi<FilterOptionsResponse>(`/api/connections/${connId}/filter-options`)
+
+export const fetchSchemaDetect = (connId: string) =>
+  fetchApi<SchemaDetectResponse>(`/api/connections/${connId}/schema/detect`)

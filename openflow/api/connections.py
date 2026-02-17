@@ -64,7 +64,6 @@ class CustomProperty(BaseModel):
     name: str
     path: str
     type: Literal["string", "number", "boolean", "timestamp"]
-    flatten: bool = False
 
     @field_validator("path")
     @classmethod
@@ -74,6 +73,8 @@ class CustomProperty(BaseModel):
                 "path must match ^[a-zA-Z_][a-zA-Z0-9_.]*$ to prevent injection"
             )
         return v
+
+    model_config = {"extra": "ignore"}
 
 
 class ConnectionCreate(BaseModel):
@@ -253,6 +254,85 @@ def test_connection(conn_id: str, api_key: str = Depends(verify_api_key)):
         ) from exc
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Connection failed: {exc}") from exc
+
+
+# ---------------------------------------------------------------------------
+# Schema Detection
+# ---------------------------------------------------------------------------
+
+_KNOWN_USER_ID_COLS = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
+_KNOWN_TIMESTAMP_COLS = ("timestamp", "ts", "created_at", "event_time", "time", "datetime", "date")
+_KNOWN_EVENT_NAME_COLS = ("event_name", "event", "action", "event_type", "name", "type")
+
+
+@router.get("/{conn_id}/schema/detect")
+def detect_schema(conn_id: str, api_key: str = Depends(verify_api_key)) -> dict:
+    """Detect columns from the target database and suggest field mappings."""
+    user_id = _ensure_user(api_key)
+    row = _get_connection_or_404(conn_id, user_id)
+
+    if row["db_type"] != "duckdb":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Schema detection supports DuckDB only (got {row['db_type']})",
+        )
+
+    try:
+        creds = decrypt_credentials(row["credentials_encrypted"])
+    except ValueError as exc:
+        raise HTTPException(status_code=500, detail="Failed to decrypt credentials") from exc
+
+    file_path = creds.get("file_path") or creds.get("s3_path")
+    if not file_path:
+        raise HTTPException(status_code=400, detail="No file path configured for this connection")
+
+    try:
+        import duckdb as _duckdb
+
+        mem = _duckdb.connect(":memory:")
+        mem.execute(f"ATTACH '{file_path}' AS src (READ_ONLY)")
+
+        tables_result = mem.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'src' ORDER BY table_name"
+        ).fetchall()
+        tables = [r[0] for r in tables_result]
+
+        # Pick the most likely events table
+        events_table = next(
+            (t for t in tables if t.lower() in ("events", "event", "analytics")),
+            tables[0] if tables else None,
+        )
+
+        if not events_table:
+            mem.close()
+            return {"tables": tables, "columns": [], "suggestions": {}}
+
+        columns_result = mem.execute(f'DESCRIBE src."{events_table}"').fetchall()
+        # DESCRIBE → column_name, column_type, null, key, default, extra
+        columns = [{"name": r[0], "type": r[1]} for r in columns_result]
+        mem.close()
+
+        col_lower: dict[str, str] = {c["name"].lower(): c["name"] for c in columns}
+        suggestions: dict[str, str] = {}
+        for candidate in _KNOWN_USER_ID_COLS:
+            if candidate in col_lower:
+                suggestions["user_id_field"] = col_lower[candidate]
+                break
+        for candidate in _KNOWN_TIMESTAMP_COLS:
+            if candidate in col_lower:
+                suggestions["timestamp_field"] = col_lower[candidate]
+                break
+        for candidate in _KNOWN_EVENT_NAME_COLS:
+            if candidate in col_lower:
+                suggestions["event_name_field"] = col_lower[candidate]
+                break
+
+        return {"tables": tables, "events_table": events_table, "columns": columns, "suggestions": suggestions}
+
+    except ImportError as exc:
+        raise HTTPException(status_code=400, detail=f"DuckDB driver not installed: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Schema detection failed: {exc}") from exc
 
 
 # ---------------------------------------------------------------------------

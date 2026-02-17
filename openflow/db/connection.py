@@ -88,6 +88,14 @@ class Database:
         """Return distinct values per enabled filter field."""
         return {}
 
+    def get_custom_properties(self) -> list[dict]:
+        """Return custom property descriptors for the active connection."""
+        return {}
+
+    def get_custom_prop_exprs(self) -> dict[str, str]:
+        """Return {field_name -> sql_expr} for all custom properties."""
+        return {}
+
 
 _db: Optional[Database] = None
 

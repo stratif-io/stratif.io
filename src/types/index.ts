@@ -203,7 +203,22 @@ export interface CustomProperty {
   name: string
   path: string
   type: PropertyType
-  flatten: boolean
+}
+
+export interface SchemaDetectColumn {
+  name: string
+  type: string
+}
+
+export interface SchemaDetectResponse {
+  tables: string[]
+  events_table?: string
+  columns: SchemaDetectColumn[]
+  suggestions: {
+    user_id_field?: string
+    timestamp_field?: string
+    event_name_field?: string
+  }
 }
 
 export interface Connection {

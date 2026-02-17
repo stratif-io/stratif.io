@@ -24,20 +24,13 @@ class Measure(BaseModel):
 
 
 
+# Universal dimensions available regardless of connection schema config
 AVAILABLE_DIMENSIONS = {
     "event_name": "Event Name",
     "date": "Date",
     "hour": "Hour of Day",
     "day_of_week": "Day of Week",
     "user_id": "User ID",
-    "country": "Country",
-    "city": "City",
-    "device_type": "Device Type",
-    "browser": "Browser",
-    "os": "Operating System",
-    "referrer": "Referrer",
-    "product_category": "Product Category",
-    "product_name": "Product Name",
 }
 
 
@@ -49,9 +42,10 @@ def get_pivot_options(
 
     events = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
 
-    # Merge static dimensions with dynamic filter fields from the active connection
-    dynamic_dimensions = {ff["field"]: ff["label"] for ff in db.get_filter_fields()}
-    dimensions = {**AVAILABLE_DIMENSIONS, **dynamic_dimensions}
+    # Merge universal dimensions with ALL custom properties from the connection schema config
+    custom_props = db.get_custom_properties()
+    custom_dimensions = {p["name"]: p["name"].replace("_", " ").title() for p in custom_props}
+    dimensions = {**AVAILABLE_DIMENSIONS, **custom_dimensions}
 
     # Build filter options dynamically from connection filter config
     filter_options = db.get_filter_options()
@@ -95,7 +89,9 @@ def get_pivot(
     if not measure_list:
         return {"error": "At least one measure is required", "data": []}
 
-    valid_dims = set(AVAILABLE_DIMENSIONS.keys())
+    custom_props = db.get_custom_properties()
+    custom_prop_exprs = db.get_custom_prop_exprs()
+    valid_dims = set(AVAILABLE_DIMENSIONS.keys()) | {p["name"] for p in custom_props}
     invalid_row_dims = [d for d in row_dims if d not in valid_dims]
     invalid_col_dims = [d for d in col_dims if d not in valid_dims]
     if invalid_row_dims:
@@ -127,13 +123,6 @@ def get_pivot(
 
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
-    # Build filter_exprs from the active connection for dynamic dimension resolution
-    raw_filter_exprs: dict = getattr(db, '_filter_exprs', {})
-    connection_filter_exprs = {
-        ff["field"]: raw_filter_exprs.get(ff["field"], f'"{ff["field"]}"')
-        for ff in db.get_filter_fields()
-    }
-
     def get_dimension_expr(dim: str) -> str:
         if dim == "event_name":
             return "event_name"
@@ -145,10 +134,8 @@ def get_pivot(
             return "EXTRACT(DAYOFWEEK FROM timestamp)::INTEGER"
         elif dim == "user_id":
             return "user_id"
-        elif dim in connection_filter_exprs:
-            return connection_filter_exprs[dim]
-        elif dim in ("city", "device_type", "os", "referrer", "product_category", "product_name"):
-            return f"json_extract_string(properties, '{dim}')"
+        elif dim in custom_prop_exprs:
+            return custom_prop_exprs[dim]
         return f'"{dim}"'
 
     def get_measure_expr(measure: str) -> str:

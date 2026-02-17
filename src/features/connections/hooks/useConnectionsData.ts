@@ -7,6 +7,7 @@ import {
   fetchFilterConfig,
   fetchFilterOptions,
   fetchSchemaConfig,
+  fetchSchemaDetect,
   testConnection,
   updateConnection,
   upsertFilterConfig,
@@ -106,5 +107,11 @@ export function useFilterOptions(connId: string) {
     enabled: !!connId,
     retry: false,
     staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useDetectSchema(connId: string) {
+  return useMutation({
+    mutationFn: () => fetchSchemaDetect(connId),
   })
 }

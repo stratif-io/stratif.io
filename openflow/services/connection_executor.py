@@ -52,12 +52,18 @@ class AnalyticsDatabase:
         conn: duckdb.DuckDBPyConnection,
         filter_fields: Optional[list[dict]] = None,
         filter_exprs: Optional[dict[str, str]] = None,
+        custom_props: Optional[list[dict]] = None,
+        custom_prop_exprs: Optional[dict[str, str]] = None,
     ):
         self._conn = conn
         # filter_fields: list of {field, label, icon} dicts
         self._filter_fields: list[dict] = filter_fields or []
         # filter_exprs: {field_name -> sql_expression} built from schema config paths
         self._filter_exprs: dict[str, str] = filter_exprs or {}
+        # custom_props: all custom properties ({name, path, type}) from schema config
+        self._custom_props: list[dict] = custom_props or []
+        # custom_prop_exprs: {name -> sql_expr} for all custom properties
+        self._custom_prop_exprs: dict[str, str] = custom_prop_exprs or {}
 
     def execute(self, query: str, params: Optional[list] = None) -> list[tuple]:
         if params:
@@ -110,6 +116,14 @@ class AnalyticsDatabase:
             except Exception:
                 options[field] = []
         return options
+
+    def get_custom_properties(self) -> list[dict]:
+        """Return all custom property descriptors from the schema config."""
+        return self._custom_props
+
+    def get_custom_prop_exprs(self) -> dict[str, str]:
+        """Return {name -> sql_expr} for all custom properties."""
+        return self._custom_prop_exprs
 
 
 # ---------------------------------------------------------------------------
@@ -218,6 +232,8 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         )
         db.get_filter_fields = lambda: filter_fields  # type: ignore[method-assign]
         db.get_filter_options = lambda: {}  # type: ignore[method-assign]
+        db.get_custom_properties = lambda: custom_props  # type: ignore[method-assign]
+        db.get_custom_prop_exprs = lambda: custom_prop_exprs  # type: ignore[method-assign]
         return db  # type: ignore[return-value]
 
     # Open in-memory DuckDB, attach the source file read-only
@@ -231,7 +247,13 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
     mem.execute(SESSION_VIEW_SQL)
     mem.execute(PATH_ANALYSIS_VIEW_SQL)
 
-    return AnalyticsDatabase(mem, filter_fields=filter_fields, filter_exprs=filter_exprs)
+    return AnalyticsDatabase(
+        mem,
+        filter_fields=filter_fields,
+        filter_exprs=filter_exprs,
+        custom_props=custom_props,
+        custom_prop_exprs=custom_prop_exprs,
+    )
 
 
 def _build_filter_clauses_from_exprs(

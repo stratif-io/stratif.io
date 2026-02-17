@@ -101,10 +101,10 @@ def _auto_register_default_connection() -> None:
     schema_id = str(_uuid.uuid4())
     # Default schema: identity mapping + default custom properties for common dimensions
     default_custom_props = __import__("json").dumps([
-        {"name": "country", "path": "properties.country", "type": "string", "flatten": False},
-        {"name": "browser", "path": "properties.browser", "type": "string", "flatten": False},
-        {"name": "device_type", "path": "properties.device_type", "type": "string", "flatten": False},
-        {"name": "os", "path": "properties.os", "type": "string", "flatten": False},
+        {"name": "country", "path": "properties.country", "type": "string"},
+        {"name": "browser", "path": "properties.browser", "type": "string"},
+        {"name": "device_type", "path": "properties.device_type", "type": "string"},
+        {"name": "os", "path": "properties.os", "type": "string"},
     ])
     product_db.execute(
         "INSERT INTO connection_schema_configs "
