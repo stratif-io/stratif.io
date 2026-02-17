@@ -25,7 +25,6 @@ export function usePathsData({
 }: UsePathsDataOptions): UsePathsDataReturn {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
-
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
     queryKey: ['events'],
     queryFn: () => fetchEvents(),

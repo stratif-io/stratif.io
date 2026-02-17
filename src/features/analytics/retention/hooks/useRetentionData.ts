@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { fetchRetention } from '@/lib/api'
+import { useAppStore } from '@/stores'
 import type { DateRange, RetentionCohort } from '@/types'
 
 export interface ChartDataItem {
@@ -31,13 +32,16 @@ export interface UseRetentionDataReturn {
 export function useRetentionData({ dateRange }: UseRetentionDataOptions): UseRetentionDataReturn {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
+  const { selectedCountry, selectedBrowser } = useAppStore()
 
   const { data: retentionResponse, isLoading } = useQuery({
-    queryKey: ['retention', startDate, endDate],
+    queryKey: ['retention', startDate, endDate, selectedCountry, selectedBrowser],
     queryFn: () =>
       fetchRetention({
         start_date: startDate,
         end_date: endDate,
+        country: selectedCountry || undefined,
+        browser: selectedBrowser || undefined,
       }),
     enabled: !!startDate && !!endDate,
   })

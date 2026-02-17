@@ -46,83 +46,66 @@ function useFilterOptions(config: DimensionFilterConfig): FilterOption[] {
   return []
 }
 
-function CountryFilter() {
-  const selectedCountry = useAppStore((state) => state.selectedCountry)
-  const setSelectedCountry = useAppStore((state) => state.setSelectedCountry)
-  const config = DIMENSION_FILTERS.find((f) => f.id === 'country')!
+function DimensionFilter({ config }: { config: DimensionFilterConfig }) {
+  const store = useAppStore()
   const filterOptions = useFilterOptions(config)
   const Icon = ICON_MAP[config.icon]
 
-  return (
-    <div className="flex items-center gap-1.5">
-      <Icon className="h-4 w-4 text-muted-foreground" />
-      <Select
-        value={selectedCountry || 'all'}
-        onValueChange={(v) => setSelectedCountry(v === 'all' ? null : v)}
-      >
-        <SelectTrigger className="w-28 h-8">
-          <SelectValue placeholder={config.label} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All {config.label.toLowerCase()}s</SelectItem>
-          {filterOptions.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  )
-}
+  const value =
+    config.id === 'country'
+      ? store.selectedCountry
+      : config.id === 'browser'
+        ? store.selectedBrowser
+        : null
 
-function BrowserFilter() {
-  const selectedBrowser = useAppStore((state) => state.selectedBrowser)
-  const setSelectedBrowser = useAppStore((state) => state.setSelectedBrowser)
-  const config = DIMENSION_FILTERS.find((f) => f.id === 'browser')!
-  const filterOptions = useFilterOptions(config)
-  const Icon = ICON_MAP[config.icon]
+  const setValue = (v: string | null) => {
+    if (config.id === 'country') store.setSelectedCountry(v)
+    else if (config.id === 'browser') store.setSelectedBrowser(v)
+  }
+
+  const isActive = value !== null
 
   return (
-    <div className="flex items-center gap-1.5">
-      <Icon className="h-4 w-4 text-muted-foreground" />
-      <Select
-        value={selectedBrowser || 'all'}
-        onValueChange={(v) => setSelectedBrowser(v === 'all' ? null : v)}
+    <Select
+      value={value || 'all'}
+      onValueChange={(v) => setValue(v === 'all' ? null : v)}
+    >
+      <SelectTrigger
+        className={`
+          h-9 border-0 shadow-none rounded-none bg-transparent
+          gap-1.5 px-3 text-sm font-medium focus:ring-0 focus:ring-offset-0
+          hover:bg-accent/60 transition-colors
+          ${isActive ? 'text-foreground' : 'text-muted-foreground'}
+        `}
+        style={{ minWidth: 0, width: 'auto' }}
       >
-        <SelectTrigger className="w-28 h-8">
-          <SelectValue placeholder={config.label} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All {config.label.toLowerCase()}s</SelectItem>
-          {filterOptions.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+        <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-primary' : ''}`} />
+        <SelectValue placeholder={`All ${config.label.toLowerCase()}s`} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All {config.label.toLowerCase()}s</SelectItem>
+        {filterOptions.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
-}
-
-const FILTER_COMPONENTS: Record<string, React.ComponentType> = {
-  country: CountryFilter,
-  browser: BrowserFilter,
 }
 
 export function GlobalFilters() {
   const { dateRange, setDateRange } = useAppStore()
+  const enabledFilters = DIMENSION_FILTERS
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center h-9 rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border">
       {ENABLE_DATE_FILTER && (
-        <DateRangePicker value={dateRange} onChange={setDateRange} className="h-8" />
+        <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
       )}
-      {DIMENSION_FILTERS.map((config) => {
-        const FilterComponent = FILTER_COMPONENTS[config.id]
-        return FilterComponent ? <FilterComponent key={config.id} /> : null
-      })}
+      {enabledFilters.map((config) => (
+        <DimensionFilter key={config.id} config={config} />
+      ))}
     </div>
   )
 }

@@ -4,7 +4,8 @@ import { format } from 'date-fns'
 import { useAppStore } from '@/stores'
 import { fetchRawEvents, fetchEvents } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { MousePointerClick } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { MousePointerClick, ChevronLeft, ChevronRight } from 'lucide-react'
 import { DataTable } from '@/components/data-table'
 import { ColumnDef } from '@tanstack/react-table'
 
@@ -52,7 +53,7 @@ const columns: ColumnDef<RawEvent>[] = [
 ]
 
 export function EventsPage() {
-  const { dateRange } = useAppStore()
+  const { dateRange, selectedCountry, selectedBrowser } = useAppStore()
   const [page, setPage] = useState(1)
   const limit = 50
 
@@ -60,13 +61,15 @@ export function EventsPage() {
   const endDate = format(dateRange.to, 'yyyy-MM-dd')
 
   const { data: rawEventsData, isLoading } = useQuery({
-    queryKey: ['rawEvents', page, startDate, endDate],
+    queryKey: ['rawEvents', page, startDate, endDate, selectedCountry, selectedBrowser],
     queryFn: () =>
       fetchRawEvents({
         limit,
         offset: (page - 1) * limit,
         start_date: startDate,
         end_date: endDate,
+        country: selectedCountry || undefined,
+        browser: selectedBrowser || undefined,
       }),
   })
 
@@ -111,24 +114,34 @@ export function EventsPage() {
           />
           {!isLoading && events.length > 0 && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <p className="text-sm text-muted-foreground">
-                Showing {events.length} of {totalEvents} events
-              </p>
-              <div className="flex gap-2">
-                <button
-                  className="px-3 py-1 border rounded disabled:opacity-50"
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-muted-foreground">
+                  Page {page} of {totalPages}
+                </p>
+                <span className="text-sm text-muted-foreground">·</span>
+                <p className="text-sm text-muted-foreground">
+                  {totalEvents.toLocaleString()} total events
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
                   Previous
-                </button>
-                <button
-                  className="px-3 py-1 border rounded disabled:opacity-50"
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                 >
                   Next
-                </button>
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
           )}

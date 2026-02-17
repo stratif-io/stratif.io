@@ -80,7 +80,7 @@ export function SparklineChart({
   }
 
   return (
-    <div className="inline-flex items-center gap-2">
+    <div className="inline-flex items-center gap-2 animate-in fade-in-50 duration-300">
       <svg width={width} height={height} className="overflow-visible">
         <defs>
           <linearGradient id={`sparkline-gradient-${color}`} x1="0" y1="0" x2="0" y2="1">

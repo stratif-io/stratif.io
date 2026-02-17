@@ -10,6 +10,8 @@ interface DateRangePickerProps {
   value: DateRange
   onChange: (value: DateRange) => void
   className?: string
+  /** When true, renders as a borderless segment for use inside a filter container */
+  inlineMode?: boolean
 }
 
 interface PresetConfig {
@@ -26,7 +28,7 @@ const PRESETS: PresetConfig[] = [
   { label: 'Year to date', getValue: () => ({ from: startOfYear(new Date()), to: new Date() }) },
 ]
 
-export function DateRangePicker({ value, onChange, className }: DateRangePickerProps) {
+export function DateRangePicker({ value, onChange, className, inlineMode }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   const fromDate = value?.from ? new Date(value.from) : subDays(new Date(), 30)
@@ -53,12 +55,39 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
     setIsOpen(false)
   }
 
-  const formatDateForInput = (date: Date): string => {
-    return format(date, 'yyyy-MM-dd')
+  const displayText = (): string => {
+    return `${format(fromDate, 'MMM d')} – ${format(toDate, 'MMM d, yyyy')}`
   }
 
-  const displayText = (): string => {
-    return `${format(fromDate, 'MMM dd')} - ${format(toDate, 'MMM dd, yyyy')}`
+  if (inlineMode) {
+    return (
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <button
+            className={cn(
+              'flex items-center gap-1.5 h-9 px-3 text-sm font-medium text-muted-foreground',
+              'hover:bg-accent/60 hover:text-foreground transition-colors',
+              'focus:outline-none focus-visible:ring-0',
+              'whitespace-nowrap'
+            )}
+          >
+            <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+            <span>{displayText()}</span>
+            <ChevronDown className="h-3 w-3 text-muted-foreground/60" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <DatePickerContent
+            fromDate={fromDate}
+            toDate={toDate}
+            onFromChange={handleFromChange}
+            onToChange={handleToChange}
+            onPreset={applyPreset}
+            onClose={() => setIsOpen(false)}
+          />
+        </PopoverContent>
+      </Popover>
+    )
   }
 
   return (
@@ -66,7 +95,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className={cn('justify-between text-left font-normal min-w-[240px]', className)}
+          className={cn('justify-between text-left font-normal min-w-[220px]', className)}
         >
           <div className="flex items-center">
             <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -76,60 +105,84 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="end">
-        <div className="p-4 space-y-4 min-w-[320px]">
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase text-muted-foreground">
-              Quick Select
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {PRESETS.map((preset) => (
-                <Button
-                  key={preset.label}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => applyPreset(preset)}
-                  className="text-xs"
-                >
-                  {preset.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="h-px bg-border" />
-
-          <div className="space-y-3">
-            <label className="text-xs font-semibold uppercase text-muted-foreground">
-              Custom Range
-            </label>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">From</label>
-                <input
-                  type="date"
-                  value={formatDateForInput(fromDate)}
-                  onChange={handleFromChange}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">To</label>
-                <input
-                  type="date"
-                  value={formatDateForInput(toDate)}
-                  onChange={handleToChange}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-            </div>
-          </div>
-
-          <Button className="w-full" onClick={() => setIsOpen(false)}>
-            Apply
-          </Button>
-        </div>
+        <DatePickerContent
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromChange={handleFromChange}
+          onToChange={handleToChange}
+          onPreset={applyPreset}
+          onClose={() => setIsOpen(false)}
+        />
       </PopoverContent>
     </Popover>
+  )
+}
+
+function DatePickerContent({
+  fromDate,
+  toDate,
+  onFromChange,
+  onToChange,
+  onPreset,
+  onClose,
+}: {
+  fromDate: Date
+  toDate: Date
+  onFromChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onToChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onPreset: (preset: PresetConfig) => void
+  onClose: () => void
+}) {
+  return (
+    <div className="p-4 space-y-4 min-w-[300px]">
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Quick select
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {PRESETS.map((preset) => (
+            <button
+              key={preset.label}
+              onClick={() => onPreset(preset)}
+              className="text-xs font-medium px-2.5 py-1 rounded-md border bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="h-px bg-border" />
+
+      <div className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Custom range
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">From</label>
+            <input
+              type="date"
+              value={format(fromDate, 'yyyy-MM-dd')}
+              onChange={onFromChange}
+              className="flex h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">To</label>
+            <input
+              type="date"
+              value={format(toDate, 'yyyy-MM-dd')}
+              onChange={onToChange}
+              className="flex h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+        </div>
+      </div>
+
+      <Button size="sm" className="w-full" onClick={onClose}>
+        Apply
+      </Button>
+    </div>
   )
 }

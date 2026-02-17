@@ -1,7 +1,8 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingState } from '@/components/ui/loading-state'
+import { SPACING } from '@/lib/constants'
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard').then((m) => ({ default: m.DashboardPage }))
@@ -44,13 +45,8 @@ const HelpPage = lazy(() =>
 
 function PageLoader() {
   return (
-    <div className="space-y-4">
-      <Skeleton className="h-8 w-48" />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-32" />
-        ))}
-      </div>
+    <div className={SPACING.page}>
+      <LoadingState message="Loading..." size="lg" />
     </div>
   )
 }

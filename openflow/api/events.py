@@ -72,15 +72,32 @@ def get_raw_events(
     limit: int = Query(100, description="Number of rows to return", ge=1, le=1000),
     offset: int = Query(0, description="Offset for pagination", ge=0),
     event_name: Optional[str] = Query(None, description="Filter by event name"),
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    country: Optional[str] = Query(None, description="Filter by country"),
+    browser: Optional[str] = Query(None, description="Filter by browser"),
     db: Database = Depends(get_db),
     _: str = Depends(verify_api_key),
 ) -> dict:
     """Get raw events data with optional filtering."""
-    where_clause = ""
+    where_clauses = []
     params = []
     if event_name:
-        where_clause = "WHERE event_name = ?"
+        where_clauses.append("event_name = ?")
         params.append(event_name)
+    if start_date:
+        where_clauses.append("timestamp >= ?")
+        params.append(f"{start_date} 00:00:00")
+    if end_date:
+        where_clauses.append("timestamp <= ?")
+        params.append(f"{end_date} 23:59:59")
+    if country:
+        where_clauses.append("json_extract_string(properties, 'country') = ?")
+        params.append(country)
+    if browser:
+        where_clauses.append("json_extract_string(properties, 'browser') = ?")
+        params.append(browser)
+    where_clause = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
     # Get total count
     count_query = transpile_sql(f"SELECT COUNT(*) FROM events {where_clause}")

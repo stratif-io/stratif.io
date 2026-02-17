@@ -80,7 +80,7 @@ export function HeatmapChart({
   const svgHeight = paddingY + cellSize * data.length + 10
 
   return (
-    <div className="w-full overflow-auto" style={{ height }}>
+    <div className="w-full overflow-auto animate-in fade-in-50 duration-500" style={{ height }}>
       <div className="flex flex-col items-center">
         <svg width={svgWidth} height={svgHeight} className="overflow-visible">
           {showAxisLabels && (

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { fetchPathAnalysis, fetchEvents } from '@/lib/api'
+import { useAppStore } from '@/stores'
 import type { DateRange, PathAnalysisData } from '@/types'
 
 export interface UsePathExplorerOptions {
@@ -37,6 +38,7 @@ export function usePathExplorer({
 }: UsePathExplorerOptions): UsePathExplorerReturn {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
+  const { selectedCountry, selectedBrowser } = useAppStore()
 
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
     queryKey: ['events'],
@@ -56,6 +58,8 @@ export function usePathExplorer({
       topN,
       startDate,
       endDate,
+      selectedCountry,
+      selectedBrowser,
     ],
     queryFn: () =>
       fetchPathAnalysis({
@@ -69,6 +73,8 @@ export function usePathExplorer({
         top_n: topN,
         start_date: startDate,
         end_date: endDate,
+        country: selectedCountry || undefined,
+        browser: selectedBrowser || undefined,
       }),
     enabled: !!startDate && !!endDate,
   })

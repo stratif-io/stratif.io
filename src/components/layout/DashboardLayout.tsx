@@ -11,7 +11,7 @@ export function DashboardLayout() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <div
-        className={cn('flex-1 transition-all duration-300', sidebarOpen ? 'lg:ml-64' : 'lg:ml-16')}
+        className={cn('flex-1 transition-all duration-300 ease-in-out', sidebarOpen ? 'lg:ml-[220px]' : 'lg:ml-[60px]')}
       >
         <Header />
         <main className="p-6 lg:p-8">

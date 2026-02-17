@@ -105,7 +105,11 @@ app = create_app()
 # MAIN
 # ============================================================================
 
-if __name__ == "__main__":
+def main():
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("openflow.main:app", host="0.0.0.0", port=8000, reload=True)
+
+
+if __name__ == "__main__":
+    main()

@@ -7,9 +7,11 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  Cell,
 } from 'recharts'
-import { DEFAULT_CHART_COLORS } from './chart-colors'
-import { ChartTooltip } from './chart-tooltip'
+import { CHART_COLORS } from '@/lib/constants'
+import { CustomTooltip } from './CustomTooltip'
+import { useState } from 'react'
 
 interface BarChartProps {
   data: Array<Record<string, unknown>>
@@ -34,28 +36,59 @@ export function BarChartComponent({
   showLegend = true,
   layout = 'horizontal',
 }: BarChartProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <RechartsBarChart
-        data={data}
-        layout={layout}
-        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-      >
-        {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border" />}
-        <XAxis dataKey={xAxisKey} tick={{ fontSize: 12 }} className="fill-muted-foreground" />
-        <YAxis tick={{ fontSize: 12 }} className="fill-muted-foreground" />
-        <Tooltip content={<ChartTooltip />} />
-        {showLegend && <Legend />}
-        {bars.map((bar, index) => (
-          <Bar
-            key={bar.dataKey}
-            dataKey={bar.dataKey}
-            name={bar.name || bar.dataKey}
-            fill={bar.color || DEFAULT_CHART_COLORS[index % DEFAULT_CHART_COLORS.length]}
-            radius={[4, 4, 0, 0]}
+    <div className="animate-in fade-in-50 duration-500">
+      <ResponsiveContainer width="100%" height={height}>
+        <RechartsBarChart
+          data={data}
+          layout={layout}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          onMouseMove={(state) => {
+            if (state.isTooltipActive) {
+              setActiveIndex(state.activeTooltipIndex ?? null)
+            } else {
+              setActiveIndex(null)
+            }
+          }}
+          onMouseLeave={() => setActiveIndex(null)}
+        >
+          {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border opacity-50" />}
+          <XAxis
+            dataKey={xAxisKey}
+            tick={{ fontSize: 12 }}
+            className="fill-muted-foreground"
+            tickLine={false}
           />
-        ))}
-      </RechartsBarChart>
-    </ResponsiveContainer>
+          <YAxis
+            tick={{ fontSize: 12 }}
+            className="fill-muted-foreground"
+            tickLine={false}
+          />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} />
+          {showLegend && <Legend wrapperStyle={{ fontSize: '12px' }} />}
+          {bars.map((bar, index) => (
+            <Bar
+              key={bar.dataKey}
+              dataKey={bar.dataKey}
+              name={bar.name || bar.dataKey}
+              fill={bar.color || CHART_COLORS.series[index % CHART_COLORS.series.length]}
+              radius={[4, 4, 0, 0]}
+              animationDuration={800}
+              animationEasing="ease-out"
+            >
+              {data.map((_, idx) => (
+                <Cell
+                  key={`cell-${idx}`}
+                  opacity={activeIndex === null || activeIndex === idx ? 1 : 0.5}
+                  className="transition-opacity duration-200"
+                />
+              ))}
+            </Bar>
+          ))}
+        </RechartsBarChart>
+      </ResponsiveContainer>
+    </div>
   )
 }

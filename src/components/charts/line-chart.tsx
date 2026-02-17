@@ -8,8 +8,8 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
-import { DEFAULT_CHART_COLORS } from './chart-colors'
-import { ChartTooltip } from './chart-tooltip'
+import { CHART_COLORS } from '@/lib/constants'
+import { CustomTooltip } from './CustomTooltip'
 
 interface LineChartProps {
   data: Array<Record<string, unknown>>
@@ -23,6 +23,7 @@ interface LineChartProps {
   height?: number
   showGrid?: boolean
   showLegend?: boolean
+  loading?: boolean
 }
 
 export function LineChartComponent({
@@ -34,30 +35,40 @@ export function LineChartComponent({
   showLegend = true,
 }: LineChartProps) {
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <RechartsLineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-        {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border" />}
-        <XAxis dataKey={xAxisKey} tick={{ fontSize: 12 }} className="fill-muted-foreground" />
-        <YAxis
-          tick={{ fontSize: 12 }}
-          className="fill-muted-foreground"
-          tickFormatter={(value) => (value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value)}
-        />
-        <Tooltip content={<ChartTooltip />} />
-        {showLegend && <Legend />}
-        {lines.map((line, index) => (
-          <Line
-            key={line.dataKey}
-            type="monotone"
-            dataKey={line.dataKey}
-            name={line.name || line.dataKey}
-            stroke={line.color || DEFAULT_CHART_COLORS[index % DEFAULT_CHART_COLORS.length]}
-            strokeWidth={line.strokeWidth || 2}
-            dot={false}
-            activeDot={{ r: 4 }}
+    <div className="animate-in fade-in-50 duration-500">
+      <ResponsiveContainer width="100%" height={height}>
+        <RechartsLineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border opacity-50" />}
+          <XAxis
+            dataKey={xAxisKey}
+            tick={{ fontSize: 12 }}
+            className="fill-muted-foreground"
+            tickLine={false}
           />
-        ))}
-      </RechartsLineChart>
-    </ResponsiveContainer>
+          <YAxis
+            tick={{ fontSize: 12 }}
+            className="fill-muted-foreground"
+            tickLine={false}
+            tickFormatter={(value) => (value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value)}
+          />
+          <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3', opacity: 0.5 }} />
+          {showLegend && <Legend wrapperStyle={{ fontSize: '12px' }} />}
+          {lines.map((line, index) => (
+            <Line
+              key={line.dataKey}
+              type="monotone"
+              dataKey={line.dataKey}
+              name={line.name || line.dataKey}
+              stroke={line.color || CHART_COLORS.series[index % CHART_COLORS.series.length]}
+              strokeWidth={line.strokeWidth || 2}
+              dot={false}
+              activeDot={{ r: 5, strokeWidth: 2 }}
+              animationDuration={800}
+              animationEasing="ease-out"
+            />
+          ))}
+        </RechartsLineChart>
+      </ResponsiveContainer>
+    </div>
   )
 }

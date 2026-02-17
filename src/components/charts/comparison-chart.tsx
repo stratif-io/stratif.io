@@ -137,13 +137,14 @@ export function ComparisonChart({
   }
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <RechartsLineChart
-        data={data}
-        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-        syncId={syncId}
-        onMouseMove={(e) => {
-          if (e?.activeTooltipIndex !== undefined) {
+    <div className="animate-in fade-in-50 duration-500">
+      <ResponsiveContainer width="100%" height={height}>
+        <RechartsLineChart
+          data={data}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          syncId={syncId}
+          onMouseMove={(e) => {
+            if (e?.activeTooltipIndex !== undefined) {
             setActiveIndex(e.activeTooltipIndex)
           }
         }}
@@ -208,6 +209,7 @@ export function ComparisonChart({
         )}
       </RechartsLineChart>
     </ResponsiveContainer>
+    </div>
   )
 }
 

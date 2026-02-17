@@ -7,6 +7,7 @@ export { HeatmapChart, generateHeatmapData } from './heatmap-chart'
 export { SparklineChart, SparklineCard } from './sparkline-chart'
 export { ComparisonChart, transformPeriodData } from './comparison-chart'
 export { ChartTooltip } from './chart-tooltip'
+export { CustomTooltip, SimpleTooltip, PercentageTooltip } from './CustomTooltip'
 export {
   CHART_COLORS,
   DEFAULT_CHART_COLORS,

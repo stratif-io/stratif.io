@@ -125,6 +125,8 @@ def get_path_analysis(
     ),
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    country: Optional[str] = Query(None, description="Filter by country"),
+    browser: Optional[str] = Query(None, description="Filter by browser"),
     event_filters: Optional[str] = Query(
         None,
         description='JSON string of event filters, e.g. {"page_view": {"category": "electronics"}}',
@@ -196,6 +198,8 @@ def get_path_analysis(
         date_range=date_range,
         sql_dialect="duckdb",
         return_type="string",
+        country=country,
+        browser=browser,
     )
 
     query_str = str(query) if query is not None else ""
@@ -237,6 +241,11 @@ def get_path_funnel(
     ),
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    device_type: Optional[str] = Query(
+        None, description="Filter by device type (Mobile/Desktop)"
+    ),
+    country: Optional[str] = Query(None, description="Filter by country"),
+    browser: Optional[str] = Query(None, description="Filter by browser"),
     db: Database = Depends(get_db),
     _: str = Depends(verify_api_key),
 ) -> Dict[str, Any]:
@@ -261,6 +270,14 @@ def get_path_funnel(
     if end_date:
         date_filter += f" AND timestamp <= '{end_date} 23:59:59'"
 
+    device_filter = ""
+    if device_type:
+        device_filter = f" AND device_type = '{device_type}'"
+    if country:
+        device_filter += f" AND json_extract_string(properties, 'country') = '{country}'"
+    if browser:
+        device_filter += f" AND json_extract_string(properties, 'browser') = '{browser}'"
+
     # Build sequential CTEs for each step
     # Step 1: Find first occurrence of event[0] for each user
     # Step 2: Find first occurrence of event[1] AFTER step 1's timestamp
@@ -276,11 +293,11 @@ def get_path_funnel(
             cte_name = f"step{i}"
             cte_parts.append(f"""
             {cte_name} AS (
-                SELECT 
+                SELECT
                     user_id,
                     MIN(timestamp) as t{i}
                 FROM events
-                WHERE event_name = '{event_name}'{date_filter}
+                WHERE event_name = '{event_name}'{date_filter}{device_filter}
                 GROUP BY user_id
             )""")
             step_cte_names.append(cte_name)
@@ -297,9 +314,9 @@ def get_path_funnel(
                     prev.user_id,
                     {prev_time_selects + ", " if prev_time_selects else ""}MIN(e.timestamp) as t{i}
                 FROM {prev_cte} prev
-                JOIN events e ON prev.user_id = e.user_id 
-                    AND e.event_name = '{event_name}' 
-                    AND e.timestamp > prev.t{i - 1}{date_filter}
+                JOIN events e ON prev.user_id = e.user_id
+                    AND e.event_name = '{event_name}'
+                    AND e.timestamp > prev.t{i - 1}{date_filter}{device_filter}
                 GROUP BY prev.user_id{", " + prev_time_groups if prev_time_groups else ""}
             )""")
             step_cte_names.append(cte_name)
@@ -324,7 +341,7 @@ def get_path_funnel(
         occ_query = f"""
             SELECT COUNT(*) as occurrences
             FROM events
-            WHERE event_name = '{event_name}'{date_filter}
+            WHERE event_name = '{event_name}'{date_filter}{device_filter}
         """
         occ_result = db.execute(occ_query)
         occurrences_results.append(occ_result[0][0] if occ_result else 0)

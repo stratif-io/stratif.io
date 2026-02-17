@@ -37,6 +37,8 @@ class PathAnalyzer:
         date_range: Optional[Tuple[str, str]] = None,
         sql_dialect: str = "duckdb",
         return_type: str = "string",
+        country: Optional[str] = None,
+        browser: Optional[str] = None,
     ) -> Union[str, exp.Expression]:
         """
         Generate SQL query to analyze event paths and identify popular sequences.
@@ -76,6 +78,8 @@ class PathAnalyzer:
             max_path_length=effective_max_length,
             top_n=top_n,
             date_range=date_range,
+            country=country,
+            browser=browser,
         )
 
         if return_type == "ast":
@@ -126,11 +130,13 @@ class PathAnalyzer:
         max_path_length: int,
         top_n: int,
         date_range: Optional[Tuple[str, str]],
+        country: Optional[str] = None,
+        browser: Optional[str] = None,
     ) -> str:
         """Build the complete path analysis query as SQL string."""
 
         where_conditions = self._build_where_conditions(
-            date_range, event_filters, table_name
+            date_range, event_filters, table_name, country, browser
         )
 
         where_clause = ""
@@ -225,6 +231,8 @@ LIMIT {top_n}
         date_range: Optional[Tuple[str, str]],
         event_filters: Optional[Dict[str, Dict[str, Any]]],
         table_name: str,
+        country: Optional[str] = None,
+        browser: Optional[str] = None,
     ) -> List[str]:
         """Build WHERE clause conditions."""
         conditions = []
@@ -234,6 +242,12 @@ LIMIT {top_n}
             conditions.append(
                 f"timestamp BETWEEN '{start_date} 00:00:00' AND '{end_date} 23:59:59'"
             )
+
+        if country:
+            conditions.append(f"json_extract_string(properties, 'country') = '{country}'")
+
+        if browser:
+            conditions.append(f"json_extract_string(properties, 'browser') = '{browser}'")
 
         if event_filters:
             filter_conditions = self._build_event_filter_sql(event_filters)
@@ -311,7 +325,7 @@ LIMIT {top_n}
     ARRAY_LENGTH(path_timestamps) < 2
     OR list_max(
         list_transform(
-            range(0, ARRAY_LENGTH(path_timestamps) - 2),
+            range(0, ARRAY_LENGTH(path_timestamps) - 1),
             i -> EPOCH(path_timestamps[i + 2] - path_timestamps[i + 1])
         )
     ) <= {max_seconds}
@@ -332,6 +346,8 @@ def generate_path_analysis_query(
     date_range: Optional[Tuple[str, str]] = None,
     sql_dialect: str = "duckdb",
     return_type: str = "string",
+    country: Optional[str] = None,
+    browser: Optional[str] = None,
 ) -> Union[str, exp.Expression]:
     """
     Generate SQL query to analyze event paths and identify popular sequences.
@@ -372,4 +388,6 @@ def generate_path_analysis_query(
         date_range=date_range,
         sql_dialect=sql_dialect,
         return_type=return_type,
+        country=country,
+        browser=browser,
     )

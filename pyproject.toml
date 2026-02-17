@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-serve = "openflow.main:app"
+serve = "openflow.main:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -175,7 +175,22 @@ export interface PivotOptionsResponse {
 
 export interface PivotResponse {
   dimensions: string[]
+  column_dimensions?: string[]
+  column_headers?: Array<Record<string, unknown>>
   measures: string[]
   data: Array<Record<string, unknown>>
+  pivoted?: boolean
   error?: string
+}
+
+export interface SandboxField {
+  fid: string
+  name: string
+  semanticType: 'nominal' | 'temporal' | 'quantitative' | 'ordinal'
+  analyticType: 'dimension' | 'measure'
+}
+
+export interface SandboxDataResponse {
+  data: Array<Record<string, unknown>>
+  fields: SandboxField[]
 }

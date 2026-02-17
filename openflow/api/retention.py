@@ -16,6 +16,8 @@ router = APIRouter(prefix="/api", tags=["retention"])
 def get_retention(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    country: Optional[str] = Query(None, description="Filter by country"),
+    browser: Optional[str] = Query(None, description="Filter by browser"),
     db: Database = Depends(get_db),
     _: str = Depends(verify_api_key),
 ) -> dict:
@@ -43,6 +45,13 @@ def get_retention(
             activity_where = "WHERE timestamp <= ?"
         signup_params.append(f"{end_date} 23:59:59")
         activity_params.append(f"{end_date} 23:59:59")
+
+    if country:
+        signup_where += " AND json_extract_string(properties, 'country') = ?"
+        signup_params.append(country)
+    if browser:
+        signup_where += " AND json_extract_string(properties, 'browser') = ?"
+        signup_params.append(browser)
 
     # Combine params: signups first, then activity
     params = signup_params + activity_params

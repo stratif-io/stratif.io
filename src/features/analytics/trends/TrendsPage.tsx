@@ -8,10 +8,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { PageTransition } from '@/components/layout/PageTransition'
+import { LoadingState, ChartSkeleton } from '@/components/ui/loading-state'
+import { EmptyState } from '@/components/ui/empty-state'
 import { TrendingUp, BarChart3, LineChart as LineChartIcon } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendChart } from './components/TrendChart'
+import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
 
 export function TrendsPage() {
   const { dateRange } = useAppStore()
@@ -26,44 +30,46 @@ export function TrendsPage() {
   })
 
   return (
-    <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Trend Analysis</h1>
-        <p className="text-muted-foreground mt-1">Analyze event trends over time</p>
-      </div>
+    <PageTransition>
+      <div className={SPACING.page}>
+        <div className={SPACING.section}>
+          <div>
+            <h1 className={TYPOGRAPHY.pageTitle}>Trend Analysis</h1>
+            <p className={`${TYPOGRAPHY.muted} mt-1`}>Analyze event trends over time</p>
+          </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Events</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalEvents.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">In selected period</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Daily Average</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{averageValue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Events per day</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Peak Day</CardTitle>
-            <LineChartIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{maxValue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Maximum events in a day</p>
-          </CardContent>
-        </Card>
-      </div>
+          <div className={`grid gap-4 md:grid-cols-3`}>
+            <Card hover="lift">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className={TYPOGRAPHY.label}>Total Events</CardTitle>
+                <TrendingUp className={`${ICON_SIZES.sm} text-muted-foreground`} />
+              </CardHeader>
+              <CardContent>
+                <div className={TYPOGRAPHY.metric}>{totalEvents.toLocaleString()}</div>
+                <p className={TYPOGRAPHY.mutedSm}>In selected period</p>
+              </CardContent>
+            </Card>
+            <Card hover="lift">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className={TYPOGRAPHY.label}>Daily Average</CardTitle>
+                <BarChart3 className={`${ICON_SIZES.sm} text-muted-foreground`} />
+              </CardHeader>
+              <CardContent>
+                <div className={TYPOGRAPHY.metric}>{averageValue.toLocaleString()}</div>
+                <p className={TYPOGRAPHY.mutedSm}>Events per day</p>
+              </CardContent>
+            </Card>
+            <Card hover="lift">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className={TYPOGRAPHY.label}>Peak Day</CardTitle>
+                <LineChartIcon className={`${ICON_SIZES.sm} text-muted-foreground`} />
+              </CardHeader>
+              <CardContent>
+                <div className={TYPOGRAPHY.metric}>{maxValue.toLocaleString()}</div>
+                <p className={TYPOGRAPHY.mutedSm}>Maximum events in a day</p>
+              </CardContent>
+            </Card>
+          </div>
 
       <Card>
         <CardHeader className="pb-3">
@@ -124,9 +130,14 @@ export function TrendsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="h-[450px] flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
+            <ChartSkeleton height="h-[450px]" />
+          ) : trendData.length === 0 ? (
+            <EmptyState
+              icon={TrendingUp}
+              title="No trend data available"
+              description="Try adjusting your date range or filters to see trend data."
+              className="h-[450px]"
+            />
           ) : (
             <div className="h-[450px]">
               <TrendChart
@@ -139,6 +150,8 @@ export function TrendsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+        </div>
+      </div>
+    </PageTransition>
   )
 }

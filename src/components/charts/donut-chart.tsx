@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
-import { DEFAULT_CHART_COLORS, DONUT_CHART_COLORS } from './chart-colors'
-import { ChartTooltip } from './chart-tooltip'
+import { DONUT_CHART_COLORS } from './chart-colors'
+import { CHART_COLORS } from '@/lib/constants'
 
 interface DonutChartProps {
   data: Array<{
@@ -76,10 +76,10 @@ export function DonutChart({
   if (loading) {
     return (
       <div
-        className="flex items-center justify-center animate-pulse bg-muted/20 rounded-lg"
+        className="flex items-center justify-center animate-pulse"
         style={{ height }}
       >
-        <div className="w-32 h-32 rounded-full bg-muted" />
+        <div className="w-32 h-32 rounded-full bg-muted/50" />
       </div>
     )
   }
@@ -121,26 +121,29 @@ export function DonutChart({
   const total = data.reduce((sum, item) => sum + item.value, 0)
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <PieChart>
-        <Pie
-          data={data}
-          cx="50%"
-          cy="50%"
-          innerRadius={innerRadius}
-          outerRadius={outerRadius}
-          paddingAngle={2}
-          dataKey="value"
-          label={showLabels ? renderCustomLabel : undefined}
-          labelLine={false}
-          onClick={(_, index) => {
-            if (onSliceClick) {
-              onSliceClick(data[index])
-            }
-          }}
-          onMouseEnter={(_, index) => setActiveIndex(index)}
-          onMouseLeave={() => setActiveIndex(null)}
-        >
+    <div className="animate-in fade-in-50 duration-500">
+      <ResponsiveContainer width="100%" height={height}>
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={innerRadius}
+            outerRadius={outerRadius}
+            paddingAngle={2}
+            dataKey="value"
+            label={showLabels ? renderCustomLabel : undefined}
+            labelLine={false}
+            animationDuration={800}
+            animationEasing="ease-out"
+            onClick={(_, index) => {
+              if (onSliceClick) {
+                onSliceClick(data[index])
+              }
+            }}
+            onMouseEnter={(_, index) => setActiveIndex(index)}
+            onMouseLeave={() => setActiveIndex(null)}
+          >
           {data.map((entry, index) => {
             const color = entry.color || colors[index % colors.length]
             const isActive = activeIndex === index
@@ -166,15 +169,15 @@ export function DonutChart({
               const data = payload[0].payload
               const percentage = ((data.value / total) * 100).toFixed(1)
               return (
-                <div className="rounded-lg border bg-background p-3 shadow-md">
-                  <p className="mb-1 font-semibold">{data.name}</p>
-                  <p className="text-sm text-muted-foreground">
+                <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg animate-in fade-in-0 zoom-in-95 duration-150">
+                  <p className="mb-1 font-semibold text-sm">{data.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     Value:{' '}
                     <span className="font-medium text-foreground">
                       {data.value.toLocaleString()}
                     </span>
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Percentage: <span className="font-medium text-foreground">{percentage}%</span>
                   </p>
                 </div>
@@ -187,10 +190,12 @@ export function DonutChart({
           <Legend
             verticalAlign="bottom"
             height={36}
-            formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
+            wrapperStyle={{ fontSize: '12px' }}
+            formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
           />
         )}
       </PieChart>
     </ResponsiveContainer>
+    </div>
   )
 }

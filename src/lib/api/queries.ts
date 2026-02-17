@@ -12,6 +12,7 @@ import {
   ConversionResponse,
   PivotOptionsResponse,
   PivotResponse,
+  SandboxDataResponse,
 } from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -80,6 +81,8 @@ export const fetchRawEvents = (params: {
   event_name?: string
   start_date?: string
   end_date?: string
+  country?: string
+  browser?: string
 }) => {
   const searchParams = new URLSearchParams()
   if (params.limit) searchParams.set('limit', String(params.limit))
@@ -87,6 +90,8 @@ export const fetchRawEvents = (params: {
   if (params.event_name) searchParams.set('event_name', params.event_name)
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
+  if (params.country) searchParams.set('country', params.country)
+  if (params.browser) searchParams.set('browser', params.browser)
 
   return fetchApi<RawEventsResponse>(`/api/raw/events?${searchParams}`)
 }
@@ -107,10 +112,17 @@ export const fetchSessionsSummary = (params: { start_date?: string; end_date?: s
   return fetchApi<SessionsSummaryResponse>(`/api/sessions/summary?${searchParams}`)
 }
 
-export const fetchRetention = (params: { start_date?: string; end_date?: string }) => {
+export const fetchRetention = (params: {
+  start_date?: string
+  end_date?: string
+  country?: string
+  browser?: string
+}) => {
   const searchParams = new URLSearchParams()
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
+  if (params.country) searchParams.set('country', params.country)
+  if (params.browser) searchParams.set('browser', params.browser)
 
   return fetchApi<RetentionResponse>(`/api/retention?${searchParams}`)
 }
@@ -143,6 +155,8 @@ export const fetchPathAnalysis = (params: {
   group_by?: string
   start_date?: string
   end_date?: string
+  country?: string
+  browser?: string
   event_filters?: Record<string, Record<string, unknown>>
 }) => {
   const searchParams = new URLSearchParams()
@@ -157,6 +171,8 @@ export const fetchPathAnalysis = (params: {
   if (params.group_by) searchParams.set('group_by', params.group_by)
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
+  if (params.country) searchParams.set('country', params.country)
+  if (params.browser) searchParams.set('browser', params.browser)
   if (params.event_filters) searchParams.set('event_filters', JSON.stringify(params.event_filters))
 
   return fetchApi<PathAnalysisResponse>(`/api/path-analysis?${searchParams}`)
@@ -166,11 +182,17 @@ export const fetchPathFunnel = (params: {
   events: string[]
   start_date?: string
   end_date?: string
+  device_type?: string
+  country?: string
+  browser?: string
 }) => {
   const searchParams = new URLSearchParams()
   searchParams.set('events', params.events.join(','))
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
+  if (params.device_type) searchParams.set('device_type', params.device_type)
+  if (params.country) searchParams.set('country', params.country)
+  if (params.browser) searchParams.set('browser', params.browser)
 
   return fetchApi<PathFunnelResponse>(`/api/path-funnel?${searchParams}`)
 }
@@ -187,6 +209,7 @@ export const fetchPivotOptions = () => fetchApi<PivotOptionsResponse>('/api/pivo
 
 export const fetchPivot = (params: {
   row_dimensions: string[]
+  column_dimensions?: string[]
   measures: string[]
   start_date?: string
   end_date?: string
@@ -197,6 +220,7 @@ export const fetchPivot = (params: {
 }) => {
   const searchParams = new URLSearchParams()
   searchParams.set('row_dimensions', params.row_dimensions.join(','))
+  searchParams.set('column_dimensions', (params.column_dimensions || []).join(','))
   searchParams.set('measures', params.measures.join(','))
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
@@ -207,4 +231,12 @@ export const fetchPivot = (params: {
     searchParams.set('product_category_filter', params.product_category_filter)
 
   return fetchApi<PivotResponse>(`/api/pivot?${searchParams}`)
+}
+
+export const fetchSandboxData = (params: { start_date?: string; end_date?: string }) => {
+  const searchParams = new URLSearchParams()
+  if (params.start_date) searchParams.set('start_date', params.start_date)
+  if (params.end_date) searchParams.set('end_date', params.end_date)
+
+  return fetchApi<SandboxDataResponse>(`/api/sandbox/data?${searchParams}`)
 }

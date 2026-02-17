@@ -71,7 +71,7 @@ export function FunnelChart({
 
   if (orientation === 'horizontal') {
     return (
-      <div className="w-full" style={{ height }}>
+      <div className="w-full animate-in fade-in-50 duration-500" style={{ height }}>
         <div className="flex flex-col gap-2 h-full justify-center">
           {data.map((stage, index) => {
             const widthPercent = (stage.value / maxValue) * 100
@@ -117,7 +117,7 @@ export function FunnelChart({
   }
 
   return (
-    <div className="w-full flex justify-center" style={{ height }}>
+    <div className="w-full flex justify-center animate-in fade-in-50 duration-500" style={{ height }}>
       <svg
         viewBox={`0 0 400 ${height}`}
         className="w-full max-w-md"
