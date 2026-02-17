@@ -1,5 +1,6 @@
 """API package for OpenFlow Analytics."""
 
+from .auth import router as auth_router
 from .events import router as events_router
 from .trend import router as trend_router
 from .retention import router as retention_router
@@ -10,6 +11,7 @@ from .pivot import router as pivot_router
 from .connections import router as connections_router
 
 __all__ = [
+    "auth_router",
     "events_router",
     "trend_router",
     "retention_router",

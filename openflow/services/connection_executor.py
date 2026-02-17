@@ -8,7 +8,7 @@ import duckdb
 from fastapi import Depends, HTTPException, Query
 
 from openflow.config import get_settings
-from openflow.core.auth import derive_user_id, verify_api_key
+from openflow.core.jwt_auth import AuthUserRow, get_current_auth_user
 from openflow.db import get_db
 from openflow.db.views import SESSION_VIEW_SQL, PATH_ANALYSIS_VIEW_SQL
 from openflow.product_db import get_product_db
@@ -100,7 +100,7 @@ class AnalyticsDatabase:
         return self._filter_fields
 
     def get_filter_options(self) -> dict[str, list[str]]:
-        """Return distinct non-null values per enabled filter field."""
+        """Return top 50 most frequent non-null values per enabled filter field."""
         options: dict[str, list[str]] = {}
         for ff in self._filter_fields:
             field = ff["field"]
@@ -109,8 +109,8 @@ class AnalyticsDatabase:
                 continue
             try:
                 rows = self._conn.execute(
-                    f"SELECT DISTINCT {expr} FROM events "
-                    f"WHERE {expr} IS NOT NULL ORDER BY {expr}"
+                    f"SELECT {expr} AS v, COUNT(*) AS n FROM events "
+                    f"WHERE {expr} IS NOT NULL GROUP BY {expr} ORDER BY n DESC LIMIT 50"
                 ).fetchall()
                 options[field] = [str(row[0]) for row in rows if row[0] is not None]
             except Exception:
@@ -231,7 +231,7 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
             filters, filter_exprs
         )
         db.get_filter_fields = lambda: filter_fields  # type: ignore[method-assign]
-        db.get_filter_options = lambda: {}  # type: ignore[method-assign]
+        db.get_filter_options = lambda: _get_filter_options_from_exprs_db(db, filter_fields, filter_exprs)  # type: ignore[method-assign]
         db.get_custom_properties = lambda: custom_props  # type: ignore[method-assign]
         db.get_custom_prop_exprs = lambda: custom_prop_exprs  # type: ignore[method-assign]
         return db  # type: ignore[return-value]
@@ -268,6 +268,27 @@ def _build_filter_clauses_from_exprs(
     return where_clauses, params
 
 
+def _get_filter_options_from_exprs_db(
+    db, filter_fields: list[dict], filter_exprs: dict[str, str]
+) -> dict[str, list[str]]:
+    """Compute filter options by querying `db` directly (used for the same-file shortcut)."""
+    options: dict[str, list[str]] = {}
+    for ff in filter_fields:
+        field = ff.get("field", "")
+        expr = filter_exprs.get(field)
+        if not expr:
+            continue
+        try:
+            rows = db.execute(
+                f"SELECT {expr} AS v, COUNT(*) AS n FROM events "
+                f"WHERE {expr} IS NOT NULL GROUP BY {expr} ORDER BY n DESC LIMIT 50"
+            )
+            options[field] = [str(row[0]) for row in rows if row[0] is not None]
+        except Exception:
+            options[field] = []
+    return options
+
+
 # ---------------------------------------------------------------------------
 # FastAPI dependency
 # ---------------------------------------------------------------------------
@@ -275,14 +296,14 @@ def _build_filter_clauses_from_exprs(
 
 async def get_analytics_db(
     connection_id: Optional[str] = Query(None, description="Active connection ID"),
-    api_key: str = Depends(verify_api_key),
+    current_user: AuthUserRow = Depends(get_current_auth_user),
 ):
     """
     FastAPI dependency: returns the analytics DB for the active connection.
     Resolves filter field metadata from the connection's filter config.
     Falls back to the first registered connection, then to the raw default DB.
     """
-    user_id = derive_user_id(api_key)
+    user_id = current_user.id
 
     resolved_id = connection_id
     if not resolved_id:

@@ -29,6 +29,7 @@ import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
 import type { PathAnalysisData } from '@/types'
 import { cn } from '@/lib/utils'
+import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 
 const TIME_UNITS = [
   { value: 'seconds', label: 'Seconds' },
@@ -206,12 +207,13 @@ export function PathsExplorerPage() {
 
   return (
     <PageTransition>
-      <div className="p-6 lg:p-8 space-y-6">
+      <div className={SPACING.page}>
+        <div className={SPACING.section}>
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Path Explorer</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className={TYPOGRAPHY.pageTitle}>Path Explorer</h1>
+            <p className={`${TYPOGRAPHY.muted} mt-1`}>
               Discover the most common journeys users take through your product
             </p>
           </div>
@@ -503,6 +505,7 @@ export function PathsExplorerPage() {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
         />
+        </div>
       </div>
     </PageTransition>
   )

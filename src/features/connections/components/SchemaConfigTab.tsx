@@ -57,25 +57,14 @@ export function SchemaConfigTab({ connId }: Props) {
   function handleDetect() {
     detect.mutate(undefined, {
       onSuccess(result) {
-        const { suggestions, columns } = result
+        const { suggestions, proposed_custom_properties } = result
         if (suggestions.user_id_field) setUserIdField(suggestions.user_id_field)
         if (suggestions.timestamp_field) setTimestampField(suggestions.timestamp_field)
         if (suggestions.event_name_field) setEventNameField(suggestions.event_name_field)
 
-        // Add remaining columns as custom properties (skip the three core fields)
-        const coreFieldValues = new Set([
-          suggestions.user_id_field,
-          suggestions.timestamp_field,
-          suggestions.event_name_field,
-        ])
+        // Merge proposed custom properties, skipping paths already defined
         const existingPaths = new Set(customProps.map((p) => p.path))
-        const newProps: CustomProperty[] = columns
-          .filter((c) => !coreFieldValues.has(c.name) && !existingPaths.has(c.name))
-          .map((c) => ({
-            name: c.name,
-            path: c.name,
-            type: inferType(c.type),
-          }))
+        const newProps = proposed_custom_properties.filter((p) => !existingPaths.has(p.path))
         if (newProps.length > 0) {
           setCustomProps((prev) => [...prev, ...newProps])
         }
@@ -221,11 +210,3 @@ export function SchemaConfigTab({ connId }: Props) {
   )
 }
 
-/** Map a DuckDB/SQL type string to a PropertyType. */
-function inferType(sqlType: string): PropertyType {
-  const t = sqlType.toUpperCase()
-  if (t.includes('INT') || t.includes('FLOAT') || t.includes('DOUBLE') || t.includes('DECIMAL') || t.includes('NUMERIC')) return 'number'
-  if (t.includes('BOOL')) return 'boolean'
-  if (t.includes('TIMESTAMP') || t.includes('DATE') || t.includes('TIME')) return 'timestamp'
-  return 'string'
-}

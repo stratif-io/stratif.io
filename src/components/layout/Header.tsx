@@ -13,15 +13,28 @@ import { Moon, Sun, Bell, Menu } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
 import { ConnectionSelector } from './ConnectionSelector'
+import { useAuthContext } from '@/contexts/AuthContext'
+import { useLogout } from '@/features/auth'
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const { resolvedTheme, setTheme } = useTheme()
+  const { user } = useAuthContext()
+  const logout = useLogout()
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
   }
+
+  const initials = user?.display_name
+    ? user.display_name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : user?.email?.[0]?.toUpperCase() ?? 'U'
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -63,18 +76,28 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                 <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-xs font-semibold">A</span>
+                  <span className="text-xs font-semibold">{initials}</span>
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                <div className="flex flex-col gap-0.5">
+                  <span>{user?.display_name ?? 'My Account'}</span>
+                  {user?.email && (
+                    <span className="font-normal text-xs text-muted-foreground truncate">
+                      {user.email}
+                    </span>
+                  )}
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Keyboard shortcuts</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Sign out</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => logout.mutate()}
+                disabled={logout.isPending}
+              >
+                {logout.isPending ? 'Signing out…' : 'Sign out'}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

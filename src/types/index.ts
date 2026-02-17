@@ -1,3 +1,12 @@
+export interface AuthUser {
+  id: string
+  email: string
+  display_name: string | null
+  avatar_url: string | null
+  created_at: string
+  last_login_at: string | null
+}
+
 export interface DateRange {
   from: Date
   to: Date
@@ -219,6 +228,7 @@ export interface SchemaDetectResponse {
     timestamp_field?: string
     event_name_field?: string
   }
+  proposed_custom_properties: Array<{ name: string; path: string; type: PropertyType }>
 }
 
 export interface Connection {

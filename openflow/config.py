@@ -11,8 +11,19 @@ class Settings(BaseSettings):
     # API
     api_url: str = "http://localhost:8000"
 
-    # Authentication
+    # Legacy API key (kept for backwards compat during migration)
     api_key: str = "dev-key-change-in-production"
+
+    # JWT Session Auth
+    jwt_secret: str = "dev-jwt-secret-change-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_days: int = 7
+
+    # Google OAuth
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = "http://localhost:8000/api/auth/google/callback"
+    frontend_url: str = "http://localhost:5173"
 
     # CORS
     cors_origins: str = "http://localhost:5173,http://localhost:3000"

@@ -1,7 +1,7 @@
 """Connections API — manage database connections and their schema/filter configs."""
 
-import hashlib
 import json
+import os
 import re
 import uuid
 from datetime import datetime, timezone
@@ -10,10 +10,12 @@ from typing import Any, Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
 
-from openflow.core.auth import verify_api_key, derive_user_id
+from openflow.core.jwt_auth import AuthUserRow, get_current_auth_user
 from openflow.product_db import get_product_db
 from openflow.services.crypto import decrypt_credentials, encrypt_credentials
 from openflow.services.connection_executor import get_analytics_db
+from openflow.config import get_settings
+from openflow.db import get_db
 
 router = APIRouter(prefix="/api/connections", tags=["connections"])
 
@@ -28,20 +30,6 @@ _PATH_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.]*$")
 
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _ensure_user(api_key: str) -> str:
-    """Upsert a user record derived from the API key; return user_id."""
-    db = get_product_db()
-    user_id = derive_user_id(api_key)
-    key_hash = hashlib.sha256(api_key.encode()).hexdigest()
-    existing = db.fetchone("SELECT id FROM users WHERE id = ?", (user_id,))
-    if not existing:
-        db.execute(
-            "INSERT INTO users (id, api_key_hash) VALUES (?, ?)",
-            (user_id, key_hash),
-        )
-    return user_id
 
 
 def _get_connection_or_404(conn_id: str, user_id: str):
@@ -131,8 +119,8 @@ class FilterConfigResponse(FilterConfigBody):
 
 
 @router.get("", response_model=list[ConnectionResponse])
-def list_connections(api_key: str = Depends(verify_api_key)):
-    user_id = _ensure_user(api_key)
+def list_connections(current_user: AuthUserRow = Depends(get_current_auth_user)):
+    user_id = current_user.id
     db = get_product_db()
     rows = db.fetchall(
         "SELECT id, name, db_type, created_at, updated_at FROM connections WHERE user_id = ? ORDER BY created_at DESC",
@@ -142,8 +130,8 @@ def list_connections(api_key: str = Depends(verify_api_key)):
 
 
 @router.post("", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)
-def create_connection(body: ConnectionCreate, api_key: str = Depends(verify_api_key)):
-    user_id = _ensure_user(api_key)
+def create_connection(body: ConnectionCreate, current_user: AuthUserRow = Depends(get_current_auth_user)):
+    user_id = current_user.id
     conn_id = str(uuid.uuid4())
     now = _now()
     encrypted = encrypt_credentials(body.credentials)
@@ -158,8 +146,8 @@ def create_connection(body: ConnectionCreate, api_key: str = Depends(verify_api_
 
 
 @router.get("/{conn_id}", response_model=ConnectionResponse)
-def get_connection(conn_id: str, api_key: str = Depends(verify_api_key)):
-    user_id = _ensure_user(api_key)
+def get_connection(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+    user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
     return ConnectionResponse(
         id=row["id"],
@@ -172,9 +160,9 @@ def get_connection(conn_id: str, api_key: str = Depends(verify_api_key)):
 
 @router.patch("/{conn_id}", response_model=ConnectionResponse)
 def update_connection(
-    conn_id: str, body: ConnectionUpdate, api_key: str = Depends(verify_api_key)
+    conn_id: str, body: ConnectionUpdate, current_user: AuthUserRow = Depends(get_current_auth_user)
 ):
-    user_id = _ensure_user(api_key)
+    user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
     now = _now()
     new_name = body.name if body.name is not None else row["name"]
@@ -198,17 +186,17 @@ def update_connection(
 
 
 @router.delete("/{conn_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_connection(conn_id: str, api_key: str = Depends(verify_api_key)):
-    user_id = _ensure_user(api_key)
+def delete_connection(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+    user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
     db = get_product_db()
     db.execute("DELETE FROM connections WHERE id = ?", (conn_id,))
 
 
 @router.post("/{conn_id}/test")
-def test_connection(conn_id: str, api_key: str = Depends(verify_api_key)):
+def test_connection(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
     """Test connectivity to the target database (read-only)."""
-    user_id = _ensure_user(api_key)
+    user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
@@ -221,9 +209,14 @@ def test_connection(conn_id: str, api_key: str = Depends(verify_api_key)):
             import duckdb
 
             path = creds.get("file_path") or creds.get("s3_path", ":memory:")
-            conn = duckdb.connect(path, read_only=True)
-            conn.execute("SELECT 1").fetchone()
-            conn.close()
+            settings = get_settings()
+            if path != ":memory:" and os.path.abspath(path) == os.path.abspath(settings.db_path):
+                # Already open as the default DB — just ping it
+                get_db().execute("SELECT 1")
+            else:
+                conn = duckdb.connect(path, read_only=True)
+                conn.execute("SELECT 1").fetchone()
+                conn.close()
         elif db_type == "sqlite":
             import sqlite3
 
@@ -266,9 +259,9 @@ _KNOWN_EVENT_NAME_COLS = ("event_name", "event", "action", "event_type", "name",
 
 
 @router.get("/{conn_id}/schema/detect")
-def detect_schema(conn_id: str, api_key: str = Depends(verify_api_key)) -> dict:
+def detect_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)) -> dict:
     """Detect columns from the target database and suggest field mappings."""
-    user_id = _ensure_user(api_key)
+    user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
 
     if row["db_type"] != "duckdb":
@@ -289,29 +282,41 @@ def detect_schema(conn_id: str, api_key: str = Depends(verify_api_key)) -> dict:
     try:
         import duckdb as _duckdb
 
-        mem = _duckdb.connect(":memory:")
-        mem.execute(f"ATTACH '{file_path}' AS src (READ_ONLY)")
+        settings = get_settings()
+        same_file = file_path != ":memory:" and os.path.abspath(file_path) == os.path.abspath(settings.db_path)
 
-        tables_result = mem.execute(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'src' ORDER BY table_name"
+        if same_file:
+            duck = get_db()._get_connection()
+            tbl_schema = "main"
+            col_prefix = ""   # e.g. DESCRIBE "events"
+            mem = None
+        else:
+            mem = _duckdb.connect(":memory:")
+            mem.execute(f"ATTACH '{file_path}' AS src (READ_ONLY)")
+            duck = mem
+            tbl_schema = "src"
+            col_prefix = "src."
+
+        tables_result = duck.execute(
+            "SELECT table_name FROM information_schema.tables "
+            f"WHERE table_schema = '{tbl_schema}' ORDER BY table_name"
         ).fetchall()
         tables = [r[0] for r in tables_result]
 
-        # Pick the most likely events table
         events_table = next(
             (t for t in tables if t.lower() in ("events", "event", "analytics")),
             tables[0] if tables else None,
         )
-
         if not events_table:
-            mem.close()
-            return {"tables": tables, "columns": [], "suggestions": {}}
+            if mem:
+                mem.close()
+            return {"tables": tables, "columns": [], "suggestions": {}, "proposed_custom_properties": []}
 
-        columns_result = mem.execute(f'DESCRIBE src."{events_table}"').fetchall()
         # DESCRIBE → column_name, column_type, null, key, default, extra
+        columns_result = duck.execute(f'DESCRIBE {col_prefix}"{events_table}"').fetchall()
         columns = [{"name": r[0], "type": r[1]} for r in columns_result]
-        mem.close()
 
+        # Determine core field suggestions
         col_lower: dict[str, str] = {c["name"].lower(): c["name"] for c in columns}
         suggestions: dict[str, str] = {}
         for candidate in _KNOWN_USER_ID_COLS:
@@ -327,12 +332,69 @@ def detect_schema(conn_id: str, api_key: str = Depends(verify_api_key)) -> dict:
                 suggestions["event_name_field"] = col_lower[candidate]
                 break
 
-        return {"tables": tables, "events_table": events_table, "columns": columns, "suggestions": suggestions}
+        core_values = set(suggestions.values())
+
+        # Build proposed custom properties:
+        # - flat columns (not core fields, not JSON-like) → direct path
+        # - JSON/BLOB/VARCHAR columns → sample json_keys() and propose col.key paths
+        _JSON_TYPES = {"json", "blob"}
+        proposed: list[dict] = []
+
+        for col in columns:
+            name = col["name"]
+            sql_type = col["type"].upper()
+            if name in core_values:
+                continue
+
+            is_json = any(t in sql_type for t in ("JSON", "BLOB", "STRUCT", "MAP"))
+
+            if is_json:
+                # Sample distinct top-level keys from this JSON column
+                try:
+                    keys_result = duck.execute(
+                        f"SELECT DISTINCT unnest(json_keys({col_prefix}\"{events_table}\".\"{name}\")) "
+                        f"FROM {col_prefix}\"{events_table}\" "
+                        f"WHERE \"{name}\" IS NOT NULL LIMIT 2000"
+                    ).fetchall()
+                    for (key,) in keys_result:
+                        if key:
+                            proposed.append({
+                                "name": key,
+                                "path": f"{name}.{key}",
+                                "type": "string",
+                            })
+                except Exception:
+                    # Fall back to proposing the column itself
+                    proposed.append({"name": name, "path": name, "type": "string"})
+            else:
+                proposed.append({"name": name, "path": name, "type": _infer_type(sql_type)})
+
+        if mem:
+            mem.close()
+
+        return {
+            "tables": tables,
+            "events_table": events_table,
+            "columns": columns,
+            "suggestions": suggestions,
+            "proposed_custom_properties": proposed,
+        }
 
     except ImportError as exc:
         raise HTTPException(status_code=400, detail=f"DuckDB driver not installed: {exc}") from exc
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Schema detection failed: {exc}") from exc
+
+
+def _infer_type(sql_type: str) -> str:
+    t = sql_type.upper()
+    if any(x in t for x in ("INT", "FLOAT", "DOUBLE", "DECIMAL", "NUMERIC", "REAL", "HUGEINT", "BIGINT", "SMALLINT", "TINYINT")):
+        return "number"
+    if "BOOL" in t:
+        return "boolean"
+    if any(x in t for x in ("TIMESTAMP", "DATE", "TIME")):
+        return "timestamp"
+    return "string"
 
 
 # ---------------------------------------------------------------------------
@@ -341,8 +403,8 @@ def detect_schema(conn_id: str, api_key: str = Depends(verify_api_key)) -> dict:
 
 
 @router.get("/{conn_id}/schema", response_model=SchemaConfigResponse)
-def get_schema(conn_id: str, api_key: str = Depends(verify_api_key)):
-    user_id = _ensure_user(api_key)
+def get_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+    user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
     db = get_product_db()
     row = db.fetchone(
@@ -363,9 +425,9 @@ def get_schema(conn_id: str, api_key: str = Depends(verify_api_key)):
 
 @router.put("/{conn_id}/schema", response_model=SchemaConfigResponse)
 def upsert_schema(
-    conn_id: str, body: SchemaConfigBody, api_key: str = Depends(verify_api_key)
+    conn_id: str, body: SchemaConfigBody, current_user: AuthUserRow = Depends(get_current_auth_user)
 ):
-    user_id = _ensure_user(api_key)
+    user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
     db = get_product_db()
     now = _now()
@@ -417,8 +479,8 @@ def upsert_schema(
 
 
 @router.get("/{conn_id}/filters", response_model=FilterConfigResponse)
-def get_filters(conn_id: str, api_key: str = Depends(verify_api_key)):
-    user_id = _ensure_user(api_key)
+def get_filters(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+    user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
     db = get_product_db()
     row = db.fetchone(
@@ -442,9 +504,9 @@ def get_filters(conn_id: str, api_key: str = Depends(verify_api_key)):
 
 @router.put("/{conn_id}/filters", response_model=FilterConfigResponse)
 def upsert_filters(
-    conn_id: str, body: FilterConfigBody, api_key: str = Depends(verify_api_key)
+    conn_id: str, body: FilterConfigBody, current_user: AuthUserRow = Depends(get_current_auth_user)
 ):
-    user_id = _ensure_user(api_key)
+    user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
     db = get_product_db()
     now = _now()
@@ -480,10 +542,10 @@ def upsert_filters(
 @router.get("/{conn_id}/filter-options")
 def get_filter_options(
     conn_id: str,
-    api_key: str = Depends(verify_api_key),
+    current_user: AuthUserRow = Depends(get_current_auth_user),
 ) -> dict:
     """Return distinct non-null values per enabled filter field for the connection."""
-    user_id = _ensure_user(api_key)
+    user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
     from openflow.services.connection_executor import open_analytics_db
     db = open_analytics_db(conn_id, user_id)

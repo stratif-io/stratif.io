@@ -1,4 +1,5 @@
 import {
+  AuthUser,
   TrendResponse,
   EventsResponse,
   TopEventsResponse,
@@ -25,22 +26,25 @@ import {
 } from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-const API_KEY = import.meta.env.VITE_API_KEY || ''
 
 const headers: HeadersInit = {
   'Content-Type': 'application/json',
-  ...(API_KEY && { 'X-Api-Key': API_KEY }),
 }
 
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
+    credentials: 'include',
     headers: { ...headers, ...options?.headers },
   })
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'An error occurred' }))
     throw new Error(error.detail || `HTTP ${response.status}`)
+  }
+
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    return undefined as T
   }
 
   return response.json()
@@ -317,3 +321,31 @@ export const fetchFilterOptions = (connId: string) =>
 
 export const fetchSchemaDetect = (connId: string) =>
   fetchApi<SchemaDetectResponse>(`/api/connections/${connId}/schema/detect`)
+
+// Auth
+
+export const fetchMe = async (): Promise<AuthUser | null> => {
+  try {
+    return await fetchApi<AuthUser>('/api/auth/me')
+  } catch {
+    return null
+  }
+}
+
+export const loginUser = (body: { email: string; password: string }) =>
+  fetchApi<AuthUser>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+
+export const registerUser = (body: { email: string; password: string; display_name: string }) =>
+  fetchApi<AuthUser>('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+
+export const logoutUser = () =>
+  fetchApi<void>('/api/auth/logout', { method: 'POST' })
+
+export const initiateGoogleAuth = () =>
+  fetchApi<{ redirect_url: string }>('/api/auth/google')

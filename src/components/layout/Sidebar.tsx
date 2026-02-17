@@ -11,10 +11,8 @@ import {
   TrendingUp,
   Users,
   Route,
-  Filter,
   Activity,
   Settings,
-  HelpCircle,
   Table,
   Database,
 } from 'lucide-react'
@@ -42,8 +40,6 @@ const navGroups: NavGroup[] = [
       { title: 'Trends', href: '/trends', icon: TrendingUp },
       { title: 'Retention', href: '/retention', icon: Users },
       { title: 'Paths', href: '/paths', icon: Route },
-      { title: 'Funnels', href: '/funnels', icon: Filter },
-      { title: 'Sessions', href: '/sessions', icon: Activity },
     ],
   },
   {
@@ -63,10 +59,7 @@ const navGroups: NavGroup[] = [
   },
 ]
 
-const bottomNav: NavItem[] = [
-  { title: 'Settings', href: '/settings', icon: Settings },
-  { title: 'Help', href: '/help', icon: HelpCircle },
-]
+const bottomNav: NavItem[] = []
 
 function NavLink({
   item,

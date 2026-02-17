@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { MousePointerClick, ChevronLeft, ChevronRight } from 'lucide-react'
 import { DataTable } from '@/components/data-table'
 import { ColumnDef } from '@tanstack/react-table'
+import { PageTransition } from '@/components/layout/PageTransition'
+import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 
 interface RawEvent {
   event_id: string
@@ -87,11 +89,13 @@ export function EventsPage() {
   const totalPages = Math.ceil(totalEvents / limit)
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Events</h1>
-        <p className="text-muted-foreground mt-1">Browse individual events.</p>
-      </div>
+    <PageTransition>
+      <div className={SPACING.page}>
+        <div className={SPACING.section}>
+          <div>
+            <h1 className={TYPOGRAPHY.pageTitle}>Events</h1>
+            <p className={`${TYPOGRAPHY.muted} mt-1`}>Browse individual events.</p>
+          </div>
 
       <Card>
         <CardHeader>
@@ -147,6 +151,8 @@ export function EventsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+        </div>
+      </div>
+    </PageTransition>
   )
 }

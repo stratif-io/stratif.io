@@ -8,6 +8,7 @@ import { useConnections, useDeleteConnection, useTestConnection } from '../hooks
 import { ConnectionFormDialog } from './ConnectionFormDialog'
 import type { Connection } from '@/types'
 import { cn } from '@/lib/utils'
+import { TYPOGRAPHY } from '@/lib/constants'
 
 const DB_TYPE_LABELS: Record<string, string> = {
   duckdb: 'DuckDB',
@@ -129,8 +130,8 @@ export function ConnectionList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Connections</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <h1 className={TYPOGRAPHY.sectionTitle}>Connections</h1>
+          <p className={`${TYPOGRAPHY.muted} mt-0.5`}>
             Manage your event database connections
           </p>
         </div>

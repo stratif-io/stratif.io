@@ -1,15 +1,12 @@
-import React from 'react'
+import { useState } from 'react'
 import { useAppStore } from '@/stores'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { DateRangePicker } from '@/components/DateRangePicker'
-import { Globe, Chrome, Monitor, Building, Tag, Layers, LucideIcon } from 'lucide-react'
+import { Globe, Chrome, Monitor, Building, Tag, Layers, ChevronDown, X, LucideIcon } from 'lucide-react'
 import { useFilterConfig, useFilterOptions } from '@/features/connections/hooks/useConnectionsData'
+import { cn } from '@/lib/utils'
 import type { FilterField } from '@/types'
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -30,37 +27,93 @@ function DimensionFilter({
 }) {
   const activeFilters = useAppStore((s) => s.activeFilters)
   const setActiveFilter = useAppStore((s) => s.setActiveFilter)
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
 
   const value = activeFilters[field.field] ?? null
-  const isActive = value !== null
   const Icon = ICON_MAP[field.icon] ?? Tag
 
+  const filtered = search
+    ? options.filter((o) => o.toLowerCase().includes(search.toLowerCase()))
+    : options
+
+  function select(v: string | null) {
+    setActiveFilter(field.field, v)
+    setOpen(false)
+    setSearch('')
+  }
+
   return (
-    <Select
-      value={value || 'all'}
-      onValueChange={(v) => setActiveFilter(field.field, v === 'all' ? null : v)}
-    >
-      <SelectTrigger
-        className={`
-          h-9 border-0 shadow-none rounded-none bg-transparent
-          gap-1.5 px-3 text-sm font-medium focus:ring-0 focus:ring-offset-0
-          hover:bg-accent/60 transition-colors
-          ${isActive ? 'text-foreground' : 'text-muted-foreground'}
-        `}
-        style={{ minWidth: 0, width: 'auto' }}
-      >
-        <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-primary' : ''}`} />
-        <SelectValue placeholder={`All ${field.label.toLowerCase()}s`} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All {field.label.toLowerCase()}s</SelectItem>
-        {options.map((opt) => (
-          <SelectItem key={opt} value={opt}>
-            {opt}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            'h-9 flex items-center gap-1.5 px-3 text-sm font-medium',
+            'hover:bg-accent/60 transition-colors',
+            value ? 'text-foreground' : 'text-muted-foreground',
+          )}
+        >
+          <Icon className={cn('h-3.5 w-3.5 shrink-0', value && 'text-primary')} />
+          <span className="max-w-[100px] truncate">
+            {value ?? `All ${field.label.toLowerCase()}s`}
+          </span>
+          {value ? (
+            <X
+              className="h-3 w-3 shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={(e) => { e.stopPropagation(); select(null) }}
+            />
+          ) : (
+            <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+          )}
+        </button>
+      </PopoverTrigger>
+
+      <PopoverContent className="w-52 p-0" align="start">
+        <div className="p-2 border-b">
+          <Input
+            placeholder={`Search ${field.label.toLowerCase()}s…`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-7 text-sm"
+            autoFocus
+          />
+        </div>
+
+        <ScrollArea className="max-h-56">
+          <div className="p-1">
+            {!search && (
+              <button
+                className={cn(
+                  'w-full text-left px-2 py-1.5 rounded text-sm',
+                  'hover:bg-accent transition-colors',
+                  value === null && 'bg-accent font-medium',
+                )}
+                onClick={() => select(null)}
+              >
+                All {field.label.toLowerCase()}s
+              </button>
+            )}
+            {filtered.length === 0 ? (
+              <p className="px-2 py-3 text-xs text-muted-foreground text-center">No results</p>
+            ) : (
+              filtered.map((opt) => (
+                <button
+                  key={opt}
+                  className={cn(
+                    'w-full text-left px-2 py-1.5 rounded text-sm truncate',
+                    'hover:bg-accent transition-colors',
+                    value === opt && 'bg-accent font-medium',
+                  )}
+                  onClick={() => select(opt)}
+                >
+                  {opt}
+                </button>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
   )
 }
 

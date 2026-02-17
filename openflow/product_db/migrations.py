@@ -36,6 +36,19 @@ CREATE TABLE IF NOT EXISTS connection_filter_configs (
     filter_fields TEXT NOT NULL DEFAULT '[]',
     updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
+
+CREATE TABLE IF NOT EXISTS auth_users (
+    id            TEXT PRIMARY KEY,
+    email         TEXT UNIQUE NOT NULL,
+    display_name  TEXT,
+    password_hash TEXT,
+    google_id     TEXT UNIQUE,
+    avatar_url    TEXT,
+    created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    last_login_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email);
+CREATE INDEX IF NOT EXISTS idx_auth_users_google_id ON auth_users(google_id);
 """
 
 
