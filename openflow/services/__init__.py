@@ -7,6 +7,7 @@ from .path_analyzer import (
     generate_path_analysis_query,
 )
 from .connection_executor import get_analytics_db, AnalyticsDatabase
+from . import sql_builder
 
 __all__ = [
     "transpile_sql",
@@ -17,4 +18,5 @@ __all__ = [
     "generate_path_analysis_query",
     "get_analytics_db",
     "AnalyticsDatabase",
+    "sql_builder",
 ]

@@ -112,7 +112,7 @@ export const PathAnalysisResponseSchema = z.object({
   start_event: z.string().nullable(),
   end_event: z.string().nullable(),
   min_path_length: z.number().int().min(2),
-  max_path_length: z.number().int().min(2),
+  max_path_length: z.number().int().min(2).min(7),
   max_time_between_events: z.number().nullable(),
   time_unit: z.string(),
   group_by: z.string(),

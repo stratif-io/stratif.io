@@ -9,6 +9,11 @@ import { useFilterConfig, useFilterOptions } from '@/features/connections/hooks/
 import { cn } from '@/lib/utils'
 import type { FilterField } from '@/types'
 
+function pluralize(word: string): string {
+  if (word.endsWith('y')) return word.slice(0, -1) + 'ies'
+  return word + 's'
+}
+
 const ICON_MAP: Record<string, LucideIcon> = {
   Globe,
   Chrome,
@@ -55,7 +60,7 @@ function DimensionFilter({
         >
           <Icon className={cn('h-3.5 w-3.5 shrink-0', value && 'text-primary')} />
           <span className="max-w-[100px] truncate">
-            {value ?? `All ${field.label.toLowerCase()}s`}
+            {value ?? `All ${pluralize(field.label.toLowerCase())}`}
           </span>
           {value ? (
             <X
@@ -71,7 +76,7 @@ function DimensionFilter({
       <PopoverContent className="w-52 p-0" align="start">
         <div className="p-2 border-b">
           <Input
-            placeholder={`Search ${field.label.toLowerCase()}s…`}
+            placeholder={`Search ${pluralize(field.label.toLowerCase())}…`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-7 text-sm"
@@ -90,7 +95,7 @@ function DimensionFilter({
                 )}
                 onClick={() => select(null)}
               >
-                All {field.label.toLowerCase()}s
+                All {pluralize(field.label.toLowerCase())}
               </button>
             )}
             {filtered.length === 0 ? (

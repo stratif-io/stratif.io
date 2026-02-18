@@ -1,4 +1,12 @@
-"""SQL transpilation service using sqlglot."""
+"""SQL transpilation service using SQLGlot.
+
+Prefer building queries with helpers from ``openflow.services.sql_builder``
+rather than transpiling raw SQL strings.  The helpers generate dialect-correct
+SQL at build time, which is more reliable than post-hoc transpilation.
+
+This module is kept as a thin utility layer for cases where you receive raw
+SQL from an external source and need to convert it to the target dialect.
+"""
 
 import sqlglot
 import structlog
@@ -8,7 +16,12 @@ log = structlog.get_logger(__name__)
 
 
 class Transpiler:
-    """SQL query transpiler for cross-database compatibility."""
+    """SQL query transpiler for cross-database compatibility.
+
+    Use this when you need to convert a SQL string written in one dialect to
+    another.  For queries you build yourself, prefer ``sql_builder`` helpers
+    which generate the correct SQL directly without a transpilation step.
+    """
 
     SUPPORTED_DIALECTS = [
         "duckdb",
@@ -26,72 +39,53 @@ class Transpiler:
         self.write_dialect = write_dialect
 
     def transpile(self, query: str, write_dialect: Optional[str] = None) -> str:
-        """
-        Transpile SQL query between dialects.
+        """Transpile *query* from *read_dialect* to *write_dialect*.
 
-        Args:
-            query: SQL query string
-            write_dialect: Target dialect (defaults to instance write_dialect)
-
-        Returns:
-            Transpiled SQL query
+        Returns the original query unchanged if transpilation fails, logging
+        a warning so the caller can investigate.
         """
-        target_dialect = write_dialect or self.write_dialect
+        target = write_dialect or self.write_dialect
+        if self.read_dialect == target:
+            return query
         try:
-            return sqlglot.transpile(
-                query, read=self.read_dialect, write=target_dialect
-            )[0]
+            return sqlglot.transpile(query, read=self.read_dialect, write=target)[0]
         except Exception as e:
-            log.warning("transpilation_warning", error=str(e), read=self.read_dialect, write=target_dialect)
+            log.warning(
+                "transpilation_warning",
+                error=str(e),
+                read=self.read_dialect,
+                write=target,
+            )
             return query
 
     def validate(self, query: str, dialect: Optional[str] = None) -> bool:
-        """
-        Validate SQL query syntax.
-
-        Args:
-            query: SQL query string
-            dialect: SQL dialect (defaults to instance read_dialect)
-
-        Returns:
-            True if valid, False otherwise
-        """
-        target_dialect = dialect or self.read_dialect
+        """Return True if *query* is syntactically valid for *dialect*."""
+        target = dialect or self.read_dialect
         try:
-            sqlglot.parse(query, dialect=target_dialect)
+            sqlglot.parse(query, dialect=target)
             return True
         except Exception:
             return False
 
     def parse(self, query: str) -> sqlglot.Expression:
-        """
-        Parse SQL query into AST.
-
-        Args:
-            query: SQL query string
-
-        Returns:
-            sqlglot Expression
-        """
+        """Parse *query* into a SQLGlot AST."""
         return sqlglot.parse_one(query, dialect=self.read_dialect)
-
-
-_default_transpiler = Transpiler()
 
 
 def transpile_sql(
     query: str,
-    read_dialect: str = "duckdb",
-    write_dialect: str = "duckdb",
+    read: str = "duckdb",
+    write: str = "duckdb",
 ) -> str:
-    """Convenience function for transpiling SQL queries."""
-    if read_dialect == write_dialect:
+    """Convenience function: transpile *query* from *read* dialect to *write* dialect.
+
+    No-op when ``read == write``.
+    """
+    if read == write:
         return query
-    transpiler = Transpiler(read_dialect, write_dialect)
-    return transpiler.transpile(query)
+    return Transpiler(read, write).transpile(query)
 
 
 def validate_sql(query: str, dialect: str = "duckdb") -> bool:
-    """Convenience function for validating SQL queries."""
-    transpiler = Transpiler(dialect)
-    return transpiler.validate(query)
+    """Convenience function: validate *query* syntax for *dialect*."""
+    return Transpiler(dialect).validate(query)

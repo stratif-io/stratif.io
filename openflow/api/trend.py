@@ -6,7 +6,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from openflow.services import transpile_sql, get_analytics_db
+from openflow.services import get_analytics_db
+from openflow.services.sql_builder import date_trunc
 
 router = APIRouter(prefix="/api", tags=["trends"])
 
@@ -21,8 +22,10 @@ def get_trend(
     db=Depends(get_analytics_db),
 ) -> dict:
     """Return trend data: Date vs Count and Unique Users."""
+    dialect = db.get_dialect()
     where_clauses = []
     params = []
+
     if event_name:
         where_clauses.append("event_name = ?")
         params.append(event_name)
@@ -39,40 +42,33 @@ def get_trend(
         params.extend(filter_params)
 
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+    unit = granularity if granularity in ("day", "week") else "day"
+    date_col = date_trunc(unit, "timestamp", dialect)
 
-    date_trunc = (
-        "DATE_TRUNC('day', timestamp)"
-        if granularity == "day"
-        else "DATE_TRUNC('week', timestamp)"
-    )
-
-    query = transpile_sql(f"""
+    query = f"""
         SELECT
-            {date_trunc} as date,
-            COUNT(*) as count,
-            COUNT(DISTINCT user_id) as unique_users
+            {date_col} AS date,
+            COUNT(*) AS count,
+            COUNT(DISTINCT user_id) AS unique_users
         FROM events
         {where_clause}
-        GROUP BY {date_trunc}
+        GROUP BY {date_col}
         ORDER BY date
-    """)
-
+    """
     result = db.execute(query, params)
 
-    total_unique_query = transpile_sql(f"""
+    total_unique_query = f"""
         SELECT COUNT(DISTINCT user_id)
         FROM events
         {where_clause}
-    """)
+    """
     total_unique = db.execute(total_unique_query, params)[0][0]
 
     return {
         "total_unique_users": total_unique,
         "data": [
             {
-                "date": row[0].isoformat()
-                if isinstance(row[0], datetime)
-                else str(row[0]),
+                "date": row[0].isoformat() if isinstance(row[0], datetime) else str(row[0]),
                 "count": row[1],
                 "unique_users": row[2],
             }

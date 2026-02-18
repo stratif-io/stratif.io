@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from openflow import __version__
 from openflow.config import get_settings
 from openflow.core.logging import setup_logging
-from openflow.db import get_db, create_views, seed_database
+from openflow.db import get_db, seed_database
 from openflow.product_db import init_product_db, run_migrations
 from openflow.api import (
     auth_router,

@@ -6,7 +6,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from openflow.services import transpile_sql, get_analytics_db
+from openflow.services import get_analytics_db
 
 router = APIRouter(prefix="/api", tags=["events"])
 
@@ -44,20 +44,19 @@ def get_top_events(
         params.extend(filter_params)
 
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+    params.append(limit)
 
-    query = transpile_sql(f"""
-        SELECT
-            event_name,
-            COUNT(*) as count
+    result = db.execute(
+        f"""
+        SELECT event_name, COUNT(*) AS count
         FROM events
         {where_clause}
         GROUP BY event_name
         ORDER BY count DESC
         LIMIT ?
-    """)
-    params.append(limit)
-
-    result = db.execute(query, params)
+        """,
+        params,
+    )
     return {"data": [{"name": row[0], "count": row[1]} for row in result]}
 
 
@@ -91,23 +90,18 @@ def get_raw_events(
 
     where_clause = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
-    count_query = transpile_sql(f"SELECT COUNT(*) FROM events {where_clause}")
-    total = db.execute(count_query, params)[0][0]
+    total = db.execute(f"SELECT COUNT(*) FROM events {where_clause}", params)[0][0]
 
-    query = transpile_sql(f"""
-        SELECT
-            user_id,
-            event_name,
-            timestamp,
-            properties
+    result = db.execute(
+        f"""
+        SELECT user_id, event_name, timestamp, properties
         FROM events
         {where_clause}
         ORDER BY timestamp DESC
         LIMIT ? OFFSET ?
-    """)
-    params.extend([limit, offset])
-
-    result = db.execute(query, params)
+        """,
+        params + [limit, offset],
+    )
 
     return {
         "total": total,
@@ -117,9 +111,7 @@ def get_raw_events(
             {
                 "user_id": row[0],
                 "event_name": row[1],
-                "timestamp": row[2].isoformat()
-                if isinstance(row[2], datetime)
-                else str(row[2]),
+                "timestamp": row[2].isoformat() if isinstance(row[2], datetime) else str(row[2]),
                 "properties": row[3],
             }
             for row in result

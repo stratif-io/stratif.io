@@ -6,7 +6,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from openflow.services import transpile_sql, get_analytics_db
+from openflow.services import get_analytics_db
+from openflow.services.sql_builder import date_trunc, date_diff_days
 
 router = APIRouter(prefix="/api", tags=["retention"])
 
@@ -18,14 +19,18 @@ def get_retention(
     filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
     db=Depends(get_analytics_db),
 ) -> dict:
+    """Calculate N-Day Retention Cohorts.
+
+    Users who performed 'Sign Up' → returned to do any event on Day 1, Day 7, etc.
     """
-    Calculate N-Day Retention Cohorts.
-    Users who did 'Sign Up' -> Returned to do Any Event on Day 1, Day 7, etc.
-    """
+    dialect = db.get_dialect()
+    day_col = date_trunc("day", "timestamp", dialect)
+    days_diff = date_diff_days("s.cohort_date", "a.activity_date", dialect)
+
     signup_where = "WHERE event_name = 'Sign Up'"
     activity_where = ""
-    signup_params = []
-    activity_params = []
+    signup_params: list = []
+    activity_params: list = []
 
     if start_date:
         signup_where += " AND timestamp >= ?"
@@ -35,10 +40,7 @@ def get_retention(
 
     if end_date:
         signup_where += " AND timestamp <= ?"
-        if activity_where:
-            activity_where += " AND timestamp <= ?"
-        else:
-            activity_where = "WHERE timestamp <= ?"
+        activity_where += (" AND " if activity_where else "WHERE ") + "timestamp <= ?"
         signup_params.append(f"{end_date} 23:59:59")
         activity_params.append(f"{end_date} 23:59:59")
 
@@ -50,11 +52,11 @@ def get_retention(
 
     params = signup_params + activity_params
 
-    query = transpile_sql(f"""
+    query = f"""
         WITH signups AS (
             SELECT
                 user_id,
-                MIN(DATE_TRUNC('day', timestamp)) as cohort_date
+                MIN({day_col}) AS cohort_date
             FROM events
             {signup_where}
             GROUP BY user_id
@@ -62,7 +64,7 @@ def get_retention(
         user_activity AS (
             SELECT DISTINCT
                 user_id,
-                DATE_TRUNC('day', timestamp) as activity_date
+                {day_col} AS activity_date
             FROM events
             {activity_where}
         ),
@@ -71,7 +73,7 @@ def get_retention(
                 s.user_id,
                 s.cohort_date,
                 a.activity_date,
-                DATE_DIFF('day', s.cohort_date, a.activity_date) as days_since_signup
+                {days_diff} AS days_since_signup
             FROM signups s
             LEFT JOIN user_activity a ON s.user_id = a.user_id
             WHERE a.activity_date >= s.cohort_date
@@ -79,7 +81,7 @@ def get_retention(
         cohort_sizes AS (
             SELECT
                 cohort_date,
-                COUNT(DISTINCT user_id) as cohort_size
+                COUNT(DISTINCT user_id) AS cohort_size
             FROM signups
             GROUP BY cohort_date
         ),
@@ -87,24 +89,24 @@ def get_retention(
             SELECT
                 cohort_date,
                 days_since_signup,
-                COUNT(DISTINCT user_id) as returning_users
+                COUNT(DISTINCT user_id) AS returning_users
             FROM cohort_activity
             GROUP BY cohort_date, days_since_signup
         )
         SELECT
             c.cohort_date,
             c.cohort_size,
-            COALESCE(MAX(CASE WHEN r.days_since_signup = 0 THEN r.returning_users END), c.cohort_size) as day_0,
-            COALESCE(MAX(CASE WHEN r.days_since_signup = 1 THEN r.returning_users END), 0) as day_1,
-            COALESCE(MAX(CASE WHEN r.days_since_signup = 7 THEN r.returning_users END), 0) as day_7,
-            COALESCE(MAX(CASE WHEN r.days_since_signup = 14 THEN r.returning_users END), 0) as day_14,
-            COALESCE(MAX(CASE WHEN r.days_since_signup = 30 THEN r.returning_users END), 0) as day_30
+            COALESCE(MAX(CASE WHEN r.days_since_signup = 0  THEN r.returning_users END), c.cohort_size) AS day_0,
+            COALESCE(MAX(CASE WHEN r.days_since_signup = 1  THEN r.returning_users END), 0) AS day_1,
+            COALESCE(MAX(CASE WHEN r.days_since_signup = 7  THEN r.returning_users END), 0) AS day_7,
+            COALESCE(MAX(CASE WHEN r.days_since_signup = 14 THEN r.returning_users END), 0) AS day_14,
+            COALESCE(MAX(CASE WHEN r.days_since_signup = 30 THEN r.returning_users END), 0) AS day_30
         FROM cohort_sizes c
         LEFT JOIN retention_counts r ON c.cohort_date = r.cohort_date
         GROUP BY c.cohort_date, c.cohort_size
         ORDER BY c.cohort_date DESC
         LIMIT 10
-    """)
+    """
 
     result = db.execute(query, params)
 
@@ -113,9 +115,9 @@ def get_retention(
             {
                 "cohort_date": row[0].isoformat() if isinstance(row[0], datetime) else str(row[0]),
                 "cohort_size": row[1],
-                "day_0_percent": round((row[2] / row[1]) * 100, 1) if row[1] > 0 else 0,
-                "day_1_percent": round((row[3] / row[1]) * 100, 1) if row[1] > 0 else 0,
-                "day_7_percent": round((row[4] / row[1]) * 100, 1) if row[1] > 0 else 0,
+                "day_0_percent":  round((row[2] / row[1]) * 100, 1) if row[1] > 0 else 0,
+                "day_1_percent":  round((row[3] / row[1]) * 100, 1) if row[1] > 0 else 0,
+                "day_7_percent":  round((row[4] / row[1]) * 100, 1) if row[1] > 0 else 0,
                 "day_14_percent": round((row[5] / row[1]) * 100, 1) if row[1] > 0 else 0,
                 "day_30_percent": round((row[6] / row[1]) * 100, 1) if row[1] > 0 else 0,
             }

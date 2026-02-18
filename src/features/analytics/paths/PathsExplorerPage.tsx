@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Select,
   SelectContent,
@@ -13,10 +14,8 @@ import {
   Clock,
   GitFork,
   Layers,
-  Monitor,
   RotateCcw,
   Settings2,
-  Smartphone,
   Users,
   Zap,
 } from 'lucide-react'
@@ -176,21 +175,58 @@ function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
 
 export function PathsExplorerPage() {
   const { dateRange } = useAppStore()
-  const [startEvent, setStartEvent] = useState<string>('')
-  const [endEvent, setEndEvent] = useState<string>('')
-  const [minPathLength, setMinPathLength] = useState<number | null>(null)
-  const [maxPathLength, setMaxPathLength] = useState<number | null>(null)
-  const [maxTimeBetweenEvents, setMaxTimeBetweenEvents] = useState<number | null>(null)
-  const [timeUnit, setTimeUnit] = useState<'seconds' | 'minutes' | 'hours' | 'days'>('minutes')
-  const [groupBy, setGroupBy] = useState<'user_id' | 'session_id'>('user_id')
-  const [topN, setTopN] = useState<number>(20)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // All filter state derived from URL search params
+  const startEvent = searchParams.get('start') ?? ''
+  const endEvent = searchParams.get('end') ?? ''
+  const minPathLength = searchParams.has('min')
+    ? Math.max(2, parseInt(searchParams.get('min')!))
+    : null
+  const maxPathLength = searchParams.has('max') ? parseInt(searchParams.get('max')!) : null
+  const maxTimeBetweenEvents = searchParams.has('maxTime')
+    ? parseInt(searchParams.get('maxTime')!)
+    : null
+  const timeUnit = (searchParams.get('timeUnit') ?? 'minutes') as
+    | 'seconds'
+    | 'minutes'
+    | 'hours'
+    | 'days'
+  const groupBy = (searchParams.get('groupBy') ?? 'user_id') as 'user_id' | 'session_id'
+  const topN = searchParams.has('top')
+    ? Math.min(100, Math.max(1, parseInt(searchParams.get('top')!) || 20))
+    : 20
 
   const [selectedPath, setSelectedPath] = useState<PathAnalysisData | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const pathLengthActive = minPathLength !== null || maxPathLength !== null
   const effectiveMin = minPathLength ?? 2
-  const effectiveMax = maxPathLength ?? 20
+  const effectiveMax = maxPathLength ?? 5
+
+  function setParam(key: string, value: string | null) {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (value === null) next.delete(key)
+        else next.set(key, value)
+        return next
+      },
+      { replace: true }
+    )
+  }
+
+  function clearPathLength() {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('min')
+        next.delete('max')
+        return next
+      },
+      { replace: true }
+    )
+  }
 
   const { pathData, events, isLoading, eventsLoading, totalPaths } = usePathExplorer({
     dateRange,
@@ -204,16 +240,7 @@ export function PathsExplorerPage() {
     topN,
   })
 
-  const handleReset = () => {
-    setStartEvent('')
-    setEndEvent('')
-    setMinPathLength(null)
-    setMaxPathLength(null)
-    setMaxTimeBetweenEvents(null)
-    setTimeUnit('minutes')
-    setGroupBy('user_id')
-    setTopN(20)
-  }
+  const handleReset = () => setSearchParams({}, { replace: true })
 
   const hasActiveFilters =
     startEvent ||
@@ -252,7 +279,7 @@ export function PathsExplorerPage() {
             {/* Start event */}
             <Select
               value={startEvent || 'any'}
-              onValueChange={(v) => setStartEvent(v === 'any' ? '' : v)}
+              onValueChange={(v) => setParam('start', v === 'any' ? null : v)}
             >
               <SelectTrigger className={segTrigger} style={{ width: 'auto', minWidth: 0 }}>
                 <SelectValue placeholder="Any start" />
@@ -275,7 +302,7 @@ export function PathsExplorerPage() {
             {/* End event */}
             <Select
               value={endEvent || 'any'}
-              onValueChange={(v) => setEndEvent(v === 'any' ? '' : v)}
+              onValueChange={(v) => setParam('end', v === 'any' ? null : v)}
             >
               <SelectTrigger className={segTrigger} style={{ width: 'auto', minWidth: 0 }}>
                 <SelectValue placeholder="Any end" />
@@ -300,9 +327,7 @@ export function PathsExplorerPage() {
                 )}
               >
                 <Layers className={cn('h-3.5 w-3.5 shrink-0', pathLengthActive && 'text-primary')} />
-                <span>
-                  {pathLengthActive ? `${effectiveMin}–${effectiveMax} steps` : 'Any steps'}
-                </span>
+                <span>{effectiveMin}–{effectiveMax} steps</span>
               </PopoverTrigger>
               <PopoverContent className="w-52 p-3 space-y-3" align="start">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -314,12 +339,12 @@ export function PathsExplorerPage() {
                     <Input
                       type="number"
                       min={2}
-                      max={20}
+                      max={10}
                       placeholder="2"
                       value={minPathLength ?? ''}
                       onChange={(e) => {
                         const val = parseInt(e.target.value)
-                        setMinPathLength(isNaN(val) ? null : Math.max(2, val))
+                        setParam('min', isNaN(val) ? null : String(Math.max(2, val)))
                       }}
                       className="h-8 text-sm text-center"
                     />
@@ -330,12 +355,12 @@ export function PathsExplorerPage() {
                     <Input
                       type="number"
                       min={effectiveMin}
-                      max={20}
-                      placeholder="Any"
+                      max={10}
+                      placeholder="5"
                       value={maxPathLength ?? ''}
                       onChange={(e) => {
                         const val = parseInt(e.target.value)
-                        setMaxPathLength(isNaN(val) ? null : Math.max(effectiveMin, val))
+                        setParam('max', isNaN(val) ? null : String(Math.max(effectiveMin, val)))
                       }}
                       className="h-8 text-sm text-center"
                     />
@@ -343,10 +368,10 @@ export function PathsExplorerPage() {
                 </div>
                 {pathLengthActive && (
                   <button
-                    onClick={() => { setMinPathLength(null); setMaxPathLength(null) }}
+                    onClick={clearPathLength}
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Clear length filter
+                    Reset to defaults
                   </button>
                 )}
               </PopoverContent>
@@ -355,7 +380,7 @@ export function PathsExplorerPage() {
             {/* Group by */}
             <Select
               value={groupBy}
-              onValueChange={(v) => setGroupBy(v as typeof groupBy)}
+              onValueChange={(v) => setParam('groupBy', v)}
             >
               <SelectTrigger className={segTrigger} style={{ width: 'auto', minWidth: 0 }}>
                 <Users className="h-3.5 w-3.5 shrink-0" />
@@ -387,7 +412,7 @@ export function PathsExplorerPage() {
                   max={100}
                   value={topN}
                   onChange={(e) =>
-                    setTopN(Math.min(100, Math.max(1, parseInt(e.target.value) || 10)))
+                    setParam('top', String(Math.min(100, Math.max(1, parseInt(e.target.value) || 10))))
                   }
                   className="h-8 text-sm text-center"
                 />
@@ -424,13 +449,13 @@ export function PathsExplorerPage() {
                     value={maxTimeBetweenEvents ?? ''}
                     onChange={(e) => {
                       const val = parseInt(e.target.value)
-                      setMaxTimeBetweenEvents(isNaN(val) ? null : val)
+                      setParam('maxTime', isNaN(val) ? null : String(val))
                     }}
                     className="h-8 text-sm w-20"
                   />
                   <Select
                     value={timeUnit}
-                    onValueChange={(v) => setTimeUnit(v as typeof timeUnit)}
+                    onValueChange={(v) => setParam('timeUnit', v)}
                   >
                     <SelectTrigger className="h-8 text-sm flex-1">
                       <SelectValue />
@@ -446,7 +471,7 @@ export function PathsExplorerPage() {
                 </div>
                 {maxTimeBetweenEvents !== null && (
                   <button
-                    onClick={() => setMaxTimeBetweenEvents(null)}
+                    onClick={() => setParam('maxTime', null)}
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Clear limit

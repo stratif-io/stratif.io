@@ -1,18 +1,59 @@
-"""Database view definitions for analytics."""
+"""Inline CTE definitions for analytics derived datasets.
 
-from openflow.db.connection import Database
+These functions return CTE chains (everything that follows the WITH keyword,
+without the WITH keyword itself) so that callers can compose them into any
+query without needing write access to the target database.
+
+All functions accept a *dialect* parameter and use helpers from
+``openflow.services.sql_builder`` to emit the correct SQL for each engine.
+The generated CTEs are valid for DuckDB, SQLite, PostgreSQL, MySQL,
+BigQuery, Snowflake, and Redshift without any post-processing.
+"""
+
+from openflow.services.sql_builder import (
+    epoch_diff_seconds,
+    interval_minutes_exceeded,
+    json_extract_string,
+    string_concat,
+    cast_to_text,
+)
 
 
-def session_view_sql(session_timeout_minutes: int = 30) -> str:
-    """Build SQL to create the derived_sessions view with a configurable session timeout."""
+def session_ctes(session_timeout_minutes: int = 30, dialect: str = "duckdb") -> str:
+    """CTE chain (without WITH) that defines ``derived_sessions``.
+
+    Segments events into sessions based on an inactivity gap.  A new session
+    starts whenever the gap between two consecutive events of the same user
+    exceeds *session_timeout_minutes*.
+
+    Usage:
+        db.execute(f"WITH {session_ctes(30, db.get_dialect())} SELECT ... FROM derived_sessions")
+
+    Columns exposed by ``derived_sessions``:
+        session_id  TEXT   — unique per user+session
+        user_id     TEXT
+        start_time  TIMESTAMP — first event of the session
+        duration_sec FLOAT  — seconds from first to last event
+        event_count INTEGER
+
+    Args:
+        session_timeout_minutes: Inactivity gap that starts a new session.
+        dialect: Target SQL dialect (duckdb | sqlite | postgres | mysql | …)
+    """
+    interval_check = interval_minutes_exceeded(
+        "prev_timestamp", "timestamp", session_timeout_minutes, dialect
+    )
+    duration_expr = epoch_diff_seconds("MIN(timestamp)", "MAX(timestamp)", dialect)
+    session_num_cast = cast_to_text("session_number", dialect)
+    session_id_expr = string_concat("user_id", "'-'", session_num_cast, dialect=dialect)
+
     return f"""
-CREATE OR REPLACE VIEW derived_sessions AS
-WITH events_with_lag AS (
+events_with_lag AS (
     SELECT
         user_id,
         event_name,
         timestamp,
-        LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp) as prev_timestamp
+        LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp) AS prev_timestamp
     FROM events
 ),
 session_markers AS (
@@ -22,10 +63,10 @@ session_markers AS (
         timestamp,
         CASE
             WHEN prev_timestamp IS NULL
-                OR timestamp - prev_timestamp > INTERVAL '{session_timeout_minutes} minutes'
+                OR {interval_check}
             THEN 1
             ELSE 0
-        END as is_new_session
+        END AS is_new_session
     FROM events_with_lag
 ),
 session_ids AS (
@@ -37,34 +78,74 @@ session_ids AS (
             PARTITION BY user_id
             ORDER BY timestamp
             ROWS UNBOUNDED PRECEDING
-        ) as session_number
+        ) AS session_number
     FROM session_markers
-)
-SELECT
-    user_id || '_' || CAST(session_number AS VARCHAR) as session_id,
-    user_id,
-    MIN(timestamp) as start_time,
-    EXTRACT(EPOCH FROM (MAX(timestamp) - MIN(timestamp))) as duration_sec,
-    COUNT(*) as event_count
-FROM session_ids
-GROUP BY user_id, session_number
-"""
+),
+derived_sessions AS (
+    SELECT
+        {session_id_expr} AS session_id,
+        user_id,
+        MIN(timestamp) AS start_time,
+        {duration_expr} AS duration_sec,
+        COUNT(*) AS event_count
+    FROM session_ids
+    GROUP BY user_id, session_number
+)"""
 
 
-def path_analysis_view_sql(session_timeout_minutes: int = 30) -> str:
-    """Build SQL to create the derived_path_analysis view with a configurable session timeout."""
+def path_analysis_ctes(session_timeout_minutes: int = 30, dialect: str = "duckdb") -> str:
+    """CTE chain (without WITH) that defines ``derived_path_analysis``.
+
+    Builds a look-back view: for each event, records the three preceding
+    events in the same user's timeline along with device type.
+
+    Usage:
+        db.execute(f"WITH {path_analysis_ctes(30, db.get_dialect())} SELECT ... FROM derived_path_analysis")
+
+    Columns exposed by ``derived_path_analysis``:
+        event_id     TEXT
+        user_id      TEXT
+        session_id   TEXT
+        target_event TEXT  — the event that occurred
+        step_minus_1 TEXT  — previous event (NULL if first in session)
+        step_minus_2 TEXT  — two events ago
+        step_minus_3 TEXT  — three events ago
+        device_type  TEXT  — extracted from the JSON properties column
+
+    Args:
+        session_timeout_minutes: Inactivity gap that starts a new session.
+        dialect: Target SQL dialect (duckdb | sqlite | postgres | mysql | …)
+    """
+    interval_check = interval_minutes_exceeded(
+        "prev_timestamp", "timestamp", session_timeout_minutes, dialect
+    )
+    device_type_expr = json_extract_string("properties", "device_type", dialect)
+
+    # Window expression for building session_number inside a CAST
+    session_window = (
+        "SUM(is_new_session) OVER "
+        "(PARTITION BY user_id ORDER BY timestamp ROWS UNBOUNDED PRECEDING)"
+    )
+    session_num_cast = cast_to_text(session_window, dialect)
+    session_id_expr = string_concat("user_id", "'-'", session_num_cast, dialect=dialect)
+
+    # event_id uses ROW_NUMBER over the full table
+    row_num_cast = cast_to_text(
+        "ROW_NUMBER() OVER (ORDER BY timestamp)", dialect
+    )
+    event_id_expr = string_concat("user_id", "'-'", row_num_cast, dialect=dialect)
+
     return f"""
-CREATE OR REPLACE VIEW derived_path_analysis AS
-WITH events_with_lag AS (
+events_with_lag AS (
     SELECT
         user_id,
         event_name,
         timestamp,
-        properties->>'device_type' as device_type,
-        LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp) as prev_timestamp,
-        LAG(event_name, 1) OVER (PARTITION BY user_id ORDER BY timestamp) as step_minus_1,
-        LAG(event_name, 2) OVER (PARTITION BY user_id ORDER BY timestamp) as step_minus_2,
-        LAG(event_name, 3) OVER (PARTITION BY user_id ORDER BY timestamp) as step_minus_3
+        {device_type_expr} AS device_type,
+        LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp) AS prev_timestamp,
+        LAG(event_name, 1) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_1,
+        LAG(event_name, 2) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_2,
+        LAG(event_name, 3) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_3
     FROM events
 ),
 events_with_session AS (
@@ -78,10 +159,10 @@ events_with_session AS (
         step_minus_3,
         CASE
             WHEN prev_timestamp IS NULL
-                OR timestamp - prev_timestamp > INTERVAL '{session_timeout_minutes} minutes'
+                OR {interval_check}
             THEN 1
             ELSE 0
-        END as is_new_session
+        END AS is_new_session
     FROM events_with_lag
 ),
 events_with_session_id AS (
@@ -93,40 +174,19 @@ events_with_session_id AS (
         step_minus_1,
         step_minus_2,
         step_minus_3,
-        user_id || '_' || CAST(
-            SUM(is_new_session) OVER (
-                PARTITION BY user_id
-                ORDER BY timestamp
-                ROWS UNBOUNDED PRECEDING
-            ) AS VARCHAR
-        ) as session_id
+        {session_id_expr} AS session_id
     FROM events_with_session
-)
-SELECT
-    user_id || '_' || CAST(row_number() OVER (ORDER BY timestamp) AS VARCHAR) as event_id,
-    user_id,
-    session_id,
-    event_name as target_event,
-    step_minus_1,
-    step_minus_2,
-    step_minus_3,
-    device_type
-FROM events_with_session_id
-WHERE step_minus_1 IS NOT NULL
-"""
-
-
-# Default-timeout constants kept for backward compatibility
-SESSION_VIEW_SQL = session_view_sql()
-PATH_ANALYSIS_VIEW_SQL = path_analysis_view_sql()
-
-
-def create_views(db: Database, session_timeout_minutes: int = 30) -> None:
-    """Create all analytics views in the database."""
-    db.execute_write(session_view_sql(session_timeout_minutes))
-    db.execute_write(path_analysis_view_sql(session_timeout_minutes))
-
-
-def refresh_views(db: Database, session_timeout_minutes: int = 30) -> None:
-    """Refresh all analytics views."""
-    create_views(db, session_timeout_minutes)
+),
+derived_path_analysis AS (
+    SELECT
+        {event_id_expr} AS event_id,
+        user_id,
+        session_id,
+        event_name AS target_event,
+        step_minus_1,
+        step_minus_2,
+        step_minus_3,
+        device_type
+    FROM events_with_session_id
+    WHERE step_minus_1 IS NOT NULL
+)"""

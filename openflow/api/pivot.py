@@ -8,7 +8,8 @@ from enum import Enum
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from openflow.services import transpile_sql, get_analytics_db
+from openflow.services import get_analytics_db
+from openflow.services.sql_builder import date_trunc, extract_hour, extract_day_of_week
 
 router = APIRouter(prefix="/api", tags=["pivot"])
 
@@ -21,7 +22,6 @@ class MeasureType(str, Enum):
 class Measure(BaseModel):
     type: MeasureType
     alias: str
-
 
 
 # Universal dimensions available regardless of connection schema config
@@ -39,15 +39,12 @@ def get_pivot_options(
     db=Depends(get_analytics_db),
 ) -> dict:
     """Get available dimensions, measures, and filter options for pivot table."""
-
     events = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
 
-    # Merge universal dimensions with ALL custom properties from the connection schema config
     custom_props = db.get_custom_properties()
     custom_dimensions = {p["name"]: p["name"].replace("_", " ").title() for p in custom_props}
     dimensions = {**AVAILABLE_DIMENSIONS, **custom_dimensions}
 
-    # Build filter options dynamically from connection filter config
     filter_options = db.get_filter_options()
 
     return {
@@ -72,16 +69,8 @@ def get_pivot(
     filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
     db=Depends(get_analytics_db),
 ) -> dict:
-    """
-    Get pivot table data with flexible row/column dimensions and measures.
-
-    Row Dimensions (optional): Shown as table rows
-    Column Dimensions (optional): Shown as table columns
-    Available: event_name, date, hour, day_of_week, user_id, country, city,
-              device_type, browser, os, referrer, product_category, product_name
-
-    Measures (required): count, unique_users
-    """
+    """Get pivot table data with flexible row/column dimensions and measures."""
+    dialect = db.get_dialect()
     row_dims = [d.strip() for d in row_dimensions.split(",") if d.strip()]
     col_dims = [d.strip() for d in column_dimensions.split(",") if d.strip()]
     measure_list = [m.strip() for m in measures.split(",") if m.strip()]
@@ -92,6 +81,7 @@ def get_pivot(
     custom_props = db.get_custom_properties()
     custom_prop_exprs = db.get_custom_prop_exprs()
     valid_dims = set(AVAILABLE_DIMENSIONS.keys()) | {p["name"] for p in custom_props}
+
     invalid_row_dims = [d for d in row_dims if d not in valid_dims]
     invalid_col_dims = [d for d in col_dims if d not in valid_dims]
     if invalid_row_dims:
@@ -126,73 +116,57 @@ def get_pivot(
     def get_dimension_expr(dim: str) -> str:
         if dim == "event_name":
             return "event_name"
-        elif dim == "date":
-            return "DATE(timestamp)"
-        elif dim == "hour":
-            return "EXTRACT(HOUR FROM timestamp)::INTEGER"
-        elif dim == "day_of_week":
-            return "EXTRACT(DAYOFWEEK FROM timestamp)::INTEGER"
-        elif dim == "user_id":
+        if dim == "date":
+            return date_trunc("day", "timestamp", dialect)
+        if dim == "hour":
+            return extract_hour("timestamp", dialect)
+        if dim == "day_of_week":
+            return extract_day_of_week("timestamp", dialect)
+        if dim == "user_id":
             return "user_id"
-        elif dim in custom_prop_exprs:
+        if dim in custom_prop_exprs:
             return custom_prop_exprs[dim]
         return f'"{dim}"'
 
     def get_measure_expr(measure: str) -> str:
         if measure == "count":
             return "COUNT(*)"
-        elif measure == "unique_users":
+        if measure == "unique_users":
             return "COUNT(DISTINCT user_id)"
         return "COUNT(*)"
 
-    # Build SELECT clause with all dimensions (rows + columns) and measures
     all_dims = row_dims + col_dims
-    select_parts = []
-
-    for dim in all_dims:
-        expr = get_dimension_expr(dim)
-        select_parts.append(f"{expr} as {dim}")
-
-    for measure in measure_list:
-        expr = get_measure_expr(measure)
-        select_parts.append(f"{expr} as {measure}")
-
+    select_parts = [f"{get_dimension_expr(dim)} AS {dim}" for dim in all_dims]
+    select_parts += [f"{get_measure_expr(m)} AS {m}" for m in measure_list]
     select_clause = ", ".join(select_parts)
 
-    # Build GROUP BY clause if any dimensions are selected
     if all_dims:
-        group_by_parts = [get_dimension_expr(dim) for dim in all_dims]
-        group_by_clause = "GROUP BY " + ", ".join(group_by_parts)
+        group_by_exprs = [get_dimension_expr(dim) for dim in all_dims]
+        group_by_clause = "GROUP BY " + ", ".join(group_by_exprs)
         order_by_clause = f"ORDER BY {measure_list[0]} DESC"
     else:
         group_by_clause = ""
         order_by_clause = ""
 
-    query = transpile_sql(f"""
+    query = f"""
         SELECT {select_clause}
         FROM events
         {where_clause}
         {group_by_clause}
         {order_by_clause}
-    """)
-
+    """
     result = db.execute(query, params)
 
-    # Parse results
     data = []
     for row in result:
-        record = {}
+        record: dict = {}
         for i, dim in enumerate(all_dims):
             val = row[i]
-            if isinstance(val, datetime):
-                record[dim] = val.isoformat()
-            else:
-                record[dim] = val
+            record[dim] = val.isoformat() if isinstance(val, datetime) else val
         for i, measure in enumerate(measure_list):
             record[measure] = row[len(all_dims) + i]
         data.append(record)
 
-    # If no column dimensions, return as-is (simple table)
     if not col_dims:
         return {
             "dimensions": row_dims,
@@ -202,69 +176,47 @@ def get_pivot(
             "pivoted": False,
         }
 
-    # If column dimensions exist, pivot the data
-    # Build column headers from unique combinations of column dimension values
-    column_values = {}
+    # Pivot when column dimensions are requested
+    column_values: dict = {}
     for record in data:
         col_key = tuple(record[dim] for dim in col_dims)
-        if col_key not in column_values:
-            column_values[col_key] = True
+        column_values.setdefault(col_key, True)
 
-    # Create pivoted structure
-    pivoted_data = []
+    pivoted_data: List[dict] = []
     if row_dims:
-        # Group by row dimensions
-        row_groups = {}
+        row_groups: dict = {}
         for record in data:
             row_key = tuple(record[dim] for dim in row_dims)
-            if row_key not in row_groups:
-                row_groups[row_key] = {}
-
             col_key = tuple(record[dim] for dim in col_dims)
-            row_groups[row_key][col_key] = {m: record[m] for m in measure_list}
+            row_groups.setdefault(row_key, {})[col_key] = {m: record[m] for m in measure_list}
 
-        # Build pivoted rows
         for row_key, col_data in row_groups.items():
-            pivoted_row = {}
-            # Add row dimensions
-            for i, dim in enumerate(row_dims):
-                pivoted_row[dim] = row_key[i]
-
-            # Add measures for each column combination
+            pivoted_row: dict = {row_dims[i]: row_key[i] for i in range(len(row_dims))}
             for col_key in sorted(column_values.keys()):
                 col_label = "_".join(str(v) for v in col_key)
-                if col_key in col_data:
-                    for measure in measure_list:
-                        pivoted_row[f"{col_label}_{measure}"] = col_data[col_key][measure]
-                else:
-                    for measure in measure_list:
-                        pivoted_row[f"{col_label}_{measure}"] = 0
-
+                for measure in measure_list:
+                    pivoted_row[f"{col_label}_{measure}"] = (
+                        col_data[col_key][measure] if col_key in col_data else 0
+                    )
             pivoted_data.append(pivoted_row)
     else:
-        # No row dimensions - single row with columns
+        col_data = {
+            tuple(record[dim] for dim in col_dims): {m: record[m] for m in measure_list}
+            for record in data
+        }
         pivoted_row = {}
-        col_data = {}
-        for record in data:
-            col_key = tuple(record[dim] for dim in col_dims)
-            col_data[col_key] = {m: record[m] for m in measure_list}
-
         for col_key in sorted(column_values.keys()):
             col_label = "_".join(str(v) for v in col_key)
-            if col_key in col_data:
-                for measure in measure_list:
-                    pivoted_row[f"{col_label}_{measure}"] = col_data[col_key][measure]
-            else:
-                for measure in measure_list:
-                    pivoted_row[f"{col_label}_{measure}"] = 0
-
+            for measure in measure_list:
+                pivoted_row[f"{col_label}_{measure}"] = (
+                    col_data[col_key][measure] if col_key in col_data else 0
+                )
         pivoted_data.append(pivoted_row)
 
-    # Build column headers
-    column_headers = []
-    for col_key in sorted(column_values.keys()):
-        col_dict = {col_dims[i]: col_key[i] for i in range(len(col_dims))}
-        column_headers.append(col_dict)
+    column_headers = [
+        {col_dims[i]: col_key[i] for i in range(len(col_dims))}
+        for col_key in sorted(column_values.keys())
+    ]
 
     return {
         "dimensions": row_dims,

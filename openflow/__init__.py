@@ -3,7 +3,7 @@
 __version__ = "1.0.0"
 
 from .config import get_settings, Settings
-from .db import get_db, Database, seed_database, create_views
+from .db import get_db, Database, seed_database
 
 __all__ = [
     "__version__",
@@ -12,5 +12,4 @@ __all__ = [
     "get_db",
     "Database",
     "seed_database",
-    "create_views",
 ]

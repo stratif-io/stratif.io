@@ -5,6 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
+from openflow.db.views import session_ctes
 from openflow.services import get_analytics_db
 
 router = APIRouter(prefix="/api", tags=["sessions"])
@@ -18,8 +19,6 @@ def get_sessions_summary(
     db=Depends(get_analytics_db),
 ) -> dict:
     """Return session summary stats for the given date range, respecting dimension filters."""
-    # Build the filter subquery against events so that only sessions belonging to
-    # users who had at least one matching event in the date range are counted.
     event_where: list[str] = []
     params: list = []
 
@@ -30,6 +29,7 @@ def get_sessions_summary(
         event_where.append("timestamp <= ?")
         params.append(f"{end_date} 23:59:59")
 
+    filter_clauses: list[str] = []
     if filters:
         filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
         event_where.extend(filter_clauses)
@@ -47,7 +47,6 @@ def get_sessions_summary(
         session_where.append("ds.start_time <= ?")
         session_params.append(f"{end_date} 23:59:59")
 
-    # If there are dimension filters, add a user_id IN (...) condition.
     if filters and filter_clauses:
         session_where.append(
             f"ds.user_id IN (SELECT DISTINCT user_id FROM events {event_where_sql})"
@@ -56,12 +55,16 @@ def get_sessions_summary(
     session_where_sql = "WHERE " + " AND ".join(session_where) if session_where else ""
     all_params = session_params + (params if filters and filter_clauses else [])
 
+    timeout = db.get_session_timeout_minutes()
+    dialect = db.get_dialect()
+
     rows = db.execute(
         f"""
+        WITH {session_ctes(timeout, dialect)}
         SELECT
-            COUNT(*) as total_sessions,
-            AVG(ds.duration_sec) as avg_duration_sec,
-            AVG(ds.event_count) as avg_events_per_session
+            COUNT(*) AS total_sessions,
+            AVG(ds.duration_sec) AS avg_duration_sec,
+            AVG(ds.event_count) AS avg_events_per_session
         FROM derived_sessions ds
         {session_where_sql}
         """,

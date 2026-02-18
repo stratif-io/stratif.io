@@ -281,10 +281,11 @@ def detect_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_
     user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
 
-    if row["db_type"] != "duckdb":
+    db_type: str = row["db_type"]
+    if db_type not in ("duckdb", "sqlite"):
         raise HTTPException(
             status_code=400,
-            detail=f"Schema detection supports DuckDB only (got {row['db_type']})",
+            detail=f"Schema detection supports DuckDB and SQLite (got {db_type})",
         )
 
     try:
@@ -297,26 +298,40 @@ def detect_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_
         raise HTTPException(status_code=400, detail="No file path configured for this connection")
 
     try:
-        import duckdb as _duckdb
+        if db_type == "sqlite":
+            return _detect_schema_sqlite(file_path)
+        return _detect_schema_duckdb(file_path)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Schema detection failed: {exc}") from exc
 
-        settings = get_settings()
-        same_file = file_path != ":memory:"
 
-        if same_file:
-            duck = get_db()._get_connection()
-            tbl_schema = "main"
-            col_prefix = ""   # e.g. DESCRIBE "events"
-            mem = None
-        else:
-            mem = _duckdb.connect(":memory:")
-            mem.execute(f"ATTACH '{file_path}' AS src (READ_ONLY)")
-            duck = mem
-            tbl_schema = "src"
-            col_prefix = "src."
+def _suggest_fields(columns: list[dict]) -> dict[str, str]:
+    """Map known candidate names to actual column names for the three core fields."""
+    col_lower: dict[str, str] = {c["name"].lower(): c["name"] for c in columns}
+    suggestions: dict[str, str] = {}
+    for candidate in _KNOWN_USER_ID_COLS:
+        if candidate in col_lower:
+            suggestions["user_id_field"] = col_lower[candidate]
+            break
+    for candidate in _KNOWN_TIMESTAMP_COLS:
+        if candidate in col_lower:
+            suggestions["timestamp_field"] = col_lower[candidate]
+            break
+    for candidate in _KNOWN_EVENT_NAME_COLS:
+        if candidate in col_lower:
+            suggestions["event_name_field"] = col_lower[candidate]
+            break
+    return suggestions
 
+
+def _detect_schema_duckdb(file_path: str) -> dict:
+    import duckdb as _duckdb
+
+    duck = _duckdb.connect(file_path, read_only=True)
+    try:
         tables_result = duck.execute(
             "SELECT table_name FROM information_schema.tables "
-            f"WHERE table_schema = '{tbl_schema}' ORDER BY table_name"
+            "WHERE table_schema = 'main' ORDER BY table_name"
         ).fetchall()
         tables = [r[0] for r in tables_result]
 
@@ -325,36 +340,14 @@ def detect_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_
             tables[0] if tables else None,
         )
         if not events_table:
-            if mem:
-                mem.close()
             return {"tables": tables, "columns": [], "suggestions": {}, "proposed_custom_properties": []}
 
-        # DESCRIBE → column_name, column_type, null, key, default, extra
-        columns_result = duck.execute(f'DESCRIBE {col_prefix}"{events_table}"').fetchall()
+        # DESCRIBE → (column_name, column_type, null, key, default, extra)
+        columns_result = duck.execute(f'DESCRIBE "{events_table}"').fetchall()
         columns = [{"name": r[0], "type": r[1]} for r in columns_result]
 
-        # Determine core field suggestions
-        col_lower: dict[str, str] = {c["name"].lower(): c["name"] for c in columns}
-        suggestions: dict[str, str] = {}
-        for candidate in _KNOWN_USER_ID_COLS:
-            if candidate in col_lower:
-                suggestions["user_id_field"] = col_lower[candidate]
-                break
-        for candidate in _KNOWN_TIMESTAMP_COLS:
-            if candidate in col_lower:
-                suggestions["timestamp_field"] = col_lower[candidate]
-                break
-        for candidate in _KNOWN_EVENT_NAME_COLS:
-            if candidate in col_lower:
-                suggestions["event_name_field"] = col_lower[candidate]
-                break
-
+        suggestions = _suggest_fields(columns)
         core_values = set(suggestions.values())
-
-        # Build proposed custom properties:
-        # - flat columns (not core fields, not JSON-like) → direct path
-        # - JSON/BLOB/VARCHAR columns → sample json_keys() and propose col.key paths
-        _JSON_TYPES = {"json", "blob"}
         proposed: list[dict] = []
 
         for col in columns:
@@ -364,30 +357,19 @@ def detect_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_
                 continue
 
             is_json = any(t in sql_type for t in ("JSON", "BLOB", "STRUCT", "MAP"))
-
             if is_json:
-                # Sample distinct top-level keys from this JSON column
                 try:
                     keys_result = duck.execute(
-                        f"SELECT DISTINCT unnest(json_keys({col_prefix}\"{events_table}\".\"{name}\")) "
-                        f"FROM {col_prefix}\"{events_table}\" "
-                        f"WHERE \"{name}\" IS NOT NULL LIMIT 2000"
+                        f'SELECT DISTINCT unnest(json_keys("{events_table}"."{name}")) '
+                        f'FROM "{events_table}" WHERE "{name}" IS NOT NULL LIMIT 2000'
                     ).fetchall()
                     for (key,) in keys_result:
                         if key:
-                            proposed.append({
-                                "name": key,
-                                "path": f"{name}.{key}",
-                                "type": "string",
-                            })
+                            proposed.append({"name": key, "path": f"{name}.{key}", "type": "string"})
                 except Exception:
-                    # Fall back to proposing the column itself
                     proposed.append({"name": name, "path": name, "type": "string"})
             else:
                 proposed.append({"name": name, "path": name, "type": _infer_type(sql_type)})
-
-        if mem:
-            mem.close()
 
         return {
             "tables": tables,
@@ -396,11 +378,79 @@ def detect_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_
             "suggestions": suggestions,
             "proposed_custom_properties": proposed,
         }
+    finally:
+        duck.close()
 
-    except ImportError as exc:
-        raise HTTPException(status_code=400, detail=f"DuckDB driver not installed: {exc}") from exc
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Schema detection failed: {exc}") from exc
+
+def _detect_schema_sqlite(file_path: str) -> dict:
+    import sqlite3 as _sqlite3
+
+    conn = _sqlite3.connect(file_path, check_same_thread=False)
+    try:
+        # List all user tables (exclude sqlite_* internal tables)
+        tables_result = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' "
+            "ORDER BY name"
+        ).fetchall()
+        tables = [r[0] for r in tables_result]
+
+        events_table = next(
+            (t for t in tables if t.lower() in ("events", "event", "analytics")),
+            tables[0] if tables else None,
+        )
+        if not events_table:
+            return {"tables": tables, "columns": [], "suggestions": {}, "proposed_custom_properties": []}
+
+        # PRAGMA table_info → (cid, name, type, notnull, dflt_value, pk)
+        columns_result = conn.execute(f'PRAGMA table_info("{events_table}")').fetchall()
+        columns = [{"name": r[1], "type": r[2] or "TEXT"} for r in columns_result]
+
+        suggestions = _suggest_fields(columns)
+        core_values = set(suggestions.values())
+        proposed: list[dict] = []
+
+        for col in columns:
+            name = col["name"]
+            sql_type = col["type"].upper()
+            if name in core_values:
+                continue
+
+            # In SQLite, JSON is stored as TEXT/BLOB. Detect by sampling the column.
+            is_json = "JSON" in sql_type or "BLOB" in sql_type
+            if not is_json and sql_type in ("TEXT", ""):
+                # Sample a non-null value to see if it looks like a JSON object
+                sample = conn.execute(
+                    f'SELECT "{name}" FROM "{events_table}" '
+                    f'WHERE "{name}" IS NOT NULL AND "{name}" != \'\' LIMIT 1'
+                ).fetchone()
+                if sample and isinstance(sample[0], str) and sample[0].lstrip().startswith("{"):
+                    is_json = True
+
+            if is_json:
+                # SQLite's json_each() returns top-level keys of a JSON object
+                try:
+                    keys_result = conn.execute(
+                        f'SELECT DISTINCT j.key FROM "{events_table}", '
+                        f'json_each("{name}") AS j '
+                        f'WHERE "{name}" IS NOT NULL LIMIT 2000'
+                    ).fetchall()
+                    for (key,) in keys_result:
+                        if key:
+                            proposed.append({"name": key, "path": f"{name}.{key}", "type": "string"})
+                except Exception:
+                    proposed.append({"name": name, "path": name, "type": "string"})
+            else:
+                proposed.append({"name": name, "path": name, "type": _infer_type(sql_type)})
+
+        return {
+            "tables": tables,
+            "events_table": events_table,
+            "columns": columns,
+            "suggestions": suggestions,
+            "proposed_custom_properties": proposed,
+        }
+    finally:
+        conn.close()
 
 
 def _infer_type(sql_type: str) -> str:

@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, Query
 
-from openflow.services import transpile_sql, generate_path_analysis_query, get_analytics_db
+from openflow.db.views import path_analysis_ctes
+from openflow.services import generate_path_analysis_query, get_analytics_db
 
 router = APIRouter(prefix="/api", tags=["paths"])
 
@@ -25,9 +26,10 @@ def get_paths(
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db=Depends(get_analytics_db),
 ) -> dict:
-    """
-    Get popular paths leading to a target event.
+    """Get popular paths leading to a target event.
+
     Returns the most common 3-event sequences that preceded the target.
+    Uses dialect-aware CTEs so it works on DuckDB and SQLite.
     """
     where_clauses = ["target_event = ?"]
     params = [target_event]
@@ -37,7 +39,7 @@ def get_paths(
         params.append(device_type)
 
     date_subquery = ""
-    date_params = []
+    date_params: list = []
     if start_date or end_date:
         date_conditions = []
         if start_date:
@@ -52,27 +54,32 @@ def get_paths(
     where_clause = " AND ".join(where_clauses) + date_subquery
     params = params + date_params
 
-    query = transpile_sql(f"""
+    timeout = db.get_session_timeout_minutes()
+    dialect = db.get_dialect()
+    ctes = path_analysis_ctes(timeout, dialect)
+
+    query = f"""
+        WITH {ctes}
         SELECT
-            COALESCE(step_minus_3, 'Start') as step_3,
-            COALESCE(step_minus_2, 'Start') as step_2,
-            COALESCE(step_minus_1, 'Start') as step_1,
+            COALESCE(step_minus_3, 'Start') AS step_3,
+            COALESCE(step_minus_2, 'Start') AS step_2,
+            COALESCE(step_minus_1, 'Start') AS step_1,
             target_event,
             device_type,
-            COUNT(*) as path_count
+            COUNT(*) AS path_count
         FROM derived_path_analysis
         WHERE {where_clause}
         GROUP BY step_minus_3, step_minus_2, step_minus_1, target_event, device_type
         ORDER BY path_count DESC
         LIMIT ?
-    """)
+    """
     params.append(str(limit))
-
     result = db.execute(query, params)
 
-    total_query = transpile_sql(f"""
+    total_query = f"""
+        WITH {ctes}
         SELECT COUNT(*) FROM derived_path_analysis WHERE {where_clause}
-    """)
+    """
     total = db.execute(total_query, params[:-1])[0][0]
 
     return {
@@ -111,7 +118,12 @@ def get_path_analysis(
     event_filters: Optional[str] = Query(None, description='JSON string of event filters'),
     db=Depends(get_analytics_db),
 ) -> Dict[str, Any]:
-    """Analyze user paths through events."""
+    """Analyze user paths through events.
+
+    Works on all supported database engines. DuckDB uses a fast array-based strategy;
+    other engines use a portable self-join strategy (median_time_to_complete is NULL
+    for non-DuckDB connections, and paths are always session-scoped).
+    """
     if max_path_length < min_path_length:
         return {"error": "max_path_length must be >= min_path_length", "data": []}
     if group_by not in ("user_id", "session_id"):
@@ -134,13 +146,10 @@ def get_path_analysis(
         except json.JSONDecodeError:
             return {"error": "Invalid JSON in event_filters parameter", "data": []}
 
-    # Build extra WHERE conditions from generic dimension filters
     extra_conditions: List[str] = []
     if filters:
         filter_clauses, filter_values = db.build_filter_clauses(json.loads(filters))
-        # path_analyzer builds SQL strings, so inline values safely
         for clause, value in zip(filter_clauses, filter_values):
-            # Replace ? placeholder with escaped inline value
             extra_conditions.append(clause.replace("?", f"'{_escape_sql_string(str(value))}'", 1))
 
     query = generate_path_analysis_query(
@@ -155,7 +164,7 @@ def get_path_analysis(
         top_n=top_n,
         group_by=group_by,
         date_range=date_range,
-        sql_dialect="duckdb",
+        sql_dialect=db.get_dialect(),
         return_type="string",
         extra_where_conditions=extra_conditions or None,
         session_timeout_minutes=db.get_session_timeout_minutes(),
@@ -202,91 +211,100 @@ def get_path_funnel(
     filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
     db=Depends(get_analytics_db),
 ) -> Dict[str, Any]:
-    """
-    Calculate conversion funnel for a specific sequence of events.
+    """Calculate conversion funnel for a specific sequence of events.
+
     Users must complete events in the EXACT order specified.
+    Uses parameterised queries for all user-supplied scalar values.
     """
     event_list = [e.strip() for e in events.split(",") if e.strip()]
     if len(event_list) < 2:
         return {"error": "At least 2 events are required for a funnel", "data": []}
 
-    date_filter = ""
+    # Date / device / dimension filters are collected as (clause, param) pairs
+    # so that all values go through parameterised binding — never inline SQL.
+    filter_clauses: list[str] = []
+    filter_params: list = []
+
     if start_date:
-        date_filter += f" AND timestamp >= '{start_date} 00:00:00'"
+        filter_clauses.append("timestamp >= ?")
+        filter_params.append(f"{start_date} 00:00:00")
     if end_date:
-        date_filter += f" AND timestamp <= '{end_date} 23:59:59'"
-
-    device_filter = ""
+        filter_clauses.append("timestamp <= ?")
+        filter_params.append(f"{end_date} 23:59:59")
     if device_type:
-        device_filter = f" AND device_type = '{_escape_sql_string(device_type)}'"
-
+        filter_clauses.append("device_type = ?")
+        filter_params.append(device_type)
     if filters:
-        filter_clauses, filter_values = db.build_filter_clauses(json.loads(filters))
-        for clause, value in zip(filter_clauses, filter_values):
-            device_filter += " AND " + clause.replace(
-                "?", f"'{_escape_sql_string(str(value))}'", 1
-            )
+        dim_clauses, dim_params = db.build_filter_clauses(json.loads(filters))
+        filter_clauses.extend(dim_clauses)
+        filter_params.extend(dim_params)
 
-    cte_parts = []
-    step_cte_names = []
+    extra_sql = (" AND " + " AND ".join(filter_clauses)) if filter_clauses else ""
+
+    cte_parts: list[str] = []
+    step_cte_names: list[str] = []
+    # All params accumulated for the funnel query (each step re-uses filter_params)
+    all_params: list = []
 
     for i, event_name in enumerate(event_list):
-        safe_name = _escape_sql_string(event_name)
         if i == 0:
             cte_name = f"step{i}"
             cte_parts.append(f"""
             {cte_name} AS (
-                SELECT user_id, MIN(timestamp) as t{i}
+                SELECT user_id, MIN(timestamp) AS t{i}
                 FROM events
-                WHERE event_name = '{safe_name}'{date_filter}{device_filter}
+                WHERE event_name = ?{extra_sql}
                 GROUP BY user_id
             )""")
+            all_params.append(event_name)
+            all_params.extend(filter_params)
             step_cte_names.append(cte_name)
         else:
             prev_cte = step_cte_names[-1]
             cte_name = f"step{i}"
-            prev_time_selects = ", ".join([f"prev.t{j}" for j in range(i)])
-            prev_time_groups = ", ".join([f"prev.t{j}" for j in range(i)])
+            prev_time_selects = ", ".join(f"prev.t{j}" for j in range(i))
+            prev_time_groups = ", ".join(f"prev.t{j}" for j in range(i))
             cte_parts.append(f"""
             {cte_name} AS (
                 SELECT
                     prev.user_id,
-                    {prev_time_selects + ", " if prev_time_selects else ""}MIN(e.timestamp) as t{i}
+                    {(prev_time_selects + ', ') if prev_time_selects else ''}MIN(e.timestamp) AS t{i}
                 FROM {prev_cte} prev
                 JOIN events e ON prev.user_id = e.user_id
-                    AND e.event_name = '{safe_name}'
-                    AND e.timestamp > prev.t{i - 1}{date_filter}{device_filter}
-                GROUP BY prev.user_id{", " + prev_time_groups if prev_time_groups else ""}
+                    AND e.event_name = ?
+                    AND e.timestamp > prev.t{i - 1}{extra_sql}
+                GROUP BY prev.user_id{(', ' + prev_time_groups) if prev_time_groups else ''}
             )""")
+            all_params.append(event_name)
+            all_params.extend(filter_params)
             step_cte_names.append(cte_name)
 
     count_selects = [
-        f"(SELECT COUNT(*) FROM {step_cte_names[i]}) as step{i}_users"
+        f"(SELECT COUNT(*) FROM {step_cte_names[i]}) AS step{i}_users"
         for i in range(len(event_list))
     ]
-
     funnel_query = f"WITH {', '.join(cte_parts)} SELECT {', '.join(count_selects)}"
-    result = db.execute(funnel_query)[0]
+    result = db.execute(funnel_query, all_params)[0]
 
     occurrences_results = []
     for event_name in event_list:
-        safe_name = _escape_sql_string(event_name)
+        occ_params: list = [event_name] + filter_params
         occ_result = db.execute(
-            f"SELECT COUNT(*) FROM events WHERE event_name = '{safe_name}'{date_filter}{device_filter}"
+            f"SELECT COUNT(*) FROM events WHERE event_name = ?{extra_sql}",
+            occ_params,
         )
         occurrences_results.append(occ_result[0][0] if occ_result else 0)
 
-    steps_data = []
+    steps_data: list[dict] = []
     for i, event_name in enumerate(event_list):
         users = result[i] if result[i] else 0
         occurrences = occurrences_results[i]
-        overall_conversion_rate = 100.0
         step_conversion_rate = 100.0
+        overall_conversion_rate = 100.0
         prev_users = steps_data[-1]["users"] if steps_data else None
 
         if prev_users is not None and prev_users > 0:
             step_conversion_rate = round((users / prev_users) * 100, 2)
-
         if i > 0 and steps_data:
             first_step_users = steps_data[0]["users"]
             if first_step_users > 0:
