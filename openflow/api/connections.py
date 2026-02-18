@@ -89,6 +89,7 @@ class SchemaConfigBody(BaseModel):
     timestamp_field: str = "timestamp"
     event_name_field: str = "event_name"
     custom_properties: list[CustomProperty] = []
+    session_timeout_minutes: int = 30
 
 
 class SchemaConfigResponse(SchemaConfigBody):
@@ -156,6 +157,22 @@ def get_connection(conn_id: str, current_user: AuthUserRow = Depends(get_current
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
+
+
+@router.get("/{conn_id}/string")
+def get_connection_string(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+    """Return the (non-sensitive) connection string for DuckDB and SQLite connections."""
+    user_id = current_user.id
+    row = _get_connection_or_404(conn_id, user_id)
+    db_type = row["db_type"]
+    if db_type not in ("duckdb", "sqlite"):
+        return {"connection_string": None}
+    try:
+        creds = decrypt_credentials(row["credentials_encrypted"])
+    except Exception:
+        return {"connection_string": None}
+    file_path = creds.get("file_path") or creds.get("s3_path")
+    return {"connection_string": file_path or None}
 
 
 @router.patch("/{conn_id}", response_model=ConnectionResponse)
@@ -283,7 +300,7 @@ def detect_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_
         import duckdb as _duckdb
 
         settings = get_settings()
-        same_file = file_path != ":memory:" and os.path.abspath(file_path) == os.path.abspath(settings.db_path)
+        same_file = file_path != ":memory:"
 
         if same_file:
             duck = get_db()._get_connection()
@@ -419,6 +436,7 @@ def get_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_aut
         timestamp_field=row["timestamp_field"],
         event_name_field=row["event_name_field"],
         custom_properties=json.loads(row["custom_properties"]),
+        session_timeout_minutes=row["session_timeout_minutes"] if row["session_timeout_minutes"] is not None else 30,
         updated_at=row["updated_at"],
     )
 
@@ -437,12 +455,13 @@ def upsert_schema(
     custom_json = json.dumps([p.model_dump() for p in body.custom_properties])
     if existing:
         db.execute(
-            "UPDATE connection_schema_configs SET user_id_field=?, timestamp_field=?, event_name_field=?, custom_properties=?, updated_at=? WHERE connection_id=?",
+            "UPDATE connection_schema_configs SET user_id_field=?, timestamp_field=?, event_name_field=?, custom_properties=?, session_timeout_minutes=?, updated_at=? WHERE connection_id=?",
             (
                 body.user_id_field,
                 body.timestamp_field,
                 body.event_name_field,
                 custom_json,
+                body.session_timeout_minutes,
                 now,
                 conn_id,
             ),
@@ -451,7 +470,7 @@ def upsert_schema(
     else:
         schema_id = str(uuid.uuid4())
         db.execute(
-            "INSERT INTO connection_schema_configs (id, connection_id, user_id_field, timestamp_field, event_name_field, custom_properties, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO connection_schema_configs (id, connection_id, user_id_field, timestamp_field, event_name_field, custom_properties, session_timeout_minutes, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 schema_id,
                 conn_id,
@@ -459,6 +478,7 @@ def upsert_schema(
                 body.timestamp_field,
                 body.event_name_field,
                 custom_json,
+                body.session_timeout_minutes,
                 now,
             ),
         )
@@ -469,6 +489,7 @@ def upsert_schema(
         timestamp_field=body.timestamp_field,
         event_name_field=body.event_name_field,
         custom_properties=body.custom_properties,
+        session_timeout_minutes=body.session_timeout_minutes,
         updated_at=now,
     )
 

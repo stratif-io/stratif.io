@@ -75,7 +75,7 @@ function NavLink({
 
   const link = (
     <Link
-      to={item.href}
+      to={{ pathname: item.href, search: location.search }}
       onClick={onClick}
       className={cn(
         'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
@@ -113,6 +113,7 @@ export function Sidebar() {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
   const [openGroups, setOpenGroups] = useState<string[]>(['Analytics', 'Data'])
+  const location = useLocation()
 
   const toggleGroup = (title: string) => {
     setOpenGroups((prev) =>
@@ -143,7 +144,7 @@ export function Sidebar() {
         {/* Logo */}
         <div className="flex h-14 shrink-0 items-center border-b px-3">
           <Link
-            to="/dashboard"
+            to={{ pathname: '/dashboard', search: location.search }}
             className={cn('flex items-center gap-2.5 overflow-hidden', sidebarOpen ? '' : 'justify-center w-full')}
           >
             <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center shrink-0">

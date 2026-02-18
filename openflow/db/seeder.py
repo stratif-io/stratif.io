@@ -6,12 +6,15 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Iterator, Optional
 
+import structlog
 import pandas as pd
 import pyarrow as pa
 from faker import Faker
 
 from openflow.config import get_settings
 from openflow.db.connection import Database
+
+log = structlog.get_logger(__name__)
 
 
 FUNNEL_PATH = ["Home", "Search", "ProductView", "AddToCart", "Purchase"]
@@ -350,7 +353,12 @@ PROGRESS_INTERVAL = 50000
 class Seeder:
     """Database seeder for generating ultra-realistic analytics data."""
 
-    def __init__(self, db: Optional[Database] = None, seed: Optional[int] = None):
+    def __init__(
+        self,
+        db: Optional[Database] = None,
+        seed: Optional[int] = None,
+        num_users: Optional[int] = None,
+    ):
         self.db = db or Database()
         self._seed_value = seed
         if seed is not None:
@@ -358,6 +366,7 @@ class Seeder:
             Faker.seed(seed)
         self.faker = Faker()
         self.settings = get_settings()
+        self._num_users = num_users  # overrides settings.seed_users when set
         self._product_cache: list[dict] = []
         self._user_sessions: dict[str, list[str]] = {}
 
@@ -368,7 +377,8 @@ class Seeder:
         Returns:
             Dictionary with seeding statistics
         """
-        print("🌱 Seeding database with ultra-realistic data...")
+        n = self._num_users or self.settings.seed_users
+        log.info("seeding_start", users=n, days=self.settings.seed_days)
 
         self._generate_products()
         self._create_events_table()
@@ -379,7 +389,7 @@ class Seeder:
             self._insert_events(batch)
             total_events += len(batch)
             if total_events % PROGRESS_INTERVAL < len(batch):
-                print(f"   Generated {total_events:,} events...")
+                log.info("seeding_progress", total_events=total_events)
 
         stats = {
             "total_events": total_events,
@@ -393,16 +403,7 @@ class Seeder:
 
         self.db.close()
 
-        print(
-            f"✅ Seeded {stats['total_events']:,} events for {stats['total_users']:,} users"
-        )
-        print(
-            f"   - {stats['new_users']:,} new users, {stats['returning_users']:,} returning"
-        )
-        print(
-            f"   - {stats['power_users']:,} power users, {stats['browser_only']:,} browse-only"
-        )
-        print(f"   - {stats['completed_purchases']:,} users completed purchase")
+        log.info("seeding_complete", **stats)
 
         return stats
 
@@ -440,7 +441,7 @@ class Seeder:
     def _generate_users(self) -> list[dict]:
         """Generate user records with behavior patterns."""
         users = []
-        num_users = self.settings.seed_users
+        num_users = self._num_users or self.settings.seed_users
 
         for _ in range(num_users):
             country_code = self._weighted_choice(
@@ -831,7 +832,7 @@ class Seeder:
     def clear(self) -> None:
         """Clear all data from the database."""
         self.db.execute_write("DROP TABLE IF EXISTS events")
-        print("🗑️  Cleared database")
+        log.info("database_cleared")
 
 
 def seed_database(

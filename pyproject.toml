@@ -18,10 +18,12 @@ dependencies = [
     "python-multipart>=0.0.6",
     "httpx>=0.27.0",
     "itsdangerous>=2.2.0",
+    "structlog>=24.0.0",
 ]
 
 [project.scripts]
 serve = "openflow.main:main"
+seed-sqlite = "scripts.seed_sqlite:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -29,3 +31,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["openflow"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["db/"]

@@ -1,10 +1,12 @@
 import { Outlet } from 'react-router-dom'
 import { useAppStore } from '@/stores'
+import { useUrlSync } from '@/hooks'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { cn } from '@/lib/utils'
 
 export function DashboardLayout() {
+  useUrlSync()
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
 
   return (

@@ -1,29 +1,33 @@
 """Main application entry point for OpenFlow Analytics."""
 
 import os
-import warnings
 from contextlib import asynccontextmanager
 
+import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from openflow import __version__
 from openflow.config import get_settings
+from openflow.core.logging import setup_logging
 from openflow.db import get_db, create_views, seed_database
-from openflow.product_db import init_product_db
+from openflow.product_db import init_product_db, run_migrations
 from openflow.api import (
     auth_router,
     events_router,
     trend_router,
     retention_router,
-    sessions_router,
     paths_router,
     conversion_router,
     pivot_router,
     connections_router,
+    sessions_router,
+    ws_router,
 )
 
 settings = get_settings()
+setup_logging(log_level=settings.log_level, log_format=settings.log_format)
+log = structlog.get_logger(__name__)
 
 
 @asynccontextmanager
@@ -31,38 +35,43 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler for startup and shutdown events."""
     # Warn if JWT secret is the insecure default
     if settings.jwt_secret == "dev-jwt-secret-change-in-production":
-        warnings.warn(
-            "\n\n"
-            "⚠️  WARNING: JWT secret is set to the default development value.\n"
-            "   Set OPENFLOW_JWT_SECRET to a strong random secret before deploying!\n",
-            stacklevel=1,
+        log.warning(
+            "insecure_jwt_secret",
+            hint="Set OPENFLOW_JWT_SECRET to a strong random secret before deploying",
         )
 
+    # Ensure db directory exists before opening any connection
+    for db_file in (settings.product_db_path):
+        db_dir = os.path.dirname(db_file)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+
     # Startup
-    db = get_db()
-    needs_seeding = False
-
-    if not os.path.exists(settings.db_path):
-        needs_seeding = True
-    else:
-        if not db.table_exists("events"):
-            needs_seeding = True
-
-    if needs_seeding:
-        seed_database(db)
-
-    # Create analytics views
-    create_views(db)
-
+    #db = get_db()
+    #needs_seeding = False
+#
+    #if not os.path.exists(settings.db_path):
+    #    needs_seeding = True
+    #else:
+    #    if not db.table_exists("events"):
+    #        needs_seeding = True
+#
+    #if needs_seeding:
+    #    seed_database(db)
+#
+    ## Create analytics views
+    #create_views(db)
+#
     # Initialize product DB schema
     init_product_db()
+    run_migrations()
 
-    print("🚀 Analytics API ready!")
+    log.info("api_ready", version=__version__, log_sql=settings.log_sql)
 
     yield  # Application runs here
 
     # Shutdown
-    print("👋 Shutting down...")
+    log.info("shutting_down")
 
 
 def create_app() -> FastAPI:
@@ -88,11 +97,12 @@ def create_app() -> FastAPI:
     app.include_router(events_router)
     app.include_router(trend_router)
     app.include_router(retention_router)
-    app.include_router(sessions_router)
     app.include_router(paths_router)
     app.include_router(conversion_router)
     app.include_router(pivot_router)
     app.include_router(connections_router)
+    app.include_router(sessions_router)
+    app.include_router(ws_router)
 
     @app.get("/")
     def root():
@@ -108,8 +118,6 @@ def create_app() -> FastAPI:
                 "events": "/api/events",
                 "paths": "/api/paths?target_event=Purchase&device_type=Mobile",
                 "raw_events": "/api/raw/events",
-                "raw_sessions": "/api/raw/sessions",
-                "sessions_summary": "/api/sessions/summary",
                 "conversion": "/api/conversion",
             },
         }
@@ -128,7 +136,13 @@ app = create_app()
 def main():
     import uvicorn
 
-    uvicorn.run("openflow.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "openflow.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        reload_dirs=["openflow"],
+    )
 
 
 if __name__ == "__main__":

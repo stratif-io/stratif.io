@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useUpdateConnection, useTestConnection } from '../hooks/useConnectionsData'
+import { useUpdateConnection, useTestConnection, useConnectionString } from '../hooks/useConnectionsData'
 import type { Connection, DbType } from '@/types'
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, Copy, Check } from 'lucide-react'
 
 interface Props {
   connection: Connection
@@ -101,6 +101,37 @@ function buildCredentials(dbType: DbType, form: HTMLFormElement): Record<string,
   }
 }
 
+function ConnectionStringDisplay({ connId }: { connId: string }) {
+  const { data } = useConnectionString(connId)
+  const [copied, setCopied] = useState(false)
+  const value = data?.connection_string
+
+  if (!value) return null
+
+  function handleCopy() {
+    navigator.clipboard.writeText(value!)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-semibold">Connection String</h3>
+      <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+        <code className="flex-1 text-xs font-mono text-muted-foreground break-all">{value}</code>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+          title="Copy"
+        >
+          {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function ConnectionConfigTab({ connection }: Props) {
   const [name, setName] = useState(connection.name)
   const update = useUpdateConnection(connection.id)
@@ -139,6 +170,11 @@ export function ConnectionConfigTab({ connection }: Props) {
           required
         />
       </div>
+
+      {/* Connection string (DuckDB / SQLite only) */}
+      {(connection.db_type === 'duckdb' || connection.db_type === 'sqlite') && (
+        <ConnectionStringDisplay connId={connection.id} />
+      )}
 
       {/* Credentials */}
       <div className="space-y-3">

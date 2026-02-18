@@ -123,24 +123,6 @@ export const fetchRawEvents = (params: {
   return fetchApi<RawEventsResponse>(`/api/raw/events?${searchParams}`)
 }
 
-export const fetchSessions = (params: { limit?: number; offset?: number; connection_id?: string }) => {
-  const searchParams = new URLSearchParams()
-  if (params.limit) searchParams.set('limit', String(params.limit))
-  if (params.offset) searchParams.set('offset', String(params.offset))
-  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
-
-  return fetchApi<SessionsResponse>(`/api/raw/sessions?${searchParams}`)
-}
-
-export const fetchSessionsSummary = (params: { start_date?: string; end_date?: string; connection_id?: string }) => {
-  const searchParams = new URLSearchParams()
-  if (params.start_date) searchParams.set('start_date', params.start_date)
-  if (params.end_date) searchParams.set('end_date', params.end_date)
-  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
-
-  return fetchApi<SessionsSummaryResponse>(`/api/sessions/summary?${searchParams}`)
-}
-
 export const fetchRetention = (params: {
   start_date?: string
   end_date?: string
@@ -229,6 +211,22 @@ export const fetchPathFunnel = (params: {
   return fetchApi<PathFunnelResponse>(`/api/path-funnel?${searchParams}`)
 }
 
+export const fetchSessionsSummary = (params: {
+  start_date?: string
+  end_date?: string
+  filters?: Record<string, string | null>
+  connection_id?: string
+}) => {
+  const searchParams = new URLSearchParams()
+  if (params.start_date) searchParams.set('start_date', params.start_date)
+  if (params.end_date) searchParams.set('end_date', params.end_date)
+  const f = serializeFilters(params.filters)
+  if (f) searchParams.set('filters', f)
+  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
+
+  return fetchApi<SessionsSummaryResponse>(`/api/sessions/summary?${searchParams}`)
+}
+
 export const fetchConversion = (params: { start_date?: string; end_date?: string; connection_id?: string }) => {
   const searchParams = new URLSearchParams()
   if (params.start_date) searchParams.set('start_date', params.start_date)
@@ -297,6 +295,9 @@ export const deleteConnection = (id: string) =>
 
 export const testConnection = (id: string) =>
   fetchApi<{ ok: boolean; db_type: string }>(`/api/connections/${id}/test`, { method: 'POST' })
+
+export const fetchConnectionString = (connId: string) =>
+  fetchApi<{ connection_string: string | null }>(`/api/connections/${connId}/string`)
 
 export const fetchSchemaConfig = (connId: string) =>
   fetchApi<SchemaConfig>(`/api/connections/${connId}/schema`)

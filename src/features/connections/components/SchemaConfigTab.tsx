@@ -22,6 +22,7 @@ export function SchemaConfigTab({ connId }: Props) {
   const [userIdField, setUserIdField] = useState('user_id')
   const [timestampField, setTimestampField] = useState('timestamp')
   const [eventNameField, setEventNameField] = useState('event_name')
+  const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30)
   const [customProps, setCustomProps] = useState<CustomProperty[]>([])
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export function SchemaConfigTab({ connId }: Props) {
       setUserIdField(data.user_id_field)
       setTimestampField(data.timestamp_field)
       setEventNameField(data.event_name_field)
+      setSessionTimeoutMinutes(data.session_timeout_minutes ?? 30)
       setCustomProps(data.custom_properties)
     }
   }, [data])
@@ -51,6 +53,7 @@ export function SchemaConfigTab({ connId }: Props) {
       timestamp_field: timestampField,
       event_name_field: eventNameField,
       custom_properties: customProps,
+      session_timeout_minutes: sessionTimeoutMinutes,
     })
   }
 
@@ -123,6 +126,22 @@ export function SchemaConfigTab({ connId }: Props) {
               placeholder="event_name"
             />
           </div>
+        </div>
+
+        <div className="space-y-1.5 max-w-xs">
+          <Label htmlFor="session_timeout_minutes">Session Timeout (minutes)</Label>
+          <Input
+            id="session_timeout_minutes"
+            type="number"
+            min={1}
+            max={1440}
+            value={sessionTimeoutMinutes}
+            onChange={(e) => setSessionTimeoutMinutes(Number(e.target.value))}
+            placeholder="30"
+          />
+          <p className="text-xs text-muted-foreground">
+            Inactivity gap that starts a new session. Default: 30 min.
+          </p>
         </div>
       </div>
 

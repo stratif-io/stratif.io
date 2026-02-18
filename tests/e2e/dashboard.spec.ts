@@ -18,7 +18,6 @@ test.describe('Dashboard Page', () => {
 
     await expect(getMetricCardByTitle(page, 'Total Events')).toBeVisible()
     await expect(getMetricCardByTitle(page, 'Unique Users')).toBeVisible()
-    await expect(getMetricCardByTitle(page, 'Avg Session')).toBeVisible()
     await expect(getMetricCardByTitle(page, 'Conversion Rate')).toBeVisible()
   })
 

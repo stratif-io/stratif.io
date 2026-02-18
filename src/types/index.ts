@@ -115,6 +115,7 @@ export interface PathAnalysisData {
   path_length: number
   occurrence_count: number
   unique_users: number
+  unique_sessions: number
   percentage_of_total: number
   avg_time_to_complete: number | null
   median_time_to_complete: number | null
@@ -246,6 +247,7 @@ export interface SchemaConfig {
   timestamp_field: string
   event_name_field: string
   custom_properties: CustomProperty[]
+  session_timeout_minutes: number
   updated_at: string
 }
 
@@ -280,6 +282,7 @@ export interface SchemaConfigBody {
   timestamp_field: string
   event_name_field: string
   custom_properties: CustomProperty[]
+  session_timeout_minutes: number
 }
 
 export interface FilterConfigBody {

@@ -1,98 +1,80 @@
 """Sessions API endpoints."""
 
-from datetime import datetime
+import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from openflow.services import transpile_sql, get_analytics_db
+from openflow.services import get_analytics_db
 
 router = APIRouter(prefix="/api", tags=["sessions"])
-
-
-@router.get("/raw/sessions")
-def get_raw_sessions(
-    limit: int = Query(100, description="Number of rows to return", ge=1, le=1000),
-    offset: int = Query(0, description="Offset for pagination", ge=0),
-    db=Depends(get_analytics_db),
-) -> dict:
-    """Get derived session data."""
-    # Get total count
-    total = db.execute("SELECT COUNT(*) FROM derived_sessions")[0][0]
-
-    # Get data
-    query = transpile_sql("""
-        SELECT 
-            session_id,
-            user_id,
-            start_time,
-            duration_sec,
-            event_count
-        FROM derived_sessions
-        ORDER BY start_time DESC
-        LIMIT ? OFFSET ?
-    """)
-    result = db.execute(query, [limit, offset])
-
-    return {
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "data": [
-            {
-                "session_id": row[0],
-                "user_id": row[1],
-                "start_time": row[2].isoformat()
-                if isinstance(row[2], datetime)
-                else str(row[2]),
-                "duration_sec": row[3],
-                "event_count": row[4],
-            }
-            for row in result
-        ],
-    }
 
 
 @router.get("/sessions/summary")
 def get_sessions_summary(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
     db=Depends(get_analytics_db),
 ) -> dict:
-    """
-    Get summary statistics for sessions.
-    Returns average session duration, total sessions, and average events per session.
-    """
-    where_clauses = []
-    params = []
+    """Return session summary stats for the given date range, respecting dimension filters."""
+    # Build the filter subquery against events so that only sessions belonging to
+    # users who had at least one matching event in the date range are counted.
+    event_where: list[str] = []
+    params: list = []
 
     if start_date:
-        where_clauses.append("start_time >= ?")
+        event_where.append("timestamp >= ?")
         params.append(f"{start_date} 00:00:00")
-
     if end_date:
-        where_clauses.append("start_time <= ?")
+        event_where.append("timestamp <= ?")
         params.append(f"{end_date} 23:59:59")
 
-    where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+    if filters:
+        filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+        event_where.extend(filter_clauses)
+        params.extend(filter_params)
 
-    query = transpile_sql(f"""
-        SELECT 
-            AVG(duration_sec) as avg_duration_sec,
+    event_where_sql = "WHERE " + " AND ".join(event_where) if event_where else ""
+
+    # Session date window: restrict to sessions that started in the date range.
+    session_where: list[str] = []
+    session_params: list = []
+    if start_date:
+        session_where.append("ds.start_time >= ?")
+        session_params.append(f"{start_date} 00:00:00")
+    if end_date:
+        session_where.append("ds.start_time <= ?")
+        session_params.append(f"{end_date} 23:59:59")
+
+    # If there are dimension filters, add a user_id IN (...) condition.
+    if filters and filter_clauses:
+        session_where.append(
+            f"ds.user_id IN (SELECT DISTINCT user_id FROM events {event_where_sql})"
+        )
+
+    session_where_sql = "WHERE " + " AND ".join(session_where) if session_where else ""
+    all_params = session_params + (params if filters and filter_clauses else [])
+
+    rows = db.execute(
+        f"""
+        SELECT
             COUNT(*) as total_sessions,
-            AVG(event_count) as avg_events_per_session
-        FROM derived_sessions
-        {where_clause}
-    """)
+            AVG(ds.duration_sec) as avg_duration_sec,
+            AVG(ds.event_count) as avg_events_per_session
+        FROM derived_sessions ds
+        {session_where_sql}
+        """,
+        all_params or None,
+    )
 
-    result = db.execute(query, params)
-
+    row = rows[0] if rows else (0, 0.0, 0.0)
     return {
         "data": [
             {
-                "avg_duration_sec": round(result[0][0], 2) if result[0][0] else 0,
-                "total_sessions": result[0][1],
-                "avg_events_per_session": round(result[0][2], 2) if result[0][2] else 0,
+                "total_sessions": row[0] or 0,
+                "avg_duration_sec": round(row[1] or 0.0, 2),
+                "avg_events_per_session": round(row[2] or 0.0, 2),
             }
         ]
     }

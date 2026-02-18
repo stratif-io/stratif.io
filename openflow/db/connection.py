@@ -1,18 +1,20 @@
 """Database connection and query execution."""
 
 import duckdb
+import structlog
 from typing import Optional
 from contextlib import contextmanager
 
 from openflow.config import get_settings
+
+log = structlog.get_logger(__name__)
 
 
 class Database:
     """Database connection manager for DuckDB."""
 
     def __init__(self, db_path: Optional[str] = None):
-        settings = get_settings()
-        self.db_path = db_path or settings.db_path
+        self.db_path = db_path
         self._conn: Optional[duckdb.DuckDBPyConnection] = None
 
     @contextmanager
@@ -38,6 +40,8 @@ class Database:
 
     def execute(self, query: str, params: Optional[list] = None) -> list[tuple]:
         """Execute a query and return results."""
+        if get_settings().log_sql:
+            log.debug("sql_query", sql=query, params=params)
         with self.connection() as conn:
             if params:
                 return conn.execute(query, params).fetchall()
@@ -45,11 +49,15 @@ class Database:
 
     def execute_many(self, query: str, params: list) -> None:
         """Execute a query with multiple parameter sets."""
+        if get_settings().log_sql:
+            log.debug("sql_executemany", sql=query, batch_size=len(params))
         conn = self._get_connection()
         conn.executemany(query, params)
 
     def execute_write(self, query: str, params: Optional[list] = None) -> None:
         """Execute a write query (INSERT, UPDATE, CREATE)."""
+        if get_settings().log_sql:
+            log.debug("sql_write", sql=query, params=params)
         conn = self._get_connection()
         if params:
             conn.execute(query, params)
@@ -96,13 +104,17 @@ class Database:
         """Return {field_name -> sql_expr} for all custom properties."""
         return {}
 
+    def get_session_timeout_minutes(self) -> int:
+        """Return the session inactivity timeout in minutes."""
+        return 30
+
 
 _db: Optional[Database] = None
 
 
-def get_db() -> Database:
+def get_db(file_path:Optional["str"]) -> Database:
     """Get the default database instance."""
     global _db
     if _db is None:
-        _db = Database()
+        _db = Database(file_path)
     return _db

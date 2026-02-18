@@ -3,6 +3,7 @@ import {
   createConnection,
   deleteConnection,
   fetchConnection,
+  fetchConnectionString,
   fetchConnections,
   fetchFilterConfig,
   fetchFilterOptions,
@@ -107,6 +108,14 @@ export function useFilterOptions(connId: string) {
     enabled: !!connId,
     retry: false,
     staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useConnectionString(connId: string) {
+  return useQuery({
+    queryKey: ['connections', connId, 'string'],
+    queryFn: () => fetchConnectionString(connId),
+    enabled: !!connId,
   })
 }
 

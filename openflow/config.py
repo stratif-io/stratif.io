@@ -28,11 +28,8 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
-    # Analytics Database (DuckDB)
-    db_path: str = "openflow.duckdb"
-
     # Product Database (SQLite — stores users, connections, configs)
-    product_db_path: str = "openflow_product.sqlite"
+    product_db_path: str = "db/openflow_product.sqlite"
 
     # Encryption key for credentials (Fernet 32-byte URL-safe base64 key)
     # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
@@ -41,6 +38,11 @@ class Settings(BaseSettings):
     # Seeding
     seed_users: int = 80000
     seed_days: int = 60
+
+    # Logging
+    log_level: str = "INFO"    # OPENFLOW_LOG_LEVEL=DEBUG|INFO|WARNING|ERROR
+    log_sql: bool = False       # OPENFLOW_LOG_SQL=true  → emit every SQL query at DEBUG
+    log_format: str = "console" # OPENFLOW_LOG_FORMAT=console|json
 
     @property
     def cors_list(self) -> list[str]:
@@ -52,6 +54,9 @@ class Settings(BaseSettings):
     class Config:
         env_prefix = "OPENFLOW_"
         case_sensitive = False
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
 @lru_cache()

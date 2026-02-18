@@ -1,7 +1,10 @@
 """SQL transpilation service using sqlglot."""
 
 import sqlglot
+import structlog
 from typing import Optional
+
+log = structlog.get_logger(__name__)
 
 
 class Transpiler:
@@ -39,7 +42,7 @@ class Transpiler:
                 query, read=self.read_dialect, write=target_dialect
             )[0]
         except Exception as e:
-            print(f"⚠️  Transpilation warning: {e}")
+            log.warning("transpilation_warning", error=str(e), read=self.read_dialect, write=target_dialect)
             return query
 
     def validate(self, query: str, dialect: Optional[str] = None) -> bool:

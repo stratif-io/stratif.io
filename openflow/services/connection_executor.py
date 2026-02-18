@@ -5,12 +5,15 @@ import os
 from typing import Optional
 
 import duckdb
+import structlog
 from fastapi import Depends, HTTPException, Query
 
 from openflow.config import get_settings
+
+log = structlog.get_logger(__name__)
 from openflow.core.jwt_auth import AuthUserRow, get_current_auth_user
 from openflow.db import get_db
-from openflow.db.views import SESSION_VIEW_SQL, PATH_ANALYSIS_VIEW_SQL
+from openflow.db.views import session_view_sql, path_analysis_view_sql
 from openflow.product_db import get_product_db
 from openflow.services.crypto import decrypt_credentials
 
@@ -54,6 +57,7 @@ class AnalyticsDatabase:
         filter_exprs: Optional[dict[str, str]] = None,
         custom_props: Optional[list[dict]] = None,
         custom_prop_exprs: Optional[dict[str, str]] = None,
+        session_timeout_minutes: int = 30,
     ):
         self._conn = conn
         # filter_fields: list of {field, label, icon} dicts
@@ -64,8 +68,11 @@ class AnalyticsDatabase:
         self._custom_props: list[dict] = custom_props or []
         # custom_prop_exprs: {name -> sql_expr} for all custom properties
         self._custom_prop_exprs: dict[str, str] = custom_prop_exprs or {}
+        self._session_timeout_minutes: int = session_timeout_minutes
 
     def execute(self, query: str, params: Optional[list] = None) -> list[tuple]:
+        if get_settings().log_sql:
+            log.debug("sql_query", sql=query, params=params, source="analytics_db")
         if params:
             return self._conn.execute(query, params).fetchall()
         return self._conn.execute(query).fetchall()
@@ -124,6 +131,10 @@ class AnalyticsDatabase:
     def get_custom_prop_exprs(self) -> dict[str, str]:
         """Return {name -> sql_expr} for all custom properties."""
         return self._custom_prop_exprs
+
+    def get_session_timeout_minutes(self) -> int:
+        """Return the session inactivity timeout in minutes for this connection."""
+        return self._session_timeout_minutes
 
 
 # ---------------------------------------------------------------------------
@@ -191,6 +202,11 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
     ts_f = schema_row["timestamp_field"] if schema_row else "timestamp"
     en_f = schema_row["event_name_field"] if schema_row else "event_name"
     custom_props: list[dict] = json.loads(schema_row["custom_properties"]) if schema_row else []
+    session_timeout_minutes: int = (
+        schema_row["session_timeout_minutes"]
+        if schema_row and schema_row["session_timeout_minutes"] is not None
+        else 30
+    )
 
     # Build {field_name -> sql_expr} from custom properties
     custom_prop_exprs: dict[str, str] = {
@@ -216,9 +232,14 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
 
     # If the target file is the same as the already-open default DB, skip ATTACH
     # (DuckDB raises a "Unique file handle conflict" if you try to attach an open file).
-    settings = get_settings()
-    if file_path != ":memory:" and os.path.abspath(file_path) == os.path.abspath(settings.db_path):
-        db = get_db()
+    if file_path != ":memory:":
+        db = get_db(file_path)
+        # Ensure derived views exist in the file with the correct session timeout.
+        # CREATE OR REPLACE VIEW is idempotent and persists the view to disk so all
+        # subsequent connections (including the short-lived ones from Database.execute)
+        # can query derived_sessions and derived_path_analysis.
+        db.execute_write(session_view_sql(session_timeout_minutes))
+        db.execute_write(path_analysis_view_sql(session_timeout_minutes))
         # Wrap the default Database in an AnalyticsDatabase-compatible object by
         # returning a thin AnalyticsDatabase that delegates to the default connection.
         # Since the default DB already has the normalized views, open a fresh
@@ -234,6 +255,7 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         db.get_filter_options = lambda: _get_filter_options_from_exprs_db(db, filter_fields, filter_exprs)  # type: ignore[method-assign]
         db.get_custom_properties = lambda: custom_props  # type: ignore[method-assign]
         db.get_custom_prop_exprs = lambda: custom_prop_exprs  # type: ignore[method-assign]
+        db.get_session_timeout_minutes = lambda: session_timeout_minutes  # type: ignore[method-assign]
         return db  # type: ignore[return-value]
 
     # Open in-memory DuckDB, attach the source file read-only
@@ -244,8 +266,8 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
     mem.execute(_build_events_view_sql(uid_f, ts_f, en_f))
 
     # Create derived analytics views (reference the normalized events view above)
-    mem.execute(SESSION_VIEW_SQL)
-    mem.execute(PATH_ANALYSIS_VIEW_SQL)
+    mem.execute(session_view_sql(session_timeout_minutes))
+    mem.execute(path_analysis_view_sql(session_timeout_minutes))
 
     return AnalyticsDatabase(
         mem,
@@ -253,6 +275,7 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         filter_exprs=filter_exprs,
         custom_props=custom_props,
         custom_prop_exprs=custom_prop_exprs,
+        session_timeout_minutes=session_timeout_minutes,
     )
 
 

@@ -158,6 +158,7 @@ def get_path_analysis(
         sql_dialect="duckdb",
         return_type="string",
         extra_where_conditions=extra_conditions or None,
+        session_timeout_minutes=db.get_session_timeout_minutes(),
     )
 
     query_str = str(query) if query is not None else ""
@@ -169,9 +170,10 @@ def get_path_analysis(
             "path_length": row[1],
             "occurrence_count": row[2],
             "unique_users": row[3],
-            "percentage_of_total": row[4],
-            "avg_time_to_complete": row[5] if len(row) > 5 else None,
-            "median_time_to_complete": row[6] if len(row) > 6 else None,
+            "unique_sessions": row[4],
+            "percentage_of_total": row[5],
+            "avg_time_to_complete": row[6] if len(row) > 6 else None,
+            "median_time_to_complete": row[7] if len(row) > 7 else None,
         }
         for row in result
     ]

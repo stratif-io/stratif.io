@@ -38,6 +38,7 @@ class PathAnalyzer:
         sql_dialect: str = "duckdb",
         return_type: str = "string",
         extra_where_conditions: Optional[List[str]] = None,
+        session_timeout_minutes: int = 30,
     ) -> Union[str, exp.Expression]:
         """
         Generate SQL query to analyze event paths and identify popular sequences.
@@ -56,7 +57,8 @@ class PathAnalyzer:
             date_range: Optional tuple of (start_date, end_date)
             sql_dialect: Target SQL dialect
             return_type: "string" or "ast"
-            extra_where_conditions: Additional pre-built SQL WHERE conditions (e.g. from filter config)
+            extra_where_conditions: Additional pre-built SQL WHERE conditions
+            session_timeout_minutes: Inactivity gap that defines a new session
 
         Returns:
             SQL query as string or SQLGlot AST object
@@ -77,8 +79,10 @@ class PathAnalyzer:
             min_path_length=min_path_length,
             max_path_length=effective_max_length,
             top_n=top_n,
+            group_by=group_by,
             date_range=date_range,
             extra_where_conditions=extra_where_conditions,
+            session_timeout_minutes=session_timeout_minutes,
         )
 
         if return_type == "ast":
@@ -128,8 +132,10 @@ class PathAnalyzer:
         min_path_length: int,
         max_path_length: int,
         top_n: int,
+        group_by: str,
         date_range: Optional[Tuple[str, str]],
         extra_where_conditions: Optional[List[str]] = None,
+        session_timeout_minutes: int = 30,
     ) -> str:
         """Build the complete path analysis query as SQL string."""
 
@@ -145,11 +151,16 @@ class PathAnalyzer:
             max_time_between_events, time_unit
         )
         start_end_conditions = self._build_start_end_conditions(start_event, end_event)
+
+        # Sessions are always computed — group_by only affects how user_sequences
+        # partitions the event lists (per-user journey vs per-session journey).
+        session_cte = self._build_session_cte(session_timeout_minutes)
+        sequences_group_by = "session_id, user_id" if group_by == "session_id" else "user_id"
         subsequence_cte = self._build_subsequence_cte(min_path_length, max_path_length)
 
         query = f"""
 WITH filtered_events AS (
-    SELECT 
+    SELECT
         user_id,
         event_name,
         timestamp,
@@ -157,20 +168,23 @@ WITH filtered_events AS (
     FROM {table_name}
     {where_clause}
 ),
+{session_cte},
 user_sequences AS (
-    SELECT 
+    SELECT
         user_id,
         LIST(event_name ORDER BY timestamp, event_name) as events,
-        LIST(timestamp ORDER BY timestamp, event_name) as timestamps
-    FROM filtered_events
-    GROUP BY user_id
+        LIST(timestamp ORDER BY timestamp, event_name) as timestamps,
+        LIST(session_id ORDER BY timestamp, event_name) as session_ids
+    FROM events_sessionized
+    GROUP BY {sequences_group_by}
 ),
 {subsequence_cte},
 valid_paths AS (
-    SELECT 
+    SELECT
         user_id,
         path,
         path_timestamps,
+        path_session_ids,
         start_ts,
         end_ts
     FROM all_subsequences
@@ -179,28 +193,60 @@ valid_paths AS (
     {start_end_conditions}
     {time_validation}
 )
-SELECT 
+SELECT
     ARRAY_TO_STRING(path, ' -> ') as path,
     ARRAY_LENGTH(path) as path_length,
     COUNT(*) as occurrence_count,
     COUNT(DISTINCT user_id) as unique_users,
+    ARRAY_LENGTH(LIST_DISTINCT(FLATTEN(LIST(path_session_ids)))) as unique_sessions,
     ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) as percentage_of_total,
     AVG(EPOCH(end_ts - start_ts)) as avg_time_to_complete,
     MEDIAN(EPOCH(end_ts - start_ts)) as median_time_to_complete
 FROM valid_paths
 GROUP BY path, ARRAY_LENGTH(path)
-ORDER BY occurrence_count DESC
+ORDER BY unique_users DESC
 LIMIT {top_n}
 """
         return query.strip()
 
+    def _build_session_cte(self, session_timeout_minutes: int) -> str:
+        """Build CTEs that assign a session_id to each event based on inactivity gap.
+
+        Split into two CTEs to avoid nesting window functions (LAG inside SUM OVER),
+        which DuckDB does not allow.
+        """
+        timeout_seconds = session_timeout_minutes * 60
+        return f"""events_with_prev AS (
+    SELECT
+        user_id,
+        event_name,
+        timestamp,
+        LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp) AS prev_timestamp
+    FROM filtered_events
+),
+events_sessionized AS (
+    SELECT
+        user_id,
+        event_name,
+        timestamp,
+        user_id || '_' || CAST(
+            SUM(CASE
+                WHEN prev_timestamp IS NULL
+                    OR EPOCH(timestamp - prev_timestamp) > {timeout_seconds}
+                THEN 1 ELSE 0 END
+            ) OVER (PARTITION BY user_id ORDER BY timestamp ROWS UNBOUNDED PRECEDING)
+        AS VARCHAR) AS session_id
+    FROM events_with_prev
+)"""
+
     def _build_subsequence_cte(self, min_length: int, max_length: int) -> str:
         """Build CTE for generating all subsequences."""
         return f"""all_subsequences AS (
-    SELECT 
+    SELECT
         user_id,
         events[i:j] as path,
         timestamps[i:j] as path_timestamps,
+        session_ids[i:j] as path_session_ids,
         timestamps[i] as start_ts,
         timestamps[j] as end_ts
     FROM user_sequences,
@@ -341,31 +387,13 @@ def generate_path_analysis_query(
     sql_dialect: str = "duckdb",
     return_type: str = "string",
     extra_where_conditions: Optional[List[str]] = None,
+    session_timeout_minutes: int = 30,
 ) -> Union[str, exp.Expression]:
     """
     Generate SQL query to analyze event paths and identify popular sequences.
 
     This is a convenience function that creates a PathAnalyzer instance
     and generates the query.
-
-    Args:
-        table_name: Name of the events table
-        start_event: Optional event name that paths must start with
-        end_event: Optional event name that paths must end with
-        event_filters: Dict mapping event names to property filters
-        max_time_between_events: Maximum time between consecutive events
-        time_unit: Unit for max_time_between_events
-        min_path_length: Minimum number of events in a path
-        max_path_length: Maximum number of events in a path
-        top_n: Number of top paths to return
-        group_by: Column to group paths by
-        date_range: Optional tuple of (start_date, end_date)
-        sql_dialect: Target SQL dialect
-        return_type: "string" or "ast"
-        extra_where_conditions: Additional pre-built SQL WHERE conditions from filter config
-
-    Returns:
-        SQL query as string or SQLGlot AST object
     """
     analyzer = PathAnalyzer(dialect=sql_dialect)
     return analyzer.generate_path_analysis_query(
@@ -383,4 +411,5 @@ def generate_path_analysis_query(
         sql_dialect=sql_dialect,
         return_type=return_type,
         extra_where_conditions=extra_where_conditions,
+        session_timeout_minutes=session_timeout_minutes,
     )

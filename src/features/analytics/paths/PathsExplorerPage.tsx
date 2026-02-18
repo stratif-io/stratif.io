@@ -47,6 +47,18 @@ const STEP_COLORS = [
   'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300',
 ]
 
+function hashEventName(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0
+  }
+  return Math.abs(h)
+}
+
+function getEventColor(eventName: string): string {
+  return STEP_COLORS[hashEventName(eventName) % STEP_COLORS.length]
+}
+
 function formatTime(seconds: number | null): string {
   if (seconds === null) return '—'
   if (seconds < 60) return `${seconds.toFixed(0)}s`
@@ -98,7 +110,7 @@ function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
                 <span
                   className={cn(
                     'text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap',
-                    STEP_COLORS[i % STEP_COLORS.length]
+                    getEventColor(step)
                   )}
                 >
                   {step}
@@ -131,6 +143,12 @@ function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
                 {path.unique_users.toLocaleString()}
               </span>
               &nbsp;users
+            </span>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">
+                {path.unique_sessions.toLocaleString()}
+              </span>
+              &nbsp;sessions
             </span>
             <span className="text-xs">
               <span className="font-semibold text-primary">{path.percentage_of_total}%</span>

@@ -60,6 +60,7 @@ export function PathExplorerTable({ data }: PathExplorerTableProps) {
                   Users
                 </div>
               </TableHead>
+              <TableHead className="text-right">Sessions</TableHead>
               <TableHead className="text-right">%</TableHead>
               <TableHead className="text-right">
                 <div className="flex items-center justify-end gap-1">
@@ -106,6 +107,9 @@ export function PathExplorerTable({ data }: PathExplorerTableProps) {
                     {path.occurrence_count.toLocaleString()}
                   </TableCell>
                   <TableCell className="text-right">{path.unique_users.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">
+                    {path.unique_sessions.toLocaleString()}
+                  </TableCell>
                   <TableCell className="text-right">
                     <Badge variant="outline">{path.percentage_of_total}%</Badge>
                   </TableCell>

@@ -102,6 +102,7 @@ export const PathAnalysisDataSchema = z.object({
   path_length: z.number().int().min(2),
   occurrence_count: z.number().int().nonnegative(),
   unique_users: z.number().int().nonnegative(),
+  unique_sessions: z.number().int().nonnegative(),
   percentage_of_total: z.number().min(0).max(100),
   avg_time_to_complete: z.number().nullable(),
   median_time_to_complete: z.number().nullable(),

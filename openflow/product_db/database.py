@@ -10,9 +10,9 @@ from openflow.config import get_settings
 class ProductDatabase:
     """Manages the SQLite product database (users, connections, configs)."""
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self):
         settings = get_settings()
-        self.db_path = db_path or settings.product_db_path
+        self.db_path = settings.product_db_path
 
     @contextmanager
     def _conn(self):

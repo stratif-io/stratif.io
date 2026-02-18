@@ -68,6 +68,7 @@ describe('usePathExplorer', () => {
           path_length: 3,
           occurrence_count: 100,
           unique_users: 50,
+          unique_sessions: 30,
           percentage_of_total: 25.5,
           avg_time_to_complete: 120,
           median_time_to_complete: 100,

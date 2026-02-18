@@ -5,7 +5,7 @@ import { MetricCard } from './components/MetricCard'
 import { ActivityChart } from './components/ActivityChart'
 import { TopEvents } from './components/TopEvents'
 import { useDashboardMetrics } from './hooks/useDashboardMetrics'
-import { MousePointerClick, Users, Clock, Target } from 'lucide-react'
+import { MousePointerClick, Users, Layers } from 'lucide-react'
 import { SPACING, TYPOGRAPHY, GRID_COLS } from '@/lib/constants'
 
 export function DashboardPage() {
@@ -55,24 +55,13 @@ export function DashboardPage() {
               </div>
               <div style={{ animationDelay: '200ms' }}>
                 <MetricCard
-                  title="Avg Session"
-                  value={`${Math.floor(metrics.avgDuration / 60)}m ${Math.round(metrics.avgDuration % 60)}s`}
-                  change={8.5}
-                  changeType="positive"
-                  icon={Clock}
-                  description="vs previous period"
-                  loading={isLoading}
-                />
-              </div>
-              <div style={{ animationDelay: '300ms' }}>
-                <MetricCard
-                  title="Conversion Rate"
-                  value={`${metrics.conversionRate.toFixed(1)}%`}
-                  change={12.3}
-                  changeType="positive"
-                  icon={Target}
-                  description="Users who purchased after viewing home"
-                  tooltip="Calculated as: users who completed a Purchase event after their first Home event, divided by total users who viewed Home."
+                  title="Total Sessions"
+                  value={metrics.totalSessions.toLocaleString()}
+                  numericValue={metrics.totalSessions}
+                  change={0}
+                  changeType="neutral"
+                  icon={Layers}
+                  description="unique sessions"
                   loading={isLoading}
                 />
               </div>

@@ -116,7 +116,7 @@ export const ICON_SIZES = {
 
 // Responsive Grid Columns
 export const GRID_COLS = {
-  metrics: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+  metrics: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
   cards: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
   split: 'grid-cols-1 lg:grid-cols-2',
 } as const;

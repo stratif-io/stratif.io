@@ -20,13 +20,14 @@ CREATE TABLE IF NOT EXISTS connections (
 );
 
 CREATE TABLE IF NOT EXISTS connection_schema_configs (
-    id                TEXT PRIMARY KEY,
-    connection_id     TEXT UNIQUE NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
-    user_id_field     TEXT NOT NULL DEFAULT 'user_id',
-    timestamp_field   TEXT NOT NULL DEFAULT 'timestamp',
-    event_name_field  TEXT NOT NULL DEFAULT 'event_name',
-    custom_properties TEXT NOT NULL DEFAULT '[]',
-    updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    id                       TEXT PRIMARY KEY,
+    connection_id            TEXT UNIQUE NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
+    user_id_field            TEXT NOT NULL DEFAULT 'user_id',
+    timestamp_field          TEXT NOT NULL DEFAULT 'timestamp',
+    event_name_field         TEXT NOT NULL DEFAULT 'event_name',
+    custom_properties        TEXT NOT NULL DEFAULT '[]',
+    session_timeout_minutes  INTEGER NOT NULL DEFAULT 30,
+    updated_at               TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
 CREATE TABLE IF NOT EXISTS connection_filter_configs (
@@ -65,3 +66,30 @@ def init_product_db() -> None:
     finally:
         conn.close()
     print("✅ Product DB initialized")
+
+
+# ---------------------------------------------------------------------------
+# Incremental migrations (safe to re-run)
+# ---------------------------------------------------------------------------
+
+_MIGRATIONS = [
+    # 001 — session_timeout_minutes on schema configs
+    "ALTER TABLE connection_schema_configs ADD COLUMN session_timeout_minutes INTEGER NOT NULL DEFAULT 30",
+]
+
+
+def run_migrations() -> None:
+    """Apply incremental schema migrations; each is silently skipped if already applied."""
+    import sqlite3
+
+    db = get_product_db()
+    conn = sqlite3.connect(db.db_path)
+    try:
+        for sql in _MIGRATIONS:
+            try:
+                conn.execute(sql)
+            except sqlite3.OperationalError:
+                pass  # column already exists
+        conn.commit()
+    finally:
+        conn.close()
