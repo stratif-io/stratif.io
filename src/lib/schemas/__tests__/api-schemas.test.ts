@@ -378,50 +378,18 @@ describe('RetentionCohortSchema', () => {
     const result = RetentionCohortSchema.safeParse({
       cohort_date: '2024-01-01',
       cohort_size: 100,
-      day_0_percent: 100,
-      day_1_percent: 80,
-      day_7_percent: 50,
-      day_14_percent: 30,
-      day_30_percent: 20,
+      retention_series: [100, 80, 70, 60, 50, 40, 30],
+      milestone_values: [80, 50, 30, 20],
     })
     expect(result.success).toBe(true)
   })
 
-  it('rejects percent over 100', () => {
+  it('accepts empty series arrays', () => {
     const result = RetentionCohortSchema.safeParse({
       cohort_date: '2024-01-01',
       cohort_size: 100,
-      day_0_percent: 101,
-      day_1_percent: 80,
-      day_7_percent: 50,
-      day_14_percent: 30,
-      day_30_percent: 20,
-    })
-    expect(result.success).toBe(false)
-  })
-
-  it('rejects negative percent', () => {
-    const result = RetentionCohortSchema.safeParse({
-      cohort_date: '2024-01-01',
-      cohort_size: 100,
-      day_0_percent: -1,
-      day_1_percent: 80,
-      day_7_percent: 50,
-      day_14_percent: 30,
-      day_30_percent: 20,
-    })
-    expect(result.success).toBe(false)
-  })
-
-  it('accepts zero percent', () => {
-    const result = RetentionCohortSchema.safeParse({
-      cohort_date: '2024-01-01',
-      cohort_size: 100,
-      day_0_percent: 0,
-      day_1_percent: 0,
-      day_7_percent: 0,
-      day_14_percent: 0,
-      day_30_percent: 0,
+      retention_series: [],
+      milestone_values: [],
     })
     expect(result.success).toBe(true)
   })
@@ -430,11 +398,17 @@ describe('RetentionCohortSchema', () => {
     const result = RetentionCohortSchema.safeParse({
       cohort_date: '2024-01-01',
       cohort_size: -1,
-      day_0_percent: 100,
-      day_1_percent: 80,
-      day_7_percent: 50,
-      day_14_percent: 30,
-      day_30_percent: 20,
+      retention_series: [100],
+      milestone_values: [80],
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects missing retention_series', () => {
+    const result = RetentionCohortSchema.safeParse({
+      cohort_date: '2024-01-01',
+      cohort_size: 100,
+      milestone_values: [80],
     })
     expect(result.success).toBe(false)
   })

@@ -126,12 +126,14 @@ export const fetchRawEvents = (params: {
 export const fetchRetention = (params: {
   start_date?: string
   end_date?: string
+  granularity?: 'day' | 'week' | 'month'
   filters?: Record<string, string | null>
   connection_id?: string
 }) => {
   const searchParams = new URLSearchParams()
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
+  if (params.granularity) searchParams.set('granularity', params.granularity)
   const f = serializeFilters(params.filters)
   if (f) searchParams.set('filters', f)
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)

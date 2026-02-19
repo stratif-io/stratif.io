@@ -33,3 +33,4 @@ db/
 # Logs
 *.log
 .env
+seeders/.env.seed

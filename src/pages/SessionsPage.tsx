@@ -20,8 +20,8 @@ export default function SessionsPage() {
   const [page, setPage] = useState(1)
   const limit = 20
 
-  const startDate = format(dateRange.from, 'yyyy-MM-dd')
-  const endDate = format(dateRange.to, 'yyyy-MM-dd')
+  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
+  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
 
   const { data: sessionsData, isLoading } = useQuery({
     queryKey: ['sessions', page, startDate, endDate],

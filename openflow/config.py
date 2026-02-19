@@ -35,10 +35,6 @@ class Settings(BaseSettings):
     # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
     encryption_key: str = "dev-insecure-key-replace-in-production-padded=="
 
-    # Seeding
-    seed_users: int = 80000
-    seed_days: int = 60
-
     # Logging
     log_level: str = "INFO"    # OPENFLOW_LOG_LEVEL=DEBUG|INFO|WARNING|ERROR
     log_sql: bool = False       # OPENFLOW_LOG_SQL=true  → emit every SQL query at DEBUG

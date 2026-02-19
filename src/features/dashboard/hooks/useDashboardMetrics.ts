@@ -26,8 +26,8 @@ export interface UseDashboardMetricsReturn {
 export function useDashboardMetrics({
   dateRange,
 }: UseDashboardMetricsOptions): UseDashboardMetricsReturn {
-  const startDate = format(dateRange.from, 'yyyy-MM-dd')
-  const endDate = format(dateRange.to, 'yyyy-MM-dd')
+  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
+  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
   const { activeFilters, activeConnectionId } = useAppStore()
 
   const { data: currentTrend, isLoading: currentLoading } = useQuery({

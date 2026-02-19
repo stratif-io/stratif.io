@@ -4,7 +4,6 @@ export { TrendChart } from './trends/components/TrendChart'
 
 export { RetentionPage } from './retention/RetentionPage'
 export { useRetentionData } from './retention/hooks/useRetentionData'
-export { RetentionChart } from './retention/components/RetentionChart'
 export { RetentionTable } from './retention/components/RetentionTable'
 
 export { PathsPage } from './paths/PathsPage'

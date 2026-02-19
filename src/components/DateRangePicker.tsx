@@ -26,22 +26,24 @@ const PRESETS: PresetConfig[] = [
   { label: 'Last 30 days', days: 30 },
   { label: 'Last 90 days', days: 90 },
   { label: 'Year to date', getValue: () => ({ from: startOfYear(new Date()), to: new Date() }) },
+  { label: 'All time', getValue: () => ({ from: null, to: null }) },
 ]
 
 export function DateRangePicker({ value, onChange, className, inlineMode }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
 
-  const fromDate = value?.from ? new Date(value.from) : subDays(new Date(), 30)
-  const toDate = value?.to ? new Date(value.to) : new Date()
+  const isAllTime = value?.from == null && value?.to == null
+  const fromDate = value?.from ? new Date(value.from) : null
+  const toDate = value?.to ? new Date(value.to) : null
 
   const handleFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFrom = e.target.value ? new Date(e.target.value) : new Date()
-    onChange({ from: newFrom, to: toDate })
+    onChange({ from: newFrom, to: toDate ?? new Date() })
   }
 
   const handleToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTo = e.target.value ? new Date(e.target.value) : new Date()
-    onChange({ from: fromDate, to: newTo })
+    onChange({ from: fromDate ?? subDays(new Date(), 30), to: newTo })
   }
 
   const applyPreset = (preset: PresetConfig) => {
@@ -56,6 +58,8 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
   }
 
   const displayText = (): string => {
+    if (isAllTime) return 'All time'
+    if (!fromDate || !toDate) return 'Select range'
     return `${format(fromDate, 'MMM d')} – ${format(toDate, 'MMM d, yyyy')}`
   }
 
@@ -80,6 +84,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
           <DatePickerContent
             fromDate={fromDate}
             toDate={toDate}
+            isAllTime={isAllTime}
             onFromChange={handleFromChange}
             onToChange={handleToChange}
             onPreset={applyPreset}
@@ -108,6 +113,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
         <DatePickerContent
           fromDate={fromDate}
           toDate={toDate}
+          isAllTime={isAllTime}
           onFromChange={handleFromChange}
           onToChange={handleToChange}
           onPreset={applyPreset}
@@ -121,13 +127,15 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
 function DatePickerContent({
   fromDate,
   toDate,
+  isAllTime,
   onFromChange,
   onToChange,
   onPreset,
   onClose,
 }: {
-  fromDate: Date
-  toDate: Date
+  fromDate: Date | null
+  toDate: Date | null
+  isAllTime: boolean
   onFromChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onToChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onPreset: (preset: PresetConfig) => void
@@ -163,18 +171,20 @@ function DatePickerContent({
             <label className="text-xs text-muted-foreground">From</label>
             <input
               type="date"
-              value={format(fromDate, 'yyyy-MM-dd')}
+              value={fromDate && !isAllTime ? format(fromDate, 'yyyy-MM-dd') : ''}
               onChange={onFromChange}
-              className="flex h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              disabled={isAllTime}
+              className="flex h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40"
             />
           </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">To</label>
             <input
               type="date"
-              value={format(toDate, 'yyyy-MM-dd')}
+              value={toDate && !isAllTime ? format(toDate, 'yyyy-MM-dd') : ''}
               onChange={onToChange}
-              className="flex h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              disabled={isAllTime}
+              className="flex h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40"
             />
           </div>
         </div>

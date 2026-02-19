@@ -68,14 +68,14 @@ export const RetentionCohortSchema = z.object({
     .datetime()
     .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
   cohort_size: z.number().int().nonnegative(),
-  day_0_percent: z.number().min(0).max(100),
-  day_1_percent: z.number().min(0).max(100),
-  day_7_percent: z.number().min(0).max(100),
-  day_14_percent: z.number().min(0).max(100),
-  day_30_percent: z.number().min(0).max(100),
+  retention_series: z.array(z.number()),
+  milestone_values: z.array(z.number()),
 })
 
 export const RetentionResponseSchema = z.object({
+  granularity: z.string(),
+  milestones: z.array(z.number().int()),
+  total_available_cohorts: z.number().int().nonnegative(),
   data: z.array(RetentionCohortSchema),
 })
 

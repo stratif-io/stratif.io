@@ -8,8 +8,8 @@ export interface AuthUser {
 }
 
 export interface DateRange {
-  from: Date
-  to: Date
+  from: Date | null
+  to: Date | null
 }
 
 export interface TrendData {
@@ -76,19 +76,14 @@ export interface SessionsSummaryResponse {
 export interface RetentionCohort {
   cohort_date: string
   cohort_size: number
-  total_users?: number
-  day_0_percent: number
-  day_1_percent: number
-  day_7_percent: number
-  day_14_percent: number
-  day_30_percent: number
-  day_1_retention?: number
-  day_7_retention?: number
-  day_14_retention?: number
-  day_30_retention?: number
+  retention_series: number[]
+  milestone_values: number[]
 }
 
 export interface RetentionResponse {
+  granularity: string
+  milestones: number[]
+  total_available_cohorts: number
   data: RetentionCohort[]
 }
 

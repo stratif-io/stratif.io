@@ -1,21 +1,45 @@
-"""Database seeding for generating ultra-realistic test data."""
+"""Base seeder — shared data-generation logic and configuration.
 
-import json
+All constants and generation helpers live here; dialect-specific
+write methods (``_create_events_table``, ``_insert_events``, ``seed``)
+are implemented by ``DuckDBSeeder`` and ``SQLiteSeeder``.
+"""
+
+from __future__ import annotations
+
 import random
 import uuid
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Iterator, Optional
 
-import structlog
-import pandas as pd
-import pyarrow as pa
 from faker import Faker
+from pydantic_settings import BaseSettings
 
-from openflow.config import get_settings
-from openflow.db.connection import Database
 
-log = structlog.get_logger(__name__)
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 
+
+class SeedConfig(BaseSettings):
+    """Seeding-only settings — read from seeders/.env.seed (no OPENFLOW_ prefix)."""
+
+    seed_users: int = None
+    seed_days: int = None
+    db_path_prefix: str = None
+
+    class Config:
+        env_prefix = ""
+        env_file = str(Path(__file__).parent / ".env.seed")
+        env_file_encoding = "utf-8"
+        extra = "ignore"
+
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
 
 FUNNEL_PATH = ["Home", "Search", "ProductView", "AddToCart", "Purchase"]
 
@@ -32,16 +56,8 @@ COUNTRIES = {
         "timezone": "America/New_York",
         "weight": 0.35,
         "cities": [
-            "New York",
-            "Los Angeles",
-            "Chicago",
-            "Houston",
-            "Phoenix",
-            "Philadelphia",
-            "San Antonio",
-            "San Diego",
-            "Dallas",
-            "San Jose",
+            "New York", "Los Angeles", "Chicago", "Houston", "Phoenix",
+            "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose",
         ],
         "currency": "USD",
     },
@@ -49,16 +65,8 @@ COUNTRIES = {
         "timezone": "Europe/London",
         "weight": 0.12,
         "cities": [
-            "London",
-            "Birmingham",
-            "Manchester",
-            "Leeds",
-            "Glasgow",
-            "Liverpool",
-            "Bristol",
-            "Sheffield",
-            "Edinburgh",
-            "Nottingham",
+            "London", "Birmingham", "Manchester", "Leeds", "Glasgow",
+            "Liverpool", "Bristol", "Sheffield", "Edinburgh", "Nottingham",
         ],
         "currency": "GBP",
     },
@@ -66,16 +74,8 @@ COUNTRIES = {
         "timezone": "Europe/Berlin",
         "weight": 0.10,
         "cities": [
-            "Berlin",
-            "Hamburg",
-            "Munich",
-            "Cologne",
-            "Frankfurt",
-            "Stuttgart",
-            "Dusseldorf",
-            "Dortmund",
-            "Essen",
-            "Leipzig",
+            "Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt",
+            "Stuttgart", "Dusseldorf", "Dortmund", "Essen", "Leipzig",
         ],
         "currency": "EUR",
     },
@@ -83,16 +83,8 @@ COUNTRIES = {
         "timezone": "Europe/Paris",
         "weight": 0.08,
         "cities": [
-            "Paris",
-            "Marseille",
-            "Lyon",
-            "Toulouse",
-            "Nice",
-            "Nantes",
-            "Strasbourg",
-            "Montpellier",
-            "Bordeaux",
-            "Lille",
+            "Paris", "Marseille", "Lyon", "Toulouse", "Nice",
+            "Nantes", "Strasbourg", "Montpellier", "Bordeaux", "Lille",
         ],
         "currency": "EUR",
     },
@@ -100,16 +92,8 @@ COUNTRIES = {
         "timezone": "Asia/Tokyo",
         "weight": 0.10,
         "cities": [
-            "Tokyo",
-            "Yokohama",
-            "Osaka",
-            "Nagoya",
-            "Sapporo",
-            "Fukuoka",
-            "Kobe",
-            "Kyoto",
-            "Kawasaki",
-            "Saitama",
+            "Tokyo", "Yokohama", "Osaka", "Nagoya", "Sapporo",
+            "Fukuoka", "Kobe", "Kyoto", "Kawasaki", "Saitama",
         ],
         "currency": "JPY",
     },
@@ -117,16 +101,8 @@ COUNTRIES = {
         "timezone": "America/Sao_Paulo",
         "weight": 0.08,
         "cities": [
-            "Sao Paulo",
-            "Rio de Janeiro",
-            "Brasilia",
-            "Salvador",
-            "Fortaleza",
-            "Belo Horizonte",
-            "Manaus",
-            "Curitiba",
-            "Recife",
-            "Porto Alegre",
+            "Sao Paulo", "Rio de Janeiro", "Brasilia", "Salvador", "Fortaleza",
+            "Belo Horizonte", "Manaus", "Curitiba", "Recife", "Porto Alegre",
         ],
         "currency": "BRL",
     },
@@ -134,16 +110,8 @@ COUNTRIES = {
         "timezone": "Asia/Kolkata",
         "weight": 0.12,
         "cities": [
-            "Mumbai",
-            "Delhi",
-            "Bangalore",
-            "Hyderabad",
-            "Chennai",
-            "Kolkata",
-            "Ahmedabad",
-            "Pune",
-            "Surat",
-            "Jaipur",
+            "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai",
+            "Kolkata", "Ahmedabad", "Pune", "Surat", "Jaipur",
         ],
         "currency": "INR",
     },
@@ -151,16 +119,8 @@ COUNTRIES = {
         "timezone": "Australia/Sydney",
         "weight": 0.05,
         "cities": [
-            "Sydney",
-            "Melbourne",
-            "Brisbane",
-            "Perth",
-            "Adelaide",
-            "Gold Coast",
-            "Canberra",
-            "Newcastle",
-            "Wollongong",
-            "Hobart",
+            "Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide",
+            "Gold Coast", "Canberra", "Newcastle", "Wollongong", "Hobart",
         ],
         "currency": "AUD",
     },
@@ -328,87 +288,63 @@ URL_PATHS = {
 }
 
 SEARCH_QUERIES = [
-    "wireless headphones",
-    "summer dress",
-    "yoga mat",
-    "coffee maker",
-    "running shoes",
-    "smart watch",
-    "kitchen knives",
-    "headphones",
-    "tv stand",
-    "book",
-    "skincare",
-    "laptop",
-    "phone case",
-    "gaming keyboard",
-    "winter jacket",
-    "fitness tracker",
+    "wireless headphones", "summer dress", "yoga mat", "coffee maker",
+    "running shoes", "smart watch", "kitchen knives", "headphones",
+    "tv stand", "book", "skincare", "laptop", "phone case",
+    "gaming keyboard", "winter jacket", "fitness tracker",
 ]
 
 INSERT_BATCH_SIZE = 5000
-PROGRESS_INTERVAL = 50000
+PROGRESS_INTERVAL = 50_000
 
 
-class Seeder:
-    """Database seeder for generating ultra-realistic analytics data."""
+# ---------------------------------------------------------------------------
+# Abstract base seeder
+# ---------------------------------------------------------------------------
+
+
+class BaseSeeder(ABC):
+    """Abstract base seeder — data generation only, no DB dependency."""
 
     def __init__(
         self,
-        db: Optional[Database] = None,
+        config: Optional[SeedConfig] = None,
         seed: Optional[int] = None,
         num_users: Optional[int] = None,
     ):
-        self.db = db or Database()
+        self.config = config or SeedConfig()
         self._seed_value = seed
         if seed is not None:
             random.seed(seed)
             Faker.seed(seed)
         self.faker = Faker()
-        self.settings = get_settings()
-        self._num_users = num_users  # overrides settings.seed_users when set
+        self._num_users = num_users
         self._product_cache: list[dict] = []
-        self._user_sessions: dict[str, list[str]] = {}
 
+    # ------------------------------------------------------------------
+    # Abstract interface — implemented per dialect
+    # ------------------------------------------------------------------
+
+    @abstractmethod
     def seed(self) -> dict[str, int]:
-        """
-        Seed the database with ultra-realistic test data.
+        """Run the full seed: open DB, generate data, write, close, return stats."""
+        ...
 
-        Returns:
-            Dictionary with seeding statistics
-        """
-        n = self._num_users or self.settings.seed_users
-        log.info("seeding_start", users=n, days=self.settings.seed_days)
+    @abstractmethod
+    def _create_events_table(self) -> None:
+        """Create the events table in the target database."""
+        ...
 
-        self._generate_products()
-        self._create_events_table()
-        users = self._generate_users()
+    @abstractmethod
+    def _insert_events(self, events: list[tuple]) -> None:
+        """Bulk-insert a batch of ``(user_id, event_name, timestamp, props)`` tuples."""
+        ...
 
-        total_events = 0
-        for batch in self._generate_events_batched(users):
-            self._insert_events(batch)
-            total_events += len(batch)
-            if total_events % PROGRESS_INTERVAL < len(batch):
-                log.info("seeding_progress", total_events=total_events)
-
-        stats = {
-            "total_events": total_events,
-            "total_users": len(users),
-            "new_users": sum(1 for u in users if not u["is_returning"]),
-            "returning_users": sum(1 for u in users if u["is_returning"]),
-            "power_users": sum(1 for u in users if u["is_power_user"]),
-            "browser_only": sum(1 for u in users if u["browser_only"]),
-            "completed_purchases": sum(1 for u in users if u["completed_purchase"]),
-        }
-
-        self.db.close()
-
-        log.info("seeding_complete", **stats)
-
-        return stats
+    # ------------------------------------------------------------------
+    # Shared data-generation helpers
+    # ------------------------------------------------------------------
 
     def _generate_products(self) -> None:
-        """Generate product catalog."""
         self._product_cache = []
         for category, data in PRODUCT_CATEGORIES.items():
             for product_name, price in data["products"]:
@@ -423,25 +359,12 @@ class Seeder:
                 )
 
     def _get_random_product(self) -> dict:
-        """Get a random product weighted by category popularity."""
         weights = [p["weight"] for p in self._product_cache]
         return random.choices(self._product_cache, weights=weights, k=1)[0]
 
-    def _create_events_table(self) -> None:
-        """Create the events table if it doesn't exist."""
-        self.db.execute_write("""
-            CREATE TABLE IF NOT EXISTS events (
-                user_id VARCHAR,
-                event_name VARCHAR,
-                timestamp TIMESTAMP,
-                properties JSON
-            )
-        """)
-
     def _generate_users(self) -> list[dict]:
-        """Generate user records with behavior patterns."""
         users = []
-        num_users = self._num_users or self.settings.seed_users
+        num_users = self._num_users or self.config.seed_users
 
         for _ in range(num_users):
             country_code = self._weighted_choice(
@@ -492,14 +415,12 @@ class Seeder:
         return users
 
     def _is_us_holiday(self, dt: datetime) -> bool:
-        """Check if date is a US holiday."""
         for month, day, _ in US_HOLIDAYS_2024_2025:
             if dt.month == month and dt.day == day:
                 return True
         return False
 
     def _get_hour_weight(self, hour: int, is_weekend: bool) -> float:
-        """Get traffic weight for a given hour."""
         if is_weekend:
             if 10 <= hour <= 14:
                 return 1.0
@@ -518,7 +439,7 @@ class Seeder:
                 return 0.95
             elif 12 <= hour <= 13:
                 return 0.6
-            elif 8 <= hour <= 8 or 17 <= hour <= 19:
+            elif hour == 8 or 17 <= hour <= 19:
                 return 0.5
             elif 20 <= hour <= 22:
                 return 0.3
@@ -528,33 +449,20 @@ class Seeder:
                 return 0.1
 
     def _get_country_hour(self, base_dt: datetime, country_code: str) -> int:
-        """Convert UTC hour to local hour for country."""
         tz_offsets = {
-            "US": -5,
-            "UK": 0,
-            "DE": 1,
-            "FR": 1,
-            "JP": 9,
-            "BR": -3,
-            "IN": 5.5,
-            "AU": 11,
+            "US": -5, "UK": 0, "DE": 1, "FR": 1,
+            "JP": 9, "BR": -3, "IN": 5.5, "AU": 11,
         }
         offset = tz_offsets.get(country_code, 0)
-        local_hour = (base_dt.hour + int(offset)) % 24
-        return local_hour
+        return (base_dt.hour + int(offset)) % 24
 
-    def _generate_session_start(
-        self, base_time: datetime, country_code: str
-    ) -> datetime:
-        """Generate a realistic session start time."""
+    def _generate_session_start(self, base_time: datetime, country_code: str) -> datetime:
         is_weekend = base_time.weekday() >= 5
         is_holiday = self._is_us_holiday(base_time)
 
         weights = []
         for hour in range(24):
-            local_hour = self._get_country_hour(
-                base_time.replace(hour=hour), country_code
-            )
+            local_hour = self._get_country_hour(base_time.replace(hour=hour), country_code)
             weight = self._get_hour_weight(local_hour, is_weekend)
             if is_holiday and country_code == "US":
                 weight *= 0.4
@@ -564,17 +472,15 @@ class Seeder:
         weights = [w / total_weight for w in weights]
 
         chosen_hour = random.choices(range(24), weights=weights, k=1)[0]
-        chosen_minute = random.randint(0, 59)
-        chosen_second = random.randint(0, 59)
-
         return base_time.replace(
-            hour=chosen_hour, minute=chosen_minute, second=chosen_second
+            hour=chosen_hour,
+            minute=random.randint(0, 59),
+            second=random.randint(0, 59),
         )
 
     def _generate_events_batched(self, users: list[dict]) -> Iterator[list[tuple]]:
-        """Generate event records in batches for memory efficiency."""
         batch: list[tuple] = []
-        base_time = datetime.now() - timedelta(days=self.settings.seed_days)
+        base_time = datetime.now() - timedelta(days=self.config.seed_days)
 
         for user in users:
             if user["is_power_user"]:
@@ -588,11 +494,9 @@ class Seeder:
 
             for session_idx in range(num_sessions):
                 session_date = base_time + timedelta(
-                    days=random.randint(0, self.settings.seed_days - 1)
+                    days=random.randint(0, self.config.seed_days - 1)
                 )
-                session_start = self._generate_session_start(
-                    session_date, user["country"]
-                )
+                session_start = self._generate_session_start(session_date, user["country"])
                 session_id = f"{user['id']}_{session_idx + 1}"
                 user_sessions.append(session_id)
 
@@ -621,11 +525,9 @@ class Seeder:
     def _generate_funnel_session(
         self, user: dict, session_start: datetime, session_id: str, referrer: str
     ) -> list[tuple]:
-        """Generate a conversion funnel session."""
         events = []
         current_time = session_start
         visited_products: list[dict] = []
-
         progress_prob = 1.0
 
         for step_idx, event_name in enumerate(FUNNEL_PATH):
@@ -669,9 +571,7 @@ class Seeder:
                             "product_price": product["product_price"],
                         }
                     )
-                    events.append(
-                        (user["id"], "ProductView", current_time, additional_props)
-                    )
+                    events.append((user["id"], "ProductView", current_time, additional_props))
                     visited_products.append(product)
 
             elif event_name == "AddToCart":
@@ -715,7 +615,6 @@ class Seeder:
     def _generate_browse_session(
         self, user: dict, session_start: datetime, session_id: str, referrer: str
     ) -> list[tuple]:
-        """Generate a browsing-only session."""
         events = []
         current_time = session_start
 
@@ -765,7 +664,6 @@ class Seeder:
         event_name: str,
         visited_products: list[dict],
     ) -> dict:
-        """Build event properties dictionary."""
         properties = {
             "session_id": session_id,
             "country": user["country"],
@@ -783,9 +681,7 @@ class Seeder:
             properties["page_url"] = URL_PATHS["Home"]
         elif event_name == "Search":
             query = random.choice(SEARCH_QUERIES)
-            properties["page_url"] = URL_PATHS["Search"].format(
-                query=query.replace(" ", "+")
-            )
+            properties["page_url"] = URL_PATHS["Search"].format(query=query.replace(" ", "+"))
             properties["search_query"] = query
         elif event_name == "ProductView":
             if visited_products:
@@ -801,43 +697,5 @@ class Seeder:
         return properties
 
     def _weighted_choice(self, choices: list[tuple]) -> str:
-        """Make a weighted random choice."""
         items, weights = zip(*choices)
         return random.choices(items, weights=weights, k=1)[0]
-
-    def _insert_events(self, events: list[tuple]) -> None:
-        """Insert a batch of events using Arrow for maximum speed."""
-        if not events:
-            return
-        conn = self.db._get_connection()
-
-        user_ids = [e[0] for e in events]
-        event_names = [e[1] for e in events]
-        timestamps = [e[2] for e in events]
-        properties = [json.dumps(e[3]) for e in events]
-
-        df = pd.DataFrame(
-            {
-                "user_id": user_ids,
-                "event_name": event_names,
-                "timestamp": timestamps,
-                "properties": properties,
-            }
-        )
-
-        conn.execute(
-            "INSERT INTO events SELECT user_id, event_name, timestamp, properties::JSON FROM df"
-        )
-
-    def clear(self) -> None:
-        """Clear all data from the database."""
-        self.db.execute_write("DROP TABLE IF EXISTS events")
-        log.info("database_cleared")
-
-
-def seed_database(
-    db: Optional[Database] = None, seed: Optional[int] = None
-) -> dict[str, int]:
-    """Convenience function to seed the database."""
-    seeder = Seeder(db, seed)
-    return seeder.seed()

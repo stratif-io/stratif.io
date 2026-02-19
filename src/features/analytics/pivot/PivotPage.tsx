@@ -30,8 +30,8 @@ export function PivotPage() {
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
-  const startDate = format(dateRange.from, 'yyyy-MM-dd')
-  const endDate = format(dateRange.to, 'yyyy-MM-dd')
+  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
+  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
 
   const { data: options, isLoading: optionsLoading } = useQuery({
     queryKey: ['pivot-options', activeConnectionId],

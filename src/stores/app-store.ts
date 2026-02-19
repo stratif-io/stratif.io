@@ -56,7 +56,7 @@ export const useAppStore = create<AppState>()(
       clearAllFilters: () => set({ activeFilters: {} }),
 
       activeConnectionId: null,
-      setActiveConnectionId: (activeConnectionId) => set({ activeConnectionId }),
+      setActiveConnectionId: (activeConnectionId) => set({ activeConnectionId, activeFilters: {} }),
     }),
     {
       name: 'openflow-storage',

@@ -5,97 +5,58 @@ import { fetchRetention } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import type { DateRange, RetentionCohort } from '@/types'
 
-export interface ChartDataItem {
-  cohort: string
-  users: number
-  day0: number
-  day1: number
-  day7: number
-  day14: number
-  day30: number
-}
+export type RetentionGranularity = 'day' | 'week' | 'month'
 
 export interface UseRetentionDataOptions {
   dateRange: DateRange
+  granularity: RetentionGranularity
 }
 
 export interface UseRetentionDataReturn {
   retentionData: RetentionCohort[]
-  chartData: ChartDataItem[]
+  milestones: number[]
   isLoading: boolean
-  avgDay1: number
-  avgDay7: number
-  avgDay30: number
-  totalCohorts: number
+  avgMilestones: number[]
+  totalAvailable: number
 }
 
-export function useRetentionData({ dateRange }: UseRetentionDataOptions): UseRetentionDataReturn {
+export function useRetentionData({
+  dateRange,
+  granularity,
+}: UseRetentionDataOptions): UseRetentionDataReturn {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
   const { activeFilters, activeConnectionId } = useAppStore()
 
   const { data: retentionResponse, isLoading } = useQuery({
-    queryKey: ['retention', startDate, endDate, activeFilters, activeConnectionId],
+    queryKey: ['retention', startDate, endDate, granularity, activeFilters, activeConnectionId],
     queryFn: () =>
       fetchRetention({
         start_date: startDate,
         end_date: endDate,
+        granularity,
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!startDate && !!endDate,
   })
 
-  const retentionData = useMemo(() => retentionResponse?.data || [], [retentionResponse])
+  const retentionData = useMemo(() => retentionResponse?.data ?? [], [retentionResponse])
+  const milestones = useMemo(() => retentionResponse?.milestones ?? [], [retentionResponse])
+  const totalAvailable = retentionResponse?.total_available_cohorts ?? 0
 
-  const chartData = useMemo(
-    () =>
-      retentionData.map((row) => ({
-        cohort: new Date(row.cohort_date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        }),
-        users: row.cohort_size,
-        day0: row.day_0_percent,
-        day1: row.day_1_percent,
-        day7: row.day_7_percent,
-        day14: row.day_14_percent,
-        day30: row.day_30_percent,
-      })),
-    [retentionData]
-  )
-
-  const avgDay1 = useMemo(
-    () =>
-      retentionData.length > 0
-        ? retentionData.reduce((acc, r) => acc + r.day_1_percent, 0) / retentionData.length
-        : 0,
-    [retentionData]
-  )
-
-  const avgDay7 = useMemo(
-    () =>
-      retentionData.length > 0
-        ? retentionData.reduce((acc, r) => acc + r.day_7_percent, 0) / retentionData.length
-        : 0,
-    [retentionData]
-  )
-
-  const avgDay30 = useMemo(
-    () =>
-      retentionData.length > 0
-        ? retentionData.reduce((acc, r) => acc + r.day_30_percent, 0) / retentionData.length
-        : 0,
-    [retentionData]
-  )
+  const avgMilestones = useMemo(() => {
+    if (retentionData.length === 0) return milestones.map(() => 0)
+    return milestones.map((_, i) =>
+      retentionData.reduce((acc, r) => acc + (r.milestone_values[i] ?? 0), 0) / retentionData.length
+    )
+  }, [retentionData, milestones])
 
   return {
     retentionData,
-    chartData,
+    milestones,
     isLoading,
-    avgDay1,
-    avgDay7,
-    avgDay30,
-    totalCohorts: retentionData.length,
+    avgMilestones,
+    totalAvailable,
   }
 }

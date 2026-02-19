@@ -11,46 +11,84 @@ from openflow.services.sql_builder import date_trunc, date_diff_days
 
 router = APIRouter(prefix="/api", tags=["retention"])
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Configurable retention milestones per granularity
+# ──────────────────────────────────────────────────────────────────────────────
+RETENTION_CONFIG: dict[str, dict] = {
+    "day": {
+        "milestones":    [1, 7, 14, 30, 90],  # days after cohort start
+        "max_units":     90,                   # build series through day 90
+        "unit_divisor":  1,
+    },
+    "week": {
+        "milestones":    [1, 2, 3, 4, 12],    # weeks after cohort start
+        "max_units":     12,
+        "unit_divisor":  7,
+    },
+    "month": {
+        "milestones":    [1, 2, 3, 4, 5, 6],  # months after cohort start (30-day approx)
+        "max_units":     6,
+        "unit_divisor":  30,
+    },
+}
+
 
 @router.get("/retention")
 def get_retention(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    granularity: Optional[str] = Query("day", description="Cohort granularity: day | week | month"),
     filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
     db=Depends(get_analytics_db),
 ) -> dict:
-    """Calculate N-Day Retention Cohorts.
+    """Calculate N-Unit Retention Cohorts.
 
-    Users who performed 'Sign Up' → returned to do any event on Day 1, Day 7, etc.
+    Cohorts are defined by each user's first-ever event within the date range,
+    grouped by the requested granularity.  For each cohort the response includes:
+      - retention_series : one percentage per unit (day/week/month) from 0 to
+                           min(max_units, end_date − cohort_date)
+      - milestone_values : percentages for the configured milestone units only
     """
     dialect = db.get_dialect()
-    day_col = date_trunc("day", "timestamp", dialect)
+    gran = granularity if granularity in RETENTION_CONFIG else "day"
+    config = RETENTION_CONFIG[gran]
+
+    milestones:    list[int] = config["milestones"]
+    max_units:     int       = config["max_units"]
+    unit_divisor:  int       = config["unit_divisor"]
+
+    # Cohort trunc unit (day/week/month for the cohort_date column)
+    day_col   = date_trunc(gran, "timestamp", dialect)
+    # Days difference expression (always in days — we convert to units in Python/SQL)
     days_diff = date_diff_days("s.cohort_date", "a.activity_date", dialect)
 
-    signup_where = "WHERE event_name = 'Sign Up'"
-    activity_where = ""
-    signup_params: list = []
-    activity_params: list = []
+    # ── WHERE clauses ──────────────────────────────────────────────────────────
+    cohort_clauses: list[str] = []
+    cohort_params:  list      = []
 
     if start_date:
-        signup_where += " AND timestamp >= ?"
-        activity_where = "WHERE timestamp >= ?"
-        signup_params.append(f"{start_date} 00:00:00")
-        activity_params.append(f"{start_date} 00:00:00")
-
+        cohort_clauses.append("timestamp >= ?")
+        cohort_params.append(f"{start_date} 00:00:00")
     if end_date:
-        signup_where += " AND timestamp <= ?"
-        activity_where += (" AND " if activity_where else "WHERE ") + "timestamp <= ?"
-        signup_params.append(f"{end_date} 23:59:59")
-        activity_params.append(f"{end_date} 23:59:59")
+        cohort_clauses.append("timestamp <= ?")
+        cohort_params.append(f"{end_date} 23:59:59")
 
+    filter_clauses: list[str] = []
+    filter_params:  list      = []
     if filters:
         filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
-        for clause in filter_clauses:
-            signup_where += f" AND {clause}"
-        signup_params.extend(filter_params)
+        cohort_clauses.extend(filter_clauses)
+        cohort_params.extend(filter_params)
 
-    params = signup_params + activity_params
+    cohort_where   = ("WHERE " + " AND ".join(cohort_clauses)) if cohort_clauses else ""
+    activity_where = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+
+    params = cohort_params + filter_params
+
+    # unit expression: integer-divide days by unit_divisor so that SQL GROUP BY
+    # collapses per-day rows into the right week/month bucket and COUNT DISTINCT
+    # correctly handles users who returned multiple times within the same unit.
+    unit_col = f"ca.days_since_signup / {unit_divisor}"
 
     query = f"""
         WITH signups AS (
@@ -58,13 +96,13 @@ def get_retention(
                 user_id,
                 MIN({day_col}) AS cohort_date
             FROM events
-            {signup_where}
+            {cohort_where}
             GROUP BY user_id
         ),
         user_activity AS (
             SELECT DISTINCT
                 user_id,
-                {day_col} AS activity_date
+                {date_trunc("day", "timestamp", dialect)} AS activity_date
             FROM events
             {activity_where}
         ),
@@ -72,7 +110,6 @@ def get_retention(
             SELECT
                 s.user_id,
                 s.cohort_date,
-                a.activity_date,
                 {days_diff} AS days_since_signup
             FROM signups s
             LEFT JOIN user_activity a ON s.user_id = a.user_id
@@ -87,40 +124,62 @@ def get_retention(
         ),
         retention_counts AS (
             SELECT
-                cohort_date,
-                days_since_signup,
-                COUNT(DISTINCT user_id) AS returning_users
-            FROM cohort_activity
-            GROUP BY cohort_date, days_since_signup
+                ca.cohort_date,
+                ca.days_since_signup / {unit_divisor} AS unit_since_signup,
+                COUNT(DISTINCT ca.user_id) AS returning_users
+            FROM cohort_activity ca
+            JOIN cohort_sizes cs ON ca.cohort_date = cs.cohort_date
+            GROUP BY ca.cohort_date, ca.days_since_signup / {unit_divisor}
         )
         SELECT
-            c.cohort_date,
-            c.cohort_size,
-            COALESCE(MAX(CASE WHEN r.days_since_signup = 0  THEN r.returning_users END), c.cohort_size) AS day_0,
-            COALESCE(MAX(CASE WHEN r.days_since_signup = 1  THEN r.returning_users END), 0) AS day_1,
-            COALESCE(MAX(CASE WHEN r.days_since_signup = 7  THEN r.returning_users END), 0) AS day_7,
-            COALESCE(MAX(CASE WHEN r.days_since_signup = 14 THEN r.returning_users END), 0) AS day_14,
-            COALESCE(MAX(CASE WHEN r.days_since_signup = 30 THEN r.returning_users END), 0) AS day_30
-        FROM cohort_sizes c
-        LEFT JOIN retention_counts r ON c.cohort_date = r.cohort_date
-        GROUP BY c.cohort_date, c.cohort_size
-        ORDER BY c.cohort_date DESC
-        LIMIT 10
+            cs.cohort_date,
+            cs.cohort_size,
+            rc.unit_since_signup,
+            rc.returning_users
+        FROM cohort_sizes cs
+        LEFT JOIN retention_counts rc ON cs.cohort_date = rc.cohort_date
+        ORDER BY cs.cohort_date DESC, rc.unit_since_signup ASC
     """
 
-    result = db.execute(query, params)
+    rows = db.execute(query, params)
+
+    # ── Aggregate into per-cohort dicts (insertion order = DESC from SQL) ──────
+    cohorts: dict = {}
+    for row in rows:
+        raw_date, cohort_size, unit, count = row
+        key = raw_date.isoformat() if isinstance(raw_date, datetime) else str(raw_date)
+        if key not in cohorts:
+            cohorts[key] = {"cohort_size": int(cohort_size), "units": {}}
+        if unit is not None and count is not None:
+            cohorts[key]["units"][int(unit)] = int(count)
+
+    def safe_pct(count: int, total: int) -> float:
+        return round((count / total) * 100, 1) if total > 0 else 0.0
+
+    data = []
+    for cohort_date_str, info in cohorts.items():
+        cohort_size = info["cohort_size"]
+        units_data  = info["units"]
+
+        # Unit 0 defaults to cohort_size (user was active in their signup unit)
+        def unit_pct(u: int) -> float:
+            count = units_data.get(u, cohort_size if u == 0 else 0)
+            return safe_pct(count, cohort_size)
+
+        # Always return the full series up to max_units — frontend decides what to show
+        retention_series = [unit_pct(u) for u in range(max_units + 1)]
+        milestone_values = [unit_pct(m) for m in milestones]
+
+        data.append({
+            "cohort_date":      cohort_date_str,
+            "cohort_size":      cohort_size,
+            "retention_series": retention_series,
+            "milestone_values": milestone_values,
+        })
 
     return {
-        "data": [
-            {
-                "cohort_date": row[0].isoformat() if isinstance(row[0], datetime) else str(row[0]),
-                "cohort_size": row[1],
-                "day_0_percent":  round((row[2] / row[1]) * 100, 1) if row[1] > 0 else 0,
-                "day_1_percent":  round((row[3] / row[1]) * 100, 1) if row[1] > 0 else 0,
-                "day_7_percent":  round((row[4] / row[1]) * 100, 1) if row[1] > 0 else 0,
-                "day_14_percent": round((row[5] / row[1]) * 100, 1) if row[1] > 0 else 0,
-                "day_30_percent": round((row[6] / row[1]) * 100, 1) if row[1] > 0 else 0,
-            }
-            for row in result
-        ]
+        "granularity":             gran,
+        "milestones":              milestones,
+        "total_available_cohorts": len(data),
+        "data":                    data,
     }
