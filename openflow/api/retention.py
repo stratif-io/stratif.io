@@ -125,11 +125,11 @@ def get_retention(
         retention_counts AS (
             SELECT
                 ca.cohort_date,
-                ca.days_since_signup / {unit_divisor} AS unit_since_signup,
+                FLOOR(ca.days_since_signup / {unit_divisor}) AS unit_since_signup,
                 COUNT(DISTINCT ca.user_id) AS returning_users
             FROM cohort_activity ca
             JOIN cohort_sizes cs ON ca.cohort_date = cs.cohort_date
-            GROUP BY ca.cohort_date, ca.days_since_signup / {unit_divisor}
+            GROUP BY ca.cohort_date, FLOOR(ca.days_since_signup / {unit_divisor})
         )
         SELECT
             cs.cohort_date,
