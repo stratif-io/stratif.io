@@ -4,6 +4,7 @@ import {
   EventsResponse,
   TopEventsResponse,
   RawEventsResponse,
+  UserEventsResponse,
   SessionsResponse,
   SessionsSummaryResponse,
   RetentionResponse,
@@ -105,6 +106,8 @@ export const fetchRawEvents = (params: {
   limit?: number
   offset?: number
   event_name?: string
+  user_id?: string
+  sort_order?: 'asc' | 'desc'
   start_date?: string
   end_date?: string
   filters?: Record<string, string | null>
@@ -114,6 +117,8 @@ export const fetchRawEvents = (params: {
   if (params.limit) searchParams.set('limit', String(params.limit))
   if (params.offset) searchParams.set('offset', String(params.offset))
   if (params.event_name) searchParams.set('event_name', params.event_name)
+  if (params.user_id) searchParams.set('user_id', params.user_id)
+  if (params.sort_order) searchParams.set('sort_order', params.sort_order)
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
   const f = serializeFilters(params.filters)
@@ -121,6 +126,19 @@ export const fetchRawEvents = (params: {
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
 
   return fetchApi<RawEventsResponse>(`/api/raw/events?${searchParams}`)
+}
+
+export const fetchUserEvents = (params: {
+  user_id: string
+  limit?: number
+  connection_id?: string
+}) => {
+  const searchParams = new URLSearchParams()
+  if (params.limit) searchParams.set('limit', String(params.limit))
+  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
+  return fetchApi<UserEventsResponse>(
+    `/api/users/${encodeURIComponent(params.user_id)}/events?${searchParams}`,
+  )
 }
 
 export const fetchRetention = (params: {

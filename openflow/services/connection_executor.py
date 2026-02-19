@@ -161,8 +161,8 @@ class AnalyticsDatabase:
         where_clauses: list[str] = []
         params: list = []
         for field, value in filters.items():
-            if value and field in self._filter_exprs:
-                where_clauses.append(f"{self._filter_exprs[field]} = ?")
+            if value and field in self._custom_prop_exprs:
+                where_clauses.append(f"{self._custom_prop_exprs[field]} = ?")
                 params.append(value)
         return where_clauses, params
 

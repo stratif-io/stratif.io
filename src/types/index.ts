@@ -47,6 +47,11 @@ export interface RawEventsResponse {
   data: Event[]
 }
 
+export interface UserEventsResponse {
+  user_id: string
+  data: Event[]
+}
+
 export interface Session {
   session_id: string
   user_id: string
