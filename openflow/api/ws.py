@@ -1,9 +1,9 @@
 """WebSocket endpoint for real-time analytics metrics."""
 
 import asyncio
+import contextlib
 import json
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -26,7 +26,7 @@ PUSH_INTERVAL = 10  # seconds between periodic metric pushes
 # ---------------------------------------------------------------------------
 
 
-def _authenticate_ws(websocket: WebSocket) -> Optional[str]:
+def _authenticate_ws(websocket: WebSocket) -> str | None:
     """Read the JWT session cookie and return user_id, or None if invalid."""
     token = websocket.cookies.get("of_session")
     if not token:
@@ -104,7 +104,9 @@ def _fetch_active_users(db) -> dict:
     users = [
         {
             "id": row[0],
-            "lastActive": row[1].isoformat() if isinstance(row[1], datetime) else str(row[1]),
+            "lastActive": row[1].isoformat()
+            if isinstance(row[1], datetime)
+            else str(row[1]),
             "page": row[2] or "/",
         }
         for row in rows
@@ -148,7 +150,7 @@ _FETCHERS = {
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 # ---------------------------------------------------------------------------
@@ -170,9 +172,9 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     loop = asyncio.get_running_loop()
 
     # ── Open analytics DB ────────────────────────────────────────────────────
-    #try:
+    # try:
     db = await loop.run_in_executor(None, _get_db_for_user, user_id)
-    #except Exception as exc:
+    # except Exception as exc:
     #    log.error("ws_db_open_failed", user_id=user_id, error=str(exc))
     #    await websocket.close(code=4500, reason="Database error")
     #    return
@@ -188,9 +190,16 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
             pending = set(subscriptions.values())
             for event_type in pending:
                 try:
-                    payload = await loop.run_in_executor(None, _FETCHERS[event_type], db)
+                    payload = await loop.run_in_executor(
+                        None, _FETCHERS[event_type], db
+                    )
                     await websocket.send_json(
-                        {"type": "data", "event": event_type, "payload": payload, "timestamp": _now()}
+                        {
+                            "type": "data",
+                            "event": event_type,
+                            "payload": payload,
+                            "timestamp": _now(),
+                        }
                     )
                 except Exception as exc:
                     log.warning("ws_push_error", event=event_type, error=str(exc))
@@ -230,7 +239,9 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                             }
                         )
                     except Exception as exc:
-                        log.warning("ws_subscribe_fetch_error", event=event, error=str(exc))
+                        log.warning(
+                            "ws_subscribe_fetch_error", event=event, error=str(exc)
+                        )
 
             elif msg_type == "unsubscribe":
                 subscriptions.pop(msg.get("subscriptionId", ""), None)
@@ -241,7 +252,5 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         log.error("ws_error", user_id=user_id, error=str(exc))
     finally:
         push_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await push_task
-        except asyncio.CancelledError:
-            pass

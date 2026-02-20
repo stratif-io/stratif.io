@@ -2,19 +2,18 @@
 
 import json
 from datetime import datetime
-from typing import Optional, List
 from enum import Enum
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 from openflow.services import get_analytics_db
-from openflow.services.sql_builder import date_trunc, extract_hour, extract_day_of_week
+from openflow.services.sql_builder import date_trunc, extract_day_of_week, extract_hour
 
 router = APIRouter(prefix="/api", tags=["pivot"])
 
 
-class MeasureType(str, Enum):
+class MeasureType(Enum):
     COUNT = "count"
     UNIQUE_USERS = "unique_users"
 
@@ -42,7 +41,9 @@ def get_pivot_options(
     events = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
 
     custom_props = db.get_custom_properties()
-    custom_dimensions = {p["name"]: p["name"].replace("_", " ").title() for p in custom_props}
+    custom_dimensions = {
+        p["name"]: p["name"].replace("_", " ").title() for p in custom_props
+    }
     dimensions = {**AVAILABLE_DIMENSIONS, **custom_dimensions}
 
     filter_options = db.get_filter_options()
@@ -60,13 +61,21 @@ def get_pivot_options(
 
 @router.get("/pivot")
 def get_pivot(
-    row_dimensions: str = Query("", description="Comma-separated list of row dimensions (optional)"),
-    column_dimensions: str = Query("", description="Comma-separated list of column dimensions (optional)"),
-    measures: str = Query(..., description="Comma-separated list of measures (count, unique_users)"),
-    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    event_filter: Optional[str] = Query(None, description="Filter by event name"),
-    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
+    row_dimensions: str = Query(
+        "", description="Comma-separated list of row dimensions (optional)"
+    ),
+    column_dimensions: str = Query(
+        "", description="Comma-separated list of column dimensions (optional)"
+    ),
+    measures: str = Query(
+        ..., description="Comma-separated list of measures (count, unique_users)"
+    ),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    event_filter: str | None = Query(None, description="Filter by event name"),
+    filters: str | None = Query(
+        None, description="JSON dict of active dimension filters"
+    ),
     db=Depends(get_analytics_db),
 ) -> dict:
     """Get pivot table data with flexible row/column dimensions and measures."""
@@ -182,13 +191,15 @@ def get_pivot(
         col_key = tuple(record[dim] for dim in col_dims)
         column_values.setdefault(col_key, True)
 
-    pivoted_data: List[dict] = []
+    pivoted_data: list[dict] = []
     if row_dims:
         row_groups: dict = {}
         for record in data:
             row_key = tuple(record[dim] for dim in row_dims)
             col_key = tuple(record[dim] for dim in col_dims)
-            row_groups.setdefault(row_key, {})[col_key] = {m: record[m] for m in measure_list}
+            row_groups.setdefault(row_key, {})[col_key] = {
+                m: record[m] for m in measure_list
+            }
 
         for row_key, col_data in row_groups.items():
             pivoted_row: dict = {row_dims[i]: row_key[i] for i in range(len(row_dims))}

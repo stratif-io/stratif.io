@@ -81,15 +81,14 @@ _MIGRATIONS = [
 def run_migrations() -> None:
     """Apply incremental schema migrations; each is silently skipped if already applied."""
     import sqlite3
+    from contextlib import suppress
 
     db = get_product_db()
     conn = sqlite3.connect(db.db_path)
     try:
         for sql in _MIGRATIONS:
-            try:
+            with suppress(sqlite3.OperationalError):
                 conn.execute(sql)
-            except sqlite3.OperationalError:
-                pass  # column already exists
         conn.commit()
     finally:
         conn.close()

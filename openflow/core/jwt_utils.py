@@ -1,8 +1,8 @@
 """JWT token creation and decoding utilities."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from jose import JWTError, jwt
+from jose import jwt
 
 from openflow.config import get_settings
 
@@ -10,7 +10,7 @@ from openflow.config import get_settings
 def create_access_token(user_id: str, email: str) -> str:
     """Create a signed JWT access token."""
     settings = get_settings()
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.jwt_expire_days)
+    expire = datetime.now(UTC) + timedelta(days=settings.jwt_expire_days)
     payload = {
         "sub": user_id,
         "email": email,

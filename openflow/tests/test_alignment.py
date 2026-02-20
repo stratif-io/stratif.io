@@ -1,8 +1,8 @@
 """Verify funnel and path analysis are aligned."""
 
+from openflow.api.paths import get_path_funnel
 from openflow.db import get_db
 from openflow.services import generate_path_analysis_query
-from openflow.api.paths import get_path_funnel
 
 
 def test_funnel_matches_path_analysis():

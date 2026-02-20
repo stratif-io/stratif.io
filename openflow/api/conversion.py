@@ -1,7 +1,5 @@
 """Conversion API endpoints."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Query
 
 from openflow.services import get_analytics_db
@@ -11,8 +9,8 @@ router = APIRouter(prefix="/api", tags=["conversion"])
 
 @router.get("/conversion")
 def get_conversion(
-    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     db=Depends(get_analytics_db),
 ) -> dict:
     """Calculate conversion rate for Home → Purchase funnel.

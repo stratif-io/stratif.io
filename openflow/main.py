@@ -8,22 +8,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from openflow import __version__
-from openflow.config import get_settings
-from openflow.core.logging import setup_logging
-from openflow.db import get_db
-from openflow.product_db import init_product_db, run_migrations
 from openflow.api import (
     auth_router,
-    events_router,
-    trend_router,
-    retention_router,
-    paths_router,
-    conversion_router,
-    pivot_router,
     connections_router,
+    conversion_router,
+    events_router,
+    paths_router,
+    pivot_router,
+    retention_router,
     sessions_router,
+    trend_router,
     ws_router,
 )
+from openflow.config import get_settings
+from openflow.core.logging import setup_logging
+from openflow.product_db import init_product_db, run_migrations
 
 settings = get_settings()
 setup_logging(log_level=settings.log_level, log_format=settings.log_format)
@@ -41,27 +40,27 @@ async def lifespan(app: FastAPI):
         )
 
     # Ensure db directory exists before opening any connection
-    for db_file in (settings.product_db_path):
+    for db_file in settings.product_db_path:
         db_dir = os.path.dirname(db_file)
         if db_dir:
             os.makedirs(db_dir, exist_ok=True)
 
     # Startup
-    #db = get_db()
-    #needs_seeding = False
-#
-    #if not os.path.exists(settings.db_path):
+    # db = get_db()
+    # needs_seeding = False
+    #
+    # if not os.path.exists(settings.db_path):
     #    needs_seeding = True
-    #else:
+    # else:
     #    if not db.table_exists("events"):
     #        needs_seeding = True
-#
-    #if needs_seeding:
+    #
+    # if needs_seeding:
     #    seed_database(db)
-#
+    #
     ## Create analytics views
-    #create_views(db)
-#
+    # create_views(db)
+    #
     # Initialize product DB schema
     init_product_db()
     run_migrations()
@@ -132,6 +131,7 @@ app = create_app()
 # ============================================================================
 # MAIN
 # ============================================================================
+
 
 def main():
     import uvicorn

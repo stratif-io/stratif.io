@@ -2,7 +2,6 @@
 
 import json
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
@@ -14,11 +13,13 @@ router = APIRouter(prefix="/api", tags=["trends"])
 
 @router.get("/trend")
 def get_trend(
-    event_name: Optional[str] = Query(None, description="Filter by event name"),
+    event_name: str | None = Query(None, description="Filter by event name"),
     granularity: str = Query("day", description="day or week"),
-    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters, e.g. {"country":"US"}'),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    filters: str | None = Query(
+        None, description='JSON dict of active dimension filters, e.g. {"country":"US"}'
+    ),
     db=Depends(get_analytics_db),
 ) -> dict:
     """Return trend data: Date vs Count and Unique Users."""
@@ -68,7 +69,9 @@ def get_trend(
         "total_unique_users": total_unique,
         "data": [
             {
-                "date": row[0].isoformat() if isinstance(row[0], datetime) else str(row[0]),
+                "date": row[0].isoformat()
+                if isinstance(row[0], datetime)
+                else str(row[0]),
                 "count": row[1],
                 "unique_users": row[2],
             }

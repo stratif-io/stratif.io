@@ -2,8 +2,8 @@
 
 __version__ = "1.0.0"
 
-from .config import get_settings, Settings
-from .db import get_db, Database
+from .config import Settings, get_settings
+from .db import Database, get_db
 
 __all__ = [
     "__version__",

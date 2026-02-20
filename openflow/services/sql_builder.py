@@ -42,36 +42,41 @@ def date_trunc(unit: str, col_expr: str, dialect: str = "duckdb") -> str:
     """
     if dialect == "sqlite":
         _sqlite_map: dict[str, str] = {
-            "hour":  f"STRFTIME('%Y-%m-%d %H:00:00', {col_expr})",
-            "day":   f"DATE({col_expr})",
-            "week":  f"DATE({col_expr}, 'weekday 1', '-6 days')",  # ISO Mon
+            "hour": f"STRFTIME('%Y-%m-%d %H:00:00', {col_expr})",
+            "day": f"DATE({col_expr})",
+            "week": f"DATE({col_expr}, 'weekday 1', '-6 days')",  # ISO Mon
             "month": f"STRFTIME('%Y-%m-01', {col_expr})",
-            "year":  f"STRFTIME('%Y-01-01', {col_expr})",
+            "year": f"STRFTIME('%Y-01-01', {col_expr})",
         }
         return _sqlite_map.get(unit, f"DATE({col_expr})")
 
     if dialect == "mysql":
         _mysql_map: dict[str, str] = {
-            "hour":  f"DATE_FORMAT({col_expr}, '%Y-%m-%d %H:00:00')",
-            "day":   f"DATE({col_expr})",
-            "week":  f"DATE_FORMAT({col_expr}, '%x-%v')",   # ISO week
+            "hour": f"DATE_FORMAT({col_expr}, '%Y-%m-%d %H:00:00')",
+            "day": f"DATE({col_expr})",
+            "week": f"DATE_FORMAT({col_expr}, '%x-%v')",  # ISO week
             "month": f"DATE_FORMAT({col_expr}, '%Y-%m-01')",
-            "year":  f"DATE_FORMAT({col_expr}, '%Y-01-01')",
+            "year": f"DATE_FORMAT({col_expr}, '%Y-01-01')",
         }
         return _mysql_map.get(unit, f"DATE({col_expr})")
 
     if dialect == "bigquery":
-        _bq_unit = {"hour": "HOUR", "day": "DAY", "week": "WEEK",
-                    "month": "MONTH", "year": "YEAR"}.get(unit, unit.upper())
+        _bq_unit = {
+            "hour": "HOUR",
+            "day": "DAY",
+            "week": "WEEK",
+            "month": "MONTH",
+            "year": "YEAR",
+        }.get(unit, unit.upper())
         return f"DATE_TRUNC({col_expr}, {_bq_unit})"
 
     if dialect == "tsql":
         _tsql_map: dict[str, str] = {
-            "hour":  f"DATEADD(hour, DATEDIFF(hour, 0, {col_expr}), 0)",
-            "day":   f"CAST({col_expr} AS DATE)",
-            "week":  f"DATEADD(week, DATEDIFF(week, 0, {col_expr}), 0)",
+            "hour": f"DATEADD(hour, DATEDIFF(hour, 0, {col_expr}), 0)",
+            "day": f"CAST({col_expr} AS DATE)",
+            "week": f"DATEADD(week, DATEDIFF(week, 0, {col_expr}), 0)",
             "month": f"DATEADD(month, DATEDIFF(month, 0, {col_expr}), 0)",
-            "year":  f"DATEADD(year, DATEDIFF(year, 0, {col_expr}), 0)",
+            "year": f"DATEADD(year, DATEDIFF(year, 0, {col_expr}), 0)",
         }
         return _tsql_map.get(unit, f"CAST({col_expr} AS DATE)")
 
@@ -105,9 +110,7 @@ def date_diff_days(start_expr: str, end_expr: str, dialect: str = "duckdb") -> s
     if dialect == "mysql":
         return f"DATEDIFF({end_expr}, {start_expr})"
     if dialect == "postgres":
-        return (
-            f"CAST(EXTRACT(DAY FROM ({end_expr}::timestamp - {start_expr}::timestamp)) AS INTEGER)"
-        )
+        return f"CAST(EXTRACT(DAY FROM ({end_expr}::timestamp - {start_expr}::timestamp)) AS INTEGER)"
     if dialect == "bigquery":
         return f"DATE_DIFF({end_expr}, {start_expr}, DAY)"
     if dialect in ("snowflake", "redshift"):

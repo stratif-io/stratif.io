@@ -1,17 +1,20 @@
 """Authentication API — register, login, logout, OAuth."""
 
 import secrets
-from typing import Optional
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from itsdangerous import SignatureExpired, BadSignature, URLSafeTimedSerializer
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel
 
 from openflow.config import get_settings
 from openflow.core.jwt_auth import AuthUserRow, get_current_auth_user
 from openflow.core.jwt_utils import create_access_token
-from openflow.services.auth_service import authenticate_user, register_user, upsert_google_user
+from openflow.services.auth_service import (
+    authenticate_user,
+    register_user,
+    upsert_google_user,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -65,10 +68,10 @@ class LoginBody(BaseModel):
 class AuthUserResponse(BaseModel):
     id: str
     email: str
-    display_name: Optional[str] = None
-    avatar_url: Optional[str] = None
+    display_name: str | None = None
+    avatar_url: str | None = None
     created_at: str
-    last_login_at: Optional[str] = None
+    last_login_at: str | None = None
 
 
 def _row_to_response(row) -> AuthUserResponse:
@@ -87,7 +90,9 @@ def _row_to_response(row) -> AuthUserResponse:
 # ---------------------------------------------------------------------------
 
 
-@router.post("/register", response_model=AuthUserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=AuthUserResponse, status_code=status.HTTP_201_CREATED
+)
 def register(body: RegisterBody, response: Response):
     row = register_user(
         email=body.email,
@@ -124,7 +129,10 @@ def logout(response: Response):
 @router.get("/me", response_model=AuthUserResponse)
 def me(current_user: AuthUserRow = Depends(get_current_auth_user)):
     from openflow.product_db import get_product_db
-    row = get_product_db().fetchone("SELECT * FROM auth_users WHERE id = ?", (current_user.id,))
+
+    row = get_product_db().fetchone(
+        "SELECT * FROM auth_users WHERE id = ?", (current_user.id,)
+    )
     return _row_to_response(row)
 
 
@@ -230,4 +238,5 @@ def google_callback(request: Request, response: Response, code: str, state: str)
     _set_session_cookie(response, row["id"], row["email"])
 
     from fastapi.responses import RedirectResponse
+
     return RedirectResponse(url=f"{settings.frontend_url}/dashboard", status_code=302)

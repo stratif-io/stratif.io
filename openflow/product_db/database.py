@@ -2,7 +2,6 @@
 
 import sqlite3
 from contextlib import contextmanager
-from typing import Optional
 
 from openflow.config import get_settings
 
@@ -33,7 +32,7 @@ class ProductDatabase:
         with self._conn() as conn:
             return conn.execute(query, params).fetchall()
 
-    def fetchone(self, query: str, params: tuple = ()) -> Optional[sqlite3.Row]:
+    def fetchone(self, query: str, params: tuple = ()) -> sqlite3.Row | None:
         with self._conn() as conn:
             return conn.execute(query, params).fetchone()
 
@@ -46,7 +45,7 @@ class ProductDatabase:
             conn.executescript(script)
 
 
-_product_db: Optional[ProductDatabase] = None
+_product_db: ProductDatabase | None = None
 
 
 def get_product_db() -> ProductDatabase:

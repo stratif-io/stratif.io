@@ -1,7 +1,5 @@
 """Unit tests for path funnel API."""
 
-import pytest
-from unittest.mock import MagicMock, patch
 from openflow.api.paths import get_path_funnel
 
 

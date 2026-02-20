@@ -3,7 +3,7 @@
 import json
 import re
 import sqlite3 as _sqlite3
-from typing import Any, Optional
+from typing import Any
 
 import duckdb
 import structlog
@@ -66,7 +66,7 @@ def _prepend_events_cte(cte_body: str, query: str, dialect: str = "duckdb") -> s
     cte_def = f"events AS {cte_body}"
     m = re.match(r"(with\s+)", q, re.IGNORECASE)
     if m:
-        return q[: m.end()] + cte_def + ", " + q[m.end():]
+        return q[: m.end()] + cte_def + ", " + q[m.end() :]
     return f"WITH {cte_def} {q}"
 
 
@@ -91,13 +91,13 @@ class AnalyticsDatabase:
     def __init__(
         self,
         conn: Any,
-        filter_fields: Optional[list[dict]] = None,
-        filter_exprs: Optional[dict[str, str]] = None,
-        custom_props: Optional[list[dict]] = None,
-        custom_prop_exprs: Optional[dict[str, str]] = None,
+        filter_fields: list[dict] | None = None,
+        filter_exprs: dict[str, str] | None = None,
+        custom_props: list[dict] | None = None,
+        custom_prop_exprs: dict[str, str] | None = None,
         session_timeout_minutes: int = 30,
         dialect: str = "duckdb",
-        events_cte: Optional[str] = None,
+        events_cte: str | None = None,
     ):
         self._conn = conn
         self._filter_fields: list[dict] = filter_fields or []
@@ -106,13 +106,13 @@ class AnalyticsDatabase:
         self._custom_prop_exprs: dict[str, str] = custom_prop_exprs or {}
         self._session_timeout_minutes: int = session_timeout_minutes
         self._dialect = dialect
-        self._events_cte: Optional[str] = events_cte
+        self._events_cte: str | None = events_cte
 
     # ------------------------------------------------------------------
     # Core query execution
     # ------------------------------------------------------------------
 
-    def execute(self, query: str, params: Optional[list] = None) -> list[tuple]:
+    def execute(self, query: str, params: list | None = None) -> list[tuple]:
         """Execute *query* against the underlying connection.
 
         The query must already be in the correct dialect for this connection.
@@ -228,7 +228,9 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
     except ValueError as exc:
-        raise HTTPException(status_code=500, detail="Failed to decrypt credentials") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to decrypt credentials"
+        ) from exc
 
     file_path: str = creds.get("file_path") or creds.get("s3_path", ":memory:")
 
@@ -240,7 +242,9 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
     uid_f = schema_row["user_id_field"] if schema_row else "user_id"
     ts_f = schema_row["timestamp_field"] if schema_row else "timestamp"
     en_f = schema_row["event_name_field"] if schema_row else "event_name"
-    custom_props: list[dict] = json.loads(schema_row["custom_properties"]) if schema_row else []
+    custom_props: list[dict] = (
+        json.loads(schema_row["custom_properties"]) if schema_row else []
+    )
     session_timeout_minutes: int = (
         schema_row["session_timeout_minutes"]
         if schema_row and schema_row["session_timeout_minutes"] is not None
@@ -260,7 +264,9 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         "SELECT * FROM connection_filter_configs WHERE connection_id = ?",
         (connection_id,),
     )
-    filter_fields: list[dict] = json.loads(filter_row["filter_fields"]) if filter_row else []
+    filter_fields: list[dict] = (
+        json.loads(filter_row["filter_fields"]) if filter_row else []
+    )
 
     filter_exprs: dict[str, str] = {}
     for ff in filter_fields:
@@ -270,13 +276,13 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         elif field in (uid_f, ts_f, en_f):
             filter_exprs[field] = f'"{field}"'
 
-    shared_kwargs = dict(
-        filter_fields=filter_fields,
-        filter_exprs=filter_exprs,
-        custom_props=custom_props,
-        custom_prop_exprs=custom_prop_exprs,
-        session_timeout_minutes=session_timeout_minutes,
-    )
+    shared_kwargs = {
+        "filter_fields": filter_fields,
+        "filter_exprs": filter_exprs,
+        "custom_props": custom_props,
+        "custom_prop_exprs": custom_prop_exprs,
+        "session_timeout_minutes": session_timeout_minutes,
+    }
 
     # Build the events CTE body when column names differ from standard.
     needs_remap = uid_f != "user_id" or ts_f != "timestamp" or en_f != "event_name"
@@ -292,7 +298,9 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
             if needs_remap
             else None
         )
-        return AnalyticsDatabase(conn, dialect="sqlite", events_cte=events_cte, **shared_kwargs)
+        return AnalyticsDatabase(
+            conn, dialect="sqlite", events_cte=events_cte, **shared_kwargs
+        )
 
     # ---------------------------------------------------------------
     # DuckDB path — open file directly, read-only, no views written
@@ -308,7 +316,9 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         if needs_remap
         else None
     )
-    return AnalyticsDatabase(conn, dialect="duckdb", events_cte=events_cte, **shared_kwargs)
+    return AnalyticsDatabase(
+        conn, dialect="duckdb", events_cte=events_cte, **shared_kwargs
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -317,7 +327,7 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
 
 
 async def get_analytics_db(
-    connection_id: Optional[str] = Query(None, description="Active connection ID"),
+    connection_id: str | None = Query(None, description="Active connection ID"),
     current_user: AuthUserRow = Depends(get_current_auth_user),
 ):
     """FastAPI dependency: returns the analytics DB for the active connection.

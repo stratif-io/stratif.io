@@ -4,18 +4,17 @@ import json
 import os
 import re
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Literal, Optional
+from datetime import UTC, datetime
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
 
+from openflow.config import get_settings
 from openflow.core.jwt_auth import AuthUserRow, get_current_auth_user
+from openflow.db import get_db
 from openflow.product_db import get_product_db
 from openflow.services.crypto import decrypt_credentials, encrypt_credentials
-from openflow.services.connection_executor import get_analytics_db
-from openflow.config import get_settings
-from openflow.db import get_db
 
 router = APIRouter(prefix="/api/connections", tags=["connections"])
 
@@ -29,7 +28,7 @@ _PATH_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.]*$")
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _get_connection_or_404(conn_id: str, user_id: str):
@@ -72,8 +71,8 @@ class ConnectionCreate(BaseModel):
 
 
 class ConnectionUpdate(BaseModel):
-    name: Optional[str] = None
-    credentials: Optional[dict[str, Any]] = None
+    name: str | None = None
+    credentials: dict[str, Any] | None = None
 
 
 class ConnectionResponse(BaseModel):
@@ -131,7 +130,9 @@ def list_connections(current_user: AuthUserRow = Depends(get_current_auth_user))
 
 
 @router.post("", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)
-def create_connection(body: ConnectionCreate, current_user: AuthUserRow = Depends(get_current_auth_user)):
+def create_connection(
+    body: ConnectionCreate, current_user: AuthUserRow = Depends(get_current_auth_user)
+):
     user_id = current_user.id
     conn_id = str(uuid.uuid4())
     now = _now()
@@ -147,7 +148,9 @@ def create_connection(body: ConnectionCreate, current_user: AuthUserRow = Depend
 
 
 @router.get("/{conn_id}", response_model=ConnectionResponse)
-def get_connection(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+def get_connection(
+    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+):
     user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
     return ConnectionResponse(
@@ -160,7 +163,9 @@ def get_connection(conn_id: str, current_user: AuthUserRow = Depends(get_current
 
 
 @router.get("/{conn_id}/string")
-def get_connection_string(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+def get_connection_string(
+    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+):
     """Return the (non-sensitive) connection string for DuckDB and SQLite connections."""
     user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
@@ -177,7 +182,9 @@ def get_connection_string(conn_id: str, current_user: AuthUserRow = Depends(get_
 
 @router.patch("/{conn_id}", response_model=ConnectionResponse)
 def update_connection(
-    conn_id: str, body: ConnectionUpdate, current_user: AuthUserRow = Depends(get_current_auth_user)
+    conn_id: str,
+    body: ConnectionUpdate,
+    current_user: AuthUserRow = Depends(get_current_auth_user),
 ):
     user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
@@ -203,7 +210,9 @@ def update_connection(
 
 
 @router.delete("/{conn_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_connection(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+def delete_connection(
+    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+):
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
     db = get_product_db()
@@ -211,14 +220,18 @@ def delete_connection(conn_id: str, current_user: AuthUserRow = Depends(get_curr
 
 
 @router.post("/{conn_id}/test")
-def test_connection(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+def test_connection(
+    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+):
     """Test connectivity to the target database (read-only)."""
     user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
     except ValueError as exc:
-        raise HTTPException(status_code=500, detail="Failed to decrypt credentials") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to decrypt credentials"
+        ) from exc
 
     db_type = row["db_type"]
     try:
@@ -227,7 +240,9 @@ def test_connection(conn_id: str, current_user: AuthUserRow = Depends(get_curren
 
             path = creds.get("file_path") or creds.get("s3_path", ":memory:")
             settings = get_settings()
-            if path != ":memory:" and os.path.abspath(path) == os.path.abspath(settings.db_path):
+            if path != ":memory:" and os.path.abspath(path) == os.path.abspath(
+                settings.db_path
+            ):
                 # Already open as the default DB — just ping it
                 get_db().execute("SELECT 1")
             else:
@@ -263,7 +278,9 @@ def test_connection(conn_id: str, current_user: AuthUserRow = Depends(get_curren
             detail=f"Driver for {db_type} not installed: {exc}",
         ) from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Connection failed: {exc}") from exc
+        raise HTTPException(
+            status_code=400, detail=f"Connection failed: {exc}"
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -271,12 +288,22 @@ def test_connection(conn_id: str, current_user: AuthUserRow = Depends(get_curren
 # ---------------------------------------------------------------------------
 
 _KNOWN_USER_ID_COLS = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
-_KNOWN_TIMESTAMP_COLS = ("timestamp", "ts", "created_at", "event_time", "time", "datetime", "date")
+_KNOWN_TIMESTAMP_COLS = (
+    "timestamp",
+    "ts",
+    "created_at",
+    "event_time",
+    "time",
+    "datetime",
+    "date",
+)
 _KNOWN_EVENT_NAME_COLS = ("event_name", "event", "action", "event_type", "name", "type")
 
 
 @router.get("/{conn_id}/schema/detect")
-def detect_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)) -> dict:
+def detect_schema(
+    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+) -> dict:
     """Detect columns from the target database and suggest field mappings."""
     user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
@@ -291,18 +318,24 @@ def detect_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
     except ValueError as exc:
-        raise HTTPException(status_code=500, detail="Failed to decrypt credentials") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to decrypt credentials"
+        ) from exc
 
     file_path = creds.get("file_path") or creds.get("s3_path")
     if not file_path:
-        raise HTTPException(status_code=400, detail="No file path configured for this connection")
+        raise HTTPException(
+            status_code=400, detail="No file path configured for this connection"
+        )
 
     try:
         if db_type == "sqlite":
             return _detect_schema_sqlite(file_path)
         return _detect_schema_duckdb(file_path)
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Schema detection failed: {exc}") from exc
+        raise HTTPException(
+            status_code=400, detail=f"Schema detection failed: {exc}"
+        ) from exc
 
 
 def _suggest_fields(columns: list[dict]) -> dict[str, str]:
@@ -340,7 +373,12 @@ def _detect_schema_duckdb(file_path: str) -> dict:
             tables[0] if tables else None,
         )
         if not events_table:
-            return {"tables": tables, "columns": [], "suggestions": {}, "proposed_custom_properties": []}
+            return {
+                "tables": tables,
+                "columns": [],
+                "suggestions": {},
+                "proposed_custom_properties": [],
+            }
 
         # DESCRIBE → (column_name, column_type, null, key, default, extra)
         columns_result = duck.execute(f'DESCRIBE "{events_table}"').fetchall()
@@ -365,11 +403,15 @@ def _detect_schema_duckdb(file_path: str) -> dict:
                     ).fetchall()
                     for (key,) in keys_result:
                         if key:
-                            proposed.append({"name": key, "path": f"{name}.{key}", "type": "string"})
+                            proposed.append(
+                                {"name": key, "path": f"{name}.{key}", "type": "string"}
+                            )
                 except Exception:
                     proposed.append({"name": name, "path": name, "type": "string"})
             else:
-                proposed.append({"name": name, "path": name, "type": _infer_type(sql_type)})
+                proposed.append(
+                    {"name": name, "path": name, "type": _infer_type(sql_type)}
+                )
 
         return {
             "tables": tables,
@@ -399,7 +441,12 @@ def _detect_schema_sqlite(file_path: str) -> dict:
             tables[0] if tables else None,
         )
         if not events_table:
-            return {"tables": tables, "columns": [], "suggestions": {}, "proposed_custom_properties": []}
+            return {
+                "tables": tables,
+                "columns": [],
+                "suggestions": {},
+                "proposed_custom_properties": [],
+            }
 
         # PRAGMA table_info → (cid, name, type, notnull, dflt_value, pk)
         columns_result = conn.execute(f'PRAGMA table_info("{events_table}")').fetchall()
@@ -423,7 +470,11 @@ def _detect_schema_sqlite(file_path: str) -> dict:
                     f'SELECT "{name}" FROM "{events_table}" '
                     f'WHERE "{name}" IS NOT NULL AND "{name}" != \'\' LIMIT 1'
                 ).fetchone()
-                if sample and isinstance(sample[0], str) and sample[0].lstrip().startswith("{"):
+                if (
+                    sample
+                    and isinstance(sample[0], str)
+                    and sample[0].lstrip().startswith("{")
+                ):
                     is_json = True
 
             if is_json:
@@ -436,11 +487,15 @@ def _detect_schema_sqlite(file_path: str) -> dict:
                     ).fetchall()
                     for (key,) in keys_result:
                         if key:
-                            proposed.append({"name": key, "path": f"{name}.{key}", "type": "string"})
+                            proposed.append(
+                                {"name": key, "path": f"{name}.{key}", "type": "string"}
+                            )
                 except Exception:
                     proposed.append({"name": name, "path": name, "type": "string"})
             else:
-                proposed.append({"name": name, "path": name, "type": _infer_type(sql_type)})
+                proposed.append(
+                    {"name": name, "path": name, "type": _infer_type(sql_type)}
+                )
 
         return {
             "tables": tables,
@@ -455,7 +510,21 @@ def _detect_schema_sqlite(file_path: str) -> dict:
 
 def _infer_type(sql_type: str) -> str:
     t = sql_type.upper()
-    if any(x in t for x in ("INT", "FLOAT", "DOUBLE", "DECIMAL", "NUMERIC", "REAL", "HUGEINT", "BIGINT", "SMALLINT", "TINYINT")):
+    if any(
+        x in t
+        for x in (
+            "INT",
+            "FLOAT",
+            "DOUBLE",
+            "DECIMAL",
+            "NUMERIC",
+            "REAL",
+            "HUGEINT",
+            "BIGINT",
+            "SMALLINT",
+            "TINYINT",
+        )
+    ):
         return "number"
     if "BOOL" in t:
         return "boolean"
@@ -470,7 +539,9 @@ def _infer_type(sql_type: str) -> str:
 
 
 @router.get("/{conn_id}/schema", response_model=SchemaConfigResponse)
-def get_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+def get_schema(
+    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+):
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
     db = get_product_db()
@@ -486,14 +557,18 @@ def get_schema(conn_id: str, current_user: AuthUserRow = Depends(get_current_aut
         timestamp_field=row["timestamp_field"],
         event_name_field=row["event_name_field"],
         custom_properties=json.loads(row["custom_properties"]),
-        session_timeout_minutes=row["session_timeout_minutes"] if row["session_timeout_minutes"] is not None else 30,
+        session_timeout_minutes=row["session_timeout_minutes"]
+        if row["session_timeout_minutes"] is not None
+        else 30,
         updated_at=row["updated_at"],
     )
 
 
 @router.put("/{conn_id}/schema", response_model=SchemaConfigResponse)
 def upsert_schema(
-    conn_id: str, body: SchemaConfigBody, current_user: AuthUserRow = Depends(get_current_auth_user)
+    conn_id: str,
+    body: SchemaConfigBody,
+    current_user: AuthUserRow = Depends(get_current_auth_user),
 ):
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
@@ -550,7 +625,9 @@ def upsert_schema(
 
 
 @router.get("/{conn_id}/filters", response_model=FilterConfigResponse)
-def get_filters(conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)):
+def get_filters(
+    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+):
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
     db = get_product_db()
@@ -562,7 +639,9 @@ def get_filters(conn_id: str, current_user: AuthUserRow = Depends(get_current_au
     raw = json.loads(row["filter_fields"])
     # Normalize: support legacy flat-string list and new object list
     fields = [
-        FilterField(**f) if isinstance(f, dict) else FilterField(field=f, label=f.capitalize(), icon="Tag")
+        FilterField(**f)
+        if isinstance(f, dict)
+        else FilterField(field=f, label=f.capitalize(), icon="Tag")
         for f in raw
     ]
     return FilterConfigResponse(
@@ -575,7 +654,9 @@ def get_filters(conn_id: str, current_user: AuthUserRow = Depends(get_current_au
 
 @router.put("/{conn_id}/filters", response_model=FilterConfigResponse)
 def upsert_filters(
-    conn_id: str, body: FilterConfigBody, current_user: AuthUserRow = Depends(get_current_auth_user)
+    conn_id: str,
+    body: FilterConfigBody,
+    current_user: AuthUserRow = Depends(get_current_auth_user),
 ):
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
@@ -619,5 +700,6 @@ def get_filter_options(
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
     from openflow.services.connection_executor import open_analytics_db
+
     db = open_analytics_db(conn_id, user_id)
     return db.get_filter_options()

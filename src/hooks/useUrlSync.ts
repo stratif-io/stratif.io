@@ -8,7 +8,7 @@ function formatDate(d: Date | string): string {
 }
 
 function parseDate(s: string): Date | null {
-  const d = new Date(s + 'T00:00:00')
+  const d = new Date(s)
   return isNaN(d.getTime()) ? null : d
 }
 

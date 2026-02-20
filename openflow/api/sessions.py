@@ -1,7 +1,6 @@
 """Sessions API endpoints."""
 
 import json
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
@@ -13,9 +12,11 @@ router = APIRouter(prefix="/api", tags=["sessions"])
 
 @router.get("/sessions/summary")
 def get_sessions_summary(
-    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    filters: str | None = Query(
+        None, description="JSON dict of active dimension filters"
+    ),
     db=Depends(get_analytics_db),
 ) -> dict:
     """Return session summary stats for the given date range, respecting dimension filters."""

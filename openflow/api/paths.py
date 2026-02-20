@@ -1,8 +1,7 @@
 """Paths API endpoints."""
 
 import json
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 
@@ -20,10 +19,12 @@ def _escape_sql_string(value: str) -> str:
 @router.get("/paths")
 def get_paths(
     target_event: str = Query(..., description="Target event to analyze paths to"),
-    device_type: Optional[str] = Query(None, description="Filter by device type (Mobile/Desktop)"),
+    device_type: str | None = Query(
+        None, description="Filter by device type (Mobile/Desktop)"
+    ),
     limit: int = Query(5, description="Number of top paths to return", ge=1, le=20),
-    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     db=Depends(get_analytics_db),
 ) -> dict:
     """Get popular paths leading to a target event.
@@ -49,7 +50,9 @@ def get_paths(
             date_conditions.append("timestamp <= ?")
             date_params.append(f"{end_date} 23:59:59")
         date_filter = " AND ".join(date_conditions)
-        date_subquery = f"AND user_id IN (SELECT DISTINCT user_id FROM events WHERE {date_filter})"
+        date_subquery = (
+            f"AND user_id IN (SELECT DISTINCT user_id FROM events WHERE {date_filter})"
+        )
 
     where_clause = " AND ".join(where_clauses) + date_subquery
     params = params + date_params
@@ -104,20 +107,30 @@ def get_paths(
 
 @router.get("/path-analysis")
 def get_path_analysis(
-    start_event: Optional[str] = Query(None, description="Event paths must start with"),
-    end_event: Optional[str] = Query(None, description="Event paths must end with"),
-    min_path_length: int = Query(2, description="Minimum number of events in path", ge=2, le=20),
-    max_path_length: int = Query(5, description="Maximum number of events in path", ge=2, le=20),
-    max_time_between_events: Optional[int] = Query(None, description="Maximum time between events", ge=1),
+    start_event: str | None = Query(None, description="Event paths must start with"),
+    end_event: str | None = Query(None, description="Event paths must end with"),
+    min_path_length: int = Query(
+        2, description="Minimum number of events in path", ge=2, le=20
+    ),
+    max_path_length: int = Query(
+        5, description="Maximum number of events in path", ge=2, le=20
+    ),
+    max_time_between_events: int | None = Query(
+        None, description="Maximum time between events", ge=1
+    ),
     time_unit: str = Query("seconds", description="Unit for max_time_between_events"),
     top_n: int = Query(10, description="Number of top paths to return", ge=1, le=100),
-    group_by: str = Query("user_id", description="Group paths by user_id or session_id"),
-    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
-    event_filters: Optional[str] = Query(None, description='JSON string of event filters'),
+    group_by: str = Query(
+        "user_id", description="Group paths by user_id or session_id"
+    ),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    filters: str | None = Query(
+        None, description="JSON dict of active dimension filters"
+    ),
+    event_filters: str | None = Query(None, description="JSON string of event filters"),
     db=Depends(get_analytics_db),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Analyze user paths through events.
 
     Works on all supported database engines. DuckDB uses a fast array-based strategy;
@@ -129,9 +142,12 @@ def get_path_analysis(
     if group_by not in ("user_id", "session_id"):
         return {"error": "group_by must be 'user_id' or 'session_id'", "data": []}
     if time_unit not in ("seconds", "minutes", "hours", "days"):
-        return {"error": "time_unit must be one of: seconds, minutes, hours, days", "data": []}
+        return {
+            "error": "time_unit must be one of: seconds, minutes, hours, days",
+            "data": [],
+        }
 
-    date_range: Optional[Tuple[str, str]] = None
+    date_range: tuple[str, str] | None = None
     if start_date and end_date:
         date_range = (start_date, end_date)
     elif start_date:
@@ -139,18 +155,20 @@ def get_path_analysis(
     elif end_date:
         date_range = (end_date, end_date)
 
-    parsed_event_filters: Optional[Dict[str, Dict[str, Any]]] = None
+    parsed_event_filters: dict[str, dict[str, Any]] | None = None
     if event_filters:
         try:
             parsed_event_filters = json.loads(event_filters)
         except json.JSONDecodeError:
             return {"error": "Invalid JSON in event_filters parameter", "data": []}
 
-    extra_conditions: List[str] = []
+    extra_conditions: list[str] = []
     if filters:
         filter_clauses, filter_values = db.build_filter_clauses(json.loads(filters))
         for clause, value in zip(filter_clauses, filter_values):
-            extra_conditions.append(clause.replace("?", f"'{_escape_sql_string(str(value))}'", 1))
+            extra_conditions.append(
+                clause.replace("?", f"'{_escape_sql_string(str(value))}'", 1)
+            )
 
     query = generate_path_analysis_query(
         table_name="events",
@@ -204,13 +222,19 @@ def get_path_analysis(
 
 @router.get("/path-funnel")
 def get_path_funnel(
-    events: str = Query(..., description="Comma-separated list of events in the funnel"),
-    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    device_type: Optional[str] = Query(None, description="Filter by device type (Mobile/Desktop)"),
-    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
+    events: str = Query(
+        ..., description="Comma-separated list of events in the funnel"
+    ),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    device_type: str | None = Query(
+        None, description="Filter by device type (Mobile/Desktop)"
+    ),
+    filters: str | None = Query(
+        None, description="JSON dict of active dimension filters"
+    ),
     db=Depends(get_analytics_db),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Calculate conversion funnel for a specific sequence of events.
 
     Users must complete events in the EXACT order specified.
@@ -268,12 +292,12 @@ def get_path_funnel(
             {cte_name} AS (
                 SELECT
                     prev.user_id,
-                    {(prev_time_selects + ', ') if prev_time_selects else ''}MIN(e.timestamp) AS t{i}
+                    {(prev_time_selects + ", ") if prev_time_selects else ""}MIN(e.timestamp) AS t{i}
                 FROM {prev_cte} prev
                 JOIN events e ON prev.user_id = e.user_id
                     AND e.event_name = ?
                     AND e.timestamp > prev.t{i - 1}{extra_sql}
-                GROUP BY prev.user_id{(', ' + prev_time_groups) if prev_time_groups else ''}
+                GROUP BY prev.user_id{(", " + prev_time_groups) if prev_time_groups else ""}
             )""")
             all_params.append(event_name)
             all_params.extend(filter_params)
@@ -310,18 +334,22 @@ def get_path_funnel(
             if first_step_users > 0:
                 overall_conversion_rate = round((users / first_step_users) * 100, 2)
 
-        dropoff_rate = round(100 - step_conversion_rate, 2) if prev_users is not None else 0
+        dropoff_rate = (
+            round(100 - step_conversion_rate, 2) if prev_users is not None else 0
+        )
         dropoff_users = prev_users - users if prev_users is not None else 0
 
-        steps_data.append({
-            "step": i + 1,
-            "event": event_name,
-            "occurrences": occurrences,
-            "users": users,
-            "step_conversion_rate": step_conversion_rate,
-            "overall_conversion_rate": overall_conversion_rate,
-            "dropoff_rate": dropoff_rate,
-            "dropoff_users": dropoff_users,
-        })
+        steps_data.append(
+            {
+                "step": i + 1,
+                "event": event_name,
+                "occurrences": occurrences,
+                "users": users,
+                "step_conversion_rate": step_conversion_rate,
+                "overall_conversion_rate": overall_conversion_rate,
+                "dropoff_rate": dropoff_rate,
+                "dropoff_users": dropoff_users,
+            }
+        )
 
     return {"events": event_list, "total_steps": len(event_list), "data": steps_data}

@@ -19,7 +19,7 @@ Output columns are identical for both strategies (``median_time_to_complete``
 is NULL for the standard strategy since SQL MEDIAN is not portable).
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import sqlglot
 from sqlglot import exp
@@ -56,21 +56,21 @@ class PathAnalyzer:
     def generate_path_analysis_query(
         self,
         table_name: str,
-        start_event: Optional[str] = None,
-        end_event: Optional[str] = None,
-        event_filters: Optional[Dict[str, Dict[str, Any]]] = None,
-        max_time_between_events: Optional[int] = None,
+        start_event: str | None = None,
+        end_event: str | None = None,
+        event_filters: dict[str, dict[str, Any]] | None = None,
+        max_time_between_events: int | None = None,
         time_unit: str = "seconds",
         min_path_length: int = 2,
-        max_path_length: Optional[int] = None,
+        max_path_length: int | None = None,
         top_n: int = 10,
         group_by: str = "user_id",
-        date_range: Optional[Tuple[str, str]] = None,
+        date_range: tuple[str, str] | None = None,
         sql_dialect: str = "duckdb",
         return_type: str = "string",
-        extra_where_conditions: Optional[List[str]] = None,
+        extra_where_conditions: list[str] | None = None,
         session_timeout_minutes: int = 30,
-    ) -> Union[str, exp.Expression]:
+    ) -> str | exp.Expression:
         """Generate a SQL query that identifies the most common event paths.
 
         For DuckDB connections the fast array-based strategy is used.
@@ -99,29 +99,33 @@ class PathAnalyzer:
         Returns:
             SQL string or SQLGlot AST depending on *return_type*.
         """
-        self._validate_params(min_path_length, max_path_length, time_unit, group_by, return_type)
+        self._validate_params(
+            min_path_length, max_path_length, time_unit, group_by, return_type
+        )
         effective_max = max_path_length or min(10, min_path_length + 5)
         effective_dialect = sql_dialect or self.dialect
 
-        common_kwargs: Dict[str, Any] = dict(
-            table_name=table_name,
-            start_event=start_event,
-            end_event=end_event,
-            event_filters=event_filters,
-            max_time_between_events=max_time_between_events,
-            time_unit=time_unit,
-            min_path_length=min_path_length,
-            max_path_length=effective_max,
-            top_n=top_n,
-            date_range=date_range,
-            extra_where_conditions=extra_where_conditions,
-            session_timeout_minutes=session_timeout_minutes,
-        )
+        common_kwargs: dict[str, Any] = {
+            "table_name": table_name,
+            "start_event": start_event,
+            "end_event": end_event,
+            "event_filters": event_filters,
+            "max_time_between_events": max_time_between_events,
+            "time_unit": time_unit,
+            "min_path_length": min_path_length,
+            "max_path_length": effective_max,
+            "top_n": top_n,
+            "date_range": date_range,
+            "extra_where_conditions": extra_where_conditions,
+            "session_timeout_minutes": session_timeout_minutes,
+        }
 
         if effective_dialect == "duckdb":
             query = self._build_duckdb_query(group_by=group_by, **common_kwargs)
         else:
-            query = self._build_standard_query(dialect=effective_dialect, **common_kwargs)
+            query = self._build_standard_query(
+                dialect=effective_dialect, **common_kwargs
+            )
 
         if return_type == "ast":
             return sqlglot.parse_one(query, dialect=effective_dialect)
@@ -134,7 +138,7 @@ class PathAnalyzer:
     def _validate_params(
         self,
         min_path_length: int,
-        max_path_length: Optional[int],
+        max_path_length: int | None,
         time_unit: str,
         group_by: str,
         return_type: str,
@@ -152,16 +156,18 @@ class PathAnalyzer:
 
     def _build_where_conditions(
         self,
-        date_range: Optional[Tuple[str, str]],
-        event_filters: Optional[Dict[str, Dict[str, Any]]],
+        date_range: tuple[str, str] | None,
+        event_filters: dict[str, dict[str, Any]] | None,
         table_name: str,
-        extra_where_conditions: Optional[List[str]],
+        extra_where_conditions: list[str] | None,
         dialect: str = "duckdb",
-    ) -> List[str]:
-        conditions: List[str] = []
+    ) -> list[str]:
+        conditions: list[str] = []
         if date_range:
             start, end = date_range
-            conditions.append(f"timestamp BETWEEN '{start} 00:00:00' AND '{end} 23:59:59'")
+            conditions.append(
+                f"timestamp BETWEEN '{start} 00:00:00' AND '{end} 23:59:59'"
+            )
         if extra_where_conditions:
             conditions.extend(extra_where_conditions)
         if event_filters:
@@ -171,7 +177,7 @@ class PathAnalyzer:
         return conditions
 
     def _build_event_filter_sql(
-        self, event_filters: Dict[str, Dict[str, Any]], dialect: str = "duckdb"
+        self, event_filters: dict[str, dict[str, Any]], dialect: str = "duckdb"
     ) -> str:
         or_conditions = []
         for event_name, filters in event_filters.items():
@@ -210,7 +216,9 @@ class PathAnalyzer:
             key = prop_key[:-3]
             col_expr = json_extract_string("properties", key, dialect)
             if isinstance(prop_value, list):
-                values = ", ".join(f"'{str(v).replace(chr(39), chr(39)*2)}'" for v in prop_value)
+                values = ", ".join(
+                    f"'{str(v).replace(chr(39), chr(39) * 2)}'" for v in prop_value
+                )
                 return f"{col_expr} IN ({values})"
             return ""
         else:
@@ -230,7 +238,9 @@ class PathAnalyzer:
         if isinstance(prop_value, (int, float)):
             return f"CAST({col_expr} AS REAL) = {prop_value}"
         if isinstance(prop_value, list):
-            values = ", ".join(f"'{str(v).replace(chr(39), chr(39)*2)}'" for v in prop_value)
+            values = ", ".join(
+                f"'{str(v).replace(chr(39), chr(39) * 2)}'" for v in prop_value
+            )
             return f"{col_expr} IN ({values})"
         if isinstance(prop_value, str):
             safe_val = prop_value.replace("'", "''")
@@ -244,28 +254,34 @@ class PathAnalyzer:
     def _build_duckdb_query(
         self,
         table_name: str,
-        start_event: Optional[str],
-        end_event: Optional[str],
-        event_filters: Optional[Dict[str, Dict[str, Any]]],
-        max_time_between_events: Optional[int],
+        start_event: str | None,
+        end_event: str | None,
+        event_filters: dict[str, dict[str, Any]] | None,
+        max_time_between_events: int | None,
         time_unit: str,
         min_path_length: int,
         max_path_length: int,
         top_n: int,
         group_by: str,
-        date_range: Optional[Tuple[str, str]],
-        extra_where_conditions: Optional[List[str]],
+        date_range: tuple[str, str] | None,
+        extra_where_conditions: list[str] | None,
         session_timeout_minutes: int,
     ) -> str:
         where_conditions = self._build_where_conditions(
             date_range, event_filters, table_name, extra_where_conditions, "duckdb"
         )
-        where_clause = ("WHERE " + " AND ".join(where_conditions)) if where_conditions else ""
+        where_clause = (
+            ("WHERE " + " AND ".join(where_conditions)) if where_conditions else ""
+        )
 
-        time_validation = self._duckdb_time_validation(max_time_between_events, time_unit)
+        time_validation = self._duckdb_time_validation(
+            max_time_between_events, time_unit
+        )
         start_end_conditions = self._duckdb_start_end_conditions(start_event, end_event)
         session_cte = self._duckdb_session_cte(session_timeout_minutes)
-        sequences_group_by = "session_id, user_id" if group_by == "session_id" else "user_id"
+        sequences_group_by = (
+            "session_id, user_id" if group_by == "session_id" else "user_id"
+        )
         subsequence_cte = self._duckdb_subsequence_cte(min_path_length, max_path_length)
 
         return f"""
@@ -346,7 +362,7 @@ events_sessionized AS (
 )"""
 
     def _duckdb_start_end_conditions(
-        self, start_event: Optional[str], end_event: Optional[str]
+        self, start_event: str | None, end_event: str | None
     ) -> str:
         conditions = []
         if start_event:
@@ -357,7 +373,7 @@ events_sessionized AS (
             conditions.append(f"path[ARRAY_LENGTH(path)] = '{safe}'")
         return ("AND " + " AND ".join(conditions)) if conditions else ""
 
-    def _duckdb_time_validation(self, max_time: Optional[int], time_unit: str) -> str:
+    def _duckdb_time_validation(self, max_time: int | None, time_unit: str) -> str:
         if max_time is None:
             return ""
         max_seconds = max_time * self._TIME_UNIT_SECONDS.get(time_unit, 1)
@@ -378,16 +394,16 @@ events_sessionized AS (
     def _build_standard_query(
         self,
         table_name: str,
-        start_event: Optional[str],
-        end_event: Optional[str],
-        event_filters: Optional[Dict[str, Dict[str, Any]]],
-        max_time_between_events: Optional[int],
+        start_event: str | None,
+        end_event: str | None,
+        event_filters: dict[str, dict[str, Any]] | None,
+        max_time_between_events: int | None,
         time_unit: str,
         min_path_length: int,
         max_path_length: int,
         top_n: int,
-        date_range: Optional[Tuple[str, str]],
-        extra_where_conditions: Optional[List[str]],
+        date_range: tuple[str, str] | None,
+        extra_where_conditions: list[str] | None,
         session_timeout_minutes: int,
         dialect: str,
     ) -> str:
@@ -411,22 +427,24 @@ events_sessionized AS (
         where_conditions = self._build_where_conditions(
             date_range, event_filters, table_name, extra_where_conditions, dialect
         )
-        where_clause = ("WHERE " + " AND ".join(where_conditions)) if where_conditions else ""
+        where_clause = (
+            ("WHERE " + " AND ".join(where_conditions)) if where_conditions else ""
+        )
 
         interval_check = interval_minutes_exceeded(
             "prev_ts", "timestamp", session_timeout_minutes, dialect
         )
 
         # ---------- build one CTE per path length ----------
-        path_cte_names: List[str] = []
-        path_cte_parts: List[str] = []
+        path_cte_names: list[str] = []
+        path_cte_parts: list[str] = []
 
         for length in range(min_path_length, max_path_length + 1):
             cte_name = f"paths_L{length}"
             path_cte_names.append(cte_name)
 
             # Path string: e1.event_name || ' -> ' || e2.event_name || …
-            concat_parts: List[str] = []
+            concat_parts: list[str] = []
             for i in range(1, length + 1):
                 concat_parts.append(f"e{i}.event_name")
                 if i < length:
@@ -434,11 +452,16 @@ events_sessionized AS (
             path_expr = string_concat(*concat_parts, dialect=dialect)
 
             # Duration from first to last event in the path
-            duration_expr = epoch_diff_seconds("e1.timestamp", f"e{length}.timestamp", dialect)
+            duration_expr = epoch_diff_seconds(
+                "e1.timestamp", f"e{length}.timestamp", dialect
+            )
 
             # Session ID for counting unique sessions
             session_id_expr = string_concat(
-                "e1.user_id", "'-'", cast_to_text("e1.session_num", dialect), dialect=dialect
+                "e1.user_id",
+                "'-'",
+                cast_to_text("e1.session_num", dialect),
+                dialect=dialect,
             )
 
             # Self-joins: e2.seq = e1.seq+1, e3.seq = e2.seq+1, …
@@ -451,7 +474,7 @@ events_sessionized AS (
             )
 
             # Per-CTE WHERE: start/end event, time constraint
-            cte_where: List[str] = []
+            cte_where: list[str] = []
             if start_event:
                 safe = start_event.replace("'", "''")
                 cte_where.append(f"e1.event_name = '{safe}'")
@@ -459,7 +482,9 @@ events_sessionized AS (
                 safe = end_event.replace("'", "''")
                 cte_where.append(f"e{length}.event_name = '{safe}'")
             if max_time_between_events:
-                max_secs = max_time_between_events * self._TIME_UNIT_SECONDS.get(time_unit, 1)
+                max_secs = max_time_between_events * self._TIME_UNIT_SECONDS.get(
+                    time_unit, 1
+                )
                 for i in range(1, length):
                     diff = epoch_diff_seconds(
                         f"e{i}.timestamp", f"e{i + 1}.timestamp", dialect
@@ -546,21 +571,21 @@ LIMIT {top_n}
 
 def generate_path_analysis_query(
     table_name: str,
-    start_event: Optional[str] = None,
-    end_event: Optional[str] = None,
-    event_filters: Optional[Dict[str, Dict[str, Any]]] = None,
-    max_time_between_events: Optional[int] = None,
+    start_event: str | None = None,
+    end_event: str | None = None,
+    event_filters: dict[str, dict[str, Any]] | None = None,
+    max_time_between_events: int | None = None,
     time_unit: str = "seconds",
     min_path_length: int = 2,
-    max_path_length: Optional[int] = None,
+    max_path_length: int | None = None,
     top_n: int = 10,
     group_by: str = "user_id",
-    date_range: Optional[Tuple[str, str]] = None,
+    date_range: tuple[str, str] | None = None,
     sql_dialect: str = "duckdb",
     return_type: str = "string",
-    extra_where_conditions: Optional[List[str]] = None,
+    extra_where_conditions: list[str] | None = None,
     session_timeout_minutes: int = 30,
-) -> Union[str, exp.Expression]:
+) -> str | exp.Expression:
     """Convenience wrapper around :class:`PathAnalyzer`."""
     return PathAnalyzer(dialect=sql_dialect).generate_path_analysis_query(
         table_name=table_name,

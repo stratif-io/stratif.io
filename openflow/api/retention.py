@@ -2,12 +2,11 @@
 
 import json
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
 from openflow.services import get_analytics_db
-from openflow.services.sql_builder import date_trunc, date_diff_days
+from openflow.services.sql_builder import date_diff_days, date_trunc
 
 router = APIRouter(prefix="/api", tags=["retention"])
 
@@ -16,29 +15,33 @@ router = APIRouter(prefix="/api", tags=["retention"])
 # ──────────────────────────────────────────────────────────────────────────────
 RETENTION_CONFIG: dict[str, dict] = {
     "day": {
-        "milestones":    [1, 7, 14, 30, 90],  # days after cohort start
-        "max_units":     90,                   # build series through day 90
-        "unit_divisor":  1,
+        "milestones": [1, 7, 14, 30, 90],  # days after cohort start
+        "max_units": 90,  # build series through day 90
+        "unit_divisor": 1,
     },
     "week": {
-        "milestones":    [1, 2, 3, 4, 12],    # weeks after cohort start
-        "max_units":     12,
-        "unit_divisor":  7,
+        "milestones": [1, 2, 3, 4, 12],  # weeks after cohort start
+        "max_units": 12,
+        "unit_divisor": 7,
     },
     "month": {
-        "milestones":    [1, 2, 3, 4, 5, 6],  # months after cohort start (30-day approx)
-        "max_units":     6,
-        "unit_divisor":  30,
+        "milestones": [1, 2, 3, 4, 5, 6],  # months after cohort start (30-day approx)
+        "max_units": 6,
+        "unit_divisor": 30,
     },
 }
 
 
 @router.get("/retention")
 def get_retention(
-    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    granularity: Optional[str] = Query("day", description="Cohort granularity: day | week | month"),
-    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    granularity: str | None = Query(
+        "day", description="Cohort granularity: day | week | month"
+    ),
+    filters: str | None = Query(
+        None, description="JSON dict of active dimension filters"
+    ),
     db=Depends(get_analytics_db),
 ) -> dict:
     """Calculate N-Unit Retention Cohorts.
@@ -53,18 +56,18 @@ def get_retention(
     gran = granularity if granularity in RETENTION_CONFIG else "day"
     config = RETENTION_CONFIG[gran]
 
-    milestones:    list[int] = config["milestones"]
-    max_units:     int       = config["max_units"]
-    unit_divisor:  int       = config["unit_divisor"]
+    milestones: list[int] = config["milestones"]
+    max_units: int = config["max_units"]
+    unit_divisor: int = config["unit_divisor"]
 
     # Cohort trunc unit (day/week/month for the cohort_date column)
-    day_col   = date_trunc(gran, "timestamp", dialect)
+    day_col = date_trunc(gran, "timestamp", dialect)
     # Days difference expression (always in days — we convert to units in Python/SQL)
     days_diff = date_diff_days("s.cohort_date", "a.activity_date", dialect)
 
     # ── WHERE clauses ──────────────────────────────────────────────────────────
     cohort_clauses: list[str] = []
-    cohort_params:  list      = []
+    cohort_params: list = []
 
     if start_date:
         cohort_clauses.append("timestamp >= ?")
@@ -74,13 +77,13 @@ def get_retention(
         cohort_params.append(f"{end_date} 23:59:59")
 
     filter_clauses: list[str] = []
-    filter_params:  list      = []
+    filter_params: list = []
     if filters:
         filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
         cohort_clauses.extend(filter_clauses)
         cohort_params.extend(filter_params)
 
-    cohort_where   = ("WHERE " + " AND ".join(cohort_clauses)) if cohort_clauses else ""
+    cohort_where = ("WHERE " + " AND ".join(cohort_clauses)) if cohort_clauses else ""
     activity_where = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
 
     params = cohort_params + filter_params
@@ -88,7 +91,6 @@ def get_retention(
     # unit expression: integer-divide days by unit_divisor so that SQL GROUP BY
     # collapses per-day rows into the right week/month bucket and COUNT DISTINCT
     # correctly handles users who returned multiple times within the same unit.
-    unit_col = f"ca.days_since_signup / {unit_divisor}"
 
     query = f"""
         WITH signups AS (
@@ -159,7 +161,7 @@ def get_retention(
     data = []
     for cohort_date_str, info in cohorts.items():
         cohort_size = info["cohort_size"]
-        units_data  = info["units"]
+        units_data = info["units"]
 
         # Unit 0 defaults to cohort_size (user was active in their signup unit)
         def unit_pct(u: int) -> float:
@@ -170,16 +172,18 @@ def get_retention(
         retention_series = [unit_pct(u) for u in range(max_units + 1)]
         milestone_values = [unit_pct(m) for m in milestones]
 
-        data.append({
-            "cohort_date":      cohort_date_str,
-            "cohort_size":      cohort_size,
-            "retention_series": retention_series,
-            "milestone_values": milestone_values,
-        })
+        data.append(
+            {
+                "cohort_date": cohort_date_str,
+                "cohort_size": cohort_size,
+                "retention_series": retention_series,
+                "milestone_values": milestone_values,
+            }
+        )
 
     return {
-        "granularity":             gran,
-        "milestones":              milestones,
+        "granularity": gran,
+        "milestones": milestones,
         "total_available_cohorts": len(data),
-        "data":                    data,
+        "data": data,
     }

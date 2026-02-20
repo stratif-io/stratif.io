@@ -1,7 +1,7 @@
 """Simple tests for path funnel with real data."""
 
-from openflow.db import get_db
 from openflow.api.paths import get_path_funnel
+from openflow.db import get_db
 
 
 def test_funnel_simple_two_steps():

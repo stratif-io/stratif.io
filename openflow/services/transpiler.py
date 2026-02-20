@@ -10,7 +10,6 @@ SQL from an external source and need to convert it to the target dialect.
 
 import sqlglot
 import structlog
-from typing import Optional
 
 log = structlog.get_logger(__name__)
 
@@ -38,7 +37,7 @@ class Transpiler:
         self.read_dialect = read_dialect
         self.write_dialect = write_dialect
 
-    def transpile(self, query: str, write_dialect: Optional[str] = None) -> str:
+    def transpile(self, query: str, write_dialect: str | None = None) -> str:
         """Transpile *query* from *read_dialect* to *write_dialect*.
 
         Returns the original query unchanged if transpilation fails, logging
@@ -58,7 +57,7 @@ class Transpiler:
             )
             return query
 
-    def validate(self, query: str, dialect: Optional[str] = None) -> bool:
+    def validate(self, query: str, dialect: str | None = None) -> bool:
         """Return True if *query* is syntactically valid for *dialect*."""
         target = dialect or self.read_dialect
         try:

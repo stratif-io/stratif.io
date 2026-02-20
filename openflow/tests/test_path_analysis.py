@@ -1,9 +1,10 @@
 """Unit tests for path analysis and path funnel."""
 
 import pytest
+
 from openflow.services.path_analyzer import (
-    generate_path_analysis_query,
     PathAnalyzerError,
+    generate_path_analysis_query,
 )
 
 

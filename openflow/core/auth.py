@@ -1,9 +1,8 @@
 """Authentication module for OpenFlow Analytics API."""
 
 import uuid
-from typing import Optional
 
-from fastapi import Header, HTTPException, Depends, status
+from fastapi import Header, HTTPException, status
 
 from openflow.config import get_settings
 
@@ -13,7 +12,7 @@ def derive_user_id(api_key: str) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"openflow.user.{api_key}"))
 
 
-async def verify_api_key(x_api_key: Optional[str] = Header(None)) -> str:
+async def verify_api_key(x_api_key: str | None = Header(None)) -> str:
     """
     Verify API key from request header.
 
@@ -40,7 +39,7 @@ async def verify_api_key(x_api_key: Optional[str] = Header(None)) -> str:
     return x_api_key
 
 
-async def optional_auth(x_api_key: Optional[str] = Header(None)) -> Optional[str]:
+async def optional_auth(x_api_key: str | None = Header(None)) -> str | None:
     """
     Optional authentication - returns None if no key provided.
 

@@ -1,7 +1,8 @@
-from behave import given, when, then
+from behave import given, then, when
+
 from openflow.services.path_analyzer import (
-    generate_path_analysis_query,
     PathAnalyzerError,
+    generate_path_analysis_query,
 )
 
 

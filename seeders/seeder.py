@@ -10,13 +10,12 @@ from __future__ import annotations
 import random
 import uuid
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Iterator, Optional
 
 from faker import Faker
 from pydantic_settings import BaseSettings
-
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -26,9 +25,9 @@ from pydantic_settings import BaseSettings
 class SeedConfig(BaseSettings):
     """Seeding-only settings — read from seeders/.env.seed (no OPENFLOW_ prefix)."""
 
-    seed_users: int = None
-    seed_days: int = None
-    db_path_prefix: str = None
+    seed_users: int | None
+    seed_days: int | None
+    db_path_prefix: str | None
 
     class Config:
         env_prefix = ""
@@ -56,8 +55,16 @@ COUNTRIES = {
         "timezone": "America/New_York",
         "weight": 0.35,
         "cities": [
-            "New York", "Los Angeles", "Chicago", "Houston", "Phoenix",
-            "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose",
+            "New York",
+            "Los Angeles",
+            "Chicago",
+            "Houston",
+            "Phoenix",
+            "Philadelphia",
+            "San Antonio",
+            "San Diego",
+            "Dallas",
+            "San Jose",
         ],
         "currency": "USD",
     },
@@ -65,8 +72,16 @@ COUNTRIES = {
         "timezone": "Europe/London",
         "weight": 0.12,
         "cities": [
-            "London", "Birmingham", "Manchester", "Leeds", "Glasgow",
-            "Liverpool", "Bristol", "Sheffield", "Edinburgh", "Nottingham",
+            "London",
+            "Birmingham",
+            "Manchester",
+            "Leeds",
+            "Glasgow",
+            "Liverpool",
+            "Bristol",
+            "Sheffield",
+            "Edinburgh",
+            "Nottingham",
         ],
         "currency": "GBP",
     },
@@ -74,8 +89,16 @@ COUNTRIES = {
         "timezone": "Europe/Berlin",
         "weight": 0.10,
         "cities": [
-            "Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt",
-            "Stuttgart", "Dusseldorf", "Dortmund", "Essen", "Leipzig",
+            "Berlin",
+            "Hamburg",
+            "Munich",
+            "Cologne",
+            "Frankfurt",
+            "Stuttgart",
+            "Dusseldorf",
+            "Dortmund",
+            "Essen",
+            "Leipzig",
         ],
         "currency": "EUR",
     },
@@ -83,8 +106,16 @@ COUNTRIES = {
         "timezone": "Europe/Paris",
         "weight": 0.08,
         "cities": [
-            "Paris", "Marseille", "Lyon", "Toulouse", "Nice",
-            "Nantes", "Strasbourg", "Montpellier", "Bordeaux", "Lille",
+            "Paris",
+            "Marseille",
+            "Lyon",
+            "Toulouse",
+            "Nice",
+            "Nantes",
+            "Strasbourg",
+            "Montpellier",
+            "Bordeaux",
+            "Lille",
         ],
         "currency": "EUR",
     },
@@ -92,8 +123,16 @@ COUNTRIES = {
         "timezone": "Asia/Tokyo",
         "weight": 0.10,
         "cities": [
-            "Tokyo", "Yokohama", "Osaka", "Nagoya", "Sapporo",
-            "Fukuoka", "Kobe", "Kyoto", "Kawasaki", "Saitama",
+            "Tokyo",
+            "Yokohama",
+            "Osaka",
+            "Nagoya",
+            "Sapporo",
+            "Fukuoka",
+            "Kobe",
+            "Kyoto",
+            "Kawasaki",
+            "Saitama",
         ],
         "currency": "JPY",
     },
@@ -101,8 +140,16 @@ COUNTRIES = {
         "timezone": "America/Sao_Paulo",
         "weight": 0.08,
         "cities": [
-            "Sao Paulo", "Rio de Janeiro", "Brasilia", "Salvador", "Fortaleza",
-            "Belo Horizonte", "Manaus", "Curitiba", "Recife", "Porto Alegre",
+            "Sao Paulo",
+            "Rio de Janeiro",
+            "Brasilia",
+            "Salvador",
+            "Fortaleza",
+            "Belo Horizonte",
+            "Manaus",
+            "Curitiba",
+            "Recife",
+            "Porto Alegre",
         ],
         "currency": "BRL",
     },
@@ -110,8 +157,16 @@ COUNTRIES = {
         "timezone": "Asia/Kolkata",
         "weight": 0.12,
         "cities": [
-            "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai",
-            "Kolkata", "Ahmedabad", "Pune", "Surat", "Jaipur",
+            "Mumbai",
+            "Delhi",
+            "Bangalore",
+            "Hyderabad",
+            "Chennai",
+            "Kolkata",
+            "Ahmedabad",
+            "Pune",
+            "Surat",
+            "Jaipur",
         ],
         "currency": "INR",
     },
@@ -119,8 +174,16 @@ COUNTRIES = {
         "timezone": "Australia/Sydney",
         "weight": 0.05,
         "cities": [
-            "Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide",
-            "Gold Coast", "Canberra", "Newcastle", "Wollongong", "Hobart",
+            "Sydney",
+            "Melbourne",
+            "Brisbane",
+            "Perth",
+            "Adelaide",
+            "Gold Coast",
+            "Canberra",
+            "Newcastle",
+            "Wollongong",
+            "Hobart",
         ],
         "currency": "AUD",
     },
@@ -288,10 +351,22 @@ URL_PATHS = {
 }
 
 SEARCH_QUERIES = [
-    "wireless headphones", "summer dress", "yoga mat", "coffee maker",
-    "running shoes", "smart watch", "kitchen knives", "headphones",
-    "tv stand", "book", "skincare", "laptop", "phone case",
-    "gaming keyboard", "winter jacket", "fitness tracker",
+    "wireless headphones",
+    "summer dress",
+    "yoga mat",
+    "coffee maker",
+    "running shoes",
+    "smart watch",
+    "kitchen knives",
+    "headphones",
+    "tv stand",
+    "book",
+    "skincare",
+    "laptop",
+    "phone case",
+    "gaming keyboard",
+    "winter jacket",
+    "fitness tracker",
 ]
 
 INSERT_BATCH_SIZE = 5000
@@ -308,9 +383,9 @@ class BaseSeeder(ABC):
 
     def __init__(
         self,
-        config: Optional[SeedConfig] = None,
-        seed: Optional[int] = None,
-        num_users: Optional[int] = None,
+        config: SeedConfig | None = None,
+        seed: int | None = None,
+        num_users: int | None = None,
     ):
         self.config = config or SeedConfig()
         self._seed_value = seed
@@ -380,16 +455,15 @@ class BaseSeeder(ABC):
             browser = self._weighted_choice(BROWSERS)
             os_choice = self._weighted_choice(OPERATING_SYSTEMS)
 
-            if device_type == "Desktop":
-                if os_choice in ["iOS", "Android"]:
-                    os_choice = self._weighted_choice(
-                        [("Windows", 0.60), ("macOS", 0.30), ("Linux", 0.10)]
-                    )
-            elif device_type in ["Mobile", "Tablet"]:
-                if os_choice in ["Windows", "Linux"]:
-                    os_choice = self._weighted_choice(
-                        [("iOS", 0.55), ("Android", 0.45)]
-                    )
+            if device_type == "Desktop" and os_choice in ["iOS", "Android"]:
+                os_choice = self._weighted_choice(
+                    [("Windows", 0.60), ("macOS", 0.30), ("Linux", 0.10)]
+                )
+            elif device_type in ["Mobile", "Tablet"] and os_choice in [
+                "Windows",
+                "Linux",
+            ]:
+                os_choice = self._weighted_choice([("iOS", 0.55), ("Android", 0.45)])
 
             screen_res = random.choice(SCREEN_RESOLUTIONS[device_type])
 
@@ -450,19 +524,29 @@ class BaseSeeder(ABC):
 
     def _get_country_hour(self, base_dt: datetime, country_code: str) -> int:
         tz_offsets = {
-            "US": -5, "UK": 0, "DE": 1, "FR": 1,
-            "JP": 9, "BR": -3, "IN": 5.5, "AU": 11,
+            "US": -5,
+            "UK": 0,
+            "DE": 1,
+            "FR": 1,
+            "JP": 9,
+            "BR": -3,
+            "IN": 5.5,
+            "AU": 11,
         }
         offset = tz_offsets.get(country_code, 0)
         return (base_dt.hour + int(offset)) % 24
 
-    def _generate_session_start(self, base_time: datetime, country_code: str) -> datetime:
+    def _generate_session_start(
+        self, base_time: datetime, country_code: str
+    ) -> datetime:
         is_weekend = base_time.weekday() >= 5
         is_holiday = self._is_us_holiday(base_time)
 
         weights = []
         for hour in range(24):
-            local_hour = self._get_country_hour(base_time.replace(hour=hour), country_code)
+            local_hour = self._get_country_hour(
+                base_time.replace(hour=hour), country_code
+            )
             weight = self._get_hour_weight(local_hour, is_weekend)
             if is_holiday and country_code == "US":
                 weight *= 0.4
@@ -496,7 +580,9 @@ class BaseSeeder(ABC):
                 session_date = base_time + timedelta(
                     days=random.randint(0, self.config.seed_days - 1)
                 )
-                session_start = self._generate_session_start(session_date, user["country"])
+                session_start = self._generate_session_start(
+                    session_date, user["country"]
+                )
                 session_id = f"{user['id']}_{session_idx + 1}"
                 user_sessions.append(session_id)
 
@@ -571,7 +657,9 @@ class BaseSeeder(ABC):
                             "product_price": product["product_price"],
                         }
                     )
-                    events.append((user["id"], "ProductView", current_time, additional_props))
+                    events.append(
+                        (user["id"], "ProductView", current_time, additional_props)
+                    )
                     visited_products.append(product)
 
             elif event_name == "AddToCart":
@@ -681,7 +769,9 @@ class BaseSeeder(ABC):
             properties["page_url"] = URL_PATHS["Home"]
         elif event_name == "Search":
             query = random.choice(SEARCH_QUERIES)
-            properties["page_url"] = URL_PATHS["Search"].format(query=query.replace(" ", "+"))
+            properties["page_url"] = URL_PATHS["Search"].format(
+                query=query.replace(" ", "+")
+            )
             properties["search_query"] = query
         elif event_name == "ProductView":
             if visited_products:

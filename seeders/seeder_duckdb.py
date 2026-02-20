@@ -8,15 +8,12 @@ Usage:
 """
 
 import argparse
-import json
 from pathlib import Path
-from typing import Optional
 
 import duckdb
-import pandas as pd
 import structlog
 
-from seeders.seeder import BaseSeeder, SeedConfig, PROGRESS_INTERVAL
+from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
 
 log = structlog.get_logger(__name__)
 
@@ -26,14 +23,14 @@ class DuckDBSeeder(BaseSeeder):
 
     def __init__(
         self,
-        db_path: Optional[str] = None,
-        num_users: Optional[int] = None,
-        seed: Optional[int] = None,
+        db_path: str | None = None,
+        num_users: int | None = None,
+        seed: int | None = None,
     ):
         config = SeedConfig()
         super().__init__(config=config, seed=seed, num_users=num_users)
-        self._db_path = db_path or (config.db_path_prefix+ ".duckdb")
-        self._conn: Optional[duckdb.DuckDBPyConnection] = None
+        self._db_path = db_path or (config.db_path_prefix + ".duckdb")
+        self._conn: duckdb.DuckDBPyConnection | None = None
 
     # ------------------------------------------------------------------
     # Dialect implementation
@@ -53,14 +50,6 @@ class DuckDBSeeder(BaseSeeder):
         if not events:
             return
 
-        df = pd.DataFrame(
-            {
-                "user_id": [e[0] for e in events],
-                "event_name": [e[1] for e in events],
-                "timestamp": [e[2] for e in events],
-                "properties": [json.dumps(e[3]) for e in events],
-            }
-        )
         self._conn.execute(
             "INSERT INTO events "
             "SELECT user_id, event_name, timestamp, properties::JSON FROM df"

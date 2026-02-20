@@ -2,15 +2,14 @@
 
 import hashlib
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from openflow.core.password import hash_password, verify_password
 from openflow.product_db import get_product_db
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _create_users_row(user_id: str) -> None:
@@ -32,7 +31,9 @@ def register_user(email: str, password: str, display_name: str):
     email = email.lower().strip()
 
     # Check uniqueness
-    existing = product_db.fetchone("SELECT id FROM auth_users WHERE email = ?", (email,))
+    existing = product_db.fetchone(
+        "SELECT id FROM auth_users WHERE email = ?", (email,)
+    )
     if existing:
         return None  # caller should treat as conflict
 
@@ -55,9 +56,7 @@ def authenticate_user(email: str, password: str):
     product_db = get_product_db()
     email = email.lower().strip()
 
-    row = product_db.fetchone(
-        "SELECT * FROM auth_users WHERE email = ?", (email,)
-    )
+    row = product_db.fetchone("SELECT * FROM auth_users WHERE email = ?", (email,))
     if not row:
         return None
     if not row["password_hash"]:
@@ -76,8 +75,8 @@ def authenticate_user(email: str, password: str):
 def upsert_google_user(
     google_id: str,
     email: str,
-    display_name: Optional[str],
-    avatar_url: Optional[str],
+    display_name: str | None,
+    avatar_url: str | None,
 ):
     """Find or create a user for Google OAuth. Returns the auth_users row."""
     product_db = get_product_db()
@@ -93,18 +92,20 @@ def upsert_google_user(
             "UPDATE auth_users SET last_login_at = ? WHERE id = ?",
             (now, row["id"]),
         )
-        return product_db.fetchone("SELECT * FROM auth_users WHERE id = ?", (row["id"],))
+        return product_db.fetchone(
+            "SELECT * FROM auth_users WHERE id = ?", (row["id"],)
+        )
 
     # Find by email (link google_id)
-    row = product_db.fetchone(
-        "SELECT * FROM auth_users WHERE email = ?", (email,)
-    )
+    row = product_db.fetchone("SELECT * FROM auth_users WHERE email = ?", (email,))
     if row:
         product_db.execute(
             "UPDATE auth_users SET google_id = ?, avatar_url = ?, last_login_at = ? WHERE id = ?",
             (google_id, avatar_url, now, row["id"]),
         )
-        return product_db.fetchone("SELECT * FROM auth_users WHERE id = ?", (row["id"],))
+        return product_db.fetchone(
+            "SELECT * FROM auth_users WHERE id = ?", (row["id"],)
+        )
 
     # Create new user
     user_id = str(uuid.uuid4())

@@ -11,9 +11,8 @@ import argparse
 import json
 import sqlite3
 from pathlib import Path
-from typing import Optional
 
-from seeders.seeder import BaseSeeder, SeedConfig, PROGRESS_INTERVAL
+from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
 
 
 class SQLiteSeeder(BaseSeeder):
@@ -21,14 +20,14 @@ class SQLiteSeeder(BaseSeeder):
 
     def __init__(
         self,
-        db_path:  Optional[str] = None,
-        num_users: Optional[int] = None,
-        seed: Optional[int] = None,
+        db_path: str | None = None,
+        num_users: int | None = None,
+        seed: int | None = None,
     ):
         config = SeedConfig()
         super().__init__(config=config, seed=seed, num_users=num_users)
-        self._db_path = db_path or (config.db_path_prefix+ ".sqlite")
-        self._conn: Optional[sqlite3.Connection] = None
+        self._db_path = db_path or (config.db_path_prefix + ".sqlite")
+        self._conn: sqlite3.Connection | None = None
 
     # ------------------------------------------------------------------
     # Dialect implementation

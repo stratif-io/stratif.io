@@ -2,12 +2,10 @@
 
 import json
 from datetime import datetime
-from typing import Optional
 
 import structlog
-from structlog.stdlib import BoundLogger
-
 from fastapi import APIRouter, Depends, Query
+from structlog.stdlib import BoundLogger
 
 from openflow.services import get_analytics_db
 from openflow.services.connection_executor import AnalyticsDatabase
@@ -30,9 +28,11 @@ def get_events(
 @router.get("/events/top")
 def get_top_events(
     limit: int = Query(5, description="Number of top events to return", ge=1, le=20),
-    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    filters: str | None = Query(
+        None, description="JSON dict of active dimension filters"
+    ),
     db=Depends(get_analytics_db),
 ) -> dict:
     """Get top events by occurrence count within date range."""
@@ -71,13 +71,17 @@ def get_top_events(
 def get_raw_events(
     limit: int = Query(100, description="Number of rows to return", ge=1, le=1000),
     offset: int = Query(0, description="Offset for pagination", ge=0),
-    event_name: Optional[str] = Query(None, description="Filter by event name"),
-    user_id: Optional[str] = Query(None, description="Filter by user ID"),
-    sort_order: str = Query("desc", description="Sort order for timestamp: asc or desc"),
-    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    filters: Optional[str] = Query(None, description='JSON dict of active dimension filters'),
-    db:AnalyticsDatabase = Depends(get_analytics_db),
+    event_name: str | None = Query(None, description="Filter by event name"),
+    user_id: str | None = Query(None, description="Filter by user ID"),
+    sort_order: str = Query(
+        "desc", description="Sort order for timestamp: asc or desc"
+    ),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    filters: str | None = Query(
+        None, description="JSON dict of active dimension filters"
+    ),
+    db: AnalyticsDatabase = Depends(get_analytics_db),
 ) -> dict:
     """Get raw events data with optional filtering."""
     where_clauses = []
@@ -125,8 +129,12 @@ def get_raw_events(
             {
                 "user_id": row[0],
                 "event_name": row[1],
-                "timestamp": row[2].isoformat() if isinstance(row[2], datetime) else str(row[2]),
-                "properties": json.loads(row[3]) if isinstance(row[3], str) else (row[3] or {}),
+                "timestamp": row[2].isoformat()
+                if isinstance(row[2], datetime)
+                else str(row[2]),
+                "properties": json.loads(row[3])
+                if isinstance(row[3], str)
+                else (row[3] or {}),
             }
             for row in result
         ],
@@ -156,8 +164,12 @@ def get_user_events(
             {
                 "user_id": row[0],
                 "event_name": row[1],
-                "timestamp": row[2].isoformat() if isinstance(row[2], datetime) else str(row[2]),
-                "properties": json.loads(row[3]) if isinstance(row[3], str) else (row[3] or {}),
+                "timestamp": row[2].isoformat()
+                if isinstance(row[2], datetime)
+                else str(row[2]),
+                "properties": json.loads(row[3])
+                if isinstance(row[3], str)
+                else (row[3] or {}),
             }
             for row in result
         ],

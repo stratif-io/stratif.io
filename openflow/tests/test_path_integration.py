@@ -1,6 +1,7 @@
 """Integration tests for path analysis with real database."""
 
 import pytest
+
 from openflow.db import get_db
 from openflow.services import generate_path_analysis_query
 
