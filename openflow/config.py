@@ -34,11 +34,11 @@ class Settings(BaseSettings):
     log_sql: bool = False  # OPENFLOW_LOG_SQL=true  → emit every SQL query at DEBUG
     log_format: str = "console"  # OPENFLOW_LOG_FORMAT=console|json
 
-    google_client_id: str
-    google_client_secret: str
-    google_redirect_uri: str
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    google_redirect_uri: str | None = None
 
-    frontend_url: str
+    frontend_url: str | None = None
 
     @property
     def cors_list(self) -> list[str]:
