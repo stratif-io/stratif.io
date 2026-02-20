@@ -7,7 +7,6 @@ Usage:
     uv run seed-sqlite --seed 42               # reproducible output
 """
 
-import argparse
 import json
 import sqlite3
 from pathlib import Path
@@ -18,16 +17,20 @@ from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
 class SQLiteSeeder(BaseSeeder):
     """Writes seeded events to a SQLite database file."""
 
+    _db_path: str | None
+
     def __init__(
         self,
-        db_path: str | None = None,
-        num_users: int | None = None,
-        seed: int | None = None,
     ):
         config = SeedConfig()
-        super().__init__(config=config, seed=seed, num_users=num_users)
-        self._db_path = db_path or (config.db_path_prefix + ".sqlite")
-        self._conn: sqlite3.Connection | None = None
+        super().__init__(config=config)
+        self._db_path = (
+            f"{config.db_path_prefix}.sqlite"
+            if config and config.db_path_prefix
+            else None
+        )
+
+        self._conn: sqlite3.Connection
 
     # ------------------------------------------------------------------
     # Dialect implementation
@@ -64,68 +67,52 @@ class SQLiteSeeder(BaseSeeder):
         self._conn.commit()
 
     def seed(self) -> dict[str, int]:
-        out = Path(self._db_path)
-        out.parent.mkdir(parents=True, exist_ok=True)
+        if self._db_path:
+            out = Path(self._db_path)
+            out.parent.mkdir(parents=True, exist_ok=True)
 
-        n = self._num_users or self.config.seed_users
-        print(f"Seeding {n:,} users → {out}")
+            n = self.config.seed_users
+            print(f"Seeding {n:,} users → {out}")
 
-        self._conn = sqlite3.connect(str(out))
-        try:
-            self._generate_products()
-            self._create_events_table()
-            users = self._generate_users()
+            self._conn = sqlite3.connect(str(out))
+            try:
+                self._generate_products()
+                self._create_events_table()
+                users = self._generate_users()
 
-            total_events = 0
-            for batch in self._generate_events_batched(users):
-                self._insert_events(batch)
-                total_events += len(batch)
-                if total_events % PROGRESS_INTERVAL < len(batch):
-                    print(f"  {total_events:,} events written…")
-        finally:
-            self._conn.close()
-            self._conn = None
+                total_events = 0
+                for batch in self._generate_events_batched(users):
+                    self._insert_events(batch)
+                    total_events += len(batch)
+                    if total_events % PROGRESS_INTERVAL < len(batch):
+                        print(f"  {total_events:,} events written…")
+            finally:
+                self._conn.close()
 
-        stats = {
-            "total_events": total_events,
-            "total_users": len(users),
-            "new_users": sum(1 for u in users if not u["is_returning"]),
-            "returning_users": sum(1 for u in users if u["is_returning"]),
-            "power_users": sum(1 for u in users if u["is_power_user"]),
-            "completed_purchases": sum(1 for u in users if u["completed_purchase"]),
-        }
+            stats = {
+                "total_events": total_events,
+                "total_users": len(users),
+                "new_users": sum(1 for u in users if not u["is_returning"]),
+                "returning_users": sum(1 for u in users if u["is_returning"]),
+                "power_users": sum(1 for u in users if u["is_power_user"]),
+                "completed_purchases": sum(1 for u in users if u["completed_purchase"]),
+            }
 
-        size_mb = out.stat().st_size / 1_048_576
-        print(
-            f"\nDone — {stats['total_events']:,} events, "
-            f"{stats['total_users']:,} users, "
-            f"{size_mb:.1f} MB"
-        )
-        return stats
+            size_mb = out.stat().st_size / 1_048_576
+            print(
+                f"\nDone — {stats['total_events']:,} events, "
+                f"{stats['total_users']:,} users, "
+                f"{size_mb:.1f} MB"
+            )
+            return stats
+        else:
+            raise ValueError(
+                "db_path must be provided or set via OPENFLOW_DB_PATH environment variable"
+            )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Seed a SQLite analytics database")
-    parser.add_argument(
-        "--out",
-        default=None,
-        help="Output SQLite file path (default: db/events.sqlite)",
-    )
-    parser.add_argument(
-        "--users",
-        type=int,
-        default=None,
-        help="Number of users to generate (default: SEED_USERS from seeders/.env.seed)",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=None,
-        help="Random seed for reproducibility",
-    )
-    args = parser.parse_args()
-
-    SQLiteSeeder(db_path=args.out, num_users=args.users, seed=args.seed).seed()
+    SQLiteSeeder().seed()
 
 
 if __name__ == "__main__":

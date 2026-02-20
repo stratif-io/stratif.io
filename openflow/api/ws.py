@@ -10,7 +10,6 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from jose import JWTError
 
 from openflow.core.jwt_utils import decode_access_token
-from openflow.db import get_db
 from openflow.product_db import get_product_db
 from openflow.services.connection_executor import open_analytics_db
 
@@ -52,7 +51,6 @@ def _get_db_for_user(user_id: str):
     )
     if row:
         return open_analytics_db(row["id"], user_id)
-    return get_db()
 
 
 # ---------------------------------------------------------------------------

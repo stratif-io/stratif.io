@@ -6,7 +6,7 @@ from openflow.services.path_analyzer import (
 )
 
 
-@given("I want to analyze paths")
+@given("I want to analyze paths")  # type: ignore[call-non-callable]
 def step_want_analyze_paths(context):
     context.params = {
         "table_name": "events",
@@ -17,7 +17,7 @@ def step_want_analyze_paths(context):
     }
 
 
-@given("I have an events table")
+@given("I have an events table")  # type: ignore[call-non-callable]
 def step_have_events_table(context):
     context.params = {
         "table_name": "events",
@@ -26,30 +26,30 @@ def step_have_events_table(context):
     }
 
 
-@when("I set min_path_length to {value:d}")
+@when("I set min_path_length to {value:d}")  # type: ignore[call-non-callable]
 def step_set_min_path_length(context, value):
     context.params["min_path_length"] = value
 
 
-@when("I set min_path_length to {min_val:d} and max_path_length to {max_val:d}")
+@when("I set min_path_length to {min_val:d} and max_path_length to {max_val:d}")  # type: ignore[call-non-callable]
 def step_set_path_lengths(context, min_val, max_val):
     context.params["min_path_length"] = min_val
     context.params["max_path_length"] = max_val
 
 
-@when('I set time_unit to "{value}"')
+@when('I set time_unit to "{value}"')  # type: ignore[call-non-callable]
 def step_set_time_unit(context, value):
     context.params["time_unit"] = value
 
 
-@when('I set group_by to "{value}"')
+@when('I set group_by to "{value}"')  # type: ignore[call-non-callable]
 def step_set_group_by(context, value):
     context.params["group_by"] = value
 
 
 @when(
     "I generate a path analysis query with min_path_length={min_len:d} and max_path_length={max_len:d}"
-)
+)  # type: ignore[call-non-callable]
 def step_generate_query_basic(context, min_len, max_len):
     context.query = generate_path_analysis_query(
         table_name="events",
@@ -58,7 +58,7 @@ def step_generate_query_basic(context, min_len, max_len):
     )
 
 
-@when('I generate a path analysis query with start_event="{event}"')
+@when('I generate a path analysis query with start_event="{event}"')  # type: ignore[call-non-callable]
 def step_generate_query_start_event(context, event):
     context.query = generate_path_analysis_query(
         table_name="events",
@@ -66,7 +66,7 @@ def step_generate_query_start_event(context, event):
     )
 
 
-@when('I generate a path analysis query with end_event="{event}"')
+@when('I generate a path analysis query with end_event="{event}"')  # type: ignore[call-non-callable]
 def step_generate_query_end_event(context, event):
     context.query = generate_path_analysis_query(
         table_name="events",
@@ -74,7 +74,7 @@ def step_generate_query_end_event(context, event):
     )
 
 
-@when('I generate a path analysis query with date_range from "{start}" to "{end}"')
+@when('I generate a path analysis query with date_range from "{start}" to "{end}"')  # type: ignore[call-non-callable]
 def step_generate_query_date_range(context, start, end):
     context.query = generate_path_analysis_query(
         table_name="events",
@@ -84,7 +84,7 @@ def step_generate_query_date_range(context, start, end):
 
 @when(
     'I generate a path analysis query with max_time_between_events={time:d} and time_unit="{unit}"'
-)
+)  # type: ignore[call-non-callable]
 def step_generate_query_time_constraint(context, time, unit):
     context.query = generate_path_analysis_query(
         table_name="events",
@@ -93,7 +93,7 @@ def step_generate_query_time_constraint(context, time, unit):
     )
 
 
-@then('I should get an error "{error_message}"')
+@then('I should get an error "{error_message}"')  # type: ignore[call-non-callable]
 def step_should_get_error(context, error_message):
     try:
         generate_path_analysis_query(**context.params)
@@ -104,7 +104,7 @@ def step_should_get_error(context, error_message):
         assert error_message in str(e), f"Expected '{error_message}' in error, got: {e}"
 
 
-@then('the query should contain "{text}"')
+@then('the query should contain "{text}"')  # type: ignore[call-non-callable]
 def step_query_contains(context, text):
     assert hasattr(context, "query"), "No query was generated"
     assert text in context.query, (
@@ -112,7 +112,7 @@ def step_query_contains(context, text):
     )
 
 
-@then("the query should filter paths ending with {event}")
+@then("the query should filter paths ending with {event}")  # type: ignore[call-non-callable]
 def step_query_filters_end_event(context, event):
     assert hasattr(context, "query"), "No query was generated"
     assert f"'{event}'" in context.query, f"Expected '{event}' in query"

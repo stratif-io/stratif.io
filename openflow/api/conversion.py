@@ -22,56 +22,61 @@ def get_conversion(
     Uses standard ANSI SQL (EXISTS, correlated subqueries) compatible with
     DuckDB, SQLite, PostgreSQL, MySQL, and most other engines.
     """
-    date_clauses: list[str] = []
-    params: list = []
+    if db:
+        date_clauses: list[str] = []
+        params: list = []
 
-    if start_date:
-        date_clauses.append("timestamp >= ?")
-        params.append(f"{start_date} 00:00:00")
-    if end_date:
-        date_clauses.append("timestamp <= ?")
-        params.append(f"{end_date} 23:59:59")
+        if start_date:
+            date_clauses.append("timestamp >= ?")
+            params.append(f"{start_date} 00:00:00")
+        if end_date:
+            date_clauses.append("timestamp <= ?")
+            params.append(f"{end_date} 23:59:59")
 
-    date_filter = (" AND " + " AND ".join(date_clauses)) if date_clauses else ""
+        date_filter = (" AND " + " AND ".join(date_clauses)) if date_clauses else ""
 
-    query = f"""
-        WITH home_users AS (
-            SELECT DISTINCT user_id
-            FROM events
-            WHERE event_name = 'Home'{date_filter}
-        ),
-        converted_users AS (
-            SELECT DISTINCT h.user_id
-            FROM home_users h
-            WHERE EXISTS (
-                SELECT 1 FROM events e
-                WHERE e.user_id = h.user_id
-                  AND e.event_name = 'Purchase'
-                  AND e.timestamp > (
-                      SELECT MIN(e2.timestamp)
-                      FROM events e2
-                      WHERE e2.user_id = h.user_id
-                        AND e2.event_name = 'Home'
-                        AND e2.timestamp IS NOT NULL
-                  )
+        query = f"""
+            WITH home_users AS (
+                SELECT DISTINCT user_id
+                FROM events
+                WHERE event_name = 'Home'{date_filter}
+            ),
+            converted_users AS (
+                SELECT DISTINCT h.user_id
+                FROM home_users h
+                WHERE EXISTS (
+                    SELECT 1 FROM events e
+                    WHERE e.user_id = h.user_id
+                    AND e.event_name = 'Purchase'
+                    AND e.timestamp > (
+                        SELECT MIN(e2.timestamp)
+                        FROM events e2
+                        WHERE e2.user_id = h.user_id
+                            AND e2.event_name = 'Home'
+                            AND e2.timestamp IS NOT NULL
+                    )
+                )
             )
+            SELECT
+                (SELECT COUNT(*) FROM home_users)     AS total_users,
+                (SELECT COUNT(*) FROM converted_users) AS converted_users
+        """
+
+        result = db.execute(query, params)
+        total_users = result[0][0]
+        converted_users = result[0][1]
+        conversion_rate = (
+            (converted_users / total_users * 100) if total_users > 0 else 0
         )
-        SELECT
-            (SELECT COUNT(*) FROM home_users)     AS total_users,
-            (SELECT COUNT(*) FROM converted_users) AS converted_users
-    """
 
-    result = db.execute(query, params)
-    total_users = result[0][0]
-    converted_users = result[0][1]
-    conversion_rate = (converted_users / total_users * 100) if total_users > 0 else 0
-
-    return {
-        "data": [
-            {
-                "total_users": total_users,
-                "converted_users": converted_users,
-                "conversion_rate_percent": round(conversion_rate, 2),
-            }
-        ]
-    }
+        return {
+            "data": [
+                {
+                    "total_users": total_users,
+                    "converted_users": converted_users,
+                    "conversion_rate_percent": round(conversion_rate, 2),
+                }
+            ]
+        }
+    else:
+        raise ValueError("db cannot be None")

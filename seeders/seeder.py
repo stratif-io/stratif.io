@@ -13,8 +13,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 
-from faker import Faker
 from pydantic_settings import BaseSettings
 
 # ---------------------------------------------------------------------------
@@ -25,9 +25,9 @@ from pydantic_settings import BaseSettings
 class SeedConfig(BaseSettings):
     """Seeding-only settings — read from seeders/.env.seed (no OPENFLOW_ prefix)."""
 
-    seed_users: int | None
-    seed_days: int | None
-    db_path_prefix: str | None
+    seed_users: int | None = None
+    seed_days: int | None = None
+    db_path_prefix: str | None = None
 
     class Config:
         env_prefix = ""
@@ -50,7 +50,7 @@ FUNNEL_DROP_OFF = {
     "Purchase": 0.80,
 }
 
-COUNTRIES = {
+COUNTRIES: dict[str, Any] = {
     "US": {
         "timezone": "America/New_York",
         "weight": 0.35,
@@ -249,7 +249,7 @@ REFERRERS = [
     ("duckduckgo", 0.01),
 ]
 
-PRODUCT_CATEGORIES = {
+PRODUCT_CATEGORIES: dict[str, Any] = {
     "Electronics": {
         "products": [
             ("Wireless Bluetooth Headphones", 79.99),
@@ -381,19 +381,8 @@ PROGRESS_INTERVAL = 50_000
 class BaseSeeder(ABC):
     """Abstract base seeder — data generation only, no DB dependency."""
 
-    def __init__(
-        self,
-        config: SeedConfig | None = None,
-        seed: int | None = None,
-        num_users: int | None = None,
-    ):
+    def __init__(self, config: SeedConfig | None = None):
         self.config = config or SeedConfig()
-        self._seed_value = seed
-        if seed is not None:
-            random.seed(seed)
-            Faker.seed(seed)
-        self.faker = Faker()
-        self._num_users = num_users
         self._product_cache: list[dict] = []
 
     # ------------------------------------------------------------------
@@ -439,7 +428,7 @@ class BaseSeeder(ABC):
 
     def _generate_users(self) -> list[dict]:
         users = []
-        num_users = self._num_users or self.config.seed_users
+        num_users = self.config.seed_users if self.config.seed_users else 0
 
         for _ in range(num_users):
             country_code = self._weighted_choice(
@@ -564,7 +553,8 @@ class BaseSeeder(ABC):
 
     def _generate_events_batched(self, users: list[dict]) -> Iterator[list[tuple]]:
         batch: list[tuple] = []
-        base_time = datetime.now() - timedelta(days=self.config.seed_days)
+        seed_days = self.config.seed_days if self.config.seed_days else 0
+        base_time = datetime.now() - timedelta(days=seed_days)
 
         for user in users:
             if user["is_power_user"]:
@@ -578,7 +568,7 @@ class BaseSeeder(ABC):
 
             for session_idx in range(num_sessions):
                 session_date = base_time + timedelta(
-                    days=random.randint(0, self.config.seed_days - 1)
+                    days=random.randint(0, seed_days - 1)
                 )
                 session_start = self._generate_session_start(
                     session_date, user["country"]
@@ -787,5 +777,6 @@ class BaseSeeder(ABC):
         return properties
 
     def _weighted_choice(self, choices: list[tuple]) -> str:
-        items, weights = zip(*choices, strict=False)
+        items = [c[0] for c in choices]
+        weights = [c[1] for c in choices]
         return random.choices(items, weights=weights, k=1)[0]

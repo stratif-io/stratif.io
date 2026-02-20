@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel
 
-from openflow.config import get_settings
+from openflow.config import Settings, get_settings
 from openflow.core.jwt_auth import AuthUserRow, get_current_auth_user
 from openflow.core.jwt_utils import create_access_token
 from openflow.services.auth_service import (
@@ -19,7 +19,7 @@ from openflow.services.auth_service import (
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-settings = get_settings()
+settings: Settings = get_settings()
 
 _OAUTH_STATE_COOKIE = "of_oauth_state"
 _SESSION_COOKIE = "of_session"
@@ -131,12 +131,15 @@ def logout(response: Response):
 def me(
     current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
-    from openflow.product_db import get_product_db
+    if current_user:
+        from openflow.product_db import get_product_db
 
-    row = get_product_db().fetchone(
-        "SELECT * FROM auth_users WHERE id = ?", (current_user.id,)
-    )
-    return _row_to_response(row)
+        row = get_product_db().fetchone(
+            "SELECT * FROM auth_users WHERE id = ?", (current_user.id,)
+        )
+        return _row_to_response(row)
+    else:
+        raise ValueError("current_user cannot be None")
 
 
 @router.get("/google")
@@ -237,9 +240,10 @@ def google_callback(request: Request, response: Response, code: str, state: str)
         display_name=userinfo.get("name"),
         avatar_url=userinfo.get("picture"),
     )
+    if row:
+        _set_session_cookie(response, row["id"], row["email"])
+        from fastapi.responses import RedirectResponse
 
-    _set_session_cookie(response, row["id"], row["email"])
-
-    from fastapi.responses import RedirectResponse
-
-    return RedirectResponse(url=f"{settings.frontend_url}/dashboard", status_code=302)
+        return RedirectResponse(
+            url=f"{settings.frontend_url}/dashboard", status_code=302
+        )

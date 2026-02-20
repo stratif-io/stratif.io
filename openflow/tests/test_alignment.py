@@ -1,8 +1,21 @@
 """Verify funnel and path analysis are aligned."""
 
 from openflow.api.paths import get_path_funnel
-from openflow.db import get_db
 from openflow.services import generate_path_analysis_query
+from openflow.services.connection_executor import AnalyticsDatabase
+
+
+class MockDB(AnalyticsDatabase):
+    def __init__(self, results):
+        self.results = results
+        self.call_count = 0
+
+    def execute(self, query, params=None):
+        result = (
+            self.results[self.call_count] if self.call_count < len(self.results) else []
+        )
+        self.call_count += 1
+        return result
 
 
 def test_funnel_matches_path_analysis():
@@ -16,12 +29,12 @@ def test_funnel_matches_path_analysis():
 
     This should match the unique_users count for the full path.
     """
-    db = get_db()
+    db = MockDB([])
 
     events = "Home,Search,ProductView"
 
     funnel = get_path_funnel(
-        events=events, start_date="2026-01-01", end_date="2026-02-16", db=db, _="test"
+        events=events, start_date="2026-01-01", end_date="2026-02-16", db=db
     )
 
     query = generate_path_analysis_query(
@@ -53,14 +66,13 @@ def test_funnel_matches_path_analysis():
 
 def test_funnel_users_decrease_monotonically():
     """Users should only decrease, never increase."""
-    db = get_db()
+    db = MockDB([])
 
     funnel = get_path_funnel(
         events="Home,Search,ProductView,AddToCart,Purchase",
         start_date="2026-01-01",
         end_date="2026-02-16",
         db=db,
-        _="test",
     )
 
     users = [step["users"] for step in funnel["data"]]
@@ -75,14 +87,13 @@ def test_funnel_users_decrease_monotonically():
 
 def test_funnel_dropoff_sums_correctly():
     """Total dropoff should equal initial users minus final users."""
-    db = get_db()
+    db = MockDB([])
 
     funnel = get_path_funnel(
         events="Home,Search,ProductView,AddToCart,Purchase",
         start_date="2026-01-01",
         end_date="2026-02-16",
         db=db,
-        _="test",
     )
 
     initial_users = funnel["data"][0]["users"]

@@ -11,7 +11,6 @@ from fastapi import Depends, HTTPException, Query
 
 from openflow.config import get_settings
 from openflow.core.jwt_auth import AuthUserRow, get_current_auth_user
-from openflow.db import get_db
 from openflow.product_db import get_product_db
 from openflow.services.crypto import decrypt_credentials
 from openflow.services.sql_builder import json_extract_string
@@ -91,13 +90,13 @@ class AnalyticsDatabase:
     def __init__(
         self,
         conn: Any,
+        dialect: str,
+        events_cte: str | None,
         filter_fields: list[dict] | None = None,
         filter_exprs: dict[str, str] | None = None,
         custom_props: list[dict] | None = None,
         custom_prop_exprs: dict[str, str] | None = None,
         session_timeout_minutes: int = 30,
-        dialect: str = "duckdb",
-        events_cte: str | None = None,
     ):
         self._conn = conn
         self._filter_fields: list[dict] = filter_fields or []
@@ -276,7 +275,7 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         elif field in (uid_f, ts_f, en_f):
             filter_exprs[field] = f'"{field}"'
 
-    shared_kwargs = {
+    shared_kwargs: dict[str, Any] = {
         "filter_fields": filter_fields,
         "filter_exprs": filter_exprs,
         "custom_props": custom_props,
@@ -334,6 +333,8 @@ async def get_analytics_db(
 
     Falls back to the first registered connection, then to the raw default DB.
     """
+    if current_user is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     user_id = current_user.id
 
     resolved_id = connection_id
@@ -347,6 +348,6 @@ async def get_analytics_db(
             resolved_id = row["id"]
 
     if not resolved_id:
-        return get_db(None)
+        return None
 
     return open_analytics_db(resolved_id, user_id)

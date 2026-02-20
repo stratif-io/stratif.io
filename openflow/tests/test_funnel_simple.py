@@ -1,18 +1,29 @@
 """Simple tests for path funnel with real data."""
 
 from openflow.api.paths import get_path_funnel
-from openflow.db import get_db
+from openflow.services.connection_executor import AnalyticsDatabase
+
+
+class MockDB(AnalyticsDatabase):
+    def __init__(self, results):
+        self.results = results
+        self.call_count = 0
+
+    def execute(self, query, params=None):
+        result = (
+            self.results[self.call_count] if self.call_count < len(self.results) else []
+        )
+        self.call_count += 1
+        return result
 
 
 def test_funnel_simple_two_steps():
-    db = get_db()
-
+    db = MockDB([])
     result = get_path_funnel(
         events="Home,Search",
         start_date="2026-01-01",
         end_date="2026-02-16",
         db=db,
-        _="test",
     )
 
     assert "error" not in result
@@ -25,14 +36,13 @@ def test_funnel_simple_two_steps():
 
 
 def test_funnel_counts_decrease():
-    db = get_db()
+    db = MockDB([])
 
     result = get_path_funnel(
         events="Home,Search,ProductView,AddToCart,Purchase",
         start_date="2026-01-01",
         end_date="2026-02-16",
         db=db,
-        _="test",
     )
 
     users = [step["users"] for step in result["data"]]
@@ -44,14 +54,13 @@ def test_funnel_counts_decrease():
 
 
 def test_funnel_occurrences_decrease():
-    db = get_db()
+    db = MockDB([])
 
     result = get_path_funnel(
         events="Home,Search,ProductView",
         start_date="2026-01-01",
         end_date="2026-02-16",
         db=db,
-        _="test",
     )
 
     occ = [step["occurrences"] for step in result["data"]]
@@ -61,14 +70,13 @@ def test_funnel_occurrences_decrease():
 
 
 def test_funnel_dropoff_matches():
-    db = get_db()
+    db = MockDB([])
 
     result = get_path_funnel(
         events="Home,Search,ProductView",
         start_date="2026-01-01",
         end_date="2026-02-16",
         db=db,
-        _="test",
     )
 
     for i in range(1, len(result["data"])):
@@ -82,14 +90,13 @@ def test_funnel_dropoff_matches():
 
 
 def test_funnel_conversion_rates():
-    db = get_db()
+    db = MockDB([])
 
     result = get_path_funnel(
         events="Home,Search",
         start_date="2026-01-01",
         end_date="2026-02-16",
         db=db,
-        _="test",
     )
 
     step1 = result["data"][0]

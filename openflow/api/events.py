@@ -21,9 +21,14 @@ router = APIRouter(prefix="/api", tags=["events"])
 def get_events(
     db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
-    """Get distinct event names for filtering."""
-    result = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
-    return {"events": [row[0] for row in result]}
+    if db:
+        """Get distinct event names for filtering."""
+        result = db.execute(
+            "SELECT DISTINCT event_name FROM events ORDER BY event_name"
+        )
+        return {"events": [row[0] for row in result]}
+    else:
+        raise ValueError("db cannot be None")
 
 
 @router.get("/events/top")
@@ -37,35 +42,38 @@ def get_top_events(
     db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Get top events by occurrence count within date range."""
-    where_clauses = []
-    params = []
-    if start_date:
-        where_clauses.append("timestamp >= ?")
-        params.append(f"{start_date} 00:00:00")
-    if end_date:
-        where_clauses.append("timestamp <= ?")
-        params.append(f"{end_date} 23:59:59")
+    if db:
+        where_clauses = []
+        params = []
+        if start_date:
+            where_clauses.append("timestamp >= ?")
+            params.append(f"{start_date} 00:00:00")
+        if end_date:
+            where_clauses.append("timestamp <= ?")
+            params.append(f"{end_date} 23:59:59")
 
-    if filters:
-        filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
-        where_clauses.extend(filter_clauses)
-        params.extend(filter_params)
+        if filters:
+            filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+            where_clauses.extend(filter_clauses)
+            params.extend(filter_params)
 
-    where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
-    params.append(limit)
+        where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+        params.append(limit)
 
-    result = db.execute(
-        f"""
-        SELECT event_name, COUNT(*) AS count
-        FROM events
-        {where_clause}
-        GROUP BY event_name
-        ORDER BY count DESC
-        LIMIT ?
-        """,
-        params,
-    )
-    return {"data": [{"name": row[0], "count": row[1]} for row in result]}
+        result = db.execute(
+            f"""
+            SELECT event_name, COUNT(*) AS count
+            FROM events
+            {where_clause}
+            GROUP BY event_name
+            ORDER BY count DESC
+            LIMIT ?
+            """,
+            params,
+        )
+        return {"data": [{"name": row[0], "count": row[1]} for row in result]}
+    else:
+        raise ValueError("db cannot be None")
 
 
 @router.get("/raw/events")
@@ -85,61 +93,63 @@ def get_raw_events(
     db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Get raw events data with optional filtering."""
-    where_clauses = []
-    params = []
-    if event_name:
-        where_clauses.append("event_name = ?")
-        params.append(event_name)
-    if user_id:
-        where_clauses.append("user_id = ?")
-        params.append(user_id)
-    if start_date:
-        where_clauses.append("timestamp >= ?")
-        params.append(f"{start_date} 00:00:00")
-    if end_date:
-        where_clauses.append("timestamp <= ?")
-        params.append(f"{end_date} 23:59:59")
+    if db:
+        where_clauses = []
+        params = []
+        if event_name:
+            where_clauses.append("event_name = ?")
+            params.append(event_name)
+        if user_id:
+            where_clauses.append("user_id = ?")
+            params.append(user_id)
+        if start_date:
+            where_clauses.append("timestamp >= ?")
+            params.append(f"{start_date} 00:00:00")
+        if end_date:
+            where_clauses.append("timestamp <= ?")
+            params.append(f"{end_date} 23:59:59")
 
-    if filters:
-        filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
-        log.debug(filter_clauses)
-        where_clauses.extend(filter_clauses)
-        params.extend(filter_params)
+        if filters:
+            filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+            where_clauses.extend(filter_clauses)
+            params.extend(filter_params)
 
-    where_clause = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
-    order_dir = "ASC" if sort_order.lower() == "asc" else "DESC"
+        where_clause = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+        order_dir = "ASC" if sort_order.lower() == "asc" else "DESC"
 
-    total = db.execute(f"SELECT COUNT(*) FROM events {where_clause}", params)[0][0]
+        total = db.execute(f"SELECT COUNT(*) FROM events {where_clause}", params)[0][0]
 
-    result = db.execute(
-        f"""
-        SELECT user_id, event_name, timestamp, properties
-        FROM events
-        {where_clause}
-        ORDER BY timestamp {order_dir}
-        LIMIT ? OFFSET ?
-        """,
-        params + [limit, offset],
-    )
+        result = db.execute(
+            f"""
+            SELECT user_id, event_name, timestamp, properties
+            FROM events
+            {where_clause}
+            ORDER BY timestamp {order_dir}
+            LIMIT ? OFFSET ?
+            """,
+            params + [limit, offset],
+        )
 
-    return {
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "data": [
-            {
-                "user_id": row[0],
-                "event_name": row[1],
-                "timestamp": row[2].isoformat()
-                if isinstance(row[2], datetime)
-                else str(row[2]),
-                "properties": json.loads(row[3])
-                if isinstance(row[3], str)
-                else (row[3] or {}),
-            }
-            for row in result
-        ],
-    }
+        return {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "data": [
+                {
+                    "user_id": row[0],
+                    "event_name": row[1],
+                    "timestamp": row[2].isoformat()
+                    if isinstance(row[2], datetime)
+                    else str(row[2]),
+                    "properties": json.loads(row[3])
+                    if isinstance(row[3], str)
+                    else (row[3] or {}),
+                }
+                for row in result
+            ],
+        }
+    else:
+        raise ValueError("db cannot be None")
 
 
 @router.get("/users/{user_id}/events")
@@ -149,29 +159,32 @@ def get_user_events(
     db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Get all events for a specific user, sorted chronologically (ASC)."""
-    result = db.execute(
-        """
-        SELECT user_id, event_name, timestamp, properties
-        FROM events
-        WHERE user_id = ?
-        ORDER BY timestamp ASC
-        LIMIT ?
-        """,
-        [user_id, limit],
-    )
-    return {
-        "user_id": user_id,
-        "data": [
-            {
-                "user_id": row[0],
-                "event_name": row[1],
-                "timestamp": row[2].isoformat()
-                if isinstance(row[2], datetime)
-                else str(row[2]),
-                "properties": json.loads(row[3])
-                if isinstance(row[3], str)
-                else (row[3] or {}),
-            }
-            for row in result
-        ],
-    }
+    if db:
+        result = db.execute(
+            """
+            SELECT user_id, event_name, timestamp, properties
+            FROM events
+            WHERE user_id = ?
+            ORDER BY timestamp ASC
+            LIMIT ?
+            """,
+            [user_id, limit],
+        )
+        return {
+            "user_id": user_id,
+            "data": [
+                {
+                    "user_id": row[0],
+                    "event_name": row[1],
+                    "timestamp": row[2].isoformat()
+                    if isinstance(row[2], datetime)
+                    else str(row[2]),
+                    "properties": json.loads(row[3])
+                    if isinstance(row[3], str)
+                    else (row[3] or {}),
+                }
+                for row in result
+            ],
+        }
+    else:
+        raise ValueError("db cannot be None")

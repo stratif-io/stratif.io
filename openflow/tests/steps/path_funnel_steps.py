@@ -15,34 +15,34 @@ class MockDB:
         return result
 
 
-@given("I request a path funnel")
+@given("I request a path funnel")  # type: ignore[call-non-callable]
 def step_request_path_funnel(context):
     context.events = []
     context.db = MockDB()
 
 
-@when('I provide only one event "{event}"')
+@when('I provide only one event "{event}"')  # type: ignore[call-non-callable]
 def step_provide_one_event(context, event):
     from openflow.api.paths import get_path_funnel
 
-    context.result = get_path_funnel(events=event, db=context.db, _="key")
+    context.result = get_path_funnel(events=event, db=context.db)
 
 
-@when("I provide empty events string")
+@when("I provide empty events string")  # type: ignore[call-non-callable]
 def step_provide_empty_events(context):
     from openflow.api.paths import get_path_funnel
 
-    context.result = get_path_funnel(events="", db=context.db, _="key")
+    context.result = get_path_funnel(events="", db=context.db)
 
 
-@when('I provide events string "{events_str}"')
+@when('I provide events string "{events_str}"')  # type: ignore[call-non-callable]
 def step_provide_events_string(context, events_str):
     from openflow.api.paths import get_path_funnel
 
-    context.result = get_path_funnel(events=events_str, db=context.db, _="key")
+    context.result = get_path_funnel(events=events_str, db=context.db)
 
 
-@then('the funnel should have error "{error_message}"')
+@then('the funnel should have error "{error_message}"')  # type: ignore[call-non-callable]
 def step_should_get_funnel_error(context, error_message):
     assert hasattr(context, "result"), "No result was generated"
     assert "error" in context.result, f"Expected error in result, got: {context.result}"

@@ -45,23 +45,6 @@ async def lifespan(app: FastAPI):
         if db_dir:
             os.makedirs(db_dir, exist_ok=True)
 
-    # Startup
-    # db = get_db()
-    # needs_seeding = False
-    #
-    # if not os.path.exists(settings.db_path):
-    #    needs_seeding = True
-    # else:
-    #    if not db.table_exists("events"):
-    #        needs_seeding = True
-    #
-    # if needs_seeding:
-    #    seed_database(db)
-    #
-    ## Create analytics views
-    # create_views(db)
-    #
-    # Initialize product DB schema
     init_product_db()
     run_migrations()
 
@@ -84,7 +67,7 @@ def create_app() -> FastAPI:
 
     # Configure CORS
     app.add_middleware(
-        CORSMiddleware,
+        CORSMiddleware,  # type: ignore[arg-type]
         allow_origins=settings.cors_list,
         allow_credentials=True,
         allow_methods=["*"],

@@ -1,9 +1,10 @@
 """Unit tests for path funnel API."""
 
 from openflow.api.paths import get_path_funnel
+from openflow.services.connection_executor import AnalyticsDatabase
 
 
-class MockDB:
+class MockDB(AnalyticsDatabase):
     def __init__(self, results):
         self.results = results
         self.call_count = 0
@@ -19,7 +20,7 @@ class MockDB:
 class TestPathFunnelAPI:
     def test_requires_at_least_two_events(self):
         db = MockDB([])
-        result = get_path_funnel(events="Home", db=db, _="key")
+        result = get_path_funnel(events="Home", db=db)
         assert "error" in result
         assert "At least 2 events" in result["error"]
 
@@ -30,7 +31,6 @@ class TestPathFunnelAPI:
             start_date="2026-01-01",
             end_date="2026-01-31",
             db=db,
-            _="key",
         )
         assert result["data"][0]["event"] == "Home"
         assert result["data"][0]["users"] == 50
@@ -44,7 +44,7 @@ class TestPathFunnelAPI:
                 [(30, 30)],  # Step 2: Search (30 users out of 50)
             ]
         )
-        result = get_path_funnel(events="Home,Search", db=db, _="key")
+        result = get_path_funnel(events="Home,Search", db=db)
         assert result["data"][0]["users"] == 50
         assert result["data"][1]["users"] == 30
         assert result["data"][1]["step_conversion_rate"] == 60.0  # 30/50 * 100
@@ -58,7 +58,7 @@ class TestPathFunnelAPI:
                 [(10, 10)],  # Step 3
             ]
         )
-        result = get_path_funnel(events="A,B,C", db=db, _="key")
+        result = get_path_funnel(events="A,B,C", db=db)
         assert result["data"][0]["overall_conversion_rate"] == 100.0
         assert result["data"][1]["overall_conversion_rate"] == 60.0  # 30/50
         assert result["data"][2]["overall_conversion_rate"] == 20.0  # 10/50
@@ -70,12 +70,12 @@ class TestPathFunnelAPI:
                 [(25, 25)],  # Step 2: 25 users
             ]
         )
-        result = get_path_funnel(events="Home,Purchase", db=db, _="key")
+        result = get_path_funnel(events="Home,Purchase", db=db)
         assert result["data"][1]["dropoff_users"] == 75
         assert result["data"][1]["dropoff_rate"] == 75.0
 
     def test_returns_event_list(self):
         db = MockDB([[(10, 5)], [(2, 2)]])
-        result = get_path_funnel(events="Home,Search,Purchase", db=db, _="key")
+        result = get_path_funnel(events="Home,Search,Purchase", db=db)
         assert result["events"] == ["Home", "Search", "Purchase"]
         assert result["total_steps"] == 3

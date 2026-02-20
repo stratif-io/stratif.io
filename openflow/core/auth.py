@@ -12,7 +12,7 @@ def derive_user_id(api_key: str) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"openflow.user.{api_key}"))
 
 
-async def verify_api_key(x_api_key: str | None = Header(None)) -> str:
+async def verify_api_key(x_api_key: str | None = Header(None)) -> str | None:
     """
     Verify API key from request header.
 

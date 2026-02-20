@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     log_sql: bool = False  # OPENFLOW_LOG_SQL=true  → emit every SQL query at DEBUG
     log_format: str = "console"  # OPENFLOW_LOG_FORMAT=console|json
 
+    google_client_id: str
+    google_client_secret: str
+    google_redirect_uri: str
+
+    frontend_url: str
+
     @property
     def cors_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
@@ -52,4 +58,4 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance."""
-    return Settings()
+    return Settings()  # type: ignore[call-arg]
