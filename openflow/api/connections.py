@@ -5,7 +5,7 @@ import os
 import re
 import uuid
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
@@ -119,7 +119,9 @@ class FilterConfigResponse(FilterConfigBody):
 
 
 @router.get("", response_model=list[ConnectionResponse])
-def list_connections(current_user: AuthUserRow = Depends(get_current_auth_user)):
+def list_connections(
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
+):
     user_id = current_user.id
     db = get_product_db()
     rows = db.fetchall(
@@ -131,7 +133,8 @@ def list_connections(current_user: AuthUserRow = Depends(get_current_auth_user))
 
 @router.post("", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)
 def create_connection(
-    body: ConnectionCreate, current_user: AuthUserRow = Depends(get_current_auth_user)
+    body: ConnectionCreate,
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     user_id = current_user.id
     conn_id = str(uuid.uuid4())
@@ -149,7 +152,8 @@ def create_connection(
 
 @router.get("/{conn_id}", response_model=ConnectionResponse)
 def get_connection(
-    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+    conn_id: str,
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
@@ -164,7 +168,8 @@ def get_connection(
 
 @router.get("/{conn_id}/string")
 def get_connection_string(
-    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+    conn_id: str,
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     """Return the (non-sensitive) connection string for DuckDB and SQLite connections."""
     user_id = current_user.id
@@ -184,7 +189,7 @@ def get_connection_string(
 def update_connection(
     conn_id: str,
     body: ConnectionUpdate,
-    current_user: AuthUserRow = Depends(get_current_auth_user),
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     user_id = current_user.id
     row = _get_connection_or_404(conn_id, user_id)
@@ -211,7 +216,8 @@ def update_connection(
 
 @router.delete("/{conn_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_connection(
-    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+    conn_id: str,
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
@@ -221,7 +227,8 @@ def delete_connection(
 
 @router.post("/{conn_id}/test")
 def test_connection(
-    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+    conn_id: str,
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     """Test connectivity to the target database (read-only)."""
     user_id = current_user.id
@@ -302,7 +309,8 @@ _KNOWN_EVENT_NAME_COLS = ("event_name", "event", "action", "event_type", "name",
 
 @router.get("/{conn_id}/schema/detect")
 def detect_schema(
-    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+    conn_id: str,
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ) -> dict:
     """Detect columns from the target database and suggest field mappings."""
     user_id = current_user.id
@@ -540,7 +548,8 @@ def _infer_type(sql_type: str) -> str:
 
 @router.get("/{conn_id}/schema", response_model=SchemaConfigResponse)
 def get_schema(
-    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+    conn_id: str,
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
@@ -568,7 +577,7 @@ def get_schema(
 def upsert_schema(
     conn_id: str,
     body: SchemaConfigBody,
-    current_user: AuthUserRow = Depends(get_current_auth_user),
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
@@ -626,7 +635,8 @@ def upsert_schema(
 
 @router.get("/{conn_id}/filters", response_model=FilterConfigResponse)
 def get_filters(
-    conn_id: str, current_user: AuthUserRow = Depends(get_current_auth_user)
+    conn_id: str,
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
@@ -656,7 +666,7 @@ def get_filters(
 def upsert_filters(
     conn_id: str,
     body: FilterConfigBody,
-    current_user: AuthUserRow = Depends(get_current_auth_user),
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     user_id = current_user.id
     _get_connection_or_404(conn_id, user_id)
@@ -694,7 +704,7 @@ def upsert_filters(
 @router.get("/{conn_id}/filter-options")
 def get_filter_options(
     conn_id: str,
-    current_user: AuthUserRow = Depends(get_current_auth_user),
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ) -> dict:
     """Return distinct non-null values per enabled filter field for the connection."""
     user_id = current_user.id

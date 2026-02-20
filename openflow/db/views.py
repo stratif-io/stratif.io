@@ -11,11 +11,11 @@ BigQuery, Snowflake, and Redshift without any post-processing.
 """
 
 from openflow.services.sql_builder import (
+    cast_to_text,
     epoch_diff_seconds,
     interval_minutes_exceeded,
     json_extract_string,
     string_concat,
-    cast_to_text,
 )
 
 
@@ -93,7 +93,9 @@ derived_sessions AS (
 )"""
 
 
-def path_analysis_ctes(session_timeout_minutes: int = 30, dialect: str = "duckdb") -> str:
+def path_analysis_ctes(
+    session_timeout_minutes: int = 30, dialect: str = "duckdb"
+) -> str:
     """CTE chain (without WITH) that defines ``derived_path_analysis``.
 
     Builds a look-back view: for each event, records the three preceding
@@ -130,9 +132,7 @@ def path_analysis_ctes(session_timeout_minutes: int = 30, dialect: str = "duckdb
     session_id_expr = string_concat("user_id", "'-'", session_num_cast, dialect=dialect)
 
     # event_id uses ROW_NUMBER over the full table
-    row_num_cast = cast_to_text(
-        "ROW_NUMBER() OVER (ORDER BY timestamp)", dialect
-    )
+    row_num_cast = cast_to_text("ROW_NUMBER() OVER (ORDER BY timestamp)", dialect)
     event_id_expr = string_concat("user_id", "'-'", row_num_cast, dialect=dialect)
 
     return f"""

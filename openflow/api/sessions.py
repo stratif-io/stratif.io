@@ -1,11 +1,13 @@
 """Sessions API endpoints."""
 
 import json
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
 from openflow.db.views import session_ctes
 from openflow.services import get_analytics_db
+from openflow.services.connection_executor import AnalyticsDatabase
 
 router = APIRouter(prefix="/api", tags=["sessions"])
 
@@ -17,7 +19,7 @@ def get_sessions_summary(
     filters: str | None = Query(
         None, description="JSON dict of active dimension filters"
     ),
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Return session summary stats for the given date range, respecting dimension filters."""
     event_where: list[str] = []

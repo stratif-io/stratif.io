@@ -2,10 +2,12 @@
 
 import json
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
 from openflow.services import get_analytics_db
+from openflow.services.connection_executor import AnalyticsDatabase
 from openflow.services.sql_builder import date_trunc
 
 router = APIRouter(prefix="/api", tags=["trends"])
@@ -20,7 +22,7 @@ def get_trend(
     filters: str | None = Query(
         None, description='JSON dict of active dimension filters, e.g. {"country":"US"}'
     ),
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Return trend data: Date vs Count and Unique Users."""
     dialect = db.get_dialect()

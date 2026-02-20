@@ -3,7 +3,7 @@
 import json
 import re
 import sqlite3 as _sqlite3
-from typing import Any
+from typing import Annotated, Any
 
 import duckdb
 import structlog
@@ -328,7 +328,7 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
 
 async def get_analytics_db(
     connection_id: str | None = Query(None, description="Active connection ID"),
-    current_user: AuthUserRow = Depends(get_current_auth_user),
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     """FastAPI dependency: returns the analytics DB for the active connection.
 

@@ -787,5 +787,5 @@ class BaseSeeder(ABC):
         return properties
 
     def _weighted_choice(self, choices: list[tuple]) -> str:
-        items, weights = zip(*choices)
+        items, weights = zip(*choices, strict=False)
         return random.choices(items, weights=weights, k=1)[0]

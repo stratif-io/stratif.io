@@ -30,11 +30,11 @@ async def get_current_auth_user(request: Request) -> AuthUserRow:
         )
     try:
         payload = decode_access_token(token)
-    except JWTError:
+    except JWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired session",
-        )
+        ) from err
 
     user_id = payload.get("sub")
     if not user_id:

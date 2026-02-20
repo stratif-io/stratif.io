@@ -38,6 +38,7 @@ exclude = ["db/"]
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.3.0",
     "ruff>=0.15.2",
     "ty>=0.0.17",
 ]
@@ -65,3 +66,5 @@ convention = "google"
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.ty]

@@ -1,12 +1,13 @@
 """Paths API endpoints."""
 
 import json
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 
 from openflow.db.views import path_analysis_ctes
 from openflow.services import generate_path_analysis_query, get_analytics_db
+from openflow.services.connection_executor import AnalyticsDatabase
 
 router = APIRouter(prefix="/api", tags=["paths"])
 
@@ -25,7 +26,7 @@ def get_paths(
     limit: int = Query(5, description="Number of top paths to return", ge=1, le=20),
     start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Get popular paths leading to a target event.
 
@@ -129,7 +130,7 @@ def get_path_analysis(
         None, description="JSON dict of active dimension filters"
     ),
     event_filters: str | None = Query(None, description="JSON string of event filters"),
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict[str, Any]:
     """Analyze user paths through events.
 
@@ -165,7 +166,7 @@ def get_path_analysis(
     extra_conditions: list[str] = []
     if filters:
         filter_clauses, filter_values = db.build_filter_clauses(json.loads(filters))
-        for clause, value in zip(filter_clauses, filter_values):
+        for clause, value in zip(filter_clauses, filter_values, strict=False):
             extra_conditions.append(
                 clause.replace("?", f"'{_escape_sql_string(str(value))}'", 1)
             )
@@ -233,7 +234,7 @@ def get_path_funnel(
     filters: str | None = Query(
         None, description="JSON dict of active dimension filters"
     ),
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict[str, Any]:
     """Calculate conversion funnel for a specific sequence of events.
 

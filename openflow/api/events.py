@@ -2,6 +2,7 @@
 
 import json
 from datetime import datetime
+from typing import Annotated
 
 import structlog
 from fastapi import APIRouter, Depends, Query
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/api", tags=["events"])
 
 @router.get("/events")
 def get_events(
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Get distinct event names for filtering."""
     result = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
@@ -33,7 +34,7 @@ def get_top_events(
     filters: str | None = Query(
         None, description="JSON dict of active dimension filters"
     ),
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Get top events by occurrence count within date range."""
     where_clauses = []
@@ -81,7 +82,7 @@ def get_raw_events(
     filters: str | None = Query(
         None, description="JSON dict of active dimension filters"
     ),
-    db: AnalyticsDatabase = Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Get raw events data with optional filtering."""
     where_clauses = []
@@ -145,7 +146,7 @@ def get_raw_events(
 def get_user_events(
     user_id: str,
     limit: int = Query(300, description="Max events to return", ge=1, le=1000),
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Get all events for a specific user, sorted chronologically (ASC)."""
     result = db.execute(

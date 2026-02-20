@@ -1,9 +1,10 @@
 """Database connection and query execution."""
 
+from contextlib import contextmanager
+from typing import Optional
+
 import duckdb
 import structlog
-from typing import Optional
-from contextlib import contextmanager
 
 from openflow.config import get_settings
 
@@ -13,9 +14,9 @@ log = structlog.get_logger(__name__)
 class Database:
     """Database connection manager for DuckDB."""
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: str | None = None):
         self.db_path = db_path
-        self._conn: Optional[duckdb.DuckDBPyConnection] = None
+        self._conn: duckdb.DuckDBPyConnection | None = None
 
     @contextmanager
     def connection(self):
@@ -38,7 +39,7 @@ class Database:
             self._conn.close()
             self._conn = None
 
-    def execute(self, query: str, params: Optional[list] = None) -> list[tuple]:
+    def execute(self, query: str, params: list | None = None) -> list[tuple]:
         """Execute a query and return results."""
         if get_settings().log_sql:
             log.debug("sql_query", sql=query, params=params)
@@ -54,7 +55,7 @@ class Database:
         conn = self._get_connection()
         conn.executemany(query, params)
 
-    def execute_write(self, query: str, params: Optional[list] = None) -> None:
+    def execute_write(self, query: str, params: list | None = None) -> None:
         """Execute a write query (INSERT, UPDATE, CREATE)."""
         if get_settings().log_sql:
             log.debug("sql_write", sql=query, params=params)
@@ -109,10 +110,10 @@ class Database:
         return 30
 
 
-_db: Optional[Database] = None
+_db: Database | None = None
 
 
-def get_db(file_path:Optional["str"]) -> Database:
+def get_db(file_path: Optional["str"]) -> Database:
     """Get the default database instance."""
     global _db
     if _db is None:

@@ -2,10 +2,12 @@
 
 import json
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
 from openflow.services import get_analytics_db
+from openflow.services.connection_executor import AnalyticsDatabase
 from openflow.services.sql_builder import date_diff_days, date_trunc
 
 router = APIRouter(prefix="/api", tags=["retention"])
@@ -42,7 +44,7 @@ def get_retention(
     filters: str | None = Query(
         None, description="JSON dict of active dimension filters"
     ),
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Calculate N-Unit Retention Cohorts.
 
@@ -164,13 +166,15 @@ def get_retention(
         units_data = info["units"]
 
         # Unit 0 defaults to cohort_size (user was active in their signup unit)
-        def unit_pct(u: int) -> float:
-            count = units_data.get(u, cohort_size if u == 0 else 0)
-            return safe_pct(count, cohort_size)
+        def unit_pct(u: int, _units_data=units_data, _cohort_size=cohort_size) -> float:
+            count = _units_data.get(u, _cohort_size if u == 0 else 0)
+            return safe_pct(count, _cohort_size)
 
         # Always return the full series up to max_units — frontend decides what to show
-        retention_series = [unit_pct(u) for u in range(max_units + 1)]
-        milestone_values = [unit_pct(m) for m in milestones]
+        retention_series = [
+            unit_pct(u, units_data, cohort_size) for u in range(max_units + 1)
+        ]
+        milestone_values = [unit_pct(m, units_data, cohort_size) for m in milestones]
 
         data.append(
             {

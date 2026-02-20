@@ -3,11 +3,13 @@
 import json
 from datetime import datetime
 from enum import Enum
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 from openflow.services import get_analytics_db
+from openflow.services.connection_executor import AnalyticsDatabase
 from openflow.services.sql_builder import date_trunc, extract_day_of_week, extract_hour
 
 router = APIRouter(prefix="/api", tags=["pivot"])
@@ -35,7 +37,7 @@ AVAILABLE_DIMENSIONS = {
 
 @router.get("/pivot/options")
 def get_pivot_options(
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Get available dimensions, measures, and filter options for pivot table."""
     events = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
@@ -76,7 +78,7 @@ def get_pivot(
     filters: str | None = Query(
         None, description="JSON dict of active dimension filters"
     ),
-    db=Depends(get_analytics_db),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Get pivot table data with flexible row/column dimensions and measures."""
     dialect = db.get_dialect()

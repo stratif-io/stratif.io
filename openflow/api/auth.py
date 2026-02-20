@@ -1,6 +1,7 @@
 """Authentication API — register, login, logout, OAuth."""
 
 import secrets
+from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -127,7 +128,9 @@ def logout(response: Response):
 
 
 @router.get("/me", response_model=AuthUserResponse)
-def me(current_user: AuthUserRow = Depends(get_current_auth_user)):
+def me(
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
+):
     from openflow.product_db import get_product_db
 
     row = get_product_db().fetchone(
@@ -185,10 +188,10 @@ def google_callback(request: Request, response: Response, code: str, state: str)
     serializer = _make_state_serializer()
     try:
         expected_state = serializer.loads(signed_state, max_age=600)
-    except SignatureExpired:
-        raise HTTPException(status_code=400, detail="OAuth state expired")
-    except BadSignature:
-        raise HTTPException(status_code=400, detail="Invalid OAuth state")
+    except SignatureExpired as err:
+        raise HTTPException(status_code=400, detail="OAuth state expired") from err
+    except BadSignature as err:
+        raise HTTPException(status_code=400, detail="Invalid OAuth state") from err
 
     if expected_state != state:
         raise HTTPException(status_code=400, detail="OAuth state mismatch")
