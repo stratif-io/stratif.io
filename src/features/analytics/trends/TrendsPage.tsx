@@ -71,85 +71,85 @@ export function TrendsPage() {
             </Card>
           </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <CardTitle>Event Trends</CardTitle>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex items-center border rounded-md p-1">
-                <Button
-                  variant={chartType === 'area' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setChartType('area')}
-                  className="h-7"
-                >
-                  Area
-                </Button>
-                <Button
-                  variant={chartType === 'line' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setChartType('line')}
-                  className="h-7"
-                >
-                  Line
-                </Button>
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <CardTitle>Event Trends</CardTitle>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex items-center border rounded-md p-1">
+                    <Button
+                      variant={chartType === 'area' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setChartType('area')}
+                      className="h-7"
+                    >
+                      Area
+                    </Button>
+                    <Button
+                      variant={chartType === 'line' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setChartType('line')}
+                      className="h-7"
+                    >
+                      Line
+                    </Button>
+                  </div>
+                  <Select
+                    value={selectedEvent || 'all'}
+                    onValueChange={(val) => setSelectedEvent(val === 'all' ? '' : val)}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="All Events" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Events</SelectItem>
+                      {events.map((event) => (
+                        <SelectItem key={event} value={event}>
+                          {event}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={granularity}
+                    onValueChange={(val) => setGranularity(val as 'day' | 'week')}
+                  >
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="day">Daily</SelectItem>
+                      <SelectItem value="week">Weekly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <Select
-                value={selectedEvent || 'all'}
-                onValueChange={(val) => setSelectedEvent(val === 'all' ? '' : val)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Events" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Events</SelectItem>
-                  {events.map((event) => (
-                    <SelectItem key={event} value={event}>
-                      {event}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={granularity}
-                onValueChange={(val) => setGranularity(val as 'day' | 'week')}
-              >
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Daily</SelectItem>
-                  <SelectItem value="week">Weekly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <ChartSkeleton height="h-[450px]" />
-          ) : trendData.length === 0 ? (
-            <EmptyState
-              icon={TrendingUp}
-              title="No trend data available"
-              description="Try adjusting your date range or filters to see trend data."
-              className="h-[450px]"
-            />
-          ) : (
-            <div className="h-[450px]">
-              <TrendChart
-                data={trendData}
-                chartType={chartType}
-                averageValue={averageValue}
-                eventName={selectedEvent || 'All Events'}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <ChartSkeleton height="h-[450px]" />
+              ) : trendData.length === 0 ? (
+                <EmptyState
+                  icon={TrendingUp}
+                  title="No trend data available"
+                  description="Try adjusting your date range or filters to see trend data."
+                  className="h-[450px]"
+                />
+              ) : (
+                <div className="h-[450px]">
+                  <TrendChart
+                    data={trendData}
+                    chartType={chartType}
+                    averageValue={averageValue}
+                    eventName={selectedEvent || 'All Events'}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </PageTransition>

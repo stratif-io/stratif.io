@@ -1,11 +1,11 @@
-import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils'
+import { Loader2 } from 'lucide-react'
 
 interface LoadingStateProps {
-  variant?: 'spinner' | 'skeleton' | 'pulse';
-  message?: string;
-  className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'spinner' | 'skeleton' | 'pulse'
+  message?: string
+  className?: string
+  size?: 'sm' | 'md' | 'lg'
 }
 
 export function LoadingState({
@@ -21,7 +21,7 @@ export function LoadingState({
           'flex flex-col items-center justify-center gap-3',
           size === 'sm' && 'gap-2',
           size === 'lg' && 'gap-4',
-          className,
+          className
         )}
       >
         <Loader2
@@ -29,7 +29,7 @@ export function LoadingState({
             'animate-spin text-muted-foreground',
             size === 'sm' && 'h-5 w-5',
             size === 'md' && 'h-8 w-8',
-            size === 'lg' && 'h-12 w-12',
+            size === 'lg' && 'h-12 w-12'
           )}
         />
         {message && (
@@ -38,14 +38,14 @@ export function LoadingState({
               'text-muted-foreground',
               size === 'sm' && 'text-xs',
               size === 'md' && 'text-sm',
-              size === 'lg' && 'text-base',
+              size === 'lg' && 'text-base'
             )}
           >
             {message}
           </p>
         )}
       </div>
-    );
+    )
   }
 
   if (variant === 'pulse') {
@@ -53,7 +53,7 @@ export function LoadingState({
       <div className={cn('animate-pulse', className)}>
         <div className="h-4 bg-muted rounded" />
       </div>
-    );
+    )
   }
 
   // Skeleton variant
@@ -66,7 +66,7 @@ export function LoadingState({
         <div className="h-4 bg-muted rounded w-4/6" />
       </div>
     </div>
-  );
+  )
 }
 
 // Specialized loading components for common use cases
@@ -81,10 +81,16 @@ export function CardSkeleton({ className }: { className?: string }) {
         <div className="h-3 bg-muted rounded w-5/6" />
       </div>
     </div>
-  );
+  )
 }
 
-export function ChartSkeleton({ className, height = 'h-80' }: { className?: string; height?: string }) {
+export function ChartSkeleton({
+  className,
+  height = 'h-80',
+}: {
+  className?: string
+  height?: string
+}) {
   return (
     <div className={cn('space-y-4 animate-pulse', className)}>
       <div className="h-6 bg-muted rounded w-1/4" />
@@ -95,7 +101,7 @@ export function ChartSkeleton({ className, height = 'h-80' }: { className?: stri
         <div className="h-3 bg-muted rounded w-20" />
       </div>
     </div>
-  );
+  )
 }
 
 export function TableSkeleton({ rows = 5, className }: { rows?: number; className?: string }) {
@@ -118,7 +124,7 @@ export function TableSkeleton({ rows = 5, className }: { rows?: number; classNam
         </div>
       ))}
     </div>
-  );
+  )
 }
 
 export function MetricCardSkeleton({ className }: { className?: string }) {
@@ -131,5 +137,5 @@ export function MetricCardSkeleton({ className }: { className?: string }) {
       <div className="h-8 bg-muted rounded w-2/3" />
       <div className="h-3 bg-muted rounded w-1/2" />
     </div>
-  );
+  )
 }

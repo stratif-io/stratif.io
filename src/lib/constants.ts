@@ -24,7 +24,7 @@ export const SPACING = {
   gridGap: 'gap-6',
   gridGapSm: 'gap-4',
   gridGapLg: 'gap-8',
-} as const;
+} as const
 
 // Typography System
 export const TYPOGRAPHY = {
@@ -57,7 +57,7 @@ export const TYPOGRAPHY = {
   metric: 'text-2xl font-bold',
   metricLg: 'text-3xl font-bold',
   metricSm: 'text-xl font-bold',
-} as const;
+} as const
 
 // Elevation/Shadow System
 export const ELEVATION = {
@@ -70,7 +70,7 @@ export const ELEVATION = {
   hoverSubtle: 'hover:shadow-md transition-shadow duration-200',
   hoverMedium: 'hover:shadow-lg transition-shadow duration-200',
   hoverProminent: 'hover:shadow-xl transition-shadow duration-200',
-} as const;
+} as const
 
 // Animation Durations
 export const ANIMATION = {
@@ -79,7 +79,7 @@ export const ANIMATION = {
   normal: 'duration-200',
   slow: 'duration-300',
   slowest: 'duration-500',
-} as const;
+} as const
 
 // Chart Color Palette (theme-aware)
 export const CHART_COLORS = {
@@ -105,18 +105,18 @@ export const CHART_COLORS = {
   warning: 'hsl(38, 92%, 50%)',
   error: 'hsl(0, 84%, 60%)',
   info: 'hsl(199, 89%, 48%)',
-} as const;
+} as const
 
 // Icon Sizes
 export const ICON_SIZES = {
   sm: 'h-4 w-4',
   md: 'h-5 w-5',
   lg: 'h-6 w-6',
-} as const;
+} as const
 
 // Responsive Grid Columns
 export const GRID_COLS = {
   metrics: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
   cards: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
   split: 'grid-cols-1 lg:grid-cols-2',
-} as const;
+} as const

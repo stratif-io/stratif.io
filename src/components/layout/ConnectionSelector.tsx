@@ -61,9 +61,7 @@ export function ConnectionSelector() {
           className="h-7 gap-1.5 text-xs font-medium max-w-[180px]"
         >
           <Database className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          <span className="truncate">
-            {activeConnection?.name ?? 'Select connection'}
-          </span>
+          <span className="truncate">{activeConnection?.name ?? 'Select connection'}</span>
           <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>

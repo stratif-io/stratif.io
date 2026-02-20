@@ -4,12 +4,7 @@ import { ChevronDown, Copy, ExternalLink, Monitor, Smartphone, TrendingDown } fr
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/stores'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Button } from '@/components/ui/button'
@@ -47,7 +42,11 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
 
   const events = path?.path.split(' -> ') || []
 
-  const { data: funnelData, isLoading, error } = useQuery({
+  const {
+    data: funnelData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['path-funnel', events.join(','), startDate, endDate, deviceType, activeFilters],
     queryFn: () =>
       fetchPathFunnel({
@@ -68,11 +67,9 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
   const lastStep = steps[steps.length - 1]
   const worstStep = steps
     .slice(1)
-    .reduce<(typeof steps)[0] | null>(
-      (worst, s) =>
-        worst === null || s.step_conversion_rate < worst.step_conversion_rate ? s : worst,
-      null
-    )
+    .reduce<
+      (typeof steps)[0] | null
+    >((worst, s) => (worst === null || s.step_conversion_rate < worst.step_conversion_rate ? s : worst), null)
 
   const getPermalink = () => {
     const params = new URLSearchParams({
@@ -144,7 +141,10 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
               value={deviceType || 'all'}
               onValueChange={(v) => setDeviceType(v === 'all' ? '' : v)}
             >
-              <SelectTrigger className={cn(segTrigger, deviceType && 'text-foreground')} style={{ width: 'auto', minWidth: 0 }}>
+              <SelectTrigger
+                className={cn(segTrigger, deviceType && 'text-foreground')}
+                style={{ width: 'auto', minWidth: 0 }}
+              >
                 {deviceType === 'Mobile' ? (
                   <Smartphone className="h-3.5 w-3.5 shrink-0 text-primary" />
                 ) : deviceType === 'Desktop' ? (
@@ -155,10 +155,16 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
               <SelectContent>
                 <SelectItem value="all">All devices</SelectItem>
                 <SelectItem value="Mobile">
-                  <span className="flex items-center gap-1.5"><Smartphone className="h-3.5 w-3.5" />Mobile</span>
+                  <span className="flex items-center gap-1.5">
+                    <Smartphone className="h-3.5 w-3.5" />
+                    Mobile
+                  </span>
                 </SelectItem>
                 <SelectItem value="Desktop">
-                  <span className="flex items-center gap-1.5"><Monitor className="h-3.5 w-3.5" />Desktop</span>
+                  <span className="flex items-center gap-1.5">
+                    <Monitor className="h-3.5 w-3.5" />
+                    Desktop
+                  </span>
                 </SelectItem>
               </SelectContent>
             </Select>

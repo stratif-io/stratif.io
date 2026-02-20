@@ -3,7 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useCreateConnection, useUpdateConnection } from '../hooks/useConnectionsData'
 import type { Connection, DbType } from '@/types'
 
@@ -196,9 +202,7 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
           )}
 
           {(create.isError || update.isError) && (
-            <p className="text-sm text-destructive">
-              {(create.error || update.error)?.message}
-            </p>
+            <p className="text-sm text-destructive">{(create.error || update.error)?.message}</p>
           )}
 
           <div className="flex justify-end gap-2 pt-2">

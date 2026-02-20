@@ -51,9 +51,7 @@ export function PathsPage() {
                   <Route className={`${ICON_SIZES.md} text-primary`} />
                   <div>
                     <CardTitle>Reverse Path Analysis</CardTitle>
-                    <CardDescription>
-                      Most common paths leading to a target event
-                    </CardDescription>
+                    <CardDescription>Most common paths leading to a target event</CardDescription>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

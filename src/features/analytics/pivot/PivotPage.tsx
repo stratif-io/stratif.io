@@ -14,7 +14,16 @@ import { Badge } from '@/components/ui/badge'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { LoadingState, TableSkeleton } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
-import { Table as TableIcon, RotateCcw, Plus, X, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
+import {
+  Table as TableIcon,
+  RotateCcw,
+  Plus,
+  X,
+  TrendingUp,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+} from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { fetchPivot, fetchPivotOptions } from '@/lib/api'
 import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
@@ -82,9 +91,11 @@ export function PivotPage() {
 
   const SortIcon = ({ colKey }: { colKey: string }) => {
     if (sortKey !== colKey) return <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />
-    return sortDirection === 'asc'
-      ? <ChevronUp className="h-3.5 w-3.5 text-primary" />
-      : <ChevronDown className="h-3.5 w-3.5 text-primary" />
+    return sortDirection === 'asc' ? (
+      <ChevronUp className="h-3.5 w-3.5 text-primary" />
+    ) : (
+      <ChevronDown className="h-3.5 w-3.5 text-primary" />
+    )
   }
 
   const addDimension = (dim: string) => {
@@ -144,9 +155,11 @@ export function PivotPage() {
   }
 
   const availableDimensions = useMemo(() => {
-    return options?.dimensions.filter(
-      (d) => !selectedDimensions.includes(d.value) && !selectedColumnDimensions.includes(d.value)
-    ) || []
+    return (
+      options?.dimensions.filter(
+        (d) => !selectedDimensions.includes(d.value) && !selectedColumnDimensions.includes(d.value)
+      ) || []
+    )
   }, [options, selectedDimensions, selectedColumnDimensions])
 
   const availableMeasures = useMemo(() => {
@@ -199,185 +212,190 @@ export function PivotPage() {
                 </Button>
               </div>
             </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className={TYPOGRAPHY.label}>Row Dimensions</h4>
-                  <p className={`${TYPOGRAPHY.mutedSm} mt-0.5`}>Table rows</p>
-                </div>
-                {availableDimensions.length > 0 && (
-                  <Select value="" onValueChange={addDimension}>
-                    <SelectTrigger className="w-40 h-8">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableDimensions.map((dim) => (
-                        <SelectItem key={dim.value} value={dim.value}>
-                          {dim.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-              <div className={`flex flex-wrap gap-2 min-h-[36px] p-3 border rounded-lg transition-colors ${
-                selectedDimensions.length === 0
-                  ? 'border-primary/30 bg-primary/5'
-                  : 'bg-muted/30'
-              }`}>
-                {selectedDimensions.length === 0 ? (
-                  <div className="flex items-center gap-2 w-full">
-                    <TrendingUp className={`${ICON_SIZES.sm} text-primary`} />
-                    <span className={`${TYPOGRAPHY.bodySm} text-primary font-medium`}>
-                      None selected — will show aggregated metrics
-                    </span>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className={TYPOGRAPHY.label}>Row Dimensions</h4>
+                      <p className={`${TYPOGRAPHY.mutedSm} mt-0.5`}>Table rows</p>
+                    </div>
+                    {availableDimensions.length > 0 && (
+                      <Select value="" onValueChange={addDimension}>
+                        <SelectTrigger className="w-40 h-8">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableDimensions.map((dim) => (
+                            <SelectItem key={dim.value} value={dim.value}>
+                              {dim.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
-                ) : (
-                  selectedDimensions.map((dim) => (
-                    <Badge key={dim} variant="secondary" className="gap-1">
-                      {getDimensionLabel(dim)}
-                      <button
-                        onClick={() => removeDimension(dim)}
-                        className="ml-1 hover:bg-background/50 rounded-full p-0.5"
-                        aria-label={`Remove ${getDimensionLabel(dim)}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className={TYPOGRAPHY.label}>Column Dimensions</h4>
-                  <p className={`${TYPOGRAPHY.mutedSm} mt-0.5`}>Table columns</p>
-                </div>
-                {availableDimensions.length > 0 && (
-                  <Select value="" onValueChange={addColumnDimension}>
-                    <SelectTrigger className="w-40 h-8">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableDimensions.map((dim) => (
-                        <SelectItem key={dim.value} value={dim.value}>
-                          {dim.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-              <div className={`flex flex-wrap gap-2 min-h-[36px] p-3 border rounded-lg transition-colors ${
-                selectedColumnDimensions.length === 0
-                  ? 'border-muted bg-muted/10'
-                  : 'bg-muted/30'
-              }`}>
-                {selectedColumnDimensions.length === 0 ? (
-                  <div className="flex items-center gap-2 w-full">
-                    <span className={`${TYPOGRAPHY.bodySm} text-muted-foreground italic`}>
-                      None — no column grouping
-                    </span>
+                  <div
+                    className={`flex flex-wrap gap-2 min-h-[36px] p-3 border rounded-lg transition-colors ${
+                      selectedDimensions.length === 0
+                        ? 'border-primary/30 bg-primary/5'
+                        : 'bg-muted/30'
+                    }`}
+                  >
+                    {selectedDimensions.length === 0 ? (
+                      <div className="flex items-center gap-2 w-full">
+                        <TrendingUp className={`${ICON_SIZES.sm} text-primary`} />
+                        <span className={`${TYPOGRAPHY.bodySm} text-primary font-medium`}>
+                          None selected — will show aggregated metrics
+                        </span>
+                      </div>
+                    ) : (
+                      selectedDimensions.map((dim) => (
+                        <Badge key={dim} variant="secondary" className="gap-1">
+                          {getDimensionLabel(dim)}
+                          <button
+                            onClick={() => removeDimension(dim)}
+                            className="ml-1 hover:bg-background/50 rounded-full p-0.5"
+                            aria-label={`Remove ${getDimensionLabel(dim)}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))
+                    )}
                   </div>
-                ) : (
-                  selectedColumnDimensions.map((dim) => (
-                    <Badge key={dim} variant="secondary" className="gap-1">
-                      {getDimensionLabel(dim)}
-                      <button
-                        onClick={() => removeColumnDimension(dim)}
-                        className="ml-1 hover:bg-background/50 rounded-full p-0.5"
-                        aria-label={`Remove ${getDimensionLabel(dim)}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className={TYPOGRAPHY.label}>Measures</h4>
-                  <p className={`${TYPOGRAPHY.mutedSm} mt-0.5`}>Required metrics</p>
                 </div>
-                {availableMeasures.length > 0 && (
-                  <Select value="" onValueChange={addMeasure}>
-                    <SelectTrigger className="w-40 h-8">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableMeasures.map((measure) => (
-                        <SelectItem key={measure.value} value={measure.value}>
-                          {measure.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-              <div className={`flex flex-wrap gap-2 min-h-[36px] p-3 border rounded-lg transition-colors ${
-                selectedMeasures.length === 0
-                  ? 'border-destructive/50 bg-destructive/5'
-                  : 'bg-muted/30'
-              }`}>
-                {selectedMeasures.length === 0 ? (
-                  <div className="flex items-center gap-2 w-full">
-                    <TrendingUp className={`${ICON_SIZES.sm} text-destructive`} />
-                    <span className={`${TYPOGRAPHY.bodySm} text-destructive font-medium`}>
-                      Select at least one measure to see data
-                    </span>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className={TYPOGRAPHY.label}>Column Dimensions</h4>
+                      <p className={`${TYPOGRAPHY.mutedSm} mt-0.5`}>Table columns</p>
+                    </div>
+                    {availableDimensions.length > 0 && (
+                      <Select value="" onValueChange={addColumnDimension}>
+                        <SelectTrigger className="w-40 h-8">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableDimensions.map((dim) => (
+                            <SelectItem key={dim.value} value={dim.value}>
+                              {dim.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
-                ) : (
-                  selectedMeasures.map((measure) => (
-                    <Badge key={measure} variant="default" className="gap-1">
-                      {getMeasureLabel(measure)}
-                      <button
-                        onClick={() => removeMeasure(measure)}
-                        className="ml-1 hover:bg-background/50 rounded-full p-0.5"
-                        aria-label={`Remove ${getMeasureLabel(measure)}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
+                  <div
+                    className={`flex flex-wrap gap-2 min-h-[36px] p-3 border rounded-lg transition-colors ${
+                      selectedColumnDimensions.length === 0
+                        ? 'border-muted bg-muted/10'
+                        : 'bg-muted/30'
+                    }`}
+                  >
+                    {selectedColumnDimensions.length === 0 ? (
+                      <div className="flex items-center gap-2 w-full">
+                        <span className={`${TYPOGRAPHY.bodySm} text-muted-foreground italic`}>
+                          None — no column grouping
+                        </span>
+                      </div>
+                    ) : (
+                      selectedColumnDimensions.map((dim) => (
+                        <Badge key={dim} variant="secondary" className="gap-1">
+                          {getDimensionLabel(dim)}
+                          <button
+                            onClick={() => removeColumnDimension(dim)}
+                            className="ml-1 hover:bg-background/50 rounded-full p-0.5"
+                            aria-label={`Remove ${getDimensionLabel(dim)}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
 
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">Filters</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground">Event</label>
-                <Select value={eventFilter} onValueChange={setEventFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All events" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All events</SelectItem>
-                    {options?.event_names.map((event) => (
-                      <SelectItem key={event} value={event}>
-                        {event}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className={TYPOGRAPHY.label}>Measures</h4>
+                      <p className={`${TYPOGRAPHY.mutedSm} mt-0.5`}>Required metrics</p>
+                    </div>
+                    {availableMeasures.length > 0 && (
+                      <Select value="" onValueChange={addMeasure}>
+                        <SelectTrigger className="w-40 h-8">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableMeasures.map((measure) => (
+                            <SelectItem key={measure.value} value={measure.value}>
+                              {measure.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  <div
+                    className={`flex flex-wrap gap-2 min-h-[36px] p-3 border rounded-lg transition-colors ${
+                      selectedMeasures.length === 0
+                        ? 'border-destructive/50 bg-destructive/5'
+                        : 'bg-muted/30'
+                    }`}
+                  >
+                    {selectedMeasures.length === 0 ? (
+                      <div className="flex items-center gap-2 w-full">
+                        <TrendingUp className={`${ICON_SIZES.sm} text-destructive`} />
+                        <span className={`${TYPOGRAPHY.bodySm} text-destructive font-medium`}>
+                          Select at least one measure to see data
+                        </span>
+                      </div>
+                    ) : (
+                      selectedMeasures.map((measure) => (
+                        <Badge key={measure} variant="default" className="gap-1">
+                          {getMeasureLabel(measure)}
+                          <button
+                            onClick={() => removeMeasure(measure)}
+                            className="ml-1 hover:bg-background/50 rounded-full p-0.5"
+                            aria-label={`Remove ${getMeasureLabel(measure)}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
 
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Filters</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground">Event</label>
+                    <Select value={eventFilter} onValueChange={setEventFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All events" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All events</SelectItem>
+                        {options?.event_names.map((event) => (
+                          <SelectItem key={event} value={event}>
+                            {event}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -424,7 +442,11 @@ export function PivotPage() {
                   {pivotData.measures.map((measure) => {
                     const value = pivotData.data[0]?.[measure]
                     return (
-                      <Card key={measure} hover="lift" className="animate-in fade-in-50 duration-300">
+                      <Card
+                        key={measure}
+                        hover="lift"
+                        className="animate-in fade-in-50 duration-300"
+                      >
                         <CardHeader className="pb-2">
                           <div className="flex items-center justify-between">
                             <CardTitle className={TYPOGRAPHY.label}>
@@ -470,28 +492,33 @@ export function PivotPage() {
                               colSpan={pivotData.measures.length}
                               className="text-center p-3 font-medium text-muted-foreground bg-primary/10 border-r"
                             >
-                              {selectedColumnDimensions.map(dim => formatCellValue(dim, colHeader[dim])).join(' / ')}
+                              {selectedColumnDimensions
+                                .map((dim) => formatCellValue(dim, colHeader[dim]))
+                                .join(' / ')}
                             </th>
                           ))}
                         </tr>
                       )}
                       {/* Measure headers */}
                       <tr className="border-b">
-                        {selectedColumnDimensions.length === 0 && pivotData.dimensions.map((dim) => (
-                          <th
-                            key={dim}
-                            className="text-left p-3 font-medium text-muted-foreground bg-muted/50 cursor-pointer select-none hover:bg-muted/70 transition-colors"
-                            onClick={() => handleSort(dim)}
-                          >
-                            <div className="flex items-center gap-1.5">
-                              {getDimensionLabel(dim)}
-                              <SortIcon colKey={dim} />
-                            </div>
-                          </th>
-                        ))}
+                        {selectedColumnDimensions.length === 0 &&
+                          pivotData.dimensions.map((dim) => (
+                            <th
+                              key={dim}
+                              className="text-left p-3 font-medium text-muted-foreground bg-muted/50 cursor-pointer select-none hover:bg-muted/70 transition-colors"
+                              onClick={() => handleSort(dim)}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                {getDimensionLabel(dim)}
+                                <SortIcon colKey={dim} />
+                              </div>
+                            </th>
+                          ))}
                         {pivotData.column_headers.map((colHeader, colIdx) =>
                           pivotData.measures.map((measure, mIdx) => {
-                            const colLabel = selectedColumnDimensions.map(dim => colHeader[dim]).join('_')
+                            const colLabel = selectedColumnDimensions
+                              .map((dim) => colHeader[dim])
+                              .join('_')
                             const cellKey = `${colLabel}_${measure}`
                             return (
                               <th
@@ -520,7 +547,9 @@ export function PivotPage() {
                             </td>
                           ))}
                           {(pivotData.column_headers || []).map((colHeader, colIdx) => {
-                            const colLabel = selectedColumnDimensions.map(dim => colHeader[dim]).join('_')
+                            const colLabel = selectedColumnDimensions
+                              .map((dim) => colHeader[dim])
+                              .join('_')
                             return pivotData.measures.map((measure, mIdx) => (
                               <td
                                 key={`${colIdx}-${measure}`}

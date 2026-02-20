@@ -34,7 +34,7 @@ export function Header() {
         .join('')
         .toUpperCase()
         .slice(0, 2)
-    : user?.email?.[0]?.toUpperCase() ?? 'U'
+    : (user?.email?.[0]?.toUpperCase() ?? 'U')
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -92,10 +92,7 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => logout.mutate()}
-                disabled={logout.isPending}
-              >
+              <DropdownMenuItem onClick={() => logout.mutate()} disabled={logout.isPending}>
                 {logout.isPending ? 'Signing out…' : 'Sign out'}
               </DropdownMenuItem>
             </DropdownMenuContent>

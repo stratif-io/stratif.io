@@ -1,12 +1,12 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils'
 
 interface CustomTooltipProps {
-  active?: boolean;
-  payload?: any[];
-  label?: string;
-  formatter?: (value: number) => string;
-  labelFormatter?: (label: string) => string;
-  className?: string;
+  active?: boolean
+  payload?: any[]
+  label?: string
+  formatter?: (value: number) => string
+  labelFormatter?: (label: string) => string
+  className?: string
 }
 
 /**
@@ -21,7 +21,7 @@ export function CustomTooltip({
   className,
 }: CustomTooltipProps) {
   if (!active || !payload || payload.length === 0) {
-    return null;
+    return null
   }
 
   return (
@@ -29,14 +29,12 @@ export function CustomTooltip({
       className={cn(
         'rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg',
         'animate-in fade-in-0 zoom-in-95 duration-150',
-        className,
+        className
       )}
     >
       {/* Label */}
       {label && (
-        <p className="text-xs font-medium text-muted-foreground mb-2">
-          {labelFormatter(label)}
-        </p>
+        <p className="text-xs font-medium text-muted-foreground mb-2">{labelFormatter(label)}</p>
       )}
 
       {/* Values */}
@@ -44,22 +42,15 @@ export function CustomTooltip({
         {payload.map((entry, index) => (
           <div key={`item-${index}`} className="flex items-center gap-2">
             {/* Color indicator */}
-            <div
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: entry.color }}
-            />
+            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
             {/* Label and value */}
-            <span className="text-xs text-muted-foreground">
-              {entry.name}:
-            </span>
-            <span className="text-sm font-semibold">
-              {formatter(entry.value)}
-            </span>
+            <span className="text-xs text-muted-foreground">{entry.name}:</span>
+            <span className="text-sm font-semibold">{formatter(entry.value)}</span>
           </div>
         ))}
       </div>
     </div>
-  );
+  )
 }
 
 /**
@@ -73,39 +64,32 @@ export function SimpleTooltip({
   labelFormatter = (label) => label,
 }: CustomTooltipProps) {
   if (!active || !payload || payload.length === 0) {
-    return null;
+    return null
   }
 
-  const entry = payload[0];
+  const entry = payload[0]
 
   return (
     <div
       className={cn(
         'rounded-lg border bg-background/95 backdrop-blur-sm p-2.5 shadow-lg',
-        'animate-in fade-in-0 zoom-in-95 duration-150',
+        'animate-in fade-in-0 zoom-in-95 duration-150'
       )}
     >
       <div className="flex flex-col gap-1">
         {label && (
-          <span className="text-xs font-medium text-muted-foreground">
-            {labelFormatter(label)}
-          </span>
+          <span className="text-xs font-medium text-muted-foreground">{labelFormatter(label)}</span>
         )}
         <span className="text-sm font-bold">{formatter(entry.value)}</span>
       </div>
     </div>
-  );
+  )
 }
 
 /**
  * Percentage tooltip formatter
  */
-export function PercentageTooltip({
-  active,
-  payload,
-  label,
-  labelFormatter,
-}: CustomTooltipProps) {
+export function PercentageTooltip({ active, payload, label, labelFormatter }: CustomTooltipProps) {
   return (
     <SimpleTooltip
       active={active}
@@ -114,5 +98,5 @@ export function PercentageTooltip({
       formatter={(value) => `${value.toFixed(1)}%`}
       labelFormatter={labelFormatter}
     />
-  );
+  )
 }

@@ -75,10 +75,7 @@ export function DonutChart({
 
   if (loading) {
     return (
-      <div
-        className="flex items-center justify-center animate-pulse"
-        style={{ height }}
-      >
+      <div className="flex items-center justify-center animate-pulse" style={{ height }}>
         <div className="w-32 h-32 rounded-full bg-muted/50" />
       </div>
     )
@@ -144,58 +141,58 @@ export function DonutChart({
             onMouseEnter={(_, index) => setActiveIndex(index)}
             onMouseLeave={() => setActiveIndex(null)}
           >
-          {data.map((entry, index) => {
-            const color = entry.color || colors[index % colors.length]
-            const isActive = activeIndex === index
+            {data.map((entry, index) => {
+              const color = entry.color || colors[index % colors.length]
+              const isActive = activeIndex === index
 
-            return (
-              <Cell
-                key={`cell-${index}`}
-                fill={color}
-                stroke={isActive ? 'hsl(var(--background))' : 'transparent'}
-                strokeWidth={isActive ? 2 : 0}
-                style={{
-                  cursor: onSliceClick ? 'pointer' : 'default',
-                  filter: isActive ? 'brightness(1.1)' : 'none',
-                  transition: 'all 0.2s ease',
-                }}
-              />
-            )
-          })}
-        </Pie>
-        <Tooltip
-          content={({ active, payload }) => {
-            if (active && payload && payload.length) {
-              const data = payload[0].payload
-              const percentage = ((data.value / total) * 100).toFixed(1)
               return (
-                <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg animate-in fade-in-0 zoom-in-95 duration-150">
-                  <p className="mb-1 font-semibold text-sm">{data.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Value:{' '}
-                    <span className="font-medium text-foreground">
-                      {data.value.toLocaleString()}
-                    </span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Percentage: <span className="font-medium text-foreground">{percentage}%</span>
-                  </p>
-                </div>
+                <Cell
+                  key={`cell-${index}`}
+                  fill={color}
+                  stroke={isActive ? 'hsl(var(--background))' : 'transparent'}
+                  strokeWidth={isActive ? 2 : 0}
+                  style={{
+                    cursor: onSliceClick ? 'pointer' : 'default',
+                    filter: isActive ? 'brightness(1.1)' : 'none',
+                    transition: 'all 0.2s ease',
+                  }}
+                />
               )
-            }
-            return null
-          }}
-        />
-        {showLegend && (
-          <Legend
-            verticalAlign="bottom"
-            height={36}
-            wrapperStyle={{ fontSize: '12px' }}
-            formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+            })}
+          </Pie>
+          <Tooltip
+            content={({ active, payload }) => {
+              if (active && payload && payload.length) {
+                const data = payload[0].payload
+                const percentage = ((data.value / total) * 100).toFixed(1)
+                return (
+                  <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg animate-in fade-in-0 zoom-in-95 duration-150">
+                    <p className="mb-1 font-semibold text-sm">{data.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Value:{' '}
+                      <span className="font-medium text-foreground">
+                        {data.value.toLocaleString()}
+                      </span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Percentage: <span className="font-medium text-foreground">{percentage}%</span>
+                    </p>
+                  </div>
+                )
+              }
+              return null
+            }}
           />
-        )}
-      </PieChart>
-    </ResponsiveContainer>
+          {showLegend && (
+            <Legend
+              verticalAlign="bottom"
+              height={36}
+              wrapperStyle={{ fontSize: '12px' }}
+              formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+            />
+          )}
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   )
 }

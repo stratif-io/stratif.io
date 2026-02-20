@@ -4,7 +4,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DateRangePicker } from '@/components/DateRangePicker'
-import { Globe, Chrome, Monitor, Building, Tag, Layers, ChevronDown, X, LucideIcon } from 'lucide-react'
+import {
+  Globe,
+  Chrome,
+  Monitor,
+  Building,
+  Tag,
+  Layers,
+  ChevronDown,
+  X,
+  LucideIcon,
+} from 'lucide-react'
 import { useFilterConfig, useFilterOptions } from '@/features/connections/hooks/useConnectionsData'
 import { cn } from '@/lib/utils'
 import type { FilterField } from '@/types'
@@ -23,13 +33,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Layers,
 }
 
-function DimensionFilter({
-  field,
-  options,
-}: {
-  field: FilterField
-  options: string[]
-}) {
+function DimensionFilter({ field, options }: { field: FilterField; options: string[] }) {
   const activeFilters = useAppStore((s) => s.activeFilters)
   const setActiveFilter = useAppStore((s) => s.setActiveFilter)
   const [open, setOpen] = useState(false)
@@ -55,7 +59,7 @@ function DimensionFilter({
           className={cn(
             'h-9 flex items-center gap-1.5 px-3 text-sm font-medium',
             'hover:bg-accent/60 transition-colors',
-            value ? 'text-foreground' : 'text-muted-foreground',
+            value ? 'text-foreground' : 'text-muted-foreground'
           )}
         >
           <Icon className={cn('h-3.5 w-3.5 shrink-0', value && 'text-primary')} />
@@ -65,7 +69,10 @@ function DimensionFilter({
           {value ? (
             <X
               className="h-3 w-3 shrink-0 text-muted-foreground hover:text-foreground"
-              onClick={(e) => { e.stopPropagation(); select(null) }}
+              onClick={(e) => {
+                e.stopPropagation()
+                select(null)
+              }}
             />
           ) : (
             <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
@@ -91,7 +98,7 @@ function DimensionFilter({
                 className={cn(
                   'w-full text-left px-2 py-1.5 rounded text-sm',
                   'hover:bg-accent transition-colors',
-                  value === null && 'bg-accent font-medium',
+                  value === null && 'bg-accent font-medium'
                 )}
                 onClick={() => select(null)}
               >
@@ -107,7 +114,7 @@ function DimensionFilter({
                   className={cn(
                     'w-full text-left px-2 py-1.5 rounded text-sm truncate',
                     'hover:bg-accent transition-colors',
-                    value === opt && 'bg-accent font-medium',
+                    value === opt && 'bg-accent font-medium'
                   )}
                   onClick={() => select(opt)}
                 >

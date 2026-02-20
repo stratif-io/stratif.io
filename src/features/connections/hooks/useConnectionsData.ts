@@ -14,7 +14,12 @@ import {
   upsertFilterConfig,
   upsertSchemaConfig,
 } from '@/lib/api/queries'
-import type { ConnectionCreate, ConnectionUpdate, FilterConfigBody, SchemaConfigBody } from '@/types'
+import type {
+  ConnectionCreate,
+  ConnectionUpdate,
+  FilterConfigBody,
+  SchemaConfigBody,
+} from '@/types'
 
 export function useConnections() {
   return useQuery({

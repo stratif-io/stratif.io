@@ -1,12 +1,12 @@
-import { Toaster } from 'sonner';
-import { useAppStore } from '@/stores/app-store';
+import { Toaster } from 'sonner'
+import { useAppStore } from '@/stores/app-store'
 
 /**
  * Toast notification provider using Sonner
  * Automatically adapts to light/dark theme
  */
 export function ToastProvider() {
-  const theme = useAppStore((state) => state.theme);
+  const theme = useAppStore((state) => state.theme)
 
   return (
     <Toaster
@@ -22,8 +22,8 @@ export function ToastProvider() {
       }}
       richColors
     />
-  );
+  )
 }
 
 // Export toast functions for convenience
-export { toast } from 'sonner';
+export { toast } from 'sonner'

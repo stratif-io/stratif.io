@@ -3,9 +3,19 @@ import { Plus, Trash2, ScanSearch } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { LoadingState } from '@/components/ui/loading-state'
-import { useSchemaConfig, useUpsertSchemaConfig, useDetectSchema } from '../hooks/useConnectionsData'
+import {
+  useSchemaConfig,
+  useUpsertSchemaConfig,
+  useDetectSchema,
+} from '../hooks/useConnectionsData'
 import type { CustomProperty, PropertyType } from '@/types'
 
 const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
@@ -83,20 +93,13 @@ export function SchemaConfigTab({ connId }: Props) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Core Field Mappings</h3>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleDetect}
-            disabled={detect.isPending}
-          >
+          <Button size="sm" variant="outline" onClick={handleDetect} disabled={detect.isPending}>
             <ScanSearch className="h-3.5 w-3.5 mr-1.5" />
             {detect.isPending ? 'Detecting…' : 'Detect from Schema'}
           </Button>
         </div>
 
-        {detect.isError && (
-          <p className="text-sm text-destructive">{detect.error?.message}</p>
-        )}
+        {detect.isError && <p className="text-sm text-destructive">{detect.error?.message}</p>}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
@@ -213,12 +216,8 @@ export function SchemaConfigTab({ connId }: Props) {
         )}
       </div>
 
-      {upsert.isError && (
-        <p className="text-sm text-destructive">{upsert.error?.message}</p>
-      )}
-      {upsert.isSuccess && (
-        <p className="text-sm text-green-600">Schema config saved.</p>
-      )}
+      {upsert.isError && <p className="text-sm text-destructive">{upsert.error?.message}</p>}
+      {upsert.isSuccess && <p className="text-sm text-green-600">Schema config saved.</p>}
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={upsert.isPending}>
@@ -228,4 +227,3 @@ export function SchemaConfigTab({ connId }: Props) {
     </div>
   )
 }
-

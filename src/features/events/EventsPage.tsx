@@ -52,7 +52,11 @@ export function EventsPage() {
   // Merge global store filters with local column filters (local takes precedence)
   const mergedFilters: Record<string, string | null> = { ...activeFilters, ...columnFilters }
 
-  const { data: rawEventsData, isLoading, isFetching } = useQuery({
+  const {
+    data: rawEventsData,
+    isLoading,
+    isFetching,
+  } = useQuery({
     queryKey: [
       'rawEvents',
       page,

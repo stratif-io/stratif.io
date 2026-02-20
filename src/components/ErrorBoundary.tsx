@@ -79,7 +79,9 @@ Stack: ${this.state.error?.stack}`
               {/* Error message (only in dev) */}
               {isDev && this.state.error && (
                 <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3">
-                  <p className="text-xs font-semibold text-destructive mb-1">Development Details:</p>
+                  <p className="text-xs font-semibold text-destructive mb-1">
+                    Development Details:
+                  </p>
                   <p className="text-xs font-mono text-destructive/90">
                     {this.state.error.message}
                   </p>

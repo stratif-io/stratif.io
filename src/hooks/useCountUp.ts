@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react'
 
 interface UseCountUpOptions {
-  duration?: number; // Duration in milliseconds
-  start?: number; // Starting value
-  decimals?: number; // Number of decimal places
-  useEasing?: boolean; // Use easing function
+  duration?: number // Duration in milliseconds
+  start?: number // Starting value
+  decimals?: number // Number of decimal places
+  useEasing?: boolean // Use easing function
 }
 
 /**
@@ -16,59 +16,52 @@ interface UseCountUpOptions {
  */
 export function useCountUp(
   end: number,
-  {
-    duration = 800,
-    start = 0,
-    decimals = 0,
-    useEasing = true,
-  }: UseCountUpOptions = {}
+  { duration = 800, start = 0, decimals = 0, useEasing = true }: UseCountUpOptions = {}
 ) {
-  const [count, setCount] = useState(start);
-  const frameRef = useRef<number>();
-  const startTimeRef = useRef<number>();
-  const prevEndRef = useRef(end);
+  const [count, setCount] = useState(start)
+  const frameRef = useRef<number>()
+  const startTimeRef = useRef<number>()
+  const prevEndRef = useRef(end)
 
   useEffect(() => {
     // Reset start time if end value changes
     if (prevEndRef.current !== end) {
-      startTimeRef.current = undefined;
-      prevEndRef.current = end;
+      startTimeRef.current = undefined
+      prevEndRef.current = end
     }
 
     const animate = (timestamp: number) => {
       if (!startTimeRef.current) {
-        startTimeRef.current = timestamp;
+        startTimeRef.current = timestamp
       }
 
-      const progress = Math.min((timestamp - startTimeRef.current) / duration, 1);
+      const progress = Math.min((timestamp - startTimeRef.current) / duration, 1)
 
       // Easing function (ease-out cubic)
-      const easedProgress = useEasing
-        ? 1 - Math.pow(1 - progress, 3)
-        : progress;
+      const easedProgress = useEasing ? 1 - Math.pow(1 - progress, 3) : progress
 
-      const currentCount = start + (end - start) * easedProgress;
+      const currentCount = start + (end - start) * easedProgress
 
-      setCount(currentCount);
+      setCount(currentCount)
 
       if (progress < 1) {
-        frameRef.current = requestAnimationFrame(animate);
+        frameRef.current = requestAnimationFrame(animate)
       } else {
-        setCount(end); // Ensure we end at exact value
+        setCount(end) // Ensure we end at exact value
       }
-    };
+    }
 
-    frameRef.current = requestAnimationFrame(animate);
+    frameRef.current = requestAnimationFrame(animate)
 
     return () => {
       if (frameRef.current) {
-        cancelAnimationFrame(frameRef.current);
+        cancelAnimationFrame(frameRef.current)
       }
-    };
-  }, [end, duration, start, useEasing]);
+    }
+  }, [end, duration, start, useEasing])
 
   // Format the count with specified decimals
-  return Number(count.toFixed(decimals));
+  return Number(count.toFixed(decimals))
 }
 
 /**
@@ -78,7 +71,7 @@ export function useFormattedCountUp(
   end: number,
   options: UseCountUpOptions & { formatter?: (value: number) => string } = {}
 ) {
-  const { formatter = (val) => val.toLocaleString(), ...countUpOptions } = options;
-  const count = useCountUp(end, countUpOptions);
-  return formatter(count);
+  const { formatter = (val) => val.toLocaleString(), ...countUpOptions } = options
+  const count = useCountUp(end, countUpOptions)
+  return formatter(count)
 }

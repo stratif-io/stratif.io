@@ -145,70 +145,70 @@ export function ComparisonChart({
           syncId={syncId}
           onMouseMove={(e) => {
             if (e?.activeTooltipIndex !== undefined) {
-            setActiveIndex(e.activeTooltipIndex)
-          }
-        }}
-        onMouseLeave={() => setActiveIndex(null)}
-      >
-        {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border" />}
-        <XAxis dataKey={xAxisKey} tick={{ fontSize: 12 }} className="fill-muted-foreground" />
-        <YAxis
-          tick={{ fontSize: 12 }}
-          className="fill-muted-foreground"
-          tickFormatter={(value) => (value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value)}
-        />
-        <Tooltip content={<ComparisonTooltip series={series} />} />
-        {showLegend && (
-          <Legend
-            formatter={(value, entry) => {
-              const s = series.find((s) => s.dataKey === entry.dataKey)
-              const isCurrent = s?.type === 'current'
-              return (
-                <span className="text-sm text-muted-foreground">
-                  {isCurrent ? 'Current Period' : 'Previous Period'}
-                </span>
-              )
-            }}
+              setActiveIndex(e.activeTooltipIndex)
+            }
+          }}
+          onMouseLeave={() => setActiveIndex(null)}
+        >
+          {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border" />}
+          <XAxis dataKey={xAxisKey} tick={{ fontSize: 12 }} className="fill-muted-foreground" />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            className="fill-muted-foreground"
+            tickFormatter={(value) => (value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value)}
           />
-        )}
+          <Tooltip content={<ComparisonTooltip series={series} />} />
+          {showLegend && (
+            <Legend
+              formatter={(value, entry) => {
+                const s = series.find((s) => s.dataKey === entry.dataKey)
+                const isCurrent = s?.type === 'current'
+                return (
+                  <span className="text-sm text-muted-foreground">
+                    {isCurrent ? 'Current Period' : 'Previous Period'}
+                  </span>
+                )
+              }}
+            />
+          )}
 
-        {previousSeries.map((s, index) => (
-          <Line
-            key={s.dataKey}
-            type="monotone"
-            dataKey={s.dataKey}
-            name={s.name}
-            stroke={getSeriesColor(s, index)}
-            strokeWidth={2}
-            strokeDasharray="5 5"
-            dot={false}
-            activeDot={{ r: 4, fill: getSeriesColor(s, index) }}
-          />
-        ))}
+          {previousSeries.map((s, index) => (
+            <Line
+              key={s.dataKey}
+              type="monotone"
+              dataKey={s.dataKey}
+              name={s.name}
+              stroke={getSeriesColor(s, index)}
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              dot={false}
+              activeDot={{ r: 4, fill: getSeriesColor(s, index) }}
+            />
+          ))}
 
-        {currentSeries.map((s, index) => (
-          <Line
-            key={s.dataKey}
-            type="monotone"
-            dataKey={s.dataKey}
-            name={s.name}
-            stroke={getSeriesColor(s, index)}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4, fill: getSeriesColor(s, index) }}
-          />
-        ))}
+          {currentSeries.map((s, index) => (
+            <Line
+              key={s.dataKey}
+              type="monotone"
+              dataKey={s.dataKey}
+              name={s.name}
+              stroke={getSeriesColor(s, index)}
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, fill: getSeriesColor(s, index) }}
+            />
+          ))}
 
-        {showDifference && activeIndex !== null && activeIndex > 0 && (
-          <ReferenceArea
-            x1={String(data[activeIndex - 1]?.[xAxisKey] ?? '')}
-            x2={String(data[activeIndex]?.[xAxisKey] ?? '')}
-            fill="hsl(var(--muted))"
-            fillOpacity={0.3}
-          />
-        )}
-      </RechartsLineChart>
-    </ResponsiveContainer>
+          {showDifference && activeIndex !== null && activeIndex > 0 && (
+            <ReferenceArea
+              x1={String(data[activeIndex - 1]?.[xAxisKey] ?? '')}
+              x2={String(data[activeIndex]?.[xAxisKey] ?? '')}
+              fill="hsl(var(--muted))"
+              fillOpacity={0.3}
+            />
+          )}
+        </RechartsLineChart>
+      </ResponsiveContainer>
     </div>
   )
 }

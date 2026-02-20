@@ -11,7 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useFilterConfig, useSchemaConfig, useUpsertFilterConfig } from '../hooks/useConnectionsData'
+import {
+  useFilterConfig,
+  useSchemaConfig,
+  useUpsertFilterConfig,
+} from '../hooks/useConnectionsData'
 import type { FilterField } from '@/types'
 
 const ICON_OPTIONS = ['Globe', 'Chrome', 'Monitor', 'Building', 'Tag', 'Layers'] as const
@@ -26,7 +30,9 @@ export function FilterConfigTab({ connId }: Props) {
   const upsert = useUpsertFilterConfig(connId)
 
   // Map field name → {label, icon} for enabled fields
-  const [enabledFields, setEnabledFields] = useState<Record<string, { label: string; icon: string }>>({})
+  const [enabledFields, setEnabledFields] = useState<
+    Record<string, { label: string; icon: string }>
+  >({})
 
   // All candidate field names derived from the schema config
   const candidates: string[] = schema
@@ -55,7 +61,10 @@ export function FilterConfigTab({ connId }: Props) {
         delete next[field]
       } else {
         // Default label: capitalize field name; default icon: Tag
-        next[field] = { label: field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' '), icon: 'Tag' }
+        next[field] = {
+          label: field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' '),
+          icon: 'Tag',
+        }
       }
       return next
     })
@@ -156,12 +165,8 @@ export function FilterConfigTab({ connId }: Props) {
         </div>
       )}
 
-      {upsert.isError && (
-        <p className="text-sm text-destructive">{upsert.error?.message}</p>
-      )}
-      {upsert.isSuccess && (
-        <p className="text-sm text-green-600">Filter config saved.</p>
-      )}
+      {upsert.isError && <p className="text-sm text-destructive">{upsert.error?.message}</p>}
+      {upsert.isSuccess && <p className="text-sm text-green-600">Filter config saved.</p>}
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={upsert.isPending || candidates.length === 0}>

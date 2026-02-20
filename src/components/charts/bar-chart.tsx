@@ -61,12 +61,11 @@ export function BarChartComponent({
             className="fill-muted-foreground"
             tickLine={false}
           />
-          <YAxis
-            tick={{ fontSize: 12 }}
-            className="fill-muted-foreground"
-            tickLine={false}
+          <YAxis tick={{ fontSize: 12 }} className="fill-muted-foreground" tickLine={false} />
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} />
           {showLegend && <Legend wrapperStyle={{ fontSize: '12px' }} />}
           {bars.map((bar, index) => (
             <Bar

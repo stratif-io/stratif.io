@@ -117,7 +117,10 @@ export function FunnelChart({
   }
 
   return (
-    <div className="w-full flex justify-center animate-in fade-in-50 duration-500" style={{ height }}>
+    <div
+      className="w-full flex justify-center animate-in fade-in-50 duration-500"
+      style={{ height }}
+    >
       <svg
         viewBox={`0 0 400 ${height}`}
         className="w-full max-w-md"

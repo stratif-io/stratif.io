@@ -57,9 +57,7 @@ export function LoginForm() {
         {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
       </div>
 
-      {login.error && (
-        <p className="text-sm text-destructive">{(login.error as Error).message}</p>
-      )}
+      {login.error && <p className="text-sm text-destructive">{(login.error as Error).message}</p>}
 
       <Button type="submit" className="w-full" disabled={login.isPending}>
         {login.isPending ? 'Signing in…' : 'Sign in'}

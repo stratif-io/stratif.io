@@ -11,12 +11,24 @@ import type { Event } from '@/types'
 
 // Deterministic color per event name
 const EVENT_PALETTE = [
-  { dot: 'bg-violet-500', ring: 'ring-violet-500/25', text: 'text-violet-600 dark:text-violet-400' },
+  {
+    dot: 'bg-violet-500',
+    ring: 'ring-violet-500/25',
+    text: 'text-violet-600 dark:text-violet-400',
+  },
   { dot: 'bg-blue-500', ring: 'ring-blue-500/25', text: 'text-blue-600 dark:text-blue-400' },
   { dot: 'bg-cyan-500', ring: 'ring-cyan-500/25', text: 'text-cyan-600 dark:text-cyan-400' },
-  { dot: 'bg-emerald-500', ring: 'ring-emerald-500/25', text: 'text-emerald-600 dark:text-emerald-400' },
+  {
+    dot: 'bg-emerald-500',
+    ring: 'ring-emerald-500/25',
+    text: 'text-emerald-600 dark:text-emerald-400',
+  },
   { dot: 'bg-amber-500', ring: 'ring-amber-500/25', text: 'text-amber-600 dark:text-amber-400' },
-  { dot: 'bg-orange-500', ring: 'ring-orange-500/25', text: 'text-orange-600 dark:text-orange-400' },
+  {
+    dot: 'bg-orange-500',
+    ring: 'ring-orange-500/25',
+    text: 'text-orange-600 dark:text-orange-400',
+  },
   { dot: 'bg-rose-500', ring: 'ring-rose-500/25', text: 'text-rose-600 dark:text-rose-400' },
   { dot: 'bg-pink-500', ring: 'ring-pink-500/25', text: 'text-pink-600 dark:text-pink-400' },
 ]
@@ -105,7 +117,7 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
             'h-7 w-7 rounded-full flex items-center justify-center',
             'ring-4 bg-background z-10',
             color.dot,
-            color.ring,
+            color.ring
           )}
         >
           <span className="text-white text-[11px] font-bold leading-none">
@@ -148,8 +160,7 @@ export interface UserTimelineModalProps {
 export function UserTimelineModal({ userId, connectionId, open, onClose }: UserTimelineModalProps) {
   const { data, isLoading } = useQuery({
     queryKey: ['userEvents', userId, connectionId],
-    queryFn: () =>
-      fetchUserEvents({ user_id: userId!, connection_id: connectionId ?? undefined }),
+    queryFn: () => fetchUserEvents({ user_id: userId!, connection_id: connectionId ?? undefined }),
     enabled: open && !!userId,
     staleTime: 60_000,
   })

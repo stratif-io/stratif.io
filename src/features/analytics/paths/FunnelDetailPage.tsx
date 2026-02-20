@@ -152,11 +152,9 @@ export function FunnelDetailPage() {
   const lastStep = steps[steps.length - 1]
   const worstStep = steps
     .slice(1)
-    .reduce<(typeof steps)[0] | null>(
-      (worst, s) =>
-        worst === null || s.step_conversion_rate < worst.step_conversion_rate ? s : worst,
-      null
-    )
+    .reduce<
+      (typeof steps)[0] | null
+    >((worst, s) => (worst === null || s.step_conversion_rate < worst.step_conversion_rate ? s : worst), null)
 
   return (
     <TooltipProvider>
@@ -250,7 +248,6 @@ export function FunnelDetailPage() {
                   <span>Add step</span>
                 </button>
               )}
-
             </div>
 
             {events.length < 2 ? (

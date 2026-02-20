@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useUpdateConnection, useTestConnection, useConnectionString } from '../hooks/useConnectionsData'
+import {
+  useUpdateConnection,
+  useTestConnection,
+  useConnectionString,
+} from '../hooks/useConnectionsData'
 import type { Connection, DbType } from '@/types'
 import { CheckCircle, XCircle, Loader2, Copy, Check } from 'lucide-react'
 
@@ -125,7 +129,11 @@ function ConnectionStringDisplay({ connId }: { connId: string }) {
           className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
           title="Copy"
         >
-          {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied ? (
+            <Check className="h-3.5 w-3.5 text-green-500" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
         </button>
       </div>
     </div>
@@ -216,12 +224,8 @@ export function ConnectionConfigTab({ connection }: Props) {
         )}
       </div>
 
-      {update.isError && (
-        <p className="text-sm text-destructive">{update.error?.message}</p>
-      )}
-      {update.isSuccess && (
-        <p className="text-sm text-green-600">Connection updated.</p>
-      )}
+      {update.isError && <p className="text-sm text-destructive">{update.error?.message}</p>}
+      {update.isSuccess && <p className="text-sm text-green-600">Connection updated.</p>}
 
       <div className="flex justify-end">
         <Button type="submit" disabled={update.isPending}>

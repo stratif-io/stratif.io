@@ -21,30 +21,30 @@ const GRANULARITIES: { value: RetentionGranularity; label: string }[] = [
 // Benchmark thresholds per granularity+milestone
 // Keyed as `${granularity}_${milestone}` → { good, ok }
 const BENCHMARKS: Record<string, { good: number; ok: number }> = {
-  day_1:   { good: 25, ok: 10 },
-  day_7:   { good: 15, ok: 5  },
-  day_14:  { good: 10, ok: 3  },
-  day_30:  { good: 8,  ok: 2  },
-  day_90:  { good: 5,  ok: 1  },
-  week_1:  { good: 40, ok: 20 },
-  week_2:  { good: 25, ok: 10 },
-  week_3:  { good: 20, ok: 8  },
-  week_4:  { good: 15, ok: 5  },
-  week_12: { good: 8,  ok: 2  },
+  day_1: { good: 25, ok: 10 },
+  day_7: { good: 15, ok: 5 },
+  day_14: { good: 10, ok: 3 },
+  day_30: { good: 8, ok: 2 },
+  day_90: { good: 5, ok: 1 },
+  week_1: { good: 40, ok: 20 },
+  week_2: { good: 25, ok: 10 },
+  week_3: { good: 20, ok: 8 },
+  week_4: { good: 15, ok: 5 },
+  week_12: { good: 8, ok: 2 },
   month_1: { good: 35, ok: 15 },
   month_2: { good: 25, ok: 10 },
-  month_3: { good: 20, ok: 8  },
-  month_4: { good: 15, ok: 5  },
-  month_5: { good: 12, ok: 3  },
-  month_6: { good: 10, ok: 2  },
+  month_3: { good: 20, ok: 8 },
+  month_4: { good: 15, ok: 5 },
+  month_5: { good: 12, ok: 3 },
+  month_6: { good: 10, ok: 2 },
 }
 
 function getRetentionLabel(value: number, granularity: RetentionGranularity, milestone: number) {
   const key = `${granularity}_${milestone}`
   const b = BENCHMARKS[key] ?? { good: 20, ok: 5 }
-  if (value >= b.good) return { label: 'Good',    color: 'text-emerald-600 dark:text-emerald-400' }
-  if (value >= b.ok)   return { label: 'Average', color: 'text-amber-600 dark:text-amber-400'   }
-  return                      { label: 'Low',     color: 'text-red-500 dark:text-red-400'       }
+  if (value >= b.good) return { label: 'Good', color: 'text-emerald-600 dark:text-emerald-400' }
+  if (value >= b.ok) return { label: 'Average', color: 'text-amber-600 dark:text-amber-400' }
+  return { label: 'Low', color: 'text-red-500 dark:text-red-400' }
 }
 
 function milestoneTitle(granularity: RetentionGranularity, unit: number): string {
@@ -90,18 +90,24 @@ export function RetentionPage() {
   const [granularity, setGranularity] = useState<RetentionGranularity>('day')
   const [cohortLimit, setCohortLimit] = useState(10)
 
-  const { retentionData, milestones, isLoading, avgMilestones, totalAvailable } =
-    useRetentionData({ dateRange, granularity })
+  const { retentionData, milestones, isLoading, avgMilestones, totalAvailable } = useRetentionData({
+    dateRange,
+    granularity,
+  })
 
   // Clamp limit to what's actually available
   const effectiveLimit = totalAvailable > 0 ? Math.min(cohortLimit, totalAvailable) : cohortLimit
-  const visibleData = useMemo(() => retentionData.slice(0, effectiveLimit), [retentionData, effectiveLimit])
+  const visibleData = useMemo(
+    () => retentionData.slice(0, effectiveLimit),
+    [retentionData, effectiveLimit]
+  )
 
   // Recompute averages over visible cohorts only
   const visibleAvgMilestones = useMemo(() => {
     if (visibleData.length === 0) return milestones.map(() => 0)
-    return milestones.map((_, i) =>
-      visibleData.reduce((acc, r) => acc + (r.milestone_values[i] ?? 0), 0) / visibleData.length
+    return milestones.map(
+      (_, i) =>
+        visibleData.reduce((acc, r) => acc + (r.milestone_values[i] ?? 0), 0) / visibleData.length
     )
   }, [visibleData, milestones])
 
@@ -193,7 +199,11 @@ export function RetentionPage() {
                   />
                 </div>
               ) : (
-                <RetentionTable data={visibleData} granularity={granularity} milestones={milestones} />
+                <RetentionTable
+                  data={visibleData}
+                  granularity={granularity}
+                  milestones={milestones}
+                />
               )}
             </CardContent>
           </Card>

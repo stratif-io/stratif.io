@@ -100,7 +100,10 @@ function ConnectionRow({ connection }: { connection: Connection }) {
             variant="ghost"
             className="h-7 w-7"
             title="Edit name"
-            onClick={(e) => { e.stopPropagation(); setEditOpen(true) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              setEditOpen(true)
+            }}
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -131,9 +134,7 @@ export function ConnectionList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className={TYPOGRAPHY.sectionTitle}>Connections</h1>
-          <p className={`${TYPOGRAPHY.muted} mt-0.5`}>
-            Manage your event database connections
-          </p>
+          <p className={`${TYPOGRAPHY.muted} mt-0.5`}>Manage your event database connections</p>
         </div>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4 mr-1.5" />
@@ -143,9 +144,7 @@ export function ConnectionList() {
 
       {isLoading && <LoadingState message="Loading connections…" />}
 
-      {error && (
-        <p className="text-sm text-destructive">{error.message}</p>
-      )}
+      {error && <p className="text-sm text-destructive">{error.message}</p>}
 
       {!isLoading && !error && data?.length === 0 && (
         <EmptyState

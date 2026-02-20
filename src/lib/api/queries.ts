@@ -137,7 +137,7 @@ export const fetchUserEvents = (params: {
   if (params.limit) searchParams.set('limit', String(params.limit))
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
   return fetchApi<UserEventsResponse>(
-    `/api/users/${encodeURIComponent(params.user_id)}/events?${searchParams}`,
+    `/api/users/${encodeURIComponent(params.user_id)}/events?${searchParams}`
   )
 }
 
@@ -247,7 +247,11 @@ export const fetchSessionsSummary = (params: {
   return fetchApi<SessionsSummaryResponse>(`/api/sessions/summary?${searchParams}`)
 }
 
-export const fetchConversion = (params: { start_date?: string; end_date?: string; connection_id?: string }) => {
+export const fetchConversion = (params: {
+  start_date?: string
+  end_date?: string
+  connection_id?: string
+}) => {
   const searchParams = new URLSearchParams()
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
@@ -365,8 +369,6 @@ export const registerUser = (body: { email: string; password: string; display_na
     body: JSON.stringify(body),
   })
 
-export const logoutUser = () =>
-  fetchApi<void>('/api/auth/logout', { method: 'POST' })
+export const logoutUser = () => fetchApi<void>('/api/auth/logout', { method: 'POST' })
 
-export const initiateGoogleAuth = () =>
-  fetchApi<{ redirect_url: string }>('/api/auth/google')
+export const initiateGoogleAuth = () => fetchApi<{ redirect_url: string }>('/api/auth/google')

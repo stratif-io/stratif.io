@@ -38,7 +38,10 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading, success, children, disabled, ...props }, ref) => {
+  (
+    { className, variant, size, asChild = false, loading, success, children, disabled, ...props },
+    ref
+  ) => {
     const Comp = asChild ? Slot : 'button'
 
     // Show loading or success state

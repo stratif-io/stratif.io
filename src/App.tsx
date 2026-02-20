@@ -31,9 +31,7 @@ const ConnectionDetailPage = lazy(() =>
 const LandingPage = lazy(() =>
   import('@/pages/LandingPage').then((m) => ({ default: m.LandingPage }))
 )
-const LoginPage = lazy(() =>
-  import('@/features/auth').then((m) => ({ default: m.LoginPage }))
-)
+const LoginPage = lazy(() => import('@/features/auth').then((m) => ({ default: m.LoginPage })))
 const RegisterPage = lazy(() =>
   import('@/features/auth').then((m) => ({ default: m.RegisterPage }))
 )

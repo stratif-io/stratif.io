@@ -53,9 +53,7 @@ function milestoneLabel(unit: number, granularity: RetentionGranularity): string
 
 export function RetentionTable({ data, granularity, milestones }: RetentionTableProps) {
   const avgMilestoneValues = milestones.map((_, i) =>
-    data.length > 0
-      ? data.reduce((s, r) => s + (r.milestone_values[i] ?? 0), 0) / data.length
-      : 0
+    data.length > 0 ? data.reduce((s, r) => s + (r.milestone_values[i] ?? 0), 0) / data.length : 0
   )
 
   return (
@@ -63,7 +61,9 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead className="font-semibold text-foreground whitespace-nowrap">Cohort</TableHead>
+            <TableHead className="font-semibold text-foreground whitespace-nowrap">
+              Cohort
+            </TableHead>
             <TableHead className="font-semibold text-foreground text-right whitespace-nowrap">
               Users
             </TableHead>

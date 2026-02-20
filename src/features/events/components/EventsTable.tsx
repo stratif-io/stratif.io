@@ -77,7 +77,7 @@ interface DimensionColumn {
 function buildDimensionColumns(
   filterFields: FilterField[],
   customProperties: CustomProperty[],
-  filterOptions: Record<string, string[]>,
+  filterOptions: Record<string, string[]>
 ): DimensionColumn[] {
   const result: DimensionColumn[] = []
   const seen = new Set<string>()
@@ -161,7 +161,7 @@ function ColumnFilterCombobox({
             'flex items-center gap-1 truncate transition-colors',
             value
               ? 'border-primary/50 bg-primary/5 text-foreground'
-              : 'border-border/40 text-muted-foreground hover:border-border',
+              : 'border-border/40 text-muted-foreground hover:border-border'
           )}
         >
           <span className="flex-1 truncate">{value || placeholder}</span>
@@ -202,7 +202,7 @@ function ColumnFilterCombobox({
                 <button
                   className={cn(
                     'w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent flex items-center gap-1.5',
-                    value === search && 'bg-accent font-medium',
+                    value === search && 'bg-accent font-medium'
                   )}
                   onClick={() => select(search)}
                 >
@@ -215,7 +215,7 @@ function ColumnFilterCombobox({
                   key={opt}
                   className={cn(
                     'w-full text-left text-xs px-2 py-1.5 rounded hover:bg-accent',
-                    value === opt && 'bg-accent font-medium',
+                    value === opt && 'bg-accent font-medium'
                   )}
                   onClick={() => select(opt)}
                 >
@@ -293,7 +293,7 @@ function ColumnSelector({
                 <div
                   className={cn(
                     'h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors',
-                    checked ? 'bg-primary border-primary' : 'border-border bg-background',
+                    checked ? 'bg-primary border-primary' : 'border-border bg-background'
                   )}
                 >
                   {checked && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
@@ -380,8 +380,8 @@ export function EventsTable({
 }: EventsTableProps) {
   const storageKey = `of_events_cols_${connectionId ?? 'default'}`
 
-  const [visibleDimColumns, setVisibleDimColumns] = useState<Set<string>>(
-    () => loadStoredColumns(storageKey),
+  const [visibleDimColumns, setVisibleDimColumns] = useState<Set<string>>(() =>
+    loadStoredColumns(storageKey)
   )
 
   // Re-load from storage when the connection changes
@@ -401,7 +401,7 @@ export function EventsTable({
         return next
       })
     },
-    [storageKey],
+    [storageKey]
   )
 
   const hideAll = useCallback(() => {
@@ -454,14 +454,11 @@ export function EventsTable({
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-foreground font-medium"
                   >
                     {field}: {value}
-                    <button
-                      onClick={() => onColumnFilterClear(field)}
-                      className="hover:opacity-70"
-                    >
+                    <button onClick={() => onColumnFilterClear(field)} className="hover:opacity-70">
                       <X className="h-2.5 w-2.5" />
                     </button>
                   </span>
-                ) : null,
+                ) : null
               )}
             </>
           )}
@@ -493,7 +490,7 @@ export function EventsTable({
                       placeholder="Filter…"
                       className={cn(
                         'h-7 text-xs pl-6',
-                        userIdFilter ? 'border-primary/50 bg-primary/5' : 'border-border/40',
+                        userIdFilter ? 'border-primary/50 bg-primary/5' : 'border-border/40'
                       )}
                     />
                     {userIdFilter && (

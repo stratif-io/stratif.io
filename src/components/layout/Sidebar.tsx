@@ -53,9 +53,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'Configuration',
     icon: Settings,
-    items: [
-      { title: 'Connections', href: '/connections', icon: Database },
-    ],
+    items: [{ title: 'Connections', href: '/connections', icon: Database }],
   },
 ]
 
@@ -145,7 +143,10 @@ export function Sidebar() {
         <div className="flex h-14 shrink-0 items-center border-b px-3">
           <Link
             to={{ pathname: '/dashboard', search: location.search }}
-            className={cn('flex items-center gap-2.5 overflow-hidden', sidebarOpen ? '' : 'justify-center w-full')}
+            className={cn(
+              'flex items-center gap-2.5 overflow-hidden',
+              sidebarOpen ? '' : 'justify-center w-full'
+            )}
           >
             <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center shrink-0">
               <BarChart3 className="h-4 w-4 text-primary-foreground" />
@@ -193,7 +194,10 @@ export function Sidebar() {
             /* Collapsed: icon rail */
             <>
               {navGroups.map((group, gi) => (
-                <div key={group.title} className={cn('space-y-0.5', gi > 0 && 'pt-2 mt-2 border-t border-border/50')}>
+                <div
+                  key={group.title}
+                  className={cn('space-y-0.5', gi > 0 && 'pt-2 mt-2 border-t border-border/50')}
+                >
                   {group.items.map((item) => (
                     <NavLink
                       key={item.href}

@@ -63,7 +63,11 @@ export function PathExplorerChart({ data, dateRange }: PathExplorerChartProps) {
               margin={{ left: 16, right: 30, top: 4, bottom: 4 }}
             >
               <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-              <XAxis type="number" tickFormatter={(val) => val.toLocaleString()} tick={{ fontSize: 11 }} />
+              <XAxis
+                type="number"
+                tickFormatter={(val) => val.toLocaleString()}
+                tick={{ fontSize: 11 }}
+              />
               <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 10 }} />
               <Tooltip
                 content={({ active, payload }) => {

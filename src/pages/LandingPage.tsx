@@ -42,12 +42,18 @@ function SnowflakeIcon({ size = 18 }: { size?: number }) {
         <line x1="12" y1="2" x2="12" y2="22" />
         <line x1="2.5" y1="7" x2="21.5" y2="17" />
         <line x1="21.5" y1="7" x2="2.5" y2="17" />
-        <line x1="12" y1="6" x2="9" y2="9" /><line x1="12" y1="6" x2="15" y2="9" />
-        <line x1="12" y1="18" x2="9" y2="15" /><line x1="12" y1="18" x2="15" y2="15" />
-        <line x1="16.8" y1="9.5" x2="13.8" y2="10.8" /><line x1="16.8" y1="9.5" x2="17.3" y2="12.5" />
-        <line x1="7.2" y1="14.5" x2="10.2" y2="13.2" /><line x1="7.2" y1="14.5" x2="6.7" y2="11.5" />
-        <line x1="7.2" y1="9.5" x2="10.2" y2="10.8" /><line x1="7.2" y1="9.5" x2="6.7" y2="12.5" />
-        <line x1="16.8" y1="14.5" x2="13.8" y2="13.2" /><line x1="16.8" y1="14.5" x2="17.3" y2="11.5" />
+        <line x1="12" y1="6" x2="9" y2="9" />
+        <line x1="12" y1="6" x2="15" y2="9" />
+        <line x1="12" y1="18" x2="9" y2="15" />
+        <line x1="12" y1="18" x2="15" y2="15" />
+        <line x1="16.8" y1="9.5" x2="13.8" y2="10.8" />
+        <line x1="16.8" y1="9.5" x2="17.3" y2="12.5" />
+        <line x1="7.2" y1="14.5" x2="10.2" y2="13.2" />
+        <line x1="7.2" y1="14.5" x2="6.7" y2="11.5" />
+        <line x1="7.2" y1="9.5" x2="10.2" y2="10.8" />
+        <line x1="7.2" y1="9.5" x2="6.7" y2="12.5" />
+        <line x1="16.8" y1="14.5" x2="13.8" y2="13.2" />
+        <line x1="16.8" y1="14.5" x2="17.3" y2="11.5" />
       </g>
     </svg>
   )
@@ -60,7 +66,10 @@ function PostgreSQLIcon({ size = 18 }: { size?: number }) {
       <ellipse cx="4.5" cy="8.5" rx="2.5" ry="3.5" fill="#4a8bc4" />
       <path
         d="M 17 12 Q 21 14 20.5 19 Q 20 21 18 20.5 Q 16 20 16.5 17"
-        fill="none" stroke="#336791" strokeWidth="2.5" strokeLinecap="round"
+        fill="none"
+        stroke="#336791"
+        strokeWidth="2.5"
+        strokeLinecap="round"
       />
       <circle cx="12" cy="9" r="1.5" fill="white" />
       <circle cx="12.3" cy="9" r="0.7" fill="#1e3a5f" />
@@ -127,10 +136,7 @@ function HeroChart() {
         {/* Chart header */}
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ background: '#3b82f6' }}
-            />
+            <span className="h-2 w-2 rounded-full" style={{ background: '#3b82f6' }} />
             <span
               className="of-mono text-[11px] uppercase tracking-widest"
               style={{ color: '#64748b' }}
@@ -138,9 +144,7 @@ function HeroChart() {
               Events · Last 12 weeks
             </span>
           </div>
-          <span className="of-mono text-[11px] text-emerald-600">
-            +24.8% ↑
-          </span>
+          <span className="of-mono text-[11px] text-emerald-600">+24.8% ↑</span>
         </div>
 
         {/* SVG */}
@@ -224,7 +228,11 @@ function HeroChart() {
             <span
               key={i}
               className="of-mono text-[10px] text-slate-400"
-              style={{ width: `${barW}px`, textAlign: 'center', marginLeft: i === 0 ? `${gap}px` : `${gap - barW}px` }}
+              style={{
+                width: `${barW}px`,
+                textAlign: 'center',
+                marginLeft: i === 0 ? `${gap}px` : `${gap - barW}px`,
+              }}
             >
               {m}
             </span>
@@ -247,9 +255,7 @@ function HeroChart() {
         <div className="of-mono text-[10px] uppercase tracking-widest text-slate-400">
           Total Users
         </div>
-        <div className="of-mono text-xl font-bold text-blue-600">
-          12,847
-        </div>
+        <div className="of-mono text-xl font-bold text-blue-600">12,847</div>
       </motion.div>
 
       <motion.div
@@ -266,9 +272,7 @@ function HeroChart() {
         <div className="of-mono text-[10px] uppercase tracking-widest text-slate-400">
           Conversion
         </div>
-        <div className="of-mono text-xl font-bold text-emerald-600">
-          68.2%
-        </div>
+        <div className="of-mono text-xl font-bold text-emerald-600">68.2%</div>
       </motion.div>
     </div>
   )
@@ -337,10 +341,7 @@ export function LandingPage() {
   }
 
   return (
-    <div
-      className="min-h-screen antialiased"
-      style={{ background: '#ffffff', color: '#0f172a' }}
-    >
+    <div className="min-h-screen antialiased" style={{ background: '#ffffff', color: '#0f172a' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         .of-display { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
@@ -363,7 +364,9 @@ export function LandingPage() {
             >
               <span className="of-display text-sm font-bold text-white">O</span>
             </div>
-            <span className="of-display text-base font-bold tracking-tight text-slate-900">OpenFlow</span>
+            <span className="of-display text-base font-bold tracking-tight text-slate-900">
+              OpenFlow
+            </span>
           </Link>
 
           <div className="flex items-center gap-3">
@@ -384,7 +387,8 @@ export function LandingPage() {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: 'radial-gradient(circle, rgba(99,102,241,0.06) 1px, transparent 1px)',
+              backgroundImage:
+                'radial-gradient(circle, rgba(99,102,241,0.06) 1px, transparent 1px)',
               backgroundSize: '32px 32px',
             }}
           />
@@ -395,7 +399,8 @@ export function LandingPage() {
               top: '30%',
               width: '700px',
               height: '500px',
-              background: 'radial-gradient(ellipse at center, rgba(59,130,246,0.07) 0%, transparent 70%)',
+              background:
+                'radial-gradient(ellipse at center, rgba(59,130,246,0.07) 0%, transparent 70%)',
               transform: 'translate(-50%,-50%)',
             }}
           />
@@ -404,7 +409,8 @@ export function LandingPage() {
             style={{
               width: '400px',
               height: '400px',
-              background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.05) 0%, transparent 70%)',
+              background:
+                'radial-gradient(ellipse at center, rgba(99,102,241,0.05) 0%, transparent 70%)',
               transform: 'translateY(-50%)',
             }}
           />
@@ -413,11 +419,7 @@ export function LandingPage() {
         <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-20">
           <div className="grid items-center gap-16 lg:grid-cols-2">
             {/* Copy */}
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={stagger(0.1)}
-            >
+            <motion.div initial="hidden" animate="visible" variants={stagger(0.1)}>
               <motion.div variants={fadeUp} className="mb-6">
                 <span
                   className="of-mono inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs uppercase tracking-widest"
@@ -536,7 +538,13 @@ export function LandingPage() {
       </section>
 
       {/* ── Stats ────────────────────────────────────────────────────────── */}
-      <section style={{ background: '#f8fafc', borderTop: '1px solid rgba(226,232,240,0.9)', borderBottom: '1px solid rgba(226,232,240,0.9)' }}>
+      <section
+        style={{
+          background: '#f8fafc',
+          borderTop: '1px solid rgba(226,232,240,0.9)',
+          borderBottom: '1px solid rgba(226,232,240,0.9)',
+        }}
+      >
         <div className="mx-auto max-w-7xl px-6 py-14">
           <motion.div
             initial="hidden"
@@ -550,9 +558,16 @@ export function LandingPage() {
               { value: '60 Days', label: 'of History' },
               { value: '4', label: 'Chart Types' },
             ].map(({ value, label }) => (
-              <motion.div key={label} variants={sectionFade} className="flex flex-col items-center gap-2">
+              <motion.div
+                key={label}
+                variants={sectionFade}
+                className="flex flex-col items-center gap-2"
+              >
                 <span className="of-mono text-4xl font-semibold text-slate-900">{value}</span>
-                <span className="of-mono text-xs uppercase tracking-[0.2em]" style={{ color: '#94a3b8' }}>
+                <span
+                  className="of-mono text-xs uppercase tracking-[0.2em]"
+                  style={{ color: '#94a3b8' }}
+                >
                   {label}
                 </span>
               </motion.div>
@@ -651,13 +666,13 @@ export function LandingPage() {
           >
             {steps.map(({ n, title, desc }) => (
               <motion.div key={n} variants={fadeUp}>
-                <div className="of-mono mb-4 text-6xl font-bold" style={{ color: 'rgba(203,213,225,1)' }}>
+                <div
+                  className="of-mono mb-4 text-6xl font-bold"
+                  style={{ color: 'rgba(203,213,225,1)' }}
+                >
                   {n}
                 </div>
-                <div
-                  className="pl-6"
-                  style={{ borderLeft: '2px solid rgba(203,213,225,0.9)' }}
-                >
+                <div className="pl-6" style={{ borderLeft: '2px solid rgba(203,213,225,0.9)' }}>
                   <h3 className="mb-3 text-xl font-semibold text-slate-900">{title}</h3>
                   <p className="leading-relaxed" style={{ color: '#64748b' }}>
                     {desc}

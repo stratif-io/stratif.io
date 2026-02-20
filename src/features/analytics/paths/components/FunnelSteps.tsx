@@ -13,7 +13,8 @@ function barBg(overallRate: number) {
 }
 
 function dropBadgeCn(rate: number) {
-  if (rate === 0) return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+  if (rate === 0)
+    return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
   if (rate < 20) return 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400'
   if (rate < 50) return 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
   return 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400'
@@ -61,7 +62,10 @@ export function FunnelSteps({ steps }: FunnelStepsProps) {
               {/* Bar */}
               <div className="h-4 bg-muted rounded-full overflow-hidden">
                 <div
-                  className={cn('h-full rounded-full transition-all duration-700 ease-out', barBg(step.overall_conversion_rate))}
+                  className={cn(
+                    'h-full rounded-full transition-all duration-700 ease-out',
+                    barBg(step.overall_conversion_rate)
+                  )}
                   style={{ width: `${Math.max(step.overall_conversion_rate, 1)}%` }}
                 />
               </div>
@@ -77,12 +81,19 @@ export function FunnelSteps({ steps }: FunnelStepsProps) {
 
                 {/* Drop-off info */}
                 {next.dropoff_users === 0 ? (
-                  <span className={cn('text-xs font-medium px-2.5 py-1 rounded-full', dropBadgeCn(0))}>
+                  <span
+                    className={cn('text-xs font-medium px-2.5 py-1 rounded-full', dropBadgeCn(0))}
+                  >
                     All {step.users.toLocaleString()} people continued
                   </span>
                 ) : (
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full', dropBadgeCn(next.dropoff_rate))}>
+                    <span
+                      className={cn(
+                        'text-xs font-semibold px-2.5 py-1 rounded-full',
+                        dropBadgeCn(next.dropoff_rate)
+                      )}
+                    >
                       {next.dropoff_users.toLocaleString()} people left here ({next.dropoff_rate}%)
                     </span>
                     <span className="text-xs text-muted-foreground">

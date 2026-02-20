@@ -47,8 +47,10 @@ export function useRetentionData({
 
   const avgMilestones = useMemo(() => {
     if (retentionData.length === 0) return milestones.map(() => 0)
-    return milestones.map((_, i) =>
-      retentionData.reduce((acc, r) => acc + (r.milestone_values[i] ?? 0), 0) / retentionData.length
+    return milestones.map(
+      (_, i) =>
+        retentionData.reduce((acc, r) => acc + (r.milestone_values[i] ?? 0), 0) /
+        retentionData.length
     )
   }, [retentionData, milestones])
 
