@@ -14,6 +14,9 @@ import {
   ConversionResponse,
   PivotOptionsResponse,
   PivotResponse,
+  PivotGridColDefsResponse,
+  PivotGridRowsRequest,
+  PivotGridRowsResponse,
   SandboxDataResponse,
   FilterOptionsResponse,
   Connection,
@@ -286,6 +289,38 @@ export const fetchPivot = (params: {
   if (f) searchParams.set('filters', f)
 
   return fetchApi<PivotResponse>(`/api/pivot?${searchParams}`)
+}
+
+export const fetchPivotGridColDefs = (connection_id?: string) => {
+  const searchParams = new URLSearchParams()
+  if (connection_id) searchParams.set('connection_id', connection_id)
+  return fetchApi<PivotGridColDefsResponse>(`/api/pivot/grid?${searchParams}`)
+}
+
+export const fetchPivotGridFilterValues = (params: {
+  field: string
+  start_date?: string
+  end_date?: string
+  event_filter?: string
+  connection_id?: string
+}) => {
+  const sp = new URLSearchParams({ field: params.field })
+  if (params.start_date) sp.set('start_date', params.start_date)
+  if (params.end_date) sp.set('end_date', params.end_date)
+  if (params.event_filter) sp.set('event_filter', params.event_filter)
+  if (params.connection_id) sp.set('connection_id', params.connection_id)
+  return fetchApi<{ field: string; values: unknown[] }>(`/api/pivot/grid/filter-values?${sp}`)
+}
+
+export const fetchPivotGridRows = (body: PivotGridRowsRequest & { connection_id?: string }) => {
+  const sp = new URLSearchParams()
+  if (body.connection_id) sp.set('connection_id', body.connection_id)
+  const { connection_id: _cid, ...rest } = body
+  return fetchApi<PivotGridRowsResponse>(`/api/pivot/grid/rows?${sp}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(rest),
+  })
 }
 
 export const fetchSandboxData = (params: { start_date?: string; end_date?: string }) => {

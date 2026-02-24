@@ -21,6 +21,9 @@ const FunnelDetailPage = lazy(() =>
   import('@/features/analytics').then((m) => ({ default: m.FunnelDetailPage }))
 )
 const PivotPage = lazy(() => import('@/features/analytics').then((m) => ({ default: m.PivotPage })))
+const NewPivotPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.NewPivotPage }))
+)
 const EventsPage = lazy(() => import('@/features/events').then((m) => ({ default: m.EventsPage })))
 const ConnectionsPage = lazy(() =>
   import('@/features/connections').then((m) => ({ default: m.ConnectionsPage }))
@@ -62,6 +65,7 @@ function App() {
             <Route path="/paths" element={<PathsPage />} />
             <Route path="/funnel" element={<FunnelDetailPage />} />
             <Route path="/pivot" element={<PivotPage />} />
+            <Route path="/pivot-grid" element={<NewPivotPage />} />
             <Route path="/events" element={<EventsPage />} />
             <Route path="/connections" element={<ConnectionsPage />} />
             <Route path="/connections/:id" element={<ConnectionDetailPage />} />

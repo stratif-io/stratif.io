@@ -227,11 +227,13 @@ export function PivotPage() {
                           Add
                         </SelectTrigger>
                         <SelectContent>
-                          {availableDimensions.map((dim) => (
-                            <SelectItem key={dim.value} value={dim.value}>
-                              {dim.label}
-                            </SelectItem>
-                          ))}
+                          {availableDimensions
+                            .sort((a, b) => a.label.localeCompare(b.label))
+                            .map((dim) => (
+                              <SelectItem key={dim.value} value={dim.value}>
+                                {dim.label}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     )}
@@ -280,11 +282,13 @@ export function PivotPage() {
                           Add
                         </SelectTrigger>
                         <SelectContent>
-                          {availableDimensions.map((dim) => (
-                            <SelectItem key={dim.value} value={dim.value}>
-                              {dim.label}
-                            </SelectItem>
-                          ))}
+                          {availableDimensions
+                            .sort((a, b) => a.label.localeCompare(b.label))
+                            .map((dim) => (
+                              <SelectItem key={dim.value} value={dim.value}>
+                                {dim.label}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     )}

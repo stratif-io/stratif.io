@@ -192,6 +192,34 @@ export interface PivotResponse {
   error?: string
 }
 
+export interface PivotGridColDefsResponse {
+  columnDefs: unknown[]
+  error?: string
+}
+
+export interface PivotGridRowsRequest {
+  rowGroupCols: Array<{ id: string; field: string; aggFunc: string; displayName: string }>
+  valueCols: Array<{ id: string; field: string; aggFunc: string; displayName: string }>
+  pivotCols: Array<{ id: string; field: string; aggFunc: string; displayName: string }>
+  pivotMode: boolean
+  groupKeys: (string | number)[]
+  filterModel: Record<string, unknown>
+  sortModel: Array<{ colId: string; sort: string }>
+  startRow: number
+  endRow: number
+  start_date?: string
+  end_date?: string
+  event_filter?: string
+  extra_filters?: Record<string, string | null>
+}
+
+export interface PivotGridRowsResponse {
+  rows: Array<Record<string, unknown>>
+  rowCount: number
+  secondaryColDefs?: unknown[]
+  error?: string
+}
+
 export interface SandboxField {
   fid: string
   name: string
