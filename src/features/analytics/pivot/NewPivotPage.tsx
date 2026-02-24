@@ -15,7 +15,7 @@ import type {
   IServerSideDatasource,
   IServerSideGetRowsParams,
 } from 'ag-grid-community'
-import { RotateCcw, Download, Loader2, Plus, X, Filter } from 'lucide-react'
+import { RotateCcw, Download, Loader2, Plus, X, Filter, Sigma } from 'lucide-react'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { useAppStore } from '@/stores'
 import { fetchPivotGridColDefs, fetchPivotGridRows, fetchPivotGridFilterValues } from '@/lib/api'
@@ -145,6 +145,7 @@ export function NewPivotPage() {
   const { dateRange, activeFilters, activeConnectionId } = useAppStore()
   const [dark, setDark] = useState(isDarkMode)
   const [isQuerying, setIsQuerying] = useState(false)
+  const [showSubtotals, setShowSubtotals] = useState(false)
   const gridApiRef = useRef<GridApi | null>(null)
 
   // Column zone state, synced from grid events
@@ -338,12 +339,11 @@ export function NewPivotPage() {
     (col: any): ColDef => {
       if (col.children) return { ...col, children: col.children.map(enrichColDef) }
       const field: string = col.field ?? ''
-      const isMeasure = field === 'count_events' || field === 'unique_users'
       const base: ColDef = {
         ...col,
         valueFormatter: ({ value }: { value: unknown }) => formatDimValue(field, value),
       }
-      if (!isMeasure && field) {
+      if (field) {
         base.filter = 'agSetColumnFilter'
         base.filterParams = {
           values: (params: { success: (v: unknown[]) => void }) => {
@@ -446,14 +446,9 @@ export function NewPivotPage() {
   const handleGridReady = useCallback(
     (e: GridReadyEvent) => {
       gridApiRef.current = e.api
-      // Default row group
-      e.api.applyColumnState({
-        state: [{ colId: 'ts_year', rowGroup: true, rowGroupIndex: 0, hide: true }],
-        applyOrder: false,
-      })
-      aggFuncOverridesRef.current['count_events'] = 'count'
-      aggFuncOverridesRef.current['unique_users'] = 'countDistinct'
-      e.api.addValueColumns(['count_events', 'unique_users'])
+      // Default: event_count in VALUES, no row group
+      aggFuncOverridesRef.current['event_count'] = 'sum'
+      e.api.addValueColumns(['event_count'])
       e.api.setGridOption('serverSideDatasource', datasource)
       syncFromApi(e.api)
     },
@@ -469,17 +464,14 @@ export function NewPivotPage() {
 
   const handleReset = useCallback(() => {
     if (!gridApiRef.current) return
-    aggFuncOverridesRef.current = { count_events: 'count', unique_users: 'countDistinct' }
+    aggFuncOverridesRef.current = { event_count: 'sum' }
+    setShowSubtotals(false)
+    gridApiRef.current.setGridOption('pinnedBottomRowData', [])
     gridApiRef.current.applyColumnState({
       defaultState: { rowGroup: false, pivot: false, aggFunc: null, hide: false },
       applyOrder: false,
     })
-    gridApiRef.current.applyColumnState({
-      state: [{ colId: 'ts_year', rowGroup: true, rowGroupIndex: 0, hide: true }],
-      applyOrder: false,
-    })
-    // Re-add default value columns (all value columns were cleared by defaultState reset)
-    gridApiRef.current.addValueColumns(['count_events', 'unique_users'])
+    gridApiRef.current.addValueColumns(['event_count'])
     setPivotFilters([])
     gridApiRef.current.refreshServerSide({ purge: true })
     syncFromApi(gridApiRef.current)
@@ -488,6 +480,48 @@ export function NewPivotPage() {
   const handleExportCsv = useCallback(() => {
     gridApiRef.current?.exportDataAsCsv()
   }, [])
+
+  const handleToggleSubtotals = useCallback(() => {
+    setShowSubtotals((prev) => !prev)
+  }, [])
+
+  // ── Pinned total row ────────────────────────────────────────────────────
+  // SSRM pivot mode can't compute grand totals client-side (values are
+  // server-computed CASE WHEN). We fetch the total row ourselves and pin it.
+  useEffect(() => {
+    const api = gridApiRef.current
+    if (!api) return
+    if (!showSubtotals || valueCols.length === 0) {
+      api.setGridOption('pinnedBottomRowData', [])
+      return
+    }
+    const { startDate, endDate, activeFilters, activeConnectionId, pivotFilters } = requestParamsRef.current
+    const mergedFilters: Record<string, string | null> = {
+      ...(activeFilters ?? {}),
+      ...Object.fromEntries(pivotFilters.map((f) => [f.field, f.value])),
+    }
+    fetchPivotGridRows({
+      rowGroupCols: [],
+      valueCols: valueCols.map((c) => ({
+        id: c.colId, field: c.colId,
+        aggFunc: aggFuncOverridesRef.current[c.colId] ?? c.aggFunc ?? 'sum',
+        displayName: c.label,
+      })),
+      pivotCols: [],
+      pivotMode: false,
+      groupKeys: [],
+      filterModel: {},
+      sortModel: [],
+      startRow: 0, endRow: 1,
+      start_date: startDate, end_date: endDate,
+      extra_filters: Object.keys(mergedFilters).length > 0 ? mergedFilters : undefined,
+      connection_id: activeConnectionId ?? undefined,
+    }).then((data) => {
+      if (data.rows?.length) {
+        api.setGridOption('pinnedBottomRowData', [{ ...data.rows[0], _isTotal: true }])
+      }
+    }).catch(() => {})
+  }, [showSubtotals, valueCols, startDate, endDate, activeFilters, pivotFilters])
 
   // ── Theme tokens ─────────────────────────────────────────────────────────
   const accent = dark ? '#818CF8' : '#6366F1'
@@ -669,7 +703,23 @@ export function NewPivotPage() {
                 />
               )}
             </div>
-            <div style={{ display: 'flex', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button
+                onClick={handleToggleSubtotals}
+                title={showSubtotals ? 'Hide subtotals' : 'Show subtotals'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '4px 9px', borderRadius: 6, cursor: 'pointer',
+                  border: `1px solid ${showSubtotals ? accent + '60' : border}`,
+                  background: showSubtotals ? (dark ? '#1A1E2E' : '#EEF0FA') : 'transparent',
+                  color: showSubtotals ? accent : (dark ? '#40475E' : '#C0C8DA'),
+                  fontFamily: 'ui-monospace, monospace', fontSize: 10,
+                  letterSpacing: '0.06em', transition: 'all 0.12s ease',
+                }}
+              >
+                <Sigma style={{ width: 11, height: 11 }} />
+                SUBTOTALS
+              </button>
               <GhostBtn
                 onClick={handleReset}
                 title="Reset"
@@ -722,7 +772,6 @@ export function NewPivotPage() {
                 defaultColDef={{ sortable: true, resizable: true, minWidth: 100 }}
                 groupDefaultExpanded={0}
                 animateRows={true}
-                grandTotalRow="bottom"
                 suppressAggFuncInHeader={false}
                 aggFuncs={{ countDistinct: ({ values }) => values[0] }}
                 onColumnRowGroupChanged={handleColEvent}

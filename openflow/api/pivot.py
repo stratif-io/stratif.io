@@ -485,6 +485,10 @@ def get_pivot_grid_filter_values(
     if not db:
         raise ValueError("db cannot be None")
 
+    # event_count is a computed column — no distinct values to return
+    if field == "event_count":
+        return {"field": field, "values": []}
+
     dialect = db.get_dialect()
     custom_prop_exprs = db.get_custom_prop_exprs()
     expr = _get_dim_expr(field, dialect, custom_prop_exprs)
@@ -598,19 +602,17 @@ def get_pivot_grid(
             }
         )
 
-    # Measure columns (go into the Values zone)
-    measure_cols = [
-        {
-            "field": field,
-            "headerName": label,
-            "type": "numericColumn",
-            "enableValue": True,
-            "allowedAggFuncs": ["countDistinct", "count", "sum", "min", "max", "avg"],
-            "filter": "agNumberColumnFilter",
-            "resizable": True,
-        }
-        for field, label in MEASURE_LABELS.items()
-    ]
+    event_count_col = {
+        "field": "event_count",
+        "headerName": "Event Count",
+        "type": "numericColumn",
+        "enableValue": True,
+        "enableRowGroup": False,
+        "enablePivot": False,
+        "allowedAggFuncs": ["sum"],
+        "filter": "agNumberColumnFilter",
+        "resizable": True,
+    }
 
     column_defs = [
         {
@@ -619,7 +621,7 @@ def get_pivot_grid(
             "children": time_children,
         },
         *other_cols,
-        *measure_cols,
+        event_count_col,
     ]
 
     return {"columnDefs": column_defs}
@@ -710,9 +712,11 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
         where_clauses.append("event_name = ?")
         where_params.append(body.event_filter)
     if body.extra_filters:
-        fc, fp = db.build_filter_clauses(body.extra_filters)
-        where_clauses.extend(fc)
-        where_params.extend(fp)
+        for ef_field, ef_value in body.extra_filters.items():
+            if ef_value is None:
+                continue
+            where_clauses.append(f"{dim_expr(ef_field)} = ?")
+            where_params.append(_cast_key(ef_field, ef_value))
 
     # Drill-down: filter to parent group values
     for i, key in enumerate(body.groupKeys):
@@ -727,18 +731,12 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
     # countDistinct on any dimension field.                               #
     # ------------------------------------------------------------------ #
     def value_col_sql(vc: ColInfo) -> tuple[str, str]:
-        """Return (sql_expression, result_alias) for a value column.
-
-        The alias always matches vc.field so AG Grid SSRM can map the returned
-        row data back to the correct column without any field-name translation.
-        """
-        if vc.field == "count_events":
-            return "COUNT(*)", "count_events"
-        if vc.field == "unique_users":
-            return "COUNT(DISTINCT user_id)", "unique_users"
+        """Return (sql_expression, result_alias) for a value column."""
+        if vc.field == "event_count":
+            return "COUNT(*)", "event_count"
         f_expr = dim_expr(vc.field)
         match vc.aggFunc:
-            case "countDistinct" | "count_distinct":
+            case "countDistinct" | "count_distinct" | "count":
                 return f"COUNT(DISTINCT {f_expr})", vc.field
             case "min":
                 return f"MIN({f_expr})", vc.field
@@ -751,16 +749,11 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
             case _:
                 return f"COUNT(DISTINCT {f_expr})", vc.field
 
-    # Build the list of (sql_expr, alias) for all requested value columns.
-    # Default to both built-in measures when the user hasn't placed anything
-    # in the Values zone yet.
-    if body.valueCols:
-        resolved_values = [value_col_sql(vc) for vc in body.valueCols]
-    else:
-        resolved_values = [
-            ("COUNT(*)", "count_events"),
-            ("COUNT(DISTINCT user_id)", "unique_users"),
-        ]
+    resolved_values = (
+        [value_col_sql(vc) for vc in body.valueCols]
+        if body.valueCols
+        else [("COUNT(*)", "event_count")]
+    )
 
     # Build a mapping alias → sql_expr for HAVING / ORDER BY look-ups
     alias_to_sql: dict[str, str] = {alias: sql for sql, alias in resolved_values}
@@ -832,48 +825,15 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
             result = db.execute(query, where_params + having_params)
 
         else:
-            # Grand total — no grouping.
-            # For built-in measures (count_events/unique_users) with min/max/avg we wrap
-            # in a subquery: first count per the top rowGroupCol, then apply the
-            # outer MIN/MAX/AVG.
-            builtin_nonsum = [
-                vc
-                for vc in body.valueCols
-                if vc.field in ("count_events", "unique_users")
-                and vc.aggFunc in ("min", "max", "avg")
-            ]
-            if builtin_nonsum and body.rowGroupCols:
-                sub_grp_expr = dim_expr(body.rowGroupCols[0].field)
-                sub_selects = [f"{sub_grp_expr} AS _g"]
-                outer_selects = []
-                for vc_sql, vc_alias in resolved_values:
-                    vc_obj = next(
-                        (v for v in body.valueCols if v.field == vc_alias), None
-                    )
-                    if (
-                        vc_obj
-                        and vc_alias in ("count_events", "unique_users")
-                        and vc_obj.aggFunc in ("min", "max", "avg")
-                    ):
-                        sub_selects.append(f"{vc_sql} AS _{vc_alias}")
-                        outer_selects.append(
-                            f"{vc_obj.aggFunc.upper()}(_{vc_alias}) AS {vc_alias}"
-                        )
-                    else:
-                        # Non-built-in dimension measures — aggregate directly
-                        outer_selects.append(f"{vc_sql} AS {vc_alias}")
-                sub_q = f"SELECT {', '.join(sub_selects)} FROM events {where_clause} GROUP BY _g"
-                query = f"SELECT {', '.join(outer_selects)} FROM ({sub_q}) _sub"
-                result = db.execute(query, where_params)
-            else:
-                select_parts = [f"{sql} AS {alias}" for sql, alias in resolved_values]
-                query = f"""
-                    SELECT {", ".join(select_parts)}
-                    FROM events
-                    {where_clause}
-                    {having_clause}
-                """
-                result = db.execute(query, where_params + having_params)
+            # Grand total — no grouping
+            select_parts = [f"{sql} AS {alias}" for sql, alias in resolved_values]
+            query = f"""
+                SELECT {", ".join(select_parts)}
+                FROM events
+                {where_clause}
+                {having_clause}
+            """
+            result = db.execute(query, where_params + having_params)
 
         value_aliases = [alias for _, alias in resolved_values]
         all_fields = ([current_group.field] if current_group else []) + value_aliases
@@ -927,32 +887,28 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
             col_key = f"{pv_safe}__{vc_alias}"
             pivot_field_names.append(col_key)
 
-            # Build conditional form of the aggregation expression
-            if vc_alias == "count_events":
+            # Build conditional aggregation for this pivot value
+            vc_obj = next((v for v in body.valueCols if v.field == vc_alias), None)
+            agg_func = vc_obj.aggFunc if vc_obj else "sum"
+            if vc_alias == "event_count":
                 agg = f"SUM(CASE WHEN {p_expr} = ? THEN 1 ELSE 0 END)"
-            elif vc_alias == "unique_users":
-                agg = (
-                    f"COUNT(DISTINCT CASE WHEN {p_expr} = ? THEN user_id ELSE NULL END)"
-                )
-            else:
-                vc_obj = next((v for v in body.valueCols if v.field == vc_alias), None)
-                if vc_obj:
-                    d_expr = dim_expr(vc_obj.field)
-                    match vc_obj.aggFunc:
-                        case "countDistinct" | "count_distinct":
-                            agg = f"COUNT(DISTINCT CASE WHEN {p_expr} = ? THEN {d_expr} ELSE NULL END)"
-                        case "min":
-                            agg = f"MIN(CASE WHEN {p_expr} = ? THEN {d_expr} ELSE NULL END)"
-                        case "max":
-                            agg = f"MAX(CASE WHEN {p_expr} = ? THEN {d_expr} ELSE NULL END)"
-                        case "avg":
-                            agg = f"AVG(CASE WHEN {p_expr} = ? THEN CAST({d_expr} AS DOUBLE) ELSE NULL END)"
-                        case "sum":
-                            agg = f"SUM(CASE WHEN {p_expr} = ? THEN CAST({d_expr} AS DOUBLE) ELSE NULL END)"
-                        case _:
-                            agg = f"COUNT(DISTINCT CASE WHEN {p_expr} = ? THEN {d_expr} ELSE NULL END)"
-                else:
-                    agg = f"SUM(CASE WHEN {p_expr} = ? THEN 1 ELSE 0 END)"
+                select_parts.append(f'{agg} AS "{col_key}"')
+                select_params.append(pv_val)
+                continue
+            d_expr = dim_expr(vc_alias)
+            match agg_func:
+                case "countDistinct" | "count_distinct" | "count":
+                    agg = f"COUNT(DISTINCT CASE WHEN {p_expr} = ? THEN {d_expr} ELSE NULL END)"
+                case "min":
+                    agg = f"MIN(CASE WHEN {p_expr} = ? THEN {d_expr} ELSE NULL END)"
+                case "max":
+                    agg = f"MAX(CASE WHEN {p_expr} = ? THEN {d_expr} ELSE NULL END)"
+                case "avg":
+                    agg = f"AVG(CASE WHEN {p_expr} = ? THEN CAST({d_expr} AS DOUBLE) ELSE NULL END)"
+                case "sum":
+                    agg = f"SUM(CASE WHEN {p_expr} = ? THEN CAST({d_expr} AS DOUBLE) ELSE NULL END)"
+                case _:
+                    agg = f"COUNT(DISTINCT CASE WHEN {p_expr} = ? THEN {d_expr} ELSE NULL END)"
 
             select_parts.append(f'{agg} AS "{col_key}"')
             select_params.append(pv_val)
@@ -991,7 +947,6 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
 
         children = []
         for _, vc_alias in resolved_values:
-            # Human-readable header: built-in labels or "Count Distinct (Field)"
             vc_obj = next((v for v in body.valueCols if v.field == vc_alias), None)
             _AGG_LABELS = {
                 "sum": "Sum",
@@ -1002,19 +957,13 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
                 "countDistinct": "Count Distinct",
                 "count_distinct": "Count Distinct",
             }
-            if vc_alias in MEASURE_LABELS:
-                header = MEASURE_LABELS[vc_alias]
-            elif vc_obj:
+            if vc_obj:
                 raw = vc_obj.displayName or vc_obj.field
                 agg_label = _AGG_LABELS.get(vc_obj.aggFunc, vc_obj.aggFunc.title())
                 header = f"{agg_label} ({raw})"
             else:
                 header = vc_alias
-            col_agg = (
-                vc_obj.aggFunc
-                if vc_obj and vc_obj.field not in ("count_events", "unique_users")
-                else "sum"
-            )
+            col_agg = vc_obj.aggFunc if vc_obj else "sum"
             children.append(
                 {
                     "field": f"{pv_safe}__{vc_alias}",

@@ -48,7 +48,6 @@ const navGroups: NavGroup[] = [
     items: [
       { title: 'Events', href: '/events', icon: Activity },
       { title: 'Pivot Explorer', href: '/pivot', icon: Table },
-      { title: 'New Pivot Explorer', href: '/pivot-grid', icon: Table },
     ],
   },
   {
