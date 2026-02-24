@@ -335,6 +335,59 @@ def extract_hour(col_expr: str, dialect: str = "duckdb") -> str:
     return f"CAST(EXTRACT(HOUR FROM {col_expr}) AS INTEGER)"
 
 
+def extract_year(col_expr: str, dialect: str = "duckdb") -> str:
+    """Extract the year as an integer (e.g. 2024)."""
+    if dialect == "sqlite":
+        return f"CAST(STRFTIME('%Y', {col_expr}) AS INTEGER)"
+    if dialect == "mysql":
+        return f"YEAR({col_expr})"
+    if dialect == "bigquery":
+        return f"EXTRACT(YEAR FROM {col_expr})"
+    if dialect == "tsql":
+        return f"DATEPART(year, {col_expr})"
+    return f"CAST(EXTRACT(YEAR FROM {col_expr}) AS INTEGER)"
+
+
+def extract_quarter(col_expr: str, dialect: str = "duckdb") -> str:
+    """Extract the quarter as an integer (1–4)."""
+    if dialect == "sqlite":
+        return f"CAST((CAST(STRFTIME('%m', {col_expr}) AS INTEGER) + 2) / 3 AS INTEGER)"
+    if dialect == "mysql":
+        return f"QUARTER({col_expr})"
+    if dialect == "bigquery":
+        return f"EXTRACT(QUARTER FROM {col_expr})"
+    if dialect == "tsql":
+        return f"DATEPART(quarter, {col_expr})"
+    return f"CAST(EXTRACT(QUARTER FROM {col_expr}) AS INTEGER)"
+
+
+def extract_month(col_expr: str, dialect: str = "duckdb") -> str:
+    """Extract the month as an integer (1–12)."""
+    if dialect == "sqlite":
+        return f"CAST(STRFTIME('%m', {col_expr}) AS INTEGER)"
+    if dialect == "mysql":
+        return f"MONTH({col_expr})"
+    if dialect == "bigquery":
+        return f"EXTRACT(MONTH FROM {col_expr})"
+    if dialect == "tsql":
+        return f"DATEPART(month, {col_expr})"
+    return f"CAST(EXTRACT(MONTH FROM {col_expr}) AS INTEGER)"
+
+
+def extract_week(col_expr: str, dialect: str = "duckdb") -> str:
+    """Extract the ISO week number as an integer (1–53)."""
+    if dialect == "sqlite":
+        return f"CAST(STRFTIME('%W', {col_expr}) AS INTEGER)"
+    if dialect == "mysql":
+        return f"WEEK({col_expr}, 3)"
+    if dialect == "bigquery":
+        return f"EXTRACT(ISOWEEK FROM {col_expr})"
+    if dialect == "tsql":
+        return f"DATEPART(iso_week, {col_expr})"
+    # DuckDB, Postgres, Snowflake, Redshift
+    return f"CAST(EXTRACT(WEEK FROM {col_expr}) AS INTEGER)"
+
+
 def extract_day_of_week(col_expr: str, dialect: str = "duckdb") -> str:
     """Extract day of week from a timestamp (0 = Sunday, 6 = Saturday).
 
