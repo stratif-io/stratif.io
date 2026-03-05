@@ -33,10 +33,7 @@ export function TrendsPage() {
     <PageTransition>
       <div className={SPACING.page}>
         <div className={SPACING.section}>
-          <div>
-            <h1 className={TYPOGRAPHY.pageTitle}>Trend Analysis</h1>
-            <p className={`${TYPOGRAPHY.muted} mt-1`}>Analyze event trends over time</p>
-          </div>
+          <span className={TYPOGRAPHY.pageLabel}>Trend Analysis</span>
 
           <div className={`grid gap-4 md:grid-cols-3`}>
             <Card hover="lift">
@@ -46,7 +43,6 @@ export function TrendsPage() {
               </CardHeader>
               <CardContent>
                 <div className={TYPOGRAPHY.metric}>{totalEvents.toLocaleString()}</div>
-                <p className={TYPOGRAPHY.mutedSm}>In selected period</p>
               </CardContent>
             </Card>
             <Card hover="lift">
@@ -56,7 +52,6 @@ export function TrendsPage() {
               </CardHeader>
               <CardContent>
                 <div className={TYPOGRAPHY.metric}>{averageValue.toLocaleString()}</div>
-                <p className={TYPOGRAPHY.mutedSm}>Events per day</p>
               </CardContent>
             </Card>
             <Card hover="lift">
@@ -66,18 +61,13 @@ export function TrendsPage() {
               </CardHeader>
               <CardContent>
                 <div className={TYPOGRAPHY.metric}>{maxValue.toLocaleString()}</div>
-                <p className={TYPOGRAPHY.mutedSm}>Maximum events in a day</p>
               </CardContent>
             </Card>
           </div>
 
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  <CardTitle>Event Trends</CardTitle>
-                </div>
+              <div className="flex items-center justify-end">
                 <div className="flex gap-2">
                   <div className="flex items-center border rounded-md p-1">
                     <Button

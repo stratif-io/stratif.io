@@ -274,9 +274,21 @@ export interface SchemaConfig {
   user_id_field: string
   timestamp_field: string
   event_name_field: string
+  events_table: string
   custom_properties: CustomProperty[]
   session_timeout_minutes: number
   updated_at: string
+}
+
+export interface TableEntry {
+  catalog: string | null
+  table_schema: string | null
+  name: string
+  full_name: string
+}
+
+export interface TablesResponse {
+  tables: TableEntry[]
 }
 
 export interface FilterField {
@@ -309,6 +321,7 @@ export interface SchemaConfigBody {
   user_id_field: string
   timestamp_field: string
   event_name_field: string
+  events_table: string
   custom_properties: CustomProperty[]
   session_timeout_minutes: number
 }

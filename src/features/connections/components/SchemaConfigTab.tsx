@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, ScanSearch } from 'lucide-react'
+import { Plus, Trash2, ScanSearch, FolderSearch } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +16,7 @@ import {
   useUpsertSchemaConfig,
   useDetectSchema,
 } from '../hooks/useConnectionsData'
+import { TableBrowserPicker } from './TableBrowserPicker'
 import type { CustomProperty, PropertyType } from '@/types'
 
 const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
@@ -28,10 +29,12 @@ export function SchemaConfigTab({ connId }: Props) {
   const { data, isLoading } = useSchemaConfig(connId)
   const upsert = useUpsertSchemaConfig(connId)
   const detect = useDetectSchema(connId)
+  const [browseOpen, setBrowseOpen] = useState(false)
 
   const [userIdField, setUserIdField] = useState('user_id')
   const [timestampField, setTimestampField] = useState('timestamp')
   const [eventNameField, setEventNameField] = useState('event_name')
+  const [eventsTable, setEventsTable] = useState('events')
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30)
   const [customProps, setCustomProps] = useState<CustomProperty[]>([])
 
@@ -40,6 +43,7 @@ export function SchemaConfigTab({ connId }: Props) {
       setUserIdField(data.user_id_field)
       setTimestampField(data.timestamp_field)
       setEventNameField(data.event_name_field)
+      setEventsTable(data.events_table ?? 'events')
       setSessionTimeoutMinutes(data.session_timeout_minutes ?? 30)
       setCustomProps(data.custom_properties)
     }
@@ -62,18 +66,20 @@ export function SchemaConfigTab({ connId }: Props) {
       user_id_field: userIdField,
       timestamp_field: timestampField,
       event_name_field: eventNameField,
+      events_table: eventsTable,
       custom_properties: customProps,
       session_timeout_minutes: sessionTimeoutMinutes,
     })
   }
 
   function handleDetect() {
-    detect.mutate(undefined, {
+    detect.mutate(eventsTable || undefined, {
       onSuccess(result) {
-        const { suggestions, proposed_custom_properties } = result
+        const { suggestions, proposed_custom_properties, events_table } = result
         if (suggestions.user_id_field) setUserIdField(suggestions.user_id_field)
         if (suggestions.timestamp_field) setTimestampField(suggestions.timestamp_field)
         if (suggestions.event_name_field) setEventNameField(suggestions.event_name_field)
+        if (events_table) setEventsTable(events_table)
 
         // Merge proposed custom properties, skipping paths already defined
         const existingPaths = new Set(customProps.map((p) => p.path))
@@ -89,6 +95,38 @@ export function SchemaConfigTab({ connId }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Events table picker */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold">Events Table</h3>
+        <div className="flex items-center gap-2">
+          <Input
+            readOnly
+            value={eventsTable}
+            placeholder="events"
+            className="font-mono text-sm text-muted-foreground bg-muted/40 cursor-default max-w-sm"
+            onClick={() => setBrowseOpen(true)}
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setBrowseOpen((o) => !o)}
+          >
+            <FolderSearch className="h-3.5 w-3.5 mr-1.5" />
+            Browse
+          </Button>
+        </div>
+        {browseOpen && (
+          <div className="max-w-sm">
+            <TableBrowserPicker
+              connId={connId}
+              value={eventsTable}
+              onChange={(v) => { setEventsTable(v); setBrowseOpen(false) }}
+            />
+          </div>
+        )}
+      </div>
+
       {/* Core field mappings */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">

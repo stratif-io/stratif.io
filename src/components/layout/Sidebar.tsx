@@ -1,10 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   BarChart3,
@@ -16,7 +14,6 @@ import {
   Table,
   Database,
 } from 'lucide-react'
-import { useState } from 'react'
 
 interface NavItem {
   title: string
@@ -110,14 +107,7 @@ function NavLink({
 export function Sidebar() {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
-  const [openGroups, setOpenGroups] = useState<string[]>(['Analytics', 'Data'])
   const location = useLocation()
-
-  const toggleGroup = (title: string) => {
-    setOpenGroups((prev) =>
-      prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
-    )
-  }
 
   const handleMobileNavClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false)
@@ -127,8 +117,9 @@ export function Sidebar() {
     <TooltipProvider delayDuration={200}>
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+        <button
+          aria-label="Close sidebar"
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden cursor-default"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -149,7 +140,7 @@ export function Sidebar() {
             )}
           >
             <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center shrink-0">
-              <BarChart3 className="h-4 w-4 text-primary-foreground" />
+              <BarChart3 className="h-4 w-4 text-primary-foreground" aria-hidden="true" />
             </div>
             {sidebarOpen && (
               <span className="font-semibold text-base tracking-tight whitespace-nowrap">
@@ -162,33 +153,18 @@ export function Sidebar() {
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
           {sidebarOpen ? (
-            /* Expanded: collapsible groups */
-            navGroups.map((group) => (
-              <Collapsible
-                key={group.title}
-                open={openGroups.includes(group.title)}
-                onOpenChange={() => toggleGroup(group.title)}
-              >
-                <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors select-none">
-                  <span>{group.title}</span>
-                  <ChevronDown
-                    className={cn(
-                      'h-3.5 w-3.5 transition-transform duration-200',
-                      openGroups.includes(group.title) ? 'rotate-0' : '-rotate-90'
-                    )}
+            /* Expanded: flat groups separated by dividers */
+            navGroups.map((group, gi) => (
+              <div key={group.title} className={cn('space-y-0.5', gi > 0 && 'pt-2 mt-2 border-t border-border/40')}>
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    item={item}
+                    collapsed={false}
+                    onClick={handleMobileNavClick}
                   />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-0.5 pt-0.5 pb-2">
-                  {group.items.map((item) => (
-                    <NavLink
-                      key={item.href}
-                      item={item}
-                      collapsed={false}
-                      onClick={handleMobileNavClick}
-                    />
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
+                ))}
+              </div>
             ))
           ) : (
             /* Collapsed: icon rail */
@@ -232,10 +208,7 @@ export function Sidebar() {
             )}
           >
             {sidebarOpen ? (
-              <>
-                <ChevronLeft className="h-4 w-4 shrink-0" />
-                <span className="text-xs font-medium">Collapse</span>
-              </>
+              <ChevronLeft className="h-4 w-4 shrink-0" />
             ) : (
               <Tooltip>
                 <TooltipTrigger asChild>

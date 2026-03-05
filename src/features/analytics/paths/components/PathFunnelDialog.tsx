@@ -40,7 +40,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
 
-  const events = path?.path.split(' -> ') || []
+  const events = (path?.path ?? '').split(' -> ').filter(Boolean)
 
   const {
     data: funnelData,

@@ -17,15 +17,7 @@ export function DashboardPage() {
       <PageTransition>
         <div className={SPACING.page}>
           <div className={SPACING.section}>
-            {/* Page Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className={TYPOGRAPHY.pageTitle}>Dashboard</h1>
-                <p className={`${TYPOGRAPHY.muted} mt-1`}>
-                  Welcome back! Here's what's happening with your product.
-                </p>
-              </div>
-            </div>
+            <span className={TYPOGRAPHY.pageLabel}>Dashboard</span>
 
             {/* Metric Cards with staggered animations */}
             <div className={`grid ${GRID_COLS.metrics} ${SPACING.gridGap}`}>

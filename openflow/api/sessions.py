@@ -12,6 +12,74 @@ from openflow.services.connection_executor import AnalyticsDatabase
 router = APIRouter(prefix="/api", tags=["sessions"])
 
 
+@router.get("/raw/sessions")
+def get_raw_sessions(
+    limit: int = Query(20, description="Number of rows to return", ge=1, le=200),
+    offset: int = Query(0, description="Offset for pagination", ge=0),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
+) -> dict:
+    """Return paginated list of sessions with basic stats."""
+    if db:
+        timeout = db.get_session_timeout_minutes()
+        dialect = db.get_dialect()
+        where: list[str] = []
+        params: list = []
+        if start_date:
+            where.append("ds.start_time >= ?")
+            params.append(f"{start_date} 00:00:00")
+        if end_date:
+            where.append("ds.start_time <= ?")
+            params.append(f"{end_date} 23:59:59")
+        where_sql = ("WHERE " + " AND ".join(where)) if where else ""
+
+        ctes = session_ctes(timeout, dialect)
+        total_row = db.execute(
+            f"WITH {ctes} SELECT COUNT(*) FROM derived_sessions ds {where_sql}",
+            params or None,
+        )
+        total = total_row[0][0] if total_row else 0
+
+        rows = db.execute(
+            f"""
+            WITH {ctes}
+            SELECT
+                ds.session_id,
+                ds.user_id,
+                ds.start_time,
+                ds.duration_sec,
+                ds.event_count
+            FROM derived_sessions ds
+            {where_sql}
+            ORDER BY ds.start_time DESC
+            LIMIT ? OFFSET ?
+            """,
+            (params or []) + [limit, offset],
+        )
+
+        return {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "data": [
+                {
+                    "session_id": row[0],
+                    "user_id": row[1],
+                    "start_time": row[2].isoformat()
+                    if hasattr(row[2], "isoformat")
+                    else str(row[2]),
+                    "duration_sec": round(row[3] or 0, 2),
+                    "event_count": row[4] or 0,
+                    "device_type": None,
+                }
+                for row in rows
+            ],
+        }
+    else:
+        raise ValueError("db cannot be None")
+
+
 @router.get("/sessions/summary")
 def get_sessions_summary(
     start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),

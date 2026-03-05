@@ -1,6 +1,5 @@
 import { useAppStore } from '@/stores'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Moon, Sun, Bell, Menu } from 'lucide-react'
+import { Moon, Sun, Menu } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
 import { ConnectionSelector } from './ConnectionSelector'
@@ -59,13 +58,6 @@ export function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-1 shrink-0">
-          <Button variant="ghost" size="icon" className="relative h-8 w-8">
-            <Bell className="h-4 w-4" />
-            <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
-              3
-            </Badge>
-          </Button>
-
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8">
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />

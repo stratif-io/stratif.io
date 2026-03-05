@@ -82,8 +82,9 @@ def get_raw_events(
     offset: int = Query(0, description="Offset for pagination", ge=0),
     event_name: str | None = Query(None, description="Filter by event name"),
     user_id: str | None = Query(None, description="Filter by user ID"),
-    sort_order: str = Query(
-        "desc", description="Sort order for timestamp: asc or desc"
+    sort_order: str = Query("desc", description="Sort order: asc or desc"),
+    sort_field: str = Query(
+        "timestamp", description="Field to sort by: timestamp, user_id, or event_name"
     ),
     start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
@@ -97,11 +98,23 @@ def get_raw_events(
         where_clauses = []
         params = []
         if event_name:
-            where_clauses.append("event_name = ?")
-            params.append(event_name)
+            event_names = [v for v in event_name.split("|") if v]
+            if len(event_names) > 1:
+                placeholders = ", ".join("?" * len(event_names))
+                where_clauses.append(f"event_name IN ({placeholders})")
+                params.extend(event_names)
+            else:
+                where_clauses.append("event_name = ?")
+                params.append(event_name)
         if user_id:
-            where_clauses.append("user_id = ?")
-            params.append(user_id)
+            user_ids = [v for v in user_id.split("|") if v]
+            if len(user_ids) > 1:
+                placeholders = ", ".join("?" * len(user_ids))
+                where_clauses.append(f"user_id IN ({placeholders})")
+                params.extend(user_ids)
+            else:
+                where_clauses.append("user_id LIKE ?")
+                params.append(f"%{user_id}%")
         if start_date:
             where_clauses.append("timestamp >= ?")
             params.append(f"{start_date} 00:00:00")
@@ -116,15 +129,20 @@ def get_raw_events(
 
         where_clause = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
         order_dir = "ASC" if sort_order.lower() == "asc" else "DESC"
+        allowed_sort_fields = {"timestamp", "user_id", "event_name"}
+        order_field = sort_field if sort_field in allowed_sort_fields else "timestamp"
 
         total = db.execute(f"SELECT COUNT(*) FROM events {where_clause}", params)[0][0]
 
+        props_col = (
+            "properties" if db.has_column("properties") else "NULL AS properties"
+        )
         result = db.execute(
             f"""
-            SELECT user_id, event_name, timestamp, properties
+            SELECT user_id, event_name, timestamp, {props_col}
             FROM events
             {where_clause}
-            ORDER BY timestamp {order_dir}
+            ORDER BY {order_field} {order_dir}
             LIMIT ? OFFSET ?
             """,
             params + [limit, offset],
@@ -160,12 +178,15 @@ def get_user_events(
 ) -> dict:
     """Get all events for a specific user, sorted chronologically (ASC)."""
     if db:
+        props_col = (
+            "properties" if db.has_column("properties") else "NULL AS properties"
+        )
         result = db.execute(
-            """
-            SELECT user_id, event_name, timestamp, properties
+            f"""
+            SELECT user_id, event_name, timestamp, {props_col}
             FROM events
             WHERE user_id = ?
-            ORDER BY timestamp ASC
+            ORDER BY timestamp DESC
             LIMIT ?
             """,
             [user_id, limit],

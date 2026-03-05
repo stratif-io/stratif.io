@@ -1,6 +1,5 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Zap } from 'lucide-react'
 
 export interface TopEvent {
   name: string
@@ -16,11 +15,7 @@ export function TopEvents({ events, loading }: TopEventsProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-primary" />
-          <CardTitle>Top Events</CardTitle>
-        </div>
-        <CardDescription>Most frequent events in period</CardDescription>
+        <CardTitle>Top Events</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (

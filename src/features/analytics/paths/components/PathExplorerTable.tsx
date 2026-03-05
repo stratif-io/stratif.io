@@ -72,7 +72,7 @@ export function PathExplorerTable({ data }: PathExplorerTableProps) {
           </TableHeader>
           <TableBody>
             {data.map((path, idx) => {
-              const events = path.path.split(' -> ')
+              const events = (path.path ?? '').split(' -> ')
               return (
                 <TableRow key={idx}>
                   <TableCell>

@@ -33,17 +33,18 @@ const EVENT_PALETTE = [
   { dot: 'bg-pink-500', ring: 'ring-pink-500/25', text: 'text-pink-600 dark:text-pink-400' },
 ]
 
-function getEventColor(eventName: string) {
+function getEventColor(eventName: string | null | undefined) {
+  const s = eventName ?? ''
   let hash = 0
-  for (let i = 0; i < eventName.length; i++) {
-    hash = (hash * 31 + eventName.charCodeAt(i)) & 0x7fffffff
+  for (let i = 0; i < s.length; i++) {
+    hash = (hash * 31 + s.charCodeAt(i)) & 0x7fffffff
   }
   return EVENT_PALETTE[hash % EVENT_PALETTE.length]
 }
 
-function PropertiesExpander({ properties }: { properties: Record<string, unknown> }) {
+function PropertiesExpander({ properties }: { properties: Record<string, unknown> | null | undefined }) {
   const [open, setOpen] = useState(false)
-  const entries = Object.entries(properties)
+  const entries = Object.entries(properties ?? {})
   if (entries.length === 0) return null
 
   return (
@@ -121,7 +122,7 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
           )}
         >
           <span className="text-white text-[11px] font-bold leading-none">
-            {event.event_name[0]?.toUpperCase() ?? '?'}
+            {event.event_name?.[0]?.toUpperCase() ?? '?'}
           </span>
         </div>
         {!isLast && <div className="w-0.5 flex-1 bg-border/50 min-h-[2rem] my-1" />}
@@ -136,7 +137,7 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
           {ts && (
             <div className="text-right flex-shrink-0">
               <div className="text-[11px] text-muted-foreground tabular-nums">
-                {format(ts, 'MMM d, HH:mm:ss')}
+                {format(ts, 'MMM d, yyyy HH:mm:ss')}
               </div>
               <div className="text-[10px] text-muted-foreground/60">
                 {formatDistanceToNow(ts, { addSuffix: true })}
@@ -150,6 +151,8 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
   )
 }
 
+const LIMIT_OPTIONS = [50, 100, 200, 500]
+
 export interface UserTimelineModalProps {
   userId: string | null
   connectionId: string | null
@@ -158,9 +161,11 @@ export interface UserTimelineModalProps {
 }
 
 export function UserTimelineModal({ userId, connectionId, open, onClose }: UserTimelineModalProps) {
+  const [limit, setLimit] = useState(100)
+
   const { data, isLoading } = useQuery({
-    queryKey: ['userEvents', userId, connectionId],
-    queryFn: () => fetchUserEvents({ user_id: userId!, connection_id: connectionId ?? undefined }),
+    queryKey: ['userEvents', userId, connectionId, limit],
+    queryFn: () => fetchUserEvents({ user_id: userId!, connection_id: connectionId ?? undefined, limit }),
     enabled: open && !!userId,
     staleTime: 60_000,
   })
@@ -174,7 +179,7 @@ export function UserTimelineModal({ userId, connectionId, open, onClose }: UserT
         <DialogHeader className="px-6 pt-5 pb-4 border-b flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Activity className="h-4 w-4 text-primary" />
+              <Activity className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <DialogTitle className="text-base font-semibold leading-tight">
@@ -188,9 +193,20 @@ export function UserTimelineModal({ userId, connectionId, open, onClose }: UserT
             </div>
           </div>
           {!isLoading && events.length > 0 && (
-            <p className="text-xs text-muted-foreground mt-2">
-              {events.length} event{events.length !== 1 ? 's' : ''} recorded
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-muted-foreground">
+                {events.length} event{events.length !== 1 ? 's' : ''}
+              </p>
+              <select
+                value={limit}
+                onChange={(e) => setLimit(Number(e.target.value))}
+                className="text-xs bg-transparent border border-border rounded px-1.5 py-0.5 text-muted-foreground cursor-pointer"
+              >
+                {LIMIT_OPTIONS.map((n) => (
+                  <option key={n} value={n}>last {n}</option>
+                ))}
+              </select>
+            </div>
           )}
         </DialogHeader>
 
@@ -202,7 +218,7 @@ export function UserTimelineModal({ userId, connectionId, open, onClose }: UserT
             ) : events.length === 0 ? (
               <div className="py-16 text-center">
                 <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                  <Activity className="h-5 w-5 text-muted-foreground/50" />
+                  <Activity className="h-5 w-5 text-muted-foreground/50" aria-hidden="true" />
                 </div>
                 <p className="text-sm text-muted-foreground">No events found for this user</p>
               </div>

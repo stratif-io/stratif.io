@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -6,104 +6,227 @@ import {
   useUpdateConnection,
   useTestConnection,
   useConnectionString,
+  useConnectionCredentials,
 } from '../hooks/useConnectionsData'
 import type { Connection, DbType } from '@/types'
-import { CheckCircle, XCircle, Loader2, Copy, Check } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, Copy, Check, Eye, EyeOff } from 'lucide-react'
+
+const MASKED = '••••••••'
 
 interface Props {
   connection: Connection
 }
 
-function CredentialFields({ dbType }: { dbType: DbType }) {
+// ---------------------------------------------------------------------------
+// Masked input — shows •••• for sensitive fields that are already set
+// ---------------------------------------------------------------------------
+
+interface MaskedInputProps {
+  id: string
+  name: string
+  placeholder: string
+  initialValue: string | null // null = not set, MASKED = set but hidden
+}
+
+function MaskedInput({ id, name, placeholder, initialValue }: MaskedInputProps) {
+  const isMasked = initialValue === MASKED
+  const [value, setValue] = useState(isMasked ? MASKED : (initialValue ?? ''))
+  const [show, setShow] = useState(false)
+  const [edited, setEdited] = useState(false)
+
+  useEffect(() => {
+    if (!edited) {
+      setValue(isMasked ? MASKED : (initialValue ?? ''))
+    }
+  }, [initialValue, isMasked, edited])
+
+  function handleFocus() {
+    if (value === MASKED) {
+      setValue('')
+      setEdited(true)
+    }
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setValue(e.target.value)
+    setEdited(true)
+  }
+
+  const displayType = show ? 'text' : 'password'
+  const isPlaceholderMask = value === MASKED
+
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        name={name}
+        type={isPlaceholderMask ? 'text' : displayType}
+        placeholder={placeholder}
+        value={value}
+        onFocus={handleFocus}
+        onChange={handleChange}
+        className="pr-9 font-mono"
+        // When value is the mask string, submit empty so backend keeps existing
+        data-masked={isPlaceholderMask ? 'true' : undefined}
+      />
+      {isMasked && (
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setShow((s) => !s)}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {show ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Plain (non-sensitive) input pre-populated with current value
+// ---------------------------------------------------------------------------
+
+interface PlainInputProps {
+  id: string
+  name: string
+  placeholder: string
+  initialValue: string | null
+  type?: string
+}
+
+function PlainInput({ id, name, placeholder, initialValue, type = 'text' }: PlainInputProps) {
+  const [value, setValue] = useState(initialValue ?? '')
+
+  useEffect(() => {
+    setValue(initialValue ?? '')
+  }, [initialValue])
+
+  return (
+    <Input
+      id={id}
+      name={name}
+      type={type}
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+    />
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Per-db-type credential fields
+// ---------------------------------------------------------------------------
+
+interface CredentialFieldsProps {
+  dbType: DbType
+  fields: Record<string, string | null>
+}
+
+function CredentialFields({ dbType, fields }: CredentialFieldsProps) {
+  const f = fields
+
   switch (dbType) {
     case 'duckdb':
       return (
         <div className="space-y-1.5">
           <Label htmlFor="file_path">File Path / S3 Path</Label>
-          <Input id="file_path" name="file_path" placeholder="/path/to/db.duckdb or s3://…" />
+          <PlainInput
+            id="file_path"
+            name="file_path"
+            placeholder="/path/to/db.duckdb or s3://…"
+            initialValue={f.file_path ?? f.s3_path ?? null}
+          />
         </div>
       )
+
     case 'sqlite':
       return (
         <div className="space-y-1.5">
           <Label htmlFor="file_path">File Path</Label>
-          <Input id="file_path" name="file_path" placeholder="/path/to/db.sqlite" />
+          <PlainInput
+            id="file_path"
+            name="file_path"
+            placeholder="/path/to/db.sqlite"
+            initialValue={f.file_path ?? null}
+          />
         </div>
       )
+
     case 'postgresql':
       return (
         <>
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2 space-y-1.5">
               <Label htmlFor="host">Host</Label>
-              <Input id="host" name="host" placeholder="localhost" />
+              <PlainInput id="host" name="host" placeholder="localhost" initialValue={f.host ?? null} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="port">Port</Label>
-              <Input id="port" name="port" placeholder="5432" type="number" />
+              <PlainInput
+                id="port"
+                name="port"
+                placeholder="5432"
+                type="number"
+                initialValue={f.port ?? null}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="database">Database</Label>
-            <Input id="database" name="database" placeholder="mydb" />
+            <PlainInput id="database" name="database" placeholder="mydb" initialValue={f.database ?? null} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label htmlFor="user">User</Label>
-              <Input id="user" name="user" placeholder="postgres" />
+              <PlainInput id="user" name="user" placeholder="postgres" initialValue={f.user ?? null} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" placeholder="••••••••" />
+              <MaskedInput id="password" name="password" placeholder="••••••••" initialValue={f.password ?? null} />
             </div>
           </div>
         </>
       )
+
     case 'databricks':
       return (
         <>
           <div className="space-y-1.5">
             <Label htmlFor="host">Workspace Host</Label>
-            <Input id="host" name="host" placeholder="adb-xxxx.azuredatabricks.net" />
+            <PlainInput
+              id="host"
+              name="host"
+              placeholder="adb-xxxx.azuredatabricks.net"
+              initialValue={f.host ?? null}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="http_path">HTTP Path</Label>
-            <Input id="http_path" name="http_path" placeholder="/sql/1.0/warehouses/…" />
+            <PlainInput
+              id="http_path"
+              name="http_path"
+              placeholder="/sql/1.0/warehouses/…"
+              initialValue={f.http_path ?? null}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="token">Access Token</Label>
-            <Input id="token" name="token" type="password" placeholder="dapiXXXXXXXX" />
+            <MaskedInput
+              id="token"
+              name="token"
+              placeholder="dapiXXXXXXXX"
+              initialValue={f.token ?? null}
+            />
           </div>
         </>
       )
   }
 }
 
-function buildCredentials(dbType: DbType, form: HTMLFormElement): Record<string, unknown> {
-  const data = new FormData(form)
-  switch (dbType) {
-    case 'duckdb': {
-      const path = (data.get('file_path') as string) || ''
-      return path.startsWith('s3://') ? { s3_path: path } : { file_path: path }
-    }
-    case 'sqlite':
-      return { file_path: data.get('file_path') as string }
-    case 'postgresql':
-      return {
-        host: data.get('host') as string,
-        port: parseInt(data.get('port') as string) || 5432,
-        database: data.get('database') as string,
-        user: data.get('user') as string,
-        password: data.get('password') as string,
-      }
-    case 'databricks':
-      return {
-        host: data.get('host') as string,
-        http_path: data.get('http_path') as string,
-        token: data.get('token') as string,
-      }
-  }
-}
+// ---------------------------------------------------------------------------
+// Connection string (DuckDB / SQLite)
+// ---------------------------------------------------------------------------
 
 function ConnectionStringDisplay({ connId }: { connId: string }) {
   const { data } = useConnectionString(connId)
@@ -140,17 +263,57 @@ function ConnectionStringDisplay({ connId }: { connId: string }) {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Main tab
+// ---------------------------------------------------------------------------
+
 export function ConnectionConfigTab({ connection }: Props) {
   const [name, setName] = useState(connection.name)
   const update = useUpdateConnection(connection.id)
   const testMutation = useTestConnection()
+  const { data: credsData } = useConnectionCredentials(connection.id)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  const fields = credsData?.fields ?? {}
+
+  function buildCredentials(dbType: DbType, form: HTMLFormElement): Record<string, unknown> {
+    const data = new FormData(form)
+
+    function get(key: string): string {
+      const el = form.elements.namedItem(key) as HTMLInputElement | null
+      // If the field still holds the mask placeholder, return '' so backend skips it
+      if (el?.dataset.masked === 'true') return ''
+      return (data.get(key) as string) || ''
+    }
+
+    switch (dbType) {
+      case 'duckdb': {
+        const path = get('file_path')
+        return path.startsWith('s3://') ? { s3_path: path } : { file_path: path }
+      }
+      case 'sqlite':
+        return { file_path: get('file_path') }
+      case 'postgresql':
+        return {
+          host: get('host'),
+          port: parseInt(get('port')) || 5432,
+          database: get('database'),
+          user: get('user'),
+          password: get('password'),
+        }
+      case 'databricks':
+        return {
+          host: get('host'),
+          http_path: get('http_path'),
+          token: get('token'),
+        }
+    }
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget
     const credentials = buildCredentials(connection.db_type, form)
-
-    // Only include credentials if at least one field was filled in
     const hasCredentials = Object.values(credentials).some((v) => v !== '' && v !== null)
 
     update.mutate({
@@ -167,7 +330,7 @@ export function ConnectionConfigTab({ connection }: Props) {
   const testError = testMutation.error
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       {/* Name */}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold">Connection Name</h3>
@@ -189,12 +352,11 @@ export function ConnectionConfigTab({ connection }: Props) {
         <div className="space-y-1">
           <h3 className="text-sm font-semibold">Credentials</h3>
           <p className="text-xs text-muted-foreground">
-            Credentials are encrypted at rest and never returned by the API. Leave fields blank to
-            keep the existing credentials unchanged.
+            Sensitive fields are masked. Leave them unchanged to keep existing values.
           </p>
         </div>
         <div className="rounded-md border p-4 space-y-3">
-          <CredentialFields dbType={connection.db_type} />
+          <CredentialFields dbType={connection.db_type} fields={fields} />
         </div>
       </div>
 

@@ -75,7 +75,7 @@ interface PathCardProps {
 }
 
 function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
-  const steps = path.path.split(' -> ')
+  const steps = (path.path ?? '').split(' -> ')
   const barWidth = Math.max((path.occurrence_count / maxCount) * 100, 2)
 
   return (
@@ -243,13 +243,8 @@ export function PathsExplorerPage() {
       <div className={SPACING.page}>
         <div className={SPACING.section}>
           {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className={TYPOGRAPHY.pageTitle}>Path Explorer</h1>
-              <p className={`${TYPOGRAPHY.muted} mt-1`}>
-                Discover the most common journeys users take through your product
-              </p>
-            </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className={TYPOGRAPHY.pageLabel}>Path Explorer</span>
             {totalPaths > 0 && (
               <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
                 <GitFork className="h-4 w-4 text-primary" />

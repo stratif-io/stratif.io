@@ -286,7 +286,7 @@ class PathAnalyzer:
 
         return f"""
 WITH filtered_events AS (
-    SELECT user_id, event_name, timestamp, properties
+    SELECT *
     FROM {table_name}
     {where_clause}
 ),

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { format } from 'date-fns'
 import { useQuery } from '@tanstack/react-query'
-import { MousePointerClick } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { fetchRawEvents, fetchEvents } from '@/lib/api'
 import {
@@ -9,9 +8,8 @@ import {
   useFilterOptions,
   useSchemaConfig,
 } from '@/features/connections/hooks/useConnectionsData'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { PageTransition } from '@/components/layout/PageTransition'
-import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { EventsTable } from './components/EventsTable'
 import { UserTimelineModal } from './components/UserTimelineModal'
 import type { RawEvent } from './components/EventsTable'
@@ -21,6 +19,7 @@ export function EventsPage() {
 
   // Pagination & sort
   const [page, setPage] = useState(1)
+  const [sortField, setSortField] = useState('timestamp')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   // Column-level filters (local to this page)
@@ -66,6 +65,7 @@ export function EventsPage() {
       columnFilters,
       eventNameFilter,
       userIdFilter,
+      sortField,
       sortOrder,
       activeConnectionId,
     ],
@@ -75,6 +75,7 @@ export function EventsPage() {
         offset: (page - 1) * limit,
         event_name: eventNameFilter || undefined,
         user_id: userIdFilter || undefined,
+        sort_field: sortField,
         sort_order: sortOrder,
         start_date: startDate,
         end_date: endDate,
@@ -115,42 +116,27 @@ export function EventsPage() {
     setPage(1)
   }, [])
 
-  const handleSortOrderChange = useCallback((order: 'asc' | 'desc') => {
+  const handleSortChange = useCallback((field: string, order: 'asc' | 'desc') => {
+    setSortField(field)
     setSortOrder(order)
     setPage(1)
   }, [])
 
   return (
     <PageTransition>
-      <div className={SPACING.page}>
-        <div className={SPACING.section}>
-          <div>
-            <h1 className={TYPOGRAPHY.pageTitle}>Events</h1>
-            <p className={`${TYPOGRAPHY.muted} mt-1`}>Browse and filter individual events.</p>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <MousePointerClick className="h-5 w-5 text-primary" />
-                <CardTitle>Event Stream</CardTitle>
-              </div>
-              <CardDescription>
-                {rawEventsData?.total != null
-                  ? `${rawEventsData.total.toLocaleString()} events in range`
-                  : 'Raw event data'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EventsTable
+      <div className="p-4 lg:p-6">
+        <Card>
+          <CardContent className="p-0">
+            <EventsTable
                 data={events}
                 total={rawEventsData?.total ?? 0}
                 page={page}
                 pageSize={limit}
                 loading={isLoading || isFetching}
                 isFetching={isFetching}
+                sortField={sortField}
                 sortOrder={sortOrder}
-                onSortOrderChange={handleSortOrderChange}
+                onSortChange={handleSortChange}
                 eventNameFilter={eventNameFilter}
                 onEventNameFilterChange={handleEventNameFilterChange}
                 userIdFilter={userIdFilter}
@@ -166,9 +152,8 @@ export function EventsPage() {
                 onUserClick={setTimelineUserId}
                 connectionId={activeConnectionId}
               />
-            </CardContent>
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       <UserTimelineModal

@@ -117,6 +117,8 @@ def date_diff_days(start_expr: str, end_expr: str, dialect: str = "duckdb") -> s
         return f"DATEDIFF('day', {start_expr}, {end_expr})"
     if dialect == "tsql":
         return f"DATEDIFF(day, {start_expr}, {end_expr})"
+    if dialect == "databricks":
+        return f"DATEDIFF({end_expr}, {start_expr})"
     # DuckDB
     return f"DATE_DIFF('day', {start_expr}, {end_expr})"
 
@@ -154,6 +156,8 @@ def epoch_diff_seconds(start_expr: str, end_expr: str, dialect: str = "duckdb") 
         return f"DATEDIFF('second', {start_expr}, {end_expr})"
     if dialect == "tsql":
         return f"DATEDIFF(second, {start_expr}, {end_expr})"
+    if dialect == "databricks":
+        return f"(unix_timestamp({end_expr}) - unix_timestamp({start_expr}))"
     # DuckDB, Postgres
     return f"EXTRACT(EPOCH FROM ({end_expr} - {start_expr}))"
 
@@ -201,6 +205,8 @@ def interval_minutes_exceeded(
         return f"DATEDIFF('minute', {col_earlier}, {col_later}) > {minutes}"
     if dialect == "tsql":
         return f"DATEDIFF(minute, {col_earlier}, {col_later}) > {minutes}"
+    if dialect == "databricks":
+        return f"(unix_timestamp({col_later}) - unix_timestamp({col_earlier})) > {minutes * 60}"
     # DuckDB, Postgres, Snowflake
     return f"{col_later} - {col_earlier} > INTERVAL '{minutes} minutes'"
 
@@ -249,6 +255,8 @@ def cast_to_text(expr: str, dialect: str = "duckdb") -> str:
     """
     if dialect == "mysql":
         return f"CAST({expr} AS CHAR)"
+    if dialect == "databricks":
+        return f"CAST({expr} AS STRING)"
     return f"CAST({expr} AS TEXT)"
 
 
@@ -302,6 +310,9 @@ def json_extract_string(col: str, key: str, dialect: str = "duckdb") -> str:
             return f"{col}->>'{key}'"
         path_args = ", ".join(f"'{p}'" for p in parts)
         return f"json_extract_path_text({col}, {path_args})"
+    if dialect == "databricks":
+        # For JSON / VARIANT string columns use get_json_object
+        return f"get_json_object({col}, '{json_path}')"
     # DuckDB: always use json_extract_string() which explicitly returns VARCHAR.
     # The ->> operator on DuckDB JSON columns returns a JSON type (not VARCHAR),
     # which causes ConversionException when compared to a bound string parameter.

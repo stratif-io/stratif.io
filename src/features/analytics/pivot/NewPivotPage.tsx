@@ -2,12 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { AgGridReact } from 'ag-grid-react'
-import {
-  AllEnterpriseModule,
-  LicenseManager,
-  ModuleRegistry,
-  themeQuartz,
-} from 'ag-grid-enterprise'
+import { AllEnterpriseModule, LicenseManager, ModuleRegistry } from 'ag-grid-enterprise'
 import type {
   ColDef,
   GridApi,
@@ -17,8 +12,11 @@ import type {
 } from 'ag-grid-community'
 import { RotateCcw, Download, Loader2, Plus, X, Filter, Sigma } from 'lucide-react'
 import { PageTransition } from '@/components/layout/PageTransition'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/stores'
 import { fetchPivotGridColDefs, fetchPivotGridRows, fetchPivotGridFilterValues } from '@/lib/api'
+import { useAgGridTheme } from '@/lib/ag-grid-theme'
 
 ModuleRegistry.registerModules([AllEnterpriseModule])
 LicenseManager.setLicenseKey('')
@@ -76,46 +74,6 @@ function formatDimValue(field: string, value: unknown): string {
   return String(value)
 }
 
-function isDarkMode() {
-  return document.documentElement.classList.contains('dark')
-}
-
-// ─── AG Grid theme params ──────────────────────────────────────────────────
-
-const DARK_PARAMS = {
-  backgroundColor: '#0A0C13',
-  foregroundColor: '#C8CDD8',
-  headerBackgroundColor: '#0D0F18',
-  headerTextColor: '#525870',
-  borderColor: '#181C27',
-  rowHoverColor: '#0F1119',
-  selectedRowBackgroundColor: '#141720',
-  accentColor: '#818CF8',
-  oddRowBackgroundColor: '#0C0E16',
-  cellTextColor: '#A8AEBB',
-  fontFamily: '"SF Mono", "Fira Code", ui-monospace, monospace',
-  fontSize: 13,
-  rowHeight: 42,
-  headerHeight: 38,
-  cellHorizontalPaddingScale: 1.2,
-}
-const LIGHT_PARAMS = {
-  backgroundColor: '#FFFFFF',
-  foregroundColor: '#0F1729',
-  headerBackgroundColor: '#F6F7FB',
-  headerTextColor: '#8892A8',
-  borderColor: '#EAECF4',
-  rowHoverColor: '#F8F9FC',
-  selectedRowBackgroundColor: '#EEF0FA',
-  accentColor: '#6366F1',
-  oddRowBackgroundColor: '#FAFBFD',
-  cellTextColor: '#2D3552',
-  fontFamily: '"SF Mono", "Fira Code", ui-monospace, monospace',
-  fontSize: 13,
-  rowHeight: 42,
-  headerHeight: 38,
-  cellHorizontalPaddingScale: 1.2,
-}
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -143,7 +101,7 @@ const AGG_LABELS: Record<string, string> = {
 
 export function NewPivotPage() {
   const { dateRange, activeFilters, activeConnectionId } = useAppStore()
-  const [dark, setDark] = useState(isDarkMode)
+  const gridTheme = useAgGridTheme()
   const [isQuerying, setIsQuerying] = useState(false)
   const [showSubtotals, setShowSubtotals] = useState(false)
   const gridApiRef = useRef<GridApi | null>(null)
@@ -158,14 +116,6 @@ export function NewPivotPage() {
 
   // Dimension filters (field → value)
   const [pivotFilters, setPivotFilters] = useState<FilterEntry[]>([])
-
-  useEffect(() => {
-    const obs = new MutationObserver(() => setDark(isDarkMode()))
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-    return () => obs.disconnect()
-  }, [])
-
-  const gridTheme = useMemo(() => themeQuartz.withParams(dark ? DARK_PARAMS : LIGHT_PARAMS), [dark])
 
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
@@ -523,283 +473,157 @@ export function NewPivotPage() {
     }).catch(() => {})
   }, [showSubtotals, valueCols, startDate, endDate, activeFilters, pivotFilters])
 
-  // ── Theme tokens ─────────────────────────────────────────────────────────
-  const accent = dark ? '#818CF8' : '#6366F1'
-  const border = dark ? '#181C27' : '#EAECF4'
-  const bg = dark ? '#0A0C13' : '#FFFFFF'
-  const bgHeader = dark ? '#0D0F18' : '#F6F7FB'
-  const textStrong = dark ? '#E2E5F0' : '#0F1729'
-  const textMuted = dark ? '#353A50' : '#C0C8DA'
-  const textDim = dark ? '#525870' : '#9098B0'
-  const chipBg = dark ? '#13161F' : '#F0F2FA'
-  const chipBorder = dark ? '#1E2230' : '#DDE1F0'
+  // ── Theme tokens (CSS variables — auto dark/light) ───────────────────────
+  const accent = 'hsl(var(--primary))'
+  const border = 'hsl(var(--border))'
+  const textStrong = 'hsl(var(--foreground))'
+  const textMuted = 'hsl(var(--muted-foreground))'
+  const textDim = 'hsl(var(--muted-foreground))'
+  const chipBg = 'hsl(var(--muted))'
+  const chipBorder = 'hsl(var(--border))'
 
   return (
     <PageTransition>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {/* ── Config bar (outside grid) ───────────────────────────────── */}
-        {columnDefs.length > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap' as const,
-              gap: 6,
-              padding: '10px 14px',
-              borderRadius: 10,
-              background: bg,
-              border: `1px solid ${border}`,
-              boxShadow: dark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.05)',
-            }}
-          >
-            <ZoneSection
-              label="GROUP BY"
-              cols={rowGroups}
-              available={availForRowGroup}
-              onRemove={removeRowGroup}
-              onAdd={addRowGroup}
-              dark={dark}
-              accent={accent}
-              border={border}
-              chipBg={chipBg}
-              chipBorder={chipBorder}
-              textDim={textDim}
-              textMuted={textMuted}
-              textStrong={textStrong}
-            />
-            <Divider dark={dark} />
-            <ZoneSection
-              label="PIVOT"
-              cols={pivotCols}
-              available={availForPivot}
-              onRemove={removePivotCol}
-              onAdd={addPivotCol}
-              dark={dark}
-              accent={accent}
-              border={border}
-              chipBg={chipBg}
-              chipBorder={chipBorder}
-              textDim={textDim}
-              textMuted={textMuted}
-              textStrong={textStrong}
-            />
-            <Divider dark={dark} />
-            <ZoneSection
-              label="VALUES"
-              cols={valueCols}
-              available={availForValues}
-              onRemove={removeValueCol}
-              onAdd={addValueCol}
-              showAggFunc
-              onAggFuncChange={changeValueAggFunc}
-              getAllowedAggFuncs={getAllowedAggFuncs}
-              dark={dark}
-              accent={accent}
-              border={border}
-              chipBg={chipBg}
-              chipBorder={chipBorder}
-              textDim={textDim}
-              textMuted={textMuted}
-              textStrong={textStrong}
-            />
-            <Divider dark={dark} />
-            <FilterSection
-              filters={pivotFilters}
-              available={availForFilter}
-              onAdd={addFilter}
-              onRemove={removeFilter}
-              startDate={startDate}
-              endDate={endDate}
-              connectionId={activeConnectionId ?? undefined}
-              dark={dark}
-              accent={accent}
-              border={border}
-              chipBg={chipBg}
-              chipBorder={chipBorder}
-              textDim={textDim}
-              textMuted={textMuted}
-              textStrong={textStrong}
-            />
-          </div>
-        )}
-
-        {/* ── Grid card ───────────────────────────────────────────────── */}
-        <div
-          style={{
-            borderRadius: 12,
-            overflow: 'hidden',
-            border: `1px solid ${border}`,
-            background: bg,
-            boxShadow: dark
-              ? '0 0 0 1px #181C27, 0 8px 32px rgba(0,0,0,0.4)'
-              : '0 1px 3px rgba(0,0,0,0.06)',
-          }}
-        >
-          {/* Header */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '13px 18px 12px',
-              background: bgHeader,
-              borderBottom: `1px solid ${border}`,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ position: 'relative', display: 'inline-flex', width: 8, height: 8 }}>
-                <span
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    borderRadius: '50%',
-                    background: accent,
-                    opacity: 0.5,
-                    animation: 'pv-ping 2.2s cubic-bezier(0,0,0.2,1) infinite',
-                  }}
+      <div className="p-4 lg:p-6 flex flex-col gap-3">
+          {/* Config bar */}
+          {columnDefs.length > 0 && (
+            <Card>
+              <CardContent className="py-2 px-3 flex items-center flex-wrap gap-1.5">
+                <ZoneSection
+                  label="GROUP BY"
+                  cols={rowGroups}
+                  available={availForRowGroup}
+                  onRemove={removeRowGroup}
+                  onAdd={addRowGroup}
+                  dark={false}
+                  accent={accent}
+                  border={border}
+                  chipBg={chipBg}
+                  chipBorder={chipBorder}
+                  textDim={textDim}
+                  textMuted={textMuted}
+                  textStrong={textStrong}
                 />
-                <span
-                  style={{
-                    position: 'relative',
-                    display: 'block',
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: accent,
-                  }}
+                <Divider dark={false} />
+                <ZoneSection
+                  label="PIVOT"
+                  cols={pivotCols}
+                  available={availForPivot}
+                  onRemove={removePivotCol}
+                  onAdd={addPivotCol}
+                  dark={false}
+                  accent={accent}
+                  border={border}
+                  chipBg={chipBg}
+                  chipBorder={chipBorder}
+                  textDim={textDim}
+                  textMuted={textMuted}
+                  textStrong={textStrong}
                 />
-              </span>
-              <span
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  letterSpacing: '-0.01em',
-                  color: textStrong,
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                }}
-              >
-                Pivot Explorer
-              </span>
-              <span
-                style={{
-                  fontSize: 10,
-                  letterSpacing: '0.08em',
-                  color: textMuted,
-                  fontFamily: 'ui-monospace, monospace',
-                  textTransform: 'uppercase' as const,
-                  userSelect: 'none' as const,
-                }}
-              >
-                Server-side aggregation
-              </span>
-              {isQuerying && (
-                <Loader2
-                  style={{
-                    width: 11,
-                    height: 11,
-                    color: accent,
-                    animation: 'pv-spin 0.8s linear infinite',
-                  }}
+                <Divider dark={false} />
+                <ZoneSection
+                  label="VALUES"
+                  cols={valueCols}
+                  available={availForValues}
+                  onRemove={removeValueCol}
+                  onAdd={addValueCol}
+                  showAggFunc
+                  onAggFuncChange={changeValueAggFunc}
+                  getAllowedAggFuncs={getAllowedAggFuncs}
+                  dark={false}
+                  accent={accent}
+                  border={border}
+                  chipBg={chipBg}
+                  chipBorder={chipBorder}
+                  textDim={textDim}
+                  textMuted={textMuted}
+                  textStrong={textStrong}
                 />
-              )}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button
-                onClick={handleToggleSubtotals}
-                title={showSubtotals ? 'Hide subtotals' : 'Show subtotals'}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '4px 9px', borderRadius: 6, cursor: 'pointer',
-                  border: `1px solid ${showSubtotals ? accent + '60' : border}`,
-                  background: showSubtotals ? (dark ? '#1A1E2E' : '#EEF0FA') : 'transparent',
-                  color: showSubtotals ? accent : (dark ? '#40475E' : '#C0C8DA'),
-                  fontFamily: 'ui-monospace, monospace', fontSize: 10,
-                  letterSpacing: '0.06em', transition: 'all 0.12s ease',
-                }}
-              >
-                <Sigma style={{ width: 11, height: 11 }} />
-                SUBTOTALS
-              </button>
-              <GhostBtn
-                onClick={handleReset}
-                title="Reset"
-                dark={dark}
-                accent={accent}
-                border={border}
-              >
-                <RotateCcw style={{ width: 12, height: 12 }} />
-              </GhostBtn>
-              <GhostBtn
-                onClick={handleExportCsv}
-                title="Export CSV"
-                dark={dark}
-                accent={accent}
-                border={border}
-              >
-                <Download style={{ width: 12, height: 12 }} />
-              </GhostBtn>
-            </div>
-          </div>
+                <Divider dark={false} />
+                <FilterSection
+                  filters={pivotFilters}
+                  available={availForFilter}
+                  onAdd={addFilter}
+                  onRemove={removeFilter}
+                  startDate={startDate}
+                  endDate={endDate}
+                  connectionId={activeConnectionId ?? undefined}
+                  dark={false}
+                  accent={accent}
+                  border={border}
+                  chipBg={chipBg}
+                  chipBorder={chipBorder}
+                  textDim={textDim}
+                  textMuted={textMuted}
+                  textStrong={textStrong}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Grid */}
-          <div style={{ height: 'calc(100vh - 290px)', minHeight: 400 }}>
-            {colDefsLoading ? (
-              <div
-                style={{
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  color: textMuted,
-                  fontFamily: 'ui-monospace, monospace',
-                  fontSize: 11,
-                  letterSpacing: '0.08em',
-                }}
-              >
-                <Loader2
-                  style={{ width: 13, height: 13, animation: 'pv-spin 0.8s linear infinite' }}
-                />
-                INITIALIZING
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              {/* Toolbar */}
+              <div className="flex items-center justify-end gap-1 px-3 py-2 border-b">
+                {isQuerying && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground mr-1" />}
+                <Button
+                  variant={showSubtotals ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={handleToggleSubtotals}
+                  title={showSubtotals ? 'Hide subtotals' : 'Show subtotals'}
+                  className="gap-1.5 h-7 text-xs"
+                >
+                  <Sigma className="h-3 w-3" />
+                  Subtotals
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReset} title="Reset">
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleExportCsv} title="Export CSV">
+                  <Download className="h-3.5 w-3.5" />
+                </Button>
               </div>
-            ) : (
-              <AgGridReact
-                theme={gridTheme}
-                columnDefs={columnDefs}
-                rowModelType="serverSide"
-                onGridReady={handleGridReady}
-                pivotMode={true}
-                defaultColDef={{ sortable: true, resizable: true, minWidth: 100 }}
-                groupDefaultExpanded={0}
-                animateRows={true}
-                suppressAggFuncInHeader={false}
-                aggFuncs={{ countDistinct: ({ values }) => values[0] }}
-                onColumnRowGroupChanged={handleColEvent}
-                onColumnPivotChanged={handleColEvent}
-                onColumnValueChanged={handleColEvent}
-              />
-            )}
-          </div>
-        </div>
+              <div style={{ height: 'calc(100vh - 196px)' }}>
+                {colDefsLoading ? (
+                  <div className="h-full flex items-center justify-center gap-2 text-muted-foreground text-xs tracking-widest">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Initializing…
+                  </div>
+                ) : (
+                  <AgGridReact
+                    theme={gridTheme}
+                    columnDefs={columnDefs}
+                    rowModelType="serverSide"
+                    onGridReady={handleGridReady}
+                    pivotMode={true}
+                    defaultColDef={{ sortable: true, resizable: true, minWidth: 100 }}
+                    groupDefaultExpanded={0}
+                    animateRows={true}
+                    suppressAggFuncInHeader={false}
+                    aggFuncs={{ countDistinct: ({ values }) => values[0] }}
+                    onColumnRowGroupChanged={handleColEvent}
+                    onColumnPivotChanged={handleColEvent}
+                    onColumnValueChanged={handleColEvent}
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
       </div>
-
-      <style>{`
-        @keyframes pv-ping { 75%, 100% { transform: scale(2.4); opacity: 0; } }
-        @keyframes pv-spin { to { transform: rotate(360deg); } }
-      `}</style>
     </PageTransition>
   )
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────
 
-function Divider({ dark }: { dark: boolean }) {
+function Divider({ dark: _dark }: { dark: boolean }) {
   return (
     <div
       style={{
         width: 1,
         height: 24,
-        background: dark ? '#1E2230' : '#E4E8F4',
+        background: 'hsl(var(--border))',
         margin: '0 8px',
         flexShrink: 0,
       }}
@@ -859,7 +683,7 @@ function ZoneSection({
           letterSpacing: '0.1em',
           textTransform: 'uppercase' as const,
           color: textMuted,
-          fontFamily: 'ui-monospace, monospace',
+          fontFamily: 'inherit',
           userSelect: 'none' as const,
           flexShrink: 0,
         }}
@@ -948,7 +772,7 @@ function FilterSection({
           letterSpacing: '0.1em',
           textTransform: 'uppercase' as const,
           color: textMuted,
-          fontFamily: 'ui-monospace, monospace',
+          fontFamily: 'inherit',
           userSelect: 'none' as const,
           flexShrink: 0,
         }}
@@ -1024,9 +848,9 @@ function FilterChip({
         gap: 3,
         padding: '3px 6px 3px 8px',
         borderRadius: 20,
-        background: hovered ? (dark ? '#1A1E2E' : '#E8ECFA') : chipBg,
+        background: hovered ? 'hsl(var(--accent))' : chipBg,
         border: `1px solid ${hovered ? accent + '50' : chipBorder}`,
-        fontFamily: 'ui-monospace, monospace',
+        fontFamily: 'inherit',
         fontSize: 11,
         color: textStrong,
         transition: 'all 0.12s ease',
@@ -1047,7 +871,7 @@ function FilterChip({
           height: 14,
           borderRadius: '50%',
           border: 'none',
-          background: hovered ? (dark ? '#282E42' : '#D8DCEE') : 'transparent',
+          background: hovered ? 'hsl(var(--accent))' : 'transparent',
           color: textDim,
           cursor: 'pointer',
           padding: 0,
@@ -1151,10 +975,10 @@ function FilterPicker({
     top: 'calc(100% + 6px)',
     left: 0,
     zIndex: 2000,
-    background: dark ? '#0D0F18' : '#FFFFFF',
+    background: 'hsl(var(--popover))',
     border: `1px solid ${border}`,
     borderRadius: 8,
-    boxShadow: dark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.12)',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
     minWidth: 190,
     padding: '4px 0',
   }
@@ -1176,9 +1000,9 @@ function FilterPicker({
           gap: 4,
           padding: '3px 9px 3px 7px',
           borderRadius: 20,
-          background: open || hovered ? (dark ? '#1A1E2E' : '#E8ECFA') : chipBg,
+          background: open || hovered ? 'hsl(var(--accent))' : chipBg,
           border: `1px solid ${open ? accent + '60' : chipBorder}`,
-          fontFamily: 'ui-monospace, monospace',
+          fontFamily: 'inherit',
           fontSize: 11,
           color: open ? accent : textDim,
           cursor: 'pointer',
@@ -1200,9 +1024,9 @@ function FilterPicker({
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
                   color: textMuted,
-                  fontFamily: 'ui-monospace, monospace',
+                  fontFamily: 'inherit',
                   userSelect: 'none',
-                  borderBottom: `1px solid ${dark ? '#181C27' : '#EAECF4'}`,
+                  borderBottom: `1px solid hsl(var(--border))`,
                   marginBottom: 4,
                 }}
               >
@@ -1214,7 +1038,7 @@ function FilterPicker({
                     key={col.colId}
                     label={col.label}
                     onClick={() => handleFieldSelect(col)}
-                    dark={dark}
+                    dark={false}
                     accent={accent}
                     textStrong={textStrong}
                     textMuted={textMuted}
@@ -1232,7 +1056,7 @@ function FilterPicker({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  borderBottom: `1px solid ${dark ? '#181C27' : '#EAECF4'}`,
+                  borderBottom: `1px solid hsl(var(--border))`,
                   marginBottom: 4,
                 }}
               >
@@ -1248,7 +1072,7 @@ function FilterPicker({
                     color: textDim,
                     cursor: 'pointer',
                     fontSize: 11,
-                    fontFamily: 'ui-monospace, monospace',
+                    fontFamily: 'inherit',
                     padding: 0,
                   }}
                 >
@@ -1260,7 +1084,7 @@ function FilterPicker({
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
                     color: textMuted,
-                    fontFamily: 'ui-monospace, monospace',
+                    fontFamily: 'inherit',
                     userSelect: 'none',
                   }}
                 >
@@ -1279,11 +1103,11 @@ function FilterPicker({
                     width: '100%',
                     boxSizing: 'border-box',
                     padding: '5px 8px',
-                    border: `1px solid ${dark ? '#1E2230' : '#E4E8F4'}`,
+                    border: `1px solid hsl(var(--border))`,
                     borderRadius: 6,
-                    background: dark ? '#13161F' : '#F8F9FC',
+                    background: 'hsl(var(--muted))',
                     color: textStrong,
-                    fontFamily: 'ui-monospace, monospace',
+                    fontFamily: 'inherit',
                     fontSize: 11,
                     outline: 'none',
                   }}
@@ -1296,7 +1120,7 @@ function FilterPicker({
                     style={{
                       padding: '10px 14px',
                       color: textDim,
-                      fontFamily: 'ui-monospace, monospace',
+                      fontFamily: 'inherit',
                       fontSize: 11,
                       display: 'flex',
                       alignItems: 'center',
@@ -1313,7 +1137,7 @@ function FilterPicker({
                     style={{
                       padding: '10px 14px',
                       color: textDim,
-                      fontFamily: 'ui-monospace, monospace',
+                      fontFamily: 'inherit',
                       fontSize: 11,
                     }}
                   >
@@ -1325,7 +1149,7 @@ function FilterPicker({
                       key={v}
                       label={v}
                       onClick={() => handleValueSelect(v)}
-                      dark={dark}
+                      dark={false}
                       accent={accent}
                       textStrong={textStrong}
                       textMuted={textMuted}
@@ -1393,9 +1217,9 @@ function Chip({
         gap: 3,
         padding: '3px 6px 3px 9px',
         borderRadius: 20,
-        background: hovered ? (dark ? '#1A1E2E' : '#E8ECFA') : chipBg,
+        background: hovered ? 'hsl(var(--accent))' : chipBg,
         border: `1px solid ${hovered ? accent + '50' : chipBorder}`,
-        fontFamily: 'ui-monospace, monospace',
+        fontFamily: 'inherit',
         fontSize: 11,
         color: textStrong,
         transition: 'all 0.12s ease',
@@ -1417,9 +1241,9 @@ function Chip({
               padding: '1px 5px',
               borderRadius: 10,
               border: 'none',
-              background: aggOpen ? accent : dark ? '#1E2338' : '#E0E4F8',
+              background: aggOpen ? accent : 'hsl(var(--primary)/0.12)',
               color: aggOpen ? '#fff' : accent,
-              fontFamily: 'ui-monospace, monospace',
+              fontFamily: 'inherit',
               fontSize: 9,
               letterSpacing: '0.04em',
               cursor: canChangeAgg ? 'pointer' : 'default',
@@ -1440,10 +1264,10 @@ function Chip({
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 2000,
-                background: dark ? '#0D0F18' : '#FFFFFF',
+                background: 'hsl(var(--popover))',
                 border: `1px solid ${border}`,
                 borderRadius: 8,
-                boxShadow: dark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.12)',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
                 minWidth: 140,
                 padding: '4px 0',
                 overflow: 'hidden',
@@ -1458,7 +1282,7 @@ function Chip({
                     onAggFuncChange!(agg)
                     setAggOpen(false)
                   }}
-                  dark={dark}
+                  dark={false}
                   accent={accent}
                   textStrong={textStrong}
                 />
@@ -1479,7 +1303,7 @@ function Chip({
           height: 14,
           borderRadius: '50%',
           border: 'none',
-          background: hovered ? (dark ? '#282E42' : '#D8DCEE') : 'transparent',
+          background: hovered ? 'hsl(var(--accent))' : 'transparent',
           color: textDim,
           cursor: 'pointer',
           padding: 0,
@@ -1521,17 +1345,9 @@ function AggOption({
         padding: '7px 12px',
         border: 'none',
         textAlign: 'left' as const,
-        background: active
-          ? dark
-            ? '#1A1E2E'
-            : '#EEF0FA'
-          : hov
-            ? dark
-              ? '#13161F'
-              : '#F5F6FC'
-            : 'transparent',
+        background: active ? 'hsl(var(--primary)/0.1)' : hov ? 'hsl(var(--accent))' : 'transparent',
         color: active ? accent : textStrong,
-        fontFamily: 'ui-monospace, monospace',
+        fontFamily: 'inherit',
         fontSize: 12,
         cursor: 'pointer',
         transition: 'all 0.08s ease',
@@ -1541,7 +1357,7 @@ function AggOption({
       <span
         style={{
           fontSize: 10,
-          color: active ? accent : dark ? '#525870' : '#B0B8CC',
+          color: active ? accent : 'hsl(var(--muted-foreground))',
           marginLeft: 8,
         }}
       >
@@ -1600,9 +1416,9 @@ function ColPicker({
           gap: 4,
           padding: '3px 9px 3px 7px',
           borderRadius: 20,
-          background: open || hovered ? (dark ? '#1A1E2E' : '#E8ECFA') : chipBg,
+          background: open || hovered ? 'hsl(var(--accent))' : chipBg,
           border: `1px solid ${open ? accent + '60' : chipBorder}`,
-          fontFamily: 'ui-monospace, monospace',
+          fontFamily: 'inherit',
           fontSize: 11,
           color: open ? accent : textDim,
           cursor: 'pointer',
@@ -1620,10 +1436,10 @@ function ColPicker({
             top: 'calc(100% + 6px)',
             left: 0,
             zIndex: 1000,
-            background: dark ? '#0D0F18' : '#FFFFFF',
+            background: 'hsl(var(--popover))',
             border: `1px solid ${border}`,
             borderRadius: 8,
-            boxShadow: dark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.12)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
             minWidth: 170,
             maxHeight: 280,
             overflowY: 'auto' as const,
@@ -1677,9 +1493,9 @@ function PickerRow({
         textAlign: 'left' as const,
         padding: '7px 14px',
         border: 'none',
-        background: hov ? (dark ? '#13161F' : '#F5F6FC') : 'transparent',
-        color: hov ? (dark ? accent : accent) : textStrong,
-        fontFamily: 'ui-monospace, monospace',
+        background: hov ? 'hsl(var(--accent))' : 'transparent',
+        color: hov ? accent : textStrong,
+        fontFamily: 'inherit',
         fontSize: 12,
         cursor: 'pointer',
         transition: 'all 0.08s ease',
@@ -1721,8 +1537,8 @@ function GhostBtn({
         borderRadius: 6,
         cursor: 'pointer',
         border: `1px solid ${hov ? border : 'transparent'}`,
-        background: hov ? (dark ? '#0F1119' : '#EEF0FA') : 'transparent',
-        color: hov ? accent : dark ? '#40475E' : '#C0C8DA',
+        background: hov ? 'hsl(var(--accent))' : 'transparent',
+        color: hov ? accent : 'hsl(var(--muted-foreground))',
         transition: 'all 0.12s ease',
         outline: 'none',
       }}

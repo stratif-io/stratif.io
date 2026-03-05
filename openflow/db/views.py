@@ -94,7 +94,9 @@ derived_sessions AS (
 
 
 def path_analysis_ctes(
-    session_timeout_minutes: int = 30, dialect: str = "duckdb"
+    session_timeout_minutes: int = 30,
+    dialect: str = "duckdb",
+    device_type_expr: str | None = None,
 ) -> str:
     """CTE chain (without WITH) that defines ``derived_path_analysis``.
 
@@ -121,7 +123,8 @@ def path_analysis_ctes(
     interval_check = interval_minutes_exceeded(
         "prev_timestamp", "timestamp", session_timeout_minutes, dialect
     )
-    device_type_expr = json_extract_string("properties", "device_type", dialect)
+    if device_type_expr is None:
+        device_type_expr = json_extract_string("properties", "device_type", dialect)
 
     # Window expression for building session_number inside a CAST
     session_window = (

@@ -26,6 +26,15 @@ def setup_logging(log_level: str = "INFO", log_format: str = "console") -> None:
         level=level,
     )
 
+    # Suppress verbose third-party loggers
+    for noisy in (
+        "databricks.sql",
+        "databricks.sql.thrift_backend",
+        "databricks.sql.session",
+        "urllib3.connectionpool",
+    ):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
     shared_processors: list[Any] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_logger_name,

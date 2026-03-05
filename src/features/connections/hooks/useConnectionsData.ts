@@ -3,7 +3,9 @@ import {
   createConnection,
   deleteConnection,
   fetchConnection,
+  fetchConnectionCredentials,
   fetchConnectionString,
+  fetchConnectionTables,
   fetchConnections,
   fetchFilterConfig,
   fetchFilterOptions,
@@ -126,6 +128,25 @@ export function useConnectionString(connId: string) {
 
 export function useDetectSchema(connId: string) {
   return useMutation({
-    mutationFn: () => fetchSchemaDetect(connId),
+    mutationFn: (eventsTable?: string) => fetchSchemaDetect(connId, eventsTable),
+  })
+}
+
+export function useConnectionCredentials(connId: string) {
+  return useQuery({
+    queryKey: ['connections', connId, 'credentials'],
+    queryFn: () => fetchConnectionCredentials(connId),
+    enabled: !!connId,
+    staleTime: Infinity,
+  })
+}
+
+export function useConnectionTables(connId: string, enabled = false) {
+  return useQuery({
+    queryKey: ['connections', connId, 'tables'],
+    queryFn: () => fetchConnectionTables(connId),
+    enabled: !!connId && enabled,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   })
 }

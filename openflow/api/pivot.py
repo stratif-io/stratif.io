@@ -689,7 +689,7 @@ def get_pivot_grid_rows(
         return {"rows": [], "rowCount": 0, "error": err}
 
 
-def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> dict:  # type: ignore[name-defined]
+def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> dict:
     dialect = db.get_dialect()
     custom_prop_exprs = db.get_custom_prop_exprs()
 

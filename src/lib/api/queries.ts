@@ -27,6 +27,7 @@ import {
   FilterConfig,
   FilterConfigBody,
   SchemaDetectResponse,
+  TablesResponse,
 } from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -111,6 +112,7 @@ export const fetchRawEvents = (params: {
   event_name?: string
   user_id?: string
   sort_order?: 'asc' | 'desc'
+  sort_field?: string
   start_date?: string
   end_date?: string
   filters?: Record<string, string | null>
@@ -122,6 +124,7 @@ export const fetchRawEvents = (params: {
   if (params.event_name) searchParams.set('event_name', params.event_name)
   if (params.user_id) searchParams.set('user_id', params.user_id)
   if (params.sort_order) searchParams.set('sort_order', params.sort_order)
+  if (params.sort_field) searchParams.set('sort_field', params.sort_field)
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
   const f = serializeFilters(params.filters)
@@ -232,6 +235,22 @@ export const fetchPathFunnel = (params: {
   if (f) searchParams.set('filters', f)
 
   return fetchApi<PathFunnelResponse>(`/api/path-funnel?${searchParams}`)
+}
+
+export const fetchSessions = (params: {
+  limit?: number
+  offset?: number
+  start_date?: string
+  end_date?: string
+  connection_id?: string
+}) => {
+  const searchParams = new URLSearchParams()
+  if (params.limit != null) searchParams.set('limit', String(params.limit))
+  if (params.offset != null) searchParams.set('offset', String(params.offset))
+  if (params.start_date) searchParams.set('start_date', params.start_date)
+  if (params.end_date) searchParams.set('end_date', params.end_date)
+  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
+  return fetchApi<SessionsResponse>(`/api/raw/sessions?${searchParams}`)
 }
 
 export const fetchSessionsSummary = (params: {
@@ -379,8 +398,26 @@ export const upsertFilterConfig = (connId: string, body: FilterConfigBody) =>
 export const fetchFilterOptions = (connId: string) =>
   fetchApi<FilterOptionsResponse>(`/api/connections/${connId}/filter-options`)
 
-export const fetchSchemaDetect = (connId: string) =>
-  fetchApi<SchemaDetectResponse>(`/api/connections/${connId}/schema/detect`)
+export const fetchSchemaDetect = (connId: string, eventsTable?: string) => {
+  const qs = eventsTable ? `?events_table=${encodeURIComponent(eventsTable)}` : ''
+  return fetchApi<SchemaDetectResponse>(`/api/connections/${connId}/schema/detect${qs}`)
+}
+
+export const fetchConnectionTables = (connId: string) =>
+  fetchApi<TablesResponse>(`/api/connections/${connId}/tables`)
+
+export const fetchBrowse = (connId: string, catalog?: string, schema?: string) => {
+  const params = new URLSearchParams()
+  if (catalog) params.set('catalog', catalog)
+  if (schema) params.set('schema', schema)
+  const qs = params.size ? `?${params}` : ''
+  return fetchApi<{ items: Array<{ name: string; full_name: string; kind: string }> }>(
+    `/api/connections/${connId}/browse${qs}`,
+  )
+}
+
+export const fetchConnectionCredentials = (connId: string) =>
+  fetchApi<{ fields: Record<string, string | null> }>(`/api/connections/${connId}/credentials`)
 
 // Auth
 

@@ -75,6 +75,8 @@ def init_product_db() -> None:
 _MIGRATIONS = [
     # 001 — session_timeout_minutes on schema configs
     "ALTER TABLE connection_schema_configs ADD COLUMN session_timeout_minutes INTEGER NOT NULL DEFAULT 30",
+    # 002 — events_table: let users choose which table contains their events
+    "ALTER TABLE connection_schema_configs ADD COLUMN events_table TEXT NOT NULL DEFAULT 'events'",
 ]
 
 

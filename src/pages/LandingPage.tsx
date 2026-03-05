@@ -748,19 +748,13 @@ export function LandingPage() {
           <div className="flex items-center gap-5">
             <Link
               to="/auth/login"
-              className="text-xs transition-colors"
-              style={{ color: '#94a3b8' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#64748b')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
+              className="text-xs transition-colors text-slate-400 hover:text-slate-500"
             >
               Sign in
             </Link>
             <Link
               to="/auth/register"
-              className="text-xs transition-colors"
-              style={{ color: '#94a3b8' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#64748b')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
+              className="text-xs transition-colors text-slate-400 hover:text-slate-500"
             >
               Get started
             </Link>

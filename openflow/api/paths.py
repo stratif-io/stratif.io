@@ -59,7 +59,9 @@ def get_paths(
 
         timeout = db.get_session_timeout_minutes()
         dialect = db.get_dialect()
-        ctes = path_analysis_ctes(timeout, dialect)
+        ctes = path_analysis_ctes(
+            timeout, dialect, device_type_expr=db.get_device_type_expr()
+        )
 
         query = f"""
             WITH {ctes}

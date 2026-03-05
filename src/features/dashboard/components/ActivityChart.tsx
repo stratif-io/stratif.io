@@ -1,7 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LineChartComponent } from '@/components/charts'
-import { TrendingUp } from 'lucide-react'
 
 export interface ActivityChartProps {
   data: Array<{ day: string; events: number; users: number }>
@@ -12,11 +11,7 @@ export function ActivityChart({ data, loading }: ActivityChartProps) {
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          <CardTitle>Activity Overview</CardTitle>
-        </div>
-        <CardDescription>Events and estimated users over time</CardDescription>
+        <CardTitle>Activity Overview</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (

@@ -26,12 +26,23 @@ log = structlog.get_logger(__name__)
 def _resolve_path_to_sql(path: str, dialect: str = "duckdb") -> str:
     """Convert a dot-notation property path to a SQL expression for the dialect.
 
-    Examples:
+    For Databricks, STRUCT fields are accessed with backtick dot notation
+    (col.`field`.`subfield`) rather than JSON extraction. JSON string / VARIANT
+    columns fall back to get_json_object() via json_extract_string().
+
+    Examples (DuckDB/SQLite):
         "country"             → '"country"'
         "properties.country"  → json_extract_string("properties", "country", dialect)
         "ctx.campaign.source" → json_extract_string("ctx", "campaign.source", dialect)
+
+    Examples (Databricks):
+        "country"             → '`country`'
+        "properties.country"  → '`properties`.`country`'  (STRUCT dot access)
+        "ctx.campaign.source" → '`ctx`.`campaign`.`source`'
     """
     parts = path.split(".")
+    if dialect == "databricks":
+        return ".".join(f"`{p}`" for p in parts)
     if len(parts) == 1:
         return f'"{parts[0]}"'
     col = parts[0]
@@ -45,6 +56,33 @@ def _resolve_path_to_sql(path: str, dialect: str = "duckdb") -> str:
 
 
 _EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
+
+
+def _inline_params(query: str, params: list) -> str:
+    """Replace each ``?`` placeholder in *query* with a safely-escaped literal.
+
+    Used for Databricks which does not support client-side ``%s`` substitution.
+    Only handles the types that analytics queries actually bind: str, int, float.
+    """
+    it = iter(params)
+    parts: list[str] = []
+    for segment in query.split("?"):
+        parts.append(segment)
+        try:
+            val = next(it)
+            if val is None:
+                parts.append("NULL")
+            elif isinstance(val, bool):
+                parts.append("TRUE" if val else "FALSE")
+            elif isinstance(val, (int, float)):
+                parts.append(str(val))
+            else:
+                # Escape single quotes by doubling them
+                escaped = str(val).replace("'", "''")
+                parts.append(f"'{escaped}'")
+        except StopIteration:
+            break
+    return "".join(parts)
 
 
 def _prepend_events_cte(cte_body: str, query: str, dialect: str = "duckdb") -> str:
@@ -131,6 +169,28 @@ class AnalyticsDatabase:
         if self._dialect == "sqlite":
             return list(self._conn.execute(query, params or []).fetchall())
 
+        if self._dialect == "postgres":
+            if params:
+                query = query.replace("?", "%s")
+            cursor = self._conn.cursor()
+            try:
+                cursor.execute(query, params or None)
+                return cursor.fetchall()
+            finally:
+                cursor.close()
+
+        if self._dialect == "databricks":
+            # Databricks connector forwards the query to the server verbatim —
+            # it does not do client-side %s substitution.  Inline params safely.
+            if params:
+                query = _inline_params(query, params)
+            cursor = self._conn.cursor()
+            try:
+                cursor.execute(query)
+                return cursor.fetchall()
+            finally:
+                cursor.close()
+
         # DuckDB path
         if params:
             return self._conn.execute(query, params).fetchall()
@@ -147,7 +207,7 @@ class AnalyticsDatabase:
             ).fetchall()
             return len(rows) > 0
         try:
-            self._conn.execute(f"SELECT 1 FROM {table_name} LIMIT 1")
+            self.execute(f"SELECT 1 FROM {table_name} LIMIT 1")
             return True
         except Exception:
             return False
@@ -160,9 +220,17 @@ class AnalyticsDatabase:
         where_clauses: list[str] = []
         params: list = []
         for field, value in filters.items():
-            if value and field in self._custom_prop_exprs:
-                where_clauses.append(f"{self._custom_prop_exprs[field]} = ?")
-                params.append(value)
+            if not value or field not in self._custom_prop_exprs:
+                continue
+            expr = self._custom_prop_exprs[field]
+            values = [v for v in str(value).split("|") if v]
+            if len(values) > 1:
+                placeholders = ", ".join("?" * len(values))
+                where_clauses.append(f"{expr} IN ({placeholders})")
+                params.extend(values)
+            else:
+                where_clauses.append(f"{expr} = ?")
+                params.append(values[0])
         return where_clauses, params
 
     def get_filter_fields(self) -> list[dict]:
@@ -185,6 +253,44 @@ class AnalyticsDatabase:
             except Exception:
                 options[field] = []
         return options
+
+    def get_device_type_expr(self) -> str:
+        """Return the SQL expression for device_type based on custom properties.
+
+        Looks for a custom property named 'device_type'. Falls back to
+        json_extract_string("properties", "device_type", dialect) when
+        'properties' is known to exist (either no CTE remapping is active,
+        meaning we query the raw table directly, or 'properties' appears as a
+        root column in a configured custom property path). Returns 'NULL' only
+        when we are certain the column doesn't exist.
+        """
+        from openflow.services.sql_builder import json_extract_string as _jex
+
+        if "device_type" in self._custom_prop_exprs:
+            return self._custom_prop_exprs["device_type"]
+        # When no CTE is active we're on the raw table — assume properties exists.
+        if self._events_cte is None:
+            return _jex("properties", "device_type", self._dialect)
+        # Check whether 'properties' is a root column in any custom prop path
+        root_cols = {p["path"].split(".")[0] for p in self._custom_props if "path" in p}
+        if "properties" in root_cols:
+            return _jex("properties", "device_type", self._dialect)
+        return "NULL"
+
+    def has_column(self, col: str) -> bool:
+        """Return True if *col* is likely present in the events CTE/table.
+
+        When no CTE remapping is active we're querying the raw table, so we
+        conservatively assume all columns exist.  When a CTE is in use we rely
+        on the standard columns plus the custom-property root columns.
+        """
+        if col in ("user_id", "timestamp", "event_name"):
+            return True
+        if self._events_cte is None:
+            # Raw table — no structural constraints known, assume column exists.
+            return True
+        root_cols = {p["path"].split(".")[0] for p in self._custom_props if "path" in p}
+        return col in root_cols
 
     def get_custom_properties(self) -> list[dict]:
         return self._custom_props
@@ -217,10 +323,10 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         raise HTTPException(status_code=404, detail="Connection not found")
 
     db_type: str = row["db_type"]
-    if db_type not in ("duckdb", "sqlite"):
+    if db_type not in ("duckdb", "sqlite", "postgresql", "databricks"):
         raise HTTPException(
             status_code=400,
-            detail=f"Analytics currently supports DuckDB and SQLite (got {db_type})",
+            detail=f"Unsupported db type for analytics: {db_type}",
         )
 
     # Decrypt credentials
@@ -241,6 +347,11 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
     uid_f = schema_row["user_id_field"] if schema_row else "user_id"
     ts_f = schema_row["timestamp_field"] if schema_row else "timestamp"
     en_f = schema_row["event_name_field"] if schema_row else "event_name"
+    events_table: str = (
+        schema_row["events_table"]
+        if schema_row and schema_row["events_table"]
+        else "events"
+    )
     custom_props: list[dict] = (
         json.loads(schema_row["custom_properties"]) if schema_row else []
     )
@@ -250,8 +361,8 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         else 30
     )
 
-    # Resolve JSON path expressions using the target dialect
-    dialect = db_type  # "duckdb" or "sqlite"
+    # Normalise dialect: postgresql driver uses "postgres" in sql_builder
+    dialect = "postgres" if db_type == "postgresql" else db_type
 
     custom_prop_exprs: dict[str, str] = {
         p["name"]: _resolve_path_to_sql(p["path"], dialect)
@@ -267,13 +378,14 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         json.loads(filter_row["filter_fields"]) if filter_row else []
     )
 
+    _iq = "`" if dialect == "databricks" else '"'  # identifier quote char
     filter_exprs: dict[str, str] = {}
     for ff in filter_fields:
         field = ff.get("field", "")
         if field in custom_prop_exprs:
             filter_exprs[field] = custom_prop_exprs[field]
         elif field in (uid_f, ts_f, en_f):
-            filter_exprs[field] = f'"{field}"'
+            filter_exprs[field] = f"{_iq}{field}{_iq}"
 
     shared_kwargs: dict[str, Any] = {
         "filter_fields": filter_fields,
@@ -283,20 +395,72 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         "session_timeout_minutes": session_timeout_minutes,
     }
 
-    # Build the events CTE body when column names differ from standard.
-    needs_remap = uid_f != "user_id" or ts_f != "timestamp" or en_f != "event_name"
+    # Build the events CTE body when column names differ from standard names
+    # OR when the configured table name isn't already "events".
+    needs_remap = (
+        uid_f != "user_id"
+        or ts_f != "timestamp"
+        or en_f != "event_name"
+        or events_table != "events"
+    )
+
+    def _build_cte(table: str) -> str:
+        q = "`" if dialect == "databricks" else '"'
+        quoted_table = ".".join(f"{q}{p}{q}" for p in table.split("."))
+
+        core = (
+            f"{q}{uid_f}{q} AS user_id, "
+            f"{q}{ts_f}{q} AS timestamp, "
+            f"{q}{en_f}{q} AS event_name"
+        )
+
+        # Exclude remapped source columns from * to prevent duplicate column names.
+        remapped_src = {uid_f, ts_f, en_f}
+        excl = ", ".join(f"{q}{c}{q}" for c in sorted(remapped_src))
+
+        if dialect == "databricks":
+            return f"(SELECT {core}, * EXCEPT ({excl}) FROM {quoted_table})"
+        if dialect == "duckdb":
+            return f"(SELECT {core}, * EXCLUDE ({excl}) FROM {quoted_table})"
+
+        # PostgreSQL / SQLite: no native column-exclusion syntax.
+        # Select core aliases + any extra columns needed by custom properties
+        # (root column names that aren't the remapped source columns).
+        extra_cols = sorted(
+            {p["path"].split(".")[0] for p in custom_props if "path" in p}
+            - remapped_src
+        )
+        extras = (
+            (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
+        )
+        return f"(SELECT {core}{extras} FROM {quoted_table})"
+
+    # ---------------------------------------------------------------
+    # PostgreSQL path
+    # ---------------------------------------------------------------
+    if db_type == "postgresql":
+        conn = _open_analytics_db_pg(creds)
+        events_cte = _build_cte(events_table) if needs_remap else None
+        return AnalyticsDatabase(
+            conn, dialect="postgres", events_cte=events_cte, **shared_kwargs
+        )
+
+    # ---------------------------------------------------------------
+    # Databricks path
+    # ---------------------------------------------------------------
+    if db_type == "databricks":
+        conn = _open_analytics_db_databricks(creds)
+        events_cte = _build_cte(events_table) if needs_remap else None
+        return AnalyticsDatabase(
+            conn, dialect="databricks", events_cte=events_cte, **shared_kwargs
+        )
 
     # ---------------------------------------------------------------
     # SQLite path
     # ---------------------------------------------------------------
     if db_type == "sqlite":
         conn = _sqlite3.connect(file_path, check_same_thread=False)
-        events_cte = (
-            f'(SELECT "{uid_f}" AS user_id, "{ts_f}" AS timestamp, '
-            f'"{en_f}" AS event_name, properties FROM "events")'
-            if needs_remap
-            else None
-        )
+        events_cte = _build_cte(events_table) if needs_remap else None
         return AnalyticsDatabase(
             conn, dialect="sqlite", events_cte=events_cte, **shared_kwargs
         )
@@ -309,14 +473,31 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         return AnalyticsDatabase(conn, dialect="duckdb", **shared_kwargs)
 
     conn = duckdb.connect(file_path, read_only=True)
-    events_cte = (
-        f'(SELECT "{uid_f}" AS user_id, "{ts_f}" AS timestamp, '
-        f'"{en_f}" AS event_name, properties FROM "events")'
-        if needs_remap
-        else None
-    )
+    events_cte = _build_cte(events_table) if needs_remap else None
     return AnalyticsDatabase(
         conn, dialect="duckdb", events_cte=events_cte, **shared_kwargs
+    )
+
+
+def _open_analytics_db_pg(creds: dict) -> Any:
+    import psycopg2
+
+    return psycopg2.connect(
+        host=creds["host"],
+        port=creds.get("port", 5432),
+        dbname=creds["database"],
+        user=creds["user"],
+        password=creds["password"],
+    )
+
+
+def _open_analytics_db_databricks(creds: dict) -> Any:
+    from databricks import sql as dbsql
+
+    return dbsql.connect(
+        server_hostname=creds["host"],
+        http_path=creds["http_path"],
+        access_token=creds["token"],
     )
 
 

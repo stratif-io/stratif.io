@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -15,7 +15,7 @@ import { PathsTable } from './components/PathsTable'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
-import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
+import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 
 export function PathsPage() {
   const { dateRange, selectedEvent, setSelectedEvent } = useAppStore()
@@ -37,22 +37,13 @@ export function PathsPage() {
     <PageTransition>
       <div className={SPACING.page}>
         <div className={SPACING.section}>
-          <div>
-            <h1 className={TYPOGRAPHY.pageTitle}>Path Analysis</h1>
-            <p className={`${TYPOGRAPHY.muted} mt-1`}>
-              Discover user journeys leading to key events
-            </p>
-          </div>
+          <span className={TYPOGRAPHY.pageLabel}>Path Analysis</span>
 
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2">
-                  <Route className={`${ICON_SIZES.md} text-primary`} />
-                  <div>
-                    <CardTitle>Reverse Path Analysis</CardTitle>
-                    <CardDescription>Most common paths leading to a target event</CardDescription>
-                  </div>
+                  <CardTitle>Reverse Path Analysis</CardTitle>
                 </div>
                 <div className="flex items-center gap-3">
                   <Select

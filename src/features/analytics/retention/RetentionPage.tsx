@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { PageTransition } from '@/components/layout/PageTransition'
@@ -53,21 +54,15 @@ function milestoneTitle(granularity: RetentionGranularity, unit: number): string
   return `Day ${unit} Retention`
 }
 
-function milestoneDescription(granularity: RetentionGranularity, unit: number): string {
-  if (granularity === 'week') return `Returned after ${unit} ${unit === 1 ? 'week' : 'weeks'}`
-  if (granularity === 'month') return `Returned after ${unit} ${unit === 1 ? 'month' : 'months'}`
-  return `Returned after ${unit} ${unit === 1 ? 'day' : 'days'}`
-}
 
 interface MetricCardProps {
   title: string
   value: number
   granularity: RetentionGranularity
   milestone: number
-  description: string
 }
 
-function MetricCard({ title, value, granularity, milestone, description }: MetricCardProps) {
+function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
   const { label, color } = getRetentionLabel(value, granularity, milestone)
   return (
     <Card hover="lift">
@@ -79,7 +74,6 @@ function MetricCard({ title, value, granularity, milestone, description }: Metri
           <span className={TYPOGRAPHY.metric}>{value.toFixed(1)}%</span>
           <span className={cn('text-xs font-medium pb-0.5', color)}>{label}</span>
         </div>
-        <p className={TYPOGRAPHY.mutedSm}>{description}</p>
       </CardContent>
     </Card>
   )
@@ -118,13 +112,8 @@ export function RetentionPage() {
       <div className={SPACING.page}>
         <div className={SPACING.section}>
           {/* Header */}
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className={TYPOGRAPHY.pageTitle}>Retention</h1>
-              <p className={`${TYPOGRAPHY.muted} mt-1`}>
-                Users grouped by first active day and tracked for return visits
-              </p>
-            </div>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <span className={TYPOGRAPHY.pageLabel}>Retention</span>
             <div className="flex items-center gap-3 shrink-0">
               {/* Granularity toggle */}
               <div className="flex items-center border rounded-md p-1">
@@ -170,7 +159,6 @@ export function RetentionPage() {
                   value={visibleAvgMilestones[i] ?? 0}
                   granularity={granularity}
                   milestone={unit}
-                  description={milestoneDescription(granularity, unit)}
                 />
               ))}
             </div>
@@ -178,13 +166,6 @@ export function RetentionPage() {
 
           {/* Cohort heatmap with sparklines */}
           <Card>
-            <CardHeader>
-              <CardTitle>Cohort Breakdown</CardTitle>
-              <CardDescription>
-                Retention rate per cohort — darker cells indicate higher retention, trend rows show
-                how each metric has evolved across cohorts
-              </CardDescription>
-            </CardHeader>
             <CardContent className="p-0 pb-0">
               {isLoading ? (
                 <div className="p-6">
