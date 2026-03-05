@@ -630,8 +630,9 @@ async def get_analytics_db(
             resolved_id = row["id"]
 
     if not resolved_id:
-        yield None
-        return
+        raise HTTPException(
+            status_code=503, detail="No analytics connection configured."
+        )
 
     db = open_analytics_db(resolved_id, user_id)
     try:

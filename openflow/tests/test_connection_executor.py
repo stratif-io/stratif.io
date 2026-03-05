@@ -1,9 +1,34 @@
 """Tests for openflow.services.connection_executor internals."""
 
+from unittest.mock import MagicMock, patch
+
+import pytest
+from fastapi import HTTPException
+
 from openflow.services.connection_executor import (
     AnalyticsDatabase,
     _to_named_params,
+    get_analytics_db,
 )
+
+
+@pytest.mark.anyio
+async def test_get_analytics_db_raises_503_when_no_connection():
+    """get_analytics_db should raise 503 when no connection is configured."""
+    mock_user = MagicMock()
+    mock_user.id = "user-123"
+
+    with patch(
+        "openflow.services.connection_executor.get_product_db"
+    ) as mock_product_db:
+        mock_db = MagicMock()
+        mock_db.fetchone.return_value = None  # no connection found
+        mock_product_db.return_value = mock_db
+
+        gen = get_analytics_db(connection_id=None, current_user=mock_user)
+        with pytest.raises(HTTPException) as exc_info:
+            await gen.__anext__()
+        assert exc_info.value.status_code == 503
 
 
 class TestToNamedParams:
