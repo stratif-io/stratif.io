@@ -8,13 +8,9 @@ from fastapi import APIRouter, Depends, Query
 from openflow.db.views import path_analysis_ctes
 from openflow.services import generate_path_analysis_query, get_analytics_db
 from openflow.services.connection_executor import AnalyticsDatabase
+from openflow.services.validators import parse_date
 
 router = APIRouter(prefix="/api", tags=["paths"])
-
-
-def _escape_sql_string(value: str) -> str:
-    """Escape a string value for safe inline SQL interpolation."""
-    return value.replace("'", "''")
 
 
 @router.get("/paths")
@@ -34,6 +30,8 @@ def get_paths(
     Uses dialect-aware CTEs so it works on DuckDB and SQLite.
     """
     if db:
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
         where_clauses = ["target_event = ?"]
         params = [target_event]
 
@@ -142,6 +140,8 @@ def get_path_analysis(
     for non-DuckDB connections, and paths are always session-scoped).
     """
     if db:
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
         if max_path_length < min_path_length:
             return {"error": "max_path_length must be >= min_path_length", "data": []}
         if group_by not in ("user_id", "session_id"):
@@ -167,13 +167,12 @@ def get_path_analysis(
             except json.JSONDecodeError:
                 return {"error": "Invalid JSON in event_filters parameter", "data": []}
 
-        extra_conditions: list[str] = []
+        extra_clauses: list[str] = []
+        extra_params: list = []
         if filters:
             filter_clauses, filter_values = db.build_filter_clauses(json.loads(filters))
-            for clause, value in zip(filter_clauses, filter_values, strict=False):
-                extra_conditions.append(
-                    clause.replace("?", f"'{_escape_sql_string(str(value))}'", 1)
-                )
+            extra_clauses.extend(filter_clauses)
+            extra_params.extend(filter_values)
 
         query = generate_path_analysis_query(
             table_name="events",
@@ -189,12 +188,12 @@ def get_path_analysis(
             date_range=date_range,
             sql_dialect=db.get_dialect(),
             return_type="string",
-            extra_where_conditions=extra_conditions or None,
+            extra_where_conditions=extra_clauses or None,
             session_timeout_minutes=db.get_session_timeout_minutes(),
         )
 
         query_str = str(query) if query is not None else ""
-        result = db.execute(query_str)
+        result = db.execute(query_str, extra_params or None)
 
         data = [
             {
@@ -248,6 +247,8 @@ def get_path_funnel(
     Uses parameterised queries for all user-supplied scalar values.
     """
     if db:
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
         event_list = [e.strip() for e in events.split(",") if e.strip()]
         if len(event_list) < 2:
             return {"error": "At least 2 events are required for a funnel", "data": []}

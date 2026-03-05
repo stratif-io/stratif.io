@@ -4,6 +4,9 @@ import contextlib
 import json
 import re
 import sqlite3 as _sqlite3
+import threading
+import time
+from collections.abc import Callable
 from typing import Annotated, Any
 
 import duckdb
@@ -17,6 +20,41 @@ from openflow.services.crypto import decrypt_credentials
 from openflow.services.sql_builder import json_extract_string
 
 log = structlog.get_logger(__name__)
+
+# ---------------------------------------------------------------------------
+# Connection pool (Databricks + PostgreSQL only — file-based DBs are cheap)
+# ---------------------------------------------------------------------------
+
+_POOL_TTL = 600  # seconds before a pooled connection is recycled
+_pool: dict[tuple, tuple[Any, float]] = {}  # key → (raw_conn, created_at)
+_pool_lock = threading.Lock()
+
+
+def _pool_get(key: tuple, factory: Callable[[], Any]) -> Any:  # type: ignore[name-defined]
+    """Return a cached connection, creating a new one if absent or expired."""
+    with _pool_lock:
+        entry = _pool.get(key)
+        if entry:
+            conn, created_at = entry
+            if time.monotonic() - created_at < _POOL_TTL:
+                return conn
+            # Expired — evict silently
+            with contextlib.suppress(Exception):
+                conn.close()
+        conn = factory()
+        _pool[key] = (conn, time.monotonic())
+        return conn
+
+
+def evict_connection(connection_id: str, user_id: str) -> None:
+    """Remove a pooled connection, e.g. after a credential change."""
+    for dialect in ("databricks", "postgres"):
+        key = (connection_id, user_id, dialect)
+        with _pool_lock:
+            entry = _pool.pop(key, None)
+        if entry:
+            with contextlib.suppress(Exception):
+                entry[0].close()
 
 
 # ---------------------------------------------------------------------------
@@ -158,6 +196,7 @@ class AnalyticsDatabase:
         self._dialect = dialect
         self._events_cte: str | None = events_cte
         self._available_columns: frozenset[str] | None = available_columns
+        self._pooled: bool = False  # set True for connections owned by the pool
 
     # ------------------------------------------------------------------
     # Core query execution
@@ -296,7 +335,13 @@ class AnalyticsDatabase:
     # ------------------------------------------------------------------
 
     def close(self) -> None:
-        """Close the underlying connection if it supports it."""
+        """Close the underlying connection.
+
+        Pooled connections (Databricks/PostgreSQL) are not closed here —
+        the pool manages their lifecycle.
+        """
+        if self._pooled:
+            return
         with contextlib.suppress(Exception):
             self._conn.close()
 
@@ -473,30 +518,36 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         return f"(SELECT {core}{extras} FROM {quoted_table})"
 
     # ---------------------------------------------------------------
-    # PostgreSQL path
+    # PostgreSQL path  (pooled)
     # ---------------------------------------------------------------
     if db_type == "postgresql":
-        conn = _open_analytics_db_pg(creds)
+        pool_key = (connection_id, user_id, "postgres")
+        conn = _pool_get(pool_key, lambda: _open_analytics_db_pg(creds))
         events_cte = _build_cte(events_table) if needs_remap else None
-        return AnalyticsDatabase(
+        db = AnalyticsDatabase(
             conn,
             dialect="postgres",
             events_cte=events_cte,
             **_build_shared_kwargs_with_columns(conn),
         )
+        db._pooled = True
+        return db
 
     # ---------------------------------------------------------------
-    # Databricks path
+    # Databricks path  (pooled)
     # ---------------------------------------------------------------
     if db_type == "databricks":
-        conn = _open_analytics_db_databricks(creds)
+        pool_key = (connection_id, user_id, "databricks")
+        conn = _pool_get(pool_key, lambda: _open_analytics_db_databricks(creds))
         events_cte = _build_cte(events_table) if needs_remap else None
-        return AnalyticsDatabase(
+        db = AnalyticsDatabase(
             conn,
             dialect="databricks",
             events_cte=events_cte,
             **_build_shared_kwargs_with_columns(conn),
         )
+        db._pooled = True
+        return db
 
     # ---------------------------------------------------------------
     # SQLite path

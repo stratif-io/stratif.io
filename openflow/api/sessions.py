@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from openflow.db.views import session_ctes
 from openflow.services import get_analytics_db
 from openflow.services.connection_executor import AnalyticsDatabase
+from openflow.services.validators import parse_date
 
 router = APIRouter(prefix="/api", tags=["sessions"])
 
@@ -22,6 +23,8 @@ def get_raw_sessions(
 ) -> dict:
     """Return paginated list of sessions with basic stats."""
     if db:
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
         timeout = db.get_session_timeout_minutes()
         dialect = db.get_dialect()
         where: list[str] = []

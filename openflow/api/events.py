@@ -10,6 +10,7 @@ from structlog.stdlib import BoundLogger
 
 from openflow.services import get_analytics_db
 from openflow.services.connection_executor import AnalyticsDatabase
+from openflow.services.validators import parse_date
 
 log: BoundLogger = structlog.get_logger(__name__)
 
@@ -43,6 +44,8 @@ def get_top_events(
 ) -> dict:
     """Get top events by occurrence count within date range."""
     if db:
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
         where_clauses = []
         params = []
         if start_date:
@@ -95,6 +98,8 @@ def get_raw_events(
 ) -> dict:
     """Get raw events data with optional filtering."""
     if db:
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
         where_clauses = []
         params = []
         if event_name:

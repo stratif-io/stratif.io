@@ -19,6 +19,7 @@ from openflow.services.sql_builder import (
     extract_quarter,
     extract_year,
 )
+from openflow.services.validators import parse_date
 
 router = APIRouter(prefix="/api", tags=["pivot"])
 
@@ -341,6 +342,8 @@ def get_pivot(
         if invalid_measures:
             return {"error": f"Invalid measures: {invalid_measures}", "data": []}
 
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
         where_clauses = []
         params = []
 
@@ -489,6 +492,8 @@ def get_pivot_grid_filter_values(
     if field == "event_count":
         return {"field": field, "values": []}
 
+    start_date = parse_date(start_date)
+    end_date = parse_date(end_date)
     dialect = db.get_dialect()
     custom_prop_exprs = db.get_custom_prop_exprs()
     expr = _get_dim_expr(field, dialect, custom_prop_exprs)
@@ -702,6 +707,8 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
     # ------------------------------------------------------------------ #
     # Build base WHERE clause                                              #
     # ------------------------------------------------------------------ #
+    parse_date(body.start_date)
+    parse_date(body.end_date)
     where_clauses: list[str] = []
     where_params: list = []
 

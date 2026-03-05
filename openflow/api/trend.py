@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from openflow.services import get_analytics_db
 from openflow.services.connection_executor import AnalyticsDatabase
 from openflow.services.sql_builder import date_trunc
+from openflow.services.validators import parse_date
 
 router = APIRouter(prefix="/api", tags=["trends"])
 
@@ -26,6 +27,8 @@ def get_trend(
 ) -> dict:
     """Return trend data: Date vs Count and Unique Users."""
     if db:
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
         dialect = db.get_dialect()
         where_clauses = []
         params = []

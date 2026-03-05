@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from openflow.services import get_analytics_db
 from openflow.services.connection_executor import AnalyticsDatabase
 from openflow.services.sql_builder import date_diff_days, date_trunc
+from openflow.services.validators import parse_date
 
 router = APIRouter(prefix="/api", tags=["retention"])
 
@@ -55,6 +56,8 @@ def get_retention(
       - milestone_values : percentages for the configured milestone units only
     """
     if db:
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
         dialect = db.get_dialect()
         gran = granularity if granularity in RETENTION_CONFIG else "day"
         config = RETENTION_CONFIG[gran]
