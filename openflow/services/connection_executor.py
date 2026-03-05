@@ -1,5 +1,6 @@
 """Open target database connections with schema mapping applied for analytics queries."""
 
+import contextlib
 import json
 import re
 import sqlite3 as _sqlite3
@@ -58,31 +59,42 @@ def _resolve_path_to_sql(path: str, dialect: str = "duckdb") -> str:
 _EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
 
 
-def _inline_params(query: str, params: list) -> str:
-    """Replace each ``?`` placeholder in *query* with a safely-escaped literal.
+def _to_named_params(query: str, params: list) -> tuple[str, dict]:
+    """Convert ``?`` placeholders in *query* to Databricks named parameters.
 
-    Used for Databricks which does not support client-side ``%s`` substitution.
-    Only handles the types that analytics queries actually bind: str, int, float.
+    Returns the rewritten query (``?`` → ``:p0``, ``:p1``, …) and a dict
+    mapping parameter names to their values.  Databricks connector v4+ uses
+    ``paramstyle='named'``.
     """
-    it = iter(params)
-    parts: list[str] = []
-    for segment in query.split("?"):
-        parts.append(segment)
-        try:
-            val = next(it)
-            if val is None:
-                parts.append("NULL")
-            elif isinstance(val, bool):
-                parts.append("TRUE" if val else "FALSE")
-            elif isinstance(val, (int, float)):
-                parts.append(str(val))
-            else:
-                # Escape single quotes by doubling them
-                escaped = str(val).replace("'", "''")
-                parts.append(f"'{escaped}'")
-        except StopIteration:
-            break
-    return "".join(parts)
+    named: dict[str, Any] = {}
+    parts = query.split("?")
+    result: list[str] = [parts[0]]
+    for i, part in enumerate(parts[1:]):
+        key = f"p{i}"
+        named[key] = params[i] if i < len(params) else None
+        result.append(f":{key}")
+        result.append(part)
+    return "".join(result), named
+
+
+def _get_table_columns(conn: Any, table_expr: str, dialect: str) -> frozenset[str]:
+    """Return the set of column names for *table_expr* via a zero-row query."""
+    try:
+        if dialect == "sqlite":
+            cursor = conn.execute(f"SELECT * FROM {table_expr} LIMIT 0")
+            return frozenset(d[0] for d in cursor.description or [])
+        if dialect in ("postgres", "databricks"):
+            cursor = conn.cursor()
+            try:
+                cursor.execute(f"SELECT * FROM {table_expr} LIMIT 0")
+                return frozenset(d[0] for d in cursor.description or [])
+            finally:
+                cursor.close()
+        # DuckDB
+        rel = conn.execute(f"SELECT * FROM {table_expr} LIMIT 0")
+        return frozenset(d[0] for d in rel.description)
+    except Exception:
+        return frozenset()
 
 
 def _prepend_events_cte(cte_body: str, query: str, dialect: str = "duckdb") -> str:
@@ -135,6 +147,7 @@ class AnalyticsDatabase:
         custom_props: list[dict] | None = None,
         custom_prop_exprs: dict[str, str] | None = None,
         session_timeout_minutes: int = 30,
+        available_columns: frozenset[str] | None = None,
     ):
         self._conn = conn
         self._filter_fields: list[dict] = filter_fields or []
@@ -144,6 +157,7 @@ class AnalyticsDatabase:
         self._session_timeout_minutes: int = session_timeout_minutes
         self._dialect = dialect
         self._events_cte: str | None = events_cte
+        self._available_columns: frozenset[str] | None = available_columns
 
     # ------------------------------------------------------------------
     # Core query execution
@@ -180,13 +194,10 @@ class AnalyticsDatabase:
                 cursor.close()
 
         if self._dialect == "databricks":
-            # Databricks connector forwards the query to the server verbatim —
-            # it does not do client-side %s substitution.  Inline params safely.
-            if params:
-                query = _inline_params(query, params)
+            named_query, named_params = _to_named_params(query, params or [])
             cursor = self._conn.cursor()
             try:
-                cursor.execute(query)
+                cursor.execute(named_query, named_params or None)
                 return cursor.fetchall()
             finally:
                 cursor.close()
@@ -255,48 +266,51 @@ class AnalyticsDatabase:
         return options
 
     def get_device_type_expr(self) -> str:
-        """Return the SQL expression for device_type based on custom properties.
-
-        Looks for a custom property named 'device_type'. Falls back to
-        json_extract_string("properties", "device_type", dialect) when
-        'properties' is known to exist (either no CTE remapping is active,
-        meaning we query the raw table directly, or 'properties' appears as a
-        root column in a configured custom property path). Returns 'NULL' only
-        when we are certain the column doesn't exist.
-        """
+        """Return the SQL expression for device_type based on custom properties."""
         from openflow.services.sql_builder import json_extract_string as _jex
 
         if "device_type" in self._custom_prop_exprs:
             return self._custom_prop_exprs["device_type"]
-        # When no CTE is active we're on the raw table — assume properties exists.
-        if self._events_cte is None:
-            return _jex("properties", "device_type", self._dialect)
-        # Check whether 'properties' is a root column in any custom prop path
-        root_cols = {p["path"].split(".")[0] for p in self._custom_props if "path" in p}
-        if "properties" in root_cols:
+        if self.has_column("properties"):
             return _jex("properties", "device_type", self._dialect)
         return "NULL"
 
     def has_column(self, col: str) -> bool:
-        """Return True if *col* is likely present in the events CTE/table.
+        """Return True if *col* is present in the events table/CTE.
 
-        When no CTE remapping is active we're querying the raw table, so we
-        conservatively assume all columns exist.  When a CTE is in use we rely
-        on the standard columns plus the custom-property root columns.
+        Uses real schema introspection when available (_available_columns),
+        otherwise falls back to conservative heuristics.
         """
+        if self._available_columns is not None:
+            return col in self._available_columns
+        # Fallback heuristic: standard cols always present; raw table assumed complete
         if col in ("user_id", "timestamp", "event_name"):
             return True
         if self._events_cte is None:
-            # Raw table — no structural constraints known, assume column exists.
             return True
         root_cols = {p["path"].split(".")[0] for p in self._custom_props if "path" in p}
         return col in root_cols
 
-    def get_custom_properties(self) -> list[dict]:
-        return self._custom_props
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
+
+    def close(self) -> None:
+        """Close the underlying connection if it supports it."""
+        with contextlib.suppress(Exception):
+            self._conn.close()
+
+    def __enter__(self) -> "AnalyticsDatabase":
+        return self
+
+    def __exit__(self, *_: Any) -> None:
+        self.close()
 
     def get_custom_prop_exprs(self) -> dict[str, str]:
         return self._custom_prop_exprs
+
+    def get_custom_properties(self) -> list[dict]:
+        return self._custom_props
 
     def get_session_timeout_minutes(self) -> int:
         return self._session_timeout_minutes
@@ -364,11 +378,32 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
     # Normalise dialect: postgresql driver uses "postgres" in sql_builder
     dialect = "postgres" if db_type == "postgresql" else db_type
 
+    needs_remap = (
+        uid_f != "user_id"
+        or ts_f != "timestamp"
+        or en_f != "event_name"
+        or events_table != "events"
+    )
+
     custom_prop_exprs: dict[str, str] = {
         p["name"]: _resolve_path_to_sql(p["path"], dialect)
         for p in custom_props
         if "name" in p and "path" in p
     }
+
+    # When columns are remapped via CTE, any custom property expression that
+    # references a source column by its original name will break — the CTE
+    # renames those columns to the standard names (user_id / timestamp /
+    # event_name).  Replace affected expressions with the standard name.
+    if needs_remap:
+        _src_to_std = {
+            _resolve_path_to_sql(uid_f, dialect): "user_id",
+            _resolve_path_to_sql(ts_f, dialect): "timestamp",
+            _resolve_path_to_sql(en_f, dialect): "event_name",
+        }
+        custom_prop_exprs = {
+            k: _src_to_std.get(v, v) for k, v in custom_prop_exprs.items()
+        }
 
     filter_row = product_db.fetchone(
         "SELECT * FROM connection_filter_configs WHERE connection_id = ?",
@@ -379,13 +414,18 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
     )
 
     _iq = "`" if dialect == "databricks" else '"'  # identifier quote char
+    _src_to_std_name = {uid_f: "user_id", ts_f: "timestamp", en_f: "event_name"}
     filter_exprs: dict[str, str] = {}
     for ff in filter_fields:
         field = ff.get("field", "")
         if field in custom_prop_exprs:
             filter_exprs[field] = custom_prop_exprs[field]
         elif field in (uid_f, ts_f, en_f):
-            filter_exprs[field] = f"{_iq}{field}{_iq}"
+            # When CTE remapping is active, the source column has been aliased
+            # to its standard name — use that; otherwise quote the field directly.
+            filter_exprs[field] = (
+                _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
+            )
 
     shared_kwargs: dict[str, Any] = {
         "filter_fields": filter_fields,
@@ -395,14 +435,11 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         "session_timeout_minutes": session_timeout_minutes,
     }
 
-    # Build the events CTE body when column names differ from standard names
-    # OR when the configured table name isn't already "events".
-    needs_remap = (
-        uid_f != "user_id"
-        or ts_f != "timestamp"
-        or en_f != "event_name"
-        or events_table != "events"
-    )
+    def _build_shared_kwargs_with_columns(conn: Any) -> dict[str, Any]:
+        _iq2 = "`" if dialect == "databricks" else '"'
+        quoted_table = ".".join(f"{_iq2}{p}{_iq2}" for p in events_table.split("."))
+        cols = _get_table_columns(conn, quoted_table, dialect)
+        return {**shared_kwargs, "available_columns": cols or None}
 
     def _build_cte(table: str) -> str:
         q = "`" if dialect == "databricks" else '"'
@@ -442,7 +479,10 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         conn = _open_analytics_db_pg(creds)
         events_cte = _build_cte(events_table) if needs_remap else None
         return AnalyticsDatabase(
-            conn, dialect="postgres", events_cte=events_cte, **shared_kwargs
+            conn,
+            dialect="postgres",
+            events_cte=events_cte,
+            **_build_shared_kwargs_with_columns(conn),
         )
 
     # ---------------------------------------------------------------
@@ -452,7 +492,10 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         conn = _open_analytics_db_databricks(creds)
         events_cte = _build_cte(events_table) if needs_remap else None
         return AnalyticsDatabase(
-            conn, dialect="databricks", events_cte=events_cte, **shared_kwargs
+            conn,
+            dialect="databricks",
+            events_cte=events_cte,
+            **_build_shared_kwargs_with_columns(conn),
         )
 
     # ---------------------------------------------------------------
@@ -462,7 +505,10 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         conn = _sqlite3.connect(file_path, check_same_thread=False)
         events_cte = _build_cte(events_table) if needs_remap else None
         return AnalyticsDatabase(
-            conn, dialect="sqlite", events_cte=events_cte, **shared_kwargs
+            conn,
+            dialect="sqlite",
+            events_cte=events_cte,
+            **_build_shared_kwargs_with_columns(conn),
         )
 
     # ---------------------------------------------------------------
@@ -475,7 +521,10 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
     conn = duckdb.connect(file_path, read_only=True)
     events_cte = _build_cte(events_table) if needs_remap else None
     return AnalyticsDatabase(
-        conn, dialect="duckdb", events_cte=events_cte, **shared_kwargs
+        conn,
+        dialect="duckdb",
+        events_cte=events_cte,
+        **_build_shared_kwargs_with_columns(conn),
     )
 
 
@@ -510,9 +559,10 @@ async def get_analytics_db(
     connection_id: str | None = Query(None, description="Active connection ID"),
     current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
-    """FastAPI dependency: returns the analytics DB for the active connection.
+    """FastAPI dependency: yields the analytics DB for the active connection.
 
     Falls back to the first registered connection, then to the raw default DB.
+    Connection is closed automatically after the request completes.
     """
     if current_user is None:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -529,6 +579,11 @@ async def get_analytics_db(
             resolved_id = row["id"]
 
     if not resolved_id:
-        return None
+        yield None
+        return
 
-    return open_analytics_db(resolved_id, user_id)
+    db = open_analytics_db(resolved_id, user_id)
+    try:
+        yield db
+    finally:
+        db.close()

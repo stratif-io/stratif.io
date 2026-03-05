@@ -540,6 +540,9 @@ def get_pivot_grid(
     custom_dim_meta: dict[str, str] = {
         p["name"]: p["name"].replace("_", " ").title() for p in custom_props
     }
+    custom_prop_types: dict[str, str] = {
+        p["name"]: p.get("type", "string") for p in custom_props
+    }
 
     # Time hierarchy column group
     time_children = [
@@ -582,6 +585,10 @@ def get_pivot_grid(
 
     # Custom property columns
     for field, label in custom_dim_meta.items():
+        is_numeric = custom_prop_types.get(field, "string") == "number"
+        allowed_aggs = ["countDistinct", "count", "min", "max"]
+        if is_numeric:
+            allowed_aggs += ["avg", "sum"]
         other_cols.append(
             {
                 "field": field,
@@ -589,16 +596,12 @@ def get_pivot_grid(
                 "enableRowGroup": True,
                 "enablePivot": True,
                 "enableValue": True,
-                "allowedAggFuncs": [
-                    "countDistinct",
-                    "count",
-                    "min",
-                    "max",
-                    "avg",
-                    "sum",
-                ],
+                "allowedAggFuncs": allowed_aggs,
                 "resizable": True,
-                "filter": "agTextColumnFilter",
+                "filter": "agNumberColumnFilter"
+                if is_numeric
+                else "agTextColumnFilter",
+                **({"type": "numericColumn"} if is_numeric else {}),
             }
         )
 
