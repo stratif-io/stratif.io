@@ -131,6 +131,38 @@ class TestBuildFilterClauses:
         assert len(params) == 2
 
 
+def test_trend_endpoint_signature_requires_db(monkeypatch):
+    """trend endpoint should declare db as non-Optional AnalyticsDatabase."""
+    import inspect
+    import typing
+
+    monkeypatch.setenv("OPENFLOW_JWT_SECRET", "test-secret")
+    monkeypatch.setenv("OPENFLOW_JWT_ALGORITHM", "HS256")
+    monkeypatch.setenv("OPENFLOW_JWT_EXPIRE_DAYS", "7")
+    monkeypatch.setenv("OPENFLOW_CORS_ORIGINS", '["*"]')
+    monkeypatch.setenv("OPENFLOW_PRODUCT_DB_PATH", ":memory:")
+    monkeypatch.setenv("OPENFLOW_ENCRYPTION_KEY", "test-encryption-key-32-chars-long!")
+    monkeypatch.setenv("OPENFLOW_API_URL", "http://localhost:8000")
+    monkeypatch.setenv("OPENFLOW_API_KEY", "test-api-key")
+    import sys
+
+    # Remove cached modules to force re-import with env vars set
+    for mod in list(sys.modules.keys()):
+        if "openflow" in mod:
+            del sys.modules[mod]
+    from openflow.api.trend import get_trend
+    from openflow.services.connection_executor import AnalyticsDatabase
+
+    sig = inspect.signature(get_trend)
+    db_param = sig.parameters["db"]
+    annotation = db_param.annotation
+    # For Annotated[T, ...], get_args returns (T, metadata...)
+    # We want to confirm the first arg is AnalyticsDatabase (not AnalyticsDatabase | None)
+    args = typing.get_args(annotation)
+    db_type = args[0] if args else annotation
+    assert db_type is AnalyticsDatabase, f"Expected AnalyticsDatabase, got {db_type}"
+
+
 class TestHasColumn:
     def _make_db(self, available_columns=None, custom_props=None, events_cte=None):
         import duckdb

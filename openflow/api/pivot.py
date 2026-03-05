@@ -267,34 +267,30 @@ def _build_ag_filter_clauses(
 
 @router.get("/pivot/options")
 def get_pivot_options(
-    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
+    db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
 ) -> dict:
     """Get available dimensions, measures, and filter options for pivot table."""
-    if db:
-        events = db.execute(
-            "SELECT DISTINCT event_name FROM events ORDER BY event_name"
-        )
-        custom_props = db.get_custom_properties()
-        custom_dimensions = {
-            p["name"]: p["name"].replace("_", " ").title() for p in custom_props
-        }
-        dimensions = {**AVAILABLE_DIMENSIONS, **custom_dimensions}
-        filter_options = db.get_filter_options()
-        return {
-            "dimensions": [{"value": k, "label": v} for k, v in dimensions.items()],
-            "measures": [
-                {"value": "count_events", "label": "Event Count"},
-                {"value": "unique_users", "label": "Unique Users"},
-            ],
-            "event_names": [row[0] for row in events],
-            **filter_options,
-        }
-    else:
-        raise ValueError("db cannot be None")
+    events = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
+    custom_props = db.get_custom_properties()
+    custom_dimensions = {
+        p["name"]: p["name"].replace("_", " ").title() for p in custom_props
+    }
+    dimensions = {**AVAILABLE_DIMENSIONS, **custom_dimensions}
+    filter_options = db.get_filter_options()
+    return {
+        "dimensions": [{"value": k, "label": v} for k, v in dimensions.items()],
+        "measures": [
+            {"value": "count_events", "label": "Event Count"},
+            {"value": "unique_users", "label": "Unique Users"},
+        ],
+        "event_names": [row[0] for row in events],
+        **filter_options,
+    }
 
 
 @router.get("/pivot")
 def get_pivot(
+    db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
     row_dimensions: str = Query(
         "", description="Comma-separated list of row dimensions (optional)"
     ),
@@ -310,142 +306,121 @@ def get_pivot(
     filters: str | None = Query(
         None, description="JSON dict of active dimension filters"
     ),
-    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
-    if db:
-        dialect = db.get_dialect()
-        row_dims = [d.strip() for d in row_dimensions.split(",") if d.strip()]
-        col_dims = [d.strip() for d in column_dimensions.split(",") if d.strip()]
-        measure_list = [m.strip() for m in measures.split(",") if m.strip()]
+    dialect = db.get_dialect()
+    row_dims = [d.strip() for d in row_dimensions.split(",") if d.strip()]
+    col_dims = [d.strip() for d in column_dimensions.split(",") if d.strip()]
+    measure_list = [m.strip() for m in measures.split(",") if m.strip()]
 
-        if not measure_list:
-            return {"error": "At least one measure is required", "data": []}
+    if not measure_list:
+        return {"error": "At least one measure is required", "data": []}
 
-        custom_props = db.get_custom_properties()
-        custom_prop_exprs = db.get_custom_prop_exprs()
-        valid_dims = set(AVAILABLE_DIMENSIONS.keys()) | {
-            p["name"] for p in custom_props
+    custom_props = db.get_custom_properties()
+    custom_prop_exprs = db.get_custom_prop_exprs()
+    valid_dims = set(AVAILABLE_DIMENSIONS.keys()) | {p["name"] for p in custom_props}
+
+    invalid_row_dims = [d for d in row_dims if d not in valid_dims]
+    invalid_col_dims = [d for d in col_dims if d not in valid_dims]
+    if invalid_row_dims:
+        return {"error": f"Invalid row dimensions: {invalid_row_dims}", "data": []}
+    if invalid_col_dims:
+        return {
+            "error": f"Invalid column dimensions: {invalid_col_dims}",
+            "data": [],
         }
 
-        invalid_row_dims = [d for d in row_dims if d not in valid_dims]
-        invalid_col_dims = [d for d in col_dims if d not in valid_dims]
-        if invalid_row_dims:
-            return {"error": f"Invalid row dimensions: {invalid_row_dims}", "data": []}
-        if invalid_col_dims:
-            return {
-                "error": f"Invalid column dimensions: {invalid_col_dims}",
-                "data": [],
-            }
+    valid_measures = {"count_events", "unique_users"}
+    invalid_measures = [m for m in measure_list if m not in valid_measures]
+    if invalid_measures:
+        return {"error": f"Invalid measures: {invalid_measures}", "data": []}
 
-        valid_measures = {"count_events", "unique_users"}
-        invalid_measures = [m for m in measure_list if m not in valid_measures]
-        if invalid_measures:
-            return {"error": f"Invalid measures: {invalid_measures}", "data": []}
+    start_date = parse_date(start_date)
+    end_date = parse_date(end_date)
+    where_clauses = []
+    params = []
 
-        start_date = parse_date(start_date)
-        end_date = parse_date(end_date)
-        where_clauses = []
-        params = []
+    if start_date:
+        where_clauses.append("timestamp >= ?")
+        params.append(f"{start_date} 00:00:00")
+    if end_date:
+        where_clauses.append("timestamp <= ?")
+        params.append(f"{end_date} 23:59:59")
+    if event_filter:
+        where_clauses.append("event_name = ?")
+        params.append(event_filter)
+    if filters:
+        filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+        where_clauses.extend(filter_clauses)
+        params.extend(filter_params)
 
-        if start_date:
-            where_clauses.append("timestamp >= ?")
-            params.append(f"{start_date} 00:00:00")
-        if end_date:
-            where_clauses.append("timestamp <= ?")
-            params.append(f"{end_date} 23:59:59")
-        if event_filter:
-            where_clauses.append("event_name = ?")
-            params.append(event_filter)
-        if filters:
-            filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
-            where_clauses.extend(filter_clauses)
-            params.extend(filter_params)
+    where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
-        where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+    def get_dimension_expr(dim: str) -> str:
+        return _get_dim_expr(dim, dialect, custom_prop_exprs)
 
-        def get_dimension_expr(dim: str) -> str:
-            return _get_dim_expr(dim, dialect, custom_prop_exprs)
-
-        def get_measure_expr(measure: str) -> str:
-            if measure == "count_events":
-                return "COUNT(*)"
-            if measure == "unique_users":
-                return "COUNT(DISTINCT user_id)"
+    def get_measure_expr(measure: str) -> str:
+        if measure == "count_events":
             return "COUNT(*)"
+        if measure == "unique_users":
+            return "COUNT(DISTINCT user_id)"
+        return "COUNT(*)"
 
-        all_dims = row_dims + col_dims
-        select_parts = [f"{get_dimension_expr(dim)} AS {dim}" for dim in all_dims]
-        select_parts += [f"{get_measure_expr(m)} AS {m}" for m in measure_list]
+    all_dims = row_dims + col_dims
+    select_parts = [f"{get_dimension_expr(dim)} AS {dim}" for dim in all_dims]
+    select_parts += [f"{get_measure_expr(m)} AS {m}" for m in measure_list]
 
-        if all_dims:
-            group_by_exprs = [get_dimension_expr(dim) for dim in all_dims]
-            group_by_clause = "GROUP BY " + ", ".join(group_by_exprs)
-            order_by_clause = f"ORDER BY {measure_list[0]} DESC"
-        else:
-            group_by_clause = ""
-            order_by_clause = ""
+    if all_dims:
+        group_by_exprs = [get_dimension_expr(dim) for dim in all_dims]
+        group_by_clause = "GROUP BY " + ", ".join(group_by_exprs)
+        order_by_clause = f"ORDER BY {measure_list[0]} DESC"
+    else:
+        group_by_clause = ""
+        order_by_clause = ""
 
-        query = f"""
-            SELECT {", ".join(select_parts)}
-            FROM events
-            {where_clause}
-            {group_by_clause}
-            {order_by_clause}
-        """
-        result = db.execute(query, params)
+    query = f"""
+        SELECT {", ".join(select_parts)}
+        FROM events
+        {where_clause}
+        {group_by_clause}
+        {order_by_clause}
+    """
+    result = db.execute(query, params)
 
-        data = []
-        for row in result:
-            record: dict = {}
-            for i, dim in enumerate(all_dims):
-                val = row[i]
-                record[dim] = val.isoformat() if isinstance(val, datetime) else val
-            for i, measure in enumerate(measure_list):
-                record[measure] = row[len(all_dims) + i]
-            data.append(record)
+    data = []
+    for row in result:
+        record: dict = {}
+        for i, dim in enumerate(all_dims):
+            val = row[i]
+            record[dim] = val.isoformat() if isinstance(val, datetime) else val
+        for i, measure in enumerate(measure_list):
+            record[measure] = row[len(all_dims) + i]
+        data.append(record)
 
-        if not col_dims:
-            return {
-                "dimensions": row_dims,
-                "column_dimensions": [],
-                "measures": measure_list,
-                "data": data,
-                "pivoted": False,
-            }
+    if not col_dims:
+        return {
+            "dimensions": row_dims,
+            "column_dimensions": [],
+            "measures": measure_list,
+            "data": data,
+            "pivoted": False,
+        }
 
-        # Pivot when column dimensions are requested
-        column_values: dict = {}
+    # Pivot when column dimensions are requested
+    column_values: dict = {}
+    for record in data:
+        col_key = tuple(record[dim] if record[dim] else "-" for dim in col_dims)
+        column_values.setdefault(col_key, True)
+    pivoted_data: list[dict] = []
+    if row_dims:
+        row_groups: dict = {}
         for record in data:
-            col_key = tuple(record[dim] if record[dim] else "-" for dim in col_dims)
-            column_values.setdefault(col_key, True)
-        pivoted_data: list[dict] = []
-        if row_dims:
-            row_groups: dict = {}
-            for record in data:
-                row_key = tuple(record[dim] for dim in row_dims)
-                col_key = tuple(record[dim] for dim in col_dims)
-                row_groups.setdefault(row_key, {})[col_key] = {
-                    m: record[m] for m in measure_list
-                }
-            for row_key, col_data in row_groups.items():
-                pivoted_row: dict = {
-                    row_dims[i]: row_key[i] for i in range(len(row_dims))
-                }
-                for col_key in sorted(column_values.keys()):
-                    col_label = "_".join(str(v) for v in col_key)
-                    for measure in measure_list:
-                        pivoted_row[f"{col_label}_{measure}"] = (
-                            col_data[col_key][measure] if col_key in col_data else 0
-                        )
-                pivoted_data.append(pivoted_row)
-        else:
-            col_data = {
-                tuple(record[dim] for dim in col_dims): {
-                    m: record[m] for m in measure_list
-                }
-                for record in data
+            row_key = tuple(record[dim] for dim in row_dims)
+            col_key = tuple(record[dim] for dim in col_dims)
+            row_groups.setdefault(row_key, {})[col_key] = {
+                m: record[m] for m in measure_list
             }
-            pivoted_row = {}
+        for row_key, col_data in row_groups.items():
+            pivoted_row: dict = {row_dims[i]: row_key[i] for i in range(len(row_dims))}
             for col_key in sorted(column_values.keys()):
                 col_label = "_".join(str(v) for v in col_key)
                 for measure in measure_list:
@@ -453,22 +428,33 @@ def get_pivot(
                         col_data[col_key][measure] if col_key in col_data else 0
                     )
             pivoted_data.append(pivoted_row)
-
-        column_headers = [
-            {col_dims[i]: col_key[i] for i in range(len(col_dims))}
-            for col_key in sorted(column_values.keys())
-        ]
-
-        return {
-            "dimensions": row_dims,
-            "column_dimensions": col_dims,
-            "column_headers": column_headers,
-            "measures": measure_list,
-            "data": pivoted_data,
-            "pivoted": True,
-        }
     else:
-        raise ValueError("db cannot be None")
+        col_data = {
+            tuple(record[dim] for dim in col_dims): {m: record[m] for m in measure_list}
+            for record in data
+        }
+        pivoted_row = {}
+        for col_key in sorted(column_values.keys()):
+            col_label = "_".join(str(v) for v in col_key)
+            for measure in measure_list:
+                pivoted_row[f"{col_label}_{measure}"] = (
+                    col_data[col_key][measure] if col_key in col_data else 0
+                )
+        pivoted_data.append(pivoted_row)
+
+    column_headers = [
+        {col_dims[i]: col_key[i] for i in range(len(col_dims))}
+        for col_key in sorted(column_values.keys())
+    ]
+
+    return {
+        "dimensions": row_dims,
+        "column_dimensions": col_dims,
+        "column_headers": column_headers,
+        "measures": measure_list,
+        "data": pivoted_data,
+        "pivoted": True,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -478,15 +464,13 @@ def get_pivot(
 
 @router.get("/pivot/grid/filter-values")
 def get_pivot_grid_filter_values(
+    db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
     field: str = Query(..., description="Dimension field to fetch distinct values for"),
     start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     event_filter: str | None = Query(None, description="Filter by event name"),
-    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
 ) -> dict:
     """Return distinct values for a dimension field, used to populate Set Filter lists."""
-    if not db:
-        raise ValueError("db cannot be None")
 
     # event_count is a computed column — no distinct values to return
     if field == "event_count":
@@ -532,14 +516,12 @@ def get_pivot_grid_filter_values(
 
 @router.get("/pivot/grid")
 def get_pivot_grid(
-    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
+    db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
 ) -> dict:
     """Return AG Grid Enterprise column definitions for the SSRM pivot grid.
 
     Row data is fetched separately via POST /pivot/grid/rows.
     """
-    if not db:
-        raise ValueError("db cannot be None")
 
     custom_props = db.get_custom_properties()
     custom_dim_meta: dict[str, str] = {
@@ -674,7 +656,7 @@ class PivotGridRequest(BaseModel):
 @router.post("/pivot/grid/rows")
 def get_pivot_grid_rows(
     body: PivotGridRequest,
-    db: Annotated[AnalyticsDatabase | None, Depends(get_analytics_db)] = None,
+    db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
 ) -> dict:
     """AG Grid SSRM data endpoint.
 
@@ -687,8 +669,6 @@ def get_pivot_grid_rows(
 
     Returns { rows, rowCount, secondaryColDefs? }
     """
-    if not db:
-        raise ValueError("db cannot be None")
 
     try:
         return _pivot_grid_rows_impl(body, db)
