@@ -197,6 +197,7 @@ class AnalyticsDatabase:
         self._events_cte: str | None = events_cte
         self._available_columns: frozenset[str] | None = available_columns
         self._pooled: bool = False  # set True for connections owned by the pool
+        self._pool_key: tuple | None = None
 
     # ------------------------------------------------------------------
     # Core query execution
@@ -531,6 +532,7 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
             **_build_shared_kwargs_with_columns(conn),
         )
         db._pooled = True
+        db._pool_key = pool_key
         return db
 
     # ---------------------------------------------------------------
@@ -547,6 +549,7 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
             **_build_shared_kwargs_with_columns(conn),
         )
         db._pooled = True
+        db._pool_key = pool_key
         return db
 
     # ---------------------------------------------------------------

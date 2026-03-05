@@ -209,3 +209,17 @@ class TestHasColumn:
         assert db.has_column("user_id") is True
         assert db.has_column("properties") is True  # root of custom prop path
         assert db.has_column("nonexistent") is False
+
+
+def test_pooled_db_stores_pool_key():
+    """Pooled AnalyticsDatabase instances should store their pool key."""
+    import duckdb
+
+    db = AnalyticsDatabase(
+        conn=duckdb.connect(":memory:"),
+        dialect="duckdb",
+        events_cte=None,
+    )
+    db._pooled = True
+    db._pool_key = ("conn-1", "user-1", "duckdb")
+    assert db._pool_key == ("conn-1", "user-1", "duckdb")
