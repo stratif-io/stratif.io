@@ -34,3 +34,4 @@ db/
 *.log
 .env
 seeders/.env.seed
+.worktrees/
