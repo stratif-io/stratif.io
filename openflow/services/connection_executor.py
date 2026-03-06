@@ -30,7 +30,7 @@ _pool: dict[tuple, tuple[Any, float]] = {}  # key → (raw_conn, created_at)
 _pool_lock = threading.Lock()
 
 
-def _pool_get(key: tuple, factory: Callable[[], Any]) -> Any:  # type: ignore[name-defined]
+def _pool_get(key: tuple, factory: Callable[[], Any]) -> Any:
     """Return a cached connection, creating a new one if absent or expired."""
     with _pool_lock:
         entry = _pool.get(key)
