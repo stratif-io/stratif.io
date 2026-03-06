@@ -230,12 +230,14 @@ export const fetchPathFunnel = (params: {
   end_date?: string
   device_type?: string
   filters?: Record<string, string | null>
+  connection_id?: string
 }) => {
   const searchParams = new URLSearchParams()
   searchParams.set('events', params.events.join(','))
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
   if (params.device_type) searchParams.set('device_type', params.device_type)
+  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
   const f = serializeFilters(params.filters)
   if (f) searchParams.set('filters', f)
 

@@ -40,7 +40,7 @@ const segTrigger =
 export function FunnelDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { dateRange, setDateRange, activeFilters } = useAppStore()
+  const { dateRange, setDateRange, activeFilters, activeConnectionId } = useAppStore()
   const [methodologyOpen, setMethodologyOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -58,8 +58,8 @@ export function FunnelDetailPage() {
   const endDateParam = searchParams.get('end_date')
 
   const { data: eventsResponse } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => fetchEvents(),
+    queryKey: ['events', activeConnectionId],
+    queryFn: () => fetchEvents(activeConnectionId ?? undefined),
   })
   const availableEvents = eventsResponse?.events || []
 
@@ -128,13 +128,14 @@ export function FunnelDetailPage() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['path-funnel', events.join(','), startDate, endDate, activeFilters],
+    queryKey: ['path-funnel', events.join(','), startDate, endDate, activeFilters, activeConnectionId],
     queryFn: () =>
       fetchPathFunnel({
         events,
         start_date: startDate,
         end_date: endDate,
         filters: activeFilters,
+        connection_id: activeConnectionId ?? undefined,
       }),
     enabled: events.length >= 2,
   })
