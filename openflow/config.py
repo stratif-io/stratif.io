@@ -24,7 +24,8 @@ class Settings(BaseSettings):
     cors_origins: str
 
     # Product Database (SQLite — stores users, connections, configs)
-    product_db_path: str
+    # Defaults to /data/ (Fly.io persistent volume mount); override for local dev
+    product_db_path: str = "/data/openflow_product.sqlite"
 
     # Encryption key for credentials (Fernet 32-byte URL-safe base64 key)
     # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"

@@ -1,0 +1,56 @@
+# fly.toml — OpenFlow Analytics deployment config
+# Deploy with: fly deploy
+# First-time setup: fly launch --no-deploy (then customize this file)
+
+app = "openflow-analytics"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8000"
+  OPENFLOW_DEBUG = "false"
+  OPENFLOW_JWT_ALGORITHM = "HS256"
+  OPENFLOW_JWT_EXPIRE_DAYS = "7"
+  OPENFLOW_LOG_LEVEL = "INFO"
+  OPENFLOW_LOG_FORMAT = "json"
+  OPENFLOW_LOG_SQL = "false"
+
+# Secrets — set via CLI, NEVER put values here:
+#   fly secrets set OPENFLOW_JWT_SECRET=$(openssl rand -base64 32)
+#   fly secrets set OPENFLOW_ENCRYPTION_KEY=$(openssl rand -base64 32)
+#   fly secrets set OPENFLOW_API_KEY=$(openssl rand -base64 16)
+#   fly secrets set OPENFLOW_API_URL=https://openflow-analytics.fly.dev
+#   fly secrets set OPENFLOW_CORS_ORIGINS=https://openflow-analytics.fly.dev
+#   fly secrets set OPENFLOW_ALLOW_REGISTRATION=false
+
+[[services]]
+  internal_port = 8000
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+    [services.ports.force_https]
+      enabled = true
+
+  [services.concurrency]
+    type = "requests"
+    hard_limit = 50
+    soft_limit = 25
+
+  [[services.http_checks]]
+    interval = "30s"
+    timeout = "5s"
+    path = "/api/health"
+
+# Persistent volume for SQLite product DB
+# Create with: fly volumes create openflow_data --size 1 --region iad
+[mounts]
+  source = "openflow_data"
+  destination = "/data"

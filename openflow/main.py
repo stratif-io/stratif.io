@@ -117,6 +117,10 @@ def create_app() -> FastAPI:
     app.include_router(sessions_router)
     app.include_router(ws_router)
 
+    @app.get("/api/health", include_in_schema=False)
+    def health():
+        return {"status": "ok"}
+
     # Serve built frontend (production) — only when dist/ exists
     _dist = Path(__file__).parent.parent / "dist"
     if _dist.exists():
