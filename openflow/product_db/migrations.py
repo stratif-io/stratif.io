@@ -77,6 +77,17 @@ _MIGRATIONS = [
     "ALTER TABLE connection_schema_configs ADD COLUMN session_timeout_minutes INTEGER NOT NULL DEFAULT 30",
     # 002 — events_table: let users choose which table contains their events
     "ALTER TABLE connection_schema_configs ADD COLUMN events_table TEXT NOT NULL DEFAULT 'events'",
+    # 003 — email verification flag on auth users
+    "ALTER TABLE auth_users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0",
+    # 004 — token table for email verification and password reset
+    """CREATE TABLE IF NOT EXISTS auth_tokens (
+        id         TEXT PRIMARY KEY,
+        user_id    TEXT NOT NULL REFERENCES auth_users(id) ON DELETE CASCADE,
+        token_type TEXT NOT NULL CHECK(token_type IN ('email_verification', 'password_reset')),
+        expires_at TEXT NOT NULL,
+        used_at    TEXT
+    )""",
+    "CREATE INDEX IF NOT EXISTS idx_auth_tokens_user ON auth_tokens(user_id, token_type)",
 ]
 
 
