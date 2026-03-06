@@ -130,10 +130,13 @@ def get_raw_events(
 
     total = db.execute(f"SELECT COUNT(*) FROM events {where_clause}", params)[0][0]
 
-    props_col = "properties" if db.has_column("properties") else "NULL AS properties"
+    props_col = "properties" if db.has_column("properties") else "NULL"
+    custom_exprs = db.get_custom_prop_exprs()
+    custom_names = list(custom_exprs.keys())
+    extra_cols = (", " + ", ".join(custom_exprs.values())) if custom_exprs else ""
     result = db.execute(
         f"""
-        SELECT user_id, event_name, timestamp, {props_col}
+        SELECT user_id, event_name, timestamp, {props_col}{extra_cols}
         FROM events
         {where_clause}
         ORDER BY {order_field} {order_dir}
@@ -141,6 +144,14 @@ def get_raw_events(
         """,
         params + [limit, offset],
     )
+
+    def _build_props(row: tuple) -> dict:
+        base = json.loads(row[3]) if isinstance(row[3], str) else (row[3] or {})
+        for i, name in enumerate(custom_names):
+            val = row[4 + i]
+            if val is not None:
+                base[name] = val
+        return base
 
     return {
         "total": total,
@@ -153,9 +164,7 @@ def get_raw_events(
                 "timestamp": row[2].isoformat()
                 if isinstance(row[2], datetime)
                 else str(row[2]),
-                "properties": json.loads(row[3])
-                if isinstance(row[3], str)
-                else (row[3] or {}),
+                "properties": _build_props(row),
             }
             for row in result
         ],
@@ -169,10 +178,13 @@ def get_user_events(
     limit: int = Query(300, description="Max events to return", ge=1, le=1000),
 ) -> dict:
     """Get all events for a specific user, sorted chronologically (ASC)."""
-    props_col = "properties" if db.has_column("properties") else "NULL AS properties"
+    props_col = "properties" if db.has_column("properties") else "NULL"
+    custom_exprs = db.get_custom_prop_exprs()
+    custom_names = list(custom_exprs.keys())
+    extra_cols = (", " + ", ".join(custom_exprs.values())) if custom_exprs else ""
     result = db.execute(
         f"""
-        SELECT user_id, event_name, timestamp, {props_col}
+        SELECT user_id, event_name, timestamp, {props_col}{extra_cols}
         FROM events
         WHERE user_id = ?
         ORDER BY timestamp DESC
@@ -180,6 +192,15 @@ def get_user_events(
         """,
         [user_id, limit],
     )
+
+    def _build_props(row: tuple) -> dict:
+        base = json.loads(row[3]) if isinstance(row[3], str) else (row[3] or {})
+        for i, name in enumerate(custom_names):
+            val = row[4 + i]
+            if val is not None:
+                base[name] = val
+        return base
+
     return {
         "user_id": user_id,
         "data": [
@@ -189,9 +210,7 @@ def get_user_events(
                 "timestamp": row[2].isoformat()
                 if isinstance(row[2], datetime)
                 else str(row[2]),
-                "properties": json.loads(row[3])
-                if isinstance(row[3], str)
-                else (row[3] or {}),
+                "properties": _build_props(row),
             }
             for row in result
         ],
