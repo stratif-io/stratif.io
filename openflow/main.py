@@ -66,6 +66,9 @@ def create_app() -> FastAPI:
         version=__version__,
         description="Bare Metal Product Analytics API",
         lifespan=lifespan,
+        docs_url="/docs" if settings.debug else None,
+        redoc_url="/redoc" if settings.debug else None,
+        openapi_url="/openapi.json" if settings.debug else None,
     )
 
     # Rate limiting

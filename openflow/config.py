@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     frontend_url: str | None = None
 
     allow_registration: bool = False
+    debug: bool = False
 
     @property
     def cors_list(self) -> list[str]:

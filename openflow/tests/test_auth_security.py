@@ -85,6 +85,56 @@ def test_login_rate_limited_after_many_attempts():
 
 
 # ---------------------------------------------------------------------------
+# Task 4 — API docs hidden in production
+# ---------------------------------------------------------------------------
+
+
+def test_api_docs_hidden_when_debug_false():
+    """With debug=False, FastAPI must be created with docs disabled."""
+    from unittest.mock import MagicMock
+
+    from openflow.main import create_app
+
+    mock_settings = MagicMock()
+    mock_settings.debug = False
+
+    import openflow.main as _main
+
+    original = _main.settings
+    _main.settings = mock_settings  # type: ignore[assignment]
+    try:
+        test_app = create_app()
+    finally:
+        _main.settings = original
+
+    assert test_app.docs_url is None, "docs_url should be None when debug=False"
+    assert test_app.redoc_url is None, "redoc_url should be None when debug=False"
+    assert test_app.openapi_url is None, "openapi_url should be None when debug=False"
+
+
+def test_api_docs_visible_when_debug_true():
+    """With debug=True, FastAPI must be created with docs enabled."""
+    from unittest.mock import MagicMock
+
+    from openflow.main import create_app
+
+    mock_settings = MagicMock()
+    mock_settings.debug = True
+
+    import openflow.main as _main
+
+    original = _main.settings
+    _main.settings = mock_settings  # type: ignore[assignment]
+    try:
+        test_app = create_app()
+    finally:
+        _main.settings = original
+
+    assert test_app.docs_url == "/docs"
+    assert test_app.openapi_url == "/openapi.json"
+
+
+# ---------------------------------------------------------------------------
 # Task 7 — encryption key minimum length validation
 # ---------------------------------------------------------------------------
 
