@@ -8,6 +8,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
+from starlette.responses import Response as StarletteResponse
 
 from openflow import __version__
 from openflow.api import (
@@ -29,6 +32,18 @@ from openflow.product_db import init_product_db, run_migrations
 
 settings = get_settings()
 setup_logging(log_level=settings.log_level, log_format=settings.log_format)
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: StarletteRequest, call_next) -> StarletteResponse:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-XSS-Protection"] = "0"
+        return response
+
+
 log = structlog.get_logger(__name__)
 
 
@@ -70,6 +85,9 @@ def create_app() -> FastAPI:
         redoc_url="/redoc" if settings.debug else None,
         openapi_url="/openapi.json" if settings.debug else None,
     )
+
+    # Security headers
+    app.add_middleware(SecurityHeadersMiddleware)  # type: ignore[arg-type]
 
     # Rate limiting
     app.state.limiter = limiter

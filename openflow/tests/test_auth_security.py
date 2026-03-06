@@ -85,6 +85,22 @@ def test_login_rate_limited_after_many_attempts():
 
 
 # ---------------------------------------------------------------------------
+# Task 5 — security response headers
+# ---------------------------------------------------------------------------
+
+
+def test_security_headers_present(client):
+    """Critical security headers must be present on every API response."""
+    response = client.get("/api/events")
+    headers = response.headers
+    assert "x-content-type-options" in headers, "Missing X-Content-Type-Options"
+    assert headers["x-content-type-options"] == "nosniff"
+    assert "x-frame-options" in headers, "Missing X-Frame-Options"
+    assert headers["x-frame-options"] == "DENY"
+    assert "referrer-policy" in headers, "Missing Referrer-Policy"
+
+
+# ---------------------------------------------------------------------------
 # Task 4 — API docs hidden in production
 # ---------------------------------------------------------------------------
 
@@ -101,7 +117,7 @@ def test_api_docs_hidden_when_debug_false():
     import openflow.main as _main
 
     original = _main.settings
-    _main.settings = mock_settings  # type: ignore[assignment]
+    _main.settings = mock_settings
     try:
         test_app = create_app()
     finally:
@@ -124,7 +140,7 @@ def test_api_docs_visible_when_debug_true():
     import openflow.main as _main
 
     original = _main.settings
-    _main.settings = mock_settings  # type: ignore[assignment]
+    _main.settings = mock_settings
     try:
         test_app = create_app()
     finally:
