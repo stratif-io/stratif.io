@@ -40,6 +40,8 @@ class Settings(BaseSettings):
 
     frontend_url: str | None = None
 
+    allow_registration: bool = False
+
     @property
     def cors_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""

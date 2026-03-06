@@ -96,6 +96,11 @@ def _row_to_response(row) -> AuthUserResponse:
     "/register", response_model=AuthUserResponse, status_code=status.HTTP_201_CREATED
 )
 def register(body: RegisterBody, response: Response):
+    if not settings.allow_registration:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Registration is disabled",
+        )
     row = register_user(
         email=body.email,
         password=body.password,
