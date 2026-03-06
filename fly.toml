@@ -1,55 +1,52 @@
-# fly.toml — OpenFlow Analytics deployment config
-# Deploy with: fly deploy
-# First-time setup: fly launch --no-deploy (then customize this file)
+# fly.toml app configuration file generated for openflow-analytics on 2026-03-06T18:36:05+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "openflow-analytics"
-primary_region = "iad"
+app = 'openflow-analytics'
+primary_region = 'iad'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  PORT = "8000"
-  OPENFLOW_DEBUG = "false"
-  OPENFLOW_JWT_ALGORITHM = "HS256"
-  OPENFLOW_JWT_EXPIRE_DAYS = "7"
-  OPENFLOW_LOG_LEVEL = "INFO"
-  OPENFLOW_LOG_FORMAT = "json"
-  OPENFLOW_LOG_SQL = "false"
+  OPENFLOW_DEBUG = 'false'
+  OPENFLOW_JWT_ALGORITHM = 'HS256'
+  OPENFLOW_JWT_EXPIRE_DAYS = '7'
+  OPENFLOW_LOG_FORMAT = 'json'
+  OPENFLOW_LOG_LEVEL = 'INFO'
+  OPENFLOW_LOG_SQL = 'false'
+  PORT = '8000'
 
-# Secrets — set via CLI, NEVER put values here:
-#   fly secrets set OPENFLOW_JWT_SECRET=$(openssl rand -base64 32)
-#   fly secrets set OPENFLOW_ENCRYPTION_KEY=$(openssl rand -base64 32)
-#   fly secrets set OPENFLOW_API_KEY=$(openssl rand -base64 16)
-#   fly secrets set OPENFLOW_API_URL=https://openflow-analytics.fly.dev
-#   fly secrets set OPENFLOW_CORS_ORIGINS=https://openflow-analytics.fly.dev
-#   fly secrets set OPENFLOW_ALLOW_REGISTRATION=false
+[[mounts]]
+  source = 'openflow_data'
+  destination = '/data'
 
 [[services]]
+  protocol = 'tcp'
   internal_port = 8000
-  protocol = "tcp"
 
   [[services.ports]]
-    handlers = ["tls", "http"]
     port = 443
+    handlers = ['tls', 'http']
 
   [[services.ports]]
-    handlers = ["http"]
     port = 80
+    handlers = ['http']
     force_https = true
 
   [services.concurrency]
-    type = "requests"
+    type = 'requests'
     hard_limit = 50
     soft_limit = 25
 
   [[services.http_checks]]
-    interval = "30s"
-    timeout = "5s"
-    path = "/api/health"
+    interval = '15s'
+    timeout = '10s'
+    grace_period = '20s'
+    path = '/api/health'
 
-# Persistent volume for SQLite product DB
-# Create with: fly volumes create openflow_data --size 1 --region iad
-[mounts]
-  source = "openflow_data"
-  destination = "/data"
+[[vm]]
+  memory = '1gb'
+  cpus = 1
+  memory_mb = 1024
