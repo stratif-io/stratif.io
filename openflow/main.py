@@ -2,10 +2,13 @@
 
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -114,23 +117,29 @@ def create_app() -> FastAPI:
     app.include_router(sessions_router)
     app.include_router(ws_router)
 
-    @app.get("/")
-    def root():
-        """Root endpoint with API info."""
-        return {
-            "name": "OpenFlow Analytics API",
-            "version": __version__,
-            "endpoints": {
-                "docs": "/docs",
-                "auth": "/api/auth/login",
-                "trend": "/api/trend?event_name={event}&granularity={day|week}",
-                "retention": "/api/retention",
-                "events": "/api/events",
-                "paths": "/api/paths?target_event=Purchase&device_type=Mobile",
-                "raw_events": "/api/raw/events",
-                "conversion": "/api/conversion",
-            },
-        }
+    # Serve built frontend (production) — only when dist/ exists
+    _dist = Path(__file__).parent.parent / "dist"
+    if _dist.exists():
+        app.mount(
+            "/assets", StaticFiles(directory=str(_dist / "assets")), name="assets"
+        )
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def spa_fallback(full_path: str) -> FileResponse:
+            """Serve index.html for all non-API routes (SPA fallback)."""
+            return FileResponse(str(_dist / "index.html"))
+    else:
+
+        @app.get("/")
+        def root():
+            """Root endpoint with API info (dev mode — run npm run build for SPA)."""
+            return {
+                "name": "OpenFlow Analytics API",
+                "version": __version__,
+                "docs": "/docs"
+                if settings.debug
+                else "disabled (set OPENFLOW_DEBUG=true)",
+            }
 
     return app
 
