@@ -223,3 +223,82 @@ def test_pooled_db_stores_pool_key():
     db._pooled = True
     db._pool_key = ("conn-1", "user-1", "duckdb")
     assert db._pool_key == ("conn-1", "user-1", "duckdb")
+
+
+def test_execute_raises_503_on_stale_databricks_connection():
+    """execute() should evict pool and raise 503 when Databricks connection is dead."""
+    from unittest.mock import MagicMock, patch
+
+    from fastapi import HTTPException
+
+    try:
+        from databricks.sql.exc import Error as DatabricksError
+    except ImportError:
+        pytest.skip("databricks-sql-connector not installed")
+
+    import openflow.services.connection_executor as _ce
+
+    dead_conn = MagicMock()
+    dead_cursor = MagicMock()
+    dead_cursor.execute.side_effect = DatabricksError("Connection closed")
+    dead_conn.cursor.return_value = dead_cursor
+
+    db = _ce.AnalyticsDatabase(
+        conn=dead_conn,
+        dialect="databricks",
+        events_cte=None,
+    )
+    db._pooled = True
+    db._pool_key = ("conn-1", "user-1", "databricks")
+
+    mock_settings = MagicMock()
+    mock_settings.log_sql = False
+    with (
+        patch.object(_ce, "get_settings", return_value=mock_settings),
+        patch.object(_ce, "evict_connection") as mock_evict,
+        pytest.raises(HTTPException) as exc_info,
+    ):
+        db.execute("SELECT 1")
+    assert exc_info.value.status_code == 503
+    assert "retry" in exc_info.value.detail.lower()
+    mock_evict.assert_called_once_with("conn-1", "user-1")
+
+
+def test_execute_raises_503_on_stale_postgres_connection():
+    """execute() should evict pool and raise 503 when PostgreSQL connection is dead."""
+    from unittest.mock import MagicMock, patch
+
+    from fastapi import HTTPException
+
+    try:
+        import psycopg2
+    except ImportError:
+        pytest.skip("psycopg2 not installed")
+
+    import openflow.services.connection_executor as _ce
+
+    dead_conn = MagicMock()
+    dead_cursor = MagicMock()
+    dead_cursor.execute.side_effect = psycopg2.OperationalError(
+        "server closed connection"
+    )
+    dead_conn.cursor.return_value = dead_cursor
+
+    db = _ce.AnalyticsDatabase(
+        conn=dead_conn,
+        dialect="postgres",
+        events_cte=None,
+    )
+    db._pooled = True
+    db._pool_key = ("conn-2", "user-2", "postgres")
+
+    mock_settings = MagicMock()
+    mock_settings.log_sql = False
+    with (
+        patch.object(_ce, "get_settings", return_value=mock_settings),
+        patch.object(_ce, "evict_connection") as mock_evict,
+        pytest.raises(HTTPException) as exc_info,
+    ):
+        db.execute("SELECT 1")
+    assert exc_info.value.status_code == 503
+    mock_evict.assert_called_once_with("conn-2", "user-2")

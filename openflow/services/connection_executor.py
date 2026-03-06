@@ -62,6 +62,27 @@ def evict_connection(connection_id: str, user_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _is_connection_error(exc: Exception, dialect: str) -> bool:
+    """Return True if exc is a known driver-level connection error."""
+    if dialect == "databricks":
+        try:
+            from databricks.sql.exc import Error as _DatabricksError
+
+            if isinstance(exc, _DatabricksError):
+                return True
+        except ImportError:
+            pass
+    if dialect == "postgres":
+        try:
+            import psycopg2
+
+            if isinstance(exc, (psycopg2.OperationalError, psycopg2.InterfaceError)):
+                return True
+        except ImportError:
+            pass
+    return False
+
+
 def _resolve_path_to_sql(path: str, dialect: str = "duckdb") -> str:
     """Convert a dot-notation property path to a SQL expression for the dialect.
 
@@ -230,8 +251,18 @@ class AnalyticsDatabase:
             try:
                 cursor.execute(query, params or None)
                 return cursor.fetchall()
+            except Exception as exc:
+                if self._pooled and _is_connection_error(exc, "postgres"):
+                    if self._pool_key:
+                        evict_connection(self._pool_key[0], self._pool_key[1])
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Connection lost — please retry.",
+                    ) from exc
+                raise
             finally:
-                cursor.close()
+                with contextlib.suppress(Exception):
+                    cursor.close()
 
         if self._dialect == "databricks":
             named_query, named_params = _to_named_params(query, params or [])
@@ -239,8 +270,18 @@ class AnalyticsDatabase:
             try:
                 cursor.execute(named_query, named_params or None)
                 return cursor.fetchall()
+            except Exception as exc:
+                if self._pooled and _is_connection_error(exc, "databricks"):
+                    if self._pool_key:
+                        evict_connection(self._pool_key[0], self._pool_key[1])
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Connection lost — please retry.",
+                    ) from exc
+                raise
             finally:
-                cursor.close()
+                with contextlib.suppress(Exception):
+                    cursor.close()
 
         # DuckDB path
         if params:
