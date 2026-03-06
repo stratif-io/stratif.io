@@ -15,6 +15,8 @@ export interface UsePathsDataReturn {
   pathData: PathData[]
   events: string[]
   isLoading: boolean
+  isError: boolean
+  error: Error | null
   eventsLoading: boolean
   totalOccurrences: number
 }
@@ -33,7 +35,7 @@ export function usePathsData({
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
   })
 
-  const { data: pathsResponse, isLoading } = useQuery({
+  const { data: pathsResponse, isLoading, isError, error } = useQuery({
     queryKey: ['paths', targetEvent, deviceType, startDate, endDate, activeConnectionId],
     queryFn: () =>
       fetchPaths({
@@ -53,6 +55,8 @@ export function usePathsData({
     pathData,
     events: eventsResponse?.events || [],
     isLoading,
+    isError,
+    error: error as Error | null,
     eventsLoading,
     totalOccurrences: pathsResponse?.total_occurrences || 0,
   }

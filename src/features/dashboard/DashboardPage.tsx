@@ -6,11 +6,14 @@ import { ActivityChart } from './components/ActivityChart'
 import { TopEvents } from './components/TopEvents'
 import { useDashboardMetrics } from './hooks/useDashboardMetrics'
 import { MousePointerClick, Users, Layers } from 'lucide-react'
+import { QueryError } from '@/components/ui/query-error'
 import { SPACING, TYPOGRAPHY, GRID_COLS } from '@/lib/constants'
 
 export function DashboardPage() {
   const { dateRange } = useAppStore()
-  const { metrics, isLoading, eventsLoading } = useDashboardMetrics({ dateRange })
+  const { metrics, isLoading, isError, error, eventsLoading } = useDashboardMetrics({ dateRange })
+
+  if (isError) return <QueryError error={error} />
 
   return (
     <TooltipProvider>

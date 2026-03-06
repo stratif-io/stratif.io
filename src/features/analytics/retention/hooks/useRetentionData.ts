@@ -16,6 +16,8 @@ export interface UseRetentionDataReturn {
   retentionData: RetentionCohort[]
   milestones: number[]
   isLoading: boolean
+  isError: boolean
+  error: Error | null
   avgMilestones: number[]
   totalAvailable: number
 }
@@ -28,7 +30,7 @@ export function useRetentionData({
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
   const { activeFilters, activeConnectionId } = useAppStore()
 
-  const { data: retentionResponse, isLoading } = useQuery({
+  const { data: retentionResponse, isLoading, isError, error } = useQuery({
     queryKey: ['retention', startDate, endDate, granularity, activeFilters, activeConnectionId],
     queryFn: () =>
       fetchRetention({
@@ -58,6 +60,8 @@ export function useRetentionData({
     retentionData,
     milestones,
     isLoading,
+    isError,
+    error: error as Error | null,
     avgMilestones,
     totalAvailable,
   }

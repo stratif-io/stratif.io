@@ -9,6 +9,7 @@ import {
   useSchemaConfig,
 } from '@/features/connections/hooks/useConnectionsData'
 import { Card, CardContent } from '@/components/ui/card'
+import { QueryError } from '@/components/ui/query-error'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { EventsTable } from './components/EventsTable'
 import { UserTimelineModal } from './components/UserTimelineModal'
@@ -55,6 +56,8 @@ export function EventsPage() {
     data: rawEventsData,
     isLoading,
     isFetching,
+    isError,
+    error,
   } = useQuery({
     queryKey: [
       'rawEvents',
@@ -121,6 +124,8 @@ export function EventsPage() {
     setSortOrder(order)
     setPage(1)
   }, [])
+
+  if (isError) return <QueryError error={error} />
 
   return (
     <PageTransition>

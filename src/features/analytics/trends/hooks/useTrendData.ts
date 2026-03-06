@@ -21,6 +21,8 @@ export interface UseTrendDataReturn {
   trendData: TrendDataItem[]
   events: string[]
   isLoading: boolean
+  isError: boolean
+  error: Error | null
   eventsLoading: boolean
   totalEvents: number
   averageValue: number
@@ -41,7 +43,7 @@ export function useTrendData({
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
   })
 
-  const { data: trendResponse, isLoading } = useQuery({
+  const { data: trendResponse, isLoading, isError, error } = useQuery({
     queryKey: [
       'trend',
       selectedEvent,
@@ -88,6 +90,8 @@ export function useTrendData({
     trendData,
     events: eventsResponse?.events || [],
     isLoading,
+    isError,
+    error: error as Error | null,
     eventsLoading,
     totalEvents,
     averageValue,

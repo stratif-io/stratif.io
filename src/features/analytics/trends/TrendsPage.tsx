@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { LoadingState, ChartSkeleton } from '@/components/ui/loading-state'
+import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { TrendingUp, BarChart3, LineChart as LineChartIcon } from 'lucide-react'
 import { useAppStore } from '@/stores'
@@ -23,11 +24,13 @@ export function TrendsPage() {
   const [granularity, setGranularity] = useState<'day' | 'week'>('day')
   const [chartType, setChartType] = useState<'area' | 'line'>('area')
 
-  const { trendData, events, isLoading, totalEvents, averageValue, maxValue } = useTrendData({
+  const { trendData, events, isLoading, isError, error, totalEvents, averageValue, maxValue } = useTrendData({
     dateRange,
     selectedEvent,
     granularity,
   })
+
+  if (isError) return <QueryError error={error} />
 
   return (
     <PageTransition>

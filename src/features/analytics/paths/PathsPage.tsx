@@ -14,6 +14,7 @@ import { PathsChart } from './components/PathsChart'
 import { PathsTable } from './components/PathsTable'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { LoadingState } from '@/components/ui/loading-state'
+import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 
@@ -22,7 +23,7 @@ export function PathsPage() {
   const [deviceType, setDeviceType] = useState<string>('')
   const [targetEvent, setTargetEvent] = useState<string>(selectedEvent || 'Purchase')
 
-  const { pathData, events, isLoading, eventsLoading, totalOccurrences } = usePathsData({
+  const { pathData, events, isLoading, isError, error, eventsLoading, totalOccurrences } = usePathsData({
     dateRange,
     targetEvent,
     deviceType,
@@ -32,6 +33,8 @@ export function PathsPage() {
     setTargetEvent(val)
     setSelectedEvent(val)
   }
+
+  if (isError) return <QueryError error={error} />
 
   return (
     <PageTransition>

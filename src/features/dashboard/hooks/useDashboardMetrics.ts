@@ -20,6 +20,8 @@ export interface UseDashboardMetricsOptions {
 export interface UseDashboardMetricsReturn {
   metrics: DashboardMetrics
   isLoading: boolean
+  isError: boolean
+  error: Error | null
   eventsLoading: boolean
 }
 
@@ -30,7 +32,7 @@ export function useDashboardMetrics({
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
   const { activeFilters, activeConnectionId } = useAppStore()
 
-  const { data: currentTrend, isLoading: currentLoading } = useQuery({
+  const { data: currentTrend, isLoading: currentLoading, isError, error } = useQuery({
     queryKey: ['trend', startDate, endDate, activeFilters, activeConnectionId],
     queryFn: () =>
       fetchTrend({
@@ -95,6 +97,8 @@ export function useDashboardMetrics({
   return {
     metrics,
     isLoading: currentLoading,
+    isError,
+    error: error as Error | null,
     eventsLoading,
   }
 }

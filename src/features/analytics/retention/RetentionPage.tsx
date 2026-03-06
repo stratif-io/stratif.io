@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { TableSkeleton } from '@/components/ui/loading-state'
+import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Users } from 'lucide-react'
 import { useAppStore } from '@/stores'
@@ -84,7 +85,7 @@ export function RetentionPage() {
   const [granularity, setGranularity] = useState<RetentionGranularity>('day')
   const [cohortLimit, setCohortLimit] = useState(10)
 
-  const { retentionData, milestones, isLoading, avgMilestones, totalAvailable } = useRetentionData({
+  const { retentionData, milestones, isLoading, isError, error, avgMilestones, totalAvailable } = useRetentionData({
     dateRange,
     granularity,
   })
@@ -106,6 +107,8 @@ export function RetentionPage() {
   }, [visibleData, milestones])
 
   const isEmpty = !isLoading && retentionData.length === 0
+
+  if (isError) return <QueryError error={error} />
 
   return (
     <PageTransition>
