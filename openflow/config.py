@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -42,6 +43,15 @@ class Settings(BaseSettings):
 
     allow_registration: bool = False
     debug: bool = False
+
+    @field_validator("encryption_key")
+    @classmethod
+    def validate_encryption_key_length(cls, v: str) -> str:
+        if len(v) < 32:
+            raise ValueError(
+                "OPENFLOW_ENCRYPTION_KEY must be at least 32 characters long"
+            )
+        return v
 
     @property
     def cors_list(self) -> list[str]:
