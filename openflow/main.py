@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from openflow import __version__
 from openflow.api import (
@@ -22,6 +24,7 @@ from openflow.api import (
 )
 from openflow.config import get_settings
 from openflow.core.logging import setup_logging
+from openflow.core.rate_limit import limiter
 from openflow.product_db import init_product_db, run_migrations
 
 settings = get_settings()
@@ -64,6 +67,10 @@ def create_app() -> FastAPI:
         description="Bare Metal Product Analytics API",
         lifespan=lifespan,
     )
+
+    # Rate limiting
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
     # Configure CORS
     app.add_middleware(

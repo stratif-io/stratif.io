@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from openflow.config import Settings, get_settings
 from openflow.core.jwt_auth import AuthUserRow, get_current_auth_user
 from openflow.core.jwt_utils import create_access_token
+from openflow.core.rate_limit import limiter
 from openflow.services.auth_service import (
     authenticate_user,
     register_user,
@@ -95,7 +96,8 @@ def _row_to_response(row) -> AuthUserResponse:
 @router.post(
     "/register", response_model=AuthUserResponse, status_code=status.HTTP_201_CREATED
 )
-def register(body: RegisterBody, response: Response):
+@limiter.limit("3/minute")
+def register(request: Request, body: RegisterBody, response: Response):
     if not settings.allow_registration:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -116,7 +118,8 @@ def register(body: RegisterBody, response: Response):
 
 
 @router.post("/login", response_model=AuthUserResponse)
-def login(body: LoginBody, response: Response):
+@limiter.limit("10/minute")
+def login(request: Request, body: LoginBody, response: Response):
     row = authenticate_user(email=body.email, password=body.password)
     if row is None:
         raise HTTPException(

@@ -65,7 +65,12 @@ def test_register_disabled_by_default():
 
 def test_login_rate_limited_after_many_attempts():
     """Login must return 429 after exceeding the rate limit."""
-    with TestClient(app) as client:
+    # Return None so authenticate_user reports invalid credentials (401),
+    # letting the rate limiter accumulate counts and eventually return 429.
+    with (
+        patch("openflow.api.auth.authenticate_user", return_value=None),
+        TestClient(app) as client,
+    ):
         responses = [
             client.post(
                 "/api/auth/login",

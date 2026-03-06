@@ -24,6 +24,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "databricks-sql-connector>=4.2.5",
     "psycopg2>=2.9.11",
+    "slowapi>=0.1.9",
 ]
 
 [project.scripts]
