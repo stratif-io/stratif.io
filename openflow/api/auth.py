@@ -37,6 +37,7 @@ def _set_session_cookie(response: Response, user_id: str, email: str) -> None:
         token,
         httponly=True,
         samesite="lax",
+        secure=True,
         max_age=settings.jwt_expire_days * 86400,
         path="/",
     )
@@ -157,6 +158,7 @@ def google_auth(response: Response):
         signed_state,
         httponly=True,
         samesite="lax",
+        secure=True,
         max_age=600,
         path="/",
     )
