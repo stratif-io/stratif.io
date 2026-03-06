@@ -43,6 +43,11 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
     headers: { ...headers, ...options?.headers },
   })
 
+  if (response.status === 503) {
+    const body = await response.json().catch(() => ({}))
+    throw new Error(body.detail ?? 'Connection lost — please retry.')
+  }
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'An error occurred' }))
     throw new Error(error.detail || `HTTP ${response.status}`)
