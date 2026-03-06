@@ -66,6 +66,32 @@ Shared components live in `src/components/` (ui/, layout/, charts/, data-table/)
 
 All prefixed with `/api/`: `trend`, `retention`, `events`, `events/top`, `raw/events`, `raw/sessions`, `sessions/summary`, `paths`, `conversion`, `pivot`. WebSocket at `/ws`.
 
+## Security (CRITICAL — client database credentials are stored)
+
+OpenFlow stores encrypted credentials for client analytics databases. Security is non-negotiable.
+
+### Credential storage
+- Credentials encrypted with Fernet (AES-128-CBC + HMAC-SHA256) via `openflow/services/crypto.py`
+- Encryption key: 32+ char string → SHA-256 → Fernet key
+- Key stored in `OPENFLOW_ENCRYPTION_KEY` env var (never in code or git)
+- Product DB: SQLite at `OPENFLOW_PRODUCT_DB_PATH` (never expose this file)
+
+### Auth
+- Passwords: bcrypt + SHA-256 pre-hash (`openflow/core/password.py`)
+- Sessions: JWT in HTTP-only, Secure, SameSite=Lax cookie (`of_session`)
+- Rate limiting on login (10/min) and register (3/min) via slowapi
+
+### Config flags for production
+- `OPENFLOW_DEBUG=false` (default) — hides `/docs`, `/redoc`, `/openapi.json`
+- `OPENFLOW_ALLOW_REGISTRATION=false` (default) — disables open registration
+- `OPENFLOW_CORS_ORIGINS` — set to your exact frontend domain (not `*`)
+- `OPENFLOW_ENCRYPTION_KEY` — must be 32+ chars; generate with `openssl rand -base64 32`
+
+### Never do
+- Never log credentials, tokens, or the encryption key
+- Never commit `.env` files or the SQLite product DB
+- Never use `OPENFLOW_DEBUG=true` in production
+
 ## Code Conventions
 
 - **Imports**: Use `@/` path alias for `src/` imports
