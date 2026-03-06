@@ -211,6 +211,148 @@ class TestHasColumn:
         assert db.has_column("nonexistent") is False
 
 
+class TestCustomPropExprFallback:
+    """When a custom property path is 'properties.device_type' but the table has
+    no 'properties' JSON column — only a flat 'device_type' column — the system
+    must remap the expression to use the flat column directly.
+
+    Without the fix, any query using the expression fails with:
+      "Referenced column 'properties' not found in FROM clause"
+    """
+
+    def _open_db(self, db_path: str, prop_path: str, db_type: str = "duckdb"):
+        """Open an analytics DB remapped from 'track' (non-standard table name)
+        with flat columns and one custom property using *prop_path*."""
+        import json
+        from unittest.mock import MagicMock, patch
+
+        from openflow.services.connection_executor import open_analytics_db
+
+        mock_product_db = MagicMock()
+        mock_product_db.fetchone.side_effect = [
+            {
+                "db_type": db_type,
+                "id": "conn-1",
+                "user_id": "user-1",
+                "credentials_encrypted": b"ignored",
+            },
+            {
+                "user_id_field": "user_id",
+                "timestamp_field": "ts",
+                "event_name_field": "event_name",
+                "events_table": "track",  # triggers needs_remap (table != "events")
+                "custom_properties": json.dumps(
+                    [{"name": "device_type", "path": prop_path}]
+                ),
+                "session_timeout_minutes": 30,
+            },
+            None,
+        ]
+
+        with (
+            patch(
+                "openflow.services.connection_executor.get_product_db",
+                return_value=mock_product_db,
+            ),
+            patch(
+                "openflow.services.connection_executor.decrypt_credentials",
+                return_value={"file_path": db_path},
+            ),
+        ):
+            return open_analytics_db("conn-1", "user-1")
+
+    def _make_duckdb(self, tmp_path) -> str:
+        import duckdb
+
+        db_path = str(tmp_path / "test.duckdb")
+        conn = duckdb.connect(db_path)
+        conn.execute(
+            "CREATE TABLE track "
+            "(user_id VARCHAR, ts TIMESTAMP, event_name VARCHAR, device_type VARCHAR)"
+        )
+        conn.execute(
+            "INSERT INTO track VALUES ('u1', '2026-01-01 10:00:00', 'Home', 'Mobile')"
+        )
+        conn.close()
+        return db_path
+
+    def test_flat_column_path_baseline(self, tmp_path):
+        """path='device_type' (flat column) — baseline, must always pass."""
+        db = self._open_db(self._make_duckdb(tmp_path), "device_type")
+        expr = db._custom_prop_exprs["device_type"]
+        result = db.execute(f"SELECT {expr} FROM events LIMIT 1")
+        assert result[0][0] == "Mobile"
+
+    def test_json_path_with_nonexistent_root_falls_back_to_flat_column(self, tmp_path):
+        """path='properties.device_type' but table has no 'properties' column.
+        The expression must be remapped to 'device_type' (flat column) so
+        queries using it do not fail with 'column not found'."""
+        db = self._open_db(self._make_duckdb(tmp_path), "properties.device_type")
+        expr = db._custom_prop_exprs["device_type"]
+        # With the bug: expr = json_extract_string("properties", ...) → BinderError
+        result = db.execute(f"SELECT {expr} FROM events LIMIT 1")
+        assert result[0][0] == "Mobile"
+
+    def test_json_path_when_root_exists_uses_json_extraction(self, tmp_path):
+        """path='props.device_type' and 'props' column exists — must keep the
+        JSON extraction expression, not fall back to flat column."""
+        import duckdb
+
+        db_path = str(tmp_path / "test_props.duckdb")
+        conn = duckdb.connect(db_path)
+        conn.execute(
+            "CREATE TABLE track "
+            "(user_id VARCHAR, ts TIMESTAMP, event_name VARCHAR, props JSON)"
+        )
+        conn.execute(
+            "INSERT INTO track VALUES "
+            "('u1', '2026-01-01 10:00:00', 'Home', '{\"device_type\": \"Desktop\"}')"
+        )
+        conn.close()
+
+        import json
+        from unittest.mock import MagicMock, patch
+
+        from openflow.services.connection_executor import open_analytics_db
+
+        mock_product_db = MagicMock()
+        mock_product_db.fetchone.side_effect = [
+            {
+                "db_type": "duckdb",
+                "id": "c1",
+                "user_id": "u1",
+                "credentials_encrypted": b"x",
+            },
+            {
+                "user_id_field": "user_id",
+                "timestamp_field": "ts",
+                "event_name_field": "event_name",
+                "events_table": "track",
+                "custom_properties": json.dumps(
+                    [{"name": "device_type", "path": "props.device_type"}]
+                ),
+                "session_timeout_minutes": 30,
+            },
+            None,
+        ]
+
+        with (
+            patch(
+                "openflow.services.connection_executor.get_product_db",
+                return_value=mock_product_db,
+            ),
+            patch(
+                "openflow.services.connection_executor.decrypt_credentials",
+                return_value={"file_path": db_path},
+            ),
+        ):
+            db = open_analytics_db("c1", "u1")
+
+        expr = db._custom_prop_exprs["device_type"]
+        result = db.execute(f"SELECT {expr} FROM events LIMIT 1")
+        assert result[0][0] == "Desktop"
+
+
 def test_pooled_db_stores_pool_key():
     """Pooled AnalyticsDatabase instances should store their pool key."""
     import duckdb

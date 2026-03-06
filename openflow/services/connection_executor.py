@@ -156,6 +156,36 @@ def _get_table_columns(conn: Any, table_expr: str, dialect: str) -> frozenset[st
         return frozenset()
 
 
+def _remap_exprs_for_available_cols(
+    custom_props: list[dict],
+    custom_prop_exprs: dict[str, str],
+    available_columns: frozenset[str],
+    dialect: str,
+) -> dict[str, str]:
+    """Remap custom-property expressions when the configured path references a
+    JSON root column that doesn't exist in the actual table, but the leaf name
+    does exist as a flat column.
+
+    Example: path='properties.device_type', table has no 'properties' column
+    but has a 'device_type' column → expression becomes '"device_type"'.
+    """
+    if not available_columns:
+        return custom_prop_exprs
+    path_by_name = {p["name"]: p.get("path", "") for p in custom_props if "name" in p}
+    result: dict[str, str] = {}
+    for name, expr in custom_prop_exprs.items():
+        path = path_by_name.get(name, "")
+        parts = path.split(".")
+        if len(parts) >= 2:
+            root = parts[0]
+            leaf = parts[-1]
+            if root not in available_columns and leaf in available_columns:
+                result[name] = _resolve_path_to_sql(leaf, dialect)
+                continue
+        result[name] = expr
+    return result
+
+
 def _prepend_events_cte(cte_body: str, query: str, dialect: str = "duckdb") -> str:
     """Apply schema-remapping CTE to *query*.
 
@@ -526,7 +556,18 @@ def open_analytics_db(connection_id: str, user_id: str) -> AnalyticsDatabase:
         _iq2 = "`" if dialect == "databricks" else '"'
         quoted_table = ".".join(f"{_iq2}{p}{_iq2}" for p in events_table.split("."))
         cols = _get_table_columns(conn, quoted_table, dialect)
-        return {**shared_kwargs, "available_columns": cols or None}
+        fixed_prop_exprs = _remap_exprs_for_available_cols(
+            custom_props, custom_prop_exprs, cols or frozenset(), dialect
+        )
+        fixed_filter_exprs = {
+            k: fixed_prop_exprs.get(k, v) for k, v in filter_exprs.items()
+        }
+        return {
+            **shared_kwargs,
+            "custom_prop_exprs": fixed_prop_exprs,
+            "filter_exprs": fixed_filter_exprs,
+            "available_columns": cols or None,
+        }
 
     def _build_cte(table: str) -> str:
         q = "`" if dialect == "databricks" else '"'
