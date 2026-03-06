@@ -36,8 +36,7 @@ primary_region = "iad"
   [[services.ports]]
     handlers = ["http"]
     port = 80
-    [services.ports.force_https]
-      enabled = true
+    force_https = true
 
   [services.concurrency]
     type = "requests"
