@@ -4,8 +4,9 @@ import * as command from "@pulumi/command";
 import * as dotenv from "dotenv";
 import * as path from "path";
 
-// Load secrets from ../.env.secrets (gitignored, never committed)
-dotenv.config({ path: path.join(__dirname, "../.env.secrets") });
+// Load secrets from repo root .env.secrets (gitignored, never committed)
+// __dirname is infra/bin/ when compiled, so go up two levels
+dotenv.config({ path: path.join(__dirname, "../../.env.secrets") });
 
 const config = new pulumi.Config();
 const region = config.get("region") ?? "iad";
