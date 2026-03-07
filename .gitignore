@@ -38,3 +38,7 @@ seeders/.env.seed
 
 # Local secrets — never commit
 .env.secrets
+
+# Pulumi
+infra/bin/
+infra/node_modules/
