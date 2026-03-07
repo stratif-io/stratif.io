@@ -10,6 +10,7 @@ dotenv.config({ path: path.join(__dirname, "../../.env.secrets") });
 const config = new pulumi.Config();
 const region = config.get("region") ?? "iad";
 const appName = config.get("appName") ?? "openflow-analytics";
+const machineCount = config.getNumber("machineCount") ?? 1;
 
 // Required secrets — fail fast if missing
 function requireSecret(name: string): string {
@@ -42,6 +43,13 @@ const secrets = new command.local.Command("openflow-secrets", {
   update: `flyctl secrets set --app ${appName} OPENFLOW_JWT_SECRET="${jwtSecret}" OPENFLOW_ENCRYPTION_KEY="${encryptionKey}" OPENFLOW_API_KEY="${apiKey}" OPENFLOW_ALLOW_REGISTRATION="${allowRegistration}"`,
   triggers: [jwtSecret, encryptionKey, apiKey, allowRegistration],
 }, { dependsOn: app });
+
+// Scale — run after app exists and secrets are set
+new command.local.Command("openflow-scale", {
+  create: `flyctl scale count ${machineCount} --app ${appName} --yes`,
+  update: `flyctl scale count ${machineCount} --app ${appName} --yes`,
+  triggers: [machineCount],
+}, { dependsOn: [app, secrets] });
 
 // Outputs
 export const flyAppName = appName;

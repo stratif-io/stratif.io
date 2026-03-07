@@ -73,3 +73,4 @@ Non-secret configuration lives here:
 |---|---|---|
 | `openflow:region` | `iad` | Fly.io primary region |
 | `openflow:appName` | `openflow-analytics` | Fly app name |
+| `openflow:machineCount` | `1` | Number of Fly machines to run |
