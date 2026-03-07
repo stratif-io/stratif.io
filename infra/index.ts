@@ -19,16 +19,21 @@ function requireSecret(name: string): string {
   return val;
 }
 
+const flyApiToken = requireSecret("FLY_API_TOKEN");
 const jwtSecret = requireSecret("OPENFLOW_JWT_SECRET");
 const encryptionKey = requireSecret("OPENFLOW_ENCRYPTION_KEY");
 const apiKey = requireSecret("OPENFLOW_API_KEY");
 const allowRegistration = process.env["OPENFLOW_ALLOW_REGISTRATION"] ?? "false";
 
+// Explicit provider — required so the token is passed through Pulumi's config
+// channel to the Go provider binary (dotenv only sets Node.js process.env)
+const flyProvider = new fly.Provider("fly", { flyApiToken });
+
 // Fly.io app
 const app = new fly.App("openflow-app", {
   name: appName,
   org: "personal",
-});
+}, { provider: flyProvider });
 
 // Persistent volume for SQLite product DB (mounts at /data in fly.toml)
 const volume = new fly.Volume("openflow-data", {
@@ -36,7 +41,7 @@ const volume = new fly.Volume("openflow-data", {
   name: "openflow_data",
   region: region,
   size: 1,
-});
+}, { provider: flyProvider });
 
 // Secrets — set via flyctl since @ediri/pulumi-fly has no Secret resource
 // Each secret is set individually so changes can be tracked
