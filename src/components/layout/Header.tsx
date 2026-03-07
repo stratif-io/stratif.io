@@ -8,12 +8,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Moon, Sun, Menu } from 'lucide-react'
+import { Moon, Sun, Menu, Settings } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
 import { ConnectionSelector } from './ConnectionSelector'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { useLogout } from '@/features/auth'
+import { useNavigate } from 'react-router-dom'
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
@@ -21,6 +22,7 @@ export function Header() {
   const { resolvedTheme, setTheme } = useTheme()
   const { user } = useAuthContext()
   const logout = useLogout()
+  const navigate = useNavigate()
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
@@ -83,6 +85,11 @@ export function Header() {
                   )}
                 </div>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => logout.mutate()} disabled={logout.isPending}>
                 {logout.isPending ? 'Signing out…' : 'Sign out'}
