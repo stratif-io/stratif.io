@@ -451,3 +451,35 @@ export const registerUser = (body: { email: string; password: string; display_na
 export const logoutUser = () => fetchApi<void>('/api/auth/logout', { method: 'POST' })
 
 export const initiateGoogleAuth = () => fetchApi<{ redirect_url: string }>('/api/auth/google')
+
+export async function forgotPassword(email: string): Promise<{ ok: boolean }> {
+  return fetchApi('/api/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export async function resetPassword(token: string, new_password: string): Promise<{ ok: boolean }> {
+  return fetchApi('/api/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, new_password }),
+  })
+}
+
+export async function verifyEmail(token: string): Promise<{ ok: boolean }> {
+  return fetchApi(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
+}
+
+export async function resendVerification(): Promise<{ ok: boolean }> {
+  return fetchApi('/api/auth/resend-verification', { method: 'POST' })
+}
+
+export async function changePassword(
+  current_password: string | null,
+  new_password: string
+): Promise<{ ok: boolean }> {
+  return fetchApi('/api/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ current_password, new_password }),
+  })
+}
