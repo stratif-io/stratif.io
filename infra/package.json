@@ -1,0 +1,17 @@
+{
+  "name": "openflow-infra",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@pulumi/pulumi": "^3.0.0",
+    "@ediri/pulumi-fly": "^0.1.0",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
