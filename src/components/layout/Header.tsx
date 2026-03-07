@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Moon, Sun, Menu, Settings } from 'lucide-react'
+import { Moon, Sun, Menu, Settings, Monitor } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
 import { ConnectionSelector } from './ConnectionSelector'
@@ -19,14 +19,10 @@ import { useNavigate } from 'react-router-dom'
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
-  const { resolvedTheme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
   const { user } = useAuthContext()
   const logout = useLogout()
   const navigate = useNavigate()
-
-  const toggleTheme = () => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
-  }
 
   const initials = user?.display_name
     ? user.display_name
@@ -60,12 +56,6 @@ export function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-1 shrink-0">
-          <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8">
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
@@ -89,6 +79,22 @@ export function Header() {
               <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setTheme('light')}>
+                <Sun className="mr-2 h-4 w-4" />
+                Light
+                {theme === 'light' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme('dark')}>
+                <Moon className="mr-2 h-4 w-4" />
+                Dark
+                {theme === 'dark' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme('system')}>
+                <Monitor className="mr-2 h-4 w-4" />
+                System
+                {theme === 'system' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => logout.mutate()} disabled={logout.isPending}>
