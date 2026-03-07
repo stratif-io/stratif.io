@@ -14,8 +14,12 @@ Manages Fly.io infrastructure as code: app, persistent volume, secrets.
 
    ```bash
    cp ../.env.secrets.example ../.env.secrets
-   # Edit .env.secrets — generate each value with: openssl rand -base64 32
    ```
+
+   Then edit `.env.secrets`:
+
+   - `FLY_API_TOKEN` — get it with `flyctl auth token`
+   - `OPENFLOW_JWT_SECRET`, `OPENFLOW_ENCRYPTION_KEY`, `OPENFLOW_API_KEY` — generate with `openssl rand -base64 32`
 
 2. Log in with local state (no account needed):
 
