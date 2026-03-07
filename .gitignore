@@ -35,3 +35,6 @@ db/
 .env
 seeders/.env.seed
 .worktrees/
+
+# Local secrets — never commit
+.env.secrets
