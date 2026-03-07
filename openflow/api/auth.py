@@ -11,11 +11,19 @@ from pydantic import BaseModel
 from openflow.config import Settings, get_settings
 from openflow.core.jwt_auth import AuthUserRow, get_current_auth_user
 from openflow.core.jwt_utils import create_access_token
+from openflow.core.password import hash_password, verify_password
 from openflow.core.rate_limit import limiter
+from openflow.product_db import get_product_db
 from openflow.services.auth_service import (
     authenticate_user,
+    consume_auth_token,
+    create_auth_token,
     register_user,
     upsert_google_user,
+)
+from openflow.services.email_service import (
+    send_password_reset_email,
+    send_verification_email,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -68,11 +76,26 @@ class LoginBody(BaseModel):
     password: str
 
 
+class ForgotPasswordBody(BaseModel):
+    email: str
+
+
+class ResetPasswordBody(BaseModel):
+    token: str
+    new_password: str
+
+
+class ChangePasswordBody(BaseModel):
+    current_password: str | None = None
+    new_password: str
+
+
 class AuthUserResponse(BaseModel):
     id: str
     email: str
     display_name: str | None = None
     avatar_url: str | None = None
+    email_verified: bool = False
     created_at: str
     last_login_at: str | None = None
 
@@ -83,6 +106,9 @@ def _row_to_response(row) -> AuthUserResponse:
         email=row["email"],
         display_name=row["display_name"],
         avatar_url=row["avatar_url"],
+        email_verified=bool(row["email_verified"])
+        if row["email_verified"] is not None
+        else False,
         created_at=row["created_at"],
         last_login_at=row["last_login_at"],
     )
@@ -141,14 +167,110 @@ def me(
     current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
     if current_user:
-        from openflow.product_db import get_product_db
-
         row = get_product_db().fetchone(
             "SELECT * FROM auth_users WHERE id = ?", (current_user.id,)
         )
         return _row_to_response(row)
     else:
         raise ValueError("current_user cannot be None")
+
+
+@router.post("/forgot-password")
+@limiter.limit("3/hour")
+def forgot_password(request: Request, body: ForgotPasswordBody):
+    email = body.email.lower().strip()
+    product_db = get_product_db()
+    row = product_db.fetchone("SELECT * FROM auth_users WHERE email = ?", (email,))
+    if row:
+        token = create_auth_token(row["id"], "password_reset", 1)
+        base_url = settings.frontend_url or "http://localhost:5173"
+        send_password_reset_email(email, token, base_url, row["id"])
+    # Always return 200 to prevent user enumeration
+    return {"ok": True}
+
+
+@router.post("/reset-password")
+@limiter.limit("5/hour")
+def reset_password(request: Request, body: ResetPasswordBody):
+    if len(body.new_password) < 8:
+        raise HTTPException(
+            status_code=400, detail="Password must be at least 8 characters"
+        )
+    user_id = consume_auth_token(body.token, "password_reset")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    product_db = get_product_db()
+    product_db.execute(
+        "UPDATE auth_users SET password_hash = ? WHERE id = ?",
+        (hash_password(body.new_password), user_id),
+    )
+    return {"ok": True}
+
+
+@router.post("/resend-verification")
+@limiter.limit("3/hour")
+def resend_verification(
+    request: Request,
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
+):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    product_db = get_product_db()
+    row = product_db.fetchone(
+        "SELECT * FROM auth_users WHERE id = ?", (current_user.id,)
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+    if row["email_verified"]:
+        return {"ok": True}
+    token = create_auth_token(current_user.id, "email_verification", 24)
+    base_url = settings.frontend_url or "http://localhost:5173"
+    send_verification_email(row["email"], token, base_url, current_user.id)
+    return {"ok": True}
+
+
+@router.get("/verify-email")
+def verify_email(token: str):
+    user_id = consume_auth_token(token, "email_verification")
+    if not user_id:
+        raise HTTPException(
+            status_code=400, detail="Invalid or expired verification token"
+        )
+    product_db = get_product_db()
+    product_db.execute(
+        "UPDATE auth_users SET email_verified = 1 WHERE id = ?", (user_id,)
+    )
+    return {"ok": True}
+
+
+@router.post("/change-password")
+def change_password(
+    body: ChangePasswordBody,
+    current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
+):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if len(body.new_password) < 8:
+        raise HTTPException(
+            status_code=400, detail="Password must be at least 8 characters"
+        )
+    product_db = get_product_db()
+    row = product_db.fetchone(
+        "SELECT * FROM auth_users WHERE id = ?", (current_user.id,)
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+    # If user has a password, verify current_password
+    if row["password_hash"]:
+        if not body.current_password:
+            raise HTTPException(status_code=400, detail="Current password is required")
+        if not verify_password(body.current_password, row["password_hash"]):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+    product_db.execute(
+        "UPDATE auth_users SET password_hash = ? WHERE id = ?",
+        (hash_password(body.new_password), current_user.id),
+    )
+    return {"ok": True}
 
 
 @router.get("/google")
