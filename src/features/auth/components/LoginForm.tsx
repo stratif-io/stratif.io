@@ -57,6 +57,12 @@ export function LoginForm() {
         {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
       </div>
 
+      <div className="flex justify-end">
+        <Link to="/auth/forgot-password" className="text-xs text-muted-foreground hover:underline">
+          Forgot your password?
+        </Link>
+      </div>
+
       {login.error && <p className="text-sm text-destructive">{(login.error as Error).message}</p>}
 
       <Button type="submit" className="w-full" disabled={login.isPending}>
