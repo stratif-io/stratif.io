@@ -17,19 +17,27 @@ Manages Fly.io infrastructure as code: app, persistent volume, secrets.
    # Edit .env.secrets — generate each value with: openssl rand -base64 32
    ```
 
-2. Install dependencies:
+2. Log in with local state (no account needed):
+
+   ```bash
+   pulumi login --local
+   ```
+
+   This stores state in `~/.pulumi/` on your machine. No Pulumi Cloud account or registration required.
+
+3. Install dependencies:
 
    ```bash
    npm install
    ```
 
-3. Create a Pulumi stack:
+4. Create a Pulumi stack:
 
    ```bash
    pulumi stack init prod
    ```
 
-4. Provision infrastructure:
+5. Provision infrastructure:
 
    ```bash
    pulumi up
