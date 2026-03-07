@@ -1,5 +1,4 @@
 import * as pulumi from "@pulumi/pulumi";
-import * as fly from "@ediri/pulumi-fly";
 import * as command from "@pulumi/command";
 import * as dotenv from "dotenv";
 import * as path from "path";
@@ -19,48 +18,31 @@ function requireSecret(name: string): string {
   return val;
 }
 
-const flyApiToken = requireSecret("FLY_API_TOKEN");
 const jwtSecret = requireSecret("OPENFLOW_JWT_SECRET");
 const encryptionKey = requireSecret("OPENFLOW_ENCRYPTION_KEY");
 const apiKey = requireSecret("OPENFLOW_API_KEY");
 const allowRegistration = process.env["OPENFLOW_ALLOW_REGISTRATION"] ?? "false";
 
-// Explicit provider — required so the token is passed through Pulumi's config
-// channel to the Go provider binary (dotenv only sets Node.js process.env)
-const flyProvider = new fly.Provider("fly", { flyApiToken });
-
-// Fly.io app
-const app = new fly.App("openflow-app", {
-  name: appName,
-  org: "personal",
-}, { provider: flyProvider });
-
-// Persistent volume for SQLite product DB (mounts at /data in fly.toml)
-const volume = new fly.Volume("openflow-data", {
-  app: app.name,
-  name: "openflow_data",
-  region: region,
-  size: 1,
-}, { provider: flyProvider });
-
-// Secrets — set via flyctl since @ediri/pulumi-fly has no Secret resource
-// Each secret is set individually so changes can be tracked
-const secretsEnv = [
-  `OPENFLOW_JWT_SECRET=${jwtSecret}`,
-  `OPENFLOW_ENCRYPTION_KEY=${encryptionKey}`,
-  `OPENFLOW_API_KEY=${apiKey}`,
-  `OPENFLOW_ALLOW_REGISTRATION=${allowRegistration}`,
-].join(" ");
-
-new command.local.Command("set-secrets", {
-  create: pulumi.interpolate`fly secrets set --app ${app.name} ${secretsEnv}`,
-  // On update, re-set all secrets to keep them in sync
-  update: pulumi.interpolate`fly secrets set --app ${app.name} ${secretsEnv}`,
-  // Secrets are deleted when the app is destroyed via pulumi destroy
-  triggers: [jwtSecret, encryptionKey, apiKey, allowRegistration],
+// Fly.io app — idempotent: only creates if it doesn't exist
+const app = new command.local.Command("openflow-app", {
+  create: `flyctl apps create ${appName} --org personal 2>&1 | grep -v "already exists" || true`,
+  delete: `flyctl apps destroy ${appName} --yes`,
 });
 
+// Persistent volume — idempotent: only creates if none exists for this app
+const volume = new command.local.Command("openflow-data", {
+  create: `flyctl volumes list --app ${appName} --json | grep -q openflow_data || flyctl volumes create openflow_data --app ${appName} --region ${region} --size 1 --yes`,
+  // Volumes must be deleted manually to avoid accidental data loss
+  delete: `echo "Volume openflow_data NOT deleted — remove manually with: flyctl volumes destroy <id>"`,
+}, { dependsOn: app });
+
+// Secrets — set all at once; flyctl restarts the app automatically
+const secrets = new command.local.Command("openflow-secrets", {
+  create: `flyctl secrets set --app ${appName} OPENFLOW_JWT_SECRET="${jwtSecret}" OPENFLOW_ENCRYPTION_KEY="${encryptionKey}" OPENFLOW_API_KEY="${apiKey}" OPENFLOW_ALLOW_REGISTRATION="${allowRegistration}"`,
+  update: `flyctl secrets set --app ${appName} OPENFLOW_JWT_SECRET="${jwtSecret}" OPENFLOW_ENCRYPTION_KEY="${encryptionKey}" OPENFLOW_API_KEY="${apiKey}" OPENFLOW_ALLOW_REGISTRATION="${allowRegistration}"`,
+  triggers: [jwtSecret, encryptionKey, apiKey, allowRegistration],
+}, { dependsOn: app });
+
 // Outputs
-export const flyAppName = app.name;
-export const flyAppHostname = pulumi.interpolate`${app.name}.fly.dev`;
-export const volumeId = volume.id;
+export const flyAppName = appName;
+export const flyAppHostname = `${appName}.fly.dev`;

@@ -6,7 +6,6 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@ediri/pulumi-fly": "^0.1.0",
     "@pulumi/command": "^1.2.1",
     "@pulumi/pulumi": "^3.0.0",
     "dotenv": "^16.0.0"
