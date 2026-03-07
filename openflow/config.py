@@ -42,6 +42,13 @@ class Settings(BaseSettings):
 
     frontend_url: str | None = None
 
+    # SMTP (optional — if not set, emails print to console)
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str = "OpenFlow <noreply@openflow.app>"
+
     allow_registration: bool = False
     debug: bool = False
 
