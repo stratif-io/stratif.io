@@ -10,7 +10,9 @@ primary_region = 'iad'
   dockerfile = 'Dockerfile'
 
 [env]
+  OPENFLOW_CORS_ORIGINS = '["https://openflow-analytics.fly.dev"]'
   OPENFLOW_DEBUG = 'false'
+  OPENFLOW_PRODUCT_DB_PATH = '/data/openflow_product.sqlite'
   OPENFLOW_JWT_ALGORITHM = 'HS256'
   OPENFLOW_JWT_EXPIRE_DAYS = '7'
   OPENFLOW_LOG_FORMAT = 'json'
