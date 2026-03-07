@@ -244,7 +244,9 @@ def verify_email(token: str):
 
 
 @router.post("/change-password")
+@limiter.limit("5/hour")
 def change_password(
+    request: Request,
     body: ChangePasswordBody,
     current_user: Annotated[AuthUserRow | None, Depends(get_current_auth_user)] = None,
 ):
