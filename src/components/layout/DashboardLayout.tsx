@@ -3,6 +3,7 @@ import { useAppStore } from '@/stores'
 import { useUrlSync } from '@/hooks'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
+import { EmailVerificationBanner } from './EmailVerificationBanner'
 import { cn } from '@/lib/utils'
 
 export function DashboardLayout() {
@@ -18,6 +19,7 @@ export function DashboardLayout() {
           sidebarOpen ? 'lg:ml-[220px]' : 'lg:ml-[60px]'
         )}
       >
+        <EmailVerificationBanner />
         <Header />
         <main className="p-6 lg:p-8">
           <Outlet />
