@@ -18,10 +18,10 @@
     "noImplicitAny": false,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./frontend/*"]
     }
   },
-  "include": ["src"],
+  "include": ["frontend"],
   "exclude": ["tests"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
