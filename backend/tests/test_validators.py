@@ -3,7 +3,7 @@
 import pytest
 from fastapi import HTTPException
 
-from openflow.services.validators import parse_date
+from backend.services.validators import parse_date
 
 
 class TestParseDate:

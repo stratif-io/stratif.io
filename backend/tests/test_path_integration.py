@@ -1,6 +1,6 @@
 """Integration tests for path analysis with real database."""
 
-from openflow.services import generate_path_analysis_query
+from backend.services import generate_path_analysis_query
 
 
 class TestPathAnalysisIntegration:

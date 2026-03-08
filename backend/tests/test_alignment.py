@@ -7,18 +7,8 @@ import duckdb
 import pytest
 from starlette.testclient import TestClient
 
-from openflow.core.jwt_auth import get_current_auth_user
-from openflow.main import app
-from openflow.services.connection_executor import AnalyticsDatabase, get_analytics_db
-
-
-class FakeUser:
-    id = "test-user-id"
-    email = "test@example.com"
-    display_name = "Test User"
-    avatar_url = None
-    created_at = "2024-01-01T00:00:00"
-    last_login_at = None
+from backend.main import app
+from backend.services.connection_executor import AnalyticsDatabase, get_analytics_db
 
 
 def _make_funnel_db() -> AnalyticsDatabase:
@@ -52,16 +42,11 @@ def _make_funnel_db() -> AnalyticsDatabase:
 
 @pytest.fixture()
 def funnel_client():
-    fake_user = FakeUser()
     test_db = _make_funnel_db()
-
-    async def override_auth():
-        return fake_user
 
     async def override_db():
         yield test_db
 
-    app.dependency_overrides[get_current_auth_user] = override_auth
     app.dependency_overrides[get_analytics_db] = override_db
 
     with TestClient(app) as c:

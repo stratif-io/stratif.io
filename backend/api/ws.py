@@ -7,11 +7,8 @@ from datetime import UTC, datetime
 
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from jose import JWTError
 
-from openflow.core.jwt_utils import decode_access_token
-from openflow.product_db import get_product_db
-from openflow.services.connection_executor import open_analytics_db
+from backend.services.connection_executor import AnalyticsDatabase, get_analytics_db
 
 log = structlog.get_logger(__name__)
 
@@ -21,44 +18,11 @@ PUSH_INTERVAL = 10  # seconds between periodic metric pushes
 
 
 # ---------------------------------------------------------------------------
-# Auth
-# ---------------------------------------------------------------------------
-
-
-def _authenticate_ws(websocket: WebSocket) -> str | None:
-    """Read the JWT session cookie and return user_id, or None if invalid."""
-    token = websocket.cookies.get("of_session")
-    if not token:
-        return None
-    try:
-        payload = decode_access_token(token)
-        return payload.get("sub")
-    except JWTError:
-        return None
-
-
-# ---------------------------------------------------------------------------
-# DB resolution
-# ---------------------------------------------------------------------------
-
-
-def _get_db_for_user(user_id: str):
-    """Return the analytics DB for the user's first connection, or the default DB."""
-    product_db = get_product_db()
-    row = product_db.fetchone(
-        "SELECT id FROM connections WHERE user_id = ? ORDER BY created_at ASC LIMIT 1",
-        (user_id,),
-    )
-    if row:
-        return open_analytics_db(row["id"], user_id)
-
-
-# ---------------------------------------------------------------------------
 # Metric fetchers  (synchronous — called via run_in_executor)
 # ---------------------------------------------------------------------------
 
 
-def _fetch_event_count(db) -> dict:
+def _fetch_event_count(db: AnalyticsDatabase) -> dict:
     rows = db.execute("""
         SELECT
             COUNT(*)                                                            AS total,
@@ -73,7 +37,7 @@ def _fetch_event_count(db) -> dict:
     return {"total": total, "today": today, "change": change}
 
 
-def _fetch_active_users(db) -> dict:
+def _fetch_active_users(db: AnalyticsDatabase) -> dict:
     """Users active in the last 30 minutes relative to the most recent event."""
     rows = db.execute("""
         WITH latest AS (
@@ -112,7 +76,7 @@ def _fetch_active_users(db) -> dict:
     return {"count": len(users), "users": users}
 
 
-def _fetch_conversion(db) -> dict:
+def _fetch_conversion(db: AnalyticsDatabase) -> dict:
     """Overall Home → Purchase conversion rate."""
     rows = db.execute("""
         WITH home_users AS (
@@ -142,11 +106,6 @@ _FETCHERS = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def _now() -> str:
     return datetime.now(UTC).isoformat()
 
@@ -158,53 +117,35 @@ def _now() -> str:
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket) -> None:
-    # ── Auth ────────────────────────────────────────────────────────────────
-    user_id = _authenticate_ws(websocket)
-    if not user_id:
-        await websocket.close(code=4001, reason="Unauthorized")
-        return
-
     await websocket.accept()
-    log.info("ws_connected", user_id=user_id)
+    log.info("ws_connected")
 
     loop = asyncio.get_running_loop()
 
-    # ── Open analytics DB ────────────────────────────────────────────────────
-    # try:
-    db = await loop.run_in_executor(None, _get_db_for_user, user_id)
-    # except Exception as exc:
-    #    log.error("ws_db_open_failed", user_id=user_id, error=str(exc))
-    #    await websocket.close(code=4500, reason="Database error")
-    #    return
+    # Get the analytics DB
+    db_gen = get_analytics_db()
+    db = await db_gen.__anext__()
 
-    # ── State ────────────────────────────────────────────────────────────────
-    # subscriptions: {subscriptionId → event_type}
     subscriptions: dict[str, str] = {}
 
-    # ── Background push loop ─────────────────────────────────────────────────
     async def push_loop() -> None:
         while True:
             await asyncio.sleep(PUSH_INTERVAL)
             pending = set(subscriptions.values())
             for event_type in pending:
                 try:
-                    payload = await loop.run_in_executor(
-                        None, _FETCHERS[event_type], db
-                    )
-                    await websocket.send_json(
-                        {
-                            "type": "data",
-                            "event": event_type,
-                            "payload": payload,
-                            "timestamp": _now(),
-                        }
-                    )
+                    payload = await loop.run_in_executor(None, _FETCHERS[event_type], db)
+                    await websocket.send_json({
+                        "type": "data",
+                        "event": event_type,
+                        "payload": payload,
+                        "timestamp": _now(),
+                    })
                 except Exception as exc:
                     log.warning("ws_push_error", event=event_type, error=str(exc))
 
     push_task = asyncio.create_task(push_loop())
 
-    # ── Message loop ─────────────────────────────────────────────────────────
     try:
         await websocket.send_json({"type": "connected", "timestamp": _now()})
 
@@ -224,30 +165,25 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 sub_id = msg.get("subscriptionId")
                 if event in _FETCHERS and sub_id:
                     subscriptions[sub_id] = event
-                    # Immediately push current data so the client doesn't wait PUSH_INTERVAL
                     try:
                         payload = await loop.run_in_executor(None, _FETCHERS[event], db)
-                        await websocket.send_json(
-                            {
-                                "type": "data",
-                                "event": event,
-                                "payload": payload,
-                                "timestamp": _now(),
-                                "subscriptionId": sub_id,
-                            }
-                        )
+                        await websocket.send_json({
+                            "type": "data",
+                            "event": event,
+                            "payload": payload,
+                            "timestamp": _now(),
+                            "subscriptionId": sub_id,
+                        })
                     except Exception as exc:
-                        log.warning(
-                            "ws_subscribe_fetch_error", event=event, error=str(exc)
-                        )
+                        log.warning("ws_subscribe_fetch_error", event=event, error=str(exc))
 
             elif msg_type == "unsubscribe":
                 subscriptions.pop(msg.get("subscriptionId", ""), None)
 
     except WebSocketDisconnect:
-        log.info("ws_disconnected", user_id=user_id)
+        log.info("ws_disconnected")
     except Exception as exc:
-        log.error("ws_error", user_id=user_id, error=str(exc))
+        log.error("ws_error", error=str(exc))
     finally:
         push_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):

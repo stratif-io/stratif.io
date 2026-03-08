@@ -25,12 +25,3 @@ class TestTrendEndpoint:
         )
         assert response.status_code == 400
 
-    def test_no_auth_returns_401(self):
-        # Use a plain client without overrides
-        from starlette.testclient import TestClient
-
-        from openflow.main import app
-
-        with TestClient(app, raise_server_exceptions=False) as c:
-            response = c.get("/api/trend")
-        assert response.status_code == 401

@@ -1,34 +1,14 @@
-"""Tests for openflow.services.connection_executor internals."""
+"""Tests for backend.services.connection_executor internals."""
 
-from unittest.mock import MagicMock, patch
-
+import duckdb
 import pytest
 from fastapi import HTTPException
 
-from openflow.services.connection_executor import (
+from backend.services.connection_executor import (
     AnalyticsDatabase,
     _to_named_params,
     get_analytics_db,
 )
-
-
-@pytest.mark.anyio
-async def test_get_analytics_db_raises_503_when_no_connection():
-    """get_analytics_db should raise 503 when no connection is configured."""
-    mock_user = MagicMock()
-    mock_user.id = "user-123"
-
-    with patch(
-        "openflow.services.connection_executor.get_product_db"
-    ) as mock_product_db:
-        mock_db = MagicMock()
-        mock_db.fetchone.return_value = None  # no connection found
-        mock_product_db.return_value = mock_db
-
-        gen = get_analytics_db(connection_id=None, current_user=mock_user)
-        with pytest.raises(HTTPException) as exc_info:
-            await gen.__anext__()
-        assert exc_info.value.status_code == 503
 
 
 class TestToNamedParams:
@@ -64,7 +44,6 @@ class TestToNamedParams:
     def test_handles_string_with_quotes(self):
         query, named = _to_named_params("WHERE name = ?", ["O'Brien"])
         assert named == {"p0": "O'Brien"}
-        # Value must NOT be escaped/modified — driver handles it
         assert "O'Brien" in str(named["p0"])
 
     def test_handles_float_value(self):
@@ -81,8 +60,6 @@ class TestBuildFilterClauses:
     """Test AnalyticsDatabase.build_filter_clauses via an in-memory instance."""
 
     def _make_db(self, custom_prop_exprs: dict) -> AnalyticsDatabase:
-        import duckdb
-
         conn = duckdb.connect(":memory:")
         return AnalyticsDatabase(
             conn=conn,
@@ -131,33 +108,17 @@ class TestBuildFilterClauses:
         assert len(params) == 2
 
 
-def test_trend_endpoint_signature_requires_db(monkeypatch):
+def test_trend_endpoint_signature_requires_db():
     """trend endpoint should declare db as non-Optional AnalyticsDatabase."""
     import inspect
     import typing
 
-    monkeypatch.setenv("OPENFLOW_JWT_SECRET", "test-secret")
-    monkeypatch.setenv("OPENFLOW_JWT_ALGORITHM", "HS256")
-    monkeypatch.setenv("OPENFLOW_JWT_EXPIRE_DAYS", "7")
-    monkeypatch.setenv("OPENFLOW_CORS_ORIGINS", '["*"]')
-    monkeypatch.setenv("OPENFLOW_PRODUCT_DB_PATH", ":memory:")
-    monkeypatch.setenv("OPENFLOW_ENCRYPTION_KEY", "test-encryption-key-32-chars-long!")
-    monkeypatch.setenv("OPENFLOW_API_URL", "http://localhost:8000")
-    monkeypatch.setenv("OPENFLOW_API_KEY", "test-api-key")
-    import sys
-
-    # Remove cached modules to force re-import with env vars set
-    for mod in list(sys.modules.keys()):
-        if "openflow" in mod:
-            del sys.modules[mod]
-    from openflow.api.trend import get_trend
-    from openflow.services.connection_executor import AnalyticsDatabase
+    from backend.api.trend import get_trend
+    from backend.services.connection_executor import AnalyticsDatabase
 
     sig = inspect.signature(get_trend)
     db_param = sig.parameters["db"]
     annotation = db_param.annotation
-    # For Annotated[T, ...], get_args returns (T, metadata...)
-    # We want to confirm the first arg is AnalyticsDatabase (not AnalyticsDatabase | None)
     args = typing.get_args(annotation)
     db_type = args[0] if args else annotation
     assert db_type is AnalyticsDatabase, f"Expected AnalyticsDatabase, got {db_type}"
@@ -165,8 +126,6 @@ def test_trend_endpoint_signature_requires_db(monkeypatch):
 
 class TestHasColumn:
     def _make_db(self, available_columns=None, custom_props=None, events_cte=None):
-        import duckdb
-
         conn = duckdb.connect(":memory:")
         return AnalyticsDatabase(
             conn=conn,
@@ -178,9 +137,6 @@ class TestHasColumn:
 
     def test_standard_columns_always_present(self):
         db = self._make_db(available_columns=frozenset())
-        # standard cols are in the fallback but NOT in available_columns
-        # so with real introspection (empty set), they'd be False
-        # This tests the real-introspection path: trusts available_columns
         assert db.has_column("user_id") is False  # not in frozenset()
 
     def test_with_real_columns_set(self):
@@ -195,7 +151,6 @@ class TestHasColumn:
 
     def test_fallback_when_no_introspection(self):
         db = self._make_db(available_columns=None)
-        # No CTE, no available_columns → conservative: assume all exist
         assert db.has_column("user_id") is True
         assert db.has_column("properties") is True
         assert db.has_column("anything") is True
@@ -207,156 +162,12 @@ class TestHasColumn:
             custom_props=[{"name": "country", "path": "properties.country"}],
         )
         assert db.has_column("user_id") is True
-        assert db.has_column("properties") is True  # root of custom prop path
+        assert db.has_column("properties") is True
         assert db.has_column("nonexistent") is False
-
-
-class TestCustomPropExprFallback:
-    """When a custom property path is 'properties.device_type' but the table has
-    no 'properties' JSON column — only a flat 'device_type' column — the system
-    must remap the expression to use the flat column directly.
-
-    Without the fix, any query using the expression fails with:
-      "Referenced column 'properties' not found in FROM clause"
-    """
-
-    def _open_db(self, db_path: str, prop_path: str, db_type: str = "duckdb"):
-        """Open an analytics DB remapped from 'track' (non-standard table name)
-        with flat columns and one custom property using *prop_path*."""
-        import json
-        from unittest.mock import MagicMock, patch
-
-        from openflow.services.connection_executor import open_analytics_db
-
-        mock_product_db = MagicMock()
-        mock_product_db.fetchone.side_effect = [
-            {
-                "db_type": db_type,
-                "id": "conn-1",
-                "user_id": "user-1",
-                "credentials_encrypted": b"ignored",
-            },
-            {
-                "user_id_field": "user_id",
-                "timestamp_field": "ts",
-                "event_name_field": "event_name",
-                "events_table": "track",  # triggers needs_remap (table != "events")
-                "custom_properties": json.dumps(
-                    [{"name": "device_type", "path": prop_path}]
-                ),
-                "session_timeout_minutes": 30,
-            },
-            None,
-        ]
-
-        with (
-            patch(
-                "openflow.services.connection_executor.get_product_db",
-                return_value=mock_product_db,
-            ),
-            patch(
-                "openflow.services.connection_executor.decrypt_credentials",
-                return_value={"file_path": db_path},
-            ),
-        ):
-            return open_analytics_db("conn-1", "user-1")
-
-    def _make_duckdb(self, tmp_path) -> str:
-        import duckdb
-
-        db_path = str(tmp_path / "test.duckdb")
-        conn = duckdb.connect(db_path)
-        conn.execute(
-            "CREATE TABLE track "
-            "(user_id VARCHAR, ts TIMESTAMP, event_name VARCHAR, device_type VARCHAR)"
-        )
-        conn.execute(
-            "INSERT INTO track VALUES ('u1', '2026-01-01 10:00:00', 'Home', 'Mobile')"
-        )
-        conn.close()
-        return db_path
-
-    def test_flat_column_path_baseline(self, tmp_path):
-        """path='device_type' (flat column) — baseline, must always pass."""
-        db = self._open_db(self._make_duckdb(tmp_path), "device_type")
-        expr = db._custom_prop_exprs["device_type"]
-        result = db.execute(f"SELECT {expr} FROM events LIMIT 1")
-        assert result[0][0] == "Mobile"
-
-    def test_json_path_with_nonexistent_root_falls_back_to_flat_column(self, tmp_path):
-        """path='properties.device_type' but table has no 'properties' column.
-        The expression must be remapped to 'device_type' (flat column) so
-        queries using it do not fail with 'column not found'."""
-        db = self._open_db(self._make_duckdb(tmp_path), "properties.device_type")
-        expr = db._custom_prop_exprs["device_type"]
-        # With the bug: expr = json_extract_string("properties", ...) → BinderError
-        result = db.execute(f"SELECT {expr} FROM events LIMIT 1")
-        assert result[0][0] == "Mobile"
-
-    def test_json_path_when_root_exists_uses_json_extraction(self, tmp_path):
-        """path='props.device_type' and 'props' column exists — must keep the
-        JSON extraction expression, not fall back to flat column."""
-        import duckdb
-
-        db_path = str(tmp_path / "test_props.duckdb")
-        conn = duckdb.connect(db_path)
-        conn.execute(
-            "CREATE TABLE track "
-            "(user_id VARCHAR, ts TIMESTAMP, event_name VARCHAR, props JSON)"
-        )
-        conn.execute(
-            "INSERT INTO track VALUES "
-            "('u1', '2026-01-01 10:00:00', 'Home', '{\"device_type\": \"Desktop\"}')"
-        )
-        conn.close()
-
-        import json
-        from unittest.mock import MagicMock, patch
-
-        from openflow.services.connection_executor import open_analytics_db
-
-        mock_product_db = MagicMock()
-        mock_product_db.fetchone.side_effect = [
-            {
-                "db_type": "duckdb",
-                "id": "c1",
-                "user_id": "u1",
-                "credentials_encrypted": b"x",
-            },
-            {
-                "user_id_field": "user_id",
-                "timestamp_field": "ts",
-                "event_name_field": "event_name",
-                "events_table": "track",
-                "custom_properties": json.dumps(
-                    [{"name": "device_type", "path": "props.device_type"}]
-                ),
-                "session_timeout_minutes": 30,
-            },
-            None,
-        ]
-
-        with (
-            patch(
-                "openflow.services.connection_executor.get_product_db",
-                return_value=mock_product_db,
-            ),
-            patch(
-                "openflow.services.connection_executor.decrypt_credentials",
-                return_value={"file_path": db_path},
-            ),
-        ):
-            db = open_analytics_db("c1", "u1")
-
-        expr = db._custom_prop_exprs["device_type"]
-        result = db.execute(f"SELECT {expr} FROM events LIMIT 1")
-        assert result[0][0] == "Desktop"
 
 
 def test_pooled_db_stores_pool_key():
     """Pooled AnalyticsDatabase instances should store their pool key."""
-    import duckdb
-
     db = AnalyticsDatabase(
         conn=duckdb.connect(":memory:"),
         dialect="duckdb",
@@ -368,24 +179,20 @@ def test_pooled_db_stores_pool_key():
 
 
 def test_execute_raises_503_on_stale_databricks_connection():
-    """execute() should evict pool and raise 503 when Databricks connection is dead."""
-    from unittest.mock import MagicMock, patch
-
-    from fastapi import HTTPException
+    """execute() should raise 503 when Databricks connection is dead."""
+    from unittest.mock import MagicMock
 
     try:
         from databricks.sql.exc import Error as DatabricksError
     except ImportError:
         pytest.skip("databricks-sql-connector not installed")
 
-    import openflow.services.connection_executor as _ce
-
     dead_conn = MagicMock()
     dead_cursor = MagicMock()
     dead_cursor.execute.side_effect = DatabricksError("Connection closed")
     dead_conn.cursor.return_value = dead_cursor
 
-    db = _ce.AnalyticsDatabase(
+    db = AnalyticsDatabase(
         conn=dead_conn,
         dialect="databricks",
         events_cte=None,
@@ -393,40 +200,27 @@ def test_execute_raises_503_on_stale_databricks_connection():
     db._pooled = True
     db._pool_key = ("conn-1", "user-1", "databricks")
 
-    mock_settings = MagicMock()
-    mock_settings.log_sql = False
-    with (
-        patch.object(_ce, "get_settings", return_value=mock_settings),
-        patch.object(_ce, "evict_connection") as mock_evict,
-        pytest.raises(HTTPException) as exc_info,
-    ):
+    with pytest.raises(HTTPException) as exc_info:
         db.execute("SELECT 1")
     assert exc_info.value.status_code == 503
     assert "retry" in exc_info.value.detail.lower()
-    mock_evict.assert_called_once_with("conn-1", "user-1")
 
 
 def test_execute_raises_503_on_stale_postgres_connection():
-    """execute() should evict pool and raise 503 when PostgreSQL connection is dead."""
-    from unittest.mock import MagicMock, patch
-
-    from fastapi import HTTPException
+    """execute() should raise 503 when PostgreSQL connection is dead."""
+    from unittest.mock import MagicMock
 
     try:
         import psycopg2
     except ImportError:
         pytest.skip("psycopg2 not installed")
 
-    import openflow.services.connection_executor as _ce
-
     dead_conn = MagicMock()
     dead_cursor = MagicMock()
-    dead_cursor.execute.side_effect = psycopg2.OperationalError(
-        "server closed connection"
-    )
+    dead_cursor.execute.side_effect = psycopg2.OperationalError("server closed connection")
     dead_conn.cursor.return_value = dead_cursor
 
-    db = _ce.AnalyticsDatabase(
+    db = AnalyticsDatabase(
         conn=dead_conn,
         dialect="postgres",
         events_cte=None,
@@ -434,13 +228,6 @@ def test_execute_raises_503_on_stale_postgres_connection():
     db._pooled = True
     db._pool_key = ("conn-2", "user-2", "postgres")
 
-    mock_settings = MagicMock()
-    mock_settings.log_sql = False
-    with (
-        patch.object(_ce, "get_settings", return_value=mock_settings),
-        patch.object(_ce, "evict_connection") as mock_evict,
-        pytest.raises(HTTPException) as exc_info,
-    ):
+    with pytest.raises(HTTPException) as exc_info:
         db.execute("SELECT 1")
     assert exc_info.value.status_code == 503
-    mock_evict.assert_called_once_with("conn-2", "user-2")

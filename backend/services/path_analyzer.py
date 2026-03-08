@@ -24,7 +24,7 @@ from typing import Any
 import sqlglot
 from sqlglot import exp
 
-from openflow.services.sql_builder import (
+from backend.services.sql_builder import (
     cast_to_text,
     epoch_diff_seconds,
     interval_minutes_exceeded,

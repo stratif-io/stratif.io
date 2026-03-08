@@ -5,10 +5,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from openflow.db.views import session_ctes
-from openflow.services import get_analytics_db
-from openflow.services.connection_executor import AnalyticsDatabase
-from openflow.services.validators import parse_date
+from backend.db.views import session_ctes
+from backend.services import get_analytics_db
+from backend.services.connection_executor import AnalyticsDatabase
+from backend.services.validators import parse_date
 
 router = APIRouter(prefix="/api", tags=["sessions"])
 

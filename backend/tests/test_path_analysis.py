@@ -2,7 +2,7 @@
 
 import pytest
 
-from openflow.services.path_analyzer import (
+from backend.services.path_analyzer import (
     PathAnalyzerError,
     generate_path_analysis_query,
 )

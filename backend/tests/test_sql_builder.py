@@ -1,6 +1,6 @@
 """Tests for openflow.services.sql_builder dialect outputs."""
 
-from openflow.services.sql_builder import (
+from backend.services.sql_builder import (
     cast_to_text,
     date_diff_days,
     date_trunc,

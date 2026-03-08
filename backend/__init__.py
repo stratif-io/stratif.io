@@ -2,6 +2,4 @@
 
 __version__ = "1.0.0"
 
-from .config import Settings, get_settings
-
-__all__ = ["__version__", "get_settings", "Settings"]
+__all__ = ["__version__"]

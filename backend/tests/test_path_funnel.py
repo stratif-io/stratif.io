@@ -1,7 +1,7 @@
 """Unit tests for path funnel API."""
 
-from openflow.api.paths import get_path_funnel
-from openflow.services.connection_executor import AnalyticsDatabase
+from backend.api.paths import get_path_funnel
+from backend.services.connection_executor import AnalyticsDatabase
 
 
 class MockDB(AnalyticsDatabase):

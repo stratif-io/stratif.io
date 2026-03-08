@@ -8,9 +8,9 @@ import structlog
 from fastapi import APIRouter, Depends, Query
 from structlog.stdlib import BoundLogger
 
-from openflow.services import get_analytics_db
-from openflow.services.connection_executor import AnalyticsDatabase
-from openflow.services.validators import parse_date
+from backend.services import get_analytics_db
+from backend.services.connection_executor import AnalyticsDatabase
+from backend.services.validators import parse_date
 
 log: BoundLogger = structlog.get_logger(__name__)
 

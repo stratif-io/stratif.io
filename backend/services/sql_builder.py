@@ -9,7 +9,7 @@ Supported dialects (mirrors SQLGlot + common targets):
     "bigquery", "snowflake", "redshift", "tsql"
 
 Usage pattern in API endpoints:
-    from openflow.services.sql_builder import date_trunc, date_diff_days
+    from backend.services.sql_builder import date_trunc, date_diff_days
 
     dialect = db.get_dialect()
     day_col  = date_trunc("day", "timestamp", dialect)
