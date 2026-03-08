@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     # API key auth (optional for dev, required for production)
     api_key: str = ""
 
+    # Product DB (SQLite — stores connections and configs)
+    product_db_path: str = "./openflow_product.sqlite"
+
+    # Encryption key for credentials (required to store connections)
+    encryption_key: str = ""
+
     # Server
     cors_origins: str = "http://localhost:5173"
     debug: bool = False
