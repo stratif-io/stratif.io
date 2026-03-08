@@ -123,8 +123,13 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     loop = asyncio.get_running_loop()
 
     # Get the analytics DB (pass connection_id=None explicitly — not via DI)
-    db_gen = get_analytics_db(connection_id=None)
-    db = await db_gen.__anext__()
+    try:
+        db_gen = get_analytics_db(connection_id=None)
+        db = await db_gen.__anext__()
+    except Exception as exc:
+        await websocket.send_json({"type": "error", "message": str(exc)})
+        await websocket.close()
+        return
 
     subscriptions: dict[str, str] = {}
 
