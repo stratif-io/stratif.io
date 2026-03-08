@@ -2,10 +2,21 @@
 
 import duckdb
 import pytest
+from unittest.mock import AsyncMock, patch
 from starlette.testclient import TestClient
 
 from backend.main import app
 from backend.services.connection_executor import AnalyticsDatabase, get_analytics_db
+
+
+@pytest.fixture(autouse=True)
+def _patch_lifespan():
+    """Prevent lifespan from opening the real DuckDB file during tests."""
+    with (
+        patch("backend.main.init_db", new_callable=AsyncMock),
+        patch("backend.main.init_product_db"),
+    ):
+        yield
 
 
 def _make_test_db() -> AnalyticsDatabase:

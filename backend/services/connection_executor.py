@@ -301,18 +301,187 @@ class AnalyticsDatabase:
 
 
 # ---------------------------------------------------------------------------
-# FastAPI dependency — single-tenant, uses global DB from config
+# Open analytics DB by connection ID (from product_db)
 # ---------------------------------------------------------------------------
 
 
-async def get_analytics_db():
-    """FastAPI dependency: yields the analytics DB for the configured connection."""
-    from backend.db import get_db, get_dialect
+def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
+    """Open a schema-mapped analytics DB for the given connection ID."""
+    import json
 
-    conn = get_db()
-    dialect = get_dialect()
-    db = AnalyticsDatabase(conn=conn, dialect=dialect, events_cte=None)
+    from backend.product_db import get_product_db
+    from backend.services.crypto import decrypt_credentials
+
+    product_db = get_product_db()
+
+    row = product_db.fetchone("SELECT * FROM connections WHERE id = ?", (connection_id,))
+    if not row:
+        raise HTTPException(status_code=404, detail="Connection not found")
+
+    db_type: str = row["db_type"]
+    creds = decrypt_credentials(row["credentials_encrypted"])
+    file_path: str = creds.get("file_path") or creds.get("s3_path", ":memory:")
+
+    schema_row = product_db.fetchone(
+        "SELECT * FROM connection_schema_configs WHERE connection_id = ?", (connection_id,)
+    )
+    uid_f = schema_row["user_id_field"] if schema_row else "user_id"
+    ts_f = schema_row["timestamp_field"] if schema_row else "timestamp"
+    en_f = schema_row["event_name_field"] if schema_row else "event_name"
+    events_table = schema_row["events_table"] if schema_row and schema_row["events_table"] else "events"
+    custom_props: list[dict] = json.loads(schema_row["custom_properties"]) if schema_row else []
+    session_timeout_minutes: int = (
+        schema_row["session_timeout_minutes"]
+        if schema_row and schema_row["session_timeout_minutes"] is not None
+        else 30
+    )
+
+    dialect = "postgres" if db_type == "postgresql" else db_type
+
+    needs_remap = (
+        uid_f != "user_id" or ts_f != "timestamp" or en_f != "event_name" or events_table != "events"
+    )
+
+    custom_prop_exprs: dict[str, str] = {
+        p["name"]: _resolve_path_to_sql(p["path"], dialect)
+        for p in custom_props
+        if "name" in p and "path" in p
+    }
+
+    filter_row = product_db.fetchone(
+        "SELECT * FROM connection_filter_configs WHERE connection_id = ?", (connection_id,)
+    )
+    filter_fields: list[dict] = json.loads(filter_row["filter_fields"]) if filter_row else []
+
+    _iq = "`" if dialect == "databricks" else '"'
+    filter_exprs: dict[str, str] = {}
+    _src_to_std_name = {uid_f: "user_id", ts_f: "timestamp", en_f: "event_name"}
+    for ff in filter_fields:
+        field = ff.get("field", "")
+        if field in custom_prop_exprs:
+            filter_exprs[field] = custom_prop_exprs[field]
+        elif field in (uid_f, ts_f, en_f):
+            filter_exprs[field] = _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
+
+    shared_kwargs: dict = {
+        "filter_fields": filter_fields,
+        "filter_exprs": filter_exprs,
+        "custom_props": custom_props,
+        "custom_prop_exprs": custom_prop_exprs,
+        "session_timeout_minutes": session_timeout_minutes,
+    }
+
+    def _build_cte(table: str) -> str:
+        q = "`" if dialect == "databricks" else '"'
+        quoted_table = ".".join(f"{q}{p}{q}" for p in table.split("."))
+        core = f"{q}{uid_f}{q} AS user_id, {q}{ts_f}{q} AS timestamp, {q}{en_f}{q} AS event_name"
+        remapped_src = {uid_f, ts_f, en_f}
+        excl = ", ".join(f"{q}{c}{q}" for c in sorted(remapped_src))
+        if dialect == "databricks":
+            return f"(SELECT {core}, * EXCEPT ({excl}) FROM {quoted_table})"
+        if dialect == "duckdb":
+            return f"(SELECT {core}, * EXCLUDE ({excl}) FROM {quoted_table})"
+        extra_cols = sorted(
+            {p["path"].split(".")[0] for p in custom_props if "path" in p} - remapped_src
+        )
+        extras = (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
+        return f"(SELECT {core}{extras} FROM {quoted_table})"
+
+    if db_type == "postgresql":
+        pool_key = (connection_id, "postgres")
+        conn = _pool_get(pool_key, lambda: _open_pg(creds))
+        events_cte = _build_cte(events_table) if needs_remap else None
+        cols = _get_table_columns(conn, f'"{events_table}"', "postgres")
+        db = AnalyticsDatabase(
+            conn, dialect="postgres", events_cte=events_cte, available_columns=cols or None, **shared_kwargs
+        )
+        db._pooled = True
+        db._pool_key = pool_key
+        return db
+
+    if db_type == "databricks":
+        pool_key = (connection_id, "databricks")
+        conn = _pool_get(pool_key, lambda: _open_databricks(creds))
+        events_cte = _build_cte(events_table) if needs_remap else None
+        cols = _get_table_columns(conn, f'`{events_table}`', "databricks")
+        db = AnalyticsDatabase(
+            conn, dialect="databricks", events_cte=events_cte, available_columns=cols or None, **shared_kwargs
+        )
+        db._pooled = True
+        db._pool_key = pool_key
+        return db
+
+    if db_type == "sqlite":
+        conn = _sqlite3.connect(file_path, check_same_thread=False)
+        events_cte = _build_cte(events_table) if needs_remap else None
+        cols = _get_table_columns(conn, f'"{events_table}"', "sqlite")
+        return AnalyticsDatabase(
+            conn, dialect="sqlite", events_cte=events_cte, available_columns=cols or None, **shared_kwargs
+        )
+
+    # DuckDB
+    if file_path == ":memory:":
+        conn = duckdb.connect(":memory:")
+        return AnalyticsDatabase(conn, dialect="duckdb", events_cte=None, **shared_kwargs)
+    conn = duckdb.connect(file_path, read_only=True)
+    events_cte = _build_cte(events_table) if needs_remap else None
+    cols = _get_table_columns(conn, f'"{events_table}"', "duckdb")
+    return AnalyticsDatabase(
+        conn, dialect="duckdb", events_cte=events_cte, available_columns=cols or None, **shared_kwargs
+    )
+
+
+def _open_pg(creds: dict):
+    import psycopg2
+
+    return psycopg2.connect(
+        host=creds["host"],
+        port=creds.get("port", 5432),
+        dbname=creds["database"],
+        user=creds["user"],
+        password=creds["password"],
+    )
+
+
+def _open_databricks(creds: dict):
+    from databricks import sql as dbsql
+
+    return dbsql.connect(
+        server_hostname=creds["host"],
+        http_path=creds["http_path"],
+        access_token=creds["token"],
+    )
+
+
+# ---------------------------------------------------------------------------
+# FastAPI dependency — resolves connection from product_db
+# ---------------------------------------------------------------------------
+
+
+from fastapi import Query  # noqa: E402
+
+
+async def get_analytics_db(
+    connection_id: str | None = Query(None, description="Active connection ID"),
+):
+    """FastAPI dependency: yields the analytics DB for the active connection.
+
+    Falls back to the first registered connection if no connection_id is given.
+    """
+    from backend.product_db import get_product_db
+
+    resolved_id = connection_id
+    if not resolved_id:
+        product_db = get_product_db()
+        row = product_db.fetchone("SELECT id FROM connections ORDER BY created_at ASC LIMIT 1")
+        if row:
+            resolved_id = row["id"]
+
+    if not resolved_id:
+        raise HTTPException(status_code=503, detail="No analytics connection configured.")
+
+    db = open_analytics_db(resolved_id)
     try:
         yield db
     finally:
-        pass  # Global connection — do not close
+        db.close()
