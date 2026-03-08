@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { fetchTrend, fetchTopEvents, fetchConversion, fetchSessionsSummary } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import type { DateRange } from '@/types'
@@ -80,7 +80,7 @@ export function useDashboardMetrics({
   const chartData = useMemo(() => {
     if (!currentTrend?.data) return []
     return currentTrend.data.map((d) => ({
-      day: format(new Date(d.date.replace(' ', 'T')), 'MMM d'),
+      day: format(parseISO(d.date.slice(0, 10)), 'MMM d'),
       events: d.count,
       users: d.unique_users,
     }))
