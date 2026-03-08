@@ -661,10 +661,10 @@ async def browse_connection(
                 items = [{"name": r[0], "full_name": r[0], "kind": "catalog"} for r in rows]
             elif schema is None:
                 rows = db.execute(f"SHOW SCHEMAS IN `{catalog}`")
-                items = [{"name": r[1], "full_name": f"{catalog}.{r[1]}", "kind": "schema"} for r in rows]
+                items = [{"name": r[0], "full_name": f"{catalog}.{r[0]}", "kind": "schema"} for r in rows]
             else:
                 rows = db.execute(f"SHOW TABLES IN `{catalog}`.`{schema}`")
-                items = [{"name": r[1], "full_name": f"{catalog}.{schema}.{r[1]}", "kind": "table"} for r in rows]
+                items = [{"name": r[0], "full_name": f"{catalog}.{schema}.{r[0]}", "kind": "table"} for r in rows]
 
         elif db_type == "postgresql":
             if schema is None:
