@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import settings
 from backend.core.logging import setup_logging
 from backend.db import init_db
+from backend.product_db import init_product_db
 from backend.api import (
     connections_router,
     conversion_router,
@@ -26,6 +27,7 @@ from backend.api import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(settings.log_level, settings.log_format)
+    init_product_db()
     await init_db()
     yield
 
