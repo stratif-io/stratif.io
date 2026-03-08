@@ -74,6 +74,34 @@ if dist_path.exists():
         return FileResponse(dist_path / "index.html")
 
 
+def create_router(db_url: str | None = None, db_type: str | None = None) -> FastAPI:
+    """Create an OpenFlow analytics FastAPI app for embedding in a SaaS wrapper.
+
+    Args:
+        db_url: Override the DB URL (e.g. per-tenant connection string).
+        db_type: Override the DB type ('duckdb', 'sqlite', 'postgresql', 'databricks').
+
+    Returns:
+        A configured FastAPI app with all analytics routes mounted.
+    """
+    if db_url:
+        settings.db_url = db_url
+    if db_type:
+        settings.db_type = db_type
+
+    router_app = FastAPI(title="OpenFlow Analytics")
+    router_app.include_router(trend_router)
+    router_app.include_router(retention_router)
+    router_app.include_router(events_router)
+    router_app.include_router(paths_router)
+    router_app.include_router(conversion_router)
+    router_app.include_router(pivot_router)
+    router_app.include_router(sessions_router)
+    router_app.include_router(connections_router)
+    router_app.include_router(ws_router)
+    return router_app
+
+
 def main():
     import uvicorn
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=settings.debug)
