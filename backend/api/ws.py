@@ -122,8 +122,8 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
     loop = asyncio.get_running_loop()
 
-    # Get the analytics DB
-    db_gen = get_analytics_db()
+    # Get the analytics DB (pass connection_id=None explicitly — not via DI)
+    db_gen = get_analytics_db(connection_id=None)
     db = await db_gen.__anext__()
 
     subscriptions: dict[str, str] = {}
