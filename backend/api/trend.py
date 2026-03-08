@@ -74,9 +74,7 @@ def get_trend(
         "total_unique_users": total_unique,
         "data": [
             {
-                "date": row[0].isoformat()
-                if isinstance(row[0], datetime)
-                else str(row[0]),
+                "date": (row[0].isoformat() if isinstance(row[0], datetime) else str(row[0]))[:10],
                 "count": row[1],
                 "unique_users": row[2],
             }

@@ -80,7 +80,7 @@ export function useDashboardMetrics({
   const chartData = useMemo(() => {
     if (!currentTrend?.data) return []
     return currentTrend.data.map((d) => ({
-      day: format(new Date(d.date), 'MMM d'),
+      day: format(new Date(d.date.replace(' ', 'T')), 'MMM d'),
       events: d.count,
       users: d.unique_users,
     }))
