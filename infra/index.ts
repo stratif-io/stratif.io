@@ -37,10 +37,16 @@ const volume = new command.local.Command("openflow-data", {
   delete: `echo "Volume openflow_data NOT deleted — remove manually with: flyctl volumes destroy <id>"`,
 }, { dependsOn: app });
 
-// Secrets — set all at once; flyctl restarts the app automatically
+// Secrets — passed via environment so values are never stored in Pulumi state
 const secrets = new command.local.Command("openflow-secrets", {
-  create: `flyctl secrets set --app ${appName} OPENFLOW_JWT_SECRET="${jwtSecret}" OPENFLOW_ENCRYPTION_KEY="${encryptionKey}" OPENFLOW_API_KEY="${apiKey}" OPENFLOW_ALLOW_REGISTRATION="${allowRegistration}"`,
-  update: `flyctl secrets set --app ${appName} OPENFLOW_JWT_SECRET="${jwtSecret}" OPENFLOW_ENCRYPTION_KEY="${encryptionKey}" OPENFLOW_API_KEY="${apiKey}" OPENFLOW_ALLOW_REGISTRATION="${allowRegistration}"`,
+  create: `flyctl secrets set --app ${appName} OPENFLOW_JWT_SECRET="$S_JWT" OPENFLOW_ENCRYPTION_KEY="$S_ENC" OPENFLOW_API_KEY="$S_API" OPENFLOW_ALLOW_REGISTRATION="$S_REG"`,
+  update: `flyctl secrets set --app ${appName} OPENFLOW_JWT_SECRET="$S_JWT" OPENFLOW_ENCRYPTION_KEY="$S_ENC" OPENFLOW_API_KEY="$S_API" OPENFLOW_ALLOW_REGISTRATION="$S_REG"`,
+  environment: {
+    S_JWT: jwtSecret,
+    S_ENC: encryptionKey,
+    S_API: apiKey,
+    S_REG: allowRegistration,
+  },
   triggers: [jwtSecret, encryptionKey, apiKey, allowRegistration],
 }, { dependsOn: app });
 
