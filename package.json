@@ -1,7 +1,16 @@
 {
-  "name": "openflow-analytics",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@openflow/core",
+  "version": "0.1.0",
+  "description": "OpenFlow Analytics — open source analytics dashboard",
+  "main": "./frontend/index.ts",
+  "exports": {
+    ".": "./frontend/index.ts"
+  },
+  "files": ["frontend", "dist"],
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
