@@ -270,6 +270,102 @@ async def get_filter_options(conn_id: str):
 
 
 # ---------------------------------------------------------------------------
+# Schema detection
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{conn_id}/schema/detect")
+async def detect_schema(conn_id: str, events_table: str = "events"):
+    from backend.services.connection_executor import open_analytics_db
+
+    _get_connection_or_404(conn_id)
+    db = open_analytics_db(conn_id)
+    try:
+        # List all tables
+        dialect = db.get_dialect()
+        if dialect == "sqlite":
+            table_rows = db.execute("SELECT name FROM sqlite_master WHERE type IN ('table','view') ORDER BY name")
+            tables = [r[0] for r in table_rows]
+        elif dialect in ("postgres",):
+            table_rows = db.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema NOT IN ('pg_catalog','information_schema') ORDER BY 1"
+            )
+            tables = [r[0] for r in table_rows]
+        elif dialect == "databricks":
+            table_rows = db.execute("SHOW TABLES")
+            tables = [r[1] for r in table_rows]
+        else:  # duckdb
+            table_rows = db.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = 'main' ORDER BY 1"
+            )
+            tables = [r[0] for r in table_rows]
+
+        # Detect columns of the events table
+        columns: list[dict] = []
+        suggestions: dict = {}
+        proposed_custom_properties: list[dict] = []
+
+        try:
+            if dialect == "sqlite":
+                col_rows = db.execute(f'PRAGMA table_info("{events_table}")')
+                col_names = [r[1] for r in col_rows]
+            elif dialect in ("postgres",):
+                col_rows = db.execute(
+                    "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = %s ORDER BY ordinal_position",
+                    [events_table],
+                )
+                col_names = [r[0] for r in col_rows]
+            elif dialect == "databricks":
+                col_rows = db.execute(f"DESCRIBE `{events_table}`")
+                col_names = [r[0] for r in col_rows if r[0] and not r[0].startswith("#")]
+            else:
+                col_rows = db.execute(f'SELECT * FROM "{events_table}" LIMIT 0')
+                # DuckDB returns description via relation
+                rel = db._conn.execute(f'SELECT * FROM "{events_table}" LIMIT 0')
+                col_names = [d[0] for d in rel.description]
+
+            # Build suggestions based on common field names
+            user_id_candidates = {"user_id", "userid", "user", "customer_id", "account_id"}
+            ts_candidates = {"timestamp", "ts", "created_at", "event_time", "time", "datetime"}
+            event_candidates = {"event_name", "event", "event_type", "action", "name"}
+
+            for col in col_names:
+                columns.append({"name": col})
+                cl = col.lower()
+                if not suggestions.get("user_id_field") and cl in user_id_candidates:
+                    suggestions["user_id_field"] = col
+                if not suggestions.get("timestamp_field") and cl in ts_candidates:
+                    suggestions["timestamp_field"] = col
+                if not suggestions.get("event_name_field") and cl in event_candidates:
+                    suggestions["event_name_field"] = col
+
+            # Columns that aren't the standard three become proposed custom properties
+            standard = {
+                suggestions.get("user_id_field", "user_id"),
+                suggestions.get("timestamp_field", "timestamp"),
+                suggestions.get("event_name_field", "event_name"),
+            }
+            for col in col_names:
+                if col not in standard:
+                    proposed_custom_properties.append({"name": col, "path": col, "type": "string"})
+
+        except Exception:
+            pass  # If we can't introspect the table, return empty columns
+
+        return {
+            "tables": tables,
+            "events_table": events_table if events_table in tables else (tables[0] if tables else None),
+            "columns": columns,
+            "suggestions": suggestions,
+            "proposed_custom_properties": proposed_custom_properties,
+        }
+    finally:
+        db.close()
+
+
+# ---------------------------------------------------------------------------
 # Browse (catalog → schema → table hierarchy)
 # ---------------------------------------------------------------------------
 
