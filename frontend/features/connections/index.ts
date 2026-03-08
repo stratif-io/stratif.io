@@ -1,2 +1,1 @@
-export { ConnectionsPage } from './ConnectionsPage'
-export { ConnectionDetailPage } from './ConnectionDetailPage'
+// Connections feature removed in OSS mode — configured via environment variables

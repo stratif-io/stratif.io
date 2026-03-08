@@ -1,7 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { LoadingState } from '@/components/ui/loading-state'
 import { SPACING } from '@/lib/constants'
 
@@ -24,28 +23,6 @@ const PivotPage = lazy(() =>
   import('@/features/analytics').then((m) => ({ default: m.NewPivotPage }))
 )
 const EventsPage = lazy(() => import('@/features/events').then((m) => ({ default: m.EventsPage })))
-const ConnectionsPage = lazy(() =>
-  import('@/features/connections').then((m) => ({ default: m.ConnectionsPage }))
-)
-const ConnectionDetailPage = lazy(() =>
-  import('@/features/connections').then((m) => ({ default: m.ConnectionDetailPage }))
-)
-const LandingPage = lazy(() =>
-  import('@/pages/LandingPage').then((m) => ({ default: m.LandingPage }))
-)
-const LoginPage = lazy(() => import('@/features/auth').then((m) => ({ default: m.LoginPage })))
-const RegisterPage = lazy(() =>
-  import('@/features/auth').then((m) => ({ default: m.RegisterPage }))
-)
-const ForgotPasswordPage = lazy(() =>
-  import('@/features/auth').then((m) => ({ default: m.ForgotPasswordPage }))
-)
-const ResetPasswordPage = lazy(() =>
-  import('@/features/auth').then((m) => ({ default: m.ResetPasswordPage }))
-)
-const VerifyEmailPage = lazy(() =>
-  import('@/features/auth').then((m) => ({ default: m.VerifyEmailPage }))
-)
 const SettingsPage = lazy(() =>
   import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 )
@@ -62,32 +39,18 @@ function App() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Public */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/auth/login" element={<LoginPage />} />
-        <Route path="/auth/register" element={<RegisterPage />} />
-        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
-
-        {/* Protected */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/trends" element={<TrendsPage />} />
-            <Route path="/retention" element={<RetentionPage />} />
-            <Route path="/paths" element={<PathsPage />} />
-            <Route path="/funnel" element={<FunnelDetailPage />} />
-            <Route path="/pivot" element={<PivotPage />} />
-            <Route path="/events" element={<EventsPage />} />
-            <Route path="/connections" element={<ConnectionsPage />} />
-            <Route path="/connections/:id" element={<ConnectionDetailPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/trends" element={<TrendsPage />} />
+          <Route path="/retention" element={<RetentionPage />} />
+          <Route path="/paths" element={<PathsPage />} />
+          <Route path="/funnel" element={<FunnelDetailPage />} />
+          <Route path="/pivot" element={<PivotPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
-
-        {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>
   )
