@@ -52,7 +52,6 @@ const navGroups: NavGroup[] = [
     icon: Settings,
     items: [
       { title: 'Connections', href: '/connections', icon: Database },
-      { title: 'Settings', href: '/settings', icon: Settings },
     ],
   },
 ]

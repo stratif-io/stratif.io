@@ -8,17 +8,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Moon, Sun, Menu, Settings, Monitor } from 'lucide-react'
+import { Moon, Sun, Menu, Monitor } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
-import { useNavigate } from 'react-router-dom'
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const { theme, setTheme } = useTheme()
-  const navigate = useNavigate()
-
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
@@ -66,10 +63,6 @@ export function Header() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <DropdownMenuSeparator />
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/settings')}>
-            <Settings className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     </header>

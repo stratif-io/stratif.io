@@ -23,9 +23,6 @@ const PivotPage = lazy(() =>
   import('@/features/analytics').then((m) => ({ default: m.NewPivotPage }))
 )
 const EventsPage = lazy(() => import('@/features/events').then((m) => ({ default: m.EventsPage })))
-const SettingsPage = lazy(() =>
-  import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
-)
 const ConnectionsPage = lazy(() =>
   import('@/features/connections').then((m) => ({ default: m.ConnectionsPage }))
 )
@@ -56,7 +53,7 @@ function App() {
           <Route path="/events" element={<EventsPage />} />
           <Route path="/connections" element={<ConnectionsPage />} />
           <Route path="/connections/:id" element={<ConnectionDetailPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings" element={<Navigate to="/connections" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
