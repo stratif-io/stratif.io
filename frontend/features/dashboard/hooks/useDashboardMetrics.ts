@@ -79,11 +79,14 @@ export function useDashboardMetrics({
 
   const chartData = useMemo(() => {
     if (!currentTrend?.data) return []
-    return currentTrend.data.map((d) => ({
-      day: format(parseISO(d.date.slice(0, 10)), 'MMM d'),
-      events: d.count,
-      users: d.unique_users,
-    }))
+    if (currentTrend.data.length > 0) console.debug('[trend] first date value:', currentTrend.data[0].date, typeof currentTrend.data[0].date)
+    return currentTrend.data
+      .filter((d) => d.date != null)
+      .map((d) => ({
+        day: format(parseISO(String(d.date).slice(0, 10)), 'MMM d'),
+        events: d.count,
+        users: d.unique_users,
+      }))
   }, [currentTrend])
 
   const metrics: DashboardMetrics = {
