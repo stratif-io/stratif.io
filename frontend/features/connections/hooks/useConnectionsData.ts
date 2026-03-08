@@ -1,72 +1,152 @@
-// In OSS single-tenant mode, connections are configured via environment variables.
-// These hooks return empty/stub data so components that used the multi-tenant
-// connections API continue to compile without changes.
-import type { FilterField, CustomProperty } from '@/types'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  createConnection,
+  deleteConnection,
+  fetchConnection,
+  fetchConnectionCredentials,
+  fetchConnectionString,
+  fetchConnectionTables,
+  fetchConnections,
+  fetchFilterConfig,
+  fetchFilterOptions,
+  fetchSchemaConfig,
+  fetchSchemaDetect,
+  testConnection,
+  updateConnection,
+  upsertFilterConfig,
+  upsertSchemaConfig,
+} from '@/lib/api/queries'
+import type {
+  ConnectionCreate,
+  ConnectionUpdate,
+  FilterConfigBody,
+  SchemaConfigBody,
+} from '@/types'
 
 export function useConnections() {
-  return { data: [], isLoading: false, error: null }
+  return useQuery({
+    queryKey: ['connections'],
+    queryFn: fetchConnections,
+  })
 }
 
-export function useFilterConfig(_connId: string) {
-  return {
-    data: null as { filter_fields: FilterField[] } | null,
-    isLoading: false,
-    error: null,
-  }
-}
-
-export function useFilterOptions(_connId: string) {
-  return { data: null as Record<string, string[]> | null, isLoading: false, error: null }
-}
-
-export function useConnection(_id: string) {
-  return { data: undefined, isLoading: false, error: null }
+export function useConnection(id: string) {
+  return useQuery({
+    queryKey: ['connections', id],
+    queryFn: () => fetchConnection(id),
+    enabled: !!id,
+  })
 }
 
 export function useCreateConnection() {
-  return { mutate: () => {}, isPending: false }
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: ConnectionCreate) => createConnection(body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['connections'] }),
+  })
 }
 
-export function useUpdateConnection(_id: string) {
-  return { mutate: () => {}, isPending: false }
+export function useUpdateConnection(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: ConnectionUpdate) => updateConnection(id, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['connections'] })
+      qc.invalidateQueries({ queryKey: ['connections', id] })
+    },
+  })
 }
 
 export function useDeleteConnection() {
-  return { mutate: () => {}, isPending: false }
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteConnection(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['connections'] }),
+  })
 }
 
 export function useTestConnection() {
-  return { mutate: () => {}, isPending: false }
+  return useMutation({
+    mutationFn: (id: string) => testConnection(id),
+  })
 }
 
-export function useSchemaConfig(_connId: string) {
-  return {
-    data: null as { custom_properties: CustomProperty[] } | null,
-    isLoading: false,
-    error: null,
-  }
+export function useSchemaConfig(connId: string) {
+  return useQuery({
+    queryKey: ['connections', connId, 'schema'],
+    queryFn: () => fetchSchemaConfig(connId),
+    enabled: !!connId,
+    retry: false,
+  })
 }
 
-export function useUpsertSchemaConfig(_connId: string) {
-  return { mutate: () => {}, isPending: false }
+export function useUpsertSchemaConfig(connId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: SchemaConfigBody) => upsertSchemaConfig(connId, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['connections', connId, 'schema'] }),
+  })
 }
 
-export function useUpsertFilterConfig(_connId: string) {
-  return { mutate: () => {}, isPending: false }
+export function useFilterConfig(connId: string) {
+  return useQuery({
+    queryKey: ['connections', connId, 'filters'],
+    queryFn: () => fetchFilterConfig(connId),
+    enabled: !!connId,
+    retry: false,
+  })
 }
 
-export function useConnectionString(_connId: string) {
-  return { data: undefined, isLoading: false, error: null }
+export function useUpsertFilterConfig(connId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: FilterConfigBody) => upsertFilterConfig(connId, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['connections', connId, 'filters'] })
+      qc.invalidateQueries({ queryKey: ['connections', connId, 'filter-options'] })
+    },
+  })
 }
 
-export function useDetectSchema(_connId: string) {
-  return { mutate: () => {}, isPending: false }
+export function useFilterOptions(connId: string) {
+  return useQuery({
+    queryKey: ['connections', connId, 'filter-options'],
+    queryFn: () => fetchFilterOptions(connId),
+    enabled: !!connId,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  })
 }
 
-export function useConnectionCredentials(_connId: string) {
-  return { data: undefined, isLoading: false, error: null }
+export function useConnectionString(connId: string) {
+  return useQuery({
+    queryKey: ['connections', connId, 'string'],
+    queryFn: () => fetchConnectionString(connId),
+    enabled: !!connId,
+  })
 }
 
-export function useConnectionTables(_connId: string, _enabled = false) {
-  return { data: undefined, isLoading: false, error: null }
+export function useDetectSchema(connId: string) {
+  return useMutation({
+    mutationFn: (eventsTable?: string) => fetchSchemaDetect(connId, eventsTable),
+  })
+}
+
+export function useConnectionCredentials(connId: string) {
+  return useQuery({
+    queryKey: ['connections', connId, 'credentials'],
+    queryFn: () => fetchConnectionCredentials(connId),
+    enabled: !!connId,
+    staleTime: Infinity,
+  })
+}
+
+export function useConnectionTables(connId: string, enabled = false) {
+  return useQuery({
+    queryKey: ['connections', connId, 'tables'],
+    queryFn: () => fetchConnectionTables(connId),
+    enabled: !!connId && enabled,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  })
 }

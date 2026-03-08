@@ -1,4 +1,5 @@
 import { useAppStore } from '@/stores'
+import { ConnectionSelector } from './ConnectionSelector'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -30,6 +31,9 @@ export function Header() {
         >
           <Menu className="h-4 w-4" />
         </Button>
+
+        {/* Connection selector */}
+        <ConnectionSelector />
 
         {/* Filters — takes remaining space */}
         <div className="flex-1 min-w-0">

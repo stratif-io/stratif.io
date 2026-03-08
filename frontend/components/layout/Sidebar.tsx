@@ -12,6 +12,7 @@ import {
   Activity,
   Settings,
   Table,
+  Database,
 } from 'lucide-react'
 
 interface NavItem {
@@ -49,7 +50,10 @@ const navGroups: NavGroup[] = [
   {
     title: 'Configuration',
     icon: Settings,
-    items: [{ title: 'Settings', href: '/settings', icon: Settings }],
+    items: [
+      { title: 'Connections', href: '/connections', icon: Database },
+      { title: 'Settings', href: '/settings', icon: Settings },
+    ],
   },
 ]
 
