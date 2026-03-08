@@ -6,8 +6,6 @@ services:
     volumes:
       - analytics_data:/data
     environment:
-      OPENFLOW_DB_URL: duckdb:////data/analytics.duckdb
-      OPENFLOW_DB_TYPE: duckdb
       OPENFLOW_ENCRYPTION_KEY: ${OPENFLOW_ENCRYPTION_KEY}
       OPENFLOW_PRODUCT_DB_PATH: /data/openflow_product.sqlite
       OPENFLOW_API_KEY: ${OPENFLOW_API_KEY:-}

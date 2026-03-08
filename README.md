@@ -11,7 +11,7 @@ cd openflow
 
 # Configure environment
 cp .env.example .env
-# Edit .env: set OPENFLOW_ENCRYPTION_KEY (required) and optionally OPENFLOW_DB_URL
+# Edit .env: set OPENFLOW_ENCRYPTION_KEY (required)
 
 # Start
 docker compose up
@@ -81,5 +81,5 @@ import { OpenFlowDashboard } from '@openflow/core'
 from backend import create_router
 
 # Mount analytics routes inside your authenticated app
-app.mount("/analytics", create_router(db_url=get_db_for_current_user()))
+app.mount("/analytics", create_router())
 ```

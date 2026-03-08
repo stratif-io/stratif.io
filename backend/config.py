@@ -5,10 +5,6 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     model_config = {"env_prefix": "OPENFLOW_", "extra": "ignore"}
 
-    # Analytics DB (single connection)
-    db_url: str = "duckdb:///./analytics.duckdb"
-    db_type: str = "duckdb"  # duckdb | sqlite | postgres | databricks
-
     # API key auth (optional for dev, required for production)
     api_key: str = ""
 
