@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    model_config = {"env_prefix": "OPENFLOW_", "extra": "ignore"}
+    model_config = {"env_prefix": "OPENFLOW_", "extra": "ignore", "env_file": ".env", "env_file_encoding": "utf-8"}
 
     # API key auth (optional for dev, required for production)
     api_key: str = ""
