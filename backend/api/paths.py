@@ -5,7 +5,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.db.views import path_analysis_ctes
+from backend.services.views import path_analysis_ctes
 from backend.services import generate_path_analysis_query, get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.validators import parse_date
