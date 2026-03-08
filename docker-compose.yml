@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - analytics_data:/data
+    environment:
+      OPENFLOW_DB_URL: duckdb:////data/analytics.duckdb
+      OPENFLOW_DB_TYPE: duckdb
+      OPENFLOW_ENCRYPTION_KEY: ${OPENFLOW_ENCRYPTION_KEY}
+      OPENFLOW_PRODUCT_DB_PATH: /data/openflow_product.sqlite
+      OPENFLOW_API_KEY: ${OPENFLOW_API_KEY:-}
+      OPENFLOW_CORS_ORIGINS: ${OPENFLOW_CORS_ORIGINS:-http://localhost:8000}
+      OPENFLOW_DEBUG: "false"
+    restart: unless-stopped
+
+volumes:
+  analytics_data:

@@ -25,11 +25,12 @@ COPY --from=python-deps /app/.venv ./.venv
 COPY --from=frontend /app/dist ./dist
 
 # Copy application code
-COPY openflow ./openflow
+COPY backend ./backend
+COPY seeders ./seeders
 COPY pyproject.toml uv.lock ./
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
-CMD ["uvicorn", "openflow.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
