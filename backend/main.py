@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
@@ -66,6 +66,10 @@ async def health():
 dist_path = Path(__file__).parent.parent / "dist"
 if dist_path.exists():
     app.mount("/assets", StaticFiles(directory=dist_path / "assets"), name="assets")
+
+    @app.get("/")
+    async def root_redirect():
+        return RedirectResponse(url="/dashboard", status_code=302)
 
     @app.get("/{full_path:path}")
     async def spa_fallback(full_path: str):
