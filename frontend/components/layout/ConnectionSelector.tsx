@@ -25,10 +25,13 @@ export function ConnectionSelector() {
   const activeConnectionId = useAppStore((s) => s.activeConnectionId)
   const setActiveConnectionId = useAppStore((s) => s.setActiveConnectionId)
 
-  // Auto-select the first connection if none is active
+  // Auto-select the first connection if none is active or the stored ID is stale
   useEffect(() => {
-    if (!activeConnectionId && connections && connections.length > 0) {
-      setActiveConnectionId(connections[0].id)
+    if (connections && connections.length > 0) {
+      const isValid = connections.some((c) => c.id === activeConnectionId)
+      if (!activeConnectionId || !isValid) {
+        setActiveConnectionId(connections[0].id)
+      }
     }
   }, [connections, activeConnectionId, setActiveConnectionId])
 
