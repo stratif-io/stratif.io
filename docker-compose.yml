@@ -8,7 +8,7 @@ services:
       - analytics_data:/data
     environment:
       # Required: generate with `openssl rand -base64 32`
-      OPENFLOW_ENCRYPTION_KEY: ${OPENFLOW_ENCRYPTION_KEY:?Set OPENFLOW_ENCRYPTION_KEY (generate with: openssl rand -base64 32)}
+      OPENFLOW_ENCRYPTION_KEY: "${OPENFLOW_ENCRYPTION_KEY:?Set OPENFLOW_ENCRYPTION_KEY (generate with: openssl rand -base64 32)}"
       OPENFLOW_PRODUCT_DB_PATH: /data/openflow_product.sqlite
       # Optional API key — leave empty for local exploration
       OPENFLOW_API_KEY: ${OPENFLOW_API_KEY:-}
