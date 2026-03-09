@@ -33,6 +33,7 @@ COPY entrypoint.sh ./entrypoint.sh
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 EXPOSE 8000
 ENTRYPOINT ["./entrypoint.sh"]

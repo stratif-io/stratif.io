@@ -19,7 +19,7 @@ services:
       OPENFLOW_LOG_FORMAT: ${OPENFLOW_LOG_FORMAT:-json}
       OPENFLOW_LOG_SQL: ${OPENFLOW_LOG_SQL:-false}
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/events')\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\""]
       interval: 15s
       timeout: 5s
       retries: 5
