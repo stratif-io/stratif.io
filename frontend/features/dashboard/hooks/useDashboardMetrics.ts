@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, isValid } from 'date-fns'
 import { fetchTrend, fetchTopEvents, fetchConversion, fetchSessionsSummary } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import type { DateRange } from '@/types'
@@ -81,12 +81,10 @@ export function useDashboardMetrics({
     if (!currentTrend?.data) return []
     if (currentTrend.data.length > 0) console.debug('[trend] first date value:', currentTrend.data[0].date, typeof currentTrend.data[0].date)
     return currentTrend.data
-      .filter((d) => d.date != null)
-      .map((d) => ({
-        day: format(parseISO(String(d.date).slice(0, 10)), 'MMM d'),
-        events: d.count,
-        users: d.unique_users,
-      }))
+      .map((d) => {
+        const parsed = d.date ? parseISO(String(d.date).slice(0, 10)) : null
+        return { day: parsed && isValid(parsed) ? format(parsed, 'MMM d') : String(d.date), events: d.count, users: d.unique_users }
+      })
   }, [currentTrend])
 
   const metrics: DashboardMetrics = {
