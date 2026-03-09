@@ -11,6 +11,7 @@ cd openflow
 
 # Generate a required encryption key and configure
 echo "OPENFLOW_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+# (Skip if you already have a .env — this would overwrite it)
 
 # Build and start (first run seeds ~5 000 sample events automatically)
 docker compose up

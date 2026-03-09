@@ -1,13 +1,14 @@
 services:
   app:
     build: .
+    env_file: .env
     ports:
       - "8000:8000"
     volumes:
       - analytics_data:/data
     environment:
       # Required: generate with `openssl rand -base64 32`
-      OPENFLOW_ENCRYPTION_KEY: ${OPENFLOW_ENCRYPTION_KEY}
+      OPENFLOW_ENCRYPTION_KEY: ${OPENFLOW_ENCRYPTION_KEY:?Set OPENFLOW_ENCRYPTION_KEY (generate with: openssl rand -base64 32)}
       OPENFLOW_PRODUCT_DB_PATH: /data/openflow_product.sqlite
       # Optional API key — leave empty for local exploration
       OPENFLOW_API_KEY: ${OPENFLOW_API_KEY:-}
@@ -22,7 +23,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 60s
+      start_period: 90s
     restart: unless-stopped
 
 volumes:
