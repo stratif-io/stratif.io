@@ -12,4 +12,6 @@ if [ ! -f "$SAMPLE_DB" ]; then
   echo "[openflow] Seeding complete → $SAMPLE_DB"
 fi
 
+python -m seeders.bootstrap_connection --path "$SAMPLE_DB"
+
 exec uvicorn backend.main:app --host 0.0.0.0 --port 8000
