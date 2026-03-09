@@ -3,7 +3,8 @@ FROM node:20-slim AS frontend
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
-COPY . .
+COPY index.html tsconfig.json tsconfig.node.json vite.config.ts postcss.config.js ./
+COPY frontend ./frontend
 RUN npm run build
 
 # ── Stage 2: Install Python dependencies ──────────────────────────────────────
@@ -28,9 +29,10 @@ COPY --from=frontend /app/dist ./dist
 COPY backend ./backend
 COPY seeders ./seeders
 COPY pyproject.toml uv.lock ./
+COPY entrypoint.sh ./entrypoint.sh
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["./entrypoint.sh"]
