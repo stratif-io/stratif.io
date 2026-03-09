@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 
 from backend.product_db.database import get_product_db
 from backend.product_db.migrations import init_product_db
-from backend.services.crypto import encrypt_credentials
+from backend.services.crypto import decrypt_credentials, encrypt_credentials
 
 
 CONNECTION_NAME = "Sample DuckDB"
@@ -49,10 +49,23 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
     db = get_product_db()
 
     existing = db.fetchone(
-        "SELECT id FROM connections WHERE name = ?", (CONNECTION_NAME,)
+        "SELECT id, credentials_encrypted FROM connections WHERE name = ?", (CONNECTION_NAME,)
     )
     if existing:
-        print(f"[openflow] Connection '{CONNECTION_NAME}' already exists — skipping.")
+        # Validate credentials have the correct key; fix silently if stale.
+        try:
+            creds = decrypt_credentials(existing["credentials_encrypted"])
+        except Exception:
+            creds = {}
+        if creds.get("file_path") == db_path:
+            print(f"[openflow] Connection '{CONNECTION_NAME}' already exists — skipping.")
+            return
+        # Credentials are stale (e.g. wrong key from an older bootstrap run) — update them.
+        db.execute(
+            "UPDATE connections SET credentials_encrypted = ?, updated_at = ? WHERE id = ?",
+            (encrypt_credentials({"file_path": db_path}), _now(), existing["id"]),
+        )
+        print(f"[openflow] Updated credentials for '{CONNECTION_NAME}' → {db_path}")
         return
 
     conn_id = str(uuid.uuid4())
