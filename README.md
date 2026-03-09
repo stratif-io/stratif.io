@@ -9,15 +9,22 @@ Open source, self-hostable product analytics dashboard. Connect your own databas
 git clone https://github.com/your-org/openflow.git
 cd openflow
 
-# Configure environment
-cp .env.example .env
-# Edit .env: set OPENFLOW_ENCRYPTION_KEY (required)
+# Generate a required encryption key and configure
+echo "OPENFLOW_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
 
-# Start
+# Build and start (first run seeds ~5 000 sample events automatically)
 docker compose up
 ```
 
-Open http://localhost:8000, go to **Connections**, and add your analytics database.
+Open **http://localhost:8000**.
+
+On first run, sample analytics data is seeded automatically into `/data/sample.duckdb` inside the container volume. To explore it:
+
+1. Go to **Connections** in the sidebar
+2. Add a new connection → choose **DuckDB** → path: `/data/sample.duckdb`
+3. Navigate to any analytics page
+
+> To reseed from scratch: `docker compose down -v && docker compose up`
 
 ## Quick Start (Local)
 
