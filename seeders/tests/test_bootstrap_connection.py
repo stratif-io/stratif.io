@@ -80,7 +80,7 @@ def test_bootstrap_credentials_decrypt_correctly(tmp_path):
         from backend.services.crypto import decrypt_credentials
         creds = decrypt_credentials(row[0])
 
-    assert creds == {"path": "/data/sample.duckdb"}
+    assert creds == {"file_path": "/data/sample.duckdb"}
 
 
 def test_bootstrap_is_idempotent(tmp_path):
@@ -124,4 +124,4 @@ def test_bootstrap_custom_path(tmp_path):
         from backend.services.crypto import decrypt_credentials
         creds = decrypt_credentials(row[0])
 
-    assert creds == {"path": custom_path}
+    assert creds == {"file_path": custom_path}

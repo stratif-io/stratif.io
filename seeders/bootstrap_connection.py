@@ -40,7 +40,7 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
 
     conn_id = str(uuid.uuid4())
     now = _now()
-    credentials_encrypted = encrypt_credentials({"path": db_path})
+    credentials_encrypted = encrypt_credentials({"file_path": db_path})
 
     # Use a direct connection for atomic insertion of all three rows
     with _sqlite3.connect(db.db_path) as raw_conn:
