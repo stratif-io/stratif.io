@@ -9,6 +9,7 @@ Usage:
 """
 
 import argparse
+import sqlite3 as _sqlite3
 import uuid
 from datetime import UTC, datetime
 
@@ -41,29 +42,32 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
     now = _now()
     credentials_encrypted = encrypt_credentials({"path": db_path})
 
-    db.execute(
-        """
-        INSERT INTO connections (id, name, db_type, credentials_encrypted, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (conn_id, CONNECTION_NAME, "duckdb", credentials_encrypted, now, now),
-    )
-    db.execute(
-        """
-        INSERT INTO connection_schema_configs
-            (id, connection_id, updated_at)
-        VALUES (?, ?, ?)
-        """,
-        (str(uuid.uuid4()), conn_id, now),
-    )
-    db.execute(
-        """
-        INSERT INTO connection_filter_configs
-            (id, connection_id, updated_at)
-        VALUES (?, ?, ?)
-        """,
-        (str(uuid.uuid4()), conn_id, now),
-    )
+    # Use a direct connection for atomic insertion of all three rows
+    with _sqlite3.connect(db.db_path) as raw_conn:
+        raw_conn.execute("PRAGMA foreign_keys=ON")
+        raw_conn.execute(
+            """
+            INSERT INTO connections (id, name, db_type, credentials_encrypted, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (conn_id, CONNECTION_NAME, "duckdb", credentials_encrypted, now, now),
+        )
+        raw_conn.execute(
+            """
+            INSERT INTO connection_schema_configs
+                (id, connection_id, updated_at)
+            VALUES (?, ?, ?)
+            """,
+            (str(uuid.uuid4()), conn_id, now),
+        )
+        raw_conn.execute(
+            """
+            INSERT INTO connection_filter_configs
+                (id, connection_id, updated_at)
+            VALUES (?, ?, ?)
+            """,
+            (str(uuid.uuid4()), conn_id, now),
+        )
 
     print(f"[openflow] Bootstrapped connection '{CONNECTION_NAME}' → {db_path}")
 
