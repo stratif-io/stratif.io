@@ -8,7 +8,23 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'redirect-root',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url === '/') {
+              res.writeHead(302, { Location: '/dashboard' })
+              res.end()
+              return
+            }
+            next()
+          })
+        },
+      },
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './frontend'),
