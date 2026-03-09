@@ -52,7 +52,7 @@ npm run dev        # http://localhost:5173
 | `OPENFLOW_ENCRYPTION_KEY` | _(required)_ | Key for encrypting stored credentials. Generate: `openssl rand -base64 32` |
 | `OPENFLOW_PRODUCT_DB_PATH` | `./openflow_product.sqlite` | SQLite file storing connection configs |
 | `OPENFLOW_API_KEY` | _(empty)_ | Optional API key for the dashboard (leave empty for local dev) |
-| `OPENFLOW_CORS_ORIGINS` | `http://localhost:5173` | Allowed CORS origins |
+| `OPENFLOW_CORS_ORIGINS` | `http://localhost:8000` | Allowed CORS origins |
 | `OPENFLOW_DEBUG` | `false` | Enable `/docs` and `/redoc` endpoints |
 | `OPENFLOW_LOG_LEVEL` | `INFO` | Log level |
 
