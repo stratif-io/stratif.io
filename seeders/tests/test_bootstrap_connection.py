@@ -1,10 +1,9 @@
 """Tests for seeders.bootstrap_connection."""
 
+import json
 import sqlite3
 from contextlib import contextmanager
 from unittest.mock import patch
-
-import pytest
 
 
 @contextmanager
@@ -53,10 +52,21 @@ def test_bootstrap_inserts_all_rows(tmp_path):
     assert len(connections) == 1
     assert connections[0]["name"] == "Sample DuckDB"
     assert connections[0]["db_type"] == "duckdb"
+
     assert len(schema_configs) == 1
     assert schema_configs[0]["connection_id"] == connections[0]["id"]
+    custom_props = json.loads(schema_configs[0]["custom_properties"])
+    prop_names = [p["name"] for p in custom_props]
+    assert "country" in prop_names
+    assert "city" in prop_names
+    assert all(p["path"].startswith("properties.") for p in custom_props)
+
     assert len(filter_configs) == 1
     assert filter_configs[0]["connection_id"] == connections[0]["id"]
+    filter_fields = json.loads(filter_configs[0]["filter_fields"])
+    field_names = [f["field"] for f in filter_fields]
+    assert "country" in field_names
+    assert "city" in field_names
 
 
 def test_bootstrap_credentials_decrypt_correctly(tmp_path):

@@ -9,6 +9,7 @@ Usage:
 """
 
 import argparse
+import json
 import sqlite3 as _sqlite3
 import uuid
 from datetime import UTC, datetime
@@ -20,6 +21,22 @@ from backend.services.crypto import encrypt_credentials
 
 CONNECTION_NAME = "Sample DuckDB"
 DEFAULT_PATH = "/data/sample.duckdb"
+
+# Custom properties extracted from the seeded events' properties JSON column
+CUSTOM_PROPERTIES = [
+    {"name": "country",     "path": "properties.country",     "type": "string"},
+    {"name": "city",        "path": "properties.city",        "type": "string"},
+    {"name": "device_type", "path": "properties.device_type", "type": "string"},
+    {"name": "browser",     "path": "properties.browser",     "type": "string"},
+    {"name": "os",          "path": "properties.os",          "type": "string"},
+    {"name": "referrer",    "path": "properties.referrer",    "type": "string"},
+]
+
+# Filter dimensions shown in the global filter bar
+FILTER_FIELDS = [
+    {"field": "country", "label": "Country", "icon": "globe"},
+    {"field": "city",    "label": "City",    "icon": "map-pin"},
+]
 
 
 def _now() -> str:
@@ -55,18 +72,18 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
         raw_conn.execute(
             """
             INSERT INTO connection_schema_configs
-                (id, connection_id, updated_at)
-            VALUES (?, ?, ?)
+                (id, connection_id, custom_properties, updated_at)
+            VALUES (?, ?, ?, ?)
             """,
-            (str(uuid.uuid4()), conn_id, now),
+            (str(uuid.uuid4()), conn_id, json.dumps(CUSTOM_PROPERTIES), now),
         )
         raw_conn.execute(
             """
             INSERT INTO connection_filter_configs
-                (id, connection_id, updated_at)
-            VALUES (?, ?, ?)
+                (id, connection_id, filter_fields, updated_at)
+            VALUES (?, ?, ?, ?)
             """,
-            (str(uuid.uuid4()), conn_id, now),
+            (str(uuid.uuid4()), conn_id, json.dumps(FILTER_FIELDS), now),
         )
 
     print(f"[openflow] Bootstrapped connection '{CONNECTION_NAME}' → {db_path}")
