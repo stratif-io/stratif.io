@@ -6,11 +6,23 @@ services:
     volumes:
       - analytics_data:/data
     environment:
+      # Required: generate with `openssl rand -base64 32`
       OPENFLOW_ENCRYPTION_KEY: ${OPENFLOW_ENCRYPTION_KEY}
       OPENFLOW_PRODUCT_DB_PATH: /data/openflow_product.sqlite
+      # Optional API key — leave empty for local exploration
       OPENFLOW_API_KEY: ${OPENFLOW_API_KEY:-}
+      # CORS: keep as localhost:8000 for single-container local use
       OPENFLOW_CORS_ORIGINS: ${OPENFLOW_CORS_ORIGINS:-http://localhost:8000}
-      OPENFLOW_DEBUG: "false"
+      OPENFLOW_DEBUG: ${OPENFLOW_DEBUG:-false}
+      OPENFLOW_LOG_LEVEL: ${OPENFLOW_LOG_LEVEL:-INFO}
+      OPENFLOW_LOG_FORMAT: ${OPENFLOW_LOG_FORMAT:-json}
+      OPENFLOW_LOG_SQL: ${OPENFLOW_LOG_SQL:-false}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/events')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     restart: unless-stopped
 
 volumes:
