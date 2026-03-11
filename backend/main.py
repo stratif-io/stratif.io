@@ -76,8 +76,8 @@ if dist_path.exists():
         return FileResponse(dist_path / "index.html")
 
 
-def create_router() -> FastAPI:
-    """Create an OpenFlow analytics FastAPI app for embedding in a SaaS wrapper."""
+def create_analytics_app() -> FastAPI:
+    """Create an OpenFlow analytics FastAPI sub-application for embedding in a SaaS wrapper."""
     router_app = FastAPI(title="OpenFlow Analytics")
     router_app.include_router(trend_router)
     router_app.include_router(retention_router)
