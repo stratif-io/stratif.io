@@ -2,12 +2,12 @@
 
 import json
 import uuid
-from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, status
 
 from backend.product_db import get_product_db
 from backend.services.crypto import decrypt_credentials, encrypt_credentials
+from backend.utils import utcnow_str as _now
 
 from .models import (
     ConnectionCreate,
@@ -20,10 +20,6 @@ from .models import (
 )
 
 router = APIRouter()
-
-
-def _now() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _get_connection_or_404(conn_id: str):
