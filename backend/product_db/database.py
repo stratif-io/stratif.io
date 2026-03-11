@@ -52,3 +52,9 @@ def get_product_db() -> ProductDatabase:
     if _product_db is None:
         _product_db = ProductDatabase()
     return _product_db
+
+
+def _reset_product_db() -> None:
+    """Reset the product DB singleton — for use in tests only."""
+    global _product_db
+    _product_db = None
