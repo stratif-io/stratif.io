@@ -12,6 +12,49 @@
 
 ---
 
+## Prerequisite: Configure pytest for SaaS
+
+**Files:**
+- Modify: `openflow-saas/pyproject.toml`
+
+- [ ] **Step 1: Add pytest config**
+
+In `openflow-saas/pyproject.toml`, add after the `[tool.uv.sources]` section:
+
+```toml
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+```
+
+This ensures `from app.main import app` resolves when pytest is run from `openflow-saas/`.
+
+- [ ] **Step 2: Create `tests/` directory with empty `__init__.py`**
+
+```bash
+mkdir -p /Users/carlo/my_work/openflow-saas/tests
+touch /Users/carlo/my_work/openflow-saas/tests/__init__.py
+```
+
+- [ ] **Step 3: Verify pytest can be invoked**
+
+```bash
+cd /Users/carlo/my_work/openflow-saas
+uv run pytest --collect-only 2>&1 | tail -5
+```
+
+Expected: no `ModuleNotFoundError`, just "no tests collected" or similar.
+
+- [ ] **Step 4: Commit**
+
+```bash
+cd /Users/carlo/my_work/openflow-saas
+git add pyproject.toml tests/__init__.py
+git commit -m "chore: configure pytest pythonpath and testpaths for SaaS"
+```
+
+---
+
 ## Chunk 1: Phase 1 — Security
 
 ### Task 1: Gate all analytics routes with JWT auth (dependency override)
@@ -609,12 +652,12 @@ git commit -m "refactor: update import to use renamed create_analytics_app()"
 
 ```bash
 diff /Users/carlo/my_work/openflow/frontend/components/layout/DashboardLayout.tsx \
-     /Users/carlo/my_work/openflow-saas/frontend/components/layout/DashboardLayout.tsx
+     /Users/carlo/my_work/openflow-saas/frontend/components/layout/DashboardLayout.tsx || true
 diff /Users/carlo/my_work/openflow/frontend/components/layout/Header.tsx \
-     /Users/carlo/my_work/openflow-saas/frontend/components/layout/Header.tsx
+     /Users/carlo/my_work/openflow-saas/frontend/components/layout/Header.tsx || true
 ```
 
-If meaningful differences exist, note them — they may need to be merged into the OSS component first.
+(`|| true` prevents non-zero exit code from diff when files differ.) If meaningful differences exist, merge them into the OSS component first before deleting the SaaS copies.
 
 - [ ] **Step 2: Update SaaS `App.tsx` to import from `@openflow/core`**
 
@@ -672,12 +715,14 @@ git commit -m "refactor: remove duplicate layout components, import from @openfl
 
 In `openflow-saas/frontend/App.tsx`:
 
-1. Remove the inline `ErrorBoundary` class definition (lines 58-78).
+1. Remove the inline `ErrorBoundary` class definition (the class component with `state = { error: null }`).
 2. Add import at the top:
 
 ```typescript
 import { ErrorBoundary } from '@openflow/core/components/ErrorBoundary'
 ```
+
+Note: `@openflow/core` resolves to `/Users/carlo/my_work/openflow/frontend` via the Vite alias. This is a direct path import bypassing the barrel file (`index.ts`) — that is intentional. The `ErrorBoundary` component is not exported from the OSS barrel but the direct path import works correctly with Vite alias resolution.
 
 - [ ] **Step 2: Verify frontend builds**
 
@@ -1121,7 +1166,11 @@ In `openflow/backend/product_db/database.py`, add after `get_product_db()`:
 
 ```python
 def _reset_product_db() -> None:
-    """Reset the product DB singleton — for use in tests only."""
+    """Reset the product DB singleton — for use in tests only.
+
+    Both OSS and SaaS share this singleton because SaaS migrations import
+    `get_product_db` from `backend.product_db`. A single reset covers both.
+    """
     global _product_db
     _product_db = None
 ```
@@ -1133,6 +1182,15 @@ cd /Users/carlo/my_work/openflow
 git add backend/product_db/database.py
 git commit -m "test: add _reset_product_db() helper for test isolation"
 ```
+
+Verify it is importable from the SaaS virtualenv before continuing:
+
+```bash
+cd /Users/carlo/my_work/openflow-saas
+uv run python -c "from backend.product_db.database import _reset_product_db; print('OK')"
+```
+
+Expected: `OK`. If this fails, the editable install has not picked up the change — run `uv sync` to refresh.
 
 - [ ] **Step 2: Create `conftest.py`**
 
