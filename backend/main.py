@@ -36,6 +36,7 @@ app = FastAPI(
     redoc_url="/redoc" if settings.debug else None,
     openapi_url="/openapi.json" if settings.debug else None,
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 app.add_middleware(
