@@ -35,7 +35,8 @@ def _get_connection_or_404(conn_id: str):
 # ---------------------------------------------------------------------------
 
 
-@router.get("/", response_model=list[ConnectionResponse])
+@router.get("", response_model=list[ConnectionResponse])
+@router.get("/", response_model=list[ConnectionResponse], include_in_schema=False)
 async def list_connections():
     db = get_product_db()
     rows = db.fetchall(
@@ -44,7 +45,8 @@ async def list_connections():
     return [dict(r) for r in rows]
 
 
-@router.post("/", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_connection(body: ConnectionCreate):
     db = get_product_db()
     conn_id = str(uuid.uuid4())
