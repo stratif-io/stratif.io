@@ -22,7 +22,7 @@ from .models import (
 from .schema_detect import detect_schema
 
 # Single assembled router — same interface as before
-connections_router = APIRouter(prefix="/api/connections", tags=["connections"])
+connections_router = APIRouter(prefix="/api/connections", tags=["connections"], redirect_slashes=False)
 # Alias so `from backend.api.connections import router` continues to work
 router = connections_router
 connections_router.include_router(_crud_router)
