@@ -286,7 +286,7 @@ def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
 
     db_type: str = row["db_type"]
     creds = decrypt_credentials(row["credentials_encrypted"])
-    file_path: str = creds.get("file_path") or creds.get("s3_path", ":memory:")
+    file_path: str = creds.get("file_path") or creds.get("s3_path") or ""
 
     schema_row = product_db.fetchone(
         "SELECT * FROM connection_schema_configs WHERE connection_id = ?", (connection_id,)
@@ -378,6 +378,11 @@ def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
         return db
 
     if db_type == "sqlite":
+        import os
+        if not file_path:
+            raise ValueError("SQLite connection is missing a file path")
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"SQLite file not found: {file_path}")
         conn = _sqlite3.connect(file_path, check_same_thread=False)
         events_cte = _build_cte(events_table) if needs_remap else None
         cols = _get_table_columns(conn, f'"{events_table}"', "sqlite")
@@ -386,9 +391,11 @@ def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
         )
 
     # DuckDB
-    if file_path == ":memory:":
-        conn = duckdb.connect(":memory:")
-        return AnalyticsDatabase(conn, dialect="duckdb", events_cte=None, **shared_kwargs)
+    if not file_path:
+        raise ValueError("DuckDB connection is missing a file path")
+    import os
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"DuckDB file not found: {file_path}")
     conn = duckdb.connect(file_path, read_only=True)
     events_cte = _build_cte(events_table) if needs_remap else None
     cols = _get_table_columns(conn, f'"{events_table}"', "duckdb")
