@@ -8,8 +8,6 @@ from .pivot import router as pivot_router
 from .retention import router as retention_router
 from .sessions import router as sessions_router
 from .trend import router as trend_router
-from .ws import router as ws_router
-
 __all__ = [
     "events_router",
     "trend_router",
@@ -19,5 +17,4 @@ __all__ = [
     "pivot_router",
     "connections_router",
     "sessions_router",
-    "ws_router",
 ]

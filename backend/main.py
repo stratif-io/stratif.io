@@ -19,7 +19,6 @@ from backend.api import (
     retention_router,
     sessions_router,
     trend_router,
-    ws_router,
 )
 
 
@@ -55,7 +54,6 @@ app.include_router(conversion_router)
 app.include_router(pivot_router)
 app.include_router(sessions_router)
 app.include_router(connections_router)
-app.include_router(ws_router)
 
 
 @app.get("/api/health")
@@ -88,7 +86,6 @@ def create_analytics_app() -> FastAPI:
     router_app.include_router(pivot_router)
     router_app.include_router(sessions_router)
     router_app.include_router(connections_router)
-    router_app.include_router(ws_router)
     return router_app
 
 
