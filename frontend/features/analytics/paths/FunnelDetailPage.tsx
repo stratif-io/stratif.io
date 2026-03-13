@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageTransition } from '@/components/layout/PageTransition'
@@ -29,13 +29,12 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FunnelSteps } from './components/FunnelSteps'
 import { fetchPathFunnel, fetchEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
-import { SPACING, TYPOGRAPHY } from '@/lib/constants'
+import { SPACING, TYPOGRAPHY, FILTER_TRIGGER_CLASS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 const MAX_STEPS = 10
 
-const segTrigger =
-  'h-9 border-0 shadow-none rounded-none bg-transparent gap-1.5 px-3 text-sm font-medium focus:ring-0 focus:ring-offset-0 hover:bg-accent/60 transition-colors text-muted-foreground'
+const segTrigger = FILTER_TRIGGER_CLASS
 
 export function FunnelDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -158,8 +157,7 @@ export function FunnelDetailPage() {
     >((worst, s) => (worst === null || s.step_conversion_rate < worst.step_conversion_rate ? s : worst), null)
 
   return (
-    <TooltipProvider>
-      <PageTransition>
+    <PageTransition>
         <div className={SPACING.page}>
           <div className={SPACING.section}>
             {/* Header */}
@@ -387,7 +385,6 @@ export function FunnelDetailPage() {
             )}
           </div>
         </div>
-      </PageTransition>
-    </TooltipProvider>
+    </PageTransition>
   )
 }

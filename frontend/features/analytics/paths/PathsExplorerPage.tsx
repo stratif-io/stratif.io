@@ -19,7 +19,7 @@ import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
 import type { PathAnalysisData } from '@/types'
 import { cn } from '@/lib/utils'
-import { SPACING, TYPOGRAPHY } from '@/lib/constants'
+import { SPACING, TYPOGRAPHY, FILTER_TRIGGER_CLASS } from '@/lib/constants'
 
 const TIME_UNITS = [
   { value: 'seconds', label: 'Seconds' },
@@ -34,7 +34,7 @@ const STEP_COLORS = [
   'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
   'bg-amber-500/15 text-amber-700 dark:text-amber-300',
   'bg-rose-500/15 text-rose-700 dark:text-rose-300',
-  'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300',
+  'bg-teal-500/15 text-teal-700 dark:text-teal-300',
 ]
 
 function hashEventName(s: string): number {
@@ -57,15 +57,13 @@ function formatTime(seconds: number | null): string {
 }
 
 function getRankLabel(idx: number) {
-  if (idx === 0) return 'text-amber-500'
-  if (idx === 1) return 'text-slate-400'
-  if (idx === 2) return 'text-orange-600'
+  if (idx === 0) return 'text-yellow-600 dark:text-yellow-400'
+  if (idx === 1) return 'text-muted-foreground'
+  if (idx === 2) return 'text-orange-600 dark:text-orange-400'
   return 'text-muted-foreground'
 }
 
-// Shared segment trigger style (matches GlobalFilters)
-const segTrigger =
-  'h-9 border-0 shadow-none rounded-none bg-transparent gap-1.5 px-3 text-sm font-medium focus:ring-0 focus:ring-offset-0 hover:bg-accent/60 transition-colors text-muted-foreground'
+const segTrigger = FILTER_TRIGGER_CLASS
 
 interface PathCardProps {
   path: PathAnalysisData
@@ -278,7 +276,10 @@ export function PathsExplorerPage() {
               </Select>
 
               {/* Arrow — non-interactive visual */}
-              <div className="flex items-center justify-center w-8 shrink-0 text-muted-foreground/40 pointer-events-none select-none">
+              <div
+                aria-hidden="true"
+                className="flex items-center justify-center w-8 shrink-0 text-muted-foreground/40 pointer-events-none select-none"
+              >
                 <ArrowRight className="h-3.5 w-3.5" />
               </div>
 
@@ -419,7 +420,7 @@ export function PathsExplorerPage() {
                       ≤ {maxTimeBetweenEvents} {timeUnit}
                     </span>
                   ) : (
-                    <span>Advanced</span>
+                    <span>Time limit</span>
                   )}
                 </PopoverTrigger>
                 <PopoverContent className="w-56 p-3 space-y-3" align="start">
@@ -490,17 +491,17 @@ export function PathsExplorerPage() {
                 <p className="text-sm text-muted-foreground">
                   Showing <span className="font-semibold text-foreground">{pathData.length}</span>{' '}
                   of <span className="font-semibold text-foreground">{totalPaths}</span> paths —
-                  click any to analyze the conversion funnel
+                  click a path to view its conversion funnel
                 </p>
                 <div className="flex gap-1.5">
                   {startEvent && (
                     <Badge variant="secondary" className="text-xs">
-                      from: {startEvent}
+                      From: {startEvent}
                     </Badge>
                   )}
                   {endEvent && (
                     <Badge variant="secondary" className="text-xs">
-                      to: {endEvent}
+                      To: {endEvent}
                     </Badge>
                   )}
                 </div>

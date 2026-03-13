@@ -12,6 +12,8 @@ export interface TopEventsProps {
 }
 
 export function TopEvents({ events, loading }: TopEventsProps) {
+  const max = events[0]?.count ?? 1
+
   return (
     <Card>
       <CardHeader>
@@ -24,20 +26,29 @@ export function TopEvents({ events, loading }: TopEventsProps) {
               <Skeleton key={i} className="h-12" />
             ))}
           </div>
+        ) : events.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <p className="text-sm text-muted-foreground">No events in the selected period.</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Try expanding the date range.</p>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {events.map((event, idx) => (
-              <div key={idx} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
-                    {idx + 1}
+              <div key={idx} className="space-y-1">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs tabular-nums text-muted-foreground w-4 shrink-0">{idx + 1}</span>
+                    <p className="font-medium text-sm truncate">{event.name}</p>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">{event.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {event.count.toLocaleString()} events
-                    </p>
-                  </div>
+                  <p className="text-xs tabular-nums text-muted-foreground shrink-0">
+                    {event.count.toLocaleString()}
+                  </p>
+                </div>
+                <div className="h-1 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary/50 transition-all duration-500"
+                    style={{ width: `${(event.count / max) * 100}%` }}
+                  />
                 </div>
               </div>
             ))}

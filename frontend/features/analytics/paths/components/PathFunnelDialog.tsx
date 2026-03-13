@@ -20,9 +20,9 @@ import { FunnelSteps } from './FunnelSteps'
 import { fetchPathFunnel } from '@/lib/api'
 import type { DateRange, PathAnalysisData } from '@/types'
 import { cn } from '@/lib/utils'
+import { FILTER_TRIGGER_CLASS } from '@/lib/constants'
 
-const segTrigger =
-  'h-9 border-0 shadow-none rounded-none bg-transparent gap-1.5 px-3 text-sm font-medium focus:ring-0 focus:ring-offset-0 hover:bg-accent/60 transition-colors text-muted-foreground'
+const segTrigger = FILTER_TRIGGER_CLASS
 
 interface PathFunnelDialogProps {
   path: PathAnalysisData | null
@@ -107,7 +107,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyPermalink}>
                       {copied ? (
-                        <span className="text-green-500 text-xs font-medium">Copied!</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 text-xs font-medium">Copied!</span>
                       ) : (
                         <Copy className="h-4 w-4" />
                       )}
@@ -209,7 +209,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
                 ))}
               </div>
             ) : error ? (
-              <p className="text-sm text-red-500 text-center py-3">Error loading funnel data</p>
+              <p className="text-sm text-destructive text-center py-3">Error loading funnel data</p>
             ) : steps.length > 0 ? (
               <FunnelSteps steps={steps} />
             ) : (

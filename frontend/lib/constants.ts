@@ -6,9 +6,9 @@
 // Spacing System
 export const SPACING = {
   // Page-level spacing
-  page: 'p-6 lg:p-8',
-  pageY: 'py-6 lg:py-8',
-  pageX: 'px-6 lg:px-8',
+  page: 'p-4 sm:p-6 lg:p-8',
+  pageY: 'py-4 sm:py-6 lg:py-8',
+  pageX: 'px-4 sm:px-6 lg:px-8',
 
   // Section spacing (between major sections)
   section: 'space-y-6',
@@ -56,9 +56,9 @@ export const TYPOGRAPHY = {
   mutedSm: 'text-xs text-muted-foreground',
 
   // Metrics/numbers
-  metric: 'text-2xl font-bold',
-  metricLg: 'text-3xl font-bold',
-  metricSm: 'text-xl font-bold',
+  metric: 'text-xl sm:text-2xl font-bold',
+  metricLg: 'text-2xl sm:text-3xl font-bold',
+  metricSm: 'text-lg sm:text-xl font-bold',
 } as const
 
 // Elevation/Shadow System
@@ -97,16 +97,17 @@ export const CHART_COLORS = {
     'hsl(var(--chart-3))',
     'hsl(var(--chart-4))',
     'hsl(var(--chart-5))',
-    'hsl(220, 70%, 50%)', // Blue
-    'hsl(340, 75%, 55%)', // Pink
-    'hsl(280, 65%, 60%)', // Purple
+    // Cycles back through chart tokens for 6+ series
+    'hsl(var(--chart-1))',
+    'hsl(var(--chart-2))',
+    'hsl(var(--chart-3))',
   ],
 
-  // Semantic colors
-  success: 'hsl(142, 71%, 45%)',
-  warning: 'hsl(38, 92%, 50%)',
-  error: 'hsl(0, 84%, 60%)',
-  info: 'hsl(199, 89%, 48%)',
+  // Semantic colors — mapped to design tokens where possible
+  success: 'hsl(var(--chart-2))',
+  warning: 'hsl(var(--warning))',
+  error: 'hsl(var(--destructive))',
+  info: 'hsl(var(--chart-1))',
 } as const
 
 // Icon Sizes
@@ -115,6 +116,10 @@ export const ICON_SIZES = {
   md: 'h-5 w-5',
   lg: 'h-6 w-6',
 } as const
+
+// Segment/filter trigger style — used in inline filter bars (PathsExplorer, FunnelDetail, PathFunnelDialog)
+export const FILTER_TRIGGER_CLASS =
+  'h-9 border-0 shadow-none rounded-none bg-transparent gap-1.5 px-3 text-sm font-medium focus:ring-0 focus:ring-offset-0 hover:bg-accent/60 transition-colors text-muted-foreground'
 
 // Responsive Grid Columns
 export const GRID_COLS = {

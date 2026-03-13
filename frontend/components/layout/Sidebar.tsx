@@ -56,8 +56,6 @@ const navGroups: NavGroup[] = [
   },
 ]
 
-const bottomNav: NavItem[] = []
-
 function NavLink({
   item,
   collapsed,
@@ -83,7 +81,7 @@ function NavLink({
       )}
     >
       <item.icon className="h-4 w-4 shrink-0" />
-      {!collapsed && <span className="truncate">{item.title}</span>}
+      {!collapsed && <span className="truncate min-w-0">{item.title}</span>}
       {!collapsed && item.badge && (
         <span className="ml-auto text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full leading-none">
           {item.badge}
@@ -157,7 +155,10 @@ export function Sidebar() {
           {sidebarOpen ? (
             /* Expanded: flat groups separated by dividers */
             navGroups.map((group, gi) => (
-              <div key={group.title} className={cn('space-y-0.5', gi > 0 && 'pt-2 mt-2 border-t border-border/40')}>
+              <div key={group.title} className={cn('space-y-0.5', gi > 0 && 'pt-3 mt-3 border-t border-border/40')}>
+                <p className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                  {group.title}
+                </p>
                 {group.items.map((item) => (
                   <NavLink
                     key={item.href}
@@ -192,15 +193,6 @@ export function Sidebar() {
 
         {/* Bottom section */}
         <div className="shrink-0 border-t px-2 py-2 space-y-0.5">
-          {bottomNav.map((item) => (
-            <NavLink
-              key={item.href}
-              item={item}
-              collapsed={!sidebarOpen}
-              onClick={handleMobileNavClick}
-            />
-          ))}
-
           {/* Collapse toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}

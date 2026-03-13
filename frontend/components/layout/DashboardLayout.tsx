@@ -3,6 +3,7 @@ import { useAppStore } from '@/stores'
 import { useUrlSync } from '@/hooks'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 export function DashboardLayout() {
@@ -10,6 +11,7 @@ export function DashboardLayout() {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
 
   return (
+    <TooltipProvider delayDuration={300}>
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <div
@@ -19,10 +21,11 @@ export function DashboardLayout() {
         )}
       >
         <Header />
-        <main className="p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
     </div>
+    </TooltipProvider>
   )
 }
