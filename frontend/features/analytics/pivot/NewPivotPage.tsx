@@ -15,7 +15,7 @@ import { PageTransition } from '@/components/layout/PageTransition'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/stores'
-import { fetchPivotGridColDefs, fetchPivotGridRows, fetchPivotGridFilterValues } from '@/lib/api'
+import { fetchPivotGridColDefs, fetchPivotGridRows, fetchPivotGridFilterValues, fetchFilterConfig } from '@/lib/api'
 import { useAgGridTheme } from '@/lib/ag-grid-theme'
 
 ModuleRegistry.registerModules([AllEnterpriseModule])
@@ -100,7 +100,7 @@ const AGG_LABELS: Record<string, string> = {
 // ─── Main page ─────────────────────────────────────────────────────────────
 
 export function NewPivotPage() {
-  const { dateRange, activeFilters, activeConnectionId } = useAppStore()
+  const { dateRange, activeFilters, activeConnectionId, setActiveFilter } = useAppStore()
   const gridTheme = useAgGridTheme()
   const [isQuerying, setIsQuerying] = useState(false)
   const [showSubtotals, setShowSubtotals] = useState(false)
@@ -120,19 +120,47 @@ export function NewPivotPage() {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
 
-  const requestParamsRef = useRef({
-    startDate,
-    endDate,
-    activeFilters,
-    activeConnectionId,
-    pivotFilters,
-  })
-  requestParamsRef.current = { startDate, endDate, activeFilters, activeConnectionId, pivotFilters }
-
   const { data: colDefsData, isLoading: colDefsLoading } = useQuery({
     queryKey: ['pivot-grid-col-defs', activeConnectionId],
     queryFn: () => fetchPivotGridColDefs(activeConnectionId ?? undefined),
   })
+
+  const { data: filterConfig } = useQuery({
+    queryKey: ['filter-config', activeConnectionId],
+    queryFn: () => fetchFilterConfig(activeConnectionId!),
+    enabled: !!activeConnectionId,
+  })
+
+  // Strip URL params that aren't valid filter fields for this connection
+  const validFilterIds = useMemo(
+    () => new Set((filterConfig?.filter_fields ?? []).map((f) => f.field)),
+    [filterConfig],
+  )
+
+  useEffect(() => {
+    if (!filterConfig) return
+    Object.keys(activeFilters).forEach((key) => {
+      if (!validFilterIds.has(key)) setActiveFilter(key, null)
+    })
+  }, [filterConfig])
+
+  // Only pass filters that are valid for this connection
+  const validActiveFilters = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(activeFilters).filter(([key]) => validFilterIds.has(key)),
+      ),
+    [activeFilters, validFilterIds],
+  )
+
+  const requestParamsRef = useRef({
+    startDate,
+    endDate,
+    activeFilters: validActiveFilters,
+    activeConnectionId,
+    pivotFilters,
+  })
+  requestParamsRef.current = { startDate, endDate, activeFilters: validActiveFilters, activeConnectionId, pivotFilters }
 
   // ── Flatten column defs into leaf metadata ──────────────────────────────
   const leafCols = useMemo<LeafMeta[]>(() => {

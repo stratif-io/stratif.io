@@ -23,7 +23,8 @@ export function Header() {
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden shrink-0 h-8 w-8"
+          className="lg:hidden shrink-0"
+          aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           <Menu className="h-4 w-4" />
@@ -41,7 +42,7 @@ export function Header() {
         <div className="flex items-center gap-1 shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" aria-label="Change theme">
                 {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               </Button>
             </DropdownMenuTrigger>

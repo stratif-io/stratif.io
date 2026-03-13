@@ -68,8 +68,8 @@ export function SparklineChart({
     }
   }, [data, width, height, showArea, showDots])
 
-  const trendColor = trend >= 0 ? 'text-green-500' : 'text-red-500'
-  const trendBgColor = trend >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'
+  const trendColor = trend >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+  const trendBgColor = trend >= 0 ? 'bg-emerald-500/10' : 'bg-destructive/10'
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     if (points.length < 2) return
@@ -96,7 +96,7 @@ export function SparklineChart({
   }
 
   return (
-    <div className="inline-flex items-center gap-2 animate-in fade-in-50 duration-300">
+    <div className="inline-flex items-center gap-2 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-300">
       <div className="relative" style={{ width, height }}>
         {/* Tooltip */}
         {hoveredPoint && (
@@ -119,6 +119,8 @@ export function SparklineChart({
         )}
 
         <svg
+          role="img"
+          aria-label="Sparkline trend chart"
           width={width}
           height={height}
           className="overflow-visible cursor-crosshair"
@@ -175,7 +177,7 @@ export function SparklineChart({
                 cy={hoveredPoint.y}
                 r={3}
                 fill={color}
-                stroke="white"
+                stroke="hsl(var(--background))"
                 strokeWidth={1.5}
               />
             </>
@@ -220,7 +222,10 @@ export function SparklineCard({
   subtitle,
   color = DEFAULT_CHART_COLORS[0],
 }: SparklineCardProps) {
-  const trendColor = trend !== undefined && trend >= 0 ? 'text-green-500' : 'text-red-500'
+  const trendColor =
+    trend !== undefined && trend >= 0
+      ? 'text-emerald-600 dark:text-emerald-400'
+      : 'text-destructive'
 
   return (
     <div className="rounded-lg border bg-card p-4 shadow-sm">

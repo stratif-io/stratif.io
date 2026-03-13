@@ -55,6 +55,17 @@ export function HeatmapChart({
     return colors[index]
   }
 
+  /** Returns a readable text color (dark or light) for a given HSL background string. */
+  const textColorMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const c of colors) {
+      const match = c.match(/hsl\(\s*[\d.]+,\s*[\d.]+%,\s*([\d.]+)%\s*\)/)
+      map.set(c, match && parseFloat(match[1]) > 58 ? 'hsl(215, 90%, 15%)' : 'hsl(0, 0%, 100%)')
+    }
+    return map
+  }, [colors])
+  const getCellTextColor = (bgColor: string): string => textColorMap.get(bgColor) ?? 'hsl(0, 0%, 100%)'
+
   const getCellValue = (dayData: HeatmapRow, hour: number): number => {
     const cell = dayData.data.find((c) => c.hour === hour)
     return cell?.value ?? 0
@@ -80,7 +91,12 @@ export function HeatmapChart({
   const svgHeight = paddingY + cellSize * data.length + 10
 
   return (
-    <div className="w-full overflow-auto animate-in fade-in-50 duration-500" style={{ height }}>
+    <div
+      role="img"
+      aria-label="Activity heatmap by day and hour"
+      className="w-full overflow-auto motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
+      style={{ height }}
+    >
       <div className="flex flex-col items-center">
         <svg width={svgWidth} height={svgHeight} className="overflow-visible">
           {showAxisLabels && (
@@ -145,7 +161,8 @@ export function HeatmapChart({
                         y={y + (cellSize - 1) / 2}
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        className="fill-white text-[8px] pointer-events-none"
+                        fill={getCellTextColor(color)}
+                        style={{ fontSize: '8px', pointerEvents: 'none' }}
                       >
                         {value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value}
                       </text>

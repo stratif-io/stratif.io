@@ -35,7 +35,7 @@ function ConnectionRow({ connection }: { connection: Connection }) {
     e.stopPropagation()
     setTestResult(null)
     testMutation.mutate(connection.id, {
-      onSuccess: (data) => setTestResult({ ok: data.ok, message: 'Connection successful' }),
+      onSuccess: (data) => setTestResult({ ok: data.ok, message: 'Connected successfully' }),
       onError: (err) => setTestResult({ ok: false, message: err.message }),
     })
   }
@@ -77,10 +77,10 @@ function ConnectionRow({ connection }: { connection: Connection }) {
           <span
             className={cn(
               'shrink-0 text-xs font-medium',
-              testResult.ok ? 'text-green-600' : 'text-destructive'
+              testResult.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
             )}
           >
-            {testResult.ok ? '✓ OK' : '✗ Failed'}
+            {testResult.ok ? '✓ Connected' : '✗ Failed'}
           </span>
         )}
 
@@ -99,7 +99,7 @@ function ConnectionRow({ connection }: { connection: Connection }) {
             size="icon"
             variant="ghost"
             className="h-7 w-7"
-            title="Edit name"
+            title="Edit connection"
             onClick={(e) => {
               e.stopPropagation()
               setEditOpen(true)

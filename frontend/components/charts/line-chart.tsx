@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/constants'
 import { CustomTooltip } from './CustomTooltip'
+import { useReducedMotion } from '@/hooks'
 
 interface LineChartProps {
   data: Array<Record<string, unknown>>
@@ -24,6 +25,7 @@ interface LineChartProps {
   showGrid?: boolean
   showLegend?: boolean
   loading?: boolean
+  ariaLabel?: string
 }
 
 export function LineChartComponent({
@@ -33,9 +35,16 @@ export function LineChartComponent({
   height = 300,
   showGrid = true,
   showLegend = true,
+  ariaLabel,
 }: LineChartProps) {
+  const reducedMotion = useReducedMotion()
+  const defaultLabel = lines.map((l) => l.name || l.dataKey).join(' and ') + ' line chart'
   return (
-    <div className="animate-in fade-in-50 duration-500">
+    <div
+      role="img"
+      aria-label={ariaLabel ?? defaultLabel}
+      className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
+    >
       <ResponsiveContainer width="100%" height={height}>
         <RechartsLineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
           {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border opacity-50" />}
@@ -63,6 +72,7 @@ export function LineChartComponent({
               strokeWidth={line.strokeWidth || 2}
               dot={false}
               activeDot={{ r: 5, strokeWidth: 2 }}
+              isAnimationActive={!reducedMotion}
               animationDuration={800}
               animationEasing="ease-out"
             />

@@ -81,14 +81,14 @@ function ComparisonTooltip({ active, payload, label, series }: ComparisonTooltip
             <p className="text-sm">
               <span className="text-muted-foreground">Difference: </span>
               <span
-                className={`font-medium ${difference >= 0 ? 'text-green-500' : 'text-red-500'}`}
+                className={`font-medium ${difference >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}
               >
                 {difference >= 0 ? '+' : ''}
                 {difference.toLocaleString()}
               </span>
               {percentChange !== null && (
                 <span
-                  className={`ml-1 text-xs ${difference >= 0 ? 'text-green-500' : 'text-red-500'}`}
+                  className={`ml-1 text-xs ${difference >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}
                 >
                   ({percentChange >= 0 ? '+' : ''}
                   {percentChange.toFixed(1)}%)
@@ -137,7 +137,7 @@ export function ComparisonChart({
   }
 
   return (
-    <div className="animate-in fade-in-50 duration-500">
+    <div className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500">
       <ResponsiveContainer width="100%" height={height}>
         <RechartsLineChart
           data={data}

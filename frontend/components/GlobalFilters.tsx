@@ -68,6 +68,8 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
           </span>
           {value ? (
             <X
+              role="button"
+              aria-label={`Clear ${field.label} filter`}
               className="h-3 w-3 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation()
@@ -138,7 +140,11 @@ export function GlobalFilters() {
   const filterFields = filterConfig?.filter_fields ?? []
 
   return (
-    <div className="flex items-center h-9 rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border">
+    <div
+      role="group"
+      aria-label="Global filters"
+      className="flex items-center h-9 rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border"
+    >
       <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
       {filterFields.map((field) => (
         <DimensionFilter

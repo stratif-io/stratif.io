@@ -98,7 +98,9 @@ DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 # ---------------------------------------------------------------------------
 
 
-def _get_dim_expr(field: str, dialect: str, custom_prop_exprs: dict[str, str]) -> str:
+def _get_dim_expr(
+    field: str, dialect: str, custom_prop_exprs: dict[str, str], filter_exprs: dict[str, str] | None = None
+) -> str:
     """Return the SQL expression for a dimension field."""
     match field:
         case "ts_year":
@@ -127,6 +129,8 @@ def _get_dim_expr(field: str, dialect: str, custom_prop_exprs: dict[str, str]) -
         case _:
             if field in custom_prop_exprs:
                 return custom_prop_exprs[field]
+            if filter_exprs and field in filter_exprs:
+                return filter_exprs[field]
             return f'"{field}"'
 
 
@@ -356,7 +360,7 @@ def get_pivot(
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
     def get_dimension_expr(dim: str) -> str:
-        return _get_dim_expr(dim, dialect, custom_prop_exprs)
+        return _get_dim_expr(dim, dialect, custom_prop_exprs, db.get_filter_exprs())
 
     def get_measure_expr(measure: str) -> str:
         if measure == "count_events":
@@ -480,7 +484,7 @@ def get_pivot_grid_filter_values(
     end_date = parse_date(end_date)
     dialect = db.get_dialect()
     custom_prop_exprs = db.get_custom_prop_exprs()
-    expr = _get_dim_expr(field, dialect, custom_prop_exprs)
+    expr = _get_dim_expr(field, dialect, custom_prop_exprs, db.get_filter_exprs())
 
     where_clauses: list[str] = []
     params: list = []
@@ -673,16 +677,19 @@ def get_pivot_grid_rows(
     try:
         return _pivot_grid_rows_impl(body, db)
     except Exception:
+        from fastapi import HTTPException
         err = _traceback.format_exc()
-        return {"rows": [], "rowCount": 0, "error": err}
+        raise HTTPException(status_code=500, detail=err)
 
 
 def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> dict:
     dialect = db.get_dialect()
     custom_prop_exprs = db.get_custom_prop_exprs()
 
+    filter_exprs = db.get_filter_exprs()
+
     def dim_expr(field: str) -> str:
-        return _get_dim_expr(field, dialect, custom_prop_exprs)
+        return _get_dim_expr(field, dialect, custom_prop_exprs, filter_exprs)
 
     # ------------------------------------------------------------------ #
     # Build base WHERE clause                                              #

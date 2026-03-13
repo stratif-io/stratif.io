@@ -2,10 +2,21 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+
+
+class APITrailingSlashMiddleware(BaseHTTPMiddleware):
+    """Rewrite the specific API collection paths that are registered with a trailing slash."""
+    _TRAILING_SLASH_PATHS = {"/api/connections"}
+
+    async def dispatch(self, request: Request, call_next):
+        if request.scope["path"] in self._TRAILING_SLASH_PATHS:
+            request.scope["path"] += "/"
+        return await call_next(request)
 
 from backend.config import settings
 from backend.core.logging import setup_logging
@@ -37,6 +48,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(APITrailingSlashMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_list,

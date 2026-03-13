@@ -17,7 +17,7 @@ interface RetentionTableProps {
   milestones: number[]
 }
 
-const SPARKLINE_COLOR = 'hsl(142, 71%, 45%)'
+const SPARKLINE_COLOR = 'hsl(var(--chart-2))'
 
 function buildSparklineLabels(granularity: RetentionGranularity, length: number): string[] {
   // length = retention_series.length - 1 (we skip unit 0)
@@ -31,7 +31,7 @@ function buildSparklineLabels(granularity: RetentionGranularity, length: number)
 
 function getCellStyle(percent: number): React.CSSProperties {
   const opacity = 0.06 + (percent / 100) * 0.44
-  return { backgroundColor: `rgba(34, 197, 94, ${opacity})` }
+  return { backgroundColor: `hsl(var(--chart-2) / ${opacity})` }
 }
 
 function formatDate(d: string, granularity: RetentionGranularity) {
@@ -112,7 +112,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                           pct >= 50
                             ? 'text-emerald-800 dark:text-emerald-200'
                             : pct >= 20
-                              ? 'text-green-800 dark:text-green-200'
+                              ? 'text-emerald-700 dark:text-emerald-300'
                               : 'text-foreground'
                         )}
                         style={getCellStyle(pct)}
@@ -144,7 +144,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                       pct >= 50
                         ? 'text-emerald-800 dark:text-emerald-200'
                         : pct >= 20
-                          ? 'text-green-800 dark:text-green-200'
+                          ? 'text-emerald-700 dark:text-emerald-300'
                           : 'text-foreground'
                     )}
                     style={getCellStyle(pct)}

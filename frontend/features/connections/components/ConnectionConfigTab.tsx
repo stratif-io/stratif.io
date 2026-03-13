@@ -253,7 +253,7 @@ function ConnectionStringDisplay({ connId }: { connId: string }) {
           title="Copy"
         >
           {copied ? (
-            <Check className="h-3.5 w-3.5 text-green-500" />
+            <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           ) : (
             <Copy className="h-3.5 w-3.5" />
           )}
@@ -373,7 +373,7 @@ export function ConnectionConfigTab({ connection }: Props) {
           Test Connection
         </Button>
         {testResult && (
-          <span className="flex items-center gap-1.5 text-sm text-green-600">
+          <span className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
             <CheckCircle className="h-4 w-4" />
             Connected ({testResult.db_type})
           </span>
@@ -387,7 +387,7 @@ export function ConnectionConfigTab({ connection }: Props) {
       </div>
 
       {update.isError && <p className="text-sm text-destructive">{update.error?.message}</p>}
-      {update.isSuccess && <p className="text-sm text-green-600">Connection updated.</p>}
+      {update.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Connection updated.</p>}
 
       <div className="flex justify-end">
         <Button type="submit" disabled={update.isPending}>

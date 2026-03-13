@@ -33,7 +33,7 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="file_path">File Path / S3 Path</Label>
-            <Input id="file_path" name="file_path" placeholder="/path/to/db.duckdb or s3://..." />
+            <Input id="file_path" name="file_path" placeholder="/path/to/db.duckdb or s3://..." required />
           </div>
         </div>
       )
@@ -42,7 +42,7 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="file_path">File Path</Label>
-            <Input id="file_path" name="file_path" placeholder="/path/to/db.sqlite" />
+            <Input id="file_path" name="file_path" placeholder="/path/to/db.sqlite" required />
           </div>
         </div>
       )
@@ -52,25 +52,25 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2 space-y-1.5">
               <Label htmlFor="host">Host</Label>
-              <Input id="host" name="host" placeholder="localhost" />
+              <Input id="host" name="host" placeholder="localhost" required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="port">Port</Label>
-              <Input id="port" name="port" placeholder="5432" type="number" />
+              <Input id="port" name="port" placeholder="5432" type="number" min={1} max={65535} required />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="database">Database</Label>
-            <Input id="database" name="database" placeholder="mydb" />
+            <Input id="database" name="database" placeholder="mydb" required />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label htmlFor="user">User</Label>
-              <Input id="user" name="user" placeholder="postgres" />
+              <Input id="user" name="user" placeholder="postgres" required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" placeholder="••••••••" />
+              <Input id="password" name="password" type="password" placeholder="••••••••" required />
             </div>
           </div>
         </div>
@@ -80,15 +80,15 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="host">Workspace Host</Label>
-            <Input id="host" name="host" placeholder="adb-xxxx.azuredatabricks.net" />
+            <Input id="host" name="host" placeholder="adb-xxxx.azuredatabricks.net" required />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="http_path">HTTP Path</Label>
-            <Input id="http_path" name="http_path" placeholder="/sql/1.0/warehouses/..." />
+            <Input id="http_path" name="http_path" placeholder="/sql/1.0/warehouses/..." required />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="token">Access Token</Label>
-            <Input id="token" name="token" type="password" placeholder="dapiXXXXXXXX" />
+            <Input id="token" name="token" type="password" placeholder="dapiXXXXXXXX" required />
           </div>
         </div>
       )
@@ -171,6 +171,7 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
               onChange={(e) => setName(e.target.value)}
               placeholder="My Production DB"
               required
+              maxLength={100}
             />
           </div>
 

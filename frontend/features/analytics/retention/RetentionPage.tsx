@@ -117,7 +117,7 @@ export function RetentionPage() {
           {/* Header */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <span className={TYPOGRAPHY.pageLabel}>Retention</span>
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {/* Granularity toggle */}
               <div className="flex items-center border rounded-md p-1">
                 {GRANULARITIES.map(({ value, label }) => (
@@ -145,7 +145,7 @@ export function RetentionPage() {
                     step={1}
                     value={[effectiveLimit]}
                     onValueChange={([v]) => setCohortLimit(v)}
-                    className="w-32"
+                    className="w-24 sm:w-32"
                   />
                 </div>
               )}
@@ -178,8 +178,8 @@ export function RetentionPage() {
                 <div className="p-6">
                   <EmptyState
                     icon={Users}
-                    title="No retention data"
-                    description="Try expanding the date range."
+                    title="No cohorts to show"
+                    description="No new users were found in this date range. Try widening it to see retention cohorts."
                   />
                 </div>
               ) : (

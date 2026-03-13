@@ -13,7 +13,6 @@ interface FunnelChartProps {
   height?: number
   showPercentage?: boolean
   showValue?: boolean
-  gradient?: boolean
   onStageClick?: (stage: FunnelStage, index: number) => void
 }
 
@@ -23,7 +22,6 @@ export function FunnelChart({
   height = 400,
   showPercentage = true,
   showValue = true,
-  gradient = true,
   onStageClick,
 }: FunnelChartProps) {
   const maxValue = useMemo(() => {
@@ -32,33 +30,10 @@ export function FunnelChart({
 
   const colors = FUNNEL_CHART_COLORS
 
-  const getGradientColor = (index: number, total: number) => {
-    if (!gradient) return colors[index % colors.length]
-
-    const startColor = colors[0]
-    const endColor = colors[Math.min(total - 1, colors.length - 1)]
-
-    const parseHSL = (hsl: string) => {
-      const match = hsl.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/)
-      if (match) {
-        return {
-          h: parseInt(match[1]),
-          s: parseInt(match[2]),
-          l: parseInt(match[3]),
-        }
-      }
-      return { h: 200, s: 70, l: 60 }
-    }
-
-    const start = parseHSL(startColor)
-    const end = parseHSL(endColor)
-    const ratio = index / Math.max(total - 1, 1)
-
-    const h = Math.round(start.h + (end.h - start.h) * ratio)
-    const s = Math.round(start.s + (end.s - start.s) * ratio)
-    const l = Math.round(start.l + (end.l - start.l) * ratio)
-
-    return `hsl(${h}, ${s}%, ${l}%)`
+  const getGradientColor = (index: number, _total: number) => {
+    // When colors are CSS-variable references (can't be interpolated at compile time),
+    // we cycle through the palette — which gives clearer per-step differentiation anyway.
+    return colors[index % colors.length]
   }
 
   if (!data || data.length === 0) {
@@ -71,7 +46,12 @@ export function FunnelChart({
 
   if (orientation === 'horizontal') {
     return (
-      <div className="w-full animate-in fade-in-50 duration-500" style={{ height }}>
+      <div
+        role="img"
+        aria-label="Funnel chart"
+        className="w-full motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
+        style={{ height }}
+      >
         <div className="flex flex-col gap-2 h-full justify-center">
           {data.map((stage, index) => {
             const widthPercent = (stage.value / maxValue) * 100
@@ -118,6 +98,8 @@ export function FunnelChart({
 
   return (
     <div
+      role="img"
+      aria-label="Funnel chart"
       className="w-full flex justify-center animate-in fade-in-50 duration-500"
       style={{ height }}
     >
@@ -126,18 +108,6 @@ export function FunnelChart({
         className="w-full max-w-md"
         preserveAspectRatio="xMidYMid meet"
       >
-        <defs>
-          {gradient && (
-            <linearGradient id="funnelGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={colors[0]} />
-              <stop
-                offset="100%"
-                stopColor={colors[Math.min(data.length - 1, colors.length - 1)]}
-              />
-            </linearGradient>
-          )}
-        </defs>
-
         {data.map((stage, index) => {
           const widthPercent = (stage.value / maxValue) * 100
           const nextWidthPercent =
@@ -181,7 +151,8 @@ export function FunnelChart({
                 x={centerX}
                 y={y + stageHeight / 2 - 8}
                 textAnchor="middle"
-                className="fill-white font-semibold text-sm pointer-events-none"
+                fill="white"
+                style={{ fontWeight: 600, fontSize: '0.875rem', pointerEvents: 'none' }}
               >
                 {stage.name}
               </text>
@@ -190,7 +161,8 @@ export function FunnelChart({
                 x={centerX}
                 y={y + stageHeight / 2 + 10}
                 textAnchor="middle"
-                className="fill-white/80 text-xs pointer-events-none"
+                fill="rgba(255,255,255,0.8)"
+                style={{ fontSize: '0.75rem', pointerEvents: 'none' }}
               >
                 {showValue && stage.value.toLocaleString()}
                 {showValue && showPercentage && ' • '}

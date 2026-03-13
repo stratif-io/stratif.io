@@ -255,7 +255,7 @@ export function SchemaConfigTab({ connId }: Props) {
       </div>
 
       {upsert.isError && <p className="text-sm text-destructive">{upsert.error?.message}</p>}
-      {upsert.isSuccess && <p className="text-sm text-green-600">Schema config saved.</p>}
+      {upsert.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Schema config saved.</p>}
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={upsert.isPending}>

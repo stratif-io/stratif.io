@@ -21,7 +21,7 @@ export function ActivityChart({ data, loading }: ActivityChartProps) {
             data={data}
             lines={[
               { dataKey: 'events', name: 'Events', color: 'hsl(var(--primary))' },
-              { dataKey: 'users', name: 'Users', color: '#22c55e' },
+              { dataKey: 'users', name: 'Users', color: 'hsl(var(--chart-2))' },
             ]}
             xAxisKey="day"
             height={300}

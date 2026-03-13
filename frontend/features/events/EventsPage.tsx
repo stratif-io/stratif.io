@@ -11,6 +11,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card'
 import { QueryError } from '@/components/ui/query-error'
 import { PageTransition } from '@/components/layout/PageTransition'
+import { SPACING } from '@/lib/constants'
 import { EventsTable } from './components/EventsTable'
 import { UserTimelineModal } from './components/UserTimelineModal'
 import type { RawEvent } from './components/EventsTable'
@@ -129,7 +130,7 @@ export function EventsPage() {
 
   return (
     <PageTransition>
-      <div className="p-4 lg:p-6">
+      <div className={SPACING.page}>
         <Card>
           <CardContent className="p-0">
             <EventsTable

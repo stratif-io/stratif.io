@@ -38,7 +38,7 @@ export function TrendsPage() {
         <div className={SPACING.section}>
           <span className={TYPOGRAPHY.pageLabel}>Trend Analysis</span>
 
-          <div className={`grid gap-4 md:grid-cols-3`}>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
             <Card hover="lift">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className={TYPOGRAPHY.label}>Total Events</CardTitle>
@@ -59,7 +59,7 @@ export function TrendsPage() {
             </Card>
             <Card hover="lift">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className={TYPOGRAPHY.label}>Peak Day</CardTitle>
+                <CardTitle className={TYPOGRAPHY.label}>Daily Peak</CardTitle>
                 <LineChartIcon className={`${ICON_SIZES.sm} text-muted-foreground`} />
               </CardHeader>
               <CardContent>
@@ -71,7 +71,7 @@ export function TrendsPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-end">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 justify-end">
                   <div className="flex items-center border rounded-md p-1">
                     <Button
                       variant={chartType === 'area' ? 'secondary' : 'ghost'}
@@ -94,7 +94,7 @@ export function TrendsPage() {
                     value={selectedEvent || 'all'}
                     onValueChange={(val) => setSelectedEvent(val === 'all' ? '' : val)}
                   >
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[min(180px,45vw)]">
                       <SelectValue placeholder="All Events" />
                     </SelectTrigger>
                     <SelectContent>
@@ -110,7 +110,7 @@ export function TrendsPage() {
                     value={granularity}
                     onValueChange={(val) => setGranularity(val as 'day' | 'week')}
                   >
-                    <SelectTrigger className="w-[120px]">
+                    <SelectTrigger className="w-[min(120px,35vw)]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -123,16 +123,16 @@ export function TrendsPage() {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <ChartSkeleton height="h-[450px]" />
+                <ChartSkeleton height="h-[300px] sm:h-[380px] lg:h-[450px]" />
               ) : trendData.length === 0 ? (
                 <EmptyState
                   icon={TrendingUp}
                   title="No trend data available"
-                  description="Try adjusting your date range or filters to see trend data."
-                  className="h-[450px]"
+                  description="No events were recorded in this date range. Try widening the range or selecting a different event."
+                  className="h-[300px] sm:h-[380px] lg:h-[450px]"
                 />
               ) : (
-                <div className="h-[450px]">
+                <div className="h-[300px] sm:h-[380px] lg:h-[450px]">
                   <TrendChart
                     data={trendData}
                     chartType={chartType}

@@ -100,7 +100,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className={cn('justify-between text-left font-normal min-w-[220px]', className)}
+          className={cn('justify-between text-left font-normal sm:min-w-[220px]', className)}
         >
           <div className="flex items-center">
             <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -142,7 +142,7 @@ function DatePickerContent({
   onClose: () => void
 }) {
   return (
-    <div className="p-4 space-y-4 min-w-[300px]">
+    <div className="p-4 space-y-4 min-w-[260px] sm:min-w-[300px]">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Quick select

@@ -206,6 +206,9 @@ class AnalyticsDatabase:
                 params.append(values[0])
         return where_clauses, params
 
+    def get_filter_exprs(self) -> dict[str, str]:
+        return self._filter_exprs
+
     def get_filter_fields(self) -> list[dict]:
         return self._filter_fields
 

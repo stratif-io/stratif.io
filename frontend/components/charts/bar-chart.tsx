@@ -39,7 +39,7 @@ export function BarChartComponent({
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
   return (
-    <div className="animate-in fade-in-50 duration-500">
+    <div className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500">
       <ResponsiveContainer width="100%" height={height}>
         <RechartsBarChart
           data={data}

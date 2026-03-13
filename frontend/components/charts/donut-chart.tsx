@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 import { DONUT_CHART_COLORS } from './chart-colors'
 import { CHART_COLORS } from '@/lib/constants'
+import { useReducedMotion } from '@/hooks'
 
 interface DonutChartProps {
   data: Array<{
@@ -72,6 +73,7 @@ export function DonutChart({
   onSliceClick,
 }: DonutChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const prefersReducedMotion = useReducedMotion()
 
   if (loading) {
     return (
@@ -118,7 +120,7 @@ export function DonutChart({
   const total = data.reduce((sum, item) => sum + item.value, 0)
 
   return (
-    <div className="animate-in fade-in-50 duration-500">
+    <div role="img" aria-label="Donut chart" className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500">
       <ResponsiveContainer width="100%" height={height}>
         <PieChart>
           <Pie
@@ -131,7 +133,8 @@ export function DonutChart({
             dataKey="value"
             label={showLabels ? renderCustomLabel : undefined}
             labelLine={false}
-            animationDuration={800}
+            animationDuration={prefersReducedMotion ? 0 : 800}
+            isAnimationActive={!prefersReducedMotion}
             animationEasing="ease-out"
             onClick={(_, index) => {
               if (onSliceClick) {

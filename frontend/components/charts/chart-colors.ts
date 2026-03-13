@@ -31,55 +31,53 @@ export const DEFAULT_CHART_COLORS = [
   CHART_COLORS.chart[5],
 ]
 
+// Cycles through the 5 design-system chart tokens, then repeats.
 export const DONUT_CHART_COLORS = [
-  'hsl(220, 70%, 50%)',
-  'hsl(160, 60%, 45%)',
-  'hsl(30, 80%, 55%)',
-  'hsl(280, 65%, 60%)',
-  'hsl(340, 75%, 55%)',
-  'hsl(180, 70%, 40%)',
-  'hsl(40, 85%, 50%)',
-  'hsl(260, 60%, 55%)',
+  ...DEFAULT_CHART_COLORS,
+  CHART_COLORS.chart[1],
+  CHART_COLORS.chart[2],
+  CHART_COLORS.chart[3],
 ]
 
+// Sequential heatmap: low-saturation background → full primary blue.
+// These are intentionally literal values because they need to resolve as
+// concrete SVG fill colors and must form a perceptual gradient.
 export const HEATMAP_SEQUENTIAL_COLORS = [
-  'hsl(210, 30%, 95%)',
-  'hsl(210, 40%, 85%)',
-  'hsl(210, 50%, 70%)',
-  'hsl(210, 60%, 55%)',
-  'hsl(210, 70%, 45%)',
-  'hsl(210, 80%, 35%)',
-  'hsl(210, 90%, 25%)',
+  'hsl(215, 25%, 93%)',
+  'hsl(215, 35%, 82%)',
+  'hsl(215, 50%, 68%)',
+  'hsl(215, 65%, 53%)',
+  'hsl(215, 75%, 43%)',
+  'hsl(215, 83%, 33%)',
+  'hsl(215, 90%, 23%)',
 ]
 
+// Diverging heatmap: destructive red → neutral → chart-2 teal.
 export const HEATMAP_DIVERGING_COLORS = [
-  'hsl(0, 70%, 50%)',
-  'hsl(15, 60%, 55%)',
-  'hsl(30, 50%, 60%)',
-  'hsl(50, 40%, 75%)',
-  'hsl(60, 30%, 90%)',
-  'hsl(150, 30%, 85%)',
-  'hsl(160, 40%, 65%)',
-  'hsl(170, 50%, 50%)',
-  'hsl(180, 60%, 40%)',
+  'hsl(0, 72%, 51%)',
+  'hsl(15, 62%, 56%)',
+  'hsl(30, 52%, 61%)',
+  'hsl(50, 38%, 76%)',
+  'hsl(60, 28%, 91%)',
+  'hsl(155, 30%, 82%)',
+  'hsl(163, 42%, 64%)',
+  'hsl(170, 52%, 50%)',
+  'hsl(173, 58%, 39%)',
 ]
 
-export const FUNNEL_CHART_COLORS = [
-  'hsl(220, 70%, 55%)',
-  'hsl(200, 65%, 50%)',
-  'hsl(180, 60%, 45%)',
-  'hsl(160, 55%, 40%)',
-  'hsl(140, 50%, 35%)',
-  'hsl(120, 45%, 30%)',
-]
+export const FUNNEL_CHART_COLORS = DEFAULT_CHART_COLORS
 
 export const COMPARISON_COLORS = {
-  current: ['hsl(220, 70%, 50%)', 'hsl(280, 60%, 55%)', 'hsl(340, 65%, 50%)'],
-  previous: ['hsl(220, 20%, 60%)', 'hsl(280, 15%, 65%)', 'hsl(340, 15%, 60%)'],
+  current: [CHART_COLORS.chart[1], CHART_COLORS.chart[4], CHART_COLORS.chart[5]],
+  previous: [
+    'hsl(var(--muted-foreground) / 0.5)',
+    'hsl(var(--muted-foreground) / 0.4)',
+    'hsl(var(--muted-foreground) / 0.35)',
+  ],
 }
 
 export const SPARKLINE_COLORS = {
-  positive: 'hsl(160, 70%, 45%)',
-  negative: 'hsl(0, 70%, 50%)',
-  neutral: 'hsl(220, 70%, 50%)',
+  positive: CHART_COLORS.chart[2],
+  negative: CHART_COLORS.destructive,
+  neutral: CHART_COLORS.chart[1],
 }

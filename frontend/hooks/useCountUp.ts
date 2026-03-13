@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useReducedMotion } from './use-reduced-motion'
 
 interface UseCountUpOptions {
   duration?: number // Duration in milliseconds
@@ -18,12 +19,17 @@ export function useCountUp(
   end: number,
   { duration = 800, start = 0, decimals = 0, useEasing = true }: UseCountUpOptions = {}
 ) {
-  const [count, setCount] = useState(start)
+  const prefersReducedMotion = useReducedMotion()
+  const [count, setCount] = useState(prefersReducedMotion ? end : start)
   const frameRef = useRef<number>()
   const startTimeRef = useRef<number>()
   const prevEndRef = useRef(end)
 
   useEffect(() => {
+    if (prefersReducedMotion) {
+      setCount(end)
+      return
+    }
     // Reset start time if end value changes
     if (prevEndRef.current !== end) {
       startTimeRef.current = undefined
@@ -58,7 +64,7 @@ export function useCountUp(
         cancelAnimationFrame(frameRef.current)
       }
     }
-  }, [end, duration, start, useEasing])
+  }, [end, duration, start, useEasing, prefersReducedMotion])
 
   // Format the count with specified decimals
   return Number(count.toFixed(decimals))

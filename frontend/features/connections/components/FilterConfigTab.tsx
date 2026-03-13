@@ -166,7 +166,7 @@ export function FilterConfigTab({ connId }: Props) {
       )}
 
       {upsert.isError && <p className="text-sm text-destructive">{upsert.error?.message}</p>}
-      {upsert.isSuccess && <p className="text-sm text-green-600">Filter config saved.</p>}
+      {upsert.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Filter config saved.</p>}
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={upsert.isPending || candidates.length === 0}>

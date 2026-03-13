@@ -1,6 +1,7 @@
 import { AreaChart as RechartsAreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import { CHART_COLORS } from '@/lib/constants'
 import { CustomTooltip } from './CustomTooltip'
+import { useReducedMotion } from '@/hooks'
 
 interface AreaChartProps {
   data: Array<Record<string, unknown>>
@@ -9,6 +10,7 @@ interface AreaChartProps {
   color?: string
   gradientId?: string
   height?: number
+  ariaLabel?: string
 }
 
 export function AreaChartComponent({
@@ -18,9 +20,15 @@ export function AreaChartComponent({
   color = CHART_COLORS.primary,
   gradientId = 'colorGradient',
   height = 300,
+  ariaLabel,
 }: AreaChartProps) {
+  const reducedMotion = useReducedMotion()
   return (
-    <div className="animate-in fade-in-50 duration-500">
+    <div
+      role="img"
+      aria-label={ariaLabel ?? `${name || dataKey} area chart`}
+      className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
+    >
       <ResponsiveContainer width="100%" height={height}>
         <RechartsAreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
           <defs>
@@ -38,6 +46,7 @@ export function AreaChartComponent({
             strokeWidth={2}
             fillOpacity={1}
             fill={`url(#${gradientId})`}
+            isAnimationActive={!reducedMotion}
             animationDuration={800}
             animationEasing="ease-out"
           />

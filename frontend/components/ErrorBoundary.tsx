@@ -66,7 +66,7 @@ Stack: ${this.state.error?.stack}`
               </div>
               <CardTitle className="text-2xl">Something went wrong</CardTitle>
               <CardDescription>
-                We're sorry, but something unexpected happened. Please try one of the options below.
+                The page ran into an error. Reloading usually fixes it.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -80,7 +80,7 @@ Stack: ${this.state.error?.stack}`
               {isDev && this.state.error && (
                 <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3">
                   <p className="text-xs font-semibold text-destructive mb-1">
-                    Development Details:
+                    Error details
                   </p>
                   <p className="text-xs font-mono text-destructive/90">
                     {this.state.error.message}
@@ -106,7 +106,7 @@ Stack: ${this.state.error?.stack}`
 
               {/* Help text */}
               <p className="text-xs text-center text-muted-foreground mt-4">
-                If this problem persists, please contact support with the error ID above.
+                If the problem continues, share the error ID above with your team.
               </p>
             </CardContent>
           </Card>
