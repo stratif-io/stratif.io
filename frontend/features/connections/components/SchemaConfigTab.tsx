@@ -225,7 +225,9 @@ export function SchemaConfigTab({ connId }: Props) {
               ))}
             </div>
 
-            {customProps.map((prop, idx) => (
+            {[...customProps.map((prop, idx) => ({ prop, idx }))].sort((a, b) =>
+              a.prop.name.localeCompare(b.prop.name)
+            ).map(({ prop, idx }) => (
               <div key={idx} className="grid grid-cols-[1fr_1.5fr_100px_32px] gap-2 items-center">
                 <Input
                   value={prop.name}
