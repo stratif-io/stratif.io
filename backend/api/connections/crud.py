@@ -88,14 +88,14 @@ async def delete_connection(conn_id: str):
 async def test_connection(conn_id: str):
     from backend.services.connection_executor import open_analytics_db
 
-    _get_connection_or_404(conn_id)
+    row = _get_connection_or_404(conn_id)
     try:
         db = open_analytics_db(conn_id)
         db.execute("SELECT 1")
         db.close()
-        return {"ok": True}
+        return {"ok": True, "db_type": row["db_type"]}
     except Exception as exc:
-        return {"ok": False, "error": str(exc)}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 # ---------------------------------------------------------------------------

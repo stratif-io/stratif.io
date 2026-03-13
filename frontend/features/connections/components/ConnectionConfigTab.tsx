@@ -273,15 +273,32 @@ export function ConnectionConfigTab({ connection }: Props) {
   const testMutation = useTestConnection()
   const { data: credsData } = useConnectionCredentials(connection.id)
   const formRef = useRef<HTMLFormElement>(null)
+  const nameInitialized = useRef(false)
 
   const fields = credsData?.fields ?? {}
+
+  // Sync name when connection prop changes
+  useEffect(() => {
+    setName(connection.name)
+    nameInitialized.current = true
+  }, [connection.name])
+
+  // Auto-save name on change (debounced)
+  useEffect(() => {
+    if (!nameInitialized.current) return
+    const trimmed = name.trim()
+    if (!trimmed || trimmed === connection.name) return
+    const timer = setTimeout(() => {
+      update.mutate({ name: trimmed })
+    }, 700)
+    return () => clearTimeout(timer)
+  }, [name])
 
   function buildCredentials(dbType: DbType, form: HTMLFormElement): Record<string, unknown> {
     const data = new FormData(form)
 
     function get(key: string): string {
       const el = form.elements.namedItem(key) as HTMLInputElement | null
-      // If the field still holds the mask placeholder, return '' so backend skips it
       if (el?.dataset.masked === 'true') return ''
       return (data.get(key) as string) || ''
     }
@@ -310,16 +327,15 @@ export function ConnectionConfigTab({ connection }: Props) {
     }
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = e.currentTarget
-    const credentials = buildCredentials(connection.db_type, form)
+  // Save credentials when focus leaves the credentials form
+  function handleFormBlur(e: React.FocusEvent<HTMLFormElement>) {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return
+    if (!formRef.current) return
+    const credentials = buildCredentials(connection.db_type, formRef.current)
     const hasCredentials = Object.values(credentials).some((v) => v !== '' && v !== null)
-
-    update.mutate({
-      name: name.trim() || connection.name,
-      ...(hasCredentials && { credentials }),
-    })
+    if (hasCredentials) {
+      update.mutate({ credentials })
+    }
   }
 
   function handleTest() {
@@ -330,15 +346,22 @@ export function ConnectionConfigTab({ connection }: Props) {
   const testError = testMutation.error
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formRef} onBlur={handleFormBlur} className="space-y-6">
       {/* Name */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Connection Name</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Connection Name</h3>
+          {update.isPending && (
+            <span className="text-xs text-muted-foreground">Saving…</span>
+          )}
+          {update.isSuccess && !update.isPending && (
+            <span className="text-xs text-emerald-600 dark:text-emerald-400">Saved</span>
+          )}
+        </div>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="My Production DB"
-          required
         />
       </div>
 
@@ -372,7 +395,7 @@ export function ConnectionConfigTab({ connection }: Props) {
           {testMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
           Test Connection
         </Button>
-        {testResult && (
+        {testResult?.ok && (
           <span className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
             <CheckCircle className="h-4 w-4" />
             Connected ({testResult.db_type})
@@ -387,13 +410,6 @@ export function ConnectionConfigTab({ connection }: Props) {
       </div>
 
       {update.isError && <p className="text-sm text-destructive">{update.error?.message}</p>}
-      {update.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Connection updated.</p>}
-
-      <div className="flex justify-end">
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? 'Saving…' : 'Save Changes'}
-        </Button>
-      </div>
     </form>
   )
 }

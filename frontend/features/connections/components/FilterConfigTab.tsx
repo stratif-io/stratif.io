@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { useEffect, useRef, useState } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,19 +28,19 @@ export function FilterConfigTab({ connId }: Props) {
   const { data: filters, isLoading: filtersLoading } = useFilterConfig(connId)
   const upsert = useUpsertFilterConfig(connId)
 
-  // Map field name → {label, icon} for enabled fields
   const [enabledFields, setEnabledFields] = useState<
     Record<string, { label: string; icon: string }>
   >({})
 
-  // All candidate field names derived from the schema config
+  const initialized = useRef(false)
+
   const candidates: string[] = schema
     ? [
         schema.user_id_field,
         schema.timestamp_field,
         schema.event_name_field,
         ...schema.custom_properties.map((p) => p.name),
-      ]
+      ].sort((a, b) => a.localeCompare(b))
     : []
 
   // Sync from saved filter config
@@ -52,7 +51,20 @@ export function FilterConfigTab({ connId }: Props) {
       map[ff.field] = { label: ff.label, icon: ff.icon }
     }
     setEnabledFields(map)
+    initialized.current = true
   }, [filters])
+
+  // Auto-save on change (debounced)
+  useEffect(() => {
+    if (!initialized.current) return
+    const timer = setTimeout(() => {
+      const filter_fields: FilterField[] = Object.entries(enabledFields).map(
+        ([field, { label, icon }]) => ({ field, label, icon })
+      )
+      upsert.mutate({ filter_fields })
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [enabledFields])
 
   function toggleField(field: string) {
     setEnabledFields((prev) => {
@@ -60,7 +72,6 @@ export function FilterConfigTab({ connId }: Props) {
       if (next[field]) {
         delete next[field]
       } else {
-        // Default label: capitalize field name; default icon: Tag
         next[field] = {
           label: field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' '),
           icon: 'Tag',
@@ -84,13 +95,6 @@ export function FilterConfigTab({ connId }: Props) {
     }))
   }
 
-  function handleSave() {
-    const filter_fields: FilterField[] = Object.entries(enabledFields).map(
-      ([field, { label, icon }]) => ({ field, label, icon })
-    )
-    upsert.mutate({ filter_fields })
-  }
-
   if (schemaLoading || filtersLoading) return <LoadingState message="Loading filter config…" />
 
   if (!schema) {
@@ -104,7 +108,15 @@ export function FilterConfigTab({ connId }: Props) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Global Filter Dimensions</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Global Filter Dimensions</h3>
+          {upsert.isPending && (
+            <span className="text-xs text-muted-foreground">Saving…</span>
+          )}
+          {upsert.isSuccess && !upsert.isPending && (
+            <span className="text-xs text-emerald-600 dark:text-emerald-400">Saved</span>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">
           Select which fields appear as filter dropdowns in the analytics header. Set a label and
           icon for each enabled dimension.
@@ -166,13 +178,6 @@ export function FilterConfigTab({ connId }: Props) {
       )}
 
       {upsert.isError && <p className="text-sm text-destructive">{upsert.error?.message}</p>}
-      {upsert.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Filter config saved.</p>}
-
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={upsert.isPending || candidates.length === 0}>
-          {upsert.isPending ? 'Saving…' : 'Save Filter Config'}
-        </Button>
-      </div>
     </div>
   )
 }

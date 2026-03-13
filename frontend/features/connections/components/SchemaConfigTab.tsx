@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Plus, Trash2, ScanSearch, FolderSearch } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,6 +38,8 @@ export function SchemaConfigTab({ connId }: Props) {
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30)
   const [customProps, setCustomProps] = useState<CustomProperty[]>([])
 
+  const initialized = useRef(false)
+
   useEffect(() => {
     if (data) {
       setUserIdField(data.user_id_field)
@@ -46,8 +48,25 @@ export function SchemaConfigTab({ connId }: Props) {
       setEventsTable(data.events_table ?? 'events')
       setSessionTimeoutMinutes(data.session_timeout_minutes ?? 30)
       setCustomProps(data.custom_properties)
+      initialized.current = true
     }
   }, [data])
+
+  // Auto-save on any field change (debounced)
+  useEffect(() => {
+    if (!initialized.current) return
+    const timer = setTimeout(() => {
+      upsert.mutate({
+        user_id_field: userIdField,
+        timestamp_field: timestampField,
+        event_name_field: eventNameField,
+        events_table: eventsTable,
+        custom_properties: customProps,
+        session_timeout_minutes: sessionTimeoutMinutes,
+      })
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [userIdField, timestampField, eventNameField, eventsTable, sessionTimeoutMinutes, customProps])
 
   function addProp() {
     setCustomProps((prev) => [...prev, { name: '', path: '', type: 'string' }])
@@ -61,17 +80,6 @@ export function SchemaConfigTab({ connId }: Props) {
     setCustomProps((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
   }
 
-  function handleSave() {
-    upsert.mutate({
-      user_id_field: userIdField,
-      timestamp_field: timestampField,
-      event_name_field: eventNameField,
-      events_table: eventsTable,
-      custom_properties: customProps,
-      session_timeout_minutes: sessionTimeoutMinutes,
-    })
-  }
-
   function handleDetect() {
     detect.mutate(eventsTable || undefined, {
       onSuccess(result) {
@@ -81,7 +89,6 @@ export function SchemaConfigTab({ connId }: Props) {
         if (suggestions.event_name_field) setEventNameField(suggestions.event_name_field)
         if (events_table) setEventsTable(events_table)
 
-        // Merge proposed custom properties, skipping paths already defined
         const existingPaths = new Set(customProps.map((p) => p.path))
         const newProps = proposed_custom_properties.filter((p) => !existingPaths.has(p.path))
         if (newProps.length > 0) {
@@ -131,10 +138,18 @@ export function SchemaConfigTab({ connId }: Props) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Core Field Mappings</h3>
-          <Button size="sm" variant="outline" onClick={handleDetect} disabled={detect.isPending}>
-            <ScanSearch className="h-3.5 w-3.5 mr-1.5" />
-            {detect.isPending ? 'Detecting…' : 'Detect from Schema'}
-          </Button>
+          <div className="flex items-center gap-3">
+            {upsert.isPending && (
+              <span className="text-xs text-muted-foreground">Saving…</span>
+            )}
+            {upsert.isSuccess && !upsert.isPending && (
+              <span className="text-xs text-emerald-600 dark:text-emerald-400">Saved</span>
+            )}
+            <Button size="sm" variant="outline" onClick={handleDetect} disabled={detect.isPending}>
+              <ScanSearch className="h-3.5 w-3.5 mr-1.5" />
+              {detect.isPending ? 'Detecting…' : 'Detect from Schema'}
+            </Button>
+          </div>
         </div>
 
         {detect.isError && <p className="text-sm text-destructive">{detect.error?.message}</p>}
@@ -202,7 +217,6 @@ export function SchemaConfigTab({ connId }: Props) {
           </p>
         ) : (
           <div className="space-y-2">
-            {/* Header */}
             <div className="hidden sm:grid grid-cols-[1fr_1.5fr_100px_32px] gap-2 px-1">
               {['Name', 'Path', 'Type', ''].map((h) => (
                 <span key={h} className="text-xs font-medium text-muted-foreground">
@@ -255,13 +269,6 @@ export function SchemaConfigTab({ connId }: Props) {
       </div>
 
       {upsert.isError && <p className="text-sm text-destructive">{upsert.error?.message}</p>}
-      {upsert.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Schema config saved.</p>}
-
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={upsert.isPending}>
-          {upsert.isPending ? 'Saving…' : 'Save Schema Config'}
-        </Button>
-      </div>
     </div>
   )
 }
