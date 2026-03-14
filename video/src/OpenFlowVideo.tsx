@@ -1,7 +1,7 @@
 import { AbsoluteFill, Series } from 'remotion'
 import { Intro } from './scenes/Intro'
-import { Features } from './scenes/Features'
-import { Dashboard } from './scenes/Dashboard'
+import { AppDemo } from './scenes/AppDemo'
+import { Outro } from './scenes/Outro'
 
 export const OpenFlowVideo: React.FC = () => {
   return (
@@ -10,11 +10,11 @@ export const OpenFlowVideo: React.FC = () => {
         <Series.Sequence durationInFrames={90}>
           <Intro />
         </Series.Sequence>
-        <Series.Sequence durationInFrames={120}>
-          <Features />
+        <Series.Sequence durationInFrames={300}>
+          <AppDemo />
         </Series.Sequence>
-        <Series.Sequence durationInFrames={240}>
-          <Dashboard />
+        <Series.Sequence durationInFrames={60}>
+          <Outro />
         </Series.Sequence>
       </Series>
     </AbsoluteFill>
