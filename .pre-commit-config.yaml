@@ -21,4 +21,10 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-        
+
+      - id: saas-contract-check
+        name: SaaS contract check (tsc + vite build)
+        entry: bash -c "cd ../openflow-saas && npm run build"
+        language: system
+        files: ^frontend/
+        pass_filenames: false
