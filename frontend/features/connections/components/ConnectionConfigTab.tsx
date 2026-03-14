@@ -274,6 +274,7 @@ export function ConnectionConfigTab({ connection }: Props) {
   const { data: credsData } = useConnectionCredentials(connection.id)
   const formRef = useRef<HTMLFormElement>(null)
   const nameInitialized = useRef(false)
+  const credsTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fields = credsData?.fields ?? {}
 
@@ -327,15 +328,18 @@ export function ConnectionConfigTab({ connection }: Props) {
     }
   }
 
-  // Save credentials when focus leaves the credentials form
-  function handleFormBlur(e: React.FocusEvent<HTMLFormElement>) {
-    if (e.currentTarget.contains(e.relatedTarget as Node)) return
+  function saveCredentials() {
     if (!formRef.current) return
     const credentials = buildCredentials(connection.db_type, formRef.current)
     const hasCredentials = Object.values(credentials).some((v) => v !== '' && v !== null)
     if (hasCredentials) {
       update.mutate({ credentials })
     }
+  }
+
+  function handleFormInput() {
+    if (credsTimer.current) clearTimeout(credsTimer.current)
+    credsTimer.current = setTimeout(saveCredentials, 1000)
   }
 
   function handleTest() {
@@ -346,7 +350,7 @@ export function ConnectionConfigTab({ connection }: Props) {
   const testError = testMutation.error
 
   return (
-    <form ref={formRef} onBlur={handleFormBlur} className="space-y-6">
+    <form ref={formRef} onInput={handleFormInput} className="space-y-6">
       {/* Name */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -401,15 +405,15 @@ export function ConnectionConfigTab({ connection }: Props) {
             Connected ({testResult.db_type})
           </span>
         )}
-        {testError && (
+        {(testError || testResult?.ok === false) && (
           <span className="flex items-center gap-1.5 text-sm text-destructive">
             <XCircle className="h-4 w-4" />
-            {testError.message}
+            {testError ? testError.message : 'Connection failed'}
           </span>
         )}
       </div>
 
-      {update.isError && <p className="text-sm text-destructive">{update.error?.message}</p>}
+      {update.error && <p className="text-sm text-destructive">{update.error.message}</p>}
     </form>
   )
 }
