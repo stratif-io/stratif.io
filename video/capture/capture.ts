@@ -1,11 +1,12 @@
 import { chromium } from '@playwright/test'
-import { execSync, spawn } from 'child_process'
+import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { waitFor } from './wait-for'
 
-const OSS_ROOT = path.resolve(__dirname, '../../')
-const OUTPUT = path.resolve(__dirname, '../public/capture.webm')
+// process.cwd() is always `openflow/video/` when run via `npm run capture`
+const OSS_ROOT = path.resolve(process.cwd(), '..')
+const OUTPUT = path.resolve(process.cwd(), 'public/capture.webm')
 const APP_URL = 'http://localhost:8000'
 
 const PAGES = [
@@ -47,7 +48,7 @@ async function main() {
     const browser = await chromium.launch({ args: ['--no-sandbox'] })
     const context = await browser.newContext({
       viewport: { width: 1280, height: 720 },
-      recordVideo: { dir: path.join(__dirname, '../public/'), size: { width: 1280, height: 720 } },
+      recordVideo: { dir: path.resolve(process.cwd(), 'public'), size: { width: 1280, height: 720 } },
     })
     const page = await context.newPage()
 
