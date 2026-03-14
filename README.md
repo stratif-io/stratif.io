@@ -6,8 +6,10 @@
 
 ---
 
-<!-- Screenshot placeholder — replace with an actual dashboard screenshot -->
-![OpenFlow Analytics Dashboard](docs/screenshot-placeholder.png)
+
+![OpenFlow Analytics Demo](docs/demo.gif)
+
+▶ [Watch full demo (MP4)](https://github.com/your-org/openflow/releases/latest/download/openflow.mp4)
 
 ---
 

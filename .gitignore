@@ -41,3 +41,5 @@ seeders/.env.seed
 
 # Local dev DB
 openflow_product.sqlite
+video/node_modules/
+video/out/
