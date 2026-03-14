@@ -379,7 +379,7 @@ export const deleteConnection = (id: string) =>
   fetchApi<void>(`/api/connections/${id}`, { method: 'DELETE' })
 
 export const testConnection = (id: string) =>
-  fetchApi<{ ok: boolean; db_type: string }>(`/api/connections/${id}/test`, { method: 'POST' })
+  fetchApi<{ ok: boolean; db_type?: string; error?: string }>(`/api/connections/${id}/test`, { method: 'POST' })
 
 export const fetchConnectionString = (connId: string) =>
   fetchApi<{ connection_string: string | null }>(`/api/connections/${connId}/string`)

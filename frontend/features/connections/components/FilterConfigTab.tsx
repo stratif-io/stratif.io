@@ -43,16 +43,18 @@ export function FilterConfigTab({ connId }: Props) {
       ].sort((a, b) => a.localeCompare(b))
     : []
 
-  // Sync from saved filter config
+  // Sync from saved filter config (initial load only)
   useEffect(() => {
-    if (!filters) return
-    const map: Record<string, { label: string; icon: string }> = {}
-    for (const ff of filters.filter_fields) {
-      map[ff.field] = { label: ff.label, icon: ff.icon }
+    if (filtersLoading || initialized.current) return
+    if (filters) {
+      const map: Record<string, { label: string; icon: string }> = {}
+      for (const ff of filters.filter_fields) {
+        map[ff.field] = { label: ff.label, icon: ff.icon }
+      }
+      setEnabledFields(map)
     }
-    setEnabledFields(map)
     initialized.current = true
-  }, [filters])
+  }, [filters, filtersLoading])
 
   // Auto-save on change (debounced)
   useEffect(() => {

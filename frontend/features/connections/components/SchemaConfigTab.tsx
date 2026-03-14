@@ -41,6 +41,7 @@ export function SchemaConfigTab({ connId }: Props) {
   const initialized = useRef(false)
 
   useEffect(() => {
+    if (initialized.current) return
     if (data) {
       setUserIdField(data.user_id_field)
       setTimestampField(data.timestamp_field)
@@ -48,9 +49,9 @@ export function SchemaConfigTab({ connId }: Props) {
       setEventsTable(data.events_table ?? 'events')
       setSessionTimeoutMinutes(data.session_timeout_minutes ?? 30)
       setCustomProps(data.custom_properties)
-      initialized.current = true
     }
-  }, [data])
+    if (!isLoading) initialized.current = true
+  }, [data, isLoading])
 
   // Auto-save on any field change (debounced)
   useEffect(() => {
@@ -83,6 +84,7 @@ export function SchemaConfigTab({ connId }: Props) {
   function handleDetect() {
     detect.mutate(eventsTable || undefined, {
       onSuccess(result) {
+        initialized.current = true
         const { suggestions, proposed_custom_properties, events_table } = result
         if (suggestions.user_id_field) setUserIdField(suggestions.user_id_field)
         if (suggestions.timestamp_field) setTimestampField(suggestions.timestamp_field)

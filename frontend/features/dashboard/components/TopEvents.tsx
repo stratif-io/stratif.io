@@ -44,9 +44,9 @@ export function TopEvents({ events, loading }: TopEventsProps) {
                     {event.count.toLocaleString()}
                   </p>
                 </div>
-                <div className="h-1 rounded-full bg-muted overflow-hidden">
+                <div className="h-1 bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-primary/50 transition-all duration-500"
+                    className="h-full bg-primary/50 transition-[width] duration-500"
                     style={{ width: `${(event.count / max) * 100}%` }}
                   />
                 </div>

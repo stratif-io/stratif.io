@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Database, Trash2, Pencil, TestTube } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading-state'
-import { EmptyState } from '@/components/ui/empty-state'
 import { useConnections, useDeleteConnection, useTestConnection } from '../hooks/useConnectionsData'
 import { ConnectionFormDialog } from './ConnectionFormDialog'
 import type { Connection } from '@/types'
@@ -147,11 +146,28 @@ export function ConnectionList() {
       {error && <p className="text-sm text-destructive">{error.message}</p>}
 
       {!isLoading && !error && data?.length === 0 && (
-        <EmptyState
-          title="No connections yet"
-          description="Add a database connection to start analyzing your events."
-          action={{ label: 'Add Connection', onClick: () => setCreateOpen(true) }}
-        />
+        <div className="rounded-lg border border-dashed border-border p-8 space-y-6">
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">No connections yet</p>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              OpenFlow queries your warehouse directly — no ETL pipelines required. Connect once
+              and your event data is available immediately.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 text-xs font-mono text-muted-foreground">
+            {['--snowflake', '--databricks', '--postgresql', '--duckdb'].map((flag) => (
+              <span key={flag} className="border border-border px-2 py-0.5">
+                {flag}
+              </span>
+            ))}
+          </div>
+
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add your first connection
+          </Button>
+        </div>
       )}
 
       {data && data.length > 0 && (

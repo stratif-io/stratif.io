@@ -60,10 +60,10 @@ export function FunnelSteps({ steps }: FunnelStepsProps) {
               </div>
 
               {/* Bar */}
-              <div className="h-4 bg-muted rounded-full overflow-hidden">
+              <div className="h-4 bg-muted overflow-hidden">
                 <div
                   className={cn(
-                    'h-full rounded-full transition-all duration-700 ease-out',
+                    'h-full transition-[width] duration-700 ease-out',
                     barBg(step.overall_conversion_rate)
                   )}
                   style={{ width: `${Math.max(step.overall_conversion_rate, 1)}%` }}

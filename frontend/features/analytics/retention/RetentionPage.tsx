@@ -44,9 +44,9 @@ const BENCHMARKS: Record<string, { good: number; ok: number }> = {
 function getRetentionLabel(value: number, granularity: RetentionGranularity, milestone: number) {
   const key = `${granularity}_${milestone}`
   const b = BENCHMARKS[key] ?? { good: 20, ok: 5 }
-  if (value >= b.good) return { label: 'Good', color: 'text-emerald-600 dark:text-emerald-400' }
-  if (value >= b.ok) return { label: 'Average', color: 'text-amber-600 dark:text-amber-400' }
-  return { label: 'Low', color: 'text-red-500 dark:text-red-400' }
+  if (value >= b.good) return { label: 'Good', color: 'text-[hsl(var(--chart-2))]' }
+  if (value >= b.ok) return { label: 'Average', color: 'text-[hsl(var(--warning))]' }
+  return { label: 'Low', color: 'text-destructive' }
 }
 
 function milestoneTitle(granularity: RetentionGranularity, unit: number): string {

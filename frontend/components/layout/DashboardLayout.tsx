@@ -16,7 +16,7 @@ export function DashboardLayout() {
       <Sidebar />
       <div
         className={cn(
-          'flex-1 transition-all duration-300 ease-in-out',
+          'flex-1 transition-[margin] duration-300 ease-in-out',
           sidebarOpen ? 'lg:ml-[220px]' : 'lg:ml-[60px]'
         )}
       >

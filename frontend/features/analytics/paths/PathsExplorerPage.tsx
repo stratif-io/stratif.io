@@ -29,12 +29,12 @@ const TIME_UNITS = [
 ] as const
 
 const STEP_COLORS = [
-  'bg-blue-500/15 text-blue-700 dark:text-blue-300',
-  'bg-violet-500/15 text-violet-700 dark:text-violet-300',
-  'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-  'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-  'bg-rose-500/15 text-rose-700 dark:text-rose-300',
-  'bg-teal-500/15 text-teal-700 dark:text-teal-300',
+  'bg-chart-1/15 text-chart-1',
+  'bg-chart-2/15 text-chart-2',
+  'bg-chart-3/15 text-chart-3',
+  'bg-chart-4/15 text-chart-4',
+  'bg-chart-5/15 text-chart-5',
+  'bg-chart-1/10 text-chart-1',
 ]
 
 function hashEventName(s: string): number {
@@ -79,7 +79,7 @@ function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
   return (
     <button
       onClick={onClick}
-      className="group w-full text-left rounded-xl border bg-card px-5 py-4 hover:bg-accent/30 hover:border-primary/30 transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group w-full text-left border bg-card px-5 py-4 hover:bg-accent/30 hover:border-primary/30 transition-[background-color,border-color] duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="flex items-start gap-4">
         <div
@@ -97,7 +97,7 @@ function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
               <span key={i} className="flex items-center gap-1.5">
                 <span
                   className={cn(
-                    'text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap',
+                    'text-xs font-medium px-2.5 py-1 whitespace-nowrap',
                     getEventColor(step)
                   )}
                 >
@@ -110,9 +110,9 @@ function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
             ))}
           </div>
 
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-1.5 bg-muted overflow-hidden">
             <div
-              className="h-full bg-primary/50 rounded-full transition-all duration-500"
+              className="h-full bg-primary/50 transition-[width] duration-500"
               style={{ width: `${barWidth}%` }}
             />
           </div>

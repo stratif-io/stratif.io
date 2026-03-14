@@ -12,7 +12,7 @@ export function QueryError({ error, className, onRetry }: QueryErrorProps) {
   const message =
     error instanceof Error
       ? error.message
-      : "Couldn't load this data. Check your connection and try again."
+      : 'Failed to load data. Please try again.'
   return (
     <div
       role="alert"

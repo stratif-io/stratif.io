@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import {
   ChevronLeft,
   ChevronRight,
-  BarChart3,
+  LayoutDashboard,
   TrendingUp,
   Users,
   Route,
@@ -31,9 +31,9 @@ interface NavGroup {
 const navGroups: NavGroup[] = [
   {
     title: 'Analytics',
-    icon: BarChart3,
+    icon: LayoutDashboard,
     items: [
-      { title: 'Dashboard', href: '/dashboard', icon: Activity },
+      { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       { title: 'Trends', href: '/trends', icon: TrendingUp },
       { title: 'Retention', href: '/retention', icon: Users },
       { title: 'Paths', href: '/paths', icon: Route },
@@ -41,7 +41,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: 'Data',
-    icon: BarChart3,
+    icon: Database,
     items: [
       { title: 'Events', href: '/events', icon: Activity },
       { title: 'Pivot Explorer', href: '/pivot', icon: Table },
@@ -118,7 +118,8 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <button
-          aria-label="Close sidebar"
+          aria-hidden="true"
+          tabIndex={-1}
           className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden cursor-default"
           onClick={() => setSidebarOpen(false)}
         />
@@ -126,7 +127,7 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-background transition-all duration-300 ease-in-out',
+          'fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-background transition-[width,transform] duration-300 ease-in-out',
           sidebarOpen ? 'w-[220px]' : 'w-[60px] -translate-x-full lg:translate-x-0'
         )}
       >
@@ -135,16 +136,14 @@ export function Sidebar() {
           <Link
             to={{ pathname: '/dashboard', search: location.search }}
             className={cn(
-              'flex items-center gap-2.5 overflow-hidden',
-              sidebarOpen ? '' : 'justify-center w-full'
+              'flex items-center overflow-hidden',
+              sidebarOpen ? 'gap-1.5' : 'justify-center w-full'
             )}
           >
-            <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center shrink-0">
-              <BarChart3 className="h-4 w-4 text-primary-foreground" aria-hidden="true" />
-            </div>
+            <span className="text-xs text-muted-foreground shrink-0">$</span>
             {sidebarOpen && (
-              <span className="font-semibold text-base tracking-tight whitespace-nowrap">
-                OpenFlow
+              <span className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
+                openflow
               </span>
             )}
           </Link>
@@ -196,6 +195,8 @@ export function Sidebar() {
           {/* Collapse toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            aria-expanded={sidebarOpen}
             className={cn(
               'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors mt-1',
               !sidebarOpen && 'justify-center px-2'
