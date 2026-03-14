@@ -1,6 +1,26 @@
 # OpenFlow Analytics
 
-Open source, self-hostable product analytics dashboard. Connect your own database, no auth required.
+**Open-source, self-hostable product analytics. Connect your own database — no vendor lock-in, no auth required.**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+---
+
+<!-- Screenshot placeholder — replace with an actual dashboard screenshot -->
+![OpenFlow Analytics Dashboard](docs/screenshot-placeholder.png)
+
+---
+
+## Features
+
+- **Self-hostable** — runs entirely on your infrastructure, one `docker compose up`
+- **Bring your own database** — connect DuckDB, SQLite, PostgreSQL, or Databricks
+- **No auth required** — ship it internally without building a login system
+- **Full analytics suite** — trends, retention, funnels, paths, pivot tables, and sessions
+- **Embeddable** — drop the frontend and backend into your own SaaS product
+- **Open source** — MIT licensed, no telemetry
+
+---
 
 ## Quick Start (Docker)
 
@@ -9,17 +29,16 @@ Open source, self-hostable product analytics dashboard. Connect your own databas
 git clone https://github.com/your-org/openflow.git
 cd openflow
 
-# Generate a required encryption key and configure
+# Generate a required encryption key
 echo "OPENFLOW_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
-# (Skip if you already have a .env — this would overwrite it)
 
-# Build and start (first run seeds ~5 000 sample events automatically)
+# Build and start — first run seeds ~5,000 sample events automatically
 docker compose up
 ```
 
 Open **http://localhost:8000**.
 
-On first run, sample analytics data is seeded automatically into `/data/sample.duckdb` inside the container volume. To explore it:
+Sample analytics data is seeded automatically into `/data/sample.duckdb` on first run. To explore it:
 
 1. Go to **Connections** in the sidebar
 2. Add a new connection → choose **DuckDB** → path: `/data/sample.duckdb`
@@ -27,60 +46,68 @@ On first run, sample analytics data is seeded automatically into `/data/sample.d
 
 > To reseed from scratch: `docker compose down -v && docker compose up`
 
-## Quick Start (Local)
-
-```bash
-# Install dependencies
-npm install
-uv sync
-
-# Copy and configure env
-cp .env.example .env
-# Set OPENFLOW_ENCRYPTION_KEY in .env
-
-# Seed sample data (optional)
-uv run seed-duckdb
-
-# Start backend + frontend
-uv run serve       # http://localhost:8000
-npm run dev        # http://localhost:5173
-```
-
-## Configuration
-
-| Variable                   | Default                     | Description                                                                |
-| -------------------------- | --------------------------- | -------------------------------------------------------------------------- |
-| `OPENFLOW_ENCRYPTION_KEY`  | _(required)_                | Key for encrypting stored credentials. Generate: `openssl rand -base64 32` |
-| `OPENFLOW_PRODUCT_DB_PATH` | `./openflow_product.sqlite` | SQLite file storing connection configs                                     |
-| `OPENFLOW_API_KEY`         | _(empty)_                   | Optional API key for the dashboard (leave empty for local dev)             |
-| `OPENFLOW_CORS_ORIGINS`    | `http://localhost:8000`     | Allowed CORS origins                                                       |
-| `OPENFLOW_DEBUG`           | `false`                     | Enable `/docs` and `/redoc` endpoints                                      |
-| `OPENFLOW_LOG_LEVEL`       | `INFO`                      | Log level                                                                  |
+---
 
 ## Supported Databases
 
-- **DuckDB** — local file or S3-backed
-- **SQLite** — local file
-- **PostgreSQL** — connection string
-- **Databricks** — SQL warehouse via HTTP path
+| Database | Notes |
+|---|---|
+| **DuckDB** | Local file or S3-backed |
+| **SQLite** | Local file |
+| **PostgreSQL** | Connection string |
+| **Databricks** | SQL warehouse via HTTP path |
 
-## Development
+---
+
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `OPENFLOW_ENCRYPTION_KEY` | _(required)_ | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
+| `OPENFLOW_PRODUCT_DB_PATH` | `./openflow_product.sqlite` | SQLite file storing connection configs |
+| `OPENFLOW_API_KEY` | _(empty)_ | Optional API key for the dashboard (leave empty for local dev) |
+| `OPENFLOW_CORS_ORIGINS` | `http://localhost:8000` | Allowed CORS origins |
+| `OPENFLOW_DEBUG` | `false` | Enable `/docs` and `/redoc` endpoints |
+| `OPENFLOW_LOG_LEVEL` | `INFO` | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+
+---
+
+## Local Development
+
+```bash
+npm install
+uv sync
+
+cp .env.example .env
+# Set OPENFLOW_ENCRYPTION_KEY in .env
+
+uv run seed-duckdb   # optional — seed sample data
+
+uv run serve         # backend  → http://localhost:8000
+npm run dev          # frontend → http://localhost:5173
+```
+
+**Testing & quality:**
 
 ```bash
 npm run test:run          # Frontend unit tests
 uv run pytest backend/    # Backend tests
 npm run build             # TypeScript + Vite production build
-npm run lint              # ESLint
+npm run lint              # ESLint (zero warnings)
 ```
 
-## Embedding (SaaS use case)
+---
+
+## Embedding
+
+OpenFlow is designed to be embedded inside a larger product. The frontend and backend are independently mountable.
 
 ### Frontend (`@openflow/core`)
 
 ```tsx
 import { OpenFlowDashboard } from '@openflow/core'
 
-;<OpenFlowDashboard />
+<OpenFlowDashboard />
 ```
 
 ### Backend (`openflow-core`)
@@ -91,3 +118,9 @@ from backend import create_router
 # Mount analytics routes inside your authenticated app
 app.mount("/analytics", create_router())
 ```
+
+---
+
+## License
+
+MIT © OpenFlow Contributors
