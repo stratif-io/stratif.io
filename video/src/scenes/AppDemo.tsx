@@ -34,45 +34,48 @@ export const AppDemo: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
-      <TransitionSeries>
-        <TransitionSeries.Sequence durationInFrames={SCENES[0].frames}>
-          <OffthreadVideo src={staticFile(SCENES[0].file)} startFrom={SCENES[0].skipFrames} />
-        </TransitionSeries.Sequence>
-
-        <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: FADE })} />
-        <TransitionSeries.Sequence durationInFrames={SCENES[1].frames}>
-          <OffthreadVideo src={staticFile(SCENES[1].file)} startFrom={SCENES[1].skipFrames} />
-        </TransitionSeries.Sequence>
-
-        <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: FADE })} />
-        <TransitionSeries.Sequence durationInFrames={SCENES[2].frames}>
-          <OffthreadVideo src={staticFile(SCENES[2].file)} startFrom={SCENES[2].skipFrames} />
-        </TransitionSeries.Sequence>
-
-        <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: FADE })} />
-        <TransitionSeries.Sequence durationInFrames={SCENES[3].frames}>
-          <OffthreadVideo src={staticFile(SCENES[3].file)} startFrom={SCENES[3].skipFrames} />
-        </TransitionSeries.Sequence>
-      </TransitionSeries>
-
       {/* Cinematic letterbox bands */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 140, backgroundColor: '#000' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 140, backgroundColor: '#000' }} />
 
-      {/* Slim progress bar at top */}
-      <ProgressBar />
+      {/* Video content in the middle 1080px */}
+      <div style={{ position: 'absolute', top: 140, left: 0, width: 1920, height: 1080 }}>
+        <TransitionSeries>
+          <TransitionSeries.Sequence durationInFrames={SCENES[0].frames}>
+            <OffthreadVideo src={staticFile(SCENES[0].file)} startFrom={SCENES[0].skipFrames} />
+          </TransitionSeries.Sequence>
 
-      {/* Chapter callouts */}
-      {callouts.map((c) => (
-        <PageCallout
-          key={c.file}
-          step={c.step}
-          label={c.label}
-          frame={frame}
-          startFrame={c.startFrame}
-          duration={c.frames}
-        />
-      ))}
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: FADE })} />
+          <TransitionSeries.Sequence durationInFrames={SCENES[1].frames}>
+            <OffthreadVideo src={staticFile(SCENES[1].file)} startFrom={SCENES[1].skipFrames} />
+          </TransitionSeries.Sequence>
+
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: FADE })} />
+          <TransitionSeries.Sequence durationInFrames={SCENES[2].frames}>
+            <OffthreadVideo src={staticFile(SCENES[2].file)} startFrom={SCENES[2].skipFrames} />
+          </TransitionSeries.Sequence>
+
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: FADE })} />
+          <TransitionSeries.Sequence durationInFrames={SCENES[3].frames}>
+            <OffthreadVideo src={staticFile(SCENES[3].file)} startFrom={SCENES[3].skipFrames} />
+          </TransitionSeries.Sequence>
+        </TransitionSeries>
+
+        {/* Slim progress bar at top */}
+        <ProgressBar />
+
+        {/* Chapter callouts */}
+        {callouts.map((c) => (
+          <PageCallout
+            key={c.file}
+            step={c.step}
+            label={c.label}
+            frame={frame}
+            startFrame={c.startFrame}
+            duration={c.frames}
+          />
+        ))}
+      </div>
     </AbsoluteFill>
   )
 }
