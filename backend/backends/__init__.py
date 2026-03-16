@@ -18,3 +18,6 @@ def _register(db_type: str, backend: "DatabaseBackend") -> None:
 
 from backend.backends.duckdb import DuckDBBackend  # noqa: E402
 _register("duckdb", DuckDBBackend())
+
+from backend.backends.sqlite import SQLiteBackend  # noqa: E402
+_register("sqlite", SQLiteBackend())
