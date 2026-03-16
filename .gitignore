@@ -43,4 +43,4 @@ seeders/.env.seed
 openflow_product.sqlite
 video/node_modules/
 video/out/
-video/public/capture.webm
+video/public/*.webm

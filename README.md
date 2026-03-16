@@ -6,7 +6,6 @@
 
 ---
 
-
 ![OpenFlow Analytics Demo](docs/demo.gif)
 
 ▶ [Watch full demo (MP4)](https://github.com/your-org/openflow/releases/latest/download/openflow.mp4)
@@ -52,25 +51,25 @@ Sample analytics data is seeded automatically into `/data/sample.duckdb` on firs
 
 ## Supported Databases
 
-| Database | Notes |
-|---|---|
-| **DuckDB** | Local file or S3-backed |
-| **SQLite** | Local file |
-| **PostgreSQL** | Connection string |
+| Database       | Notes                       |
+| -------------- | --------------------------- |
+| **DuckDB**     | Local file or S3-backed     |
+| **SQLite**     | Local file                  |
+| **PostgreSQL** | Connection string           |
 | **Databricks** | SQL warehouse via HTTP path |
 
 ---
 
 ## Configuration
 
-| Variable | Default | Description |
-|---|---|---|
-| `OPENFLOW_ENCRYPTION_KEY` | _(required)_ | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
-| `OPENFLOW_PRODUCT_DB_PATH` | `./openflow_product.sqlite` | SQLite file storing connection configs |
-| `OPENFLOW_API_KEY` | _(empty)_ | Optional API key for the dashboard (leave empty for local dev) |
-| `OPENFLOW_CORS_ORIGINS` | `http://localhost:8000` | Allowed CORS origins |
-| `OPENFLOW_DEBUG` | `false` | Enable `/docs` and `/redoc` endpoints |
-| `OPENFLOW_LOG_LEVEL` | `INFO` | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| Variable                   | Default                     | Description                                                      |
+| -------------------------- | --------------------------- | ---------------------------------------------------------------- |
+| `OPENFLOW_ENCRYPTION_KEY`  | _(required)_                | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
+| `OPENFLOW_PRODUCT_DB_PATH` | `./openflow_product.sqlite` | SQLite file storing connection configs                           |
+| `OPENFLOW_API_KEY`         | _(empty)_                   | Optional API key for the dashboard (leave empty for local dev)   |
+| `OPENFLOW_CORS_ORIGINS`    | `http://localhost:8000`     | Allowed CORS origins                                             |
+| `OPENFLOW_DEBUG`           | `false`                     | Enable `/docs` and `/redoc` endpoints                            |
+| `OPENFLOW_LOG_LEVEL`       | `INFO`                      | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)                  |
 
 ---
 
@@ -108,8 +107,7 @@ OpenFlow is designed to be embedded inside a larger product. The frontend and ba
 
 ```tsx
 import { OpenFlowDashboard } from '@openflow/core'
-
-<OpenFlowDashboard />
+;<OpenFlowDashboard />
 ```
 
 ### Backend (`openflow-core`)
