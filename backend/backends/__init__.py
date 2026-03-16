@@ -14,3 +14,7 @@ def get_backend(db_type: str) -> "DatabaseBackend":
 
 def _register(db_type: str, backend: "DatabaseBackend") -> None:
     _REGISTRY[db_type] = backend
+
+
+from backend.backends.duckdb import DuckDBBackend  # noqa: E402
+_register("duckdb", DuckDBBackend())
