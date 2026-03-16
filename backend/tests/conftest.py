@@ -5,6 +5,7 @@ import pytest
 from unittest.mock import patch
 from starlette.testclient import TestClient
 
+from backend.backends.duckdb import DuckDBBackend
 from backend.main import app
 from backend.services.connection_executor import AnalyticsDatabase, get_analytics_db
 
@@ -34,7 +35,7 @@ def _make_test_db() -> AnalyticsDatabase:
             ('user-2', '2024-01-16 11:00:00', 'Home', '{}'),
             ('user-2', '2024-01-16 11:10:00', 'Checkout', '{}')
     """)
-    return AnalyticsDatabase(conn=conn, dialect="duckdb", events_cte=None)
+    return AnalyticsDatabase(conn=conn, backend=DuckDBBackend(), events_cte=None)
 
 
 @pytest.fixture()

@@ -1,28 +1,24 @@
 """Analytics database wrapper for OpenFlow Analytics."""
-
 import contextlib
 import re
-import sqlite3 as _sqlite3
 from typing import Any
 
-import duckdb
 import structlog
 from fastapi import HTTPException
 
+from backend.backends import get_backend
+from backend.backends.base import DatabaseBackend
 from backend.config import settings
-from backend.services.pool import _is_connection_error, _pool_get
+from backend.services.pool import _pool_get
 from backend.services.sql_builder import json_extract_string
 
 log = structlog.get_logger(__name__)
-
-# ---------------------------------------------------------------------------
-# Private helpers
-# ---------------------------------------------------------------------------
 
 _EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
 
 
 def _resolve_path_to_sql(path: str, dialect: str = "duckdb") -> str:
+    """Legacy helper: kept for compatibility with callers that pass dialect strings."""
     parts = path.split(".")
     if dialect == "databricks":
         return ".".join(f"`{p}`" for p in parts)
@@ -43,24 +39,6 @@ def _to_named_params(query: str, params: list) -> tuple[str, dict]:
         result.append(f":{key}")
         result.append(part)
     return "".join(result), named
-
-
-def _get_table_columns(conn: Any, table_expr: str, dialect: str) -> frozenset[str]:
-    try:
-        if dialect == "sqlite":
-            cursor = conn.execute(f"SELECT * FROM {table_expr} LIMIT 0")
-            return frozenset(d[0] for d in cursor.description or [])
-        if dialect in ("postgres", "databricks"):
-            cursor = conn.cursor()
-            try:
-                cursor.execute(f"SELECT * FROM {table_expr} LIMIT 0")
-                return frozenset(d[0] for d in cursor.description or [])
-            finally:
-                cursor.close()
-        rel = conn.execute(f"SELECT * FROM {table_expr} LIMIT 0")
-        return frozenset(d[0] for d in rel.description)
-    except Exception:
-        return frozenset()
 
 
 def _remap_exprs_for_available_cols(
@@ -86,29 +64,13 @@ def _remap_exprs_for_available_cols(
     return result
 
 
-def _prepend_events_cte(cte_body: str, query: str, dialect: str = "duckdb") -> str:
-    q = query.strip()
-    if dialect == "sqlite":
-        return _EVENTS_REF_RE.sub(lambda m: f"{m.group(1)} {cte_body}", q)
-    cte_def = f"events AS {cte_body}"
-    m = re.match(r"(with\s+)", q, re.IGNORECASE)
-    if m:
-        return q[: m.end()] + cte_def + ", " + q[m.end() :]
-    return f"WITH {cte_def} {q}"
-
-
-# ---------------------------------------------------------------------------
-# AnalyticsDatabase
-# ---------------------------------------------------------------------------
-
-
 class AnalyticsDatabase:
     """Wraps a database connection and provides a uniform execute() interface."""
 
     def __init__(
         self,
         conn: Any,
-        dialect: str,
+        backend: DatabaseBackend,
         events_cte: str | None,
         filter_fields: list[dict] | None = None,
         filter_exprs: dict[str, str] | None = None,
@@ -118,12 +80,12 @@ class AnalyticsDatabase:
         available_columns: frozenset[str] | None = None,
     ):
         self._conn = conn
+        self._backend = backend
         self._filter_fields: list[dict] = filter_fields or []
         self._filter_exprs: dict[str, str] = filter_exprs or {}
         self._custom_props: list[dict] = custom_props or []
         self._custom_prop_exprs: dict[str, str] = custom_prop_exprs or {}
         self._session_timeout_minutes: int = session_timeout_minutes
-        self._dialect = dialect
         self._events_cte: str | None = events_cte
         self._available_columns: frozenset[str] | None = available_columns
         self._pooled: bool = False
@@ -131,63 +93,22 @@ class AnalyticsDatabase:
 
     def execute(self, query: str, params: list | None = None) -> list[tuple]:
         if self._events_cte:
-            query = _prepend_events_cte(self._events_cte, query, dialect=self._dialect)
-
+            query = self._backend.prepend_events_cte(self._events_cte, query)
         if settings.log_sql:
-            log.debug("sql_query", sql=query, params=params, dialect=self._dialect)
-
-        if self._dialect == "sqlite":
-            return list(self._conn.execute(query, params or []).fetchall())
-
-        if self._dialect == "postgres":
-            if params:
-                query = query.replace("?", "%s")
-            cursor = self._conn.cursor()
-            try:
-                cursor.execute(query, params or None)
-                return cursor.fetchall()
-            except Exception as exc:
-                if self._pooled and _is_connection_error(exc, "postgres"):
-                    raise HTTPException(status_code=503, detail="Connection lost — please retry.") from exc
-                raise
-            finally:
-                with contextlib.suppress(Exception):
-                    cursor.close()
-
-        if self._dialect == "databricks":
-            named_query, named_params = _to_named_params(query, params or [])
-            cursor = self._conn.cursor()
-            try:
-                cursor.execute(named_query, named_params or None)
-                return cursor.fetchall()
-            except Exception as exc:
-                if self._pooled and _is_connection_error(exc, "databricks"):
-                    raise HTTPException(status_code=503, detail="Connection lost — please retry.") from exc
-                raise
-            finally:
-                with contextlib.suppress(Exception):
-                    cursor.close()
-
-        # DuckDB
-        if params:
-            return self._conn.execute(query, params).fetchall()
-        return self._conn.execute(query).fetchall()
+            log.debug("sql_query", sql=query, params=params, dialect=self._backend.dialect_name)
+        try:
+            return self._backend.execute(self._conn, query, params)
+        except Exception as exc:
+            if self._pooled and self._backend.is_connection_error(exc):
+                raise HTTPException(status_code=503, detail="Connection lost — please retry.") from exc
+            raise
 
     def get_dialect(self) -> str:
-        return self._dialect
+        """Backward-compatible: returns dialect string for sql_builder callers."""
+        return self._backend.dialect_name
 
     def table_exists(self, table_name: str) -> bool:
-        if self._dialect == "sqlite":
-            rows = self._conn.execute(
-                "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name = ?",
-                (table_name,),
-            ).fetchall()
-            return len(rows) > 0
-        try:
-            self.execute(f"SELECT 1 FROM {table_name} LIMIT 1")
-            return True
-        except Exception:
-            return False
+        return self._backend.table_exists(self._conn, table_name)
 
     def build_filter_clauses(self, filters: dict) -> tuple[list[str], list]:
         where_clauses: list[str] = []
@@ -230,11 +151,10 @@ class AnalyticsDatabase:
         return options
 
     def get_device_type_expr(self) -> str:
-        from backend.services.sql_builder import json_extract_string as _jex
         if "device_type" in self._custom_prop_exprs:
             return self._custom_prop_exprs["device_type"]
         if self.has_column("properties"):
-            return _jex("properties", "device_type", self._dialect)
+            return self._backend.json_extract_string("properties", "device_type")
         return "NULL"
 
     def has_column(self, col: str) -> bool:
@@ -269,11 +189,6 @@ class AnalyticsDatabase:
         return self._session_timeout_minutes
 
 
-# ---------------------------------------------------------------------------
-# Open analytics DB by connection ID (from product_db)
-# ---------------------------------------------------------------------------
-
-
 def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
     """Open a schema-mapped analytics DB for the given connection ID."""
     import json
@@ -282,14 +197,18 @@ def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
     from backend.services.crypto import decrypt_credentials
 
     product_db = get_product_db()
-
     row = product_db.fetchone("SELECT * FROM connections WHERE id = ?", (connection_id,))
     if not row:
         raise HTTPException(status_code=404, detail="Connection not found")
 
     db_type: str = row["db_type"]
+    try:
+        backend = get_backend(db_type)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}")
+
     creds = decrypt_credentials(row["credentials_encrypted"])
-    file_path: str = creds.get("file_path") or creds.get("s3_path") or ""
+    credentials = backend.parse_credentials(creds)
 
     schema_row = product_db.fetchone(
         "SELECT * FROM connection_schema_configs WHERE connection_id = ?", (connection_id,)
@@ -305,11 +224,8 @@ def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
         else 30
     )
 
-    dialect = "postgres" if db_type == "postgresql" else db_type
-
-    needs_remap = (
-        uid_f != "user_id" or ts_f != "timestamp" or en_f != "event_name" or events_table != "events"
-    )
+    dialect = backend.dialect_name
+    needs_remap = (uid_f != "user_id" or ts_f != "timestamp" or en_f != "event_name" or events_table != "events")
 
     custom_prop_exprs: dict[str, str] = {
         p["name"]: _resolve_path_to_sql(p["path"], dialect)
@@ -322,7 +238,7 @@ def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
     )
     filter_fields: list[dict] = json.loads(filter_row["filter_fields"]) if filter_row else []
 
-    _iq = "`" if dialect == "databricks" else '"'
+    _iq = backend.identifier_quote_char
     filter_exprs: dict[str, str] = {}
     _src_to_std_name = {uid_f: "user_id", ts_f: "timestamp", en_f: "event_name"}
     for ff in filter_fields:
@@ -340,90 +256,24 @@ def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
         "session_timeout_minutes": session_timeout_minutes,
     }
 
-    def _build_cte(table: str) -> str:
-        q = "`" if dialect == "databricks" else '"'
-        quoted_table = ".".join(f"{q}{p}{q}" for p in table.split("."))
-        core = f"{q}{uid_f}{q} AS user_id, {q}{ts_f}{q} AS timestamp, {q}{en_f}{q} AS event_name"
-        remapped_src = {uid_f, ts_f, en_f}
-        excl = ", ".join(f"{q}{c}{q}" for c in sorted(remapped_src))
-        if dialect == "databricks":
-            return f"(SELECT {core}, * EXCEPT ({excl}) FROM {quoted_table})"
-        if dialect == "duckdb":
-            return f"(SELECT {core}, * EXCLUDE ({excl}) FROM {quoted_table})"
-        extra_cols = sorted(
-            {p["path"].split(".")[0] for p in custom_props if "path" in p} - remapped_src
-        )
-        extras = (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
-        return f"(SELECT {core}{extras} FROM {quoted_table})"
+    events_cte = (
+        backend.build_events_cte(events_table, uid_f, ts_f, en_f, custom_props)
+        if needs_remap else None
+    )
 
-    if db_type == "postgresql":
-        pool_key = (connection_id, "postgres")
-        conn = _pool_get(pool_key, lambda: _open_pg(creds))
-        events_cte = _build_cte(events_table) if needs_remap else None
-        cols = _get_table_columns(conn, f'"{events_table}"', "postgres")
+    if backend.use_pool:
+        pool_key = backend.pool_key(connection_id, credentials)
+        conn = _pool_get(pool_key, lambda: backend.open(credentials, read_only=False))
+        cols = backend.get_table_columns(conn, f'{_iq}{events_table}{_iq}')
         db = AnalyticsDatabase(
-            conn, dialect="postgres", events_cte=events_cte, available_columns=cols or None, **shared_kwargs
+            conn, backend, events_cte=events_cte, available_columns=cols or None, **shared_kwargs
         )
         db._pooled = True
         db._pool_key = pool_key
         return db
 
-    if db_type == "databricks":
-        pool_key = (connection_id, "databricks")
-        conn = _pool_get(pool_key, lambda: _open_databricks(creds))
-        events_cte = _build_cte(events_table) if needs_remap else None
-        cols = _get_table_columns(conn, f'`{events_table}`', "databricks")
-        db = AnalyticsDatabase(
-            conn, dialect="databricks", events_cte=events_cte, available_columns=cols or None, **shared_kwargs
-        )
-        db._pooled = True
-        db._pool_key = pool_key
-        return db
-
-    if db_type == "sqlite":
-        import os
-        if not file_path:
-            raise ValueError("SQLite connection is missing a file path")
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"SQLite file not found: {file_path}")
-        conn = _sqlite3.connect(file_path, check_same_thread=False)
-        events_cte = _build_cte(events_table) if needs_remap else None
-        cols = _get_table_columns(conn, f'"{events_table}"', "sqlite")
-        return AnalyticsDatabase(
-            conn, dialect="sqlite", events_cte=events_cte, available_columns=cols or None, **shared_kwargs
-        )
-
-    # DuckDB
-    if not file_path:
-        raise ValueError("DuckDB connection is missing a file path")
-    import os
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"DuckDB file not found: {file_path}")
-    conn = duckdb.connect(file_path, read_only=True)
-    events_cte = _build_cte(events_table) if needs_remap else None
-    cols = _get_table_columns(conn, f'"{events_table}"', "duckdb")
+    conn = backend.open(credentials, read_only=True)
+    cols = backend.get_table_columns(conn, f'"{events_table}"')
     return AnalyticsDatabase(
-        conn, dialect="duckdb", events_cte=events_cte, available_columns=cols or None, **shared_kwargs
-    )
-
-
-def _open_pg(creds: dict):
-    import psycopg2
-
-    return psycopg2.connect(
-        host=creds["host"],
-        port=creds.get("port", 5432),
-        dbname=creds["database"],
-        user=creds["user"],
-        password=creds["password"],
-    )
-
-
-def _open_databricks(creds: dict):
-    from databricks import sql as dbsql
-
-    return dbsql.connect(
-        server_hostname=creds["host"],
-        http_path=creds["http_path"],
-        access_token=creds["token"],
+        conn, backend, events_cte=events_cte, available_columns=cols or None, **shared_kwargs
     )

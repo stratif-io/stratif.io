@@ -23,21 +23,3 @@ def _pool_get(key: tuple, factory: Callable[[], Any]) -> Any:
         conn = factory()
         _pool[key] = (conn, time.monotonic())
         return conn
-
-
-def _is_connection_error(exc: Exception, dialect: str) -> bool:
-    if dialect == "databricks":
-        try:
-            from databricks.sql.exc import Error as _DatabricksError
-            if isinstance(exc, _DatabricksError):
-                return True
-        except ImportError:
-            pass
-    if dialect == "postgres":
-        try:
-            import psycopg2
-            if isinstance(exc, (psycopg2.OperationalError, psycopg2.InterfaceError)):
-                return True
-        except ImportError:
-            pass
-    return False

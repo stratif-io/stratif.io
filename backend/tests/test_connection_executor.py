@@ -4,6 +4,7 @@ import duckdb
 import pytest
 from fastapi import HTTPException
 
+from backend.backends.duckdb import DuckDBBackend
 from backend.services.connection_executor import (
     AnalyticsDatabase,
     _to_named_params,
@@ -63,7 +64,7 @@ class TestBuildFilterClauses:
         conn = duckdb.connect(":memory:")
         return AnalyticsDatabase(
             conn=conn,
-            dialect="duckdb",
+            backend=DuckDBBackend(),
             events_cte=None,
             custom_prop_exprs=custom_prop_exprs,
         )
@@ -129,7 +130,7 @@ class TestHasColumn:
         conn = duckdb.connect(":memory:")
         return AnalyticsDatabase(
             conn=conn,
-            dialect="duckdb",
+            backend=DuckDBBackend(),
             events_cte=events_cte,
             custom_props=custom_props or [],
             available_columns=available_columns,
@@ -170,7 +171,7 @@ def test_pooled_db_stores_pool_key():
     """Pooled AnalyticsDatabase instances should store their pool key."""
     db = AnalyticsDatabase(
         conn=duckdb.connect(":memory:"),
-        dialect="duckdb",
+        backend=DuckDBBackend(),
         events_cte=None,
     )
     db._pooled = True
@@ -192,9 +193,10 @@ def test_execute_raises_503_on_stale_databricks_connection():
     dead_cursor.execute.side_effect = DatabricksError("Connection closed")
     dead_conn.cursor.return_value = dead_cursor
 
+    from backend.backends.databricks import DatabricksBackend
     db = AnalyticsDatabase(
         conn=dead_conn,
-        dialect="databricks",
+        backend=DatabricksBackend(),
         events_cte=None,
     )
     db._pooled = True
@@ -220,9 +222,10 @@ def test_execute_raises_503_on_stale_postgres_connection():
     dead_cursor.execute.side_effect = psycopg2.OperationalError("server closed connection")
     dead_conn.cursor.return_value = dead_cursor
 
+    from backend.backends.postgresql import PostgreSQLBackend
     db = AnalyticsDatabase(
         conn=dead_conn,
-        dialect="postgres",
+        backend=PostgreSQLBackend(),
         events_cte=None,
     )
     db._pooled = True

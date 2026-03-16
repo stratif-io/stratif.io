@@ -4,6 +4,7 @@ import duckdb
 import pytest
 from starlette.testclient import TestClient
 
+from backend.backends.duckdb import DuckDBBackend
 from backend.main import app
 from backend.services.connection_executor import AnalyticsDatabase, get_analytics_db
 
@@ -31,7 +32,7 @@ def _make_flat_columns_db() -> AnalyticsDatabase:
     """)
     return AnalyticsDatabase(
         conn=conn,
-        dialect="duckdb",
+        backend=DuckDBBackend(),
         events_cte=None,
         custom_props=[
             {"name": "device_type", "path": "device_type"},

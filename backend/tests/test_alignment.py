@@ -7,6 +7,7 @@ import duckdb
 import pytest
 from starlette.testclient import TestClient
 
+from backend.backends.duckdb import DuckDBBackend
 from backend.main import app
 from backend.services.connection_executor import AnalyticsDatabase, get_analytics_db
 
@@ -37,7 +38,7 @@ def _make_funnel_db() -> AnalyticsDatabase:
             ('user-2', '2026-01-01 11:01:00', 'Search',      '{}'),
             ('user-3', '2026-01-01 12:00:00', 'Home',        '{}')
     """)
-    return AnalyticsDatabase(conn=conn, dialect="duckdb", events_cte=None)
+    return AnalyticsDatabase(conn=conn, backend=DuckDBBackend(), events_cte=None)
 
 
 @pytest.fixture()
