@@ -56,8 +56,8 @@ export const AppDemo: React.FC = () => {
       </TransitionSeries>
 
       {/* Cinematic letterbox bands */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 140, backgroundColor: '#000', zIndex: 10 }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 140, backgroundColor: '#000', zIndex: 10 }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 140, backgroundColor: '#000' }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 140, backgroundColor: '#000' }} />
 
       {/* Slim progress bar at top */}
       <ProgressBar />
