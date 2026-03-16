@@ -1,4 +1,4 @@
-import { chromium, type Page } from '@playwright/test'
+import { chromium, type Locator, type Page } from '@playwright/test'
 import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
@@ -14,6 +14,32 @@ const W = 1920
 const H = 1080
 
 const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+
+// ── Smooth mouse movement ────────────────────────────────────────────────────
+
+let mouseX = 0
+let mouseY = 0
+
+function easeInOut(t: number): number {
+  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+}
+
+async function moveThenClick(page: Page, locator: Locator) {
+  const box = await locator.boundingBox()
+  if (!box) { await locator.click(); return }
+  const tx = box.x + box.width / 2
+  const ty = box.y + box.height / 2
+  const sx = mouseX, sy = mouseY
+  const steps = 24
+  for (let i = 1; i <= steps; i++) {
+    const t = easeInOut(i / steps)
+    await page.mouse.move(sx + (tx - sx) * t, sy + (ty - sy) * t)
+    await pause(12)
+  }
+  mouseX = tx
+  mouseY = ty
+  await page.mouse.click(tx, ty)
+}
 
 // Apply zoom-out and inject cursor overlay
 async function setup(page: Page) {
@@ -160,7 +186,7 @@ async function sceneAddConnection(page: Page) {
   await pause(700)
 
   // Open dialog
-  await page.getByRole('button', { name: /add connection|add your first connection/i }).first().click()
+  await moveThenClick(page, page.getByRole('button', { name: /add connection|add your first connection/i }).first())
   await pause(600)
 
   // Fill form
@@ -168,9 +194,9 @@ async function sceneAddConnection(page: Page) {
   await pause(400)
 
   // Select DuckDB (Label is not linked via htmlFor — target the first combobox)
-  await page.getByRole('combobox').first().click()
+  await moveThenClick(page, page.getByRole('combobox').first())
   await pause(300)
-  await page.getByRole('option', { name: 'DuckDB' }).click()
+  await moveThenClick(page, page.getByRole('option', { name: 'DuckDB' }))
   await pause(400)
 
   await page.getByLabel(/file path/i).fill('/data/sample.duckdb')
@@ -180,7 +206,7 @@ async function sceneAddConnection(page: Page) {
   await pause(1200)
 
   // Submit
-  await page.getByRole('button', { name: 'Create' }).click()
+  await moveThenClick(page, page.getByRole('button', { name: 'Create' }))
   await pause(900)
 }
 
@@ -191,17 +217,17 @@ async function sceneSchema(page: Page) {
   await setup(page)
   await pause(400)
 
-  await page.locator('p.truncate', { hasText: 'Sample Analytics' }).first().click()
+  await moveThenClick(page, page.locator('p.truncate', { hasText: 'Sample Analytics' }).first())
   await page.waitForURL(/\/connections\/[^/]+$/, { timeout: 10000 })
   await page.waitForSelector('button:has-text("Schema Mapping")', { timeout: 10000 })
   await pause(400)
 
   // Schema Mapping tab
-  await page.getByRole('button', { name: 'Schema Mapping' }).click()
+  await moveThenClick(page, page.getByRole('button', { name: 'Schema Mapping' }))
   await pause(700)
 
   // Detect from Schema
-  await page.getByRole('button', { name: /detect from schema/i }).click()
+  await moveThenClick(page, page.getByRole('button', { name: /detect from schema/i }))
   await page.waitForFunction(
     () => ![...document.querySelectorAll('button')].some((b) => b.textContent?.includes('Detecting')),
     { timeout: 15000 },
@@ -222,19 +248,19 @@ async function sceneFilters(page: Page) {
   await setup(page)
   await pause(300)
 
-  await page.locator('p.truncate', { hasText: 'Sample Analytics' }).first().click()
+  await moveThenClick(page, page.locator('p.truncate', { hasText: 'Sample Analytics' }).first())
   await page.waitForURL(/\/connections\/[^/]+$/, { timeout: 10000 })
   await page.waitForSelector('button:has-text("Global Filters")', { timeout: 10000 })
   await pause(300)
 
   // Global Filters tab
-  await page.getByRole('button', { name: 'Global Filters' }).click()
+  await moveThenClick(page, page.getByRole('button', { name: 'Global Filters' }))
   await pause(700)
 
   // Enable country and city checkboxes (id="filter-<fieldname>")
-  await page.locator('#filter-country').click()
+  await moveThenClick(page, page.locator('#filter-country'))
   await pause(500)
-  await page.locator('#filter-city').click()
+  await moveThenClick(page, page.locator('#filter-city'))
   await pause(500)
 
   // Let the viewer see the enabled state + auto-save
@@ -254,28 +280,28 @@ async function sceneDashboardAndPivot(page: Page) {
   await pause(3000)
 
   // Open country dimension filter
-  await page.locator('[aria-label="Global filters"] button', { hasText: /^All /i }).first().click()
+  await moveThenClick(page, page.locator('[aria-label="Global filters"] button', { hasText: /^All /i }).first())
   await pause(2000)
 
   // Options in Radix portal — click "United States" or first non-empty option
   await page.waitForSelector('[data-radix-popper-content-wrapper] button', { timeout: 10000 })
   const usOption = page.locator('[data-radix-popper-content-wrapper] button', { hasText: /US/i })
   if (await usOption.count() > 0) {
-    await usOption.first().click()
+    await moveThenClick(page, usOption.first())
   } else {
-    await page.locator('[data-radix-popper-content-wrapper] button').first().click()
+    await moveThenClick(page, page.locator('[data-radix-popper-content-wrapper] button').first())
   }
   await pause(2000)
 
   // Now select "Year to date" from DateRangePicker
-  await page.locator('[aria-label="Global filters"] button').first().click()
+  await moveThenClick(page, page.locator('[aria-label="Global filters"] button').first())
   await pause(1000)
 
   // Presets are buttons inside the calendar popover
   await page.waitForSelector('[data-radix-popper-content-wrapper] button', { timeout: 10000 })
   const ytdBtn = page.locator('[data-radix-popper-content-wrapper] button', { hasText: /year to date/i })
   if (await ytdBtn.count() > 0) {
-    await ytdBtn.first().click()
+    await moveThenClick(page, ytdBtn.first())
     await pause(1500)
   }
 
@@ -290,32 +316,32 @@ async function sceneDashboardAndPivot(page: Page) {
   await pause(800)
 
   // GROUP BY — add month (index 0 = GROUP BY zone)
-  await page.getByRole('button', { name: 'Field' }).nth(0).click()
+  await moveThenClick(page, page.getByRole('button', { name: 'Field' }).nth(0))
   await pause(600)
-  await page.getByRole('button', { name: /month/i }).first().click()
+  await moveThenClick(page, page.getByRole('button', { name: /month/i }).first())
   await pause(1200)
 
   // PIVOT — add city (index 1 = PIVOT zone)
-  await page.getByRole('button', { name: 'Field' }).nth(1).click()
+  await moveThenClick(page, page.getByRole('button', { name: 'Field' }).nth(1))
   await pause(600)
-  await page.getByRole('button', { name: /city/i }).first().click()
+  await moveThenClick(page, page.getByRole('button', { name: /city/i }).first())
   await pause(1200)
 
   // VALUES — count events (index 2 = VALUES zone)
-  await page.getByRole('button', { name: 'Field' }).nth(2).click()
+  await moveThenClick(page, page.getByRole('button', { name: 'Field' }).nth(2))
   await pause(600)
-  await page.getByRole('button', { name: /event/i }).first().click()
+  await moveThenClick(page, page.getByRole('button', { name: /event/i }).first())
   await pause(1200)
 
   // VALUES — count distinct user_id (field may render as "user_id" or "User" depending on UI)
-  await page.getByRole('button', { name: 'Field' }).nth(2).click()
+  await moveThenClick(page, page.getByRole('button', { name: 'Field' }).nth(2))
   await pause(600)
   // Prefer exact user_id label; fall back to any user-related option
   const userIdBtn = page.locator('button').filter({ hasText: /user_id/i })
   if (await userIdBtn.count() > 0) {
-    await userIdBtn.first().click()
+    await moveThenClick(page, userIdBtn.first())
   } else {
-    await page.getByRole('button', { name: /user/i }).first().click()
+    await moveThenClick(page, page.getByRole('button', { name: /user/i }).first())
   }
   await pause(1000)
 
