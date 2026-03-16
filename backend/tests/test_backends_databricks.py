@@ -1,0 +1,116 @@
+"""Tests for the Databricks database backend (mock-based)."""
+from unittest.mock import MagicMock
+import pytest
+
+from backend.backends.databricks import DatabricksBackend
+from backend.backends.databricks.credentials import DatabricksCredentials
+from backend.backends.base import DatabaseBackend
+
+
+@pytest.fixture
+def backend():
+    return DatabricksBackend()
+
+
+def _make_conn(rows=None):
+    cursor = MagicMock()
+    cursor.description = [("col",)]
+    cursor.fetchall.return_value = rows or []
+    conn = MagicMock()
+    conn.cursor.return_value = cursor
+    return conn, cursor
+
+
+class TestDatabricksIdentity:
+    def test_dialect_name(self, backend):
+        assert backend.dialect_name == "databricks"
+
+    def test_identifier_quote_char(self, backend):
+        assert backend.identifier_quote_char == "`"
+
+    def test_use_pool_is_true(self, backend):
+        assert backend.use_pool is True
+
+    def test_implements_protocol(self, backend):
+        assert isinstance(backend, DatabaseBackend)
+
+
+class TestDatabricksCredentials:
+    def test_valid(self):
+        c = DatabricksCredentials(host="h", http_path="/p", token="t")
+        assert c.host == "h"
+
+    def test_parse_credentials(self, backend):
+        creds = backend.parse_credentials({"host": "h", "http_path": "/p", "token": "t"})
+        assert isinstance(creds, DatabricksCredentials)
+
+    def test_pool_key(self, backend):
+        creds = DatabricksCredentials(host="h", http_path="/p", token="t")
+        assert backend.pool_key("c42", creds) == ("c42", "databricks")
+
+
+class TestDatabricksExecution:
+    def test_execute_converts_to_named_params(self, backend):
+        conn, cursor = _make_conn([(42,)])
+        backend.execute(conn, "SELECT * FROM t WHERE id = ?", ["abc"])
+        call_args = cursor.execute.call_args
+        assert ":p0" in call_args[0][0]
+
+    def test_execute_no_params(self, backend):
+        conn, cursor = _make_conn([(7,)])
+        result = backend.execute(conn, "SELECT 7", None)
+        assert result == [(7,)]
+
+    def test_is_connection_error_false_for_generic(self, backend):
+        assert backend.is_connection_error(ValueError("nope")) is False
+
+
+class TestDatabricksBrowse:
+    def test_browse_no_catalog_returns_catalogs(self, backend):
+        conn, cursor = _make_conn([("main",), ("hive_metastore",)])
+        items = backend.browse(conn, catalog=None, schema=None)
+        assert all(i["kind"] == "catalog" for i in items)
+        assert any(i["name"] == "main" for i in items)
+
+    def test_browse_catalog_no_schema_returns_schemas(self, backend):
+        conn, cursor = _make_conn([("default",)])
+        items = backend.browse(conn, catalog="main", schema=None)
+        assert all(i["kind"] == "schema" for i in items)
+
+    def test_browse_catalog_and_schema_returns_tables(self, backend):
+        # SHOW TABLES returns (tableName, isTemporary) or (dbName, tableName, isTemporary)
+        # The backend reads r[1] for the table name (standard Databricks SHOW TABLES format)
+        conn, cursor = _make_conn([("default", "events", False)])
+        items = backend.browse(conn, catalog="main", schema="default")
+        assert all(i["kind"] == "table" for i in items)
+
+
+class TestDatabricksCTE:
+    def test_build_events_cte_uses_except(self, backend):
+        cte = backend.build_events_cte("cat.sch.raw", "uid", "ts", "action", [])
+        assert "EXCEPT" in cte.upper()
+        assert "uid" in cte and "user_id" in cte
+
+    def test_prepend_events_cte(self, backend):
+        result = backend.prepend_events_cte("(SELECT * FROM raw)", "SELECT 1 FROM events")
+        assert "WITH events AS" in result
+
+
+class TestDatabricksSQLFragments:
+    def test_date_trunc(self, backend):
+        assert "DATE_TRUNC" in backend.date_trunc("day", "ts").upper()
+
+    def test_cast_to_text_uses_string(self, backend):
+        assert "STRING" in backend.cast_to_text("x").upper()
+
+    def test_json_extract_uses_get_json_object(self, backend):
+        assert "get_json_object" in backend.json_extract_string("p", "k").lower()
+
+    def test_epoch_diff_seconds_uses_unix_timestamp(self, backend):
+        assert "unix_timestamp" in backend.epoch_diff_seconds("a", "b").lower()
+
+    def test_date_diff_days(self, backend):
+        assert "DATEDIFF" in backend.date_diff_days("a", "b").upper()
+
+    def test_extract_quarter(self, backend):
+        assert "QUARTER" in backend.extract_quarter("ts").upper()

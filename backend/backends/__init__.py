@@ -24,3 +24,6 @@ _register("sqlite", SQLiteBackend())
 
 from backend.backends.postgresql import PostgreSQLBackend  # noqa: E402
 _register("postgresql", PostgreSQLBackend())
+
+from backend.backends.databricks import DatabricksBackend  # noqa: E402
+_register("databricks", DatabricksBackend())
