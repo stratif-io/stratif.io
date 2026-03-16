@@ -21,3 +21,6 @@ _register("duckdb", DuckDBBackend())
 
 from backend.backends.sqlite import SQLiteBackend  # noqa: E402
 _register("sqlite", SQLiteBackend())
+
+from backend.backends.postgresql import PostgreSQLBackend  # noqa: E402
+_register("postgresql", PostgreSQLBackend())
