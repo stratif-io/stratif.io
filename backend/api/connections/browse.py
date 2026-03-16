@@ -1,16 +1,16 @@
 """Browse endpoint for the Connections API (catalog → schema → table hierarchy)."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
+from backend.backends import get_backend
 from backend.product_db import get_product_db
-from backend.services.connection_executor import open_analytics_db
+from backend.services.crypto import decrypt_credentials
+from backend.services.pool import _pool_get
 
 router = APIRouter()
 
 
 def _get_connection_or_404(conn_id: str):
-    from fastapi import HTTPException
-
     db = get_product_db()
     row = db.fetchone("SELECT * FROM connections WHERE id = ?", (conn_id,))
     if not row:
@@ -26,50 +26,33 @@ async def browse_connection(
 ):
     row = _get_connection_or_404(conn_id)
     db_type: str = row["db_type"]
-    db = open_analytics_db(conn_id)
+
     try:
-        items: list[dict] = []
+        backend = get_backend(db_type)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}")
 
-        if db_type == "databricks":
-            if catalog is None:
-                rows = db.execute("SHOW CATALOGS")
-                items = [{"name": r[0], "full_name": r[0], "kind": "catalog"} for r in rows]
-            elif schema is None:
-                rows = db.execute(f"SHOW SCHEMAS IN `{catalog}`")
-                items = [{"name": r[0], "full_name": f"{catalog}.{r[0]}", "kind": "schema"} for r in rows]
-            else:
-                rows = db.execute(f"SHOW TABLES IN `{catalog}`.`{schema}`")
-                items = [{"name": r[1], "full_name": f"{catalog}.{schema}.{r[1]}", "kind": "table"} for r in rows]
+    try:
+        creds = decrypt_credentials(row["credentials_encrypted"])
+    except ValueError as exc:
+        raise HTTPException(status_code=500, detail="Failed to decrypt credentials") from exc
 
-        elif db_type == "postgresql":
-            if schema is None:
-                rows = db.execute(
-                    "SELECT schema_name FROM information_schema.schemata "
-                    "WHERE schema_name NOT IN ('pg_catalog','information_schema') ORDER BY 1"
-                )
-                items = [{"name": r[0], "full_name": r[0], "kind": "schema"} for r in rows]
-            else:
-                rows = db.execute(
-                    "SELECT table_name FROM information_schema.tables WHERE table_schema = %s ORDER BY 1",
-                    [schema],
-                )
-                items = [{"name": r[0], "full_name": f"{schema}.{r[0]}", "kind": "table"} for r in rows]
+    credentials = backend.parse_credentials(creds)
 
-        elif db_type == "duckdb":
-            if schema is None:
-                rows = db.execute("SELECT schema_name FROM information_schema.schemata ORDER BY 1")
-                items = [{"name": r[0], "full_name": r[0], "kind": "schema"} for r in rows]
-            else:
-                rows = db.execute(
-                    "SELECT table_name FROM information_schema.tables WHERE table_schema = ? ORDER BY 1",
-                    [schema],
-                )
-                items = [{"name": r[0], "full_name": f"{schema}.{r[0]}", "kind": "table"} for r in rows]
+    try:
+        if backend.use_pool:
+            pool_key = backend.pool_key(conn_id, credentials)
+            conn = _pool_get(pool_key, lambda: backend.open(credentials, read_only=False))
+            items = backend.browse(conn, catalog=catalog, schema=schema)
+        else:
+            conn = backend.open(credentials, read_only=True)
+            try:
+                items = backend.browse(conn, catalog=catalog, schema=schema)
+            finally:
+                conn.close()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Browse failed: {exc}") from exc
 
-        else:  # sqlite
-            rows = db.execute("SELECT name FROM sqlite_master WHERE type IN ('table','view') ORDER BY name")
-            items = [{"name": r[0], "full_name": r[0], "kind": "table"} for r in rows]
-
-        return {"items": items}
-    finally:
-        db.close()
+    return {"items": items}
