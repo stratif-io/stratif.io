@@ -282,12 +282,7 @@ export function EventsTable({
             <Spinner className="h-5 w-5" />
           </div>
         ) : (
-          <table className="w-full border-collapse text-sm" style={{ opacity: isFetching ? 0.6 : 1, tableLayout: 'fixed' }}>
-            <colgroup>
-              {table.getVisibleLeafColumns().map((col) => (
-                <col key={col.id} style={{ width: col.getSize() }} />
-              ))}
-            </colgroup>
+          <table className="w-full border-collapse text-sm" style={{ opacity: isFetching ? 0.6 : 1 }}>
             <thead className="sticky top-0 z-10 bg-background border-b border-border">
               {/* Sort headers */}
               {table.getHeaderGroups().map((hg) => (
@@ -391,23 +386,36 @@ export function EventsTable({
                 </tr>
               ))}
             </thead>
-            <tbody style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+            <tbody>
+              {/* top spacer */}
+              {virtualizer.getVirtualItems().length > 0 && virtualizer.getVirtualItems()[0].start > 0 && (
+                <tr><td colSpan={table.getVisibleLeafColumns().length} style={{ height: virtualizer.getVirtualItems()[0].start, padding: 0 }} /></tr>
+              )}
               {virtualizer.getVirtualItems().map((vi) => {
                 const row = rows[vi.index]
                 return (
                   <tr
                     key={row.id}
-                    style={{ position: 'absolute', top: vi.start, left: 0, width: '100%', height: ROW_HEIGHT_PX }}
+                    style={{ height: ROW_HEIGHT_PX }}
                     className="border-b border-border/50 hover:bg-accent/30"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-3 overflow-hidden text-ellipsis whitespace-nowrap align-middle h-10">
+                      <td key={cell.id} className="px-3 overflow-hidden text-ellipsis whitespace-nowrap align-middle">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
                   </tr>
                 )
               })}
+              {/* bottom spacer */}
+              {(() => {
+                const items = virtualizer.getVirtualItems()
+                const lastEnd = items.length > 0 ? items[items.length - 1].end : 0
+                const remaining = virtualizer.getTotalSize() - lastEnd
+                return remaining > 0 ? (
+                  <tr><td colSpan={table.getVisibleLeafColumns().length} style={{ height: remaining, padding: 0 }} /></tr>
+                ) : null
+              })()}
             </tbody>
           </table>
         )}
