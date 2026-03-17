@@ -1,5 +1,5 @@
+import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
 
 export interface TopEvent {
   name: string
@@ -23,7 +23,7 @@ export function TopEvents({ events, loading }: TopEventsProps) {
         {loading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-12" />
+              <div key={i} className="h-12 rounded bg-muted/40" />
             ))}
           </div>
         ) : events.length === 0 ? (
@@ -34,10 +34,18 @@ export function TopEvents({ events, loading }: TopEventsProps) {
         ) : (
           <div className="space-y-3">
             {events.map((event, idx) => (
-              <div key={idx} className="space-y-1">
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: idx * 0.04 }}
+                className="space-y-1"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs tabular-nums text-muted-foreground w-4 shrink-0">{idx + 1}</span>
+                    <span className="text-xs tabular-nums text-muted-foreground w-4 shrink-0">
+                      {idx + 1}
+                    </span>
                     <p className="font-medium text-sm truncate">{event.name}</p>
                   </div>
                   <p className="text-xs tabular-nums text-muted-foreground shrink-0">
@@ -50,7 +58,7 @@ export function TopEvents({ events, loading }: TopEventsProps) {
                     style={{ width: `${(event.count / max) * 100}%` }}
                   />
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
