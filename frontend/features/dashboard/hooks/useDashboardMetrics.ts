@@ -42,6 +42,7 @@ export function useDashboardMetrics({
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
+    enabled: !!activeConnectionId,
   })
 
   const { data: topEventsData, isLoading: eventsLoading } = useQuery({
@@ -54,6 +55,7 @@ export function useDashboardMetrics({
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
+    enabled: !!activeConnectionId,
   })
 
   const { data: conversion } = useQuery({
@@ -64,6 +66,7 @@ export function useDashboardMetrics({
         end_date: endDate,
         connection_id: activeConnectionId ?? undefined,
       }),
+    enabled: !!activeConnectionId,
   })
 
   const { data: sessionsSummary } = useQuery({
@@ -75,6 +78,7 @@ export function useDashboardMetrics({
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
+    enabled: !!activeConnectionId,
   })
 
   const chartData = useMemo(() => {

@@ -65,10 +65,9 @@ function DashboardFirstRun() {
 }
 
 export function DashboardPage() {
+
   const { dateRange, activeConnectionId } = useAppStore()
   const { metrics, isLoading, isError, error, eventsLoading } = useDashboardMetrics({ dateRange })
-
-  if (isError) return <QueryError error={error} />
 
   if (!activeConnectionId) {
     return (
@@ -79,6 +78,8 @@ export function DashboardPage() {
       </PageTransition>
     )
   }
+
+  if (isError) return <QueryError error={error} />
 
   return (
     <PageTransition>
