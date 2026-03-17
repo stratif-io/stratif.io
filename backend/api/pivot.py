@@ -535,6 +535,14 @@ def get_pivot_grid(
         p["name"]: p.get("type", "string") for p in custom_props
     }
 
+    # Filter fields from connection configuration mapping
+    filter_fields = db.get_filter_fields()
+    filter_dim_meta: dict[str, str] = {
+        ff["field"]: ff.get("label") or ff["field"].replace("_", " ").title()
+        for ff in filter_fields
+        if "field" in ff
+    }
+
     # Time hierarchy column group
     time_children = [
         {
@@ -575,7 +583,11 @@ def get_pivot_grid(
         )
 
     # Custom property columns
+    already_added: set[str] = {c["field"] for c in other_cols}
     for field, label in custom_dim_meta.items():
+        if field in already_added:
+            continue
+        already_added.add(field)
         is_numeric = custom_prop_types.get(field, "string") == "number"
         allowed_aggs = ["countDistinct", "count", "min", "max"]
         if is_numeric:
@@ -593,6 +605,24 @@ def get_pivot_grid(
                 if is_numeric
                 else "agTextColumnFilter",
                 **({"type": "numericColumn"} if is_numeric else {}),
+            }
+        )
+
+    # Filter field dimension columns (from connection configuration mapping)
+    for field, label in filter_dim_meta.items():
+        if field in already_added:
+            continue
+        already_added.add(field)
+        other_cols.append(
+            {
+                "field": field,
+                "headerName": label,
+                "enableRowGroup": True,
+                "enablePivot": True,
+                "enableValue": True,
+                "allowedAggFuncs": ["countDistinct", "count", "min", "max"],
+                "resizable": True,
+                "filter": "agTextColumnFilter",
             }
         )
 
