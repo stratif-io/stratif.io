@@ -47,6 +47,7 @@ export function EventsPage() {
   const { data: eventsData } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
+    staleTime: 5 * 60 * 1000,
   })
   const allEventNames = eventsData?.events ?? []
 
@@ -86,6 +87,7 @@ export function EventsPage() {
         filters: mergedFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
+    staleTime: 5 * 60 * 1000,
   })
 
   const events: RawEvent[] = (rawEventsData?.data ?? []).map((e, i) => ({
