@@ -41,6 +41,7 @@ export function useRetentionData({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000,
   })
 
   const retentionData = useMemo(() => retentionResponse?.data ?? [], [retentionResponse])

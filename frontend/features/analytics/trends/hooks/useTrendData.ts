@@ -41,6 +41,7 @@ export function useTrendData({
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: trendResponse, isLoading, isError, error } = useQuery({
@@ -63,6 +64,7 @@ export function useTrendData({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000,
   })
 
   const trendData = useMemo(() => {

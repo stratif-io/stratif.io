@@ -27,6 +27,7 @@ export function useConnections() {
   return useQuery({
     queryKey: ['connections'],
     queryFn: fetchConnections,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -35,6 +36,7 @@ export function useConnection(id: string) {
     queryKey: ['connections', id],
     queryFn: () => fetchConnection(id),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -77,6 +79,7 @@ export function useSchemaConfig(connId: string) {
     queryFn: () => fetchSchemaConfig(connId),
     enabled: !!connId,
     retry: false,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -94,6 +97,7 @@ export function useFilterConfig(connId: string) {
     queryFn: () => fetchFilterConfig(connId),
     enabled: !!connId,
     retry: false,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -123,6 +127,7 @@ export function useConnectionString(connId: string) {
     queryKey: ['connections', connId, 'string'],
     queryFn: () => fetchConnectionString(connId),
     enabled: !!connId,
+    staleTime: 5 * 60 * 1000,
   })
 }
 

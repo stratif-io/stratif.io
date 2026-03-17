@@ -43,6 +43,7 @@ export function usePathExplorer({
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: pathResponse, isLoading } = useQuery({
@@ -77,6 +78,7 @@ export function usePathExplorer({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!startDate && !!endDate,
+    staleTime: 5 * 60 * 1000,
   })
 
   const pathData = useMemo(() => pathResponse?.data || [], [pathResponse])
