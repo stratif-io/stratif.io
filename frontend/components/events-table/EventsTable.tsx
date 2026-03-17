@@ -93,7 +93,7 @@ export function EventsTable({
   data, total, page, pageSize, loading, isFetching,
   sortField, sortOrder, onSortChange,
   filterFields, customProperties,
-  filterOptions: _filterOptions, // accepted for API compat; dim cols use click-to-filter
+  filterOptions,
   allEventNames,
   columnFilters, onColumnFilterChange, onColumnFilterClear,
   eventNameFilter, onEventNameFilterChange,
@@ -346,13 +346,21 @@ export function EventsTable({
                     if (dimColIds.has(colId)) {
                       const active = columnFilters[colId]
                       const inputVal = dimFilterInputs[colId] ?? ''
+                      const suggestions = filterOptions[colId] ?? []
+                      const listId = `filter-list-${colId}`
                       return (
                         <th key={header.id} className="px-2 py-1">
                           <div className="relative flex items-center">
+                            {suggestions.length > 0 && (
+                              <datalist id={listId}>
+                                {suggestions.map((v) => <option key={v} value={v} />)}
+                              </datalist>
+                            )}
                             <input
                               type="text"
                               placeholder="Filter…"
                               value={inputVal}
+                              list={suggestions.length > 0 ? listId : undefined}
                               onChange={(e) => {
                                 const val = e.target.value
                                 setDimFilterInputs((prev) => ({ ...prev, [colId]: val }))
