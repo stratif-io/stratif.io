@@ -358,7 +358,7 @@ export function EventsTable({
                     if (dimColIds.has(colId)) {
                       const active = columnFilters[colId]
                       const suggestions = filterOptions[colId] ?? []
-                      const isLowCardinality = suggestions.length > 0 && suggestions.length <= 25
+                      const isLowCardinality = suggestions.length > 0 && suggestions.length < 200
                       const inputVal = dimFilterInputs[colId] ?? ''
 
                       const applyFilter = (val: string) => {
