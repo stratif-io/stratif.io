@@ -198,6 +198,18 @@ async def get_filter_options(conn_id: str):
         db.close()
 
 
+@router.get("/{conn_id}/field-options")
+async def get_field_options(conn_id: str, field: str):
+    from backend.services.connection_executor import open_analytics_db
+
+    _get_connection_or_404(conn_id)
+    db = open_analytics_db(conn_id)
+    try:
+        return {"field": field, "values": db.get_field_options(field)}
+    finally:
+        db.close()
+
+
 # ---------------------------------------------------------------------------
 # Credentials (masked)
 # ---------------------------------------------------------------------------

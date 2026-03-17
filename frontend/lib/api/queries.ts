@@ -405,6 +405,9 @@ export const upsertFilterConfig = (connId: string, body: FilterConfigBody) =>
 export const fetchFilterOptions = (connId: string) =>
   fetchApi<FilterOptionsResponse>(`/api/connections/${connId}/filter-options`)
 
+export const fetchFieldOptions = (connId: string, field: string) =>
+  fetchApi<{ field: string; values: string[] }>(`/api/connections/${connId}/field-options?field=${encodeURIComponent(field)}`)
+
 export const fetchSchemaDetect = (connId: string, eventsTable?: string) => {
   const qs = eventsTable ? `?events_table=${encodeURIComponent(eventsTable)}` : ''
   return fetchApi<SchemaDetectResponse>(`/api/connections/${connId}/schema/detect${qs}`)

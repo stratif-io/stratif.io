@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { format } from 'date-fns'
 import { useQuery } from '@tanstack/react-query'
 import { useAppStore } from '@/stores'
-import { fetchRawEvents, fetchEvents } from '@/lib/api'
+import { fetchRawEvents, fetchEvents, fetchFieldOptions } from '@/lib/api'
 import {
   useFilterConfig,
   useFilterOptions,
@@ -46,6 +46,25 @@ export function EventsPage() {
   const { data: schemaConfig } = useSchemaConfig(activeConnectionId ?? '')
   const filterFields = filterConfig?.filter_fields ?? []
   const customProperties = schemaConfig?.custom_properties ?? []
+
+  // Fetch field options for all custom properties in a single query
+  const customPropFields = useMemo(() => customProperties.map((cp) => cp.name), [customProperties])
+  const { data: customPropOptions } = useQuery({
+    queryKey: ['field-options-bulk', activeConnectionId, customPropFields],
+    queryFn: async () => {
+      if (!activeConnectionId || customPropFields.length === 0) return {}
+      const results = await Promise.all(
+        customPropFields.map((field) => fetchFieldOptions(activeConnectionId, field))
+      )
+      return Object.fromEntries(results.map((r) => [r.field, r.values]))
+    },
+    enabled: !!activeConnectionId && customPropFields.length > 0,
+    staleTime: 5 * 60 * 1000,
+  })
+  const mergedFilterOptions = useMemo(
+    () => ({ ...(filterOptions ?? {}), ...(customPropOptions ?? {}) }),
+    [filterOptions, customPropOptions]
+  )
 
   // All event names for the event filter combobox
   const { data: eventsData } = useQuery({
@@ -158,7 +177,7 @@ export function EventsPage() {
                 onColumnFilterClear={handleColumnFilterClear}
                 filterFields={filterFields}
                 customProperties={customProperties}
-                filterOptions={filterOptions ?? {}}
+                filterOptions={mergedFilterOptions}
                 allEventNames={allEventNames}
                 onPageChange={setPage}
                 onUserClick={setTimelineUserId}

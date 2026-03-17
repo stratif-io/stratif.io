@@ -134,6 +134,7 @@ class AnalyticsDatabase:
         return self._filter_fields
 
     def get_filter_options(self) -> dict[str, list[str]]:
+        """Return distinct values for configured filter fields only (not custom props — too slow)."""
         options: dict[str, list[str]] = {}
         for ff in self._filter_fields:
             field = ff["field"]
@@ -143,12 +144,28 @@ class AnalyticsDatabase:
             try:
                 rows = self.execute(
                     f"SELECT {expr} AS v, COUNT(*) AS n FROM events "
-                    f"WHERE {expr} IS NOT NULL GROUP BY {expr} ORDER BY n DESC LIMIT 50"
+                    f"WHERE {expr} IS NOT NULL GROUP BY {expr} ORDER BY n DESC LIMIT 200"
                 )
                 options[field] = [str(row[0]) for row in rows if row[0] is not None]
             except Exception:
                 options[field] = []
         return options
+
+    def get_field_options(self, field: str) -> list[str]:
+        """Return distinct values for a field, sampling up to 50k rows for speed."""
+        expr = self._filter_exprs.get(field) or self._custom_prop_exprs.get(field)
+        if not expr:
+            return []
+        try:
+            # Use a sampled subquery so JSON extractions on huge SQLite tables don't stall
+            rows = self.execute(
+                f"SELECT v, COUNT(*) AS n FROM "
+                f"(SELECT {expr} AS v FROM events LIMIT 50000) t "
+                f"WHERE v IS NOT NULL GROUP BY v ORDER BY n DESC LIMIT 200"
+            )
+            return sorted(str(row[0]) for row in rows if row[0] is not None)
+        except Exception:
+            return []
 
     def get_device_type_expr(self) -> str:
         if "device_type" in self._custom_prop_exprs:
