@@ -252,6 +252,7 @@ export function EventsTable({
       label: typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id,
       visible: col.getIsVisible(),
     }))
+    .sort((a, b) => a.label.localeCompare(b.label))
 
   const dimColIds = new Set(dimCols.map((c) => c.id))
 
@@ -377,7 +378,7 @@ export function EventsTable({
                                 className="w-full h-6 text-xs px-1 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
                               >
                                 <option value="">All</option>
-                                {suggestions.map((v) => <option key={v} value={v}>{v}</option>)}
+                                {[...suggestions].sort((a, b) => a.localeCompare(b)).map((v) => <option key={v} value={v}>{v}</option>)}
                               </select>
                             ) : (
                               <input
