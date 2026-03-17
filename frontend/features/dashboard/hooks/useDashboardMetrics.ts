@@ -43,6 +43,7 @@ export function useDashboardMetrics({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!activeConnectionId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: topEventsData, isLoading: eventsLoading } = useQuery({
@@ -56,6 +57,7 @@ export function useDashboardMetrics({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!activeConnectionId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: conversion } = useQuery({
@@ -67,6 +69,7 @@ export function useDashboardMetrics({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!activeConnectionId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: sessionsSummary } = useQuery({
@@ -79,6 +82,7 @@ export function useDashboardMetrics({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!activeConnectionId,
+    staleTime: 5 * 60 * 1000,
   })
 
   const chartData = useMemo(() => {
