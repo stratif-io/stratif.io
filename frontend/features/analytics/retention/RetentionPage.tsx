@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -168,7 +169,8 @@ export function RetentionPage() {
           )}
 
           {/* Cohort heatmap with sparklines */}
-          <Card>
+          <Card className="relative overflow-hidden">
+            <CardLoadingBar loading={isLoading} />
             <CardContent className="p-0 pb-0">
               {isLoading ? (
                 <div className="p-6">

@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export interface TopEvent {
@@ -15,7 +16,8 @@ export function TopEvents({ events, loading }: TopEventsProps) {
   const max = events[0]?.count ?? 1
 
   return (
-    <Card>
+    <Card className="relative overflow-hidden">
+      <CardLoadingBar loading={loading} />
       <CardHeader>
         <CardTitle>Top Events</CardTitle>
       </CardHeader>

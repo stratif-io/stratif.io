@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import {
   Select,
   SelectContent,
@@ -68,7 +69,8 @@ export function TrendsPage() {
             </Card>
           </div>
 
-          <Card>
+          <Card className="relative overflow-hidden">
+            <CardLoadingBar loading={isLoading} />
             <CardHeader className="pb-3">
               <div className="flex items-center justify-end">
                 <div className="flex flex-wrap gap-2 justify-end">

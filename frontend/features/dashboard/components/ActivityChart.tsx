@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LineChartComponent } from '@/components/charts'
 
@@ -9,7 +10,8 @@ export interface ActivityChartProps {
 
 export function ActivityChart({ data, loading }: ActivityChartProps) {
   return (
-    <Card className="lg:col-span-2">
+    <Card className="relative overflow-hidden lg:col-span-2">
+      <CardLoadingBar loading={loading} />
       <CardHeader>
         <CardTitle>Activity Overview</CardTitle>
       </CardHeader>

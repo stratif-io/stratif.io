@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Badge } from '@/components/ui/badge'
 import { MetricCardSkeleton } from '@/components/ui/loading-state'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -40,7 +41,8 @@ export function MetricCard({
   const displayValue = numericValue !== undefined ? animatedValue.toLocaleString() : value
 
   return (
-    <Card hover="lift" className={cn('motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-300', className)}>
+    <Card hover="lift" className={cn('relative overflow-hidden motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-300', className)}>
+      <CardLoadingBar loading={loading} />
       <CardHeader className="pb-2">
         <div className="flex items-center gap-1.5">
           <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
