@@ -41,5 +41,27 @@ export default defineConfig(({ mode }) => {
         '/api': 'http://localhost:8000',
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) {
+                return 'charts'
+              }
+              if (id.includes('ag-grid')) {
+                return 'ag-grid'
+              }
+              if (id.includes('@tanstack')) {
+                return 'query'
+              }
+              if (id.includes('framer-motion')) {
+                return 'motion'
+              }
+            }
+          },
+        },
+      },
+    },
   }
 })
