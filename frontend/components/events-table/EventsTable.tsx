@@ -9,7 +9,7 @@ import {
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { format } from 'date-fns'
-import { User, Columns3, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
+import { User, Columns3, ArrowUp, ArrowDown, ArrowUpDown, Filter, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FilterBar } from '@/components/shared/FilterBar'
 import { Pagination } from '@/components/shared/Pagination'
@@ -66,6 +66,17 @@ function buildDimCols(fields: FilterField[], custom: CustomProperty[]): DimCol[]
   return result
 }
 
+const ALWAYS_VISIBLE = new Set(['user_id', 'event_name', 'timestamp'])
+
+/** Default visibility: show core cols + any col that has an active column filter. */
+function defaultVisibility(dimCols: DimCol[], columnFilters: Record<string, string>): VisibilityState {
+  const state: VisibilityState = {}
+  for (const col of dimCols) {
+    state[col.id] = col.id in columnFilters && !!columnFilters[col.id]
+  }
+  return state
+}
+
 function loadColVisibility(key: string): VisibilityState | null {
   try { const r = localStorage.getItem(key); return r ? JSON.parse(r) as VisibilityState : null } catch { return null }
 }
@@ -92,14 +103,19 @@ export function EventsTable({
   const storageKey = `of_events_colstate_v2_${connectionId ?? 'default'}`
   const [showColumnPanel, setShowColumnPanel] = useState(false)
   const [userIdInput, setUserIdInput] = useState(userIdFilter)
-  const [colVisibility, setColVisibility] = useState<VisibilityState>(() => loadColVisibility(storageKey) ?? {})
-  const [showEventFilter, setShowEventFilter] = useState(false)
+  const dimCols = useMemo(() => buildDimCols(filterFields, customProperties), [filterFields, customProperties])
+  const [colVisibility, setColVisibility] = useState<VisibilityState>(
+    () => loadColVisibility(storageKey) ?? defaultVisibility(dimCols, columnFilters)
+  )
+  // Per-dim-col input state for inline header filters
+  const [dimFilterInputs, setDimFilterInputs] = useState<Record<string, string>>(() => ({ ...columnFilters }))
   const parentRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const dimDebounceRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   useEffect(() => { setUserIdInput(userIdFilter) }, [userIdFilter])
-
-  const dimCols = useMemo(() => buildDimCols(filterFields, customProperties), [filterFields, customProperties])
+  // Sync dim filter inputs when columnFilters reset externally
+  useEffect(() => { setDimFilterInputs((prev) => ({ ...prev, ...columnFilters })) }, [columnFilters])
 
   const rowData = useMemo(() =>
     data.map((event) => {
@@ -210,59 +226,30 @@ export function EventsTable({
     ...(eventNameFilter ? [{ label: 'event', value: eventNameFilter, onClear: () => onEventNameFilterChange('') }] : []),
     ...(userIdFilter ? [{ label: 'user', value: userIdFilter, onClear: () => onUserIdFilterChange('') }] : []),
     ...Object.entries(columnFilters).filter(([, v]) => v).map(([field, value]) => ({
-      label: field, value, variant: 'accent' as const, onClear: () => onColumnFilterClear(field),
+      label: field, value, onClear: () => {
+        onColumnFilterClear(field)
+        setDimFilterInputs((prev) => { const next = { ...prev }; delete next[field]; return next })
+      },
     })),
   ]
 
-  const columnPanelEntries = table.getAllColumns().map((col) => ({
-    id: col.id,
-    label: typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id,
-    visible: col.getIsVisible(),
-  }))
+  const columnPanelEntries = table.getAllColumns()
+    .filter((col) => !ALWAYS_VISIBLE.has(col.id))
+    .map((col) => ({
+      id: col.id,
+      label: typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id,
+      visible: col.getIsVisible(),
+    }))
+
+  const dimColIds = new Set(dimCols.map((c) => c.id))
 
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border">
-        <input
-          type="text"
-          placeholder="Filter by user ID..."
-          value={userIdInput}
-          onChange={(e) => {
-            setUserIdInput(e.target.value)
-            if (debounceRef.current) clearTimeout(debounceRef.current)
-            debounceRef.current = setTimeout(() => onUserIdFilterChange(e.target.value), 400)
-          }}
-          className="h-7 text-xs px-2.5 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring w-44"
-        />
-        <div className="relative">
-          <button
-            onClick={() => setShowEventFilter((s) => !s)}
-            className="h-7 text-xs px-2.5 rounded border border-border bg-background hover:bg-accent"
-          >
-            {eventNameFilter || 'All events'}
-          </button>
-          {showEventFilter && (
-            <div className="absolute top-full left-0 mt-1 z-20 w-56 max-h-60 overflow-y-auto rounded-md border border-border bg-background shadow-lg">
-              <button
-                className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent/50"
-                onClick={() => { onEventNameFilterChange(''); setShowEventFilter(false) }}
-              >
-                All events
-              </button>
-              {allEventNames.map((name) => (
-                <button
-                  key={name}
-                  className={cn('w-full text-left px-3 py-1.5 text-xs hover:bg-accent/50', eventNameFilter === name && 'bg-primary/10 text-primary')}
-                  onClick={() => { onEventNameFilterChange(name); setShowEventFilter(false) }}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="ml-auto relative">
+        <span className="text-xs text-muted-foreground">Events</span>
+        <div className="ml-auto relative flex items-center gap-2">
+          {isFetching && <Spinner className="h-3.5 w-3.5" />}
           <button
             onClick={() => setShowColumnPanel((s) => !s)}
             className="h-7 text-xs px-2.5 rounded border border-border bg-background hover:bg-accent flex items-center gap-1.5"
@@ -279,7 +266,6 @@ export function EventsTable({
             />
           )}
         </div>
-        {isFetching && <Spinner className="h-3.5 w-3.5" />}
       </div>
 
       {/* Active filters */}
@@ -298,6 +284,7 @@ export function EventsTable({
         ) : (
           <table className="w-full border-collapse text-sm" style={{ opacity: isFetching ? 0.6 : 1 }}>
             <thead className="sticky top-0 z-10 bg-background border-b border-border">
+              {/* Sort headers */}
               {table.getHeaderGroups().map((hg) => (
                 <tr key={hg.id}>
                   {hg.headers.map((header) => {
@@ -307,7 +294,7 @@ export function EventsTable({
                       <th
                         key={header.id}
                         style={{ width: header.getSize() }}
-                        className={cn('px-3 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap', canSort && 'cursor-pointer select-none hover:text-foreground')}
+                        className={cn('px-3 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap', canSort && 'cursor-pointer select-none hover:text-foreground')}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                       >
                         <span className="flex items-center gap-1">
@@ -316,6 +303,86 @@ export function EventsTable({
                         </span>
                       </th>
                     )
+                  })}
+                </tr>
+              ))}
+              {/* Filter row */}
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={`${hg.id}-filters`} className="border-b border-border/60 bg-muted/20">
+                  {hg.headers.map((header) => {
+                    const colId = header.column.id
+                    if (colId === 'user_id') {
+                      return (
+                        <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1">
+                          <input
+                            type="text"
+                            placeholder="Filter by user ID…"
+                            value={userIdInput}
+                            onChange={(e) => {
+                              setUserIdInput(e.target.value)
+                              if (debounceRef.current) clearTimeout(debounceRef.current)
+                              debounceRef.current = setTimeout(() => onUserIdFilterChange(e.target.value), 400)
+                            }}
+                            className="w-full h-6 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                          />
+                        </th>
+                      )
+                    }
+                    if (colId === 'event_name') {
+                      return (
+                        <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1">
+                          <select
+                            value={eventNameFilter}
+                            onChange={(e) => onEventNameFilterChange(e.target.value)}
+                            className="w-full h-6 text-xs px-1 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                          >
+                            <option value="">All events</option>
+                            {allEventNames.map((name) => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                          </select>
+                        </th>
+                      )
+                    }
+                    if (dimColIds.has(colId)) {
+                      const active = columnFilters[colId]
+                      const inputVal = dimFilterInputs[colId] ?? ''
+                      return (
+                        <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1">
+                          <div className="relative flex items-center">
+                            <input
+                              type="text"
+                              placeholder="Filter…"
+                              value={inputVal}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                setDimFilterInputs((prev) => ({ ...prev, [colId]: val }))
+                                if (dimDebounceRefs.current[colId]) clearTimeout(dimDebounceRefs.current[colId])
+                                dimDebounceRefs.current[colId] = setTimeout(() => {
+                                  if (val) onColumnFilterChange(colId, val)
+                                  else onColumnFilterClear(colId)
+                                }, 400)
+                              }}
+                              className="w-full h-6 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring pr-5"
+                            />
+                            {active && (
+                              <button
+                                className="absolute right-1 text-muted-foreground hover:text-foreground"
+                                onClick={() => {
+                                  onColumnFilterClear(colId)
+                                  setDimFilterInputs((prev) => { const next = { ...prev }; delete next[colId]; return next })
+                                }}
+                                aria-label={`Clear ${colId} filter`}
+                              >
+                                <X size={10} />
+                              </button>
+                            )}
+                            {!active && <Filter size={10} className="absolute right-1.5 opacity-20 pointer-events-none" />}
+                          </div>
+                        </th>
+                      )
+                    }
+                    return <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1" />
                   })}
                 </tr>
               ))}
