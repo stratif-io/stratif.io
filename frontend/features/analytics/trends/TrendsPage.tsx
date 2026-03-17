@@ -44,8 +44,8 @@ export function TrendsPage() {
           <h1 className="sr-only">Trends</h1>
           <span className={TYPOGRAPHY.pageLabel}>Trend Analysis</span>
 
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            <Card hover="lift">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <Card hover="lift" className="col-span-2 lg:col-span-2">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className={TYPOGRAPHY.label}>Total Events</CardTitle>
                 <TrendingUp className={`${ICON_SIZES.sm} text-muted-foreground`} />
@@ -54,7 +54,7 @@ export function TrendsPage() {
                 <div className={TYPOGRAPHY.metric}>{totalEvents.toLocaleString()}</div>
               </CardContent>
             </Card>
-            <Card hover="lift">
+            <Card hover="lift" className="col-span-1">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className={TYPOGRAPHY.label}>Daily Average</CardTitle>
                 <BarChart3 className={`${ICON_SIZES.sm} text-muted-foreground`} />
@@ -63,7 +63,7 @@ export function TrendsPage() {
                 <div className={TYPOGRAPHY.metric}>{averageValue.toLocaleString()}</div>
               </CardContent>
             </Card>
-            <Card hover="lift">
+            <Card hover="lift" className="col-span-1">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className={TYPOGRAPHY.label}>Daily Peak</CardTitle>
                 <LineChartIcon className={`${ICON_SIZES.sm} text-muted-foreground`} />

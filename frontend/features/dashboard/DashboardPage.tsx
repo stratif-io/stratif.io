@@ -104,7 +104,7 @@ export function DashboardPage() {
             <span className={TYPOGRAPHY.pageLabel}>Dashboard</span>
 
             {/* Metric Cards */}
-            <div className={`grid ${GRID_COLS.metrics} ${SPACING.gridGap}`}>
+            <div className={`grid grid-cols-2 lg:grid-cols-4 ${SPACING.gridGap}`}>
               <MetricCard
                 title="Total Events"
                 value={metrics.totalEvents.toLocaleString()}
@@ -114,6 +114,7 @@ export function DashboardPage() {
                 description="in selected period"
                 subtitle={metrics.uniqueUsers > 0 ? `${(metrics.totalEvents / metrics.uniqueUsers).toFixed(1)} events / user` : undefined}
                 loading={isLoading}
+                className="col-span-2 lg:col-span-2"
               />
               <MetricCard
                 title="Unique Users"
@@ -123,7 +124,7 @@ export function DashboardPage() {
                 changeType="neutral"
                 description="in selected period"
                 loading={isLoading}
-                className="motion-safe:[animation-delay:75ms]"
+                className="col-span-1 motion-safe:[animation-delay:75ms]"
               />
               <MetricCard
                 title="Total Sessions"
@@ -134,7 +135,7 @@ export function DashboardPage() {
                 description="in selected period"
                 subtitle={metrics.uniqueUsers > 0 ? `${(metrics.totalSessions / metrics.uniqueUsers).toFixed(1)} sessions / user` : undefined}
                 loading={isLoading}
-                className="motion-safe:[animation-delay:150ms]"
+                className="col-span-1 motion-safe:[animation-delay:150ms]"
               />
             </div>
 
