@@ -9,6 +9,10 @@ export function ConnectionsPage() {
   const location = useLocation()
 
   useEffect(() => {
+    document.title = 'Connections — OpenFlow'
+  }, [])
+
+  useEffect(() => {
     if (location.search) {
       navigate('/connections', { replace: true })
     }

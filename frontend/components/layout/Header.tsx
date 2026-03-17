@@ -47,17 +47,17 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setTheme('light')}>
+              <DropdownMenuItem role="menuitemradio" aria-checked={theme === 'light'} onClick={() => setTheme('light')}>
                 <Sun className="mr-2 h-4 w-4" />
                 Light
                 {theme === 'light' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme('dark')}>
+              <DropdownMenuItem role="menuitemradio" aria-checked={theme === 'dark'} onClick={() => setTheme('dark')}>
                 <Moon className="mr-2 h-4 w-4" />
                 Dark
                 {theme === 'dark' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme('system')}>
+              <DropdownMenuItem role="menuitemradio" aria-checked={theme === 'system'} onClick={() => setTheme('system')}>
                 <Monitor className="mr-2 h-4 w-4" />
                 System
                 {theme === 'system' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}

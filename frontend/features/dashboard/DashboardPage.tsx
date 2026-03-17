@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { PageTransition } from '@/components/layout/PageTransition'
@@ -66,13 +67,27 @@ function DashboardFirstRun() {
 
 export function DashboardPage() {
 
-  const { dateRange, activeConnectionId } = useAppStore()
+  useEffect(() => {
+    document.title = 'Dashboard — OpenFlow'
+  }, [])
+
+  const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()
   const { metrics, isLoading, isError, error, eventsLoading } = useDashboardMetrics({ dateRange })
 
-  if (!activeConnectionId) {
+  const isConnectionNotFound =
+    isError && error instanceof Error && error.message.toLowerCase().includes('connection not found')
+
+  useEffect(() => {
+    if (isConnectionNotFound && activeConnectionId) {
+      setActiveConnectionId(null)
+    }
+  }, [isConnectionNotFound, activeConnectionId, setActiveConnectionId])
+
+  if (!activeConnectionId || isConnectionNotFound) {
     return (
       <PageTransition>
         <div className={SPACING.page}>
+          <h1 className="sr-only">Dashboard</h1>
           <DashboardFirstRun />
         </div>
       </PageTransition>
@@ -85,6 +100,7 @@ export function DashboardPage() {
     <PageTransition>
         <div className={SPACING.page}>
           <div className={SPACING.section}>
+            <h1 className="sr-only">Dashboard</h1>
             <span className={TYPOGRAPHY.pageLabel}>Dashboard</span>
 
             {/* Metric Cards */}

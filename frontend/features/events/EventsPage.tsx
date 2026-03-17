@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { format } from 'date-fns'
 import { useQuery } from '@tanstack/react-query'
 import { useAppStore } from '@/stores'
@@ -17,6 +17,10 @@ import { UserTimelineModal } from './components/UserTimelineModal'
 import type { RawEvent } from './components/EventsTable'
 
 export function EventsPage() {
+  useEffect(() => {
+    document.title = 'Events — OpenFlow'
+  }, [])
+
   const { dateRange, activeFilters, activeConnectionId } = useAppStore()
 
   // Pagination & sort

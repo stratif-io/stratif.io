@@ -155,7 +155,7 @@ export function Sidebar() {
             /* Expanded: flat groups separated by dividers */
             navGroups.map((group, gi) => (
               <div key={group.title} className={cn('space-y-0.5', gi > 0 && 'pt-3 mt-3 border-t border-border/40')}>
-                <p className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                <p className="px-2.5 pb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground/50">
                   {group.title}
                 </p>
                 {group.items.map((item) => (

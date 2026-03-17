@@ -1,0 +1,109 @@
+<h2>Combined Loading Design</h2>
+<p class="subtitle">How all three approaches work together — Dashboard as example</p>
+
+<div class="section">
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">❌ Current — skeleton flash</div>
+      <div class="mockup-body" style="padding:16px;background:#0a0a0a;border-radius:4px">
+        <!-- Metric cards skeleton -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+          <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:14px">
+            <div style="background:#2a2a2a;height:10px;width:60%;border-radius:3px;margin-bottom:10px;animation:pulse 1.5s infinite"></div>
+            <div style="background:#2a2a2a;height:22px;width:40%;border-radius:3px;animation:pulse 1.5s infinite"></div>
+          </div>
+          <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:14px">
+            <div style="background:#2a2a2a;height:10px;width:60%;border-radius:3px;margin-bottom:10px;animation:pulse 1.5s infinite"></div>
+            <div style="background:#2a2a2a;height:22px;width:40%;border-radius:3px;animation:pulse 1.5s infinite"></div>
+          </div>
+          <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:14px">
+            <div style="background:#2a2a2a;height:10px;width:60%;border-radius:3px;margin-bottom:10px;animation:pulse 1.5s infinite"></div>
+            <div style="background:#2a2a2a;height:22px;width:40%;border-radius:3px;animation:pulse 1.5s infinite"></div>
+          </div>
+        </div>
+        <!-- Chart skeleton -->
+        <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:14px;height:80px">
+          <div style="background:#2a2a2a;height:10px;width:30%;border-radius:3px;margin-bottom:10px;animation:pulse 1.5s infinite"></div>
+          <div style="background:#2a2a2a;height:40px;border-radius:3px;animation:pulse 1.5s infinite"></div>
+        </div>
+        <p style="color:#ef4444;font-size:10px;margin-top:8px;text-align:center">→ Skeleton appears even for 80ms loads. Flash.</p>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-header">✓ New — content animates in</div>
+      <div class="mockup-body" style="padding:16px;background:#0a0a0a;border-radius:4px">
+        <!-- Metric cards with real structure -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+          <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:14px;opacity:0.5">
+            <div style="color:#888;font-size:10px;margin-bottom:6px">Total Events</div>
+            <div style="color:#fff;font-size:20px;font-weight:600">—</div>
+          </div>
+          <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:14px;opacity:0.5">
+            <div style="color:#888;font-size:10px;margin-bottom:6px">Unique Users</div>
+            <div style="color:#fff;font-size:20px;font-weight:600">—</div>
+          </div>
+          <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:14px;opacity:0.5">
+            <div style="color:#888;font-size:10px;margin-bottom:6px">Sessions</div>
+            <div style="color:#fff;font-size:20px;font-weight:600">—</div>
+          </div>
+        </div>
+        <!-- Chart area with empty axes -->
+        <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:14px;height:80px;opacity:0.5">
+          <div style="color:#888;font-size:10px;margin-bottom:8px">Activity</div>
+          <div style="border-bottom:1px solid #2a2a2a;height:40px;display:flex;align-items:flex-end;gap:3px;padding-bottom:4px">
+            <div style="width:8px;background:#2a2a2a;height:10px;border-radius:2px 2px 0 0"></div>
+            <div style="width:8px;background:#2a2a2a;height:10px;border-radius:2px 2px 0 0"></div>
+            <div style="width:8px;background:#2a2a2a;height:10px;border-radius:2px 2px 0 0"></div>
+          </div>
+        </div>
+        <p style="color:#22c55e;font-size:10px;margin-top:8px;text-align:center">→ Layout stable. Numbers count up. Charts fade in.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>What changes, per layer</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:8px 4px;color:var(--muted)">Layer</th>
+        <th style="text-align:left;padding:8px 4px;color:var(--muted)">Change</th>
+        <th style="text-align:left;padding:8px 4px;color:var(--muted)">Approach</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 4px"><strong>MetricCard</strong></td>
+        <td style="padding:8px 4px">Show "—" + dimmed card while loading instead of skeleton. Already has count-up.</td>
+        <td style="padding:8px 4px"><span style="background:#1a3a1a;color:#22c55e;padding:2px 6px;border-radius:3px;font-size:10px">C</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 4px"><strong>ActivityChart</strong></td>
+        <td style="padding:8px 4px">Render empty chart immediately, fade data in on arrival.</td>
+        <td style="padding:8px 4px"><span style="background:#1a3a1a;color:#22c55e;padding:2px 6px;border-radius:3px;font-size:10px">C</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 4px"><strong>TopEvents</strong></td>
+        <td style="padding:8px 4px">Show dimmed empty rows, items fade-slide in when data arrives.</td>
+        <td style="padding:8px 4px"><span style="background:#1a3a1a;color:#22c55e;padding:2px 6px;border-radius:3px;font-size:10px">C</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 4px"><strong>Other pages</strong><br><span style="color:var(--muted);font-size:10px">Trends, Retention, Paths…</span></td>
+        <td style="padding:8px 4px">Keep skeletons but delay 200ms. Add fade-in on content swap.</td>
+        <td style="padding:8px 4px"><span style="background:#1a1a3a;color:#818cf8;padding:2px 6px;border-radius:3px;font-size:10px">A</span></td>
+      </tr>
+      <tr>
+        <td style="padding:8px 4px"><strong>All hooks</strong></td>
+        <td style="padding:8px 4px">Add <code>staleTime: 5 * 60 * 1000</code> so revisits show cached data instantly.</td>
+        <td style="padding:8px 4px"><span style="background:#3a1a1a;color:#f87171;padding:2px 6px;border-radius:3px;font-size:10px">B</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<style>
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+code { background: var(--border); padding: 1px 5px; border-radius: 3px; font-size: 10px; }
+</style>

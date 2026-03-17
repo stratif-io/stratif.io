@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
@@ -19,6 +19,10 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 
 export function PathsPage() {
+  useEffect(() => {
+    document.title = 'Paths — OpenFlow'
+  }, [])
+
   const { dateRange, selectedEvent, setSelectedEvent } = useAppStore()
   const [deviceType, setDeviceType] = useState<string>('')
   const [targetEvent, setTargetEvent] = useState<string>(selectedEvent || 'Purchase')

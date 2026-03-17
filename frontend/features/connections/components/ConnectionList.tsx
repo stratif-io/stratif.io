@@ -88,7 +88,7 @@ function ConnectionRow({ connection }: { connection: Connection }) {
             size="icon"
             variant="ghost"
             className="h-7 w-7"
-            title="Test connection"
+            aria-label="Test connection"
             disabled={testMutation.isPending}
             onClick={handleTest}
           >
@@ -98,7 +98,7 @@ function ConnectionRow({ connection }: { connection: Connection }) {
             size="icon"
             variant="ghost"
             className="h-7 w-7"
-            title="Edit connection"
+            aria-label="Edit connection"
             onClick={(e) => {
               e.stopPropagation()
               setEditOpen(true)
@@ -110,7 +110,7 @@ function ConnectionRow({ connection }: { connection: Connection }) {
             size="icon"
             variant="ghost"
             className="h-7 w-7 text-destructive hover:text-destructive"
-            title="Delete connection"
+            aria-label="Delete connection"
             disabled={deleteMutation.isPending}
             onClick={handleDelete}
           >

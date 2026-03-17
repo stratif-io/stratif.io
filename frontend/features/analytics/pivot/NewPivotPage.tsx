@@ -605,10 +605,10 @@ export function NewPivotPage() {
                   <Sigma className="h-3 w-3" />
                   Subtotals
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReset} title="Reset">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReset} aria-label="Reset">
                   <RotateCcw className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleExportCsv} title="Export CSV">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleExportCsv} aria-label="Export CSV">
                   <Download className="h-3.5 w-3.5" />
                 </Button>
               </div>

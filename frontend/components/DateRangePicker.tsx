@@ -71,7 +71,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
             className={cn(
               'flex items-center gap-1.5 h-9 px-3 text-sm font-medium text-muted-foreground',
               'hover:bg-accent/60 hover:text-foreground transition-colors',
-              'focus:outline-none focus-visible:ring-0',
+              'focus:outline-none',
               'whitespace-nowrap'
             )}
           >

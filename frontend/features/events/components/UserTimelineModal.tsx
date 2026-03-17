@@ -50,7 +50,7 @@ function PropertiesExpander({ properties }: { properties: Record<string, unknown
   return (
     <div className="mt-1">
       <button
-        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         onClick={() => setOpen(!open)}
       >
         {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -58,7 +58,7 @@ function PropertiesExpander({ properties }: { properties: Record<string, unknown
       </button>
       {open && (
         <div className="mt-1.5 ml-1 rounded-md border border-border/50 bg-muted/30 overflow-hidden">
-          <table className="w-full text-[11px]">
+          <table className="w-full text-xs">
             <tbody>
               {entries.map(([key, val]) => (
                 <tr key={key} className="border-b border-border/30 last:border-0">
@@ -121,7 +121,7 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
             color.ring
           )}
         >
-          <span className="text-white text-[11px] font-bold leading-none">
+          <span className="text-white text-xs font-bold leading-none">
             {event.event_name?.[0]?.toUpperCase() ?? '?'}
           </span>
         </div>
@@ -136,10 +136,10 @@ function TimelineEvent({ event, isLast }: TimelineEventProps) {
           </span>
           {ts && (
             <div className="text-right flex-shrink-0">
-              <div className="text-[11px] text-muted-foreground tabular-nums">
+              <div className="text-xs text-muted-foreground tabular-nums">
                 {format(ts, 'MMM d, yyyy HH:mm:ss')}
               </div>
-              <div className="text-[10px] text-muted-foreground/60">
+              <div className="text-xs text-muted-foreground/60">
                 {formatDistanceToNow(ts, { addSuffix: true })}
               </div>
             </div>
@@ -186,7 +186,7 @@ export function UserTimelineModal({ userId, connectionId, open, onClose }: UserT
                 User Timeline
               </DialogTitle>
               {userId && (
-                <p className="text-[11px] font-mono text-muted-foreground truncate mt-0.5">
+                <p className="text-xs font-mono text-muted-foreground truncate mt-0.5">
                   {userId}
                 </p>
               )}

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 
@@ -82,6 +82,10 @@ function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
 }
 
 export function RetentionPage() {
+  useEffect(() => {
+    document.title = 'Retention — OpenFlow'
+  }, [])
+
   const { dateRange } = useAppStore()
   const [granularity, setGranularity] = useState<RetentionGranularity>('day')
   const [cohortLimit, setCohortLimit] = useState(10)
@@ -117,6 +121,7 @@ export function RetentionPage() {
         <div className={SPACING.section}>
           {/* Header */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
+            <h1 className="sr-only">Retention</h1>
             <span className={TYPOGRAPHY.pageLabel}>Retention</span>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {/* Granularity toggle */}

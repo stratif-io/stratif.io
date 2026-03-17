@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
@@ -20,6 +20,10 @@ import { TrendChart } from './components/TrendChart'
 import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
 
 export function TrendsPage() {
+  useEffect(() => {
+    document.title = 'Trends — OpenFlow'
+  }, [])
+
   const { dateRange } = useAppStore()
   const [selectedEvent, setSelectedEvent] = useState<string>('')
   const [granularity, setGranularity] = useState<'day' | 'week'>('day')
@@ -37,6 +41,7 @@ export function TrendsPage() {
     <PageTransition>
       <div className={SPACING.page}>
         <div className={SPACING.section}>
+          <h1 className="sr-only">Trends</h1>
           <span className={TYPOGRAPHY.pageLabel}>Trend Analysis</span>
 
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">

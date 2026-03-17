@@ -1,0 +1,47 @@
+<h2>Loading UX — 3 Approaches</h2>
+<p class="subtitle">Which strategy fits best? You can select multiple.</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Deferred skeleton + fade-in</h3>
+      <p>Don't show the skeleton at all until 200ms has passed. Fast loads (under 200ms) show nothing — content just appears. Slow loads show the skeleton briefly, then fade content in smoothly when ready.</p>
+      <div style="margin-top:12px;display:flex;gap:12px;font-size:11px;color:var(--muted)">
+        <span>✓ Eliminates flash for fast loads</span>
+        <span>✓ Smooth transition always</span>
+        <span>◦ Small code change per component</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Stale-while-revalidate</h3>
+      <p>TanStack Query's <code>staleTime</code>: show cached data immediately on page revisit — no skeleton at all. Fresh loads still show a skeleton, but navigating back feels instant. Works best when users revisit pages often.</p>
+      <div style="margin-top:12px;display:flex;gap:12px;font-size:11px;color:var(--muted)">
+        <span>✓ Instant revisits</span>
+        <span>✓ No skeleton on back-navigation</span>
+        <span>◦ Data can be slightly stale</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Skip skeletons, animate in content</h3>
+      <p>Remove skeletons entirely. Show the page structure immediately (empty metric cards, empty chart area) and animate numbers/content in when data arrives — count-up for metrics, fade-slide for charts. Dashboard already has count-up on MetricCard.</p>
+      <div style="margin-top:12px;display:flex;gap:12px;font-size:11px;color:var(--muted)">
+        <span>✓ No flash ever</span>
+        <span>✓ Feels like the app is alive</span>
+        <span>◦ Layout must be stable without data</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+code { background: var(--border); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+</style>

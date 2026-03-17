@@ -163,7 +163,7 @@ export function FunnelDetailPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate('/paths')}>
+                <Button variant="ghost" size="icon" aria-label="Go back" onClick={() => navigate('/paths')}>
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
@@ -175,7 +175,7 @@ export function FunnelDetailPage() {
               </div>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={copyPermalink}>
+                  <Button variant="outline" size="icon" aria-label="Copy permalink" onClick={copyPermalink}>
                     {copied ? (
                       <Check className="h-4 w-4 text-green-500" />
                     ) : (

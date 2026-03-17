@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { useAppStore } from '@/stores'
@@ -16,6 +16,10 @@ import {
 import { Clock, Users } from 'lucide-react'
 
 export default function SessionsPage() {
+  useEffect(() => {
+    document.title = 'Sessions — OpenFlow'
+  }, [])
+
   const { dateRange } = useAppStore()
   const [page, setPage] = useState(1)
   const limit = 20

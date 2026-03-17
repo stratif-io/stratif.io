@@ -105,7 +105,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyPermalink}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Copy permalink" onClick={copyPermalink}>
                       {copied ? (
                         <span className="text-emerald-600 dark:text-emerald-400 text-xs font-medium">Copied!</span>
                       ) : (
@@ -117,7 +117,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={openFullPage}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Open full page" onClick={openFullPage}>
                       <ExternalLink className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
