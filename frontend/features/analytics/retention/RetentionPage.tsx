@@ -13,6 +13,8 @@ import { useRetentionData, type RetentionGranularity } from './hooks/useRetentio
 import { RetentionTable } from './components/RetentionTable'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { useDeferredLoading, useReducedMotion } from '@/hooks'
+import { motion } from 'framer-motion'
 
 const GRANULARITIES: { value: RetentionGranularity; label: string }[] = [
   { value: 'day', label: 'Daily' },
@@ -106,12 +108,20 @@ export function RetentionPage() {
     )
   }, [visibleData, milestones])
 
+  const showSkeleton = useDeferredLoading(isLoading)
+  const prefersReducedMotion = useReducedMotion()
+
   const isEmpty = !isLoading && retentionData.length === 0
 
   if (isError) return <QueryError error={error} />
 
   return (
     <PageTransition>
+      <motion.div
+        initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
+        animate={{ opacity: 1 }}
+        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
+      >
       <div className={SPACING.page}>
         <div className={SPACING.section}>
           {/* Header */}
@@ -170,7 +180,7 @@ export function RetentionPage() {
           {/* Cohort heatmap with sparklines */}
           <Card>
             <CardContent className="p-0 pb-0">
-              {isLoading ? (
+              {showSkeleton ? (
                 <div className="p-6">
                   <TableSkeleton />
                 </div>
@@ -193,6 +203,7 @@ export function RetentionPage() {
           </Card>
         </div>
       </div>
+      </motion.div>
     </PageTransition>
   )
 }

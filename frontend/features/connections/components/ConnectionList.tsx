@@ -8,6 +8,8 @@ import { ConnectionFormDialog } from './ConnectionFormDialog'
 import type { Connection } from '@/types'
 import { cn } from '@/lib/utils'
 import { TYPOGRAPHY } from '@/lib/constants'
+import { useDeferredLoading, useReducedMotion } from '@/hooks'
+import { motion } from 'framer-motion'
 
 const DB_TYPE_LABELS: Record<string, string> = {
   duckdb: 'DuckDB',
@@ -125,11 +127,19 @@ function ConnectionRow({ connection }: { connection: Connection }) {
 }
 
 export function ConnectionList() {
-  const { data, isLoading, error } = useConnections()
+  const { data, isLoading: isLoadingRaw, error } = useConnections()
   const [createOpen, setCreateOpen] = useState(false)
 
+  const isLoading = useDeferredLoading(isLoadingRaw)
+  const prefersReducedMotion = useReducedMotion()
+
   return (
-    <div className="space-y-4">
+    <motion.div
+      className="space-y-4"
+      initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
+      animate={{ opacity: 1 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
+    >
       <div className="flex items-center justify-between">
         <div>
           <h1 className={TYPOGRAPHY.sectionTitle}>Connections</h1>
@@ -179,6 +189,6 @@ export function ConnectionList() {
       )}
 
       <ConnectionFormDialog open={createOpen} onOpenChange={setCreateOpen} />
-    </div>
+    </motion.div>
   )
 }

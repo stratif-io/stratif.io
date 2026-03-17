@@ -59,6 +59,7 @@ export function FunnelDetailPage() {
   const { data: eventsResponse } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
+    staleTime: 5 * 60 * 1000,
   })
   const availableEvents = eventsResponse?.events || []
 

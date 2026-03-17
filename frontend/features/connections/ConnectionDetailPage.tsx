@@ -10,6 +10,8 @@ import { useConnection } from './hooks/useConnectionsData'
 import { ConnectionConfigTab } from './components/ConnectionConfigTab'
 import { SchemaConfigTab } from './components/SchemaConfigTab'
 import { FilterConfigTab } from './components/FilterConfigTab'
+import { useDeferredLoading, useReducedMotion } from '@/hooks'
+import { motion } from 'framer-motion'
 
 type Tab = 'connection' | 'schema' | 'filters'
 
@@ -29,10 +31,13 @@ const DB_TYPE_LABELS: Record<string, string> = {
 export function ConnectionDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { data: connection, isLoading, error } = useConnection(id ?? '')
+  const { data: connection, isLoading: isLoadingRaw, error } = useConnection(id ?? '')
   const [tab, setTab] = useState<Tab>('connection')
 
-  if (isLoading) {
+  const showSkeleton = useDeferredLoading(isLoadingRaw)
+  const prefersReducedMotion = useReducedMotion()
+
+  if (showSkeleton) {
     return (
       <div className={SPACING.page}>
         <LoadingState message="Loading connection…" />
@@ -52,7 +57,12 @@ export function ConnectionDetailPage() {
   }
 
   return (
-    <div className={SPACING.page}>
+    <motion.div
+      className={SPACING.page}
+      initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
+      animate={{ opacity: 1 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
+    >
       {/* Back + header */}
       <div className="space-y-3">
         <Button
@@ -102,6 +112,6 @@ export function ConnectionDetailPage() {
       {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
       {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
       {tab === 'filters' && <FilterConfigTab connId={connection.id} />}
-    </div>
+    </motion.div>
   )
 }

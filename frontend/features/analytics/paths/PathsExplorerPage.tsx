@@ -20,6 +20,8 @@ import { EmptyState } from '@/components/ui/empty-state'
 import type { PathAnalysisData } from '@/types'
 import { cn } from '@/lib/utils'
 import { SPACING, TYPOGRAPHY, FILTER_TRIGGER_CLASS } from '@/lib/constants'
+import { useDeferredLoading, useReducedMotion } from '@/hooks'
+import { motion } from 'framer-motion'
 
 const TIME_UNITS = [
   { value: 'seconds', label: 'Seconds' },
@@ -229,6 +231,9 @@ export function PathsExplorerPage() {
     topN,
   })
 
+  const showLoading = useDeferredLoading(isLoading || eventsLoading)
+  const prefersReducedMotion = useReducedMotion()
+
   const handleReset = () => setSearchParams({}, { replace: true })
 
   const hasActiveFilters =
@@ -238,6 +243,11 @@ export function PathsExplorerPage() {
 
   return (
     <PageTransition>
+      <motion.div
+        initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
+        animate={{ opacity: 1 }}
+        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
+      >
       <div className={SPACING.page}>
         <div className={SPACING.section}>
           {/* Header */}
@@ -477,7 +487,7 @@ export function PathsExplorerPage() {
           </div>
 
           {/* Results */}
-          {isLoading || eventsLoading ? (
+          {showLoading ? (
             <LoadingState message="Analyzing paths…" />
           ) : pathData.length === 0 ? (
             <EmptyState
@@ -532,6 +542,7 @@ export function PathsExplorerPage() {
           />
         </div>
       </div>
+      </motion.div>
     </PageTransition>
   )
 }
