@@ -19,9 +19,9 @@ const EVENT_PALETTE = [
   { dot: 'bg-blue-500', ring: 'ring-blue-500/25', text: 'text-blue-600 dark:text-blue-400' },
   { dot: 'bg-cyan-500', ring: 'ring-cyan-500/25', text: 'text-cyan-600 dark:text-cyan-400' },
   {
-    dot: 'bg-emerald-500',
+    dot: 'bg-success',
     ring: 'ring-emerald-500/25',
-    text: 'text-emerald-600 dark:text-emerald-400',
+    text: 'text-success',
   },
   { dot: 'bg-amber-500', ring: 'ring-amber-500/25', text: 'text-amber-600 dark:text-amber-400' },
   {

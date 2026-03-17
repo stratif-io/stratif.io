@@ -81,14 +81,14 @@ function ComparisonTooltip({ active, payload, label, series }: ComparisonTooltip
             <p className="text-sm">
               <span className="text-muted-foreground">Difference: </span>
               <span
-                className={`font-medium ${difference >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}
+                className={`font-medium ${difference >= 0 ? 'text-success' : 'text-destructive'}`}
               >
                 {difference >= 0 ? '+' : ''}
                 {difference.toLocaleString()}
               </span>
               {percentChange !== null && (
                 <span
-                  className={`ml-1 text-xs ${difference >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}
+                  className={`ml-1 text-xs ${difference >= 0 ? 'text-success' : 'text-destructive'}`}
                 >
                   ({percentChange >= 0 ? '+' : ''}
                   {percentChange.toFixed(1)}%)

@@ -110,9 +110,9 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                         className={cn(
                           'rounded-md px-2 py-1 text-sm tabular-nums font-medium transition-colors mx-auto w-fit',
                           pct >= 50
-                            ? 'text-emerald-800 dark:text-emerald-200'
+                            ? 'text-success'
                             : pct >= 20
-                              ? 'text-emerald-700 dark:text-emerald-300'
+                              ? 'text-success'
                               : 'text-foreground'
                         )}
                         style={getCellStyle(pct)}
@@ -142,9 +142,9 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                     className={cn(
                       'rounded-md px-2 py-1 text-sm tabular-nums font-semibold mx-auto w-fit',
                       pct >= 50
-                        ? 'text-emerald-800 dark:text-emerald-200'
+                        ? 'text-success'
                         : pct >= 20
-                          ? 'text-emerald-700 dark:text-emerald-300'
+                          ? 'text-success'
                           : 'text-foreground'
                     )}
                     style={getCellStyle(pct)}

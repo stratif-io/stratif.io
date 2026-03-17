@@ -76,7 +76,7 @@ function ConnectionRow({ connection }: { connection: Connection }) {
           <span
             className={cn(
               'shrink-0 text-xs font-medium',
-              testResult.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+              testResult.ok ? 'text-success' : 'text-destructive'
             )}
           >
             {testResult.ok ? '✓ Connected' : '✗ Failed'}

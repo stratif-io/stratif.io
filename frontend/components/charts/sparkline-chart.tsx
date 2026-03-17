@@ -68,8 +68,8 @@ export function SparklineChart({
     }
   }, [data, width, height, showArea, showDots])
 
-  const trendColor = trend >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
-  const trendBgColor = trend >= 0 ? 'bg-emerald-500/10' : 'bg-destructive/10'
+  const trendColor = trend >= 0 ? 'text-success' : 'text-destructive'
+  const trendBgColor = trend >= 0 ? 'bg-success/10' : 'bg-destructive/10'
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     if (points.length < 2) return
@@ -224,7 +224,7 @@ export function SparklineCard({
 }: SparklineCardProps) {
   const trendColor =
     trend !== undefined && trend >= 0
-      ? 'text-emerald-600 dark:text-emerald-400'
+      ? 'text-success'
       : 'text-destructive'
 
   return (

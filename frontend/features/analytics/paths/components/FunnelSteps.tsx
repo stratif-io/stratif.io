@@ -6,7 +6,7 @@ interface FunnelStepsProps {
 }
 
 function barBg(overallRate: number) {
-  if (overallRate > 70) return 'bg-emerald-500'
+  if (overallRate > 70) return 'bg-success'
   if (overallRate > 40) return 'bg-blue-500'
   if (overallRate > 20) return 'bg-amber-500'
   return 'bg-destructive'
@@ -14,7 +14,7 @@ function barBg(overallRate: number) {
 
 function dropBadgeCn(rate: number) {
   if (rate === 0)
-    return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+    return 'bg-success/10 text-success'
   if (rate < 20) return 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400'
   if (rate < 50) return 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
   return 'bg-destructive/10 text-destructive dark:bg-destructive/20'

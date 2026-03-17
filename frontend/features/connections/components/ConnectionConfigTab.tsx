@@ -253,7 +253,7 @@ function ConnectionStringDisplay({ connId }: { connId: string }) {
           title="Copy"
         >
           {copied ? (
-            <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <Check className="h-3.5 w-3.5 text-success" />
           ) : (
             <Copy className="h-3.5 w-3.5" />
           )}
@@ -359,7 +359,7 @@ export function ConnectionConfigTab({ connection }: Props) {
             <span className="text-xs text-muted-foreground">Saving…</span>
           )}
           {update.isSuccess && !update.isPending && (
-            <span className="text-xs text-emerald-600 dark:text-emerald-400">Saved</span>
+            <span className="text-xs text-success">Saved</span>
           )}
         </div>
         <Input
@@ -400,7 +400,7 @@ export function ConnectionConfigTab({ connection }: Props) {
           Test Connection
         </Button>
         {testResult?.ok && (
-          <span className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
+          <span className="flex items-center gap-1.5 text-sm text-success">
             <CheckCircle className="h-4 w-4" />
             Connected ({testResult.db_type})
           </span>
