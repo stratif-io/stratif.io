@@ -282,7 +282,12 @@ export function EventsTable({
             <Spinner className="h-5 w-5" />
           </div>
         ) : (
-          <table className="w-full border-collapse text-sm" style={{ opacity: isFetching ? 0.6 : 1 }}>
+          <table className="w-full border-collapse text-sm" style={{ opacity: isFetching ? 0.6 : 1, tableLayout: 'fixed' }}>
+            <colgroup>
+              {table.getVisibleLeafColumns().map((col) => (
+                <col key={col.id} style={{ width: col.getSize() }} />
+              ))}
+            </colgroup>
             <thead className="sticky top-0 z-10 bg-background border-b border-border">
               {/* Sort headers */}
               {table.getHeaderGroups().map((hg) => (
@@ -293,8 +298,7 @@ export function EventsTable({
                     return (
                       <th
                         key={header.id}
-                        style={{ width: header.getSize() }}
-                        className={cn('px-3 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap', canSort && 'cursor-pointer select-none hover:text-foreground')}
+                        className={cn('px-3 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap overflow-hidden', canSort && 'cursor-pointer select-none hover:text-foreground')}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                       >
                         <span className="flex items-center gap-1">
@@ -313,7 +317,7 @@ export function EventsTable({
                     const colId = header.column.id
                     if (colId === 'user_id') {
                       return (
-                        <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1">
+                        <th key={header.id} className="px-2 py-1">
                           <input
                             type="text"
                             placeholder="Filter by user ID…"
@@ -330,7 +334,7 @@ export function EventsTable({
                     }
                     if (colId === 'event_name') {
                       return (
-                        <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1">
+                        <th key={header.id} className="px-2 py-1">
                           <select
                             value={eventNameFilter}
                             onChange={(e) => onEventNameFilterChange(e.target.value)}
@@ -348,7 +352,7 @@ export function EventsTable({
                       const active = columnFilters[colId]
                       const inputVal = dimFilterInputs[colId] ?? ''
                       return (
-                        <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1">
+                        <th key={header.id} className="px-2 py-1">
                           <div className="relative flex items-center">
                             <input
                               type="text"
@@ -382,7 +386,7 @@ export function EventsTable({
                         </th>
                       )
                     }
-                    return <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1" />
+                    return <th key={header.id} className="px-2 py-1" />
                   })}
                 </tr>
               ))}
@@ -397,7 +401,7 @@ export function EventsTable({
                     className="border-b border-border/50 hover:bg-accent/30"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} style={{ width: cell.column.getSize() }} className="px-3 overflow-hidden text-ellipsis whitespace-nowrap align-middle h-10">
+                      <td key={cell.id} className="px-3 overflow-hidden text-ellipsis whitespace-nowrap align-middle h-10">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
