@@ -68,17 +68,29 @@ function buildDimCols(fields: FilterField[], custom: CustomProperty[]): DimCol[]
 
 const ALWAYS_VISIBLE = new Set(['user_id', 'event_name', 'timestamp'])
 
-/** Default visibility: show core cols + any col that has an active column filter. */
-function defaultVisibility(dimCols: DimCol[], columnFilters: Record<string, string>): VisibilityState {
+/** Default visibility: show core cols + filter fields; hide custom properties. */
+function defaultVisibility(dimCols: DimCol[], filterFields: FilterField[]): VisibilityState {
+  const filterFieldIds = new Set(filterFields.map((f) => f.field))
   const state: VisibilityState = {}
   for (const col of dimCols) {
-    state[col.id] = col.id in columnFilters && !!columnFilters[col.id]
+    // filter fields are visible by default; custom properties are hidden
+    state[col.id] = filterFieldIds.has(col.id)
   }
   return state
 }
 
+const COL_VISIBILITY_VERSION = 'v3'
 function loadColVisibility(key: string): VisibilityState | null {
-  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) as VisibilityState : null } catch { return null }
+  try {
+    const versionKey = `${key}_ver`
+    if (localStorage.getItem(versionKey) !== COL_VISIBILITY_VERSION) {
+      localStorage.removeItem(key)
+      localStorage.setItem(versionKey, COL_VISIBILITY_VERSION)
+      return null
+    }
+    const r = localStorage.getItem(key)
+    return r ? JSON.parse(r) as VisibilityState : null
+  } catch { return null }
 }
 
 function saveColVisibility(key: string, state: VisibilityState) {
@@ -105,7 +117,7 @@ export function EventsTable({
   const [userIdInput, setUserIdInput] = useState(userIdFilter)
   const dimCols = useMemo(() => buildDimCols(filterFields, customProperties), [filterFields, customProperties])
   const [colVisibility, setColVisibility] = useState<VisibilityState>(
-    () => loadColVisibility(storageKey) ?? defaultVisibility(dimCols, columnFilters)
+    () => loadColVisibility(storageKey) ?? defaultVisibility(dimCols, filterFields)
   )
   // Per-dim-col input state for inline header filters
   const [dimFilterInputs, setDimFilterInputs] = useState<Record<string, string>>(() => ({ ...columnFilters }))
