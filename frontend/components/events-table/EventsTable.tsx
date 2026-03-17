@@ -345,34 +345,40 @@ export function EventsTable({
                     }
                     if (dimColIds.has(colId)) {
                       const active = columnFilters[colId]
-                      const inputVal = dimFilterInputs[colId] ?? ''
                       const suggestions = filterOptions[colId] ?? []
-                      const listId = `filter-list-${colId}`
+                      const isLowCardinality = suggestions.length > 0 && suggestions.length <= 25
+                      const inputVal = dimFilterInputs[colId] ?? ''
+
+                      const applyFilter = (val: string) => {
+                        if (dimDebounceRefs.current[colId]) clearTimeout(dimDebounceRefs.current[colId])
+                        if (val) onColumnFilterChange(colId, val)
+                        else onColumnFilterClear(colId)
+                      }
+
                       return (
                         <th key={header.id} className="px-2 py-1">
                           <div className="relative flex items-center">
-                            {suggestions.length > 0 && (
-                              <datalist id={listId}>
-                                {suggestions.map((v) => <option key={v} value={v} />)}
-                              </datalist>
+                            {isLowCardinality ? (
+                              <select
+                                value={active ?? ''}
+                                onChange={(e) => applyFilter(e.target.value)}
+                                className="w-full h-6 text-xs px-1 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                              >
+                                <option value="">All</option>
+                                {suggestions.map((v) => <option key={v} value={v}>{v}</option>)}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                placeholder="Filter… (Enter)"
+                                value={inputVal}
+                                onChange={(e) => setDimFilterInputs((prev) => ({ ...prev, [colId]: e.target.value }))}
+                                onKeyDown={(e) => { if (e.key === 'Enter') applyFilter(inputVal) }}
+                                onBlur={() => { if (inputVal !== (active ?? '')) applyFilter(inputVal) }}
+                                className="w-full h-6 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring pr-5"
+                              />
                             )}
-                            <input
-                              type="text"
-                              placeholder="Filter…"
-                              value={inputVal}
-                              list={suggestions.length > 0 ? listId : undefined}
-                              onChange={(e) => {
-                                const val = e.target.value
-                                setDimFilterInputs((prev) => ({ ...prev, [colId]: val }))
-                                if (dimDebounceRefs.current[colId]) clearTimeout(dimDebounceRefs.current[colId])
-                                dimDebounceRefs.current[colId] = setTimeout(() => {
-                                  if (val) onColumnFilterChange(colId, val)
-                                  else onColumnFilterClear(colId)
-                                }, 400)
-                              }}
-                              className="w-full h-6 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring pr-5"
-                            />
-                            {active && (
+                            {!isLowCardinality && active && (
                               <button
                                 className="absolute right-1 text-muted-foreground hover:text-foreground"
                                 onClick={() => {
@@ -384,7 +390,7 @@ export function EventsTable({
                                 <X size={10} />
                               </button>
                             )}
-                            {!active && <Filter size={10} className="absolute right-1.5 opacity-20 pointer-events-none" />}
+                            {!isLowCardinality && !active && <Filter size={10} className="absolute right-1.5 opacity-20 pointer-events-none" />}
                           </div>
                         </th>
                       )
