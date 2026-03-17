@@ -27,7 +27,7 @@ export function ZoneBar({
   const [dragging, setDragging] = useState<{ colId: string; from: ZoneName | 'picker' } | null>(null)
 
   const usedIds = new Set([...rowGroups, ...pivotCols, ...valueCols].map((c) => c.colId))
-  const available = leafCols.filter((c) => !usedIds.has(c.colId))
+  const available = leafCols.filter((c) => !usedIds.has(c.colId)).sort((a, b) => a.label.localeCompare(b.label))
 
   function getZone(name: ZoneName) {
     if (name === 'rowGroups') return { cols: rowGroups, setter: onRowGroupsChange, canAdd: (m: LeafMeta) => m.enableRowGroup }

@@ -70,8 +70,19 @@ export function PivotTable({
     try {
       const res = await fetchRows({ startDate, endDate, activeFilters, activeConnectionId, pivotFilters, rowGroups, pivotCols, valueCols })
       if (id !== fetchIdRef.current) return
+      function flattenFields(defs: { field?: string; children?: unknown[] }[]): string[] {
+        const out: string[] = []
+        for (const c of defs) {
+          if (c.children) out.push(...flattenFields(c.children as { field?: string; children?: unknown[] }[]))
+          else if (c.field) out.push(c.field)
+        }
+        return out
+      }
       const cols = res.columnDefs
-        ? (res.columnDefs as { field?: string }[]).map((c) => c.field ?? '').filter(Boolean)
+        ? [
+            ...rowGroups.map((c) => c.colId),
+            ...flattenFields(res.columnDefs as { field?: string; children?: unknown[] }[]),
+          ]
         : rowGroups.map((c) => c.colId).concat(valueCols.map((c) => c.colId))
       setHeaders(cols)
       setRows(res.rows)
@@ -195,11 +206,14 @@ export function PivotTable({
               : 'No data for current selection.'}
           </div>
         ) : (
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full text-sm border-collapse table-fixed">
+            <colgroup>
+              {headers.map((h) => <col key={h} style={{ width: `${100 / headers.length}%` }} />)}
+            </colgroup>
             <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
               <tr>
                 {headers.map((h) => (
-                  <th key={h} className="px-3 py-2 text-left font-medium text-xs text-muted-foreground border-b border-border whitespace-nowrap">
+                  <th key={h} className="px-3 py-2 text-left font-medium text-xs text-muted-foreground border-b border-border whitespace-nowrap overflow-hidden text-ellipsis">
                     {h}
                   </th>
                 ))}
@@ -211,11 +225,11 @@ export function PivotTable({
                 return (
                   <tr
                     key={vi.index}
-                    style={{ position: 'absolute', top: vi.start, left: 0, width: '100%', height: `${vi.size}px` }}
+                    style={{ position: 'absolute', top: vi.start, left: 0, width: '100%', height: `${vi.size}px`, display: 'flex' }}
                     className="hover:bg-muted/40 border-b border-border/50"
                   >
                     {headers.map((h) => (
-                      <td key={h} className="px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">
+                      <td key={h} className="px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis" style={{ width: `${100 / headers.length}%`, flexShrink: 0 }}>
                         {row[h] == null ? '' : String(row[h])}
                       </td>
                     ))}
