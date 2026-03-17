@@ -2,6 +2,7 @@ export { useTheme } from './use-theme'
 export { useReducedMotion } from './use-reduced-motion'
 export { useUrlSync } from './useUrlSync'
 export { useVirtualList, useInfiniteScroll } from './use-virtual-list'
+export { useDeferredLoading } from './useDeferredLoading'
 export type {
   UseVirtualListOptions,
   UseVirtualListReturn,
