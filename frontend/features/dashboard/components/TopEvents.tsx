@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useReducedMotion } from '@/hooks'
 
 export interface TopEvent {
   name: string
@@ -12,6 +13,7 @@ export interface TopEventsProps {
 }
 
 export function TopEvents({ events, loading }: TopEventsProps) {
+  const prefersReducedMotion = useReducedMotion()
   const max = events[0]?.count ?? 1
 
   return (
@@ -35,10 +37,10 @@ export function TopEvents({ events, loading }: TopEventsProps) {
           <div className="space-y-3">
             {events.map((event, idx) => (
               <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 8 }}
+                key={event.name}
+                initial={{ opacity: prefersReducedMotion ? 1 : 0, y: prefersReducedMotion ? 0 : 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: idx * 0.04 }}
+                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2, delay: idx * 0.04 }}
                 className="space-y-1"
               >
                 <div className="flex items-center justify-between gap-3">

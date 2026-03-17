@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LineChartComponent } from '@/components/charts'
+import { useReducedMotion } from '@/hooks'
 
 export interface ActivityChartProps {
   data: Array<{ day: string; events: number; users: number }>
@@ -8,6 +9,7 @@ export interface ActivityChartProps {
 }
 
 export function ActivityChart({ data, loading }: ActivityChartProps) {
+  const prefersReducedMotion = useReducedMotion()
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
@@ -18,9 +20,9 @@ export function ActivityChart({ data, loading }: ActivityChartProps) {
           <div className="h-[300px] rounded-md bg-muted opacity-30" />
         ) : (
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
           >
             <LineChartComponent
               data={data}
