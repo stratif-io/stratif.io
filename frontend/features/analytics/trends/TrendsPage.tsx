@@ -17,8 +17,6 @@ import { useAppStore } from '@/stores'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendChart } from './components/TrendChart'
 import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
-import { useDeferredLoading, useReducedMotion } from '@/hooks'
-import { motion } from 'framer-motion'
 
 export function TrendsPage() {
   const { dateRange } = useAppStore()
@@ -32,18 +30,10 @@ export function TrendsPage() {
     granularity,
   })
 
-  const showSkeleton = useDeferredLoading(isLoading)
-  const prefersReducedMotion = useReducedMotion()
-
   if (isError) return <QueryError error={error} />
 
   return (
     <PageTransition>
-      <motion.div
-        initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
-        animate={{ opacity: 1 }}
-        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
-      >
       <div className={SPACING.page}>
         <div className={SPACING.section}>
           <span className={TYPOGRAPHY.pageLabel}>Trend Analysis</span>
@@ -132,7 +122,7 @@ export function TrendsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {showSkeleton ? (
+              {isLoading ? (
                 <ChartSkeleton height="h-[300px] sm:h-[380px] lg:h-[450px]" />
               ) : trendData.length === 0 ? (
                 <EmptyState
@@ -155,7 +145,6 @@ export function TrendsPage() {
           </Card>
         </div>
       </div>
-      </motion.div>
     </PageTransition>
   )
 }

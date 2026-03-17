@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { MetricCardSkeleton } from '@/components/ui/loading-state'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { HelpCircle } from 'lucide-react'
 import { useCountUp } from '@/hooks/useCountUp'
@@ -13,7 +14,7 @@ export interface MetricCardProps {
   change: number
   changeType: 'positive' | 'negative' | 'neutral'
   description: string
-  subtitle?: string
+  subtitle?: string // derived ratio shown below the metric
   loading?: boolean
   tooltip?: string
   className?: string
@@ -31,27 +32,15 @@ export function MetricCard({
   tooltip,
   className,
 }: MetricCardProps) {
-  // Only pass numericValue to count-up when not loading.
-  // This ensures the animation fires exactly once: when data arrives.
-  const animatedValue = useCountUp(loading ? 0 : (numericValue ?? 0), {
+  const animatedValue = useCountUp(numericValue ?? 0, {
     duration: 1000,
     decimals: 0,
   })
 
-  const displayValue = loading
-    ? '—'
-    : numericValue !== undefined
-      ? animatedValue.toLocaleString()
-      : value
+  const displayValue = numericValue !== undefined ? animatedValue.toLocaleString() : value
 
   return (
-    <Card
-      hover="lift"
-      className={cn(
-        'motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-300',
-        className,
-      )}
-    >
+    <Card hover="lift" className={cn('motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-300', className)}>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-1.5">
           <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
@@ -68,44 +57,43 @@ export function MetricCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div
-          className={cn(
-            'space-y-1 transition-opacity duration-300',
-            loading ? 'opacity-50' : 'opacity-100',
-          )}
-        >
-          <div className={TYPOGRAPHY.metricLg}>{displayValue}</div>
-          <div className="flex items-center gap-2">
-            {!loading && (changeType !== 'neutral' || change !== 0) && (
-              <Badge
-                variant={
-                  changeType === 'positive'
-                    ? 'default'
-                    : changeType === 'negative'
-                      ? 'destructive'
-                      : 'secondary'
-                }
-                className="text-xs font-semibold"
-              >
-                <span aria-hidden="true">
-                  {changeType === 'positive' ? '↑' : changeType === 'negative' ? '↓' : '−'}
-                </span>
-                <span className="sr-only">
-                  {changeType === 'positive'
-                    ? 'increased by'
-                    : changeType === 'negative'
-                      ? 'decreased by'
-                      : 'no change'}
-                </span>{' '}
-                {Math.abs(change)}%
-              </Badge>
+        {loading ? (
+          <MetricCardSkeleton />
+        ) : (
+          <div className="space-y-1">
+            <div className={TYPOGRAPHY.metricLg}>{displayValue}</div>
+            <div className="flex items-center gap-2">
+              {(changeType !== 'neutral' || change !== 0) && (
+                <Badge
+                  variant={
+                    changeType === 'positive'
+                      ? 'default'
+                      : changeType === 'negative'
+                        ? 'destructive'
+                        : 'secondary'
+                  }
+                  className="text-xs font-semibold"
+                >
+                  <span aria-hidden="true">
+                    {changeType === 'positive' ? '↑' : changeType === 'negative' ? '↓' : '−'}
+                  </span>
+                  <span className="sr-only">
+                    {changeType === 'positive'
+                      ? 'increased by'
+                      : changeType === 'negative'
+                        ? 'decreased by'
+                        : 'no change'}
+                  </span>{' '}
+                  {Math.abs(change)}%
+                </Badge>
+              )}
+              <p className="text-xs text-muted-foreground">{description}</p>
+            </div>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground/70 tabular-nums">{subtitle}</p>
             )}
-            <p className="text-xs text-muted-foreground">{description}</p>
           </div>
-          {!loading && subtitle && (
-            <p className="text-xs text-muted-foreground/70 tabular-nums">{subtitle}</p>
-          )}
-        </div>
+        )}
       </CardContent>
     </Card>
   )

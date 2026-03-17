@@ -14,8 +14,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Clock, Users } from 'lucide-react'
-import { useDeferredLoading, useReducedMotion } from '@/hooks'
-import { motion } from 'framer-motion'
 
 export default function SessionsPage() {
   const { dateRange } = useAppStore()
@@ -25,14 +23,11 @@ export default function SessionsPage() {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
 
-  const { data: sessionsData, isLoading: isLoadingRaw } = useQuery({
+  const { data: sessionsData, isLoading } = useQuery({
     queryKey: ['sessions', page, startDate, endDate],
     queryFn: () => fetchSessions({ limit, offset: (page - 1) * limit }),
     staleTime: 5 * 60 * 1000,
   })
-
-  const isLoading = useDeferredLoading(isLoadingRaw)
-  const prefersReducedMotion = useReducedMotion()
 
   const sessions = sessionsData?.data || []
   const totalSessions = sessionsData?.total || 0
@@ -45,12 +40,7 @@ export default function SessionsPage() {
   }
 
   return (
-    <motion.div
-      className="space-y-8"
-      initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
-      animate={{ opacity: 1 }}
-      transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
-    >
+    <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Sessions</h1>
         <p className="text-muted-foreground mt-1">Browse individual user sessions.</p>
@@ -128,6 +118,6 @@ export default function SessionsPage() {
           )}
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   )
 }

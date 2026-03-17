@@ -15,8 +15,6 @@ import { SPACING } from '@/lib/constants'
 import { EventsTable } from './components/EventsTable'
 import { UserTimelineModal } from './components/UserTimelineModal'
 import type { RawEvent } from './components/EventsTable'
-import { useReducedMotion } from '@/hooks'
-import { motion } from 'framer-motion'
 
 export function EventsPage() {
   const { dateRange, activeFilters, activeConnectionId } = useAppStore()
@@ -130,17 +128,10 @@ export function EventsPage() {
     setPage(1)
   }, [])
 
-  const prefersReducedMotion = useReducedMotion()
-
   if (isError) return <QueryError error={error} />
 
   return (
     <PageTransition>
-      <motion.div
-        initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
-        animate={{ opacity: 1 }}
-        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
-      >
       <div className={SPACING.page}>
         <Card>
           <CardContent className="p-0">
@@ -179,7 +170,6 @@ export function EventsPage() {
         open={timelineUserId !== null}
         onClose={() => setTimelineUserId(null)}
       />
-      </motion.div>
     </PageTransition>
   )
 }

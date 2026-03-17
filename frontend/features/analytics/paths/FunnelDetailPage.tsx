@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import {
   Select,
   SelectContent,
@@ -32,7 +31,6 @@ import { fetchPathFunnel, fetchEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import { SPACING, TYPOGRAPHY, FILTER_TRIGGER_CLASS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
-import { useDeferredLoading, useReducedMotion } from '@/hooks'
 
 const MAX_STEPS = 10
 
@@ -44,7 +42,6 @@ export function FunnelDetailPage() {
   const { dateRange, setDateRange, activeFilters, activeConnectionId } = useAppStore()
   const [methodologyOpen, setMethodologyOpen] = useState(false)
   const [copied, setCopied] = useState(false)
-  const prefersReducedMotion = useReducedMotion()
 
   const eventsParam = searchParams.get('events') || ''
   const initialEvents = eventsParam.split(',').filter(Boolean)
@@ -62,7 +59,6 @@ export function FunnelDetailPage() {
   const { data: eventsResponse } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
-    staleTime: 5 * 60 * 1000,
   })
   const availableEvents = eventsResponse?.events || []
 
@@ -144,7 +140,6 @@ export function FunnelDetailPage() {
   })
 
   const steps = funnelData?.data || []
-  const showSkeleton = useDeferredLoading(isLoading)
 
   const copyPermalink = async () => {
     await navigator.clipboard.writeText(window.location.href)
@@ -163,11 +158,6 @@ export function FunnelDetailPage() {
 
   return (
     <PageTransition>
-      <motion.div
-        initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
-        animate={{ opacity: 1 }}
-        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
-      >
         <div className={SPACING.page}>
           <div className={SPACING.section}>
             {/* Header */}
@@ -336,7 +326,7 @@ export function FunnelDetailPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {showSkeleton ? (
+                    {isLoading ? (
                       <div className="space-y-3">
                         {events.map((_, i) => (
                           <div key={i} className="space-y-2 p-4 rounded-xl border">
@@ -395,7 +385,6 @@ export function FunnelDetailPage() {
             )}
           </div>
         </div>
-      </motion.div>
     </PageTransition>
   )
 }

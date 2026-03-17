@@ -17,8 +17,6 @@ import { LoadingState } from '@/components/ui/loading-state'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
-import { useDeferredLoading, useReducedMotion } from '@/hooks'
-import { motion } from 'framer-motion'
 
 export function PathsPage() {
   const { dateRange, selectedEvent, setSelectedEvent } = useAppStore()
@@ -31,9 +29,6 @@ export function PathsPage() {
     deviceType,
   })
 
-  const showLoading = useDeferredLoading(isLoading || eventsLoading)
-  const prefersReducedMotion = useReducedMotion()
-
   const handleTargetEventChange = (val: string) => {
     setTargetEvent(val)
     setSelectedEvent(val)
@@ -43,11 +38,6 @@ export function PathsPage() {
 
   return (
     <PageTransition>
-      <motion.div
-        initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
-        animate={{ opacity: 1 }}
-        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
-      >
       <div className={SPACING.page}>
         <div className={SPACING.section}>
           <span className={TYPOGRAPHY.pageLabel}>Path Analysis</span>
@@ -88,7 +78,7 @@ export function PathsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {showLoading ? (
+              {isLoading || eventsLoading ? (
                 <LoadingState message="Analyzing paths…" />
               ) : pathData.length === 0 ? (
                 <EmptyState
@@ -113,7 +103,6 @@ export function PathsPage() {
           </Card>
         </div>
       </div>
-      </motion.div>
     </PageTransition>
   )
 }
