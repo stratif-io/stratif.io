@@ -4,6 +4,13 @@ from __future__ import annotations
 import duckdb
 import pytest
 
+from backend.backends.duckdb import DuckDBBackend
+from backend.backends.sqlite import SQLiteBackend
+from backend.backends.postgresql import PostgreSQLBackend
+from backend.backends.clickhouse import ClickHouseBackend
+from backend.backends.snowflake import SnowflakeBackend
+from backend.backends.databricks import DatabricksBackend
+
 _SEED_SQL = """
 CREATE TABLE IF NOT EXISTS test_events (
     user_id    VARCHAR,
@@ -16,21 +23,6 @@ INSERT INTO test_events VALUES
     ('u1', '2024-01-01 10:05:00', 'click',     '{"element": "btn"}'),
     ('u2', '2024-01-02 09:00:00', 'page_view', '{"page": "/about"}');
 """
-
-
-def _is_docker_available() -> bool:
-    try:
-        import docker
-        docker.from_env().ping()
-        return True
-    except Exception:
-        return False
-
-
-_docker_available = pytest.mark.skipif(
-    not _is_docker_available(),
-    reason="Docker not available",
-)
 
 
 # ── DuckDB ───────────────────────────────────────────────────────────────────
@@ -165,13 +157,6 @@ def databricks_conn():
 
 
 # ── Parametrized fixture ──────────────────────────────────────────────────────
-
-from backend.backends.duckdb import DuckDBBackend
-from backend.backends.sqlite import SQLiteBackend
-from backend.backends.postgresql import PostgreSQLBackend
-from backend.backends.clickhouse import ClickHouseBackend
-from backend.backends.snowflake import SnowflakeBackend
-from backend.backends.databricks import DatabricksBackend
 
 
 @pytest.fixture(scope="session")

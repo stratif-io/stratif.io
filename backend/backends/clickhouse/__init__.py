@@ -59,8 +59,8 @@ class ClickHouseBackend:
 
     def is_connection_error(self, exc: Exception) -> bool:
         try:
-            from clickhouse_connect.driver.exceptions import DatabaseError, OperationalError
-            return isinstance(exc, (DatabaseError, OperationalError))
+            from clickhouse_connect.driver.exceptions import DatabaseError
+            return isinstance(exc, DatabaseError)
         except ImportError:
             return False
 
