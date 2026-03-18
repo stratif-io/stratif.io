@@ -44,3 +44,4 @@ stratifio_product.sqlite
 video/node_modules/
 video/out/
 video/public/*.webm
+video/public/*.mp3
