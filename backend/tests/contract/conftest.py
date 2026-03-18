@@ -57,7 +57,6 @@ def sqlite_conn():
 # ── PostgreSQL (testcontainers) ───────────────────────────────────────────────
 
 @pytest.fixture(scope="session")
-@_docker_available
 def postgresql_conn():
     from testcontainers.postgres import PostgresContainer
     with PostgresContainer("postgres:16") as pg:
@@ -84,7 +83,6 @@ def postgresql_conn():
 # ── ClickHouse (testcontainers) ───────────────────────────────────────────────
 
 @pytest.fixture(scope="session")
-@_docker_available
 def clickhouse_conn():
     from testcontainers.clickhouse import ClickHouseContainer
     with ClickHouseContainer("clickhouse/clickhouse-server:24") as ch:
