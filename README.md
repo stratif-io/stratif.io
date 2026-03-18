@@ -51,12 +51,14 @@ Sample analytics data is seeded automatically into `/data/sample.duckdb` on firs
 
 ## Supported Databases
 
-| Database       | Notes                       |
-| -------------- | --------------------------- |
-| **DuckDB**     | Local file or S3-backed     |
-| **SQLite**     | Local file                  |
-| **PostgreSQL** | Connection string           |
-| **Databricks** | SQL warehouse via HTTP path |
+| Database          | Notes                          |
+| ----------------- | ------------------------------ |
+| **DuckDB**        | Local file or S3-backed        |
+| **SQLite**        | Local file                     |
+| **PostgreSQL**    | Connection string              |
+| **Databricks**    | SQL warehouse via HTTP path    |
+| **Snowflake**     | Account identifier + warehouse |
+| **ClickHouse**    | Host/port, optional TLS        |
 
 ---
 
