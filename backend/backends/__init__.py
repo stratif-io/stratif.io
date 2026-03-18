@@ -27,3 +27,9 @@ _register("postgresql", PostgreSQLBackend())
 
 from backend.backends.databricks import DatabricksBackend  # noqa: E402
 _register("databricks", DatabricksBackend())
+
+from backend.backends.snowflake import SnowflakeBackend  # noqa: E402
+_register("snowflake", SnowflakeBackend())
+
+from backend.backends.clickhouse import ClickHouseBackend  # noqa: E402
+_register("clickhouse", ClickHouseBackend())
