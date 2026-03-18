@@ -121,9 +121,10 @@ function PlainInput({ id, name, placeholder, initialValue, type = 'text' }: Plai
 interface CredentialFieldsProps {
   dbType: DbType
   fields: Record<string, string | null>
+  onCheckboxChange?: () => void
 }
 
-function CredentialFields({ dbType, fields }: CredentialFieldsProps) {
+function CredentialFields({ dbType, fields, onCheckboxChange }: CredentialFieldsProps) {
   const f = fields
 
   switch (dbType) {
@@ -221,6 +222,87 @@ function CredentialFields({ dbType, fields }: CredentialFieldsProps) {
           </div>
         </>
       )
+
+    case 'snowflake':
+      return (
+        <>
+          <div className="space-y-1.5">
+            <Label htmlFor="account">Account</Label>
+            <PlainInput id="account" name="account" placeholder="xy12345.us-east-1" initialValue={f.account ?? null} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="user">User</Label>
+              <PlainInput id="user" name="user" placeholder="" initialValue={f.user ?? null} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <MaskedInput id="password" name="password" placeholder="••••••••" initialValue={f.password ?? null} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="warehouse">Warehouse</Label>
+            <PlainInput id="warehouse" name="warehouse" placeholder="COMPUTE_WH" initialValue={f.warehouse ?? null} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="database">Database</Label>
+              <PlainInput id="database" name="database" placeholder="" initialValue={f.database ?? null} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="schema">Schema</Label>
+              <PlainInput id="schema" name="schema" placeholder="" initialValue={f.schema ?? null} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="role">Role <span className="text-muted-foreground">(optional)</span></Label>
+            <PlainInput id="role" name="role" placeholder="ACCOUNTADMIN" initialValue={f.role ?? null} />
+          </div>
+        </>
+      )
+
+    case 'clickhouse': {
+      const isSecure = f.secure !== 'false'
+      return (
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="host">Host</Label>
+              <PlainInput id="host" name="host" placeholder="" initialValue={f.host ?? null} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="port">Port</Label>
+              <PlainInput id="port" name="port" placeholder="8443" type="number" initialValue={f.port ?? null} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="database">Database</Label>
+            <PlainInput id="database" name="database" placeholder="" initialValue={f.database ?? null} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="user">User</Label>
+              <PlainInput id="user" name="user" placeholder="" initialValue={f.user ?? null} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <MaskedInput id="password" name="password" placeholder="••••••••" initialValue={f.password ?? null} />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="secure"
+              name="secure"
+              type="checkbox"
+              defaultChecked={isSecure}
+              className="h-4 w-4"
+              onChange={onCheckboxChange}
+            />
+            <Label htmlFor="secure">Use TLS (secure)</Label>
+          </div>
+        </>
+      )
+    }
   }
 }
 
@@ -325,6 +407,30 @@ export function ConnectionConfigTab({ connection }: Props) {
           http_path: get('http_path'),
           token: get('token'),
         }
+      case 'snowflake': {
+        const role = get('role')
+        const creds: Record<string, unknown> = {
+          account: get('account'),
+          user: get('user'),
+          password: get('password'),
+          warehouse: get('warehouse'),
+          database: get('database'),
+          schema: get('schema'),
+        }
+        if (role) creds.role = role
+        return creds
+      }
+      case 'clickhouse': {
+        const secureEl = form.elements.namedItem('secure') as HTMLInputElement | null
+        return {
+          host: get('host'),
+          port: parseInt(get('port')) || 8443,
+          database: get('database'),
+          user: get('user'),
+          password: get('password'),
+          secure: secureEl?.checked ?? true,
+        }
+      }
     }
   }
 
@@ -383,7 +489,7 @@ export function ConnectionConfigTab({ connection }: Props) {
           </p>
         </div>
         <div className="rounded-md border p-4 space-y-3">
-          <CredentialFields dbType={connection.db_type} fields={fields} />
+          <CredentialFields dbType={connection.db_type} fields={fields} onCheckboxChange={saveCredentials} />
         </div>
       </div>
 
