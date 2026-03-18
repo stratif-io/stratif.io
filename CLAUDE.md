@@ -106,15 +106,7 @@ stratif.io stores encrypted credentials for client analytics databases. Security
 
 ## Git Worktrees
 
-Feature work should be done in an isolated worktree, not directly on `main`. Use `.worktrees/` (already in `.gitignore`) as the worktree directory:
-
-```bash
-git worktree add .worktrees/<branch-name> -b <branch-name>
-cd .worktrees/<branch-name>
-npm install && uv sync
-```
-
-When done, merge or create a PR, then clean up: `git worktree remove .worktrees/<branch-name>`.
+Feature work should be done in an isolated worktree, not directly on `main`. Use the `superpowers:using-git-worktrees` skill to set one up — it handles directory selection, `.gitignore` verification, dependency install, and baseline test check automatically. The `.worktrees/` directory is already in `.gitignore`.
 
 ## Adding a Feature
 
