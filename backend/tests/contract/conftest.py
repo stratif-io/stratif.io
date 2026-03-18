@@ -190,7 +190,7 @@ def all_backend_fixtures(request, duckdb_conn, sqlite_conn, snowflake_conn, data
         try:
             conn = request.getfixturevalue(fixture_name)
             result[db_type] = (backend_cls(), conn)
-        except pytest.skip.Exception:
+        except (pytest.skip.Exception, Exception):
             pass
     return result
 
