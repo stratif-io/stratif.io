@@ -24,6 +24,8 @@ const DB_TYPES: { value: DbType; label: string }[] = [
   { value: 'postgresql', label: 'PostgreSQL' },
   { value: 'databricks', label: 'Databricks' },
   { value: 'sqlite', label: 'SQLite' },
+  { value: 'snowflake', label: 'Snowflake' },
+  { value: 'clickhouse', label: 'ClickHouse' },
 ]
 
 function CredentialFields({ dbType }: { dbType: DbType }) {
@@ -92,6 +94,76 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
           </div>
         </div>
       )
+    case 'snowflake':
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="account">Account</Label>
+            <Input id="account" name="account" placeholder="xy12345.us-east-1" required />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="user">User</Label>
+              <Input id="user" name="user" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" name="password" type="password" placeholder="••••••••" required />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="warehouse">Warehouse</Label>
+            <Input id="warehouse" name="warehouse" placeholder="COMPUTE_WH" required />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="database">Database</Label>
+              <Input id="database" name="database" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="schema">Schema</Label>
+              <Input id="schema" name="schema" required />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="role">Role <span className="text-muted-foreground">(optional)</span></Label>
+            <Input id="role" name="role" placeholder="ACCOUNTADMIN" />
+          </div>
+        </div>
+      )
+    case 'clickhouse':
+      return (
+        <div className="space-y-3">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="host">Host</Label>
+              <Input id="host" name="host" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="port">Port</Label>
+              <Input id="port" name="port" placeholder="8443" type="number" min={1} max={65535} required />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="database">Database</Label>
+            <Input id="database" name="database" required />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="user">User</Label>
+              <Input id="user" name="user" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" name="password" type="password" placeholder="••••••••" required />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input id="secure" name="secure" type="checkbox" defaultChecked className="h-4 w-4" />
+            <Label htmlFor="secure">Use TLS (secure)</Label>
+          </div>
+        </div>
+      )
   }
 }
 
@@ -118,6 +190,30 @@ function buildCredentials(dbType: DbType, form: HTMLFormElement): Record<string,
         http_path: data.get('http_path') as string,
         token: data.get('token') as string,
       }
+    case 'snowflake': {
+      const role = data.get('role') as string
+      const creds: Record<string, unknown> = {
+        account: data.get('account') as string,
+        user: data.get('user') as string,
+        password: data.get('password') as string,
+        warehouse: data.get('warehouse') as string,
+        database: data.get('database') as string,
+        schema: data.get('schema') as string,
+      }
+      if (role) creds.role = role
+      return creds
+    }
+    case 'clickhouse': {
+      const secureEl = form.elements.namedItem('secure') as HTMLInputElement | null
+      return {
+        host: data.get('host') as string,
+        port: parseInt(data.get('port') as string) || 8443,
+        database: data.get('database') as string,
+        user: data.get('user') as string,
+        password: data.get('password') as string,
+        secure: secureEl?.checked ?? true,
+      }
+    }
   }
 }
 
