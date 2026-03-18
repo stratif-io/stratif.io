@@ -104,6 +104,18 @@ stratif.io stores encrypted credentials for client analytics databases. Security
 - **Formatting**: Prettier — single quotes, 2-space indent, 100 char width, trailing commas
 - **Backend config**: Environment variables prefixed with `STRATIFIO_` (via pydantic-settings in `stratifio/config.py`)
 
+## Git Worktrees
+
+Feature work should be done in an isolated worktree, not directly on `main`. Use `.worktrees/` (already in `.gitignore`) as the worktree directory:
+
+```bash
+git worktree add .worktrees/<branch-name> -b <branch-name>
+cd .worktrees/<branch-name>
+npm install && uv sync
+```
+
+When done, merge or create a PR, then clean up: `git worktree remove .worktrees/<branch-name>`.
+
 ## Adding a Feature
 
 1. Create `src/features/<feature>/` with `components/` and `hooks/` subdirectories
