@@ -12,7 +12,7 @@ The original OSS/SaaS split plan removed multi-connection management and replace
 Restore multi-connection management (Option A — minimal diff):
 
 - Drop `users` table and `user_id` from all connection tables
-- Keep credential encryption (Fernet, requires `OPENFLOW_ENCRYPTION_KEY`)
+- Keep credential encryption (Fernet, requires `STRATIFIO_ENCRYPTION_KEY`)
 - No auth guard on connections API — dashboard is public/unprotected
 - `get_analytics_db` resolves by `connection_id` query param → first connection → 503
 
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS connection_filter_configs (
 ### Config (`backend/config.py`)
 
 Add:
-- `product_db_path: str = "./openflow_product.sqlite"`
+- `product_db_path: str = "./stratifio_product.sqlite"`
 - `encryption_key: str = ""` (optional; warn if empty but don't crash)
 
 ### Files to restore
@@ -105,8 +105,8 @@ async def get_analytics_db(connection_id: str | None = Query(None)):
 ## Configuration
 
 ```env
-OPENFLOW_ENCRYPTION_KEY=<openssl rand -base64 32>
-OPENFLOW_PRODUCT_DB_PATH=./openflow_product.sqlite
+STRATIFIO_ENCRYPTION_KEY=<openssl rand -base64 32>
+STRATIFIO_PRODUCT_DB_PATH=./stratifio_product.sqlite
 ```
 
-`OPENFLOW_ENCRYPTION_KEY` is required to store credentials. If not set, the server logs a warning and connection creation will fail gracefully.
+`STRATIFIO_ENCRYPTION_KEY` is required to store credentials. If not set, the server logs a warning and connection creation will fail gracefully.

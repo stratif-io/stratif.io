@@ -103,7 +103,7 @@ class DuckDBSeeder(BaseSeeder):
             return stats
         else:
             raise ValueError(
-                "db_path must be provided or set via OPENFLOW_DB_PATH environment variable"
+                "db_path must be provided or set via STRATIFIO_DB_PATH environment variable"
             )
 
 

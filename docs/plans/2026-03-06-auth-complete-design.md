@@ -25,7 +25,7 @@ Extend the existing JWT + Google OAuth auth system with:
 
 ## Database Changes
 
-Two migrations added to `openflow/product_db/migrations.py`:
+Two migrations added to `stratifio/product_db/migrations.py`:
 
 ```sql
 -- Migration 003
@@ -48,16 +48,16 @@ Google OAuth upsert sets `email_verified = 1` at creation time.
 
 ## Email Service
 
-**File:** `openflow/services/email_service.py`
+**File:** `stratifio/services/email_service.py`
 
 SMTP wrapper using Python's `smtplib`. Config:
 
 ```
-OPENFLOW_SMTP_HOST      smtp host (e.g. smtp.gmail.com)
-OPENFLOW_SMTP_PORT      default 587 (STARTTLS)
-OPENFLOW_SMTP_USER      login username
-OPENFLOW_SMTP_PASSWORD  login password / app password
-OPENFLOW_SMTP_FROM      display name + address (e.g. "OpenFlow <noreply@example.com>")
+STRATIFIO_SMTP_HOST      smtp host (e.g. smtp.gmail.com)
+STRATIFIO_SMTP_PORT      default 587 (STARTTLS)
+STRATIFIO_SMTP_USER      login username
+STRATIFIO_SMTP_PASSWORD  login password / app password
+STRATIFIO_SMTP_FROM      display name + address (e.g. "stratif.io <noreply@example.com>")
 ```
 
 Behavior:
@@ -73,7 +73,7 @@ Two templates (plain HTML strings in the service):
 
 ## Backend API
 
-All endpoints in `openflow/api/auth.py`. New endpoints:
+All endpoints in `stratifio/api/auth.py`. New endpoints:
 
 ### POST `/api/auth/forgot-password`
 - Body: `{ email: str }`
@@ -120,14 +120,14 @@ All endpoints in `openflow/api/auth.py`. New endpoints:
 
 ## Config Changes
 
-Add to `openflow/config.py`:
+Add to `stratifio/config.py`:
 
 ```python
 smtp_host: str | None = None
 smtp_port: int = 587
 smtp_user: str | None = None
 smtp_password: str | None = None
-smtp_from: str = "OpenFlow <noreply@openflow.app>"
+smtp_from: str = "stratif.io <noreply@stratifio.app>"
 ```
 
 ---
@@ -167,7 +167,7 @@ smtp_from: str = "OpenFlow <noreply@openflow.app>"
 | Weak passwords | Minimum 8 chars enforced on backend |
 | Google users without password | `change-password` detects `password_hash IS NULL`, skips current_password check |
 | Token value in logs | Never logged; only user_id is logged |
-| HTTPS links in emails | Links use `OPENFLOW_API_URL` (production env var) |
+| HTTPS links in emails | Links use `STRATIFIO_API_URL` (production env var) |
 
 ---
 

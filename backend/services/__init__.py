@@ -1,4 +1,4 @@
-"""Services package for OpenFlow Analytics."""
+"""Services package for stratif.io Analytics."""
 
 from . import sql_builder
 from .connection_executor import AnalyticsDatabase, get_analytics_db

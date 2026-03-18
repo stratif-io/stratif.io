@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Split the current monolithic OpenFlow repo into a public OSS repo (self-hostable analytics dashboard) and a private SaaS repo (auth + multi-tenancy wrapper).
+**Goal:** Split the current monolithic stratif.io repo into a public OSS repo (self-hostable analytics dashboard) and a private SaaS repo (auth + multi-tenancy wrapper).
 
-**Architecture:** The current repo becomes the OSS repo. Auth code is stripped out and replaced with a simple API key. The frontend is restructured to export `<OpenFlowDashboard>` as an npm package (`@openflow/core`). The backend is restructured to export `create_router()` as a PyPI package (`openflow-core`). A separate `openflow-saas` repo will be created manually after this plan completes.
+**Architecture:** The current repo becomes the OSS repo. Auth code is stripped out and replaced with a simple API key. The frontend is restructured to export `<stratif.ioDashboard>` as an npm package (`@stratifio/core`). The backend is restructured to export `create_router()` as a PyPI package (`stratifio-core`). A separate `stratifio-saas` repo will be created manually after this plan completes.
 
 **Tech Stack:** React 18, Vite, FastAPI, DuckDB, Docker Compose, npm, PyPI (via uv/hatch)
 
@@ -12,10 +12,10 @@
 
 ## Overview of changes to this repo
 
-1. Rename `src/` → `frontend/`, `openflow/` → `backend/`
+1. Rename `src/` → `frontend/`, `stratifio/` → `backend/`
 2. Remove all auth code (frontend + backend)
 3. Replace multi-tenant DB connection system with single env-var config
-4. Add `<OpenFlowDashboard>` root component export
+4. Add `<stratif.ioDashboard>` root component export
 5. Add `create_router()` factory export to backend
 6. Update build tooling (Vite, pyproject.toml) for new structure
 7. Add `docker-compose.yml` for self-hosting
@@ -23,11 +23,11 @@
 
 ---
 
-## Task 1: Rename directories — `src/` → `frontend/`, `openflow/` → `backend/`
+## Task 1: Rename directories — `src/` → `frontend/`, `stratifio/` → `backend/`
 
 **Files:**
 - Rename: `src/` → `frontend/`
-- Rename: `openflow/` → `backend/`
+- Rename: `stratifio/` → `backend/`
 - Modify: `vite.config.ts`
 - Modify: `tsconfig.json`
 - Modify: `tsconfig.node.json`
@@ -42,7 +42,7 @@
 
 ```bash
 mv src frontend
-mv openflow backend
+mv stratifio backend
 ```
 
 **Step 2: Update `vite.config.ts`**
@@ -98,7 +98,7 @@ Change script src from `/src/main.tsx` to `/frontend/main.tsx`:
 
 **Step 5: Update `pyproject.toml`**
 
-Change all `openflow.*` references to `backend.*`:
+Change all `stratifio.*` references to `backend.*`:
 
 ```toml
 [project.scripts]
@@ -107,7 +107,7 @@ seed-duckdb = "seeders.seeder_duckdb:main"
 seed-sqlite = "seeders.seeder_sqlite:main"
 ```
 
-Also update any package discovery config to use `backend` instead of `openflow`.
+Also update any package discovery config to use `backend` instead of `stratifio`.
 
 **Step 6: Update `vitest.config.ts`**
 
@@ -148,7 +148,7 @@ Expected: `ok`
 
 ```bash
 git add -A
-git commit -m "refactor: rename src/ → frontend/, openflow/ → backend/"
+git commit -m "refactor: rename src/ → frontend/, stratifio/ → backend/"
 ```
 
 ---
@@ -216,7 +216,7 @@ from pydantic import field_validator
 
 
 class Settings(BaseSettings):
-    model_config = {"env_prefix": "OPENFLOW_", "extra": "ignore"}
+    model_config = {"env_prefix": "STRATIFIO_", "extra": "ignore"}
 
     # Analytics DB (single connection)
     db_url: str = "duckdb:///./analytics.duckdb"
@@ -268,7 +268,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="OpenFlow Analytics",
+    title="stratif.io Analytics",
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
     openapi_url="/openapi.json" if settings.debug else None,
@@ -552,7 +552,7 @@ git commit -m "feat: remove auth from frontend, dashboard is always accessible"
 
 ---
 
-## Task 5: Export `<OpenFlowDashboard>` root component
+## Task 5: Export `<stratif.ioDashboard>` root component
 
 **Files:**
 - Modify: `frontend/main.tsx` — keep as app entry point (unchanged for self-hosting)
@@ -563,8 +563,8 @@ git commit -m "feat: remove auth from frontend, dashboard is always accessible"
 
 ```ts
 // frontend/index.ts
-// Package entry point for @openflow/core consumers
-export { default as OpenFlowDashboard } from './App'
+// Package entry point for @stratifio/core consumers
+export { default as stratif.ioDashboard } from './App'
 ```
 
 **Step 2: Update `package.json`**
@@ -573,9 +573,9 @@ Add `exports` and `main` fields so the package is consumable:
 
 ```json
 {
-  "name": "@openflow/core",
+  "name": "@stratifio/core",
   "version": "0.1.0",
-  "description": "OpenFlow Analytics — open source analytics dashboard",
+  "description": "stratif.io Analytics — open source analytics dashboard",
   "main": "./frontend/index.ts",
   "exports": {
     ".": "./frontend/index.ts"
@@ -600,7 +600,7 @@ Expected: Build succeeds. The `dist/` contains the compiled output.
 
 ```bash
 git add frontend/index.ts package.json
-git commit -m "feat: export OpenFlowDashboard component as @openflow/core package"
+git commit -m "feat: export stratif.ioDashboard component as @stratifio/core package"
 ```
 
 ---
@@ -621,7 +621,7 @@ from fastapi import FastAPI
 
 def create_router(db_url: str | None = None, db_type: str | None = None) -> FastAPI:
     """
-    Create an OpenFlow analytics FastAPI app.
+    Create an stratif.io analytics FastAPI app.
 
     Args:
         db_url: Override the DB URL (e.g. for multi-tenant use cases).
@@ -637,7 +637,7 @@ def create_router(db_url: str | None = None, db_type: str | None = None) -> Fast
 
     from backend.api import trend, retention, events, paths, conversion, pivot, sessions, ws
 
-    router_app = FastAPI(title="OpenFlow Analytics")
+    router_app = FastAPI(title="stratif.io Analytics")
     router_app.include_router(trend.router, prefix="/api")
     router_app.include_router(retention.router, prefix="/api")
     router_app.include_router(events.router, prefix="/api")
@@ -685,9 +685,9 @@ git commit -m "feat: export create_router() factory for SaaS embedding"
 
 ```toml
 [project]
-name = "openflow-core"
+name = "stratifio-core"
 version = "0.1.0"
-description = "OpenFlow Analytics — open source self-hostable analytics dashboard backend"
+description = "stratif.io Analytics — open source self-hostable analytics dashboard backend"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
@@ -723,7 +723,7 @@ Expected: `ok`
 
 ```bash
 git add pyproject.toml
-git commit -m "chore: update pyproject.toml for openflow-core PyPI package"
+git commit -m "chore: update pyproject.toml for stratifio-core PyPI package"
 ```
 
 ---
@@ -748,11 +748,11 @@ services:
     volumes:
       - analytics_data:/data
     environment:
-      OPENFLOW_DB_URL: duckdb:////data/analytics.duckdb
-      OPENFLOW_DB_TYPE: duckdb
-      OPENFLOW_API_KEY: ${OPENFLOW_API_KEY:-}
-      OPENFLOW_CORS_ORIGINS: ${OPENFLOW_CORS_ORIGINS:-http://localhost:8000}
-      OPENFLOW_DEBUG: "false"
+      STRATIFIO_DB_URL: duckdb:////data/analytics.duckdb
+      STRATIFIO_DB_TYPE: duckdb
+      STRATIFIO_API_KEY: ${STRATIFIO_API_KEY:-}
+      STRATIFIO_CORS_ORIGINS: ${STRATIFIO_CORS_ORIGINS:-http://localhost:8000}
+      STRATIFIO_DEBUG: "false"
     restart: unless-stopped
 
 volumes:
@@ -767,7 +767,7 @@ Read the existing Dockerfile and ensure it:
 - Serves from `backend.main:app`
 - Copies `dist/` for SPA serving
 
-Fix any path references that changed from `src/` → `frontend/` or `openflow/` → `backend/`.
+Fix any path references that changed from `src/` → `frontend/` or `stratifio/` → `backend/`.
 
 **Step 3: Test the Docker build**
 
@@ -796,7 +796,7 @@ git commit -m "feat: add docker-compose.yml for self-hosting"
 Replace the current README with OSS-focused content:
 
 ```markdown
-# OpenFlow Analytics
+# stratif.io Analytics
 
 Open source, self-hostable product analytics dashboard.
 
@@ -804,12 +804,12 @@ Open source, self-hostable product analytics dashboard.
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-org/openflow.git
-cd openflow
+git clone https://github.com/your-org/stratifio.git
+cd stratifio
 
 # Copy env file and configure
 cp .env.example .env
-# Edit .env: set OPENFLOW_DB_URL to your analytics database
+# Edit .env: set STRATIFIO_DB_URL to your analytics database
 
 # Start
 docker compose up
@@ -821,11 +821,11 @@ Open http://localhost:8000
 
 | Variable | Default | Description |
 |---|---|---|
-| `OPENFLOW_DB_URL` | `duckdb:///./analytics.duckdb` | Analytics DB URL |
-| `OPENFLOW_DB_TYPE` | `duckdb` | DB type: `duckdb`, `sqlite`, `postgres`, `databricks` |
-| `OPENFLOW_API_KEY` | _(empty)_ | API key for the dashboard (leave empty for local dev) |
-| `OPENFLOW_CORS_ORIGINS` | `http://localhost:5173` | Allowed origins |
-| `OPENFLOW_DEBUG` | `false` | Enable debug mode (shows /docs) |
+| `STRATIFIO_DB_URL` | `duckdb:///./analytics.duckdb` | Analytics DB URL |
+| `STRATIFIO_DB_TYPE` | `duckdb` | DB type: `duckdb`, `sqlite`, `postgres`, `databricks` |
+| `STRATIFIO_API_KEY` | _(empty)_ | API key for the dashboard (leave empty for local dev) |
+| `STRATIFIO_CORS_ORIGINS` | `http://localhost:5173` | Allowed origins |
+| `STRATIFIO_DEBUG` | `false` | Enable debug mode (shows /docs) |
 
 ## Development
 
@@ -842,23 +842,23 @@ uv run serve
 ### Frontend
 
 ```bash
-npm install @openflow/core
+npm install @stratifio/core
 ```
 
 ```tsx
-import { OpenFlowDashboard } from '@openflow/core'
+import { stratif.ioDashboard } from '@stratifio/core'
 
-<OpenFlowDashboard apiBaseUrl="https://api.yourapp.com" />
+<stratif.ioDashboard apiBaseUrl="https://api.yourapp.com" />
 ```
 
 ### Backend
 
 ```bash
-pip install openflow-core
+pip install stratifio-core
 ```
 
 ```python
-from openflow_core import create_router
+from stratifio_core import create_router
 
 app.include_router(
     create_router(db_url=get_db_for_current_user()),
@@ -871,11 +871,11 @@ app.include_router(
 
 ```bash
 # .env.example
-OPENFLOW_DB_URL=duckdb:///./analytics.duckdb
-OPENFLOW_DB_TYPE=duckdb
-OPENFLOW_API_KEY=
-OPENFLOW_CORS_ORIGINS=http://localhost:5173
-OPENFLOW_DEBUG=false
+STRATIFIO_DB_URL=duckdb:///./analytics.duckdb
+STRATIFIO_DB_TYPE=duckdb
+STRATIFIO_API_KEY=
+STRATIFIO_CORS_ORIGINS=http://localhost:5173
+STRATIFIO_DEBUG=false
 ```
 
 **Step 3: Commit**
@@ -935,13 +935,13 @@ git push origin main --tags
 
 ---
 
-## After this plan: Create `openflow-saas` repo
+## After this plan: Create `stratifio-saas` repo
 
-Once the OSS repo is clean, create a new private `openflow-saas` repo containing:
+Once the OSS repo is clean, create a new private `stratifio-saas` repo containing:
 
-1. **Frontend**: Install `@openflow/core`, add back `features/auth/`, `AuthContext`, `ProtectedRoute`, `LandingPage`
-2. **Backend**: Install `openflow-core`, add back `core/` (JWT/bcrypt), `api/auth.py`, `services/auth_service.py`, `product_db/`, multi-tenant connection management
-3. Mount `<OpenFlowDashboard>` inside the authenticated route
+1. **Frontend**: Install `@stratifio/core`, add back `features/auth/`, `AuthContext`, `ProtectedRoute`, `LandingPage`
+2. **Backend**: Install `stratifio-core`, add back `core/` (JWT/bcrypt), `api/auth.py`, `services/auth_service.py`, `product_db/`, multi-tenant connection management
+3. Mount `<stratif.ioDashboard>` inside the authenticated route
 4. Mount `create_router(db_url=get_db_for_user())` inside the authenticated FastAPI app
 
 This is a separate implementation plan to be created for the SaaS repo.

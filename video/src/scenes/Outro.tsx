@@ -96,7 +96,7 @@ export const Outro: React.FC = () => {
           fontFamily: FONT, letterSpacing: '0.2px',
           marginTop: 4,
         }}>
-          github.com/openflow-analytics/openflow
+          github.com/stratifio-analytics/stratifio
         </div>
       </div>
     </AbsoluteFill>

@@ -18,7 +18,7 @@ import type { RawEvent } from '@/components/events-table/types'
 
 export function EventsPage() {
   useEffect(() => {
-    document.title = 'Events — OpenFlow'
+    document.title = 'Events — stratif.io'
   }, [])
 
   const { dateRange, activeFilters, activeConnectionId } = useAppStore()

@@ -148,7 +148,7 @@ test.describe('Responsive Design - Desktop', () => {
 
   test('desktop sidebar shows expanded state', async ({ page }) => {
     const sidebar = page.locator('aside')
-    await expect(sidebar.locator('text=OpenFlow')).toBeVisible()
+    await expect(sidebar.locator('text=stratif.io')).toBeVisible()
     
     const analyticsSection = sidebar.locator('text=Analytics')
     await expect(analyticsSection).toBeVisible()

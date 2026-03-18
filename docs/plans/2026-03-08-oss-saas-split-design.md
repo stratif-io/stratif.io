@@ -5,31 +5,31 @@
 
 ## Overview
 
-Split OpenFlow into two projects:
+Split stratif.io into two projects:
 
-- **`openflow`** (public OSS repo) — self-hostable analytics dashboard, single-tenant, Docker Compose
-- **`openflow-saas`** (private SaaS repo) — auth + multi-tenancy wrapper that embeds the OSS dashboard
+- **`stratifio`** (public OSS repo) — self-hostable analytics dashboard, single-tenant, Docker Compose
+- **`stratifio-saas`** (private SaaS repo) — auth + multi-tenancy wrapper that embeds the OSS dashboard
 
 The current repo becomes the OSS repo.
 
 ## Repository Structure
 
-### OSS repo (`openflow` — public)
+### OSS repo (`stratifio` — public)
 
 ```
-openflow/
-  frontend/            ← React app → published as @openflow/core on npm
-  backend/             ← Python package → published as openflow-core on PyPI
+stratifio/
+  frontend/            ← React app → published as @stratifio/core on npm
+  backend/             ← Python package → published as stratifio-core on PyPI
   docker-compose.yml   ← self-hostable deployment
   Dockerfile
 ```
 
-### SaaS repo (`openflow-saas` — private)
+### SaaS repo (`stratifio-saas` — private)
 
 ```
-openflow-saas/
-  frontend/            ← React app: installs @openflow/core, adds auth pages
-  backend/             ← FastAPI app: installs openflow-core, adds auth + multi-tenancy
+stratifio-saas/
+  frontend/            ← React app: installs @stratifio/core, adds auth pages
+  backend/             ← FastAPI app: installs stratifio-core, adds auth + multi-tenancy
   docker-compose.yml
 ```
 
@@ -43,7 +43,7 @@ openflow-saas/
 - All analytics features: dashboard, trends, retention, paths, funnel, pivot, events
 - Single-connection config via env vars
 - DuckDB + all analytics API routes
-- Simple API key auth via `OPENFLOW_API_KEY` env var (for self-hosters)
+- Simple API key auth via `STRATIFIO_API_KEY` env var (for self-hosters)
 
 ### SaaS only
 
@@ -57,24 +57,24 @@ openflow-saas/
 
 ## Package API
 
-### `@openflow/core` (npm)
+### `@stratifio/core` (npm)
 
 Single root component the SaaS mounts inside its authenticated route:
 
 ```tsx
-import { OpenFlowDashboard } from '@openflow/core'
+import { stratif.ioDashboard } from '@stratifio/core'
 
-<OpenFlowDashboard apiBaseUrl="https://api.myapp.com" />
+<stratif.ioDashboard apiBaseUrl="https://api.myapp.com" />
 ```
 
 The component owns its own router, sidebar, and all analytics pages.
 
-### `openflow-core` (PyPI)
+### `stratifio-core` (PyPI)
 
 Router factory the SaaS mounts with per-user DB injection:
 
 ```python
-from openflow_core import create_router
+from stratifio_core import create_router
 
 app.include_router(
     create_router(db_url=get_db_for_current_user()),
@@ -87,9 +87,9 @@ app.include_router(
 Self-hosters configure their analytics DB via env vars — no UI:
 
 ```
-OPENFLOW_DB_URL=duckdb:///./analytics.db
-OPENFLOW_DB_TYPE=duckdb
-OPENFLOW_API_KEY=your-secret-key
+STRATIFIO_DB_URL=duckdb:///./analytics.db
+STRATIFIO_DB_TYPE=duckdb
+STRATIFIO_API_KEY=your-secret-key
 ```
 
 ## Local Development
@@ -105,26 +105,26 @@ cd backend && uv run serve
 
 ```bash
 # Frontend
-cd openflow/frontend && npm link
-cd openflow-saas/frontend && npm link @openflow/core
+cd stratifio/frontend && npm link
+cd stratifio-saas/frontend && npm link @stratifio/core
 
 # Backend
-cd openflow/backend && pip install -e .
-cd openflow-saas/backend && pip install -e ../openflow/backend
+cd stratifio/backend && pip install -e .
+cd stratifio-saas/backend && pip install -e ../stratifio/backend
 ```
 
 ## CI/CD
 
-- **OSS**: on git tag → publish `@openflow/core` to npm + `openflow-core` to PyPI + push Docker image
+- **OSS**: on git tag → publish `@stratifio/core` to npm + `stratifio-core` to PyPI + push Docker image
 - **SaaS**: on merge to main → deploy, pinned to specific OSS versions
 
 ## Migration Steps (current repo → OSS repo)
 
-1. Rename `src/` → `frontend/`, `openflow/` → `backend/`
+1. Rename `src/` → `frontend/`, `stratifio/` → `backend/`
 2. Remove auth code: `features/auth/`, `AuthContext`, `ProtectedRoute`, `auth.py`, `product_db/`, `core/` (JWT/password)
-3. Replace auth with simple env-var API key (`OPENFLOW_API_KEY`)
+3. Replace auth with simple env-var API key (`STRATIFIO_API_KEY`)
 4. Replace multi-tenant connection UI with env-var single connection config
-5. Export `<OpenFlowDashboard>` root component from `frontend/`
+5. Export `<stratif.ioDashboard>` root component from `frontend/`
 6. Export `create_router()` factory from `backend/`
 7. Add `docker-compose.yml` for self-hosting
-8. Create `openflow-saas` repo with current auth code + SaaS wrapper
+8. Create `stratifio-saas` repo with current auth code + SaaS wrapper

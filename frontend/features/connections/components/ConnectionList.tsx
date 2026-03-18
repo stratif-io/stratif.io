@@ -150,7 +150,7 @@ export function ConnectionList() {
           <div className="space-y-1.5">
             <p className="text-sm font-medium">No connections yet</p>
             <p className="text-sm text-muted-foreground max-w-sm">
-              OpenFlow queries your warehouse directly — no ETL pipelines required. Connect once
+              stratif.io queries your warehouse directly — no ETL pipelines required. Connect once
               and your event data is available immediately.
             </p>
           </div>

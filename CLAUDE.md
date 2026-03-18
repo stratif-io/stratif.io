@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-OpenFlow Analytics — a full-stack product analytics dashboard with a React/TypeScript frontend and Python/FastAPI backend using DuckDB (embedded).
+stratif.io Analytics — a full-stack product analytics dashboard with a React/TypeScript frontend and Python/FastAPI backend using DuckDB (embedded).
 
 ## Commands
 
@@ -30,7 +30,7 @@ npm run build            # TypeScript type-check + production build
 
 **Frontend** (`src/`): React 18, Vite 6, Tailwind CSS v4, shadcn/ui, React Router v6
 
-**Backend** (`openflow/`): FastAPI, DuckDB, pydantic-settings, SQLGlot for SQL transpilation
+**Backend** (`stratifio/`): FastAPI, DuckDB, pydantic-settings, SQLGlot for SQL transpilation
 
 ### Two-tier state management
 
@@ -57,10 +57,10 @@ Shared components live in `src/components/` (ui/, layout/, charts/, data-table/)
 
 ### Backend layers
 
-- `openflow/api/` — FastAPI routers (trend, retention, events, paths, conversion, pivot, sessions)
-- `openflow/services/` — Business logic (path_analyzer, transpiler)
-- `openflow/db/` — DuckDB connection management and seeding
-- `openflow/core/` — Auth (API key verification)
+- `stratifio/api/` — FastAPI routers (trend, retention, events, paths, conversion, pivot, sessions)
+- `stratifio/services/` — Business logic (path_analyzer, transpiler)
+- `stratifio/db/` — DuckDB connection management and seeding
+- `stratifio/core/` — Auth (API key verification)
 
 ### API endpoints
 
@@ -68,29 +68,29 @@ All prefixed with `/api/`: `trend`, `retention`, `events`, `events/top`, `raw/ev
 
 ## Security (CRITICAL — client database credentials are stored)
 
-OpenFlow stores encrypted credentials for client analytics databases. Security is non-negotiable.
+stratif.io stores encrypted credentials for client analytics databases. Security is non-negotiable.
 
 ### Credential storage
-- Credentials encrypted with Fernet (AES-128-CBC + HMAC-SHA256) via `openflow/services/crypto.py`
+- Credentials encrypted with Fernet (AES-128-CBC + HMAC-SHA256) via `stratifio/services/crypto.py`
 - Encryption key: 32+ char string → SHA-256 → Fernet key
-- Key stored in `OPENFLOW_ENCRYPTION_KEY` env var (never in code or git)
-- Product DB: SQLite at `OPENFLOW_PRODUCT_DB_PATH` (never expose this file)
+- Key stored in `STRATIFIO_ENCRYPTION_KEY` env var (never in code or git)
+- Product DB: SQLite at `STRATIFIO_PRODUCT_DB_PATH` (never expose this file)
 
 ### Auth
-- Passwords: bcrypt + SHA-256 pre-hash (`openflow/core/password.py`)
-- Sessions: JWT in HTTP-only, Secure, SameSite=Lax cookie (`of_session`)
+- Passwords: bcrypt + SHA-256 pre-hash (`stratifio/core/password.py`)
+- Sessions: JWT in HTTP-only, Secure, SameSite=Lax cookie (`sio_session`)
 - Rate limiting on login (10/min) and register (3/min) via slowapi
 
 ### Config flags for production
-- `OPENFLOW_DEBUG=false` (default) — hides `/docs`, `/redoc`, `/openapi.json`
-- `OPENFLOW_ALLOW_REGISTRATION=false` (default) — disables open registration
-- `OPENFLOW_CORS_ORIGINS` — set to your exact frontend domain (not `*`)
-- `OPENFLOW_ENCRYPTION_KEY` — must be 32+ chars; generate with `openssl rand -base64 32`
+- `STRATIFIO_DEBUG=false` (default) — hides `/docs`, `/redoc`, `/openapi.json`
+- `STRATIFIO_ALLOW_REGISTRATION=false` (default) — disables open registration
+- `STRATIFIO_CORS_ORIGINS` — set to your exact frontend domain (not `*`)
+- `STRATIFIO_ENCRYPTION_KEY` — must be 32+ chars; generate with `openssl rand -base64 32`
 
 ### Never do
 - Never log credentials, tokens, or the encryption key
 - Never commit `.env` files or the SQLite product DB
-- Never use `OPENFLOW_DEBUG=true` in production
+- Never use `STRATIFIO_DEBUG=true` in production
 
 ## Code Conventions
 
@@ -102,7 +102,7 @@ OpenFlow stores encrypted credentials for client analytics databases. Security i
 - **Charts**: Recharts wrappers in `src/components/charts/`
 - **Tests**: Co-located in `__tests__` directories, `*.test.ts(x)` pattern, using `@testing-library/react`
 - **Formatting**: Prettier — single quotes, 2-space indent, 100 char width, trailing commas
-- **Backend config**: Environment variables prefixed with `OPENFLOW_` (via pydantic-settings in `openflow/config.py`)
+- **Backend config**: Environment variables prefixed with `STRATIFIO_` (via pydantic-settings in `stratifio/config.py`)
 
 ## Adding a Feature
 

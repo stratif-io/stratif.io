@@ -1,4 +1,4 @@
-"""Tests for openflow.services.sql_builder dialect outputs."""
+"""Tests for stratifio.services.sql_builder dialect outputs."""
 
 from backend.services.sql_builder import (
     cast_to_text,

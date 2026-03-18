@@ -17,7 +17,7 @@
 
 **Step 1: Write the script**
 
-Create `/Users/carlo/my_work/openflow/seeders/bootstrap_connection.py`:
+Create `/Users/carlo/my_work/stratifio/seeders/bootstrap_connection.py`:
 
 ```python
 """Bootstrap a sample DuckDB connection into the product SQLite DB.
@@ -59,7 +59,7 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
         "SELECT id FROM connections WHERE name = ?", (CONNECTION_NAME,)
     )
     if existing:
-        print(f"[openflow] Connection '{CONNECTION_NAME}' already exists — skipping.")
+        print(f"[stratifio] Connection '{CONNECTION_NAME}' already exists — skipping.")
         return
 
     conn_id = str(uuid.uuid4())
@@ -90,7 +90,7 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
         (str(uuid.uuid4()), conn_id, now),
     )
 
-    print(f"[openflow] Bootstrapped connection '{CONNECTION_NAME}' → {db_path}")
+    print(f"[stratifio] Bootstrapped connection '{CONNECTION_NAME}' → {db_path}")
 
 
 def main() -> None:
@@ -111,7 +111,7 @@ if __name__ == "__main__":
 **Step 2: Verify it parses (no import errors)**
 
 ```bash
-cd /Users/carlo/my_work/openflow && python -c "import seeders.bootstrap_connection; print('OK')"
+cd /Users/carlo/my_work/stratifio && python -c "import seeders.bootstrap_connection; print('OK')"
 ```
 
 Expected: `OK`
@@ -132,9 +132,9 @@ git commit -m "feat(docker): add bootstrap_connection script for first-run setup
 
 **Step 1: Create the test file**
 
-Create `/Users/carlo/my_work/openflow/seeders/tests/__init__.py` (empty).
+Create `/Users/carlo/my_work/stratifio/seeders/tests/__init__.py` (empty).
 
-Create `/Users/carlo/my_work/openflow/seeders/tests/test_bootstrap_connection.py`:
+Create `/Users/carlo/my_work/stratifio/seeders/tests/test_bootstrap_connection.py`:
 
 ```python
 """Tests for seeders.bootstrap_connection."""
@@ -301,7 +301,7 @@ def test_bootstrap_uses_custom_path(tmp_path):
 **Step 2: Run the tests and verify they pass**
 
 ```bash
-cd /Users/carlo/my_work/openflow && python -m pytest seeders/tests/test_bootstrap_connection.py -v
+cd /Users/carlo/my_work/stratifio && python -m pytest seeders/tests/test_bootstrap_connection.py -v
 ```
 
 Expected: 4 tests PASS.
@@ -330,12 +330,12 @@ set -euo pipefail
 SAMPLE_DB="/data/sample.duckdb"
 
 if [ ! -f "$SAMPLE_DB" ]; then
-  echo "[openflow] Seeding sample analytics data (first run)…"
+  echo "[stratifio] Seeding sample analytics data (first run)…"
   DB_PATH_PREFIX=/data/sample \
   SEED_USERS=5000 \
   SEED_DAYS=90 \
   seed-duckdb
-  echo "[openflow] Seeding complete → $SAMPLE_DB"
+  echo "[stratifio] Seeding complete → $SAMPLE_DB"
 fi
 
 exec uvicorn backend.main:app --host 0.0.0.0 --port 8000
@@ -352,12 +352,12 @@ set -euo pipefail
 SAMPLE_DB="/data/sample.duckdb"
 
 if [ ! -f "$SAMPLE_DB" ]; then
-  echo "[openflow] Seeding sample analytics data (first run)…"
+  echo "[stratifio] Seeding sample analytics data (first run)…"
   DB_PATH_PREFIX=/data/sample \
   SEED_USERS=5000 \
   SEED_DAYS=90 \
   seed-duckdb
-  echo "[openflow] Seeding complete → $SAMPLE_DB"
+  echo "[stratifio] Seeding complete → $SAMPLE_DB"
 fi
 
 python -m seeders.bootstrap_connection --path "$SAMPLE_DB"
@@ -381,7 +381,7 @@ git commit -m "feat(docker): run bootstrap_connection on every startup (idempote
 **Step 1: Build the image**
 
 ```bash
-cd /Users/carlo/my_work/openflow && docker build -t openflow:test .
+cd /Users/carlo/my_work/stratifio && docker build -t stratifio:test .
 ```
 
 Expected: build succeeds.
@@ -390,33 +390,33 @@ Expected: build succeeds.
 
 ```bash
 docker run --rm -d \
-  --name openflow_smoke \
+  --name stratifio_smoke \
   -p 8000:8000 \
-  -e OPENFLOW_ENCRYPTION_KEY=testkeyfortestingonly1234567890ab \
-  -e OPENFLOW_PRODUCT_DB_PATH=/data/openflow_product.sqlite \
-  -e OPENFLOW_CORS_ORIGINS=http://localhost:8000 \
-  -v openflow_test_data:/data \
-  openflow:test
+  -e STRATIFIO_ENCRYPTION_KEY=testkeyfortestingonly1234567890ab \
+  -e STRATIFIO_PRODUCT_DB_PATH=/data/stratifio_product.sqlite \
+  -e STRATIFIO_CORS_ORIGINS=http://localhost:8000 \
+  -v stratifio_test_data:/data \
+  stratifio:test
 ```
 
 **Step 3: Wait for startup and check logs**
 
 ```bash
-sleep 25 && docker logs openflow_smoke 2>&1 | grep -E "\[openflow\]|Uvicorn"
+sleep 25 && docker logs stratifio_smoke 2>&1 | grep -E "\[stratifio\]|Uvicorn"
 ```
 
 Expected output includes:
 ```
-[openflow] Seeding sample analytics data (first run)…
-[openflow] Seeding complete → /data/sample.duckdb
-[openflow] Bootstrapped connection 'Sample DuckDB' → /data/sample.duckdb
+[stratifio] Seeding sample analytics data (first run)…
+[stratifio] Seeding complete → /data/sample.duckdb
+[stratifio] Bootstrapped connection 'Sample DuckDB' → /data/sample.duckdb
 INFO:     Uvicorn running on http://0.0.0.0:8000
 ```
 
 **Step 4: Verify connection exists in the product DB**
 
 ```bash
-docker exec openflow_smoke python -c "
+docker exec stratifio_smoke python -c "
 from backend.product_db.database import get_product_db
 db = get_product_db()
 rows = db.fetchall('SELECT name, db_type FROM connections')
@@ -429,18 +429,18 @@ Expected: `{'name': 'Sample DuckDB', 'db_type': 'duckdb'}`
 **Step 5: Verify idempotency on restart**
 
 ```bash
-docker restart openflow_smoke
+docker restart stratifio_smoke
 sleep 10
-docker logs openflow_smoke 2>&1 | grep "already exists"
+docker logs stratifio_smoke 2>&1 | grep "already exists"
 ```
 
-Expected: `[openflow] Connection 'Sample DuckDB' already exists — skipping.`
+Expected: `[stratifio] Connection 'Sample DuckDB' already exists — skipping.`
 
 **Step 6: Clean up**
 
 ```bash
-docker stop openflow_smoke
-docker volume rm openflow_test_data
+docker stop stratifio_smoke
+docker volume rm stratifio_test_data
 ```
 
 **Step 7: Commit any fixups found during smoke test**

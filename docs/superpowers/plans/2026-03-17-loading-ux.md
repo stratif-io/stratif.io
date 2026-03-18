@@ -85,7 +85,7 @@ export { useDeferredLoading } from './useDeferredLoading'
 - [ ] **Step 3: Verify TypeScript compiles**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-oss && npm run build 2>&1 | head -30
+cd /Users/carlo/my_work/stratifio/stratifio-oss && npm run build 2>&1 | head -30
 ```
 Expected: no errors related to `useDeferredLoading`.
 
@@ -751,7 +751,7 @@ git commit -m "feat: Sessions and Connections pages defer skeleton and fade cont
 - [ ] **Run full build**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-oss && npm run build
+cd /Users/carlo/my_work/stratifio/stratifio-oss && npm run build
 ```
 Expected: zero TypeScript errors.
 

@@ -20,7 +20,7 @@ import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 
 export function PathsPage() {
   useEffect(() => {
-    document.title = 'Paths — OpenFlow'
+    document.title = 'Paths — stratif.io'
   }, [])
 
   const { dateRange, selectedEvent, setSelectedEvent } = useAppStore()

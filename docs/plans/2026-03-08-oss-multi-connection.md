@@ -20,7 +20,7 @@
 **Step 1: Create `backend/product_db/database.py`**
 
 ```python
-"""SQLite database manager for the OpenFlow product database."""
+"""SQLite database manager for the stratif.io product database."""
 
 import sqlite3
 from contextlib import contextmanager
@@ -79,7 +79,7 @@ def get_product_db() -> ProductDatabase:
 **Step 2: Create `backend/product_db/migrations.py`**
 
 ```python
-"""Database schema initialization for the OpenFlow product database."""
+"""Database schema initialization for the stratif.io product database."""
 
 from backend.product_db.database import get_product_db
 
@@ -202,7 +202,7 @@ Open `backend/config.py` and add these two fields to the `Settings` class:
 
 ```python
 # Product DB (SQLite — stores connections and configs)
-product_db_path: str = "./openflow_product.sqlite"
+product_db_path: str = "./stratifio_product.sqlite"
 
 # Encryption key for credentials (required to store connections)
 encryption_key: str = ""
@@ -212,7 +212,7 @@ encryption_key: str = ""
 
 ```bash
 uv run python -c "
-import os; os.environ['OPENFLOW_ENCRYPTION_KEY'] = 'test-key-32-chars-minimum-length!'
+import os; os.environ['STRATIFIO_ENCRYPTION_KEY'] = 'test-key-32-chars-minimum-length!'
 from backend.services.crypto import encrypt_credentials, decrypt_credentials
 token = encrypt_credentials({'password': 'secret'})
 result = decrypt_credentials(token)
@@ -912,7 +912,7 @@ Start backend and frontend:
 
 ```bash
 # Terminal 1
-OPENFLOW_ENCRYPTION_KEY=$(openssl rand -base64 32) uv run serve
+STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32) uv run serve
 
 # Terminal 2
 npm run dev

@@ -13,7 +13,7 @@ Rewrite the OSS README to be product-first (PostHog/Cal.com style): lead with va
 4. **Supported Databases** — brief list
 5. **Configuration** — env var table
 6. **Local Development** — contributor setup
-7. **Embedding** — `@openflow/core` frontend + backend
+7. **Embedding** — `@stratifio/core` frontend + backend
 8. **License** — short line
 
 ## Tone

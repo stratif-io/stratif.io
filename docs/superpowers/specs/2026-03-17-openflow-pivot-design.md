@@ -1,4 +1,4 @@
-# openflow-pivot — Design Spec
+# stratifio-pivot — Design Spec
 
 **Date:** 2026-03-17
 **Status:** Approved by user
@@ -7,7 +7,7 @@
 
 ## Overview
 
-`openflow-pivot` is a standalone open source project (separate GitHub repo) that provides two composable, AG Grid-free React table components:
+`stratifio-pivot` is a standalone open source project (separate GitHub repo) that provides two composable, AG Grid-free React table components:
 
 1. **`<EventsTable>`** — a sortable, filterable, server-paginated data table for event streams
 2. **`<PivotTable>`** — a pivot/aggregation explorer with row group / pivot column / value column zones and server-side data fetching
@@ -20,7 +20,7 @@ It is a **reference implementation / copy-paste project** — not published to n
 
 ## Goals
 
-- Replace AG Grid Enterprise in `openflow-oss` with zero enterprise/viral license dependencies
+- Replace AG Grid Enterprise in `stratifio-oss` with zero enterprise/viral license dependencies
 - Styled with Tailwind CSS v4 + CSS variables (light/dark mode via `.dark` on `<html>`)
 - Composable: each building block (`<FilterBar>`, `<Pagination>`, `<ColumnPanel>`, `<PivotToolbar>`, `<ZoneBar>`) is independently usable
 - Includes a live demo app with mock data for both components
@@ -40,10 +40,10 @@ It is a **reference implementation / copy-paste project** — not published to n
 ## Project Location
 
 ```
-/Users/carlo/my_work/openflow/openflow-pivot/
+/Users/carlo/my_work/stratifio/stratifio-pivot/
 ```
 
-Sits alongside `openflow-oss` and `openflow-saas` in the same workspace.
+Sits alongside `stratifio-oss` and `stratifio-saas` in the same workspace.
 
 ---
 
@@ -68,7 +68,7 @@ TanStack Virtual is used for row virtualization in `<EventsTable>` when the visi
 ## Project Structure
 
 ```
-openflow-pivot/
+stratifio-pivot/
 ├── README.md                       # Setup steps only (npm install, npm run dev)
 ├── package.json
 ├── vite.config.ts
@@ -116,7 +116,7 @@ Renders first/prev/next/last buttons and a "X–Y of N events" label. Purely con
 
 ### EventsTable
 
-The current `EventsTable.tsx` in `openflow-oss` already has a props-based interface. The new component is a **direct drop-in replacement with identical props** — migration in `openflow-oss` is a single import line change, no logic changes.
+The current `EventsTable.tsx` in `stratifio-oss` already has a props-based interface. The new component is a **direct drop-in replacement with identical props** — migration in `stratifio-oss` is a single import line change, no logic changes.
 
 **Props** (identical to current AG Grid component):
 
@@ -162,9 +162,9 @@ interface EventsTableProps {
 
 ### PivotTable
 
-The current `NewPivotPage` in `openflow-oss` is a **zero-prop page component** that reads all state from Zustand and runs its own TanStack Query fetches. The new `<PivotTable>` is a **prop-driven composable component** — this is a deliberate design improvement.
+The current `NewPivotPage` in `stratifio-oss` is a **zero-prop page component** that reads all state from Zustand and runs its own TanStack Query fetches. The new `<PivotTable>` is a **prop-driven composable component** — this is a deliberate design improvement.
 
-**Migration impact:** `NewPivotPage.tsx` in `openflow-oss` must be updated to:
+**Migration impact:** `NewPivotPage.tsx` in `stratifio-oss` must be updated to:
 1. Continue making its own TanStack Query calls (`fetchPivotGridColDefs`, `fetchFilterConfig`)
 2. Handle `filterConfig` validation (stripping invalid `activeFilters` for the current connection) — this logic stays in the page component, not inside `<PivotTable>`
 3. Pass the resulting data down as props to `<PivotTable>`
@@ -203,13 +203,13 @@ interface PivotTableProps {
 
 ## Theming
 
-`src/index.css` defines CSS variables with identical names to `openflow-oss/src/index.css`:
+`src/index.css` defines CSS variables with identical names to `stratifio-oss/src/index.css`:
 
 ```css
 :root {
   --background: ...; --foreground: ...;
   --primary: ...; --muted: ...; --border: ...;
-  /* same variable names as openflow-oss */
+  /* same variable names as stratifio-oss */
 }
 .dark { /* dark overrides */ }
 ```
@@ -226,23 +226,23 @@ Components use Tailwind utility classes referencing these variables (`bg-backgro
 
 ---
 
-## Migration Path (openflow-oss)
+## Migration Path (stratifio-oss)
 
-Once `openflow-pivot` is built:
+Once `stratifio-pivot` is built:
 
 **EventsTable (import-line only):**
-1. Copy `openflow-pivot/src/components/events-table/` → `openflow-oss/frontend/features/events/components/`
-2. Copy `openflow-pivot/src/components/shared/` → `openflow-oss/frontend/components/shared/`
+1. Copy `stratifio-pivot/src/components/events-table/` → `stratifio-oss/frontend/features/events/components/`
+2. Copy `stratifio-pivot/src/components/shared/` → `stratifio-oss/frontend/components/shared/`
 3. Update import in the parent component — props are identical, no other changes
 
 **PivotTable (small page-component refactor):**
-1. Copy `openflow-pivot/src/components/pivot-table/` → `openflow-oss/frontend/features/analytics/pivot/components/`
-2. Copy `openflow-pivot/src/components/shared/` → `openflow-oss/frontend/components/shared/` (if not already done)
+1. Copy `stratifio-pivot/src/components/pivot-table/` → `stratifio-oss/frontend/features/analytics/pivot/components/`
+2. Copy `stratifio-pivot/src/components/shared/` → `stratifio-oss/frontend/components/shared/` (if not already done)
 3. Refactor `NewPivotPage.tsx`: keep all TanStack Query calls and Zustand reads in the page component; pass `colDefsData`, `colDefsLoading`, `startDate`, `endDate`, `activeFilters` (validated), `activeConnectionId`, `fetchRows`, `fetchFilterValues` as props to `<PivotTable>`
 4. The `filterConfig` validation logic (~10 lines) stays in `NewPivotPage.tsx`
 
 **Cleanup (both):**
-5. Delete `openflow-oss/frontend/lib/ag-grid-theme.ts`
+5. Delete `stratifio-oss/frontend/lib/ag-grid-theme.ts`
 6. Remove `ag-grid-community`, `ag-grid-react`, `ag-grid-enterprise` from `package.json`
 
 No backend changes required.
@@ -255,6 +255,6 @@ No backend changes required.
 - [ ] `<PivotTable>` renders pivot data with zone controls, agg function cycling, filters, CSV export — no AG Grid watermark
 - [ ] Light/dark mode works on both components
 - [ ] Demo app runs with `npm run dev` out of the box with zero configuration
-- [ ] `openflow-oss` EventsTable swap requires only an import line change
-- [ ] `openflow-oss` PivotTable swap requires only the described page-component refactor (~30 lines)
-- [ ] Zero `ag-grid-*` dependencies in `openflow-pivot/package.json`
+- [ ] `stratifio-oss` EventsTable swap requires only an import line change
+- [ ] `stratifio-oss` PivotTable swap requires only the described page-component refactor (~30 lines)
+- [ ] Zero `ag-grid-*` dependencies in `stratifio-pivot/package.json`

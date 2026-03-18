@@ -1,4 +1,4 @@
-"""Analytics database wrapper for OpenFlow Analytics."""
+"""Analytics database wrapper for stratif.io Analytics."""
 import contextlib
 import re
 from typing import Any

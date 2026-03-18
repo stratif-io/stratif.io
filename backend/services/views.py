@@ -5,7 +5,7 @@ without the WITH keyword itself) so that callers can compose them into any
 query without needing write access to the target database.
 
 All functions accept a *dialect* parameter and use helpers from
-``openflow.services.sql_builder`` to emit the correct SQL for each engine.
+``stratifio.services.sql_builder`` to emit the correct SQL for each engine.
 The generated CTEs are valid for DuckDB, SQLite, PostgreSQL, MySQL,
 BigQuery, Snowflake, and Redshift without any post-processing.
 """

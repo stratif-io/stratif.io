@@ -1,4 +1,4 @@
-"""Database schema initialization for the OpenFlow product database."""
+"""Database schema initialization for the stratif.io product database."""
 
 import sqlite3
 

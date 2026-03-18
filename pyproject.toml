@@ -1,7 +1,7 @@
 [project]
-name = "openflow-core"
+name = "stratifio-core"
 version = "0.1.0"
-description = "OpenFlow Analytics — open source self-hostable analytics dashboard backend"
+description = "stratif.io Analytics — open source self-hostable analytics dashboard backend"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }

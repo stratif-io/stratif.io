@@ -1,4 +1,4 @@
-"""Tests for openflow.services.validators."""
+"""Tests for stratifio.services.validators."""
 
 import pytest
 from fastapi import HTTPException

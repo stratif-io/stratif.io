@@ -1,11 +1,11 @@
 import { Composition } from 'remotion'
-import { OpenFlowVideo, TOTAL_FRAMES } from './OpenFlowVideo'
+import { stratif.ioVideo, TOTAL_FRAMES } from './stratif.ioVideo'
 
 export const Root: React.FC = () => {
   return (
     <Composition
-      id="OpenFlowVideo"
-      component={OpenFlowVideo}
+      id="stratif.ioVideo"
+      component={stratif.ioVideo}
       durationInFrames={TOTAL_FRAMES}
       fps={30}
       width={1920}

@@ -143,7 +143,7 @@ export function Sidebar() {
             <span className="text-xs text-muted-foreground shrink-0">$</span>
             {sidebarOpen && (
               <span className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
-                openflow
+                stratifio
               </span>
             )}
           </Link>

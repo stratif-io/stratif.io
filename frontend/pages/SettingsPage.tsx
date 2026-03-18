@@ -10,7 +10,7 @@ export function SettingsPage() {
           <CardHeader>
             <CardTitle>Configuration</CardTitle>
             <CardDescription>
-              OpenFlow Analytics is configured via environment variables. See{' '}
+              stratif.io Analytics is configured via environment variables. See{' '}
               <code className="text-xs bg-muted px-1 py-0.5 rounded">.env.example</code> for
               available options.
             </CardDescription>
@@ -18,14 +18,14 @@ export function SettingsPage() {
           <CardContent>
             <div className="space-y-2 text-sm text-muted-foreground">
               <p>
-                <code className="text-foreground">OPENFLOW_DB_URL</code> — Analytics database URL
+                <code className="text-foreground">STRATIFIO_DB_URL</code> — Analytics database URL
               </p>
               <p>
-                <code className="text-foreground">OPENFLOW_DB_TYPE</code> — Database type (duckdb,
+                <code className="text-foreground">STRATIFIO_DB_TYPE</code> — Database type (duckdb,
                 sqlite, postgres)
               </p>
               <p>
-                <code className="text-foreground">OPENFLOW_API_KEY</code> — Optional API key for
+                <code className="text-foreground">STRATIFIO_API_KEY</code> — Optional API key for
                 dashboard access
               </p>
             </div>

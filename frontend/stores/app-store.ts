@@ -59,7 +59,7 @@ export const useAppStore = create<AppState>()(
       setActiveConnectionId: (activeConnectionId) => set({ activeConnectionId, activeFilters: {} }),
     }),
     {
-      name: 'openflow-storage',
+      name: 'stratifio-storage',
       partialize: (state) => ({
         theme: state.theme,
         dateRange: state.dateRange,

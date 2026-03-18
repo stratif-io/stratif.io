@@ -17,7 +17,7 @@ import { Clock, Users } from 'lucide-react'
 
 export default function SessionsPage() {
   useEffect(() => {
-    document.title = 'Sessions — OpenFlow'
+    document.title = 'Sessions — stratif.io'
   }, [])
 
   const { dateRange } = useAppStore()

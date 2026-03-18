@@ -1,4 +1,4 @@
-"""SQLite database manager for the OpenFlow product database."""
+"""SQLite database manager for the stratif.io product database."""
 
 import sqlite3
 from contextlib import contextmanager

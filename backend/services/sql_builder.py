@@ -1,4 +1,4 @@
-"""Dialect-aware SQL fragment builders for OpenFlow Analytics.
+"""Dialect-aware SQL fragment builders for stratif.io Analytics.
 
 Use these helpers instead of raw SQL strings whenever a construct differs
 between database engines. Each function returns a SQL string fragment that

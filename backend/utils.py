@@ -1,4 +1,4 @@
-"""Shared utility helpers for the OpenFlow backend."""
+"""Shared utility helpers for the stratif.io backend."""
 from datetime import UTC, datetime
 
 

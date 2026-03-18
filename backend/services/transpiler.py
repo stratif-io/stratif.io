@@ -1,6 +1,6 @@
 """SQL transpilation service using SQLGlot.
 
-Prefer building queries with helpers from ``openflow.services.sql_builder``
+Prefer building queries with helpers from ``stratifio.services.sql_builder``
 rather than transpiling raw SQL strings.  The helpers generate dialect-correct
 SQL at build time, which is more reliable than post-hoc transpilation.
 

@@ -211,16 +211,16 @@ git commit -m "feat: add QueryError component and error states to analytics page
 ### Task 3: API endpoint integration tests
 
 **Files:**
-- Create: `openflow/tests/conftest.py`
-- Create: `openflow/tests/test_api_trend.py`
-- Create: `openflow/tests/test_api_events.py`
-- Create: `openflow/tests/test_api_retention.py`
-- Create: `openflow/tests/test_api_sessions.py`
-- Create: `openflow/tests/test_api_conversion.py`
+- Create: `stratifio/tests/conftest.py`
+- Create: `stratifio/tests/test_api_trend.py`
+- Create: `stratifio/tests/test_api_events.py`
+- Create: `stratifio/tests/test_api_retention.py`
+- Create: `stratifio/tests/test_api_sessions.py`
+- Create: `stratifio/tests/test_api_conversion.py`
 
-**Background:** FastAPI's `TestClient` (from `starlette.testclient`, already installed) lets us make real HTTP requests against the app without a running server. Auth uses JWT cookies (`of_session`). The `get_analytics_db` dependency is complex (hits product DB + opens real connections), so we override it via `app.dependency_overrides` to return a seeded in-memory DuckDB. Auth is also overridden to skip cookie validation.
+**Background:** FastAPI's `TestClient` (from `starlette.testclient`, already installed) lets us make real HTTP requests against the app without a running server. Auth uses JWT cookies (`sio_session`). The `get_analytics_db` dependency is complex (hits product DB + opens real connections), so we override it via `app.dependency_overrides` to return a seeded in-memory DuckDB. Auth is also overridden to skip cookie validation.
 
-**Step 1: Create `openflow/tests/conftest.py`**
+**Step 1: Create `stratifio/tests/conftest.py`**
 
 This sets up the shared `client` fixture used by all API test files.
 
@@ -231,9 +231,9 @@ import pytest
 import duckdb
 from starlette.testclient import TestClient
 
-from openflow.main import app
-from openflow.services.connection_executor import AnalyticsDatabase, get_analytics_db
-from openflow.core.jwt_auth import AuthUserRow, get_current_auth_user
+from stratifio.main import app
+from stratifio.services.connection_executor import AnalyticsDatabase, get_analytics_db
+from stratifio.core.jwt_auth import AuthUserRow, get_current_auth_user
 
 
 def _make_fake_user():
@@ -290,7 +290,7 @@ def client():
     app.dependency_overrides.clear()
 ```
 
-**Step 2: Create `openflow/tests/test_api_trend.py`**
+**Step 2: Create `stratifio/tests/test_api_trend.py`**
 
 ```python
 """Integration tests for /api/trend endpoint."""
@@ -317,7 +317,7 @@ class TestTrendEndpoint:
     def test_no_auth_returns_401(self):
         # Use a plain client without overrides
         from starlette.testclient import TestClient
-        from openflow.main import app
+        from stratifio.main import app
         with TestClient(app, raise_server_exceptions=False) as c:
             response = c.get("/api/trend")
         assert response.status_code == 401
@@ -327,12 +327,12 @@ class TestTrendEndpoint:
 
 ```bash
 cd /path/to/worktree
-uv run pytest openflow/tests/test_api_trend.py -v
+uv run pytest stratifio/tests/test_api_trend.py -v
 ```
 
 Expected: 3 passed.
 
-**Step 4: Create `openflow/tests/test_api_events.py`**
+**Step 4: Create `stratifio/tests/test_api_events.py`**
 
 ```python
 """Integration tests for /api/events, /api/events/top, /api/raw/events endpoints."""
@@ -364,7 +364,7 @@ class TestEventsEndpoint:
         assert response.status_code == 400
 ```
 
-**Step 5: Create `openflow/tests/test_api_retention.py`**
+**Step 5: Create `stratifio/tests/test_api_retention.py`**
 
 ```python
 """Integration tests for /api/retention endpoint."""
@@ -388,7 +388,7 @@ class TestRetentionEndpoint:
         assert response.status_code == 400
 ```
 
-**Step 6: Create `openflow/tests/test_api_sessions.py`**
+**Step 6: Create `stratifio/tests/test_api_sessions.py`**
 
 ```python
 """Integration tests for /api/raw/sessions endpoint."""
@@ -412,7 +412,7 @@ class TestSessionsEndpoint:
         assert response.status_code == 400
 ```
 
-**Step 7: Create `openflow/tests/test_api_conversion.py`**
+**Step 7: Create `stratifio/tests/test_api_conversion.py`**
 
 ```python
 """Integration tests for /api/conversion endpoint."""
@@ -443,9 +443,9 @@ class TestConversionEndpoint:
 **Step 8: Run all API tests**
 
 ```bash
-uv run pytest openflow/tests/test_api_trend.py openflow/tests/test_api_events.py \
-    openflow/tests/test_api_retention.py openflow/tests/test_api_sessions.py \
-    openflow/tests/test_api_conversion.py -v
+uv run pytest stratifio/tests/test_api_trend.py stratifio/tests/test_api_events.py \
+    stratifio/tests/test_api_retention.py stratifio/tests/test_api_sessions.py \
+    stratifio/tests/test_api_conversion.py -v
 ```
 
 Expected: all pass.
@@ -453,7 +453,7 @@ Expected: all pass.
 **Step 9: Run full Python test suite to confirm nothing broke**
 
 ```bash
-uv run pytest openflow/tests/ -v
+uv run pytest stratifio/tests/ -v
 ```
 
 Expected: all existing tests still pass + new API tests pass.
@@ -461,12 +461,12 @@ Expected: all existing tests still pass + new API tests pass.
 **Step 10: Commit**
 
 ```bash
-git add openflow/tests/conftest.py \
-        openflow/tests/test_api_trend.py \
-        openflow/tests/test_api_events.py \
-        openflow/tests/test_api_retention.py \
-        openflow/tests/test_api_sessions.py \
-        openflow/tests/test_api_conversion.py
+git add stratifio/tests/conftest.py \
+        stratifio/tests/test_api_trend.py \
+        stratifio/tests/test_api_events.py \
+        stratifio/tests/test_api_retention.py \
+        stratifio/tests/test_api_sessions.py \
+        stratifio/tests/test_api_conversion.py
 git commit -m "test: add API endpoint integration tests with TestClient"
 ```
 
@@ -476,7 +476,7 @@ git commit -m "test: add API endpoint integration tests with TestClient"
 
 ```bash
 # Python
-uv run pytest openflow/tests/ -v
+uv run pytest stratifio/tests/ -v
 
 # Frontend
 npm run test:run

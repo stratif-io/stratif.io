@@ -83,7 +83,7 @@ function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
 
 export function RetentionPage() {
   useEffect(() => {
-    document.title = 'Retention — OpenFlow'
+    document.title = 'Retention — stratif.io'
   }, [])
 
   const { dateRange } = useAppStore()

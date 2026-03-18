@@ -15,11 +15,11 @@
 ### Task 1: DB migrations — email_verified + auth_tokens
 
 **Files:**
-- Modify: `openflow/product_db/migrations.py`
+- Modify: `stratifio/product_db/migrations.py`
 
 **Step 1: Add migrations 003 and 004 to `_MIGRATIONS`**
 
-Open `openflow/product_db/migrations.py`. The list currently ends at index 1 (migration 002). Append two more entries:
+Open `stratifio/product_db/migrations.py`. The list currently ends at index 1 (migration 002). Append two more entries:
 
 ```python
 _MIGRATIONS = [
@@ -44,7 +44,7 @@ _MIGRATIONS = [
 **Step 2: Run migrations manually to verify**
 
 ```bash
-uv run python -c "from openflow.product_db.migrations import run_migrations; run_migrations(); print('OK')"
+uv run python -c "from stratifio.product_db.migrations import run_migrations; run_migrations(); print('OK')"
 ```
 
 Expected: `OK` with no errors. Run twice — second run should still print `OK` (idempotent).
@@ -52,7 +52,7 @@ Expected: `OK` with no errors. Run twice — second run should still print `OK` 
 **Step 3: Commit**
 
 ```bash
-git add openflow/product_db/migrations.py
+git add stratifio/product_db/migrations.py
 git commit -m "feat: db migrations 003+004 — email_verified + auth_tokens"
 ```
 
@@ -61,12 +61,12 @@ git commit -m "feat: db migrations 003+004 — email_verified + auth_tokens"
 ### Task 2: Config — SMTP settings
 
 **Files:**
-- Modify: `openflow/config.py`
+- Modify: `stratifio/config.py`
 - Modify: `.env.example`
 
 **Step 1: Add SMTP fields to `Settings` class**
 
-In `openflow/config.py`, after the `frontend_url` field (line 43), add:
+In `stratifio/config.py`, after the `frontend_url` field (line 43), add:
 
 ```python
 # SMTP (optional — if not set, emails print to console)
@@ -74,7 +74,7 @@ smtp_host: str | None = None
 smtp_port: int = 587
 smtp_user: str | None = None
 smtp_password: str | None = None
-smtp_from: str = "OpenFlow <noreply@openflow.app>"
+smtp_from: str = "stratif.io <noreply@stratifio.app>"
 ```
 
 **Step 2: Add SMTP vars to `.env.example`**
@@ -83,17 +83,17 @@ Append to `.env.example`:
 
 ```
 # ── Email / SMTP (optional — omit for console fallback in dev) ─────────────────
-# OPENFLOW_SMTP_HOST=smtp.gmail.com
-# OPENFLOW_SMTP_PORT=587
-# OPENFLOW_SMTP_USER=you@gmail.com
-# OPENFLOW_SMTP_PASSWORD=your-app-password
-# OPENFLOW_SMTP_FROM=OpenFlow <noreply@openflow.app>
+# STRATIFIO_SMTP_HOST=smtp.gmail.com
+# STRATIFIO_SMTP_PORT=587
+# STRATIFIO_SMTP_USER=you@gmail.com
+# STRATIFIO_SMTP_PASSWORD=your-app-password
+# STRATIFIO_SMTP_FROM=stratif.io <noreply@stratifio.app>
 ```
 
 **Step 3: Verify settings load**
 
 ```bash
-uv run python -c "from openflow.config import get_settings; s = get_settings(); print(s.smtp_host, s.smtp_port)"
+uv run python -c "from stratifio.config import get_settings; s = get_settings(); print(s.smtp_host, s.smtp_port)"
 ```
 
 Expected: `None 587`
@@ -101,7 +101,7 @@ Expected: `None 587`
 **Step 4: Commit**
 
 ```bash
-git add openflow/config.py .env.example
+git add stratifio/config.py .env.example
 git commit -m "feat: add SMTP config fields"
 ```
 
@@ -110,7 +110,7 @@ git commit -m "feat: add SMTP config fields"
 ### Task 3: Email service
 
 **Files:**
-- Create: `openflow/services/email_service.py`
+- Create: `stratifio/services/email_service.py`
 
 **Step 1: Create the file**
 
@@ -123,7 +123,7 @@ import threading
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from openflow.config import get_settings
+from stratifio.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -166,29 +166,29 @@ def _send(to: str, subject: str, html: str, user_id: str) -> None:
 def send_verification_email(to: str, token: str, base_url: str, user_id: str) -> None:
     link = f"{base_url}/auth/verify-email?token={token}"
     html = f"""
-    <p>Thanks for signing up for OpenFlow!</p>
+    <p>Thanks for signing up for stratif.io!</p>
     <p>Please verify your email address by clicking the link below:</p>
     <p><a href="{link}">{link}</a></p>
     <p>This link expires in 24 hours.</p>
     """
-    _send(to, "Verify your OpenFlow email", html, user_id)
+    _send(to, "Verify your stratif.io email", html, user_id)
 
 
 def send_password_reset_email(to: str, token: str, base_url: str, user_id: str) -> None:
     link = f"{base_url}/auth/reset-password?token={token}"
     html = f"""
-    <p>You requested a password reset for your OpenFlow account.</p>
+    <p>You requested a password reset for your stratif.io account.</p>
     <p>Click the link below to reset your password:</p>
     <p><a href="{link}">{link}</a></p>
     <p>This link expires in 1 hour. If you did not request this, ignore this email.</p>
     """
-    _send(to, "Reset your OpenFlow password", html, user_id)
+    _send(to, "Reset your stratif.io password", html, user_id)
 ```
 
 **Step 2: Verify import**
 
 ```bash
-uv run python -c "from openflow.services.email_service import send_verification_email; print('OK')"
+uv run python -c "from stratifio.services.email_service import send_verification_email; print('OK')"
 ```
 
 Expected: `OK`
@@ -196,7 +196,7 @@ Expected: `OK`
 **Step 3: Commit**
 
 ```bash
-git add openflow/services/email_service.py
+git add stratifio/services/email_service.py
 git commit -m "feat: email service with SMTP + console fallback"
 ```
 
@@ -205,11 +205,11 @@ git commit -m "feat: email service with SMTP + console fallback"
 ### Task 4: Auth service — token helpers
 
 **Files:**
-- Modify: `openflow/services/auth_service.py`
+- Modify: `stratifio/services/auth_service.py`
 
 **Step 1: Add token creation and validation helpers**
 
-At the top of `openflow/services/auth_service.py`, add to imports:
+At the top of `stratifio/services/auth_service.py`, add to imports:
 
 ```python
 from datetime import timedelta
@@ -267,14 +267,14 @@ At the end of `register_user`, before `return`, add:
 
 ```python
     # Send verification email (fire-and-forget)
-    from openflow.services.email_service import send_verification_email
+    from stratifio.services.email_service import send_verification_email
     settings = get_settings()
     token = create_auth_token(user_id, "email_verification", 24)
     base_url = settings.frontend_url or "http://localhost:5173"
     send_verification_email(email, token, base_url, user_id)
 ```
 
-Also add the import at the top: `from openflow.config import get_settings`
+Also add the import at the top: `from stratifio.config import get_settings`
 
 **Step 3: Update `upsert_google_user` to set email_verified=1**
 
@@ -300,7 +300,7 @@ Also update the "Find by email (link google_id)" block to set `email_verified = 
 **Step 4: Verify**
 
 ```bash
-uv run python -c "from openflow.services.auth_service import create_auth_token, consume_auth_token; print('OK')"
+uv run python -c "from stratifio.services.auth_service import create_auth_token, consume_auth_token; print('OK')"
 ```
 
 Expected: `OK`
@@ -308,7 +308,7 @@ Expected: `OK`
 **Step 5: Commit**
 
 ```bash
-git add openflow/services/auth_service.py
+git add stratifio/services/auth_service.py
 git commit -m "feat: auth service token helpers + email_verified on Google upsert"
 ```
 
@@ -317,23 +317,23 @@ git commit -m "feat: auth service token helpers + email_verified on Google upser
 ### Task 5: Backend — new auth endpoints
 
 **Files:**
-- Modify: `openflow/api/auth.py`
+- Modify: `stratifio/api/auth.py`
 
 **Step 1: Update imports and models**
 
 Add to the imports block at the top:
 
 ```python
-from openflow.services.auth_service import (
+from stratifio.services.auth_service import (
     authenticate_user,
     register_user,
     upsert_google_user,
     create_auth_token,
     consume_auth_token,
 )
-from openflow.services.email_service import send_verification_email, send_password_reset_email
-from openflow.core.password import hash_password, verify_password
-from openflow.product_db import get_product_db
+from stratifio.services.email_service import send_verification_email, send_password_reset_email
+from stratifio.core.password import hash_password, verify_password
+from stratifio.product_db import get_product_db
 ```
 
 Add new request/response models after the existing ones:
@@ -495,7 +495,7 @@ Expected: `{"ok": true}`
 **Step 5: Commit**
 
 ```bash
-git add openflow/api/auth.py
+git add stratifio/api/auth.py
 git commit -m "feat: add forgot-password, reset-password, verify-email, resend-verification, change-password endpoints"
 ```
 
@@ -1282,11 +1282,11 @@ After deploying, set secrets:
 
 ```bash
 fly secrets set \
-  OPENFLOW_SMTP_HOST=smtp.gmail.com \
-  OPENFLOW_SMTP_PORT=587 \
-  OPENFLOW_SMTP_USER=your@gmail.com \
-  OPENFLOW_SMTP_PASSWORD=your-app-password \
-  OPENFLOW_SMTP_FROM="OpenFlow <noreply@yourdomain.com>"
+  STRATIFIO_SMTP_HOST=smtp.gmail.com \
+  STRATIFIO_SMTP_PORT=587 \
+  STRATIFIO_SMTP_USER=your@gmail.com \
+  STRATIFIO_SMTP_PASSWORD=your-app-password \
+  STRATIFIO_SMTP_FROM="stratif.io <noreply@yourdomain.com>"
 ```
 
-The `OPENFLOW_FRONTEND_URL` secret must already be set to the production URL (used in email links).
+The `STRATIFIO_FRONTEND_URL` secret must already be set to the production URL (used in email links).

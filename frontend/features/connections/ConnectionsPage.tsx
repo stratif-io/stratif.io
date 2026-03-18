@@ -9,7 +9,7 @@ export function ConnectionsPage() {
   const location = useLocation()
 
   useEffect(() => {
-    document.title = 'Connections — OpenFlow'
+    document.title = 'Connections — stratif.io'
   }, [])
 
   useEffect(() => {

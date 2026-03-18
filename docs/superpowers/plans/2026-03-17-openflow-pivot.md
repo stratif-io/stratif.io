@@ -1,34 +1,34 @@
-# openflow-pivot Implementation Plan
+# stratifio-pivot Implementation Plan
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Create `openflow-pivot` — a standalone open source React project replacing AG Grid Enterprise with TanStack Table-based `<EventsTable>` and `<PivotTable>` components, then migrate `openflow-oss` to use them.
+**Goal:** Create `stratifio-pivot` — a standalone open source React project replacing AG Grid Enterprise with TanStack Table-based `<EventsTable>` and `<PivotTable>` components, then migrate `stratifio-oss` to use them.
 
-**Architecture:** Composable components built on TanStack Table v8 + TanStack Virtual v3, styled with Tailwind CSS v4 + CSS variables (identical to openflow-oss). Each building block (FilterBar, Pagination, ColumnPanel, ZoneBar, PivotToolbar) is independently usable. A Vite demo app shows both components with mock data.
+**Architecture:** Composable components built on TanStack Table v8 + TanStack Virtual v3, styled with Tailwind CSS v4 + CSS variables (identical to stratifio-oss). Each building block (FilterBar, Pagination, ColumnPanel, ZoneBar, PivotToolbar) is independently usable. A Vite demo app shows both components with mock data.
 
 **Tech Stack:** React 18, Vite 6, TypeScript, Tailwind CSS v4, @tanstack/react-table v8, @tanstack/react-virtual v3, lucide-react, date-fns, vitest + @testing-library/react
 
-**Spec:** `docs/superpowers/specs/2026-03-17-openflow-pivot-design.md`
+**Spec:** `docs/superpowers/specs/2026-03-17-stratifio-pivot-design.md`
 
 ---
 
 ## Chunk 1: Project scaffold + shared primitives
 
-### Task 1: Initialize the openflow-pivot project
+### Task 1: Initialize the stratifio-pivot project
 
 **Files:**
-- Create: `/Users/carlo/my_work/openflow/openflow-pivot/package.json`
-- Create: `/Users/carlo/my_work/openflow/openflow-pivot/vite.config.ts`
-- Create: `/Users/carlo/my_work/openflow/openflow-pivot/tsconfig.json`
-- Create: `/Users/carlo/my_work/openflow/openflow-pivot/index.html`
-- Create: `/Users/carlo/my_work/openflow/openflow-pivot/README.md`
+- Create: `/Users/carlo/my_work/stratifio/stratifio-pivot/package.json`
+- Create: `/Users/carlo/my_work/stratifio/stratifio-pivot/vite.config.ts`
+- Create: `/Users/carlo/my_work/stratifio/stratifio-pivot/tsconfig.json`
+- Create: `/Users/carlo/my_work/stratifio/stratifio-pivot/index.html`
+- Create: `/Users/carlo/my_work/stratifio/stratifio-pivot/README.md`
 
 - [ ] **Step 1: Create `README.md`**
 
 ```markdown
-# openflow-pivot
+# stratifio-pivot
 
-AG Grid-free pivot and events table components for OpenFlow Analytics.
+AG Grid-free pivot and events table components for stratif.io Analytics.
 Built with TanStack Table v8, TanStack Virtual v3, and Tailwind CSS v4.
 
 ## Setup
@@ -49,9 +49,9 @@ See `src/demo/` for usage examples.
 
 ```json
 {
-  "name": "openflow-pivot",
+  "name": "stratifio-pivot",
   "version": "0.1.0",
-  "description": "AG Grid-free pivot and events table components for OpenFlow Analytics",
+  "description": "AG Grid-free pivot and events table components for stratif.io Analytics",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -143,7 +143,7 @@ export default defineConfig({
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>openflow-pivot demo</title>
+    <title>stratifio-pivot demo</title>
   </head>
   <body>
     <div id="root"></div>
@@ -161,7 +161,7 @@ import '@testing-library/jest-dom'
 - [ ] **Step 6: Install dependencies**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-pivot
+cd /Users/carlo/my_work/stratifio/stratifio-pivot
 npm install
 ```
 
@@ -170,10 +170,10 @@ Expected: `node_modules/` created, no errors.
 - [ ] **Step 7: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-pivot
+cd /Users/carlo/my_work/stratifio/stratifio-pivot
 git init
 git add .
-git commit -m "chore: initialize openflow-pivot project"
+git commit -m "chore: initialize stratifio-pivot project"
 ```
 
 ---
@@ -185,7 +185,7 @@ git commit -m "chore: initialize openflow-pivot project"
 - Create: `src/main.tsx`
 - Create: `src/lib/utils.ts`
 
-- [ ] **Step 1: Create `src/index.css`** (identical CSS variables to openflow-oss)
+- [ ] **Step 1: Create `src/index.css`** (identical CSS variables to stratifio-oss)
 
 ```css
 @import 'tailwindcss';
@@ -308,7 +308,7 @@ function App() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="flex items-center gap-4 px-6 py-3 border-b border-border">
-        <span className="font-semibold text-sm">openflow-pivot demo</span>
+        <span className="font-semibold text-sm">stratifio-pivot demo</span>
         <button
           onClick={() => setPage('events')}
           className={`text-sm px-3 py-1 rounded ${page === 'events' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
@@ -484,7 +484,7 @@ test('renders nothing when filters array is empty', () => {
 - [ ] **Step 2: Run test — expect FAIL**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-pivot
+cd /Users/carlo/my_work/stratifio/stratifio-pivot
 npm run test:run -- src/components/shared/__tests__/FilterBar.test.tsx
 ```
 
@@ -1223,7 +1223,7 @@ npm run test:run -- src/components/events-table/__tests__/EventsTable.test.tsx
 - [ ] **Step 4: Verify TypeScript compiles**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-pivot
+cd /Users/carlo/my_work/stratifio/stratifio-pivot
 npx tsc --noEmit
 ```
 
@@ -1346,7 +1346,7 @@ export function EventsDemo() {
 - [ ] **Step 2: Start dev server and verify EventsTable renders**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-pivot
+cd /Users/carlo/my_work/stratifio/stratifio-pivot
 npm run dev
 ```
 
@@ -2106,26 +2106,26 @@ Expected: all pass.
 - [ ] **Step 4: Commit**
 
 ```bash
-git commit -am "feat: add PivotDemo with mock data — openflow-pivot complete"
+git commit -am "feat: add PivotDemo with mock data — stratifio-pivot complete"
 ```
 
 ---
 
-## Chunk 4: Migrate openflow-oss
+## Chunk 4: Migrate stratifio-oss
 
-### Task 13: Migrate EventsTable in openflow-oss
+### Task 13: Migrate EventsTable in stratifio-oss
 
 **Files:**
-- Copy: `openflow-pivot/src/components/shared/` → `openflow-oss/frontend/components/shared/`
-- Copy: `openflow-pivot/src/components/ui/button.tsx` → `openflow-oss/frontend/components/ui/` (skip if Button already exists)
-- Copy: `openflow-pivot/src/components/ui/spinner.tsx` → `openflow-oss/frontend/components/ui/spinner.tsx`
-- Copy: `openflow-pivot/src/components/events-table/` → `openflow-oss/frontend/features/events/components/events-table/`
+- Copy: `stratifio-pivot/src/components/shared/` → `stratifio-oss/frontend/components/shared/`
+- Copy: `stratifio-pivot/src/components/ui/button.tsx` → `stratifio-oss/frontend/components/ui/` (skip if Button already exists)
+- Copy: `stratifio-pivot/src/components/ui/spinner.tsx` → `stratifio-oss/frontend/components/ui/spinner.tsx`
+- Copy: `stratifio-pivot/src/components/events-table/` → `stratifio-oss/frontend/features/events/components/events-table/`
 - Modify: the file that currently imports `EventsTable` from `ag-grid-react` path
 
-- [ ] **Step 1: Find the parent component that renders EventsTable in openflow-oss**
+- [ ] **Step 1: Find the parent component that renders EventsTable in stratifio-oss**
 
 ```bash
-grep -r "EventsTable" /Users/carlo/my_work/openflow/openflow-oss/frontend --include="*.tsx" -l
+grep -r "EventsTable" /Users/carlo/my_work/stratifio/stratifio-oss/frontend --include="*.tsx" -l
 ```
 
 Note the file(s) found — these need their import updated.
@@ -2133,14 +2133,14 @@ Note the file(s) found — these need their import updated.
 - [ ] **Step 2: Copy shared components**
 
 ```bash
-cp -r /Users/carlo/my_work/openflow/openflow-pivot/src/components/shared /Users/carlo/my_work/openflow/openflow-oss/frontend/components/shared
-cp /Users/carlo/my_work/openflow/openflow-pivot/src/components/ui/spinner.tsx /Users/carlo/my_work/openflow/openflow-oss/frontend/components/ui/spinner.tsx
+cp -r /Users/carlo/my_work/stratifio/stratifio-pivot/src/components/shared /Users/carlo/my_work/stratifio/stratifio-oss/frontend/components/shared
+cp /Users/carlo/my_work/stratifio/stratifio-pivot/src/components/ui/spinner.tsx /Users/carlo/my_work/stratifio/stratifio-oss/frontend/components/ui/spinner.tsx
 ```
 
 - [ ] **Step 3: Copy events-table components**
 
 ```bash
-cp -r /Users/carlo/my_work/openflow/openflow-pivot/src/components/events-table /Users/carlo/my_work/openflow/openflow-oss/frontend/features/events/components/events-table
+cp -r /Users/carlo/my_work/stratifio/stratifio-pivot/src/components/events-table /Users/carlo/my_work/stratifio/stratifio-oss/frontend/features/events/components/events-table
 ```
 
 - [ ] **Step 4: Update import in parent component**
@@ -2161,7 +2161,7 @@ The props are identical — no other changes needed.
 - [ ] **Step 5: Verify build**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-oss
+cd /Users/carlo/my_work/stratifio/stratifio-oss
 npm run build
 ```
 
@@ -2170,21 +2170,21 @@ Expected: no TypeScript errors related to EventsTable.
 - [ ] **Step 6: Commit**
 
 ```bash
-git commit -am "feat: replace ag-grid EventsTable with openflow-pivot component"
+git commit -am "feat: replace ag-grid EventsTable with stratifio-pivot component"
 ```
 
 ---
 
-### Task 14: Migrate PivotTable in openflow-oss
+### Task 14: Migrate PivotTable in stratifio-oss
 
 **Files:**
-- Copy: `openflow-pivot/src/components/pivot-table/` → `openflow-oss/frontend/features/analytics/pivot/components/`
-- Modify: `openflow-oss/frontend/features/analytics/pivot/NewPivotPage.tsx`
+- Copy: `stratifio-pivot/src/components/pivot-table/` → `stratifio-oss/frontend/features/analytics/pivot/components/`
+- Modify: `stratifio-oss/frontend/features/analytics/pivot/NewPivotPage.tsx`
 
 - [ ] **Step 1: Copy pivot-table components**
 
 ```bash
-cp -r /Users/carlo/my_work/openflow/openflow-pivot/src/components/pivot-table /Users/carlo/my_work/openflow/openflow-oss/frontend/features/analytics/pivot/components
+cp -r /Users/carlo/my_work/stratifio/stratifio-pivot/src/components/pivot-table /Users/carlo/my_work/stratifio/stratifio-oss/frontend/features/analytics/pivot/components
 ```
 
 - [ ] **Step 2: Refactor `NewPivotPage.tsx`**
@@ -2242,7 +2242,7 @@ export function NewPivotPage() {
     [activeFilters, validFilterIds],
   )
 
-  // Map openflow-pivot's PivotRowsRequest shape to openflow-oss's PivotGridRowsRequest shape.
+  // Map stratifio-pivot's PivotRowsRequest shape to stratifio-oss's PivotGridRowsRequest shape.
   // The two are structurally different: ZoneCol[] vs Array<{id,field,aggFunc,displayName}>.
   const fetchRows = async (params: PivotRowsRequest) => {
     const toGridCol = (c: { colId: string; label: string; aggFunc?: string }) => ({
@@ -2269,7 +2269,7 @@ export function NewPivotPage() {
     })
 
     // Map PivotGridRowsResponse → PivotRowsResponse
-    // secondaryColDefs (AG Grid naming) → columnDefs (openflow-pivot naming)
+    // secondaryColDefs (AG Grid naming) → columnDefs (stratifio-pivot naming)
     return { rows: res.rows, columnDefs: res.secondaryColDefs }
   }
 
@@ -2302,12 +2302,12 @@ export function NewPivotPage() {
 }
 ```
 
-**Note:** `fetchPivotGridRows` in `openflow-oss/frontend/lib/api/queries.ts` may need its signature updated to accept the `PivotRowsRequest` shape. Check the existing signature and adapt the wrapper function accordingly.
+**Note:** `fetchPivotGridRows` in `stratifio-oss/frontend/lib/api/queries.ts` may need its signature updated to accept the `PivotRowsRequest` shape. Check the existing signature and adapt the wrapper function accordingly.
 
 - [ ] **Step 3: Verify TypeScript compiles**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-oss
+cd /Users/carlo/my_work/stratifio/stratifio-oss
 npx tsc --noEmit
 ```
 
@@ -2316,7 +2316,7 @@ Fix any type errors before proceeding.
 - [ ] **Step 4: Commit**
 
 ```bash
-git commit -am "feat: replace ag-grid PivotTable with openflow-pivot component"
+git commit -am "feat: replace ag-grid PivotTable with stratifio-pivot component"
 ```
 
 ---
@@ -2324,20 +2324,20 @@ git commit -am "feat: replace ag-grid PivotTable with openflow-pivot component"
 ### Task 15: Remove ag-grid dependencies
 
 **Files:**
-- Modify: `openflow-oss/package.json`
-- Delete: `openflow-oss/frontend/lib/ag-grid-theme.ts`
+- Modify: `stratifio-oss/package.json`
+- Delete: `stratifio-oss/frontend/lib/ag-grid-theme.ts`
 
 - [ ] **Step 1: Remove ag-grid packages**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-oss
+cd /Users/carlo/my_work/stratifio/stratifio-oss
 npm uninstall ag-grid-community ag-grid-enterprise ag-grid-react
 ```
 
 - [ ] **Step 2: Delete the theme file**
 
 ```bash
-rm /Users/carlo/my_work/openflow/openflow-oss/frontend/lib/ag-grid-theme.ts
+rm /Users/carlo/my_work/stratifio/stratifio-oss/frontend/lib/ag-grid-theme.ts
 ```
 
 - [ ] **Step 3: Verify build is clean**
@@ -2361,7 +2361,7 @@ Navigate to:
 - [ ] **Step 5: Final commit**
 
 ```bash
-git commit -am "chore: remove ag-grid-enterprise dependency — replaced by openflow-pivot"
+git commit -am "chore: remove ag-grid-enterprise dependency — replaced by stratifio-pivot"
 ```
 
 ---
@@ -2370,7 +2370,7 @@ git commit -am "chore: remove ag-grid-enterprise dependency — replaced by open
 
 | Chunk | Tasks | Outcome |
 |---|---|---|
-| 1 | 1–5 | openflow-pivot scaffolded, shared components with tests |
+| 1 | 1–5 | stratifio-pivot scaffolded, shared components with tests |
 | 2 | 6–8 | EventsTable built and demoed |
 | 3 | 9–12 | PivotTable built and demoed |
-| 4 | 13–15 | openflow-oss migrated, ag-grid removed |
+| 4 | 13–15 | stratifio-oss migrated, ag-grid removed |

@@ -15,11 +15,11 @@
 ## Prerequisite: Configure pytest for SaaS
 
 **Files:**
-- Modify: `openflow-saas/pyproject.toml`
+- Modify: `stratifio-saas/pyproject.toml`
 
 - [ ] **Step 1: Add pytest config**
 
-In `openflow-saas/pyproject.toml`, add after the `[tool.uv.sources]` section:
+In `stratifio-saas/pyproject.toml`, add after the `[tool.uv.sources]` section:
 
 ```toml
 [tool.pytest.ini_options]
@@ -27,19 +27,19 @@ pythonpath = ["."]
 testpaths = ["tests"]
 ```
 
-This ensures `from app.main import app` resolves when pytest is run from `openflow-saas/`.
+This ensures `from app.main import app` resolves when pytest is run from `stratifio-saas/`.
 
 - [ ] **Step 2: Create `tests/` directory with empty `__init__.py`**
 
 ```bash
-mkdir -p /Users/carlo/my_work/openflow-saas/tests
-touch /Users/carlo/my_work/openflow-saas/tests/__init__.py
+mkdir -p /Users/carlo/my_work/stratifio-saas/tests
+touch /Users/carlo/my_work/stratifio-saas/tests/__init__.py
 ```
 
 - [ ] **Step 3: Verify pytest can be invoked**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest --collect-only 2>&1 | tail -5
 ```
 
@@ -48,7 +48,7 @@ Expected: no `ModuleNotFoundError`, just "no tests collected" or similar.
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add pyproject.toml tests/__init__.py
 git commit -m "chore: configure pytest pythonpath and testpaths for SaaS"
 ```
@@ -60,14 +60,14 @@ git commit -m "chore: configure pytest pythonpath and testpaths for SaaS"
 ### Task 1: Gate all analytics routes with JWT auth (dependency override)
 
 **Files:**
-- Create: `openflow-saas/app/core/dependencies.py`
-- Modify: `openflow-saas/app/main.py`
+- Create: `stratifio-saas/app/core/dependencies.py`
+- Modify: `stratifio-saas/app/main.py`
 
 **Context:** The OSS analytics sub-app is mounted at `/` with no auth. FastAPI supports `dependency_overrides` on sub-applications. We override `get_analytics_db` to require a valid JWT session and verify connection ownership.
 
 - [ ] **Step 1: Write failing test**
 
-Create `openflow-saas/tests/test_analytics_auth.py`:
+Create `stratifio-saas/tests/test_analytics_auth.py`:
 
 ```python
 """Verify analytics endpoints require authentication."""
@@ -96,7 +96,7 @@ def test_analytics_requires_auth(route):
 - [ ] **Step 2: Run test — verify it fails (all routes return 200 or 503, not 401)**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_analytics_auth.py -v
 ```
 
@@ -165,7 +165,7 @@ app.mount("/", analytics_app)
 - [ ] **Step 5: Run test — verify it passes**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_analytics_auth.py -v
 ```
 
@@ -174,7 +174,7 @@ Expected: PASS — all routes return 401 without a session cookie.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add app/core/dependencies.py app/main.py tests/test_analytics_auth.py
 git commit -m "fix(security): gate all analytics routes with JWT auth via dependency override"
 ```
@@ -184,13 +184,13 @@ git commit -m "fix(security): gate all analytics routes with JWT auth via depend
 ### Task 2: Add missing OSS connection sub-endpoints to SaaS router (with auth)
 
 **Files:**
-- Modify: `openflow-saas/app/api/connections.py`
+- Modify: `stratifio-saas/app/api/connections.py`
 
 **Context:** Routes like `POST /api/connections/{id}/test`, `GET /api/connections/{id}/schema/detect`, `GET /api/connections/{id}/browse`, `GET /api/connections/{id}/credentials`, `GET /api/connections/{id}/schema`, `GET /api/connections/{id}/filters`, `GET /api/connections/{id}/filter-options` fall through to the OSS router (inside the mounted analytics app) which has no auth. Adding them to the SaaS router causes FastAPI to match them before the mounted sub-app.
 
 - [ ] **Step 1: Write failing tests**
 
-Add to `openflow-saas/tests/test_analytics_auth.py`:
+Add to `stratifio-saas/tests/test_analytics_auth.py`:
 
 ```python
 CONNECTION_SUB_ROUTES = [
@@ -212,7 +212,7 @@ def test_connection_sub_endpoints_require_auth(method, route):
 - [ ] **Step 2: Run — verify fails**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_analytics_auth.py::test_connection_sub_endpoints_require_auth -v
 ```
 
@@ -220,7 +220,7 @@ Expected: FAIL — sub-endpoints return something other than 401.
 
 - [ ] **Step 3: Add sub-endpoints to SaaS connections router**
 
-In `openflow-saas/app/api/connections.py`, add at the bottom:
+In `stratifio-saas/app/api/connections.py`, add at the bottom:
 
 ```python
 from backend.api.connections import (
@@ -334,7 +334,7 @@ async def get_filter_options(
 - [ ] **Step 4: Run tests — verify pass**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_analytics_auth.py -v
 ```
 
@@ -343,7 +343,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add app/api/connections.py tests/test_analytics_auth.py
 git commit -m "fix(security): add auth-gated connection sub-endpoints to SaaS router"
 ```
@@ -353,12 +353,12 @@ git commit -m "fix(security): add auth-gated connection sub-endpoints to SaaS ro
 ### Task 3: Enforce email verification at login
 
 **Files:**
-- Modify: `openflow-saas/app/services/auth_service.py`
-- Modify: `openflow-saas/app/api/auth.py`
+- Modify: `stratifio-saas/app/services/auth_service.py`
+- Modify: `stratifio-saas/app/api/auth.py`
 
 - [ ] **Step 1: Write failing test**
 
-Create `openflow-saas/tests/test_auth_service.py`:
+Create `stratifio-saas/tests/test_auth_service.py`:
 
 ```python
 """Unit tests for auth_service."""
@@ -420,7 +420,7 @@ def test_authenticate_user_verified_returns_row(monkeypatch):
 - [ ] **Step 2: Run — verify fails**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_auth_service.py -v
 ```
 
@@ -464,7 +464,7 @@ def login(request: Request, body: LoginBody, response: Response):
 - [ ] **Step 5: Run tests — verify pass**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_auth_service.py -v
 ```
 
@@ -473,7 +473,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add app/services/auth_service.py app/api/auth.py tests/test_auth_service.py
 git commit -m "fix(security): enforce email verification before login"
 ```
@@ -483,7 +483,7 @@ git commit -m "fix(security): enforce email verification before login"
 ### Task 4: Document `users.api_key_hash` risk and guard against misuse
 
 **Files:**
-- Modify: `openflow-saas/app/services/auth_service.py`
+- Modify: `stratifio-saas/app/services/auth_service.py`
 
 **Context:** `_create_users_row()` stores a deterministic hash of the user UUID as `api_key_hash` to satisfy the OSS `users` table NOT NULL constraint. This is not a real API key. If API key auth is ever connected to any route, this value is derivable from the JWT (which encodes `user_id`). The full fix (removing the `users` table) requires a schema migration and is out of scope here. The immediate fix is a comment and a non-derivable value.
 
@@ -515,7 +515,7 @@ def _create_users_row(user_id: str) -> None:
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add app/services/auth_service.py
 git commit -m "fix(security): replace deterministic api_key_hash with random value, add warning"
 ```
@@ -525,18 +525,18 @@ git commit -m "fix(security): replace deterministic api_key_hash with random val
 ### Task 5: Mark `backend/core/auth.py` as OSS-only dead code
 
 **Files:**
-- Modify: `openflow/backend/core/auth.py`
+- Modify: `stratifio/backend/core/auth.py`
 
 - [ ] **Step 1: Add warning comment**
 
-Replace the contents of `openflow/backend/core/auth.py`:
+Replace the contents of `stratifio/backend/core/auth.py`:
 
 ```python
 # backend/core/auth.py
 # OSS-only API key auth — NOT connected to SaaS JWT auth.
 # This dependency is wired to NO router in the current codebase.
 # Do NOT add Depends(verify_api_key) to any router expecting SaaS-level protection.
-# SaaS authentication is handled by app/core/jwt_auth.py in openflow-saas.
+# SaaS authentication is handled by app/core/jwt_auth.py in stratifio-saas.
 from fastapi import Header, HTTPException, status
 from backend.config import settings
 
@@ -544,7 +544,7 @@ from backend.config import settings
 async def verify_api_key(x_api_key: str = Header(default="")) -> None:
     """Verify the API key header. Skip check if no key is configured (dev mode).
 
-    OSS standalone auth only. Not used in SaaS — see openflow-saas/app/core/jwt_auth.py.
+    OSS standalone auth only. Not used in SaaS — see stratifio-saas/app/core/jwt_auth.py.
     """
     if not settings.api_key:
         return
@@ -558,7 +558,7 @@ async def verify_api_key(x_api_key: str = Header(default="")) -> None:
 - [ ] **Step 2: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 git add backend/core/auth.py
 git commit -m "docs(security): mark backend/core/auth.py as OSS-only, not wired to SaaS"
 ```
@@ -570,17 +570,17 @@ git commit -m "docs(security): mark backend/core/auth.py as OSS-only, not wired 
 ### Task 6: Rename `create_router()` to `create_analytics_app()`
 
 **Files:**
-- Modify: `openflow/backend/main.py`
-- Modify: `openflow-saas/app/main.py`
+- Modify: `stratifio/backend/main.py`
+- Modify: `stratifio-saas/app/main.py`
 
 - [ ] **Step 1: Rename in OSS**
 
-In `openflow/backend/main.py`, rename `create_router` → `create_analytics_app` and update the docstring:
+In `stratifio/backend/main.py`, rename `create_router` → `create_analytics_app` and update the docstring:
 
 ```python
 def create_analytics_app() -> FastAPI:
-    """Create an OpenFlow analytics FastAPI sub-application for embedding in a SaaS wrapper."""
-    app = FastAPI(title="OpenFlow Analytics")
+    """Create an stratif.io analytics FastAPI sub-application for embedding in a SaaS wrapper."""
+    app = FastAPI(title="stratif.io Analytics")
     app.include_router(trend_router)
     app.include_router(retention_router)
     app.include_router(events_router)
@@ -595,7 +595,7 @@ def create_analytics_app() -> FastAPI:
 
 - [ ] **Step 2: Update SaaS import**
 
-In `openflow-saas/app/main.py`, update:
+In `stratifio-saas/app/main.py`, update:
 
 ```python
 from backend.main import create_analytics_app
@@ -609,7 +609,7 @@ app.mount("/", analytics_app)
 - [ ] **Step 3: Verify app still starts**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run python -c "from app.main import app; print('OK')"
 ```
 
@@ -618,7 +618,7 @@ Expected: `OK`
 - [ ] **Step 4: Run auth tests to confirm nothing broke**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_analytics_auth.py -v
 ```
 
@@ -627,11 +627,11 @@ Expected: all PASS.
 - [ ] **Step 5: Commit both repos**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 git add backend/main.py
 git commit -m "refactor: rename create_router() to create_analytics_app() for clarity"
 
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add app/main.py
 git commit -m "refactor: update import to use renamed create_analytics_app()"
 ```
@@ -641,56 +641,56 @@ git commit -m "refactor: update import to use renamed create_analytics_app()"
 ### Task 7: Remove SaaS duplicate layout components
 
 **Files:**
-- Delete: `openflow-saas/frontend/components/layout/DashboardLayout.tsx`
-- Delete: `openflow-saas/frontend/components/layout/Header.tsx`
-- Modify: `openflow-saas/frontend/App.tsx`
-- Modify: `openflow-saas/frontend/components/auth/ProtectedRoute.tsx` (if it imports local layout)
+- Delete: `stratifio-saas/frontend/components/layout/DashboardLayout.tsx`
+- Delete: `stratifio-saas/frontend/components/layout/Header.tsx`
+- Modify: `stratifio-saas/frontend/App.tsx`
+- Modify: `stratifio-saas/frontend/components/auth/ProtectedRoute.tsx` (if it imports local layout)
 
-**Context:** The SaaS `DashboardLayout` and `Header` duplicate OSS equivalents. The OSS versions are already available via the `@openflow/core` alias (set in `vite.config.ts`).
+**Context:** The SaaS `DashboardLayout` and `Header` duplicate OSS equivalents. The OSS versions are already available via the `@stratifio/core` alias (set in `vite.config.ts`).
 
 - [ ] **Step 1: Read SaaS layout files to check for differences**
 
 ```bash
-diff /Users/carlo/my_work/openflow/frontend/components/layout/DashboardLayout.tsx \
-     /Users/carlo/my_work/openflow-saas/frontend/components/layout/DashboardLayout.tsx || true
-diff /Users/carlo/my_work/openflow/frontend/components/layout/Header.tsx \
-     /Users/carlo/my_work/openflow-saas/frontend/components/layout/Header.tsx || true
+diff /Users/carlo/my_work/stratifio/frontend/components/layout/DashboardLayout.tsx \
+     /Users/carlo/my_work/stratifio-saas/frontend/components/layout/DashboardLayout.tsx || true
+diff /Users/carlo/my_work/stratifio/frontend/components/layout/Header.tsx \
+     /Users/carlo/my_work/stratifio-saas/frontend/components/layout/Header.tsx || true
 ```
 
 (`|| true` prevents non-zero exit code from diff when files differ.) If meaningful differences exist, merge them into the OSS component first before deleting the SaaS copies.
 
-- [ ] **Step 2: Update SaaS `App.tsx` to import from `@openflow/core`**
+- [ ] **Step 2: Update SaaS `App.tsx` to import from `@stratifio/core`**
 
-In `openflow-saas/frontend/App.tsx`, change:
+In `stratifio-saas/frontend/App.tsx`, change:
 
 ```typescript
 // Before:
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 
 // After:
-import { DashboardLayout } from '@openflow/core/components/layout'
+import { DashboardLayout } from '@stratifio/core/components/layout'
 ```
 
 - [ ] **Step 3: Check and update any other SaaS files importing local layout**
 
 ```bash
 grep -r "components/layout/DashboardLayout\|components/layout/Header" \
-  /Users/carlo/my_work/openflow-saas/frontend/ --include="*.tsx" --include="*.ts"
+  /Users/carlo/my_work/stratifio-saas/frontend/ --include="*.tsx" --include="*.ts"
 ```
 
-Update any found imports to use `@openflow/core/components/layout`.
+Update any found imports to use `@stratifio/core/components/layout`.
 
 - [ ] **Step 4: Remove the duplicate files**
 
 ```bash
-rm /Users/carlo/my_work/openflow-saas/frontend/components/layout/DashboardLayout.tsx
-rm /Users/carlo/my_work/openflow-saas/frontend/components/layout/Header.tsx
+rm /Users/carlo/my_work/stratifio-saas/frontend/components/layout/DashboardLayout.tsx
+rm /Users/carlo/my_work/stratifio-saas/frontend/components/layout/Header.tsx
 ```
 
 - [ ] **Step 5: Verify frontend builds**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 npm run build 2>&1 | tail -20
 ```
 
@@ -699,9 +699,9 @@ Expected: build succeeds with no TypeScript errors.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add -A
-git commit -m "refactor: remove duplicate layout components, import from @openflow/core"
+git commit -m "refactor: remove duplicate layout components, import from @stratifio/core"
 ```
 
 ---
@@ -709,25 +709,25 @@ git commit -m "refactor: remove duplicate layout components, import from @openfl
 ### Task 8: Replace SaaS `ErrorBoundary` with OSS one
 
 **Files:**
-- Modify: `openflow-saas/frontend/App.tsx`
+- Modify: `stratifio-saas/frontend/App.tsx`
 
 - [ ] **Step 1: Update import in `App.tsx`**
 
-In `openflow-saas/frontend/App.tsx`:
+In `stratifio-saas/frontend/App.tsx`:
 
 1. Remove the inline `ErrorBoundary` class definition (the class component with `state = { error: null }`).
 2. Add import at the top:
 
 ```typescript
-import { ErrorBoundary } from '@openflow/core/components/ErrorBoundary'
+import { ErrorBoundary } from '@stratifio/core/components/ErrorBoundary'
 ```
 
-Note: `@openflow/core` resolves to `/Users/carlo/my_work/openflow/frontend` via the Vite alias. This is a direct path import bypassing the barrel file (`index.ts`) — that is intentional. The `ErrorBoundary` component is not exported from the OSS barrel but the direct path import works correctly with Vite alias resolution.
+Note: `@stratifio/core` resolves to `/Users/carlo/my_work/stratifio/frontend` via the Vite alias. This is a direct path import bypassing the barrel file (`index.ts`) — that is intentional. The `ErrorBoundary` component is not exported from the OSS barrel but the direct path import works correctly with Vite alias resolution.
 
 - [ ] **Step 2: Verify frontend builds**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 npm run build 2>&1 | tail -20
 ```
 
@@ -736,7 +736,7 @@ Expected: build succeeds.
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add frontend/App.tsx
 git commit -m "refactor: replace inline ErrorBoundary with shared OSS component"
 ```
@@ -746,22 +746,22 @@ git commit -m "refactor: replace inline ErrorBoundary with shared OSS component"
 ### Task 9: Move `PathAnalysisTable.tsx` into feature folder
 
 **Files:**
-- Move: `openflow/frontend/PathAnalysisTable.tsx` → `openflow/frontend/features/analytics/paths/components/PathAnalysisTable.tsx`
+- Move: `stratifio/frontend/PathAnalysisTable.tsx` → `stratifio/frontend/features/analytics/paths/components/PathAnalysisTable.tsx`
 - Update any imports
 
 - [ ] **Step 1: Find all imports of the file**
 
 ```bash
-grep -r "PathAnalysisTable" /Users/carlo/my_work/openflow/frontend/ \
+grep -r "PathAnalysisTable" /Users/carlo/my_work/stratifio/frontend/ \
   --include="*.tsx" --include="*.ts" -l
 ```
 
 - [ ] **Step 2: Ensure target directory exists and move the file**
 
 ```bash
-mkdir -p /Users/carlo/my_work/openflow/frontend/features/analytics/paths/components
-mv /Users/carlo/my_work/openflow/frontend/PathAnalysisTable.tsx \
-   /Users/carlo/my_work/openflow/frontend/features/analytics/paths/components/PathAnalysisTable.tsx
+mkdir -p /Users/carlo/my_work/stratifio/frontend/features/analytics/paths/components
+mv /Users/carlo/my_work/stratifio/frontend/PathAnalysisTable.tsx \
+   /Users/carlo/my_work/stratifio/frontend/features/analytics/paths/components/PathAnalysisTable.tsx
 ```
 
 - [ ] **Step 3: Update imports in files found in step 1**
@@ -771,7 +771,7 @@ Change any `import ... from '.../PathAnalysisTable'` to the new path.
 - [ ] **Step 4: Verify frontend builds**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 npm run build 2>&1 | tail -20
 ```
 
@@ -780,7 +780,7 @@ Expected: build succeeds.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 git add -A
 git commit -m "refactor: move PathAnalysisTable into features/analytics/paths/components/"
 ```
@@ -792,13 +792,13 @@ git commit -m "refactor: move PathAnalysisTable into features/analytics/paths/co
 - [ ] **Step 1: Check if tracked**
 
 ```bash
-git -C /Users/carlo/my_work/openflow-saas ls-files dist/ | head -5
+git -C /Users/carlo/my_work/stratifio-saas ls-files dist/ | head -5
 ```
 
 - [ ] **Step 2: If output is non-empty, untrack and commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git rm -r --cached dist/
 git commit -m "chore: untrack dist/ build output from git"
 ```
@@ -812,20 +812,20 @@ If output is empty, skip — already clean.
 ### Task 11: Split `backend/api/connections.py` into a subpackage
 
 **Files:**
-- Create: `openflow/backend/api/connections/__init__.py`
-- Create: `openflow/backend/api/connections/models.py`
-- Create: `openflow/backend/api/connections/crud.py`
-- Create: `openflow/backend/api/connections/schema_detect.py`
-- Create: `openflow/backend/api/connections/browse.py`
-- Delete: `openflow/backend/api/connections.py` (flat file)
-- Modify: `openflow/backend/api/__init__.py`
+- Create: `stratifio/backend/api/connections/__init__.py`
+- Create: `stratifio/backend/api/connections/models.py`
+- Create: `stratifio/backend/api/connections/crud.py`
+- Create: `stratifio/backend/api/connections/schema_detect.py`
+- Create: `stratifio/backend/api/connections/browse.py`
+- Delete: `stratifio/backend/api/connections.py` (flat file)
+- Modify: `stratifio/backend/api/__init__.py`
 
 **Context:** The 717-line `connections.py` does five unrelated jobs. Split into a subpackage with one file per responsibility. The public interface (`connections_router`) stays the same so nothing else needs changing.
 
 - [ ] **Step 1: Run existing backend tests to establish baseline**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 uv run pytest backend/tests/ -v --tb=short 2>&1 | tail -30
 ```
 
@@ -834,14 +834,14 @@ Note how many pass. This is the baseline to beat.
 - [ ] **Step 2: Create `backend/api/connections/` subpackage**
 
 ```bash
-mkdir /Users/carlo/my_work/openflow/backend/api/connections_pkg
+mkdir /Users/carlo/my_work/stratifio/backend/api/connections_pkg
 ```
 
 (We use a temp name to avoid collision with the existing file; we'll rename after.)
 
 - [ ] **Step 3: Create `models.py`**
 
-Create `openflow/backend/api/connections_pkg/models.py`. Copy these classes verbatim from `connections.py`:
+Create `stratifio/backend/api/connections_pkg/models.py`. Copy these classes verbatim from `connections.py`:
 - `CustomProperty` (with `validate_path` validator and `model_config`)
 - `ConnectionCreate`, `ConnectionUpdate`, `ConnectionResponse`
 - `SchemaConfigBody`, `SchemaConfigResponse`
@@ -852,7 +852,7 @@ Required imports for this file: `re`, `typing.Any`, `typing.Literal`, `pydantic.
 
 - [ ] **Step 4: Create `schema_detect.py`**
 
-Create `openflow/backend/api/connections_pkg/schema_detect.py`. Copy these functions verbatim from `connections.py`:
+Create `stratifio/backend/api/connections_pkg/schema_detect.py`. Copy these functions verbatim from `connections.py`:
 - `_suggest_fields(columns)`
 - `_pick_events_table(tables, hint)`
 - `_infer_type(sql_type)`
@@ -869,14 +869,14 @@ Required imports: `fastapi.APIRouter`, `fastapi.HTTPException`, `backend.api.con
 
 - [ ] **Step 5: Create `browse.py`**
 
-Create `openflow/backend/api/connections_pkg/browse.py`. Copy verbatim from `connections.py`:
+Create `stratifio/backend/api/connections_pkg/browse.py`. Copy verbatim from `connections.py`:
 - `browse_connection(conn_id, catalog, schema)` FastAPI endpoint
 
 Create a `router = APIRouter()` (no prefix) and decorate with `@router.get("/{conn_id}/browse")`.
 
 - [ ] **Step 6: Create `crud.py`**
 
-Create `openflow/backend/api/connections_pkg/crud.py` with:
+Create `stratifio/backend/api/connections_pkg/crud.py` with:
 - `_now()`
 - `_get_connection_or_404()`
 - All CRUD endpoints: `list_connections`, `create_connection`, `get_connection`, `update_connection`, `delete_connection`, `test_connection`
@@ -889,7 +889,7 @@ This references models from `models.py` and functions from `schema_detect.py` an
 
 - [ ] **Step 7: Create `__init__.py` that assembles the router**
 
-Create `openflow/backend/api/connections_pkg/__init__.py`:
+Create `stratifio/backend/api/connections_pkg/__init__.py`:
 
 ```python
 """Connections API — manage database connections and their schema/filter configs."""
@@ -932,16 +932,16 @@ Note: each sub-router (`_crud_router`, `_detect_router`, `_browse_router`) shoul
 - [ ] **Step 8: Swap the old file for the subpackage**
 
 ```bash
-mv /Users/carlo/my_work/openflow/backend/api/connections.py \
-   /Users/carlo/my_work/openflow/backend/api/connections_old.py
-mv /Users/carlo/my_work/openflow/backend/api/connections_pkg \
-   /Users/carlo/my_work/openflow/backend/api/connections
+mv /Users/carlo/my_work/stratifio/backend/api/connections.py \
+   /Users/carlo/my_work/stratifio/backend/api/connections_old.py
+mv /Users/carlo/my_work/stratifio/backend/api/connections_pkg \
+   /Users/carlo/my_work/stratifio/backend/api/connections
 ```
 
 - [ ] **Step 9: Update `backend/api/__init__.py`** if it imports directly from `connections.py`
 
 ```bash
-cat /Users/carlo/my_work/openflow/backend/api/__init__.py
+cat /Users/carlo/my_work/stratifio/backend/api/__init__.py
 ```
 
 Ensure `connections_router` is imported from the new package. The import path stays the same: `from backend.api.connections import connections_router`.
@@ -949,7 +949,7 @@ Ensure `connections_router` is imported from the new package. The import path st
 - [ ] **Step 10: Run tests — verify baseline still holds**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 uv run pytest backend/tests/ -v --tb=short 2>&1 | tail -30
 ```
 
@@ -958,13 +958,13 @@ Expected: same number of tests pass as baseline.
 - [ ] **Step 11: Remove old file**
 
 ```bash
-rm /Users/carlo/my_work/openflow/backend/api/connections_old.py
+rm /Users/carlo/my_work/stratifio/backend/api/connections_old.py
 ```
 
 - [ ] **Step 12: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 git add -A
 git commit -m "refactor: split connections.py (717 lines) into connections/ subpackage"
 ```
@@ -974,15 +974,15 @@ git commit -m "refactor: split connections.py (717 lines) into connections/ subp
 ### Task 12: Extract `_now()` to a shared utility
 
 **Files:**
-- Create: `openflow/backend/utils.py`
-- Modify: `openflow/backend/api/connections/crud.py`
-- Modify: `openflow-saas/app/api/connections.py`
-- Modify: `openflow-saas/app/services/auth_service.py`
+- Create: `stratifio/backend/utils.py`
+- Modify: `stratifio/backend/api/connections/crud.py`
+- Modify: `stratifio-saas/app/api/connections.py`
+- Modify: `stratifio-saas/app/services/auth_service.py`
 
-- [ ] **Step 1: Create `openflow/backend/utils.py`**
+- [ ] **Step 1: Create `stratifio/backend/utils.py`**
 
 ```python
-"""Shared utility helpers for the OpenFlow backend."""
+"""Shared utility helpers for the stratif.io backend."""
 from datetime import UTC, datetime
 
 
@@ -1009,10 +1009,10 @@ For `auth_service.py` which also uses `_now_plus()`:
 - [ ] **Step 3: Run tests**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 uv run pytest backend/tests/ -v --tb=short 2>&1 | tail -10
 
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/ -v --tb=short 2>&1 | tail -10
 ```
 
@@ -1021,11 +1021,11 @@ Expected: all pass.
 - [ ] **Step 4: Commit both repos**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 git add backend/utils.py backend/api/connections/crud.py
 git commit -m "refactor: extract _now() to backend/utils.py"
 
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add app/api/connections.py app/services/auth_service.py
 git commit -m "refactor: use shared utcnow_str() from backend/utils.py"
 ```
@@ -1035,13 +1035,13 @@ git commit -m "refactor: use shared utcnow_str() from backend/utils.py"
 ### Task 13: Fix fragile migration system with version tracking
 
 **Files:**
-- Modify: `openflow-saas/app/product_db/migrations.py`
+- Modify: `stratifio-saas/app/product_db/migrations.py`
 
 **Context:** Migrations currently use `suppress(sqlite3.OperationalError)` which swallows real errors. Replace with a `schema_migrations` table that tracks applied migrations by index.
 
 - [ ] **Step 1: Write failing test**
 
-Add to `openflow-saas/tests/test_migrations.py`:
+Add to `stratifio-saas/tests/test_migrations.py`:
 
 ```python
 """Test that migrations are tracked and errors are not silently swallowed."""
@@ -1095,7 +1095,7 @@ def test_migration_not_reapplied(tmp_path):
 - [ ] **Step 2: Run — verify fails**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_migrations.py -v
 ```
 
@@ -1136,7 +1136,7 @@ def run_migrations() -> None:
 - [ ] **Step 4: Run tests — verify pass**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_migrations.py -v
 ```
 
@@ -1145,7 +1145,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add app/product_db/migrations.py tests/test_migrations.py
 git commit -m "fix: replace fragile migration error suppression with schema_migrations tracking"
 ```
@@ -1155,14 +1155,14 @@ git commit -m "fix: replace fragile migration error suppression with schema_migr
 ### Task 14: Add SaaS integration tests for auth flow
 
 **Files:**
-- Create: `openflow-saas/tests/conftest.py`
-- Create: `openflow-saas/tests/test_auth_flow.py`
+- Create: `stratifio-saas/tests/conftest.py`
+- Create: `stratifio-saas/tests/test_auth_flow.py`
 
 **Context:** The SaaS has no automated tests for the core auth flow. Cover the happy path and key error cases.
 
 - [ ] **Step 1: Add `_reset_product_db()` to OSS `database.py`**
 
-In `openflow/backend/product_db/database.py`, add after `get_product_db()`:
+In `stratifio/backend/product_db/database.py`, add after `get_product_db()`:
 
 ```python
 def _reset_product_db() -> None:
@@ -1178,7 +1178,7 @@ def _reset_product_db() -> None:
 Commit this change:
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 git add backend/product_db/database.py
 git commit -m "test: add _reset_product_db() helper for test isolation"
 ```
@@ -1186,7 +1186,7 @@ git commit -m "test: add _reset_product_db() helper for test isolation"
 Verify it is importable from the SaaS virtualenv before continuing:
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run python -c "from backend.product_db.database import _reset_product_db; print('OK')"
 ```
 
@@ -1194,10 +1194,10 @@ Expected: `OK`. If this fails, the editable install has not picked up the change
 
 - [ ] **Step 2: Create `conftest.py`**
 
-Create `openflow-saas/tests/conftest.py`:
+Create `stratifio-saas/tests/conftest.py`:
 
 ```python
-"""Shared test fixtures for openflow-saas."""
+"""Shared test fixtures for stratifio-saas."""
 import pytest
 from fastapi.testclient import TestClient
 
@@ -1206,12 +1206,12 @@ from fastapi.testclient import TestClient
 def use_tmp_db(tmp_path, monkeypatch):
     """Point product DB at a temp file and reset singletons for each test."""
     db_file = str(tmp_path / "test_product.db")
-    monkeypatch.setenv("OPENFLOW_PRODUCT_DB_PATH", db_file)
-    monkeypatch.setenv("OPENFLOW_JWT_SECRET", "test-secret-at-least-32-chars-long")
-    monkeypatch.setenv("OPENFLOW_ENCRYPTION_KEY", "test-encrypt-key-32-chars-padded==")
-    monkeypatch.setenv("OPENFLOW_CORS_ORIGINS", "http://localhost:5174")
-    monkeypatch.setenv("OPENFLOW_ALLOW_REGISTRATION", "true")
-    monkeypatch.setenv("OPENFLOW_DEBUG", "true")
+    monkeypatch.setenv("STRATIFIO_PRODUCT_DB_PATH", db_file)
+    monkeypatch.setenv("STRATIFIO_JWT_SECRET", "test-secret-at-least-32-chars-long")
+    monkeypatch.setenv("STRATIFIO_ENCRYPTION_KEY", "test-encrypt-key-32-chars-padded==")
+    monkeypatch.setenv("STRATIFIO_CORS_ORIGINS", "http://localhost:5174")
+    monkeypatch.setenv("STRATIFIO_ALLOW_REGISTRATION", "true")
+    monkeypatch.setenv("STRATIFIO_DEBUG", "true")
 
     # Reset cached settings and DB singleton so they pick up the new env vars
     from app.config import get_settings
@@ -1241,7 +1241,7 @@ Note: `backend/product_db/database.py` may need a `_reset_product_db()` helper t
 
 - [ ] **Step 2: Create `test_auth_flow.py`**
 
-Create `openflow-saas/tests/test_auth_flow.py`:
+Create `stratifio-saas/tests/test_auth_flow.py`:
 
 ```python
 """Integration tests for the auth flow."""
@@ -1327,7 +1327,7 @@ def test_logout_clears_session(client):
 - [ ] **Step 3: Run tests**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_auth_flow.py -v
 ```
 
@@ -1336,7 +1336,7 @@ Expected: all PASS (adjust conftest if product DB singleton needs reset helper).
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add tests/conftest.py tests/test_auth_flow.py
 git commit -m "test: add SaaS integration tests for auth flow"
 ```
@@ -1346,7 +1346,7 @@ git commit -m "test: add SaaS integration tests for auth flow"
 ### Task 15: Add connection scoping tests for SaaS
 
 **Files:**
-- Create: `openflow-saas/tests/test_connection_scoping.py`
+- Create: `stratifio-saas/tests/test_connection_scoping.py`
 
 **Context:** Verify that a user cannot access another user's connections.
 
@@ -1411,7 +1411,7 @@ def test_user_cannot_access_other_users_connection_by_id(client):
 - [ ] **Step 2: Run tests**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 uv run pytest tests/test_connection_scoping.py -v
 ```
 
@@ -1420,7 +1420,7 @@ Expected: PASS.
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow-saas
+cd /Users/carlo/my_work/stratifio-saas
 git add tests/test_connection_scoping.py
 git commit -m "test: add connection scoping tests verifying user isolation"
 ```
@@ -1430,22 +1430,22 @@ git commit -m "test: add connection scoping tests verifying user isolation"
 ### Task 16: Split `backend/services/connection_executor.py`
 
 **Files:**
-- Create: `openflow/backend/services/analytics_db.py`
-- Create: `openflow/backend/services/pool.py`
-- Modify: `openflow/backend/services/connection_executor.py` (keep only `get_analytics_db` dependency)
+- Create: `stratifio/backend/services/analytics_db.py`
+- Create: `stratifio/backend/services/pool.py`
+- Modify: `stratifio/backend/services/connection_executor.py` (keep only `get_analytics_db` dependency)
 
 **Context:** The 488-line file mixes pool management, CTE building, dialect routing, and the `AnalyticsDatabase` class. Split into focused files. `get_analytics_db` stays in `connection_executor.py` since SaaS overrides it by name.
 
 - [ ] **Step 1: Run backend tests to establish baseline**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 uv run pytest backend/tests/ -v --tb=short 2>&1 | tail -10
 ```
 
 - [ ] **Step 2: Create `pool.py`**
 
-Create `openflow/backend/services/pool.py`. Move from `connection_executor.py`:
+Create `stratifio/backend/services/pool.py`. Move from `connection_executor.py`:
 - `_POOL_TTL` constant
 - `_pool` dict and `_pool_lock`
 - `_pool_get(key, factory)` function
@@ -1453,7 +1453,7 @@ Create `openflow/backend/services/pool.py`. Move from `connection_executor.py`:
 
 - [ ] **Step 3: Create `analytics_db.py`**
 
-Create `openflow/backend/services/analytics_db.py`. Move from `connection_executor.py`:
+Create `stratifio/backend/services/analytics_db.py`. Move from `connection_executor.py`:
 - All private helper functions: `_resolve_path_to_sql`, `_EVENTS_REF_RE`, `_to_named_params`, `_get_table_columns`, `_remap_exprs_for_available_cols`, `_prepend_events_cte`
 - The `AnalyticsDatabase` class (all methods)
 - `open_analytics_db(connection_id)` function
@@ -1495,7 +1495,7 @@ The re-exports (`AnalyticsDatabase`, `open_analytics_db`) preserve backward comp
 - [ ] **Step 5: Run tests — verify baseline holds**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 uv run pytest backend/tests/ -v --tb=short 2>&1 | tail -10
 ```
 
@@ -1504,7 +1504,7 @@ Expected: same pass count as Step 1.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/carlo/my_work/openflow
+cd /Users/carlo/my_work/stratifio
 git add -A
 git commit -m "refactor: split connection_executor.py into analytics_db.py and pool.py"
 ```

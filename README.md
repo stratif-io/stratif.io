@@ -1,4 +1,4 @@
-# OpenFlow Analytics
+# stratif.io Analytics
 
 **Open-source, self-hostable product analytics. Connect your own database — no vendor lock-in, no auth required.**
 
@@ -6,9 +6,9 @@
 
 ---
 
-![OpenFlow Analytics Demo](docs/demo.gif)
+![stratif.io Analytics Demo](docs/demo.gif)
 
-▶ [Watch full demo (MP4)](https://github.com/your-org/openflow/releases/latest/download/openflow.mp4)
+▶ [Watch full demo (MP4)](https://github.com/your-org/stratifio/releases/latest/download/stratifio.mp4)
 
 ---
 
@@ -27,11 +27,11 @@
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-org/openflow.git
-cd openflow
+git clone https://github.com/your-org/stratifio.git
+cd stratifio
 
 # Generate a required encryption key
-echo "OPENFLOW_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
 
 # Build and start — first run seeds ~5,000 sample events automatically
 docker compose up
@@ -64,12 +64,12 @@ Sample analytics data is seeded automatically into `/data/sample.duckdb` on firs
 
 | Variable                   | Default                     | Description                                                      |
 | -------------------------- | --------------------------- | ---------------------------------------------------------------- |
-| `OPENFLOW_ENCRYPTION_KEY`  | _(required)_                | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
-| `OPENFLOW_PRODUCT_DB_PATH` | `./openflow_product.sqlite` | SQLite file storing connection configs                           |
-| `OPENFLOW_API_KEY`         | _(empty)_                   | Optional API key for the dashboard (leave empty for local dev)   |
-| `OPENFLOW_CORS_ORIGINS`    | `http://localhost:8000`     | Allowed CORS origins                                             |
-| `OPENFLOW_DEBUG`           | `false`                     | Enable `/docs` and `/redoc` endpoints                            |
-| `OPENFLOW_LOG_LEVEL`       | `INFO`                      | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)                  |
+| `STRATIFIO_ENCRYPTION_KEY`  | _(required)_                | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
+| `STRATIFIO_PRODUCT_DB_PATH` | `./stratifio_product.sqlite` | SQLite file storing connection configs                           |
+| `STRATIFIO_API_KEY`         | _(empty)_                   | Optional API key for the dashboard (leave empty for local dev)   |
+| `STRATIFIO_CORS_ORIGINS`    | `http://localhost:8000`     | Allowed CORS origins                                             |
+| `STRATIFIO_DEBUG`           | `false`                     | Enable `/docs` and `/redoc` endpoints                            |
+| `STRATIFIO_LOG_LEVEL`       | `INFO`                      | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)                  |
 
 ---
 
@@ -80,7 +80,7 @@ npm install
 uv sync
 
 cp .env.example .env
-# Set OPENFLOW_ENCRYPTION_KEY in .env
+# Set STRATIFIO_ENCRYPTION_KEY in .env
 
 uv run seed-duckdb   # optional — seed sample data
 
@@ -101,16 +101,16 @@ npm run lint              # ESLint (zero warnings)
 
 ## Embedding
 
-OpenFlow is designed to be embedded inside a larger product. The frontend and backend are independently mountable.
+stratif.io is designed to be embedded inside a larger product. The frontend and backend are independently mountable.
 
-### Frontend (`@openflow/core`)
+### Frontend (`@stratifio/core`)
 
 ```tsx
-import { OpenFlowDashboard } from '@openflow/core'
-;<OpenFlowDashboard />
+import { stratif.ioDashboard } from '@stratifio/core'
+;<stratif.ioDashboard />
 ```
 
-### Backend (`openflow-core`)
+### Backend (`stratifio-core`)
 
 ```python
 from backend import create_router
@@ -123,4 +123,4 @@ app.mount("/analytics", create_router())
 
 ## License
 
-MIT © OpenFlow Contributors
+MIT © stratif.io Contributors

@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="OpenFlow Analytics",
+    title="stratif.io Analytics",
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
     openapi_url="/openapi.json" if settings.debug else None,
@@ -90,8 +90,8 @@ if dist_path.exists():
 
 
 def create_analytics_app() -> FastAPI:
-    """Create an OpenFlow analytics FastAPI sub-application for embedding in a SaaS wrapper."""
-    router_app = FastAPI(title="OpenFlow Analytics")
+    """Create an stratif.io analytics FastAPI sub-application for embedding in a SaaS wrapper."""
+    router_app = FastAPI(title="stratif.io Analytics")
     router_app.include_router(trend_router)
     router_app.include_router(retention_router)
     router_app.include_router(events_router)

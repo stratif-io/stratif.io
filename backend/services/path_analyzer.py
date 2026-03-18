@@ -11,7 +11,7 @@ DuckDB (fast path)
 Standard SQL (portable path)
     Uses only ANSI SQL constructs — window functions (ROW_NUMBER, LAG, SUM
     OVER), self-joins, UNION ALL, and helpers from
-    ``openflow.services.sql_builder`` for dialect-sensitive fragments.
+    ``stratifio.services.sql_builder`` for dialect-sensitive fragments.
     Works on DuckDB, SQLite, PostgreSQL, MySQL, Snowflake, BigQuery, etc.
     Selected automatically for every non-DuckDB dialect.
 

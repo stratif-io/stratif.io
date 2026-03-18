@@ -11,5 +11,5 @@ dist
 .vite
 *.sqlite
 *.duckdb
-openflow_product.sqlite
+stratifio_product.sqlite
 db/

@@ -24,12 +24,12 @@ set -euo pipefail
 SAMPLE_DB="/data/sample.duckdb"
 
 if [ ! -f "$SAMPLE_DB" ]; then
-  echo "[openflow] Seeding sample analytics data (first run)…"
+  echo "[stratifio] Seeding sample analytics data (first run)…"
   DB_PATH_PREFIX=/data/sample \
   SEED_USERS=5000 \
   SEED_DAYS=90 \
   seed-duckdb
-  echo "[openflow] Seeding complete → $SAMPLE_DB"
+  echo "[stratifio] Seeding complete → $SAMPLE_DB"
 fi
 
 exec uvicorn backend.main:app --host 0.0.0.0 --port 8000
@@ -105,7 +105,7 @@ Key changes:
 **Step 3: Verify the build compiles**
 
 ```bash
-docker build -t openflow:test .
+docker build -t stratifio:test .
 ```
 
 Expected: build succeeds, no errors.
@@ -136,16 +136,16 @@ services:
       - analytics_data:/data
     environment:
       # Required: generate with `openssl rand -base64 32`
-      OPENFLOW_ENCRYPTION_KEY: ${OPENFLOW_ENCRYPTION_KEY}
-      OPENFLOW_PRODUCT_DB_PATH: /data/openflow_product.sqlite
+      STRATIFIO_ENCRYPTION_KEY: ${STRATIFIO_ENCRYPTION_KEY}
+      STRATIFIO_PRODUCT_DB_PATH: /data/stratifio_product.sqlite
       # Optional API key — leave empty for local exploration
-      OPENFLOW_API_KEY: ${OPENFLOW_API_KEY:-}
+      STRATIFIO_API_KEY: ${STRATIFIO_API_KEY:-}
       # CORS: keep as localhost:8000 for single-container local use
-      OPENFLOW_CORS_ORIGINS: ${OPENFLOW_CORS_ORIGINS:-http://localhost:8000}
-      OPENFLOW_DEBUG: ${OPENFLOW_DEBUG:-false}
-      OPENFLOW_LOG_LEVEL: ${OPENFLOW_LOG_LEVEL:-INFO}
-      OPENFLOW_LOG_FORMAT: ${OPENFLOW_LOG_FORMAT:-json}
-      OPENFLOW_LOG_SQL: ${OPENFLOW_LOG_SQL:-false}
+      STRATIFIO_CORS_ORIGINS: ${STRATIFIO_CORS_ORIGINS:-http://localhost:8000}
+      STRATIFIO_DEBUG: ${STRATIFIO_DEBUG:-false}
+      STRATIFIO_LOG_LEVEL: ${STRATIFIO_LOG_LEVEL:-INFO}
+      STRATIFIO_LOG_FORMAT: ${STRATIFIO_LOG_FORMAT:-json}
+      STRATIFIO_LOG_SQL: ${STRATIFIO_LOG_SQL:-false}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/events')\""]
       interval: 15s
@@ -161,7 +161,7 @@ volumes:
 Notes:
 - Health check uses stdlib `urllib` (no `curl` in slim image) hitting `/api/events`
 - `start_period: 60s` gives seeding time to finish on first run before health checks begin
-- All vars have `${VAR:-default}` so only `OPENFLOW_ENCRYPTION_KEY` is strictly required
+- All vars have `${VAR:-default}` so only `STRATIFIO_ENCRYPTION_KEY` is strictly required
 
 **Step 2: Commit**
 
@@ -180,38 +180,38 @@ git commit -m "feat(docker): health check, log vars, and correct CORS default"
 **Step 1: Replace contents with**
 
 ```bash
-# ── OpenFlow Analytics — Environment Configuration ────────────────────────────
+# ── stratif.io Analytics — Environment Configuration ────────────────────────────
 #
 # Quick start:
 #   1. Copy this file:  cp .env.example .env
-#   2. Set OPENFLOW_ENCRYPTION_KEY (required — see below)
+#   2. Set STRATIFIO_ENCRYPTION_KEY (required — see below)
 #   3. Run:  docker compose up
 #
 # ── Connection Credentials Encryption ────────────────────────────────────────
 # Required. Encrypts stored database credentials.
 # Generate with:  openssl rand -base64 32
-OPENFLOW_ENCRYPTION_KEY=<your-secret-key>
+STRATIFIO_ENCRYPTION_KEY=<your-secret-key>
 
 # ── Product Database (stores connections & configs) ───────────────────────────
-# Docker: set to /data/openflow_product.sqlite (mapped to named volume)
+# Docker: set to /data/stratifio_product.sqlite (mapped to named volume)
 # Local dev: leave as default
-OPENFLOW_PRODUCT_DB_PATH=./openflow_product.sqlite
+STRATIFIO_PRODUCT_DB_PATH=./stratifio_product.sqlite
 
 # ── API Key (optional — leave empty for local dev, set in production) ─────────
-OPENFLOW_API_KEY=
+STRATIFIO_API_KEY=
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
 # Docker single-container: http://localhost:8000
 # Local dev (split frontend/backend): http://localhost:5173
-OPENFLOW_CORS_ORIGINS=http://localhost:8000
+STRATIFIO_CORS_ORIGINS=http://localhost:8000
 
 # ── Logging ───────────────────────────────────────────────────────────────────
-OPENFLOW_LOG_LEVEL=INFO
-OPENFLOW_LOG_SQL=false
-OPENFLOW_LOG_FORMAT=json
+STRATIFIO_LOG_LEVEL=INFO
+STRATIFIO_LOG_SQL=false
+STRATIFIO_LOG_FORMAT=json
 
 # ── Debug (enables /docs, /redoc — disable in production) ────────────────────
-OPENFLOW_DEBUG=false
+STRATIFIO_DEBUG=false
 ```
 
 **Step 2: Commit**
@@ -237,11 +237,11 @@ Find the "Quick Start (Docker)" section and replace with:
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-org/openflow.git
-cd openflow
+git clone https://github.com/your-org/stratifio.git
+cd stratifio
 
 # Generate a required encryption key and configure
-echo "OPENFLOW_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
 
 # Build and start (first run seeds ~5k sample events automatically)
 docker compose up
@@ -275,7 +275,7 @@ git commit -m "docs: update Docker quickstart with seeding note and connection i
 docker compose up --build
 ```
 
-Expected: image builds, seeding log lines appear (`[openflow] Seeding sample analytics data…`, `[openflow] Seeding complete`), then uvicorn starts.
+Expected: image builds, seeding log lines appear (`[stratifio] Seeding sample analytics data…`, `[stratifio] Seeding complete`), then uvicorn starts.
 
 **Step 2: Check health**
 

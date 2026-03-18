@@ -22,7 +22,7 @@ function DashboardFirstRun() {
       <div className="space-y-2">
         <h2 className="text-lg font-semibold tracking-tight">Connect your warehouse</h2>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          OpenFlow queries your database directly — no data pipelines, no per-event fees. Connect
+          stratif.io queries your database directly — no data pipelines, no per-event fees. Connect
           once and your events are available immediately.
         </p>
       </div>
@@ -33,7 +33,7 @@ function DashboardFirstRun() {
           <div>
             <p className="font-medium">Add a connection</p>
             <p className="text-muted-foreground mt-0.5">
-              Snowflake, Databricks, PostgreSQL, or DuckDB — provide credentials and OpenFlow
+              Snowflake, Databricks, PostgreSQL, or DuckDB — provide credentials and stratif.io
               connects directly.
             </p>
           </div>
@@ -43,7 +43,7 @@ function DashboardFirstRun() {
           <div>
             <p className="font-medium">Point to your events table</p>
             <p className="text-muted-foreground mt-0.5">
-              Tell OpenFlow which table holds your events and which columns map to user, session,
+              Tell stratif.io which table holds your events and which columns map to user, session,
               and timestamp.
             </p>
           </div>
@@ -68,7 +68,7 @@ function DashboardFirstRun() {
 export function DashboardPage() {
 
   useEffect(() => {
-    document.title = 'Dashboard — OpenFlow'
+    document.title = 'Dashboard — stratif.io'
   }, [])
 
   const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()

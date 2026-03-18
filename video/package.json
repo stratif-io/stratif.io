@@ -1,11 +1,11 @@
 {
-  "name": "openflow-video",
+  "name": "stratifio-video",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "studio": "npx remotion studio",
-    "render": "npx remotion render OpenFlowVideo out/openflow.mp4",
-    "render:gif": "ffmpeg -i out/openflow.mp4 -vf 'fps=15,scale=1280:-1:flags=lanczos,palettegen' /tmp/palette.png && ffmpeg -i out/openflow.mp4 -i /tmp/palette.png -vf 'fps=15,scale=1280:-1:flags=lanczos,paletteuse' ../docs/demo.gif",
+    "render": "npx remotion render stratif.ioVideo out/stratifio.mp4",
+    "render:gif": "ffmpeg -i out/stratifio.mp4 -vf 'fps=15,scale=1280:-1:flags=lanczos,palettegen' /tmp/palette.png && ffmpeg -i out/stratifio.mp4 -i /tmp/palette.png -vf 'fps=15,scale=1280:-1:flags=lanczos,paletteuse' ../docs/demo.gif",
     "capture": "npx tsx capture/capture.ts",
     "render:full": "npm run capture && npm run render && npm run render:gif"
   },

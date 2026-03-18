@@ -1,7 +1,7 @@
-# Architecture Audit — OpenFlow OSS + SaaS
+# Architecture Audit — stratif.io OSS + SaaS
 
 **Date**: 2026-03-11
-**Scope**: `openflow/` (OSS) and `openflow-saas/` (SaaS)
+**Scope**: `stratifio/` (OSS) and `stratifio-saas/` (SaaS)
 **Approach**: Triage + phased fix — security first, then structural, then quality
 
 ---
@@ -18,7 +18,7 @@ The critical gap is that the analytics API is completely unauthenticated in prod
 
 ### 🔴 CRITICAL — All analytics endpoints unauthenticated in SaaS
 
-**Location**: `openflow-saas/app/main.py`
+**Location**: `stratifio-saas/app/main.py`
 
 ```python
 analytics_app = create_analytics_router()
@@ -48,7 +48,7 @@ Any caller who knows (or guesses) a connection UUID can query real customer anal
 
 ### 🟡 MEDIUM — Email verification not enforced at login
 
-**Location**: `openflow-saas/app/services/auth_service.py` → `authenticate_user()`
+**Location**: `stratifio-saas/app/services/auth_service.py` → `authenticate_user()`
 
 The function validates the password but does not check `email_verified`. Users can log in immediately after registering without verifying their email address.
 
@@ -58,7 +58,7 @@ The function validates the password but does not check `email_verified`. Users c
 
 ### 🟡 MEDIUM — `users.api_key_hash` is a fake value
 
-**Location**: `openflow-saas/app/services/auth_service.py` → `_create_users_row()`
+**Location**: `stratifio-saas/app/services/auth_service.py` → `_create_users_row()`
 
 ```python
 api_key_hash = hashlib.sha256(user_id.encode()).hexdigest()
@@ -70,9 +70,9 @@ The `users` table (an OSS concept) requires a `NOT NULL` `api_key_hash`. SaaS po
 
 ### 🔵 LOW — `backend/core/auth.py` is dead code but dangerous
 
-**Location**: `openflow/backend/core/auth.py`
+**Location**: `stratifio/backend/core/auth.py`
 
-`verify_api_key` is defined but wired to no router. If someone adds `Depends(verify_api_key)` believing it provides SaaS-level protection, it does not — it reads `OPENFLOW_API_KEY` which is empty by default.
+`verify_api_key` is defined but wired to no router. If someone adds `Depends(verify_api_key)` believing it provides SaaS-level protection, it does not — it reads `STRATIFIO_API_KEY` which is empty by default.
 
 **Fix**: remove the file or add a prominent warning comment that it is OSS-only and not connected to SaaS auth.
 
@@ -82,11 +82,11 @@ The `users` table (an OSS concept) requires a `NOT NULL` `api_key_hash`. SaaS po
 
 ### 🔴 HIGH — `create_router()` returns a `FastAPI` app, not a router
 
-**Location**: `openflow/backend/main.py`
+**Location**: `stratifio/backend/main.py`
 
 ```python
 def create_router() -> FastAPI:
-    router_app = FastAPI(title="OpenFlow Analytics")
+    router_app = FastAPI(title="stratif.io Analytics")
     ...
     return router_app
 ```
@@ -99,7 +99,7 @@ The name says "router" but returns a full sub-application. This means the SaaS l
 
 ### 🟡 MEDIUM — SaaS connections CRUD duplicates OSS instead of extending it
 
-**Location**: `openflow-saas/app/api/connections.py`
+**Location**: `stratifio-saas/app/api/connections.py`
 
 All 6 CRUD endpoints are re-implemented with `user_id` scoping. If the OSS connections API evolves, SaaS won't inherit the changes. Sub-endpoints (`/test`, `/schema/detect`, `/browse`, `/credentials`) remain in the OSS router with no auth, creating a split where some endpoints are SaaS-controlled and others are not.
 
@@ -109,7 +109,7 @@ All 6 CRUD endpoints are re-implemented with `user_id` scoping. If the OSS conne
 
 ### 🟡 MEDIUM — Two diverging schema definitions for the same SQLite file
 
-**Locations**: `openflow/backend/product_db/migrations.py` and `openflow-saas/app/product_db/migrations.py`
+**Locations**: `stratifio/backend/product_db/migrations.py` and `stratifio-saas/app/product_db/migrations.py`
 
 OSS schema has `connections` without `user_id`. SaaS schema has a superset with `user_id`, `auth_users`, `users`. In practice only the SaaS `init_product_db()` runs at SaaS startup — it works — but if someone runs the OSS standalone against the same DB file the schemas conflict.
 
@@ -119,17 +119,17 @@ OSS schema has `connections` without `user_id`. SaaS schema has a superset with 
 
 ### 🟡 MEDIUM — SaaS duplicates OSS layout components
 
-**Location**: `openflow-saas/frontend/components/layout/`
+**Location**: `stratifio-saas/frontend/components/layout/`
 
-`DashboardLayout.tsx` and `Header.tsx` exist in SaaS alongside OSS equivalents in `openflow/frontend/components/layout/`. The SaaS should import and extend OSS components via the `@openflow/core` alias, not maintain parallel copies. They will silently diverge.
+`DashboardLayout.tsx` and `Header.tsx` exist in SaaS alongside OSS equivalents in `stratifio/frontend/components/layout/`. The SaaS should import and extend OSS components via the `@stratifio/core` alias, not maintain parallel copies. They will silently diverge.
 
-**Fix**: remove SaaS-local layout components and import from `@openflow/core/components/layout/`. Customizations should extend rather than copy.
+**Fix**: remove SaaS-local layout components and import from `@stratifio/core/components/layout/`. Customizations should extend rather than copy.
 
 ---
 
 ### 🔵 LOW — `PathAnalysisTable.tsx` at root of `frontend/`
 
-**Location**: `openflow/frontend/PathAnalysisTable.tsx`
+**Location**: `stratifio/frontend/PathAnalysisTable.tsx`
 
 The only file at the root of `frontend/` that is not an entry point. Should live in `frontend/features/analytics/paths/components/`.
 
@@ -137,9 +137,9 @@ The only file at the root of `frontend/` that is not an entry point. Should live
 
 ### 🔵 LOW — `ErrorBoundary` class component inline in SaaS `App.tsx`
 
-**Location**: `openflow-saas/frontend/App.tsx`
+**Location**: `stratifio-saas/frontend/App.tsx`
 
-Mixing a class component into an otherwise functional file. The OSS already has `frontend/components/ErrorBoundary.tsx` — SaaS should import it via `@openflow/core/components/ErrorBoundary` rather than define its own.
+Mixing a class component into an otherwise functional file. The OSS already has `frontend/components/ErrorBoundary.tsx` — SaaS should import it via `@stratifio/core/components/ErrorBoundary` rather than define its own.
 
 ---
 
@@ -170,7 +170,7 @@ Pool management, CTE building, dialect routing, schema remapping, `AnalyticsData
 
 ### 🟡 MEDIUM — Migration system is fragile
 
-**Location**: `openflow-saas/app/product_db/migrations.py`
+**Location**: `stratifio-saas/app/product_db/migrations.py`
 
 Migrations use `suppress(sqlite3.OperationalError)` to detect already-applied statements. Real errors (typos, constraint violations) are silently swallowed. No version table means no way to audit which migrations have run.
 
@@ -198,7 +198,7 @@ Auth flows, email sending, connection scoping, JWT cookie handling, and token co
 
 Added to `.gitignore` but `git rm --cached -r dist/` was never run. The directory appears in git status.
 
-**Fix**: `git rm --cached -r openflow-saas/dist/` and commit.
+**Fix**: `git rm --cached -r stratifio-saas/dist/` and commit.
 
 ---
 
@@ -235,6 +235,6 @@ Added to `.gitignore` but `git rm --cached -r dist/` was never run. The director
 - Multi-dialect SQL via `sql_builder.py` helpers
 - `resolve.dedupe` in Vite to prevent dual React instance
 - SPA fallback via HTTP middleware (correct pattern with mounted sub-app)
-- pydantic-settings with `OPENFLOW_` prefix and `extra="ignore"`
+- pydantic-settings with `STRATIFIO_` prefix and `extra="ignore"`
 - Structured logging via structlog
 - `.dockerignore` whitelist pattern keeping build context under 1MB

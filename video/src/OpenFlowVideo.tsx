@@ -14,7 +14,7 @@ const FADE       = 15
 
 export const TOTAL_FRAMES = INTRO + DEMO + COMINGSOON + OUTRO - FADE * 3
 
-export const OpenFlowVideo: React.FC = () => {
+export const stratif.ioVideo: React.FC = () => {
   const { durationInFrames, fps } = useVideoConfig()
 
   return (

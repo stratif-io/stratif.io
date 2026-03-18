@@ -1,4 +1,4 @@
-"""OpenFlow Analytics - Bare Metal Product Analytics"""
+"""stratif.io Analytics - Bare Metal Product Analytics"""
 
 from backend.main import create_analytics_app
 

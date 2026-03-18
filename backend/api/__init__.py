@@ -1,4 +1,4 @@
-"""API package for OpenFlow Analytics."""
+"""API package for stratif.io Analytics."""
 
 from .connections import router as connections_router
 from .conversion import router as conversion_router

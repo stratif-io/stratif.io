@@ -1,2 +1,2 @@
-// Package entry point for @openflow/core consumers
-export { default as OpenFlowDashboard } from './App'
+// Package entry point for @stratifio/core consumers
+export { default as stratif.ioDashboard } from './App'

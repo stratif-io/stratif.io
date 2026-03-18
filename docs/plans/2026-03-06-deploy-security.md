@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Harden OpenFlow's security (credentials stored for client DBs — CRITICAL) and deploy cheaply on Fly.io.
+**Goal:** Harden stratif.io's security (credentials stored for client DBs — CRITICAL) and deploy cheaply on Fly.io.
 
 **Architecture:** Fix security issues in priority order (CRITICAL → HIGH → MEDIUM), then add Fly.io deployment config. All security fixes use TDD where testable; deployment config is infra-only.
 
@@ -30,38 +30,38 @@
 
 **Files:**
 
-- Modify: `openflow/api/auth.py` (find `_set_session_cookie`)
+- Modify: `stratifio/api/auth.py` (find `_set_session_cookie`)
 
 **Step 1: Write the failing test**
 
-In `openflow/tests/test_auth_security.py` (create new file):
+In `stratifio/tests/test_auth_security.py` (create new file):
 
 ```python
 """Security tests for auth endpoints."""
 import pytest
 from starlette.testclient import TestClient
 from unittest.mock import patch, MagicMock
-from openflow.main import app
+from stratifio.main import app
 
 
 def test_session_cookie_has_secure_flag(monkeypatch):
     """Session cookie MUST have Secure flag to prevent sending over HTTP."""
-    monkeypatch.setenv("OPENFLOW_JWT_SECRET", "test-secret-min-32-chars-long!!!!")
-    monkeypatch.setenv("OPENFLOW_JWT_ALGORITHM", "HS256")
-    monkeypatch.setenv("OPENFLOW_JWT_EXPIRE_DAYS", "7")
-    monkeypatch.setenv("OPENFLOW_CORS_ORIGINS", '["*"]')
-    monkeypatch.setenv("OPENFLOW_PRODUCT_DB_PATH", ":memory:")
-    monkeypatch.setenv("OPENFLOW_ENCRYPTION_KEY", "test-encryption-key-32-chars-long!")
-    monkeypatch.setenv("OPENFLOW_API_URL", "http://localhost:8000")
-    monkeypatch.setenv("OPENFLOW_API_KEY", "test-api-key")
+    monkeypatch.setenv("STRATIFIO_JWT_SECRET", "test-secret-min-32-chars-long!!!!")
+    monkeypatch.setenv("STRATIFIO_JWT_ALGORITHM", "HS256")
+    monkeypatch.setenv("STRATIFIO_JWT_EXPIRE_DAYS", "7")
+    monkeypatch.setenv("STRATIFIO_CORS_ORIGINS", '["*"]')
+    monkeypatch.setenv("STRATIFIO_PRODUCT_DB_PATH", ":memory:")
+    monkeypatch.setenv("STRATIFIO_ENCRYPTION_KEY", "test-encryption-key-32-chars-long!")
+    monkeypatch.setenv("STRATIFIO_API_URL", "http://localhost:8000")
+    monkeypatch.setenv("STRATIFIO_API_KEY", "test-api-key")
 
     fake_user = MagicMock()
     fake_user.id = "user-123"
     fake_token = "fake.jwt.token"
 
     with (
-        patch("openflow.api.auth.auth_service.authenticate_user", return_value=fake_user),
-        patch("openflow.core.jwt_utils.create_access_token", return_value=fake_token),
+        patch("stratifio.api.auth.auth_service.authenticate_user", return_value=fake_user),
+        patch("stratifio.core.jwt_utils.create_access_token", return_value=fake_token),
         TestClient(app, raise_server_exceptions=True) as client,
     ):
         response = client.post(
@@ -78,20 +78,20 @@ def test_session_cookie_has_secure_flag(monkeypatch):
 **Step 2: Run to confirm it fails**
 
 ```bash
-cd /Users/carlo/my_work/openflow
-uv run pytest openflow/tests/test_auth_security.py::test_session_cookie_has_secure_flag -v
+cd /Users/carlo/my_work/stratifio
+uv run pytest stratifio/tests/test_auth_security.py::test_session_cookie_has_secure_flag -v
 ```
 
 Expected: FAIL — "Cookie missing Secure flag"
 
-**Step 3: Fix `_set_session_cookie` in `openflow/api/auth.py`**
+**Step 3: Fix `_set_session_cookie` in `stratifio/api/auth.py`**
 
 Find the `_set_session_cookie` helper and add `secure=True`:
 
 ```python
 def _set_session_cookie(response: Response, token: str) -> None:
     response.set_cookie(
-        key="of_session",
+        key="sio_session",
         value=token,
         httponly=True,
         samesite="lax",
@@ -106,7 +106,7 @@ Also find the OAuth state cookie set in the OAuth endpoints and add `secure=True
 **Step 4: Run to confirm it passes**
 
 ```bash
-uv run pytest openflow/tests/test_auth_security.py::test_session_cookie_has_secure_flag -v
+uv run pytest stratifio/tests/test_auth_security.py::test_session_cookie_has_secure_flag -v
 ```
 
 Expected: PASS
@@ -114,7 +114,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add openflow/api/auth.py openflow/tests/test_auth_security.py
+git add stratifio/api/auth.py stratifio/tests/test_auth_security.py
 git commit -m "security: add Secure flag to session and OAuth state cookies"
 ```
 
@@ -124,26 +124,26 @@ git commit -m "security: add Secure flag to session and OAuth state cookies"
 
 **Files:**
 
-- Modify: `openflow/config.py` — add `allow_registration: bool = False`
-- Modify: `openflow/api/auth.py` — gate `/register` on config flag
-- Test: `openflow/tests/test_auth_security.py`
+- Modify: `stratifio/config.py` — add `allow_registration: bool = False`
+- Modify: `stratifio/api/auth.py` — gate `/register` on config flag
+- Test: `stratifio/tests/test_auth_security.py`
 
 **Step 1: Write the failing test**
 
-Add to `openflow/tests/test_auth_security.py`:
+Add to `stratifio/tests/test_auth_security.py`:
 
 ```python
 def test_register_disabled_by_default(monkeypatch):
-    """Registration must be disabled unless OPENFLOW_ALLOW_REGISTRATION=true."""
-    monkeypatch.setenv("OPENFLOW_JWT_SECRET", "test-secret-min-32-chars-long!!!!")
-    monkeypatch.setenv("OPENFLOW_JWT_ALGORITHM", "HS256")
-    monkeypatch.setenv("OPENFLOW_JWT_EXPIRE_DAYS", "7")
-    monkeypatch.setenv("OPENFLOW_CORS_ORIGINS", '["*"]')
-    monkeypatch.setenv("OPENFLOW_PRODUCT_DB_PATH", ":memory:")
-    monkeypatch.setenv("OPENFLOW_ENCRYPTION_KEY", "test-encryption-key-32-chars-long!")
-    monkeypatch.setenv("OPENFLOW_API_URL", "http://localhost:8000")
-    monkeypatch.setenv("OPENFLOW_API_KEY", "test-api-key")
-    # Explicitly NOT setting OPENFLOW_ALLOW_REGISTRATION
+    """Registration must be disabled unless STRATIFIO_ALLOW_REGISTRATION=true."""
+    monkeypatch.setenv("STRATIFIO_JWT_SECRET", "test-secret-min-32-chars-long!!!!")
+    monkeypatch.setenv("STRATIFIO_JWT_ALGORITHM", "HS256")
+    monkeypatch.setenv("STRATIFIO_JWT_EXPIRE_DAYS", "7")
+    monkeypatch.setenv("STRATIFIO_CORS_ORIGINS", '["*"]')
+    monkeypatch.setenv("STRATIFIO_PRODUCT_DB_PATH", ":memory:")
+    monkeypatch.setenv("STRATIFIO_ENCRYPTION_KEY", "test-encryption-key-32-chars-long!")
+    monkeypatch.setenv("STRATIFIO_API_URL", "http://localhost:8000")
+    monkeypatch.setenv("STRATIFIO_API_KEY", "test-api-key")
+    # Explicitly NOT setting STRATIFIO_ALLOW_REGISTRATION
 
     with TestClient(app) as client:
         response = client.post(
@@ -156,18 +156,18 @@ def test_register_disabled_by_default(monkeypatch):
 **Step 2: Run to confirm it fails**
 
 ```bash
-uv run pytest openflow/tests/test_auth_security.py::test_register_disabled_by_default -v
+uv run pytest stratifio/tests/test_auth_security.py::test_register_disabled_by_default -v
 ```
 
 Expected: FAIL — register returns 200 or 201, not 403
 
-**Step 3: Add config flag to `openflow/config.py`**
+**Step 3: Add config flag to `stratifio/config.py`**
 
 ```python
-allow_registration: bool = Field(default=False, alias="OPENFLOW_ALLOW_REGISTRATION")
+allow_registration: bool = Field(default=False, alias="STRATIFIO_ALLOW_REGISTRATION")
 ```
 
-**Step 4: Gate register endpoint in `openflow/api/auth.py`**
+**Step 4: Gate register endpoint in `stratifio/api/auth.py`**
 
 At the top of the `register` endpoint function:
 
@@ -182,7 +182,7 @@ async def register(body: RegisterRequest, response: Response) -> dict:
 **Step 5: Run to confirm it passes**
 
 ```bash
-uv run pytest openflow/tests/test_auth_security.py::test_register_disabled_by_default -v
+uv run pytest stratifio/tests/test_auth_security.py::test_register_disabled_by_default -v
 ```
 
 Expected: PASS
@@ -190,8 +190,8 @@ Expected: PASS
 **Step 6: Commit**
 
 ```bash
-git add openflow/config.py openflow/api/auth.py openflow/tests/test_auth_security.py
-git commit -m "security: disable open registration by default (require OPENFLOW_ALLOW_REGISTRATION=true)"
+git add stratifio/config.py stratifio/api/auth.py stratifio/tests/test_auth_security.py
+git commit -m "security: disable open registration by default (require STRATIFIO_ALLOW_REGISTRATION=true)"
 ```
 
 ---
@@ -200,9 +200,9 @@ git commit -m "security: disable open registration by default (require OPENFLOW_
 
 **Files:**
 
-- Create: `openflow/core/rate_limit.py`
-- Modify: `openflow/api/auth.py` — apply limiter to login and register
-- Test: `openflow/tests/test_auth_security.py`
+- Create: `stratifio/core/rate_limit.py`
+- Modify: `stratifio/api/auth.py` — apply limiter to login and register
+- Test: `stratifio/tests/test_auth_security.py`
 
 **Step 1: Install slowapi**
 
@@ -212,7 +212,7 @@ uv add slowapi
 
 **Step 2: Write the failing test**
 
-Add to `openflow/tests/test_auth_security.py`:
+Add to `stratifio/tests/test_auth_security.py`:
 
 ```python
 def test_login_rate_limited_after_many_attempts(monkeypatch):
@@ -227,7 +227,7 @@ def test_login_rate_limited_after_many_attempts(monkeypatch):
     assert 429 in status_codes, f"Expected a 429 after repeated attempts, got: {status_codes}"
 ```
 
-**Step 3: Create `openflow/core/rate_limit.py`**
+**Step 3: Create `stratifio/core/rate_limit.py`**
 
 ```python
 """Rate limiting configuration."""
@@ -237,21 +237,21 @@ from slowapi.util import get_remote_address
 limiter = Limiter(key_func=get_remote_address)
 ```
 
-**Step 4: Wire up limiter in `openflow/main.py`**
+**Step 4: Wire up limiter in `stratifio/main.py`**
 
 ```python
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from openflow.core.rate_limit import limiter
+from stratifio.core.rate_limit import limiter
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 ```
 
-**Step 5: Apply rate limit decorator in `openflow/api/auth.py`**
+**Step 5: Apply rate limit decorator in `stratifio/api/auth.py`**
 
 ```python
-from openflow.core.rate_limit import limiter
+from stratifio.core.rate_limit import limiter
 from fastapi import Request
 
 @router.post("/login")
@@ -268,7 +268,7 @@ async def register(request: Request, body: RegisterRequest, response: Response) 
 **Step 6: Run to confirm it passes**
 
 ```bash
-uv run pytest openflow/tests/test_auth_security.py::test_login_rate_limited_after_many_attempts -v
+uv run pytest stratifio/tests/test_auth_security.py::test_login_rate_limited_after_many_attempts -v
 ```
 
 Expected: PASS
@@ -276,7 +276,7 @@ Expected: PASS
 **Step 7: Commit**
 
 ```bash
-git add openflow/core/rate_limit.py openflow/main.py openflow/api/auth.py openflow/tests/test_auth_security.py
+git add stratifio/core/rate_limit.py stratifio/main.py stratifio/api/auth.py stratifio/tests/test_auth_security.py
 git commit -m "security: add rate limiting to login (10/min) and register (3/min) endpoints"
 ```
 
@@ -286,17 +286,17 @@ git commit -m "security: add rate limiting to login (10/min) and register (3/min
 
 **Files:**
 
-- Modify: `openflow/main.py` — conditionally expose docs
-- Modify: `openflow/config.py` — add `debug: bool = False`
+- Modify: `stratifio/main.py` — conditionally expose docs
+- Modify: `stratifio/config.py` — add `debug: bool = False`
 
 **Step 1: Write the failing test**
 
-Add to `openflow/tests/test_auth_security.py`:
+Add to `stratifio/tests/test_auth_security.py`:
 
 ```python
 def test_api_docs_hidden_in_production(monkeypatch):
     """Swagger UI must not be accessible when DEBUG=false (production)."""
-    monkeypatch.setenv("OPENFLOW_DEBUG", "false")
+    monkeypatch.setenv("STRATIFIO_DEBUG", "false")
     # ... other required env vars ...
     with TestClient(app) as client:
         response = client.get("/docs")
@@ -306,25 +306,25 @@ def test_api_docs_hidden_in_production(monkeypatch):
 **Step 2: Run to confirm it fails**
 
 ```bash
-uv run pytest openflow/tests/test_auth_security.py::test_api_docs_hidden_in_production -v
+uv run pytest stratifio/tests/test_auth_security.py::test_api_docs_hidden_in_production -v
 ```
 
 Expected: FAIL — /docs returns 200
 
-**Step 3: Add `debug` to `openflow/config.py`**
+**Step 3: Add `debug` to `stratifio/config.py`**
 
 ```python
-debug: bool = Field(default=False, alias="OPENFLOW_DEBUG")
+debug: bool = Field(default=False, alias="STRATIFIO_DEBUG")
 ```
 
-**Step 4: Conditionally enable docs in `openflow/main.py`**
+**Step 4: Conditionally enable docs in `stratifio/main.py`**
 
 ```python
-from openflow.config import get_settings as _get_settings
+from stratifio.config import get_settings as _get_settings
 _s = _get_settings()
 
 app = FastAPI(
-    title="OpenFlow Analytics",
+    title="stratif.io Analytics",
     docs_url="/docs" if _s.debug else None,
     redoc_url="/redoc" if _s.debug else None,
     openapi_url="/openapi.json" if _s.debug else None,
@@ -334,14 +334,14 @@ app = FastAPI(
 **Step 5: Run to confirm it passes**
 
 ```bash
-uv run pytest openflow/tests/test_auth_security.py::test_api_docs_hidden_in_production -v
+uv run pytest stratifio/tests/test_auth_security.py::test_api_docs_hidden_in_production -v
 ```
 
 **Step 6: Commit**
 
 ```bash
-git add openflow/config.py openflow/main.py openflow/tests/test_auth_security.py
-git commit -m "security: hide API docs (/docs, /redoc) in production; enable only when OPENFLOW_DEBUG=true"
+git add stratifio/config.py stratifio/main.py stratifio/tests/test_auth_security.py
+git commit -m "security: hide API docs (/docs, /redoc) in production; enable only when STRATIFIO_DEBUG=true"
 ```
 
 ---
@@ -350,11 +350,11 @@ git commit -m "security: hide API docs (/docs, /redoc) in production; enable onl
 
 **Files:**
 
-- Modify: `openflow/main.py` — add security headers middleware
+- Modify: `stratifio/main.py` — add security headers middleware
 
 **Step 1: Write the failing test**
 
-Add to `openflow/tests/test_auth_security.py`:
+Add to `stratifio/tests/test_auth_security.py`:
 
 ```python
 def test_security_headers_present(monkeypatch):
@@ -373,12 +373,12 @@ def test_security_headers_present(monkeypatch):
 **Step 2: Run to confirm it fails**
 
 ```bash
-uv run pytest openflow/tests/test_auth_security.py::test_security_headers_present -v
+uv run pytest stratifio/tests/test_auth_security.py::test_security_headers_present -v
 ```
 
 Expected: FAIL
 
-**Step 3: Add middleware in `openflow/main.py`**
+**Step 3: Add middleware in `stratifio/main.py`**
 
 ```python
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -399,13 +399,13 @@ app.add_middleware(SecurityHeadersMiddleware)
 **Step 4: Run to confirm it passes**
 
 ```bash
-uv run pytest openflow/tests/test_auth_security.py::test_security_headers_present -v
+uv run pytest stratifio/tests/test_auth_security.py::test_security_headers_present -v
 ```
 
 **Step 5: Commit**
 
 ```bash
-git add openflow/main.py openflow/tests/test_auth_security.py
+git add stratifio/main.py stratifio/tests/test_auth_security.py
 git commit -m "security: add security response headers middleware (X-Frame-Options, X-Content-Type-Options, Referrer-Policy)"
 ```
 
@@ -415,12 +415,12 @@ git commit -m "security: add security response headers middleware (X-Frame-Optio
 
 **Files:**
 
-- Modify: `openflow/main.py` — restrict CORS methods and headers
-- Modify: `openflow/config.py` — cors_origins already exists, verify it
+- Modify: `stratifio/main.py` — restrict CORS methods and headers
+- Modify: `stratifio/config.py` — cors_origins already exists, verify it
 
 **Step 1: No TDD needed (config change)**
 
-Look at the current CORS setup in `openflow/main.py` and change:
+Look at the current CORS setup in `stratifio/main.py` and change:
 
 ```python
 # BEFORE
@@ -445,7 +445,7 @@ app.add_middleware(
 **Step 2: Commit**
 
 ```bash
-git add openflow/main.py
+git add stratifio/main.py
 git commit -m "security: restrict CORS to explicit methods and headers instead of wildcard"
 ```
 
@@ -455,18 +455,18 @@ git commit -m "security: restrict CORS to explicit methods and headers instead o
 
 **Files:**
 
-- Modify: `openflow/config.py` — add validator for `encryption_key` minimum length
-- Test: `openflow/tests/test_auth_security.py`
+- Modify: `stratifio/config.py` — add validator for `encryption_key` minimum length
+- Test: `stratifio/tests/test_auth_security.py`
 
 **Step 1: Write the failing test**
 
-Add to `openflow/tests/test_auth_security.py`:
+Add to `stratifio/tests/test_auth_security.py`:
 
 ```python
 def test_short_encryption_key_rejected():
     """Encryption key shorter than 32 chars must be rejected at startup."""
     from pydantic import ValidationError
-    from openflow.config import Settings
+    from stratifio.config import Settings
     with pytest.raises((ValidationError, ValueError)):
         Settings(
             jwt_secret="test-secret-min-32-chars-long!!!!",
@@ -480,12 +480,12 @@ def test_short_encryption_key_rejected():
 **Step 2: Run to confirm it fails**
 
 ```bash
-uv run pytest openflow/tests/test_auth_security.py::test_short_encryption_key_rejected -v
+uv run pytest stratifio/tests/test_auth_security.py::test_short_encryption_key_rejected -v
 ```
 
 Expected: FAIL — no error raised
 
-**Step 3: Add validator to `openflow/config.py`**
+**Step 3: Add validator to `stratifio/config.py`**
 
 ```python
 from pydantic import field_validator
@@ -494,26 +494,26 @@ from pydantic import field_validator
 @classmethod
 def validate_encryption_key_length(cls, v: str) -> str:
     if len(v) < 32:
-        raise ValueError("OPENFLOW_ENCRYPTION_KEY must be at least 32 characters long")
+        raise ValueError("STRATIFIO_ENCRYPTION_KEY must be at least 32 characters long")
     return v
 ```
 
 **Step 4: Run to confirm it passes**
 
 ```bash
-uv run pytest openflow/tests/test_auth_security.py::test_short_encryption_key_rejected -v
+uv run pytest stratifio/tests/test_auth_security.py::test_short_encryption_key_rejected -v
 ```
 
 **Step 5: Run the full test suite to check nothing broke**
 
 ```bash
-uv run pytest openflow/tests/ -v
+uv run pytest stratifio/tests/ -v
 ```
 
 **Step 6: Commit**
 
 ```bash
-git add openflow/config.py openflow/tests/test_auth_security.py
+git add stratifio/config.py stratifio/tests/test_auth_security.py
 git commit -m "security: validate encryption key minimum length (32 chars) at startup"
 ```
 
@@ -532,33 +532,33 @@ Add after the "Architecture" section:
 ```markdown
 ## Security (CRITICAL — client database credentials are stored)
 
-OpenFlow stores encrypted credentials for client analytics databases. Security is non-negotiable.
+stratif.io stores encrypted credentials for client analytics databases. Security is non-negotiable.
 
 ### Credential storage
 
-- Credentials encrypted with Fernet (AES-128-CBC + HMAC-SHA256) via `openflow/services/crypto.py`
+- Credentials encrypted with Fernet (AES-128-CBC + HMAC-SHA256) via `stratifio/services/crypto.py`
 - Encryption key: 32+ char string → SHA-256 → Fernet key
-- Key stored in `OPENFLOW_ENCRYPTION_KEY` env var (never in code or git)
-- Product DB: SQLite at `OPENFLOW_PRODUCT_DB_PATH` (never expose this file)
+- Key stored in `STRATIFIO_ENCRYPTION_KEY` env var (never in code or git)
+- Product DB: SQLite at `STRATIFIO_PRODUCT_DB_PATH` (never expose this file)
 
 ### Auth
 
-- Passwords: bcrypt + SHA-256 pre-hash (`openflow/core/password.py`)
-- Sessions: JWT in HTTP-only, Secure, SameSite=Lax cookie (`of_session`)
+- Passwords: bcrypt + SHA-256 pre-hash (`stratifio/core/password.py`)
+- Sessions: JWT in HTTP-only, Secure, SameSite=Lax cookie (`sio_session`)
 - Rate limiting on login (10/min) and register (3/min) via slowapi
 
 ### Config flags for production
 
-- `OPENFLOW_DEBUG=false` (default) — hides `/docs`, `/redoc`, `/openapi.json`
-- `OPENFLOW_ALLOW_REGISTRATION=false` (default) — disables open registration
-- `OPENFLOW_CORS_ORIGINS` — set to your exact frontend domain (not `["*"]`)
-- `OPENFLOW_ENCRYPTION_KEY` — must be 32+ chars, use `openssl rand -base64 32`
+- `STRATIFIO_DEBUG=false` (default) — hides `/docs`, `/redoc`, `/openapi.json`
+- `STRATIFIO_ALLOW_REGISTRATION=false` (default) — disables open registration
+- `STRATIFIO_CORS_ORIGINS` — set to your exact frontend domain (not `["*"]`)
+- `STRATIFIO_ENCRYPTION_KEY` — must be 32+ chars, use `openssl rand -base64 32`
 
 ### Never do
 
 - Never log credentials, tokens, or the encryption key
 - Never commit `.env` files or SQLite product DB
-- Never use `OPENFLOW_DEBUG=true` in production
+- Never use `STRATIFIO_DEBUG=true` in production
 ```
 
 **Step 2: Commit**
@@ -592,7 +592,7 @@ dist
 .vite
 *.sqlite
 *.duckdb
-openflow_product.sqlite
+stratifio_product.sqlite
 ```
 
 **Step 2: Create `Dockerfile`**
@@ -625,7 +625,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
 COPY --from=0 /app/.venv ./.venv
 COPY --from=frontend /app/dist ./dist
-COPY openflow ./openflow
+COPY stratifio ./stratifio
 COPY pyproject.toml uv.lock ./
 
 ENV PATH="/app/.venv/bin:$PATH"
@@ -633,7 +633,7 @@ ENV PYTHONUNBUFFERED=1
 
 # Serve static frontend from FastAPI + run backend
 EXPOSE 8000
-CMD ["uvicorn", "openflow.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "stratifio.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 **Note:** FastAPI needs to serve the built frontend. See Task 10 for wiring static files.
@@ -651,9 +651,9 @@ git commit -m "deploy: add Dockerfile for production build (uv + npm build + uvi
 
 **Files:**
 
-- Modify: `openflow/main.py` — mount static files from `dist/`
+- Modify: `stratifio/main.py` — mount static files from `dist/`
 
-**Step 1: Add static file serving to `openflow/main.py`**
+**Step 1: Add static file serving to `stratifio/main.py`**
 
 ```python
 import os
@@ -683,7 +683,7 @@ uv run serve
 **Step 3: Commit**
 
 ```bash
-git add openflow/main.py
+git add stratifio/main.py
 git commit -m "deploy: serve built frontend (dist/) from FastAPI with SPA fallback"
 ```
 
@@ -705,7 +705,7 @@ curl -L https://fly.io/install.sh | sh
 fly auth login
 
 # Create app (pick a unique name)
-fly launch --no-deploy --name openflow-analytics
+fly launch --no-deploy --name stratifio-analytics
 ```
 
 This generates a `fly.toml`. Then customize it:
@@ -713,7 +713,7 @@ This generates a `fly.toml`. Then customize it:
 **Step 2: Edit `fly.toml`**
 
 ```toml
-app = "openflow-analytics"
+app = "stratifio-analytics"
 primary_region = "iad"  # or closest region
 
 [build]
@@ -721,13 +721,13 @@ primary_region = "iad"  # or closest region
 
 [env]
   PORT = "8000"
-  OPENFLOW_DEBUG = "false"
-  OPENFLOW_CORS_ORIGINS = '["https://openflow-analytics.fly.dev"]'
+  STRATIFIO_DEBUG = "false"
+  STRATIFIO_CORS_ORIGINS = '["https://stratifio-analytics.fly.dev"]'
 
 # Secrets (set via fly secrets, NOT in fly.toml):
-# fly secrets set OPENFLOW_JWT_SECRET=$(openssl rand -base64 32)
-# fly secrets set OPENFLOW_ENCRYPTION_KEY=$(openssl rand -base64 32)
-# fly secrets set OPENFLOW_ALLOW_REGISTRATION=false
+# fly secrets set STRATIFIO_JWT_SECRET=$(openssl rand -base64 32)
+# fly secrets set STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)
+# fly secrets set STRATIFIO_ALLOW_REGISTRATION=false
 
 [[services]]
   internal_port = 8000
@@ -756,22 +756,22 @@ primary_region = "iad"  # or closest region
 
 # Persistent volume for SQLite product DB
 [mounts]
-  source = "openflow_data"
+  source = "stratifio_data"
   destination = "/data"
 ```
 
 **Step 3: Create persistent volume for SQLite DB**
 
 ```bash
-fly volumes create openflow_data --size 1 --region iad
+fly volumes create stratifio_data --size 1 --region iad
 ```
 
-**Step 4: Update `openflow/config.py` to default to `/data/` path**
+**Step 4: Update `stratifio/config.py` to default to `/data/` path**
 
 ```python
 product_db_path: str = Field(
-    default="/data/openflow_product.sqlite",
-    alias="OPENFLOW_PRODUCT_DB_PATH"
+    default="/data/stratifio_product.sqlite",
+    alias="STRATIFIO_PRODUCT_DB_PATH"
 )
 ```
 
@@ -779,16 +779,16 @@ product_db_path: str = Field(
 
 ```bash
 fly secrets set \
-  OPENFLOW_JWT_SECRET=$(openssl rand -base64 32) \
-  OPENFLOW_ENCRYPTION_KEY=$(openssl rand -base64 32) \
-  OPENFLOW_API_KEY=$(openssl rand -base64 16) \
-  OPENFLOW_ALLOW_REGISTRATION=false
+  STRATIFIO_JWT_SECRET=$(openssl rand -base64 32) \
+  STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32) \
+  STRATIFIO_API_KEY=$(openssl rand -base64 16) \
+  STRATIFIO_ALLOW_REGISTRATION=false
 ```
 
 **Step 6: Commit fly.toml**
 
 ```bash
-git add fly.toml openflow/config.py
+git add fly.toml stratifio/config.py
 git commit -m "deploy: add fly.toml with HTTPS redirect, persistent volume for SQLite, health check"
 ```
 
@@ -805,7 +805,7 @@ fly deploy
 **Step 2: Verify security headers in production**
 
 ```bash
-curl -I https://openflow-analytics.fly.dev/api/health
+curl -I https://stratifio-analytics.fly.dev/api/health
 # Check for: X-Content-Type-Options, X-Frame-Options
 # Check Set-Cookie has Secure flag on login
 ```
@@ -813,20 +813,20 @@ curl -I https://openflow-analytics.fly.dev/api/health
 **Step 3: Verify docs are hidden**
 
 ```bash
-curl https://openflow-analytics.fly.dev/docs
+curl https://stratifio-analytics.fly.dev/docs
 # Should return 404
 ```
 
 **Step 4: Verify HTTPS redirect**
 
 ```bash
-curl -I http://openflow-analytics.fly.dev/
+curl -I http://stratifio-analytics.fly.dev/
 # Should return 301/302 to HTTPS
 ```
 
 **Step 5: Run smoke test — login works end-to-end**
 
-Open browser → `https://openflow-analytics.fly.dev` → register (if enabled) → login → should see dashboard.
+Open browser → `https://stratifio-analytics.fly.dev` → register (if enabled) → login → should see dashboard.
 
 **Step 6: Final cost check**
 
@@ -839,9 +839,9 @@ This deployment uses 1 VM (shared-cpu-1x, 256MB RAM) + 1GB volume = **$0/month**
 
 | Secret                        | How to generate           | Notes                                                     |
 | ----------------------------- | ------------------------- | --------------------------------------------------------- |
-| `OPENFLOW_JWT_SECRET`         | `openssl rand -base64 32` | Min 32 chars                                              |
-| `OPENFLOW_ENCRYPTION_KEY`     | `openssl rand -base64 32` | Min 32 chars; losing this = losing all stored credentials |
-| `OPENFLOW_API_KEY`            | `openssl rand -base64 16` | Legacy system key                                         |
-| `OPENFLOW_ALLOW_REGISTRATION` | `false`                   | Set `true` briefly to create first user, then `false`     |
+| `STRATIFIO_JWT_SECRET`         | `openssl rand -base64 32` | Min 32 chars                                              |
+| `STRATIFIO_ENCRYPTION_KEY`     | `openssl rand -base64 32` | Min 32 chars; losing this = losing all stored credentials |
+| `STRATIFIO_API_KEY`            | `openssl rand -base64 16` | Legacy system key                                         |
+| `STRATIFIO_ALLOW_REGISTRATION` | `false`                   | Set `true` briefly to create first user, then `false`     |
 
-**CRITICAL:** Back up `OPENFLOW_ENCRYPTION_KEY`. If lost, all stored database credentials become unrecoverable.
+**CRITICAL:** Back up `STRATIFIO_ENCRYPTION_KEY`. If lost, all stored database credentials become unrecoverable.

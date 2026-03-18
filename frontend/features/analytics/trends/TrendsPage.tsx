@@ -21,7 +21,7 @@ import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
 
 export function TrendsPage() {
   useEffect(() => {
-    document.title = 'Trends — OpenFlow'
+    document.title = 'Trends — stratif.io'
   }, [])
 
   const { dateRange } = useAppStore()

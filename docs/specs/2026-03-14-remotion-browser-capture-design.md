@@ -19,11 +19,11 @@ npm run render:full  # all three in sequence
 - Docker running (Colima or Docker Desktop)
 - `ffmpeg` installed (for GIF conversion)
 - Playwright Chromium installed: `npx playwright install chromium`
-- `.env` file in OSS root with at minimum `OPENFLOW_ENCRYPTION_KEY` set (required by docker compose). The capture script checks for this and exits early with a clear error if missing.
+- `.env` file in OSS root with at minimum `STRATIFIO_ENCRYPTION_KEY` set (required by docker compose). The capture script checks for this and exits early with a clear error if missing.
 
 ## Capture Script (`capture/capture.ts`)
 
-1. Check `../.env` exists and contains `OPENFLOW_ENCRYPTION_KEY` — exit with message if not
+1. Check `../.env` exists and contains `STRATIFIO_ENCRYPTION_KEY` — exit with message if not
 2. `docker compose up -d` from the OSS root (`../`)
 3. Poll `http://localhost:8000` until healthy via `capture/wait-for.ts` (timeout: 60s, interval: 1s)
 4. Launch Playwright Chromium (1280×720, no sandbox), enable video recording
@@ -78,7 +78,7 @@ video/src/components/
 
 **Removed:** `src/scenes/Features.tsx`, `src/scenes/Dashboard.tsx`, `src/components/MockDashboard.tsx`
 
-**Modified:** `src/OpenFlowVideo.tsx` — sequence Intro → AppDemo → Outro
+**Modified:** `src/stratif.ioVideo.tsx` — sequence Intro → AppDemo → Outro
 
 ## New package.json scripts
 

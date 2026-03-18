@@ -8,16 +8,16 @@ services:
       - analytics_data:/data
     environment:
       # Required: generate with `openssl rand -base64 32`
-      OPENFLOW_ENCRYPTION_KEY: "${OPENFLOW_ENCRYPTION_KEY:?Set OPENFLOW_ENCRYPTION_KEY (generate with: openssl rand -base64 32)}"
-      OPENFLOW_PRODUCT_DB_PATH: /data/openflow_product.sqlite
+      STRATIFIO_ENCRYPTION_KEY: "${STRATIFIO_ENCRYPTION_KEY:?Set STRATIFIO_ENCRYPTION_KEY (generate with: openssl rand -base64 32)}"
+      STRATIFIO_PRODUCT_DB_PATH: /data/stratifio_product.sqlite
       # Optional API key — leave empty for local exploration
-      OPENFLOW_API_KEY: ${OPENFLOW_API_KEY:-}
+      STRATIFIO_API_KEY: ${STRATIFIO_API_KEY:-}
       # CORS: keep as localhost:8000 for single-container local use
-      OPENFLOW_CORS_ORIGINS: ${OPENFLOW_CORS_ORIGINS:-http://localhost:8000}
-      OPENFLOW_DEBUG: ${OPENFLOW_DEBUG:-false}
-      OPENFLOW_LOG_LEVEL: ${OPENFLOW_LOG_LEVEL:-INFO}
-      OPENFLOW_LOG_FORMAT: ${OPENFLOW_LOG_FORMAT:-json}
-      OPENFLOW_LOG_SQL: ${OPENFLOW_LOG_SQL:-false}
+      STRATIFIO_CORS_ORIGINS: ${STRATIFIO_CORS_ORIGINS:-http://localhost:8000}
+      STRATIFIO_DEBUG: ${STRATIFIO_DEBUG:-false}
+      STRATIFIO_LOG_LEVEL: ${STRATIFIO_LOG_LEVEL:-INFO}
+      STRATIFIO_LOG_FORMAT: ${STRATIFIO_LOG_FORMAT:-json}
+      STRATIFIO_LOG_SQL: ${STRATIFIO_LOG_SQL:-false}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\""]
       interval: 15s

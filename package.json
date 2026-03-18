@@ -1,7 +1,7 @@
 {
-  "name": "@openflow/core",
+  "name": "@stratifio/core",
   "version": "0.1.0",
-  "description": "OpenFlow Analytics — open source analytics dashboard",
+  "description": "stratif.io Analytics — open source analytics dashboard",
   "main": "./frontend/index.ts",
   "exports": {
     ".": "./frontend/index.ts"

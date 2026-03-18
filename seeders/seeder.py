@@ -23,7 +23,7 @@ from pydantic_settings import BaseSettings
 
 
 class SeedConfig(BaseSettings):
-    """Seeding-only settings — read from seeders/.env.seed (no OPENFLOW_ prefix)."""
+    """Seeding-only settings — read from seeders/.env.seed (no STRATIFIO_ prefix)."""
 
     seed_users: int | None = None
     seed_days: int | None = None

@@ -4,7 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import { waitFor } from './wait-for'
 
-// process.cwd() is always `openflow/video/` when run via `npm run capture`
+// process.cwd() is always `stratifio/video/` when run via `npm run capture`
 const OSS_ROOT = path.resolve(process.cwd(), '..')
 const PUBLIC   = path.resolve(process.cwd(), 'public')
 const TMP_DIR  = path.resolve(PUBLIC, 'tmp')
@@ -140,8 +140,8 @@ function checkEnv() {
     console.error(`❌  Missing .env at ${envFile}`)
     process.exit(1)
   }
-  if (!fs.readFileSync(envFile, 'utf8').includes('OPENFLOW_ENCRYPTION_KEY')) {
-    console.error('❌  OPENFLOW_ENCRYPTION_KEY not in .env')
+  if (!fs.readFileSync(envFile, 'utf8').includes('STRATIFIO_ENCRYPTION_KEY')) {
+    console.error('❌  STRATIFIO_ENCRYPTION_KEY not in .env')
     process.exit(1)
   }
 }
@@ -373,7 +373,7 @@ async function main() {
     console.log('→ Clearing existing connections...')
     execSync(
       `docker compose exec -T app python -c ` +
-      `"import sqlite3; db = sqlite3.connect('/data/openflow_product.sqlite'); ` +
+      `"import sqlite3; db = sqlite3.connect('/data/stratifio_product.sqlite'); ` +
       `db.execute('DELETE FROM connections'); db.commit(); print('done')"`,
       { cwd: OSS_ROOT, stdio: 'inherit' },
     )

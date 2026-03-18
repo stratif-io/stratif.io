@@ -126,7 +126,7 @@ test.describe('Navigation', () => {
     await page.goto('/trends')
     await waitForLoadingToFinish(page)
     
-    const logo = page.locator('aside a:has-text("OpenFlow")')
+    const logo = page.locator('aside a:has-text("stratif.io")')
     await logo.click()
     
     await expect(page).toHaveURL(/.*dashboard/)

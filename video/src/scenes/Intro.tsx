@@ -2,7 +2,7 @@ import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } fr
 
 const FONT = 'system-ui, -apple-system, sans-serif'
 
-// "OpenFlow" — 4 dark letters + 4 blue letters
+// "stratif.io" — 4 dark letters + 4 blue letters
 const LETTERS = [
   { char: 'O', color: '#0f172a' },
   { char: 'p', color: '#0f172a' },

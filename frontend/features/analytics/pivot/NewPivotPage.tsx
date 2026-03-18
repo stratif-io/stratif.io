@@ -24,7 +24,7 @@ function toGridCol(c: { colId: string; label: string; aggFunc?: string }): GridC
 
 export function NewPivotPage() {
   useEffect(() => {
-    document.title = 'Pivot — OpenFlow'
+    document.title = 'Pivot — stratif.io'
   }, [])
 
   const { dateRange, activeFilters, activeConnectionId, setActiveFilter } = useAppStore()

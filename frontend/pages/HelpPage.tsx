@@ -7,7 +7,7 @@ export default function HelpPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Help & Support</h1>
         <p className="text-muted-foreground mt-1">
-          Get help and learn how to use OpenFlow Analytics.
+          Get help and learn how to use stratif.io Analytics.
         </p>
       </div>
 
@@ -18,7 +18,7 @@ export default function HelpPage() {
               <BookOpen className="h-5 w-5" />
               <CardTitle>Documentation</CardTitle>
             </div>
-            <CardDescription>Learn how to use OpenFlow</CardDescription>
+            <CardDescription>Learn how to use stratif.io</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">

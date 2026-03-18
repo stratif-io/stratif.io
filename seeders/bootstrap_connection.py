@@ -58,14 +58,14 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
         except Exception:
             creds = {}
         if creds.get("file_path") == db_path:
-            print(f"[openflow] Connection '{CONNECTION_NAME}' already exists — skipping.")
+            print(f"[stratifio] Connection '{CONNECTION_NAME}' already exists — skipping.")
             return
         # Credentials are stale (e.g. wrong key from an older bootstrap run) — update them.
         db.execute(
             "UPDATE connections SET credentials_encrypted = ?, updated_at = ? WHERE id = ?",
             (encrypt_credentials({"file_path": db_path}), _now(), existing["id"]),
         )
-        print(f"[openflow] Updated credentials for '{CONNECTION_NAME}' → {db_path}")
+        print(f"[stratifio] Updated credentials for '{CONNECTION_NAME}' → {db_path}")
         return
 
     conn_id = str(uuid.uuid4())
@@ -99,7 +99,7 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
             (str(uuid.uuid4()), conn_id, json.dumps(FILTER_FIELDS), now),
         )
 
-    print(f"[openflow] Bootstrapped connection '{CONNECTION_NAME}' → {db_path}")
+    print(f"[stratifio] Bootstrapped connection '{CONNECTION_NAME}' → {db_path}")
 
 
 def main() -> None:

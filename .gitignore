@@ -40,7 +40,7 @@ seeders/.env.seed
 .env.secrets
 
 # Local dev DB
-openflow_product.sqlite
+stratifio_product.sqlite
 video/node_modules/
 video/out/
 video/public/*.webm

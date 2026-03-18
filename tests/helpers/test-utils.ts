@@ -113,7 +113,7 @@ export async function clearLocalStorage(page: Page): Promise<void> {
 
 export async function setTheme(page: Page, theme: 'light' | 'dark' | 'system'): Promise<void> {
   await page.evaluate((t) => {
-    localStorage.setItem('openflow-storage', JSON.stringify({
+    localStorage.setItem('stratifio-storage', JSON.stringify({
       state: { theme: t },
       version: 0
     }))

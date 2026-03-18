@@ -3,13 +3,13 @@ Date: 2026-03-14
 
 ## Goal
 
-Build a ~15-second Remotion video for the OpenFlow Analytics GitHub README. Replaces the screenshot placeholder with an animated GIF (inline) and an MP4 (linked). Lives in `openflow/video/`.
+Build a ~15-second Remotion video for the stratif.io Analytics GitHub README. Replaces the screenshot placeholder with an animated GIF (inline) and an MP4 (linked). Lives in `stratifio/video/`.
 
 ## Video Structure (450 frames @ 30fps)
 
 | Segment | Frames | Duration | Content |
 |---|---|---|---|
-| Intro | 0–90 | 0–3s | Dark bg, "OpenFlow Analytics" slides up, tagline fades in |
+| Intro | 0–90 | 0–3s | Dark bg, "stratif.io Analytics" slides up, tagline fades in |
 | Features | 90–210 | 3–7s | 3 feature pills animate in sequentially |
 | Dashboard | 210–450 | 7–15s | Stylized UI mockup: sidebar slides in, charts draw, numbers count up |
 
@@ -20,14 +20,14 @@ Build a ~15-second Remotion video for the OpenFlow Analytics GitHub README. Repl
 ## Project Structure
 
 ```
-openflow/video/
+stratifio/video/
 ├── package.json           # remotion, @remotion/cli, react, typescript
 ├── remotion.config.ts     # entry point, format, concurrency
 ├── tsconfig.json          # TypeScript config for this subfolder
 └── src/
     ├── index.ts            # registerRoot(Root) — Remotion webpack entry point
-    ├── Root.tsx            # registers OpenFlowVideo composition
-    ├── OpenFlowVideo.tsx   # main 450-frame composition, sequences scenes
+    ├── Root.tsx            # registers stratif.ioVideo composition
+    ├── stratif.ioVideo.tsx   # main 450-frame composition, sequences scenes
     ├── scenes/
     │   ├── Intro.tsx       # name + tagline motion graphics
     │   ├── Features.tsx    # sequential pill animations
@@ -60,8 +60,8 @@ registerRoot(Root)
 {
   "scripts": {
     "studio": "remotion studio",
-    "render": "remotion render OpenFlowVideo out/openflow.mp4",
-    "render:gif": "ffmpeg -i out/openflow.mp4 -vf 'fps=15,scale=1280:-1:flags=lanczos,palettegen' /tmp/palette.png && ffmpeg -i out/openflow.mp4 -i /tmp/palette.png -vf 'fps=15,scale=1280:-1:flags=lanczos,paletteuse' ../docs/demo.gif"
+    "render": "remotion render stratif.ioVideo out/stratifio.mp4",
+    "render:gif": "ffmpeg -i out/stratifio.mp4 -vf 'fps=15,scale=1280:-1:flags=lanczos,palettegen' /tmp/palette.png && ffmpeg -i out/stratifio.mp4 -i /tmp/palette.png -vf 'fps=15,scale=1280:-1:flags=lanczos,paletteuse' ../docs/demo.gif"
   }
 }
 ```
@@ -72,21 +72,21 @@ GIF uses two-pass ffmpeg palette generation for quality output at 15fps.
 
 | File | Purpose |
 |---|---|
-| `video/out/openflow.mp4` | Full quality, upload to GitHub Releases or host externally |
+| `video/out/stratifio.mp4` | Full quality, upload to GitHub Releases or host externally |
 | `docs/demo.gif` | Converted from MP4 via ffmpeg two-pass, displayed inline in README |
 
 ## README Change
 
 Replace:
 ```md
-![OpenFlow Analytics Dashboard](docs/screenshot-placeholder.png)
+![stratif.io Analytics Dashboard](docs/screenshot-placeholder.png)
 ```
 
 With:
 ```md
-![OpenFlow Analytics Demo](docs/demo.gif)
+![stratif.io Analytics Demo](docs/demo.gif)
 
-▶ [Watch full demo (MP4)](https://github.com/your-org/openflow/releases/latest/download/openflow.mp4)
+▶ [Watch full demo (MP4)](https://github.com/your-org/stratifio/releases/latest/download/stratifio.mp4)
 ```
 
 ## Out of Scope

@@ -9,7 +9,7 @@
 **Tech Stack:** Python 3.12, FastAPI, DuckDB, psycopg2, sqlite3, databricks-sql-connector, pydantic v2, pytest
 
 **Worktree:** `.worktrees/db-backends-plugin`
-**Run tests from:** `cd /Users/carlo/my_work/openflow/openflow-oss/.worktrees/db-backends-plugin && uv run pytest backend/tests/ -q`
+**Run tests from:** `cd /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/db-backends-plugin && uv run pytest backend/tests/ -q`
 **Spec:** `docs/superpowers/specs/2026-03-16-database-backends-plugin-design.md`
 
 ---
@@ -180,7 +180,7 @@ def infer_type(sql_type: str) -> str:
 - [ ] **Step 1.4: Verify no import errors**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-oss/.worktrees/db-backends-plugin
+cd /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/db-backends-plugin
 uv run python -c "from backend.backends.base import DatabaseBackend, SchemaInfo, ColumnInfo; from backend.backends._utils import pick_events_table, suggest_fields, infer_type; print('OK')"
 ```
 
@@ -428,7 +428,7 @@ class TestDuckDBSQLFragments:
 - [ ] **Step 2.2: Run tests to confirm they fail**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-oss/.worktrees/db-backends-plugin
+cd /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/db-backends-plugin
 uv run pytest backend/tests/test_backends_duckdb.py -q 2>&1 | head -5
 ```
 
@@ -2095,7 +2095,7 @@ Expected: `TypeError` — `AnalyticsDatabase.__init__` still takes `dialect`.
 Replace `backend/services/analytics_db.py` with:
 
 ```python
-"""Analytics database wrapper for OpenFlow Analytics."""
+"""Analytics database wrapper for stratif.io Analytics."""
 
 import contextlib
 import re
@@ -2619,7 +2619,7 @@ git commit -m "refactor: browse endpoint uses backend plugin"
 - [ ] **Step 9.1: Full test suite with verbose output**
 
 ```bash
-cd /Users/carlo/my_work/openflow/openflow-oss/.worktrees/db-backends-plugin
+cd /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/db-backends-plugin
 uv run pytest backend/tests/ -v 2>&1 | tail -40
 ```
 
