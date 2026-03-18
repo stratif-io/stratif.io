@@ -24,6 +24,10 @@ dependencies = [
     "psycopg2-binary>=2.9.11",
 ]
 
+[project.optional-dependencies]
+snowflake = ["snowflake-connector-python>=3.0.0"]
+clickhouse = ["clickhouse-connect>=0.7.0"]
+
 [project.scripts]
 serve = "backend.main:main"
 seed-duckdb = "seeders.seeder_duckdb:main"
@@ -45,6 +49,8 @@ dev = [
     "pytest>=8.4.2",
     "ruff>=0.15.2",
     "ty>=0.0.17",
+    "testcontainers[clickhouse]>=4.8",
+    "fakesnow>=0.9.0",
 ]
 
 [tool.ruff]
