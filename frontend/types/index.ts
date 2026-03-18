@@ -235,7 +235,7 @@ export interface SandboxDataResponse {
 
 // Connections
 
-export type DbType = 'duckdb' | 'databricks' | 'postgresql' | 'sqlite'
+export type DbType = 'duckdb' | 'databricks' | 'postgresql' | 'sqlite' | 'snowflake' | 'clickhouse'
 export type PropertyType = 'string' | 'number' | 'boolean' | 'timestamp'
 
 export interface CustomProperty {
