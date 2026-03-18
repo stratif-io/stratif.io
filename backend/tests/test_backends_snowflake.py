@@ -26,3 +26,86 @@ class TestSnowflakeCredentials:
             role="ANALYST",
         )
         assert c.role == "ANALYST"
+
+
+from backend.backends.snowflake import SnowflakeBackend
+from backend.backends.base import DatabaseBackend
+
+
+@pytest.fixture
+def backend():
+    return SnowflakeBackend()
+
+
+class TestSnowflakeIdentity:
+    def test_dialect_name(self, backend):
+        assert backend.dialect_name == "snowflake"
+
+    def test_identifier_quote_char(self, backend):
+        assert backend.identifier_quote_char == '"'
+
+    def test_use_pool_is_true(self, backend):
+        assert backend.use_pool is True
+
+    def test_implements_protocol(self, backend):
+        assert isinstance(backend, DatabaseBackend)
+
+    def test_pool_key(self, backend):
+        creds = SnowflakeCredentials(
+            account="a", user="u", password="p",
+            warehouse="w", database="d", schema="s"
+        )
+        assert backend.pool_key("conn1", creds) == ("conn1", "snowflake")
+
+
+class TestSnowflakeDialect:
+    def test_date_trunc_day(self, backend):
+        assert backend.date_trunc("day", "ts") == "DATE_TRUNC('day', ts)"
+
+    def test_date_trunc_month(self, backend):
+        assert backend.date_trunc("month", "ts") == "DATE_TRUNC('month', ts)"
+
+    def test_date_diff_days(self, backend):
+        result = backend.date_diff_days("a", "b")
+        assert "DATEDIFF" in result.upper() and "'day'" in result.lower()
+
+    def test_epoch_diff_seconds(self, backend):
+        result = backend.epoch_diff_seconds("a", "b")
+        assert "DATEDIFF" in result.upper() and "'second'" in result.lower()
+
+    def test_interval_minutes_exceeded(self, backend):
+        result = backend.interval_minutes_exceeded("a", "b", 30)
+        assert "DATEDIFF" in result.upper() and "30" in result
+
+    def test_string_concat_two(self, backend):
+        result = backend.string_concat("a", "b")
+        assert "||" in result
+
+    def test_string_concat_three(self, backend):
+        result = backend.string_concat("a", "b", "c")
+        assert result.count("||") == 2
+
+    def test_cast_to_text(self, backend):
+        assert "::string" in backend.cast_to_text("x")
+
+    def test_json_extract_string(self, backend):
+        result = backend.json_extract_string("props", "key")
+        assert "::string" in result
+
+    def test_extract_hour(self, backend):
+        assert "HOUR" in backend.extract_hour("ts").upper()
+
+    def test_extract_day_of_week(self, backend):
+        assert "DAYOFWEEK" in backend.extract_day_of_week("ts").upper()
+
+    def test_extract_year(self, backend):
+        assert "YEAR" in backend.extract_year("ts").upper()
+
+    def test_extract_month(self, backend):
+        assert "MONTH" in backend.extract_month("ts").upper()
+
+    def test_extract_week(self, backend):
+        assert "WEEK" in backend.extract_week("ts").upper()
+
+    def test_extract_quarter(self, backend):
+        assert "QUARTER" in backend.extract_quarter("ts").upper()
