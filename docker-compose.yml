@@ -3,12 +3,12 @@ services:
     build: .
     env_file: .env
     ports:
-      - "8000:8000"
+      - '9999:8000'
     volumes:
       - analytics_data:/data
     environment:
       # Required: generate with `openssl rand -base64 32`
-      STRATIFIO_ENCRYPTION_KEY: "${STRATIFIO_ENCRYPTION_KEY:?Set STRATIFIO_ENCRYPTION_KEY (generate with: openssl rand -base64 32)}"
+      STRATIFIO_ENCRYPTION_KEY: '${STRATIFIO_ENCRYPTION_KEY:?Set STRATIFIO_ENCRYPTION_KEY (generate with: openssl rand -base64 32)}'
       STRATIFIO_PRODUCT_DB_PATH: /data/stratifio_product.sqlite
       # Optional API key — leave empty for local exploration
       STRATIFIO_API_KEY: ${STRATIFIO_API_KEY:-}
@@ -19,7 +19,11 @@ services:
       STRATIFIO_LOG_FORMAT: ${STRATIFIO_LOG_FORMAT:-json}
       STRATIFIO_LOG_SQL: ${STRATIFIO_LOG_SQL:-false}
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/')\""]
+      test:
+        [
+          'CMD-SHELL',
+          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:8000/'')"',
+        ]
       interval: 15s
       timeout: 5s
       retries: 5

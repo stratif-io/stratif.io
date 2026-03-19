@@ -1,14 +1,15 @@
 <div align="center">
   <img src="docs/logo.png" alt="stratif.io" width="320"/>
 
-  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-  [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](pyproject.toml)
-  [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](package.json)
-  [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](package.json)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 
-  **🔍 Self-hosted product analytics. Your database, your infrastructure, your rules. 📊**
+**🔍 Self-hosted product analytics. Your database, your infrastructure, your rules. 📊**
 
-  [Quick Start](#-quick-start) · [Features](#-features) · [Databases](#-supported-databases) · [Embed](#-embedding) · [Docs](#-local-development)
+[Quick Start](#-quick-start) · [Features](#-features) · [Databases](#-supported-databases) · [Embed](#-embedding) · [Docs](#-local-development)
+
 </div>
 
 ---
@@ -34,6 +35,7 @@ curl -fsSL https://stratif.io/install.sh | bash
 The script checks your dependencies, clones the repo, generates an encryption key, and starts the app. Open **http://localhost:8000** when it's done.
 
 > **Manual (Docker Compose):**
+>
 > ```bash
 > git clone https://github.com/stratifio/stratifio-oss.git
 > cd stratifio-oss
@@ -49,30 +51,30 @@ The script checks your dependencies, clones the repo, generates an encryption ke
 
 ## ✨ Features
 
-| Feature | Description |
-|---------|-------------|
-| 📈 **Trends** | Event counts over time with customizable granularity |
-| 🔁 **Retention** | Cohort-based retention tables |
-| 🚦 **Funnels** | Step-by-step conversion analysis |
-| 🗺️ **Paths** | User journey flows with Sankey diagrams |
-| 🔀 **Pivot Tables** | Drag-and-drop data exploration (Graphic Walker) |
-| 💻 **Sessions** | Raw session browser with full event timelines |
-| 🔌 **Multi-database** | One UI, many backends — DuckDB, Postgres, Snowflake & more |
-| 🔐 **Encrypted credentials** | AES-128-CBC + HMAC-SHA256 via Fernet |
-| 🐳 **Single-container deploy** | One `docker compose up` from dev to production |
+| Feature                        | Description                                                |
+| ------------------------------ | ---------------------------------------------------------- |
+| 📈 **Trends**                  | Event counts over time with customizable granularity       |
+| 🔁 **Retention**               | Cohort-based retention tables                              |
+| 🚦 **Funnels**                 | Step-by-step conversion analysis                           |
+| 🗺️ **Paths**                   | User journey flows with Sankey diagrams                    |
+| 🔀 **Pivot Tables**            | Drag-and-drop data exploration (Graphic Walker)            |
+| 💻 **Sessions**                | Raw session browser with full event timelines              |
+| 🔌 **Multi-database**          | One UI, many backends — DuckDB, Postgres, Snowflake & more |
+| 🔐 **Encrypted credentials**   | AES-128-CBC + HMAC-SHA256 via Fernet                       |
+| 🐳 **Single-container deploy** | One `docker compose up` from dev to production             |
 
 ---
 
 ## 🗄️ Supported Databases
 
-| Database | Notes |
-|----------|-------|
-| **DuckDB** | Local file or S3-backed |
-| **SQLite** | Local file |
-| **PostgreSQL** | Connection string |
-| **Databricks** | SQL warehouse via HTTP path |
-| **Snowflake** | Account identifier + warehouse |
-| **ClickHouse** | Host/port, optional TLS |
+| Database       | Notes                          |
+| -------------- | ------------------------------ |
+| **DuckDB**     | Local file or S3-backed        |
+| **SQLite**     | Local file                     |
+| **PostgreSQL** | Connection string              |
+| **Databricks** | SQL warehouse via HTTP path    |
+| **Snowflake**  | Account identifier + warehouse |
+| **ClickHouse** | Host/port, optional TLS        |
 
 ---
 
@@ -101,15 +103,15 @@ stratifio-oss/
 
 ## ⚙️ Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `STRATIFIO_ENCRYPTION_KEY` | *(required)* | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
-| `STRATIFIO_PRODUCT_DB_PATH` | `./stratifio_product.sqlite` | SQLite file storing connection configs |
-| `STRATIFIO_API_KEY` | *(empty)* | Optional API key for the dashboard |
-| `STRATIFIO_CORS_ORIGINS` | `http://localhost:8000` | Allowed CORS origins |
-| `STRATIFIO_DEBUG` | `false` | Enable `/docs` and `/redoc` endpoints |
-| `STRATIFIO_ALLOW_REGISTRATION` | `false` | Allow open user registration |
-| `STRATIFIO_LOG_LEVEL` | `INFO` | `DEBUG` / `INFO` / `WARNING` / `ERROR` |
+| Variable                       | Default                      | Description                                                      |
+| ------------------------------ | ---------------------------- | ---------------------------------------------------------------- |
+| `STRATIFIO_ENCRYPTION_KEY`     | _(required)_                 | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
+| `STRATIFIO_PRODUCT_DB_PATH`    | `./stratifio_product.sqlite` | SQLite file storing connection configs                           |
+| `STRATIFIO_API_KEY`            | _(empty)_                    | Optional API key for the dashboard                               |
+| `STRATIFIO_CORS_ORIGINS`       | `http://localhost:8000`      | Allowed CORS origins                                             |
+| `STRATIFIO_DEBUG`              | `false`                      | Enable `/docs` and `/redoc` endpoints                            |
+| `STRATIFIO_ALLOW_REGISTRATION` | `false`                      | Allow open user registration                                     |
+| `STRATIFIO_LOG_LEVEL`          | `INFO`                       | `DEBUG` / `INFO` / `WARNING` / `ERROR`                           |
 
 Copy `.env.example` as a starting point:
 
