@@ -81,6 +81,10 @@ if dist_path.exists():
     async def root_redirect():
         return RedirectResponse(url="/dashboard", status_code=302)
 
+    @app.get("/favicon.svg")
+    async def favicon():
+        return FileResponse(dist_path / "favicon.svg", media_type="image/svg+xml")
+
     @app.get("/{full_path:path}")
     async def spa_fallback(full_path: str):
         if full_path.startswith("api/"):
