@@ -3,7 +3,11 @@ FROM node:20-slim AS frontend
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/package.json
-RUN npm ci
+RUN npm ci && \
+    npm install --no-save \
+      @rollup/rollup-linux-x64-gnu \
+      lightningcss-linux-x64-gnu \
+      "@tailwindcss/oxide-linux-x64-gnu"
 COPY apps/web/index.html apps/web/tsconfig.json apps/web/tsconfig.node.json \
      apps/web/vite.config.ts apps/web/postcss.config.js ./apps/web/
 COPY apps/web/frontend ./apps/web/frontend
