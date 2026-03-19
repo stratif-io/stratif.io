@@ -47,7 +47,7 @@ export const EquationScene4: React.FC = () => {
             letterSpacing: '-0.03em',
           }}
         >
-          stratifio
+          stratif.io
         </span>
       </AnimatedText>
 
