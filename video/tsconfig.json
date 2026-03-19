@@ -8,5 +8,6 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/OpenFlowVideo.tsx", "src/scenes/AppDemo.tsx", "src/scenes/ComingSoon.tsx", "src/scenes/Intro.tsx", "src/scenes/Outro.tsx"]
 }
