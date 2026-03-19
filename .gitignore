@@ -49,3 +49,6 @@ apps/web/playwright-report/
 apps/web/test-results/
 .superpowers/
 docs/superpowers/
+
+# Skillfish
+skills-lock.json
