@@ -86,14 +86,28 @@ async def delete_connection(conn_id: str):
 
 @router.post("/{conn_id}/test")
 async def test_connection(conn_id: str):
-    from backend.services.connection_executor import open_analytics_db
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+    from backend.backends import get_backend
+    from backend.services.crypto import decrypt_credentials
 
     row = _get_connection_or_404(conn_id)
+
+    def _do_test():
+        backend = get_backend(row["db_type"])
+        creds = decrypt_credentials(row["credentials_encrypted"])
+        credentials = backend.parse_credentials(creds)
+        conn = backend.open(credentials, read_only=True)
+        conn.execute("SELECT 1")
+        conn.close()
+
     try:
-        db = open_analytics_db(conn_id)
-        db.execute("SELECT 1")
-        db.close()
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            await asyncio.wait_for(loop.run_in_executor(pool, _do_test), timeout=10)
         return {"ok": True, "db_type": row["db_type"]}
+    except TimeoutError:
+        raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT, detail="Connection timed out after 10 seconds")
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 

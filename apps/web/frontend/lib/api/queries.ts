@@ -378,8 +378,14 @@ export const updateConnection = (id: string, body: ConnectionUpdate) =>
 export const deleteConnection = (id: string) =>
   fetchApi<void>(`/api/connections/${id}`, { method: 'DELETE' })
 
-export const testConnection = (id: string) =>
-  fetchApi<{ ok: boolean; db_type?: string; error?: string }>(`/api/connections/${id}/test`, { method: 'POST' })
+export const testConnection = (id: string) => {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(new Error('Connection timed out')), 11_000)
+  return fetchApi<{ ok: boolean; db_type?: string; error?: string }>(
+    `/api/connections/${id}/test`,
+    { method: 'POST', signal: controller.signal }
+  ).finally(() => clearTimeout(timer))
+}
 
 export const fetchConnectionString = (connId: string) =>
   fetchApi<{ connection_string: string | null }>(`/api/connections/${connId}/string`)

@@ -446,6 +446,7 @@ export function ConnectionConfigTab({ connection }: Props) {
 
   function handleFormInput() {
     if (credsTimer.current) clearTimeout(credsTimer.current)
+    testMutation.reset()
     credsTimer.current = setTimeout(saveCredentials, 1000)
   }
 
