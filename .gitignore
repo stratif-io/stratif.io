@@ -47,3 +47,6 @@ video/public/*.webm
 video/public/*.mp3
 .superpowers/
 docs/superpowers/
+
+# Skillfish
+skills-lock.json
