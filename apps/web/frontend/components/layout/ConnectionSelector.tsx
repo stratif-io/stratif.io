@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Database, ChevronDown, AlertCircle } from 'lucide-react'
+import { ChevronDown, AlertCircle } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,14 +9,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAppStore } from '@/stores'
 import { useConnections } from '@/features/connections/hooks/useConnectionsData'
+import { DbLogo } from '@/components/DbLogo'
 import { cn } from '@/lib/utils'
 
 const DB_TYPE_LABELS: Record<string, string> = {
   duckdb: 'DuckDB',
   postgresql: 'PostgreSQL',
   databricks: 'Databricks',
+  snowflake: 'Snowflake',
+  clickhouse: 'ClickHouse',
+  bigquery: 'BigQuery',
+  redshift: 'Redshift',
+  mysql: 'MySQL',
   sqlite: 'SQLite',
 }
 
@@ -42,12 +49,7 @@ export function ConnectionSelector() {
   const activeConnection = connections?.find((c) => c.id === activeConnectionId)
 
   if (isLoading) {
-    return (
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground px-2">
-        <Database className="h-3.5 w-3.5" />
-        <span>Loading…</span>
-      </div>
-    )
+    return <Skeleton className="h-7 w-32 rounded-md" />
   }
 
   if (!connections || connections.length === 0) {
@@ -67,7 +69,7 @@ export function ConnectionSelector() {
           size="sm"
           className="h-7 gap-1.5 text-xs font-medium max-w-[180px]"
         >
-          <Database className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <DbLogo dbType={activeConnection?.db_type ?? ''} size={14} className="shrink-0" />
           <span className="truncate" title={activeConnection?.name}>
             {activeConnection?.name ?? 'Select connection'}
           </span>
@@ -88,7 +90,7 @@ export function ConnectionSelector() {
               conn.id === activeConnectionId && 'bg-accent'
             )}
           >
-            <Database className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <DbLogo dbType={conn.db_type} size={16} className="shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm truncate">{conn.name}</p>
               <p className="text-xs text-muted-foreground">

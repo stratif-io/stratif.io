@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Database, Trash2, Pencil, TestTube } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading-state'
 import { useConnections, useDeleteConnection, useTestConnection } from '../hooks/useConnectionsData'
 import { ConnectionFormDialog } from './ConnectionFormDialog'
+import { DbLogo } from '@/components/DbLogo'
 import type { Connection } from '@/types'
 import { cn } from '@/lib/utils'
 import { TYPOGRAPHY } from '@/lib/constants'
@@ -13,6 +14,11 @@ const DB_TYPE_LABELS: Record<string, string> = {
   duckdb: 'DuckDB',
   postgresql: 'PostgreSQL',
   databricks: 'Databricks',
+  snowflake: 'Snowflake',
+  clickhouse: 'ClickHouse',
+  bigquery: 'BigQuery',
+  redshift: 'Redshift',
+  mysql: 'MySQL',
   sqlite: 'SQLite',
 }
 
@@ -20,6 +26,11 @@ const DB_TYPE_COLORS: Record<string, string> = {
   duckdb: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   postgresql: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   databricks: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  snowflake: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
+  clickhouse: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  bigquery: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  redshift: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  mysql: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
   sqlite: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
 }
 
@@ -27,7 +38,6 @@ function ConnectionRow({ connection }: { connection: Connection }) {
   const navigate = useNavigate()
   const deleteMutation = useDeleteConnection()
   const testMutation = useTestConnection()
-  const [editOpen, setEditOpen] = useState(false)
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
 
   function handleTest(e: React.MouseEvent) {
@@ -47,13 +57,12 @@ function ConnectionRow({ connection }: { connection: Connection }) {
   }
 
   return (
-    <>
       <div
         className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-accent/40 cursor-pointer transition-colors"
         onClick={() => navigate(`/connections/${connection.id}`)}
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-background">
-          <Database className="h-4 w-4 text-muted-foreground" />
+          <DbLogo dbType={connection.db_type} size={20} />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -85,26 +94,13 @@ function ConnectionRow({ connection }: { connection: Connection }) {
 
         <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8"
-            aria-label="Test connection"
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs"
             disabled={testMutation.isPending}
             onClick={handleTest}
           >
-            <TestTube className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8"
-            aria-label="Edit connection"
-            onClick={(e) => {
-              e.stopPropagation()
-              setEditOpen(true)
-            }}
-          >
-            <Pencil className="h-3.5 w-3.5" />
+            {testMutation.isPending ? 'Testing…' : 'Test connection'}
           </Button>
           <Button
             size="icon"
@@ -118,9 +114,6 @@ function ConnectionRow({ connection }: { connection: Connection }) {
           </Button>
         </div>
       </div>
-
-      <ConnectionFormDialog open={editOpen} onOpenChange={setEditOpen} connection={connection} />
-    </>
   )
 }
 
