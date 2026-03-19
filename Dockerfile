@@ -2,9 +2,11 @@
 FROM node:20-slim AS frontend
 WORKDIR /app
 COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/package.json
 RUN npm ci
-COPY index.html tsconfig.json tsconfig.node.json vite.config.ts postcss.config.js ./
-COPY frontend ./frontend
+COPY apps/web/index.html apps/web/tsconfig.json apps/web/tsconfig.node.json \
+     apps/web/vite.config.ts apps/web/postcss.config.js ./apps/web/
+COPY apps/web/frontend ./apps/web/frontend
 RUN npm run build
 
 # ── Stage 2: Install Python dependencies ──────────────────────────────────────
@@ -23,7 +25,7 @@ WORKDIR /app
 COPY --from=python-deps /app/.venv ./.venv
 
 # Copy built frontend
-COPY --from=frontend /app/dist ./dist
+COPY --from=frontend /app/apps/web/dist ./dist
 
 # Copy application code
 COPY backend ./backend
