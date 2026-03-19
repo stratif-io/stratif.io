@@ -54,7 +54,7 @@ export function NewPivotPage() {
     Object.keys(activeFilters).forEach((key) => {
       if (!validFilterIds.has(key)) setActiveFilter(key, null)
     })
-  }, [filterConfig]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filterConfig])
 
   const validActiveFilters = useMemo(
     () =>

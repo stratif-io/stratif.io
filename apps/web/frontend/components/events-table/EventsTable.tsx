@@ -94,7 +94,7 @@ function loadColVisibility(key: string): VisibilityState | null {
 }
 
 function saveColVisibility(key: string, state: VisibilityState) {
-  try { localStorage.setItem(key, JSON.stringify(state)) } catch {}
+  try { localStorage.setItem(key, JSON.stringify(state)) } catch { /* ignore */ }
 }
 
 const ROW_HEIGHT_PX = 40

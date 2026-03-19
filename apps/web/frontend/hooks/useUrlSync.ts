@@ -69,7 +69,6 @@ export function useUrlSync() {
         if (!RESERVED.has(key)) setActiveFilter(key, value || null)
       })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Phase 2 — mirror store → URL on every relevant store change.
@@ -89,6 +88,5 @@ export function useUrlSync() {
     })
 
     setSearchParams(params, { replace: true })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConnectionId, dateRange, activeFilters])
 }

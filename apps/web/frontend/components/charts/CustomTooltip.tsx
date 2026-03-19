@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 
 interface CustomTooltipProps {
   active?: boolean
-  payload?: any[]
+  payload?: { name: string; value: number; color: string }[]
   label?: string
   formatter?: (value: number) => string
   labelFormatter?: (label: string) => string
