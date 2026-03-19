@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { DbLogo } from '@/components/DbLogo'
 import { useCreateConnection, useUpdateConnection } from '../hooks/useConnectionsData'
 import type { Connection, DbType } from '@/types'
 
@@ -23,9 +24,9 @@ const DB_TYPES: { value: DbType; label: string }[] = [
   { value: 'duckdb', label: 'DuckDB' },
   { value: 'postgresql', label: 'PostgreSQL' },
   { value: 'databricks', label: 'Databricks' },
-  { value: 'sqlite', label: 'SQLite' },
   { value: 'snowflake', label: 'Snowflake' },
   { value: 'clickhouse', label: 'ClickHouse' },
+  { value: 'sqlite', label: 'SQLite' },
 ]
 
 function CredentialFields({ dbType }: { dbType: DbType }) {
@@ -240,13 +241,13 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget
-    const credentials = isEdit ? undefined : buildCredentials(dbType, form)
+    const credentials = buildCredentials(dbType, form)
 
     if (isEdit) {
-      update.mutate({ name }, { onSuccess: () => onOpenChange(false) })
+      update.mutate({ name, credentials }, { onSuccess: () => onOpenChange(false) })
     } else {
       create.mutate(
-        { name, db_type: dbType, credentials: credentials! },
+        { name, db_type: dbType, credentials },
         { onSuccess: () => onOpenChange(false) }
       )
     }
@@ -256,7 +257,10 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit Connection' : 'New Connection'}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <DbLogo dbType={dbType} size={20} />
+            {isEdit ? 'Edit Connection' : 'New Connection'}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
@@ -271,32 +275,35 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
             />
           </div>
 
-          {!isEdit && (
-            <>
-              <div className="space-y-1.5">
-                <Label>Database Type</Label>
-                <Select value={dbType} onValueChange={(v) => setDbType(v as DbType)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DB_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="space-y-1.5">
+            <Label>Database Type</Label>
+            <Select
+              value={dbType}
+              onValueChange={(v) => setDbType(v as DbType)}
+              disabled={isEdit}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DB_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    <span className="flex items-center gap-2">
+                      <DbLogo dbType={t.value} size={16} />
+                      {t.label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-              <div className="rounded-md border p-3 space-y-3">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Credentials
-                </p>
-                <CredentialFields dbType={dbType} />
-              </div>
-            </>
-          )}
+          <div className="rounded-md border p-3 space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Credentials
+            </p>
+            <CredentialFields dbType={dbType} />
+          </div>
 
           {(create.isError || update.isError) && (
             <p className="text-sm text-destructive">{(create.error || update.error)?.message}</p>
