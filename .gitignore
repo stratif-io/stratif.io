@@ -41,9 +41,11 @@ seeders/.env.seed
 
 # Local dev DB
 stratifio_product.sqlite
-video/node_modules/
-video/out/
-video/public/*.webm
-video/public/*.mp3
+apps/video/node_modules/
+apps/video/out/
+apps/video/public/*.webm
+apps/video/public/*.mp3
+apps/web/playwright-report/
+apps/web/test-results/
 .superpowers/
 docs/superpowers/

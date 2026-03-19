@@ -28,32 +28,32 @@ npm run build            # TypeScript type-check + production build
 
 ## Architecture
 
-**Frontend** (`src/`): React 18, Vite 6, Tailwind CSS v4, shadcn/ui, React Router v6
+**Frontend** (`apps/web/frontend/`): React 18, Vite 6, Tailwind CSS v4, shadcn/ui, React Router v6
 
 **Backend** (`stratifio/`): FastAPI, DuckDB, pydantic-settings, SQLGlot for SQL transpilation
 
 ### Two-tier state management
 
-- **Server state**: TanStack Query v5 — all API data goes through custom hooks (`src/features/*/hooks/useXxxData.ts`). Never use raw `fetch` in components:
+- **Server state**: TanStack Query v5 — all API data goes through custom hooks (`apps/web/frontend/features/*/hooks/useXxxData.ts`). Never use raw `fetch` in components:
   ```typescript
   // CORRECT
   const { data, isLoading } = useTrendData({ dateRange, selectedEvent, granularity })
   // WRONG — never do this
   useEffect(() => { fetch('/api/trend').then(r => r.json()).then(setData) }, [])
   ```
-- **Client state**: Zustand store (`src/stores/app-store.ts`) — theme, dateRange, sidebarOpen, selectedEvent, selectedDevice. Persisted to localStorage.
+- **Client state**: Zustand store (`apps/web/frontend/stores/app-store.ts`) — theme, dateRange, sidebarOpen, selectedEvent, selectedDevice. Persisted to localStorage.
 
 ### Feature-based structure
 
-Each feature under `src/features/` is self-contained:
+Each feature under `apps/web/frontend/features/` is self-contained:
 ```
-src/features/<feature>/
+apps/web/frontend/features/<feature>/
 ├── components/       # Feature-specific UI
 ├── hooks/            # TanStack Query data hooks
 └── <Feature>Page.tsx # Page component
 ```
 
-Shared components live in `src/components/` (ui/, layout/, charts/, data-table/).
+Shared components live in `apps/web/frontend/components/` (ui/, layout/, charts/, data-table/).
 
 ### Backend layers
 
@@ -94,12 +94,12 @@ stratif.io stores encrypted credentials for client analytics databases. Security
 
 ## Code Conventions
 
-- **Imports**: Use `@/` path alias for `src/` imports
-- **Styling**: Tailwind CSS v4 + `cn()` utility from `src/lib/utils.ts` for conditional classes
-- **Validation**: Zod schemas in `src/lib/schemas/` for API responses
-- **Types**: Defined in `src/types/index.ts` or co-located with feature
-- **API functions**: Centralized in `src/lib/api/queries.ts`
-- **Charts**: Recharts wrappers in `src/components/charts/`
+- **Imports**: Use `@/` path alias for `apps/web/frontend/` imports
+- **Styling**: Tailwind CSS v4 + `cn()` utility from `apps/web/frontend/lib/utils.ts` for conditional classes
+- **Validation**: Zod schemas in `apps/web/frontend/lib/schemas/` for API responses
+- **Types**: Defined in `apps/web/frontend/types/index.ts` or co-located with feature
+- **API functions**: Centralized in `apps/web/frontend/lib/api/queries.ts`
+- **Charts**: Recharts wrappers in `apps/web/frontend/components/charts/`
 - **Tests**: Co-located in `__tests__` directories, `*.test.ts(x)` pattern, using `@testing-library/react`
 - **Formatting**: Prettier — single quotes, 2-space indent, 100 char width, trailing commas
 - **Backend config**: Environment variables prefixed with `STRATIFIO_` (via pydantic-settings in `stratifio/config.py`)
@@ -110,16 +110,16 @@ Feature work should be done in an isolated worktree, not directly on `main`. Use
 
 ## Adding a Feature
 
-1. Create `src/features/<feature>/` with `components/` and `hooks/` subdirectories
-2. Add fetch function in `src/lib/api/queries.ts`
+1. Create `apps/web/frontend/features/<feature>/` with `components/` and `hooks/` subdirectories
+2. Add fetch function in `apps/web/frontend/lib/api/queries.ts`
 3. Create TanStack Query hook in `hooks/useXxxData.ts`
 4. Create page component `<Feature>Page.tsx`
-5. Add route in `src/App.tsx` (lazy-loaded with Suspense)
-6. Add nav item in `src/components/layout/Sidebar.tsx`
-7. Add types in `src/types/index.ts` and Zod schema in `src/lib/schemas/`
+5. Add route in `apps/web/frontend/App.tsx` (lazy-loaded with Suspense)
+6. Add nav item in `apps/web/frontend/components/layout/Sidebar.tsx`
+7. Add types in `apps/web/frontend/types/index.ts` and Zod schema in `apps/web/frontend/lib/schemas/`
 
 ## Adding a Chart
 
-- Feature-specific: create in `src/features/<feature>/components/`
-- Shared/reusable: create in `src/components/charts/` and export from `src/components/charts/index.ts`
+- Feature-specific: create in `apps/web/frontend/features/<feature>/components/`
+- Shared/reusable: create in `apps/web/frontend/components/charts/` and export from `apps/web/frontend/components/charts/index.ts`
 - Use Recharts primitives, follow existing patterns for tooltips and styling

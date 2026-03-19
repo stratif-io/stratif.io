@@ -23,6 +23,20 @@
 
 ---
 
+## Architecture
+
+```
+apps/
+  web/           # React 18, Vite 6, Tailwind CSS v4, shadcn/ui
+    frontend/    # source code
+    tests/       # Playwright e2e
+  video/         # Remotion demo video
+backend/         # FastAPI, DuckDB, SQLGlot
+seeders/         # sample data generators
+```
+
+---
+
 ## Quick Start (Docker)
 
 ```bash
