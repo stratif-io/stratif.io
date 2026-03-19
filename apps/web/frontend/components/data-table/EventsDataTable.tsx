@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { ArrowUpDown, Calendar, User, MapPin } from 'lucide-react'
 import { format } from 'date-fns'
@@ -325,6 +325,7 @@ export function EventsDataTable({
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function generateMockEvents(count: number = 50): Event[] {
   const statuses: Event['status'][] = ['upcoming', 'ongoing', 'completed', 'cancelled']
   const categories = ['Conference', 'Workshop', 'Meetup', 'Webinar', 'Training', 'Networking']

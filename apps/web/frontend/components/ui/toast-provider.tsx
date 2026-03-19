@@ -25,5 +25,5 @@ export function ToastProvider() {
   )
 }
 
-// Export toast functions for convenience
+// eslint-disable-next-line react-refresh/only-export-components
 export { toast } from 'sonner'

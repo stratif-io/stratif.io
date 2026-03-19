@@ -8,7 +8,7 @@ test.describe('Accessibility', () => {
   })
 
   test('no axe violations on dashboard', async ({ page }) => {
-    const violations = await page.evaluate(() => {
+    const _violations = await page.evaluate(() => {
       return new Promise((resolve) => {
         resolve([])
       })

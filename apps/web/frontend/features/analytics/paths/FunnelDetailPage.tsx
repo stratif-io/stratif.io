@@ -80,6 +80,7 @@ export function FunnelDetailPage() {
         end_date: format(dateRange.to, 'yyyy-MM-dd'),
       })
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange])
 
   // Sync step and device state back to URL
@@ -89,6 +90,7 @@ export function FunnelDetailPage() {
     if (events.length >= 2) next['events'] = events.join(',')
     delete next['device_type']
     setSearchParams(next)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnelSteps])
 
   const addStep = () => {

@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
+import { useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { useVirtualizer, VirtualItem } from '@tanstack/react-virtual'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -90,7 +90,7 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: React.ForwardedRef
   )
 
   const measureElement = useCallback(
-    (element: Element | null, index: number) => {
+    (element: Element | null, _index: number) => {
       if (element) {
         virtualizer.measureElement(element)
       }
@@ -198,7 +198,7 @@ export function VirtualGrid<T>({
   style,
   loading = false,
   emptyMessage = 'No items',
-  ...props
+  ..._props
 }: VirtualGridProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null)
 

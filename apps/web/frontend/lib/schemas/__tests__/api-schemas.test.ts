@@ -10,7 +10,6 @@ import {
   SessionsResponseSchema,
   SessionsSummarySchema,
   RetentionCohortSchema,
-  RetentionResponseSchema,
   PathDataSchema,
   PathsResponseSchema,
   PathAnalysisDataSchema,
@@ -18,7 +17,6 @@ import {
   FunnelStepDataSchema,
   PathFunnelResponseSchema,
   ConversionDataSchema,
-  ConversionResponseSchema,
   ApiErrorSchema,
   MetricCardSchema,
 } from '../api-schemas'

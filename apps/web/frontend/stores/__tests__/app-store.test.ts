@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react'
 import { useAppStore } from '../app-store'
 
 describe('useAppStore', () => {
-  const originalLocalStorage = window.localStorage
+  const _originalLocalStorage = window.localStorage
 
   beforeEach(() => {
     vi.resetAllMocks()

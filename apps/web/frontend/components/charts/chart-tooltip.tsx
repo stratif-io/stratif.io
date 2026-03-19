@@ -1,5 +1,5 @@
 import React from 'react'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+// tooltip imports reserved for future interactive tooltip use
 
 interface ChartTooltipProps {
   active?: boolean

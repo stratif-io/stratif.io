@@ -14,7 +14,7 @@ import {
   PaginationState,
   Row,
 } from '@tanstack/react-table'
-import { ArrowUpDown, Download, MoreHorizontal } from 'lucide-react'
+import { Download } from 'lucide-react'
 import {
   Table,
   TableBody,

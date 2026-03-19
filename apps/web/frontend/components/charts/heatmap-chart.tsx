@@ -188,6 +188,7 @@ export function HeatmapChart({
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function generateHeatmapData(
   valueGenerator: (day: number, hour: number) => number
 ): HeatmapRow[] {

@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Clock, Users } from 'lucide-react'
+import { Clock } from 'lucide-react'
 
 export default function SessionsPage() {
   useEffect(() => {

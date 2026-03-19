@@ -23,7 +23,7 @@ export function SparklineChart({
   showArea = true,
   showDots = false,
   showTrend = false,
-  trendPosition = 'end',
+  trendPosition: _trendPosition = 'end',
   strokeWidth = 1.5,
 }: SparklineChartProps) {
   const uid = useId()

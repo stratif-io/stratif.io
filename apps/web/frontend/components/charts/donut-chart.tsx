@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 import { DONUT_CHART_COLORS } from './chart-colors'
-import { CHART_COLORS } from '@/lib/constants'
 import { useReducedMotion } from '@/hooks'
 
 interface DonutChartProps {

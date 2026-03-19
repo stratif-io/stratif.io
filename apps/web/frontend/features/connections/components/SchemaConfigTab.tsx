@@ -67,6 +67,7 @@ export function SchemaConfigTab({ connId }: Props) {
       })
     }, 800)
     return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userIdField, timestampField, eventNameField, eventsTable, sessionTimeoutMinutes, customProps])
 
   function addProp() {

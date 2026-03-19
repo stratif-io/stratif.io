@@ -7,7 +7,7 @@ export interface UseVirtualListOptions<T> {
   overscan?: number
 }
 
-export interface UseVirtualListReturn<T> {
+export interface UseVirtualListReturn<_T> {
   virtualizer: Virtualizer<HTMLDivElement, Element>
   virtualItems: VirtualItem[]
   totalSize: number

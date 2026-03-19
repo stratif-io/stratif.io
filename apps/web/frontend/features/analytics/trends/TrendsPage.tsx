@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { PageTransition } from '@/components/layout/PageTransition'
-import { LoadingState, ChartSkeleton } from '@/components/ui/loading-state'
+import { ChartSkeleton } from '@/components/ui/loading-state'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { TrendingUp, BarChart3, LineChart as LineChartIcon } from 'lucide-react'

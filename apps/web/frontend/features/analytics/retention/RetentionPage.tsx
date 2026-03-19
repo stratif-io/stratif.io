@@ -90,7 +90,7 @@ export function RetentionPage() {
   const [granularity, setGranularity] = useState<RetentionGranularity>('day')
   const [cohortLimit, setCohortLimit] = useState(10)
 
-  const { retentionData, milestones, isLoading, isError, error, avgMilestones, totalAvailable } = useRetentionData({
+  const { retentionData, milestones, isLoading, isError, error, avgMilestones: _avgMilestones, totalAvailable } = useRetentionData({
     dateRange,
     granularity,
   })

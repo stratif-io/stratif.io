@@ -10,7 +10,7 @@ import {
   Legend,
   ReferenceArea,
 } from 'recharts'
-import { DEFAULT_CHART_COLORS, COMPARISON_COLORS } from './chart-colors'
+import { COMPARISON_COLORS } from './chart-colors'
 
 interface ComparisonSeries {
   dataKey: string
@@ -43,7 +43,6 @@ interface ComparisonTooltipProps {
 }
 
 function ComparisonTooltip({ active, payload, label, series }: ComparisonTooltipProps) {
-  const [hidden, setHidden] = useState<Set<string>>(new Set())
 
   if (active && payload && payload.length) {
     const currentData = payload.find((p) => {
@@ -219,6 +218,7 @@ interface PeriodComparisonData {
   previous: number
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function transformPeriodData(data: PeriodComparisonData[]): Array<Record<string, unknown>> {
   return data.map((item) => ({
     name: item.label,

@@ -60,7 +60,7 @@ export function useDashboardMetrics({
     staleTime: 5 * 60 * 1000,
   })
 
-  const { data: conversion } = useQuery({
+  const { data: _conversion } = useQuery({
     queryKey: ['conversion', startDate, endDate, activeConnectionId],
     queryFn: () =>
       fetchConversion({

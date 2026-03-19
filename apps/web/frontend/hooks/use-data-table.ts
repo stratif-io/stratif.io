@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import {
   RowSelectionState,
   SortingState,
@@ -33,7 +33,7 @@ export interface UseDataTableReturn {
 export function useDataTable({
   initialPageSize = 10,
   initialSorting = [],
-  multiSort = false,
+  multiSort: _multiSort = false,
 }: UseDataTableProps = {}): UseDataTableReturn {
   const [sorting, setSorting] = useState<SortingState>(initialSorting)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])

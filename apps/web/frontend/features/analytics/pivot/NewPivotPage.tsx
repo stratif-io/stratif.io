@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useMemo, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { PageTransition } from '@/components/layout/PageTransition'
@@ -54,6 +54,7 @@ export function NewPivotPage() {
     Object.keys(activeFilters).forEach((key) => {
       if (!validFilterIds.has(key)) setActiveFilter(key, null)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterConfig])
 
   const validActiveFilters = useMemo(

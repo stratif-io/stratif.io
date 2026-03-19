@@ -375,6 +375,7 @@ export function ConnectionConfigTab({ connection }: Props) {
       update.mutate({ name: trimmed })
     }, 700)
     return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name])
 
   function buildCredentials(dbType: DbType, form: HTMLFormElement): Record<string, unknown> {

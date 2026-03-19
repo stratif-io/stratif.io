@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Select,
@@ -18,7 +17,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Smartphone, Monitor, ArrowRight, type LucideIcon } from 'lucide-react'
+import { Smartphone, Monitor, ArrowRight } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const API_KEY = import.meta.env.VITE_API_KEY || 'dev-key-change-in-production'

@@ -45,7 +45,10 @@ export function EventsPage() {
   const { data: filterOptions } = useFilterOptions(activeConnectionId ?? '')
   const { data: schemaConfig } = useSchemaConfig(activeConnectionId ?? '')
   const filterFields = filterConfig?.filter_fields ?? []
-  const customProperties = schemaConfig?.custom_properties ?? []
+  const customProperties = useMemo(
+    () => schemaConfig?.custom_properties ?? [],
+    [schemaConfig?.custom_properties]
+  )
 
   // Fetch field options for all custom properties in a single query
   const customPropFields = useMemo(() => customProperties.map((cp) => cp.name), [customProperties])

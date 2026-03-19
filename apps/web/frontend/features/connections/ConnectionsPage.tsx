@@ -16,6 +16,7 @@ export function ConnectionsPage() {
     if (location.search) {
       navigate('/connections', { replace: true })
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

@@ -23,7 +23,7 @@ function dropBadgeCn(rate: number) {
 export function FunnelSteps({ steps }: FunnelStepsProps) {
   if (!steps.length) return null
 
-  const startUsers = steps[0].users
+  const _startUsers = steps[0].users
 
   return (
     <div className="space-y-0">

@@ -66,6 +66,7 @@ export function FilterConfigTab({ connId }: Props) {
       upsert.mutate({ filter_fields })
     }, 600)
     return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabledFields])
 
   function toggleField(field: string) {

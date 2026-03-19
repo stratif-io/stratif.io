@@ -7,7 +7,7 @@ import { ActivityChart } from './components/ActivityChart'
 import { TopEvents } from './components/TopEvents'
 import { useDashboardMetrics } from './hooks/useDashboardMetrics'
 import { QueryError } from '@/components/ui/query-error'
-import { SPACING, TYPOGRAPHY, GRID_COLS } from '@/lib/constants'
+import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Database } from 'lucide-react'
 
