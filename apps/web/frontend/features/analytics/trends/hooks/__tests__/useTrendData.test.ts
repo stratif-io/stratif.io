@@ -66,7 +66,7 @@ describe('useTrendData — with breakdown', () => {
   it('calls fetchPivot (not fetchTrend) when breakdownDimension is set', async () => {
     vi.mocked(fetchPivot).mockResolvedValue({
       dimensions: ['date', 'device_type'],
-      measures: ['event_count'],
+      measures: ['count_events'],
       data: [],
     })
     vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
@@ -82,7 +82,7 @@ describe('useTrendData — with breakdown', () => {
     expect(fetchPivot).toHaveBeenCalledWith(
       expect.objectContaining({
         row_dimensions: ['date', 'device_type'],
-        measures: ['event_count'],
+        measures: ['count_events'],
       })
     )
   })
@@ -90,12 +90,12 @@ describe('useTrendData — with breakdown', () => {
   it('transforms flat pivot rows into wide-format records', async () => {
     vi.mocked(fetchPivot).mockResolvedValue({
       dimensions: ['date', 'device_type'],
-      measures: ['event_count'],
+      measures: ['count_events'],
       data: [
-        { date: '2026-01-01', device_type: 'mobile', event_count: 100 },
-        { date: '2026-01-01', device_type: 'desktop', event_count: 200 },
-        { date: '2026-01-02', device_type: 'mobile', event_count: 50 },
-        { date: '2026-01-02', device_type: 'desktop', event_count: 150 },
+        { date: '2026-01-01', device_type: 'mobile', count_events: 100 },
+        { date: '2026-01-01', device_type: 'desktop', count_events: 200 },
+        { date: '2026-01-02', device_type: 'mobile', count_events: 50 },
+        { date: '2026-01-02', device_type: 'desktop', count_events: 150 },
       ],
     })
     vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
@@ -116,11 +116,11 @@ describe('useTrendData — with breakdown', () => {
   it('returns seriesKeys sorted by total count descending', async () => {
     vi.mocked(fetchPivot).mockResolvedValue({
       dimensions: ['date', 'device_type'],
-      measures: ['event_count'],
+      measures: ['count_events'],
       data: [
-        { date: '2026-01-01', device_type: 'mobile', event_count: 300 },
-        { date: '2026-01-01', device_type: 'desktop', event_count: 100 },
-        { date: '2026-01-01', device_type: 'tablet', event_count: 50 },
+        { date: '2026-01-01', device_type: 'mobile', count_events: 300 },
+        { date: '2026-01-01', device_type: 'desktop', count_events: 100 },
+        { date: '2026-01-01', device_type: 'tablet', count_events: 50 },
       ],
     })
     vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
@@ -140,11 +140,11 @@ describe('useTrendData — with breakdown', () => {
     const manyValues = Array.from({ length: 10 }, (_, i) => ({
       date: '2026-01-01',
       device_type: `value_${i}`,
-      event_count: 100 - i,
+      count_events: 100 - i,
     }))
     vi.mocked(fetchPivot).mockResolvedValue({
       dimensions: ['date', 'device_type'],
-      measures: ['event_count'],
+      measures: ['count_events'],
       data: manyValues,
     })
     vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
@@ -164,12 +164,12 @@ describe('useTrendData — with breakdown', () => {
   it('computes maxValue as the max stacked total per date', async () => {
     vi.mocked(fetchPivot).mockResolvedValue({
       dimensions: ['date', 'device_type'],
-      measures: ['event_count'],
+      measures: ['count_events'],
       data: [
-        { date: '2026-01-01', device_type: 'mobile', event_count: 100 },
-        { date: '2026-01-01', device_type: 'desktop', event_count: 200 }, // total 300
-        { date: '2026-01-02', device_type: 'mobile', event_count: 50 },
-        { date: '2026-01-02', device_type: 'desktop', event_count: 50 }, // total 100
+        { date: '2026-01-01', device_type: 'mobile', count_events: 100 },
+        { date: '2026-01-01', device_type: 'desktop', count_events: 200 }, // total 300
+        { date: '2026-01-02', device_type: 'mobile', count_events: 50 },
+        { date: '2026-01-02', device_type: 'desktop', count_events: 50 }, // total 100
       ],
     })
     vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
