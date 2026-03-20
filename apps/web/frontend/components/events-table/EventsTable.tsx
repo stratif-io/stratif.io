@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { ColumnDef, SortingState, VisibilityState } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { User, Filter, X } from 'lucide-react'
@@ -330,18 +331,19 @@ export function EventsTable({
         className="h-7 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring w-44"
       />
       {/* Event name filter */}
-      <select
-        value={eventNameFilter}
-        onChange={(e) => onEventNameFilterChange(e.target.value)}
-        className="h-7 text-xs px-1 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-      >
-        <option value="">All events</option>
-        {allEventNames.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
+      <Select value={eventNameFilter} onValueChange={onEventNameFilterChange}>
+        <SelectTrigger className="h-7 text-xs w-36">
+          <SelectValue placeholder="All events" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">All events</SelectItem>
+          {allEventNames.map((name) => (
+            <SelectItem key={name} value={name}>
+              {name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {/* Dim col filters */}
       {dimCols
         .filter((col) => colVisibility[col.id] !== false)
@@ -361,21 +363,21 @@ export function EventsTable({
           return (
             <div key={colId} className="relative flex items-center">
               {isLowCardinality ? (
-                <select
-                  value={active ?? ''}
-                  onChange={(e) => applyFilter(e.target.value)}
-                  className="h-7 text-xs px-1 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-                  aria-label={`Filter ${col.label}`}
-                >
-                  <option value="">All {col.label}</option>
-                  {[...suggestions]
-                    .sort((a, b) => a.localeCompare(b))
-                    .map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                </select>
+                <Select value={active ?? ''} onValueChange={applyFilter}>
+                  <SelectTrigger className="h-7 text-xs w-32" aria-label={`Filter ${col.label}`}>
+                    <SelectValue placeholder={`All ${col.label}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All {col.label}</SelectItem>
+                    {[...suggestions]
+                      .sort((a, b) => a.localeCompare(b))
+                      .map((v) => (
+                        <SelectItem key={v} value={v}>
+                          {v}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               ) : (
                 <>
                   <input
