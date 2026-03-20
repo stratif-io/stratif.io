@@ -85,6 +85,7 @@ export function DimensionTreeSelect({
               <div key={group.category.id}>
                 {/* Category header */}
                 <button
+                  type="button"
                   className="w-full flex items-center gap-1.5 px-3 py-2 text-left hover:bg-accent/50 transition-colors"
                   onClick={() => toggleGroup(group.category.id)}
                 >
@@ -100,6 +101,7 @@ export function DimensionTreeSelect({
                 {isExpanded && group.dimensions.map((dim) => (
                   <button
                     key={dim.value}
+                    type="button"
                     className={cn(
                       'w-full text-left px-3 py-1.5 pl-8 text-sm truncate',
                       'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
