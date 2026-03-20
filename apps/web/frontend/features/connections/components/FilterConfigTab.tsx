@@ -16,7 +16,7 @@ import {
   useSchemaConfig,
   useUpsertFilterConfig,
 } from '../hooks/useConnectionsData'
-import type { FilterField, DimensionCategoryConfig } from '@/types'
+import type { FilterField, DimensionCategoryConfig, DimensionOption } from '@/types'
 import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
 import categoriesConfig from '@/config/dimension-categories.json'
 
@@ -52,12 +52,16 @@ export function FilterConfigTab({ connId }: Props) {
     })
   }
 
-  const candidates: string[] = schema
+  const candidateOptions: DimensionOption[] = schema
     ? [
-        schema.user_id_field,
-        schema.timestamp_field,
-        schema.event_name_field,
-        ...schema.custom_properties.map((p) => p.name),
+        { value: schema.user_id_field, label: schema.user_id_field },
+        { value: schema.timestamp_field, label: schema.timestamp_field },
+        { value: schema.event_name_field, label: schema.event_name_field },
+        ...schema.custom_properties.map((p) => ({
+          value: p.name,
+          label: p.name,
+          category: p.category,
+        })),
       ]
     : []
 
@@ -144,16 +148,13 @@ export function FilterConfigTab({ connId }: Props) {
         </p>
       </div>
 
-      {candidates.length === 0 ? (
+      {candidateOptions.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center border rounded-md">
           No fields available. Add custom properties in the Schema tab.
         </p>
       ) : (
         <div className="rounded-md border divide-y">
-          {groupDimensionsByCategory(
-            candidates.map((f) => ({ value: f, label: f })),
-            CATEGORIES,
-          ).map((group) => {
+          {groupDimensionsByCategory(candidateOptions, CATEGORIES).map((group) => {
             const isExpanded = expandedCategories.has(group.category.id)
             return (
               <div key={group.category.id}>
