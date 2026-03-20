@@ -178,9 +178,10 @@ export interface MetricCard {
 export interface PivotOptionsResponse {
   dimensions: Array<{ value: string; label: string }>
   measures: Array<{ value: string; label: string }>
+  numeric_dimensions?: Array<{ value: string; label: string }>
   event_names: string[]
   /** Dynamic filter options keyed by field name, e.g. { country: [...], browser: [...] } */
-  [key: string]: string[] | Array<{ value: string; label: string }>
+  [key: string]: string[] | Array<{ value: string; label: string }> | undefined
 }
 
 export interface PivotResponse {
