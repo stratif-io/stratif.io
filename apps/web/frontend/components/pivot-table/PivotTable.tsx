@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { PivotToolbar } from './PivotToolbar'
 import { ZoneBar } from './ZoneBar'
@@ -177,24 +179,27 @@ export function PivotTable({
       {filterField !== null && (
         <div className="px-4 py-2 border-b border-border bg-muted/10 flex items-center gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground">Add filter:</span>
-          <select
-            value={filterField}
-            onChange={(e) => handleFilterFieldChange(e.target.value)}
-            className="text-xs border border-border rounded px-2 py-1 bg-background"
-          >
-            {leafCols.map((c) => (
-              <option key={c.colId} value={c.colId}>{c.label}</option>
-            ))}
-          </select>
-          <select
-            defaultValue=""
-            onChange={(e) => { if (e.target.value) handleFilterApply(filterField, e.target.value) }}
-            className="text-xs border border-border rounded px-2 py-1 bg-background"
-          >
-            <option value="" disabled>Select value…</option>
-            {filterOptions.map((v) => <option key={v} value={v}>{v}</option>)}
-          </select>
-          <button onClick={() => setFilterField(null)} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+          <Select value={filterField} onValueChange={handleFilterFieldChange}>
+            <SelectTrigger className="h-7 text-xs w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {leafCols.map((c) => (
+                <SelectItem key={c.colId} value={c.colId}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select onValueChange={(v) => { if (v) handleFilterApply(filterField, v) }}>
+            <SelectTrigger className="h-7 text-xs w-36">
+              <SelectValue placeholder="Select value…" />
+            </SelectTrigger>
+            <SelectContent>
+              {filterOptions.map((v) => (
+                <SelectItem key={v} value={v}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="ghost" size="sm" onClick={() => setFilterField(null)}>Cancel</Button>
         </div>
       )}
 
