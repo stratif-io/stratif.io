@@ -55,7 +55,8 @@ export function FilterSelect({
   const triggerLabel = (() => {
     if (selectedValues.length === 0) return null
     if (mode === 'multi') {
-      if (selectedValues.length === 1) return selectedValues[0]
+      if (selectedValues.length === 1)
+        return options.find((o) => o.value === selectedValues[0])?.label ?? selectedValues[0]
       return `${selectedValues.length} values`
     }
     return options.find((o) => o.value === selectedValues[0])?.label ?? selectedValues[0]
@@ -126,12 +127,9 @@ export function FilterSelect({
             className,
           )}
         >
-          {/* Visual label: zero-width non-joiner appended so textContent !== label,
-              preventing getByText from matching trigger when popover is open.
-              Accessible name is provided via aria-label on the button. */}
           <span aria-hidden="true" className="truncate">
             {triggerLabel != null ? (
-              <>{triggerLabel}{'\u200C'}</>
+              triggerLabel
             ) : (
               <span className="text-muted-foreground">{placeholder}</span>
             )}
@@ -166,6 +164,7 @@ export function FilterSelect({
                   <div key={group.category.id}>
                     <button
                       type="button"
+                      aria-expanded={isExpanded}
                       className="w-full flex items-center gap-1.5 px-3 py-2 text-left hover:bg-accent/50 transition-colors"
                       onClick={() => toggleGroup(group.category.id)}
                     >
@@ -212,7 +211,7 @@ export function FilterSelect({
               })}
               {groups.length === 0 && (
                 <p className="px-3 py-4 text-xs text-muted-foreground text-center">
-                  No options available
+                  No options
                 </p>
               )}
             </div>
