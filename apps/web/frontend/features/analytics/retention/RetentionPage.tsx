@@ -134,7 +134,6 @@ export function RetentionPage() {
                     variant={granularity === value ? 'secondary' : 'ghost'}
                     size="sm"
                     onClick={() => setGranularity(value)}
-                    className="h-8"
                   >
                     {label}
                   </Button>
