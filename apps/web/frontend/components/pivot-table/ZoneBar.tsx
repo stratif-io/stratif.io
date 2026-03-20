@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
 import categoriesConfig from '@/config/dimension-categories.json'
 import type { ZoneCol, LeafMeta } from './types'
@@ -129,21 +130,25 @@ export function ZoneBar({
                 >
                   {col.label}
                   {zoneName === 'valueCols' && col.aggFunc && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={(e) => { e.stopPropagation(); cycleAggFunc(col.colId) }}
-                      className="ml-0.5 px-1 rounded text-[10px] bg-primary/20 hover:bg-primary/30"
+                      className="ml-0.5 h-auto px-1 py-0 text-[10px] bg-primary/20 hover:bg-primary/30"
                       title="Click to cycle agg function"
                     >
                       {AGG_LABELS[col.aggFunc] ?? col.aggFunc}
-                    </button>
+                    </Button>
                   )}
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => removeFromZone(zoneName, col.colId)}
-                    className="hover:opacity-70"
+                    className="h-4 w-4 p-0 hover:opacity-70 hover:bg-transparent"
                     aria-label={`Remove ${col.label}`}
                   >
                     <X className="h-2.5 w-2.5" />
-                  </button>
+                  </Button>
                 </span>
               ))}
               {cols.length === 0 && (
