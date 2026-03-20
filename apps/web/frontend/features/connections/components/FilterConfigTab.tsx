@@ -58,7 +58,7 @@ export function FilterConfigTab({ connId }: Props) {
         schema.timestamp_field,
         schema.event_name_field,
         ...schema.custom_properties.map((p) => p.name),
-      ].sort((a, b) => a.localeCompare(b))
+      ]
     : []
 
   // Sync from saved filter config (initial load only)
