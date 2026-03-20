@@ -36,7 +36,7 @@ export function TrendsPage() {
   const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
   const [measureField, setMeasureField] = useState<string>('count_events')
   const [aggregation, setAggregation] = useState<'sum' | 'avg' | 'min' | 'max' | 'count' | 'count_distinct'>('sum')
-  const [localFilters, setLocalFilters] = useState<Record<string, string | null>>({})
+  const [localFilters, setLocalFilters] = useState<Record<string, string[]>>({})
 
   useEffect(() => {
     setBreakdownDimension(null)
@@ -286,10 +286,7 @@ export function TrendsPage() {
                   dimensions={[...dimensions, ...numericDimensions]}
                   filters={localFilters}
                   connectionId={activeConnectionId ?? undefined}
-                  onChange={(field, value) =>
-                    setLocalFilters((prev) => ({ ...prev, [field]: value }))
-                  }
-                  onClearAll={() => setLocalFilters({})}
+                  onChange={setLocalFilters}
                 />
               </div>
               {isLoading ? (
