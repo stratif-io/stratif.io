@@ -60,7 +60,7 @@ function ValueMultiSelect({
       <PopoverTrigger asChild>
         <button
           className={cn(
-            'h-7 flex items-center gap-1 px-2.5 rounded-l-md text-xs font-medium border border-r-0 transition-colors',
+            'h-7 flex items-center gap-1 px-2.5 rounded-r-md text-xs font-medium border border-l-0 transition-colors',
             selected.length > 0
               ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
               : 'border-border text-muted-foreground hover:bg-accent/60'
@@ -156,7 +156,7 @@ function DimensionSelect({
     <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSearch('') }}>
       <PopoverTrigger asChild>
         <button
-          className="h-7 flex items-center gap-1 px-2.5 rounded-r-md text-xs font-medium border border-border text-foreground bg-muted/40 hover:bg-accent/60 transition-colors"
+          className="h-7 flex items-center gap-1 px-2.5 rounded-l-md text-xs font-medium border border-border text-foreground bg-muted/40 hover:bg-accent/60 transition-colors"
         >
           <span>{current?.label ?? 'Dimension'}</span>
           <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
@@ -221,6 +221,11 @@ export function TrendFilters({ dimensions, filters, connectionId, onChange }: Tr
     onChange({ ...filters, [next.value]: [] })
   }
 
+  function handleOpenChange(next: boolean) {
+    setOpen(next)
+    if (next && rows.length === 0) addRow()
+  }
+
   function removeRow(field: string) {
     const next = { ...filters }
     delete next[field]
@@ -242,7 +247,7 @@ export function TrendFilters({ dimensions, filters, connectionId, onChange }: Tr
   if (dimensions.length === 0) return null
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+    <Collapsible open={open} onOpenChange={handleOpenChange}>
       <CollapsibleTrigger asChild>
         <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
@@ -258,17 +263,17 @@ export function TrendFilters({ dimensions, filters, connectionId, onChange }: Tr
         <div className="mt-3 flex flex-col gap-2">
           {rows.map((row) => (
             <div key={row.field} className="flex items-center gap-2">
-              <ValueMultiSelect
-                dimension={dimensions.find((d) => d.value === row.field) ?? { value: row.field, label: row.field }}
-                selected={row.values}
-                connectionId={connectionId}
-                onChange={(values) => updateValues(row.field, values)}
-              />
               <DimensionSelect
                 dimensions={dimensions}
                 value={row.field}
                 usedFields={usedFields}
                 onChange={(newField) => changeField(row.field, newField)}
+              />
+              <ValueMultiSelect
+                dimension={dimensions.find((d) => d.value === row.field) ?? { value: row.field, label: row.field }}
+                selected={row.values}
+                connectionId={connectionId}
+                onChange={(values) => updateValues(row.field, values)}
               />
               <button
                 className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
