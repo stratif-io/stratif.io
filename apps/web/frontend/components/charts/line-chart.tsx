@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
-import { CHART_COLORS } from '@/lib/constants'
+import { CHART_COLORS, CHART_MARGINS } from '@/lib/constants'
 import { CustomTooltip } from './CustomTooltip'
 import { useReducedMotion } from '@/hooks'
 
@@ -46,7 +46,7 @@ export function LineChartComponent({
       className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
     >
       <ResponsiveContainer width="100%" height={height}>
-        <RechartsLineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+        <RechartsLineChart data={data} margin={CHART_MARGINS.default}>
           {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border opacity-50" />}
           <XAxis
             dataKey={xAxisKey}

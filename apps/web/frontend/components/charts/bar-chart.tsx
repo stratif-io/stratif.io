@@ -9,7 +9,7 @@ import {
   Legend,
   Cell,
 } from 'recharts'
-import { CHART_COLORS } from '@/lib/constants'
+import { CHART_COLORS, CHART_MARGINS } from '@/lib/constants'
 import { CustomTooltip } from './CustomTooltip'
 import { useState } from 'react'
 
@@ -25,6 +25,7 @@ interface BarChartProps {
   showGrid?: boolean
   showLegend?: boolean
   layout?: 'horizontal' | 'vertical'
+  ariaLabel?: string
 }
 
 export function BarChartComponent({
@@ -35,16 +36,22 @@ export function BarChartComponent({
   showGrid = true,
   showLegend = true,
   layout = 'horizontal',
+  ariaLabel,
 }: BarChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const defaultLabel = bars.map((b) => b.name || b.dataKey).join(' and ') + ' bar chart'
 
   return (
-    <div className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500">
+    <div
+      role="img"
+      aria-label={ariaLabel ?? defaultLabel}
+      className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
+    >
       <ResponsiveContainer width="100%" height={height}>
         <RechartsBarChart
           data={data}
           layout={layout}
-          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          margin={CHART_MARGINS.default}
           onMouseMove={(state) => {
             if (state.isTooltipActive) {
               setActiveIndex(state.activeTooltipIndex ?? null)

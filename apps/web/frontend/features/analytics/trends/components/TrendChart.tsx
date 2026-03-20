@@ -15,6 +15,8 @@ import {
   Brush,
 } from 'recharts'
 
+import { CHART_MARGINS } from '@/lib/constants'
+
 const SERIES_COLORS = [
   'hsl(262, 83%, 70%)',
   'hsl(199, 89%, 60%)',
@@ -77,12 +79,15 @@ export function TrendChart({
 
   const chartProps = {
     data,
-    margin: { top: 10, right: 30, left: 0, bottom: 0 },
+    margin: CHART_MARGINS.default,
   }
+
+  const ariaLabel = `${chartType} chart for ${eventName || 'All Events'}${seriesKeys ? ` broken down by ${seriesKeys.join(', ')}` : ''}, ${data.length} data points`
 
   // ── Bar chart ─────────────────────────────────────────────────────────────
   if (chartType === 'bar') {
     return (
+      <div role="img" aria-label={ariaLabel} className="w-full h-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart {...chartProps}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -109,6 +114,7 @@ export function TrendChart({
           )}
         </BarChart>
       </ResponsiveContainer>
+      </div>
     )
   }
 
@@ -116,6 +122,7 @@ export function TrendChart({
   if (seriesKeys) {
     if (chartType === 'line') {
       return (
+      <div role="img" aria-label={ariaLabel} className="w-full h-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart {...chartProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -140,10 +147,12 @@ export function TrendChart({
             ))}
           </LineChart>
         </ResponsiveContainer>
+      </div>
       )
     }
 
     return (
+      <div role="img" aria-label={ariaLabel} className="w-full h-full">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart {...chartProps}>
           <defs>
@@ -178,12 +187,14 @@ export function TrendChart({
           ))}
         </AreaChart>
       </ResponsiveContainer>
+      </div>
     )
   }
 
   // ── Single-series mode ────────────────────────────────────────────────────
   if (chartType === 'line') {
     return (
+      <div role="img" aria-label={ariaLabel} className="w-full h-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart {...chartProps}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -212,11 +223,13 @@ export function TrendChart({
           <Brush dataKey="date" height={30} stroke="hsl(var(--primary))" />
         </LineChart>
       </ResponsiveContainer>
+      </div>
     )
   }
 
   // area (default single-series)
   return (
+    <div role="img" aria-label={ariaLabel} className="w-full h-full">
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart {...chartProps}>
         <defs>
@@ -256,5 +269,6 @@ export function TrendChart({
         <Brush dataKey="date" height={30} stroke="hsl(var(--primary))" />
       </AreaChart>
     </ResponsiveContainer>
+    </div>
   )
 }

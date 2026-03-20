@@ -1,3 +1,4 @@
+import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
@@ -43,7 +44,7 @@ export function usePathExplorer({
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   const { data: pathResponse, isLoading } = useQuery({
@@ -78,7 +79,7 @@ export function usePathExplorer({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!startDate && !!endDate,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   const pathData = useMemo(() => pathResponse?.data || [], [pathResponse])
