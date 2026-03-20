@@ -192,7 +192,7 @@ export function useTrendData({
     return trendResponse.data.map((d) => ({
       date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       fullDate: d.date,
-      count: (d as Record<string, number>)[field] ?? d.count,
+      count: (d as unknown as Record<string, number>)[field] ?? d.count,
     }))
   }, [usePivot, trendResponse, stackedData, measure])
 

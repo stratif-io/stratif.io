@@ -6,7 +6,9 @@ import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
@@ -29,31 +31,46 @@ export function TrendsPage() {
   const { dateRange, activeConnectionId } = useAppStore()
   const [selectedEvent, setSelectedEvent] = useState<string>('')
   const [granularity, setGranularity] = useState<'day' | 'week'>('day')
-  const [chartType, setChartType] = useState<'area' | 'line'>('area')
+  const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area')
   const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
+  const [measure, setMeasure] = useState<string>('count_events')
 
-  // Reset breakdown when connection changes
   useEffect(() => {
     setBreakdownDimension(null)
+    setMeasure('count_events')
   }, [activeConnectionId])
 
-  // Load all available dimensions for the "Break down by" selector
   const { data: pivotOptions } = useQuery({
     queryKey: ['pivot-options', activeConnectionId],
     queryFn: () => fetchPivotOptions(activeConnectionId ?? undefined),
     staleTime: 5 * 60 * 1000,
   })
   const dimensions = pivotOptions?.dimensions ?? []
+  const standardMeasures = pivotOptions?.measures ?? []
+  const numericDimensions = pivotOptions?.numeric_dimensions ?? []
 
-  const { trendData, events, isLoading, isError, error, totalEvents, averageValue, maxValue, seriesKeys } =
-    useTrendData({
-      dateRange,
-      selectedEvent,
-      granularity,
-      breakdownDimension,
-    })
+  const {
+    trendData,
+    events,
+    isLoading,
+    isError,
+    error,
+    totalEvents,
+    averageValue,
+    maxValue,
+    seriesKeys,
+    measureKey,
+  } = useTrendData({
+    dateRange,
+    selectedEvent,
+    granularity,
+    breakdownDimension,
+    measure,
+  })
 
   if (isError) return <QueryError error={error} />
+
+  const measureIsNonDefault = measure !== 'count_events'
 
   return (
     <PageTransition>
@@ -97,6 +114,7 @@ export function TrendsPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-end">
                 <div className="flex flex-wrap gap-2 justify-end">
+                  {/* Chart type toggle */}
                   <div className="flex items-center border rounded-md p-1">
                     <Button
                       variant={chartType === 'area' ? 'secondary' : 'ghost'}
@@ -114,7 +132,17 @@ export function TrendsPage() {
                     >
                       Line
                     </Button>
+                    <Button
+                      variant={chartType === 'bar' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setChartType('bar')}
+                      className="h-8"
+                    >
+                      Bar
+                    </Button>
                   </div>
+
+                  {/* Event selector */}
                   <Select
                     value={selectedEvent || 'all'}
                     onValueChange={(val) => setSelectedEvent(val === 'all' ? '' : val)}
@@ -131,6 +159,8 @@ export function TrendsPage() {
                       ))}
                     </SelectContent>
                   </Select>
+
+                  {/* Granularity selector */}
                   <Select
                     value={granularity}
                     onValueChange={(val) => setGranularity(val as 'day' | 'week')}
@@ -139,7 +169,9 @@ export function TrendsPage() {
                     <SelectTrigger
                       className="w-[min(120px,35vw)]"
                       title={
-                        breakdownDimension ? 'Granularity is not available in breakdown mode' : undefined
+                        breakdownDimension
+                          ? 'Granularity is not available in breakdown mode'
+                          : undefined
                       }
                     >
                       <SelectValue />
@@ -149,6 +181,39 @@ export function TrendsPage() {
                       <SelectItem value="week">Weekly</SelectItem>
                     </SelectContent>
                   </Select>
+
+                  {/* Measure selector */}
+                  <Select value={measure} onValueChange={setMeasure}>
+                    <SelectTrigger
+                      className={`w-[min(200px,50vw)] ${measureIsNonDefault ? 'border-primary text-primary' : ''}`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Standard</SelectLabel>
+                        {standardMeasures.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      {numericDimensions.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Numeric fields</SelectLabel>
+                          {numericDimensions.flatMap((d) =>
+                            (['sum', 'avg', 'min', 'max'] as const).map((agg) => (
+                              <SelectItem key={`${agg}:${d.value}`} value={`${agg}:${d.value}`}>
+                                {agg.charAt(0).toUpperCase() + agg.slice(1)} of {d.label}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectGroup>
+                      )}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Breakdown selector */}
                   {dimensions.length > 0 && (
                     <Select
                       value={breakdownDimension ?? 'none'}
@@ -190,6 +255,7 @@ export function TrendsPage() {
                     averageValue={averageValue}
                     eventName={selectedEvent || 'All Events'}
                     seriesKeys={seriesKeys}
+                    measureKey={measureKey}
                   />
                 </div>
               )}
