@@ -282,26 +282,33 @@ def get_pivot_options(
     dimensions = {**AVAILABLE_DIMENSIONS, **custom_dimensions}
     filter_options = db.get_filter_options()
     # A prop is numeric if explicitly typed as 'number', OR if a sample TRY_CAST to DOUBLE succeeds.
+    # Check all candidate props in a single query to avoid N round-trips.
     custom_prop_exprs = db.get_custom_prop_exprs()
-    numeric_dimensions = []
-    for p in custom_props:
-        name = p.get("name", "")
-        if not name:
-            continue
-        if p.get("type") == "number":
-            numeric_dimensions.append({"value": name, "label": name.replace("_", " ").title()})
-            continue
-        expr = custom_prop_exprs.get(name)
-        if not expr:
-            continue
+    candidates = [
+        p for p in custom_props
+        if p.get("name") and p.get("type") != "number" and custom_prop_exprs.get(p["name"])
+    ]
+    numeric_names: set[str] = {
+        p["name"] for p in custom_props if p.get("type") == "number"
+    }
+    if candidates:
+        cast_cols = ", ".join(
+            f"MAX(TRY_CAST({custom_prop_exprs[p['name']]} AS DOUBLE)) AS {p['name']}"
+            for p in candidates
+        )
         try:
-            rows = db.execute(
-                f"SELECT COUNT(*) FROM events WHERE TRY_CAST({expr} AS DOUBLE) IS NOT NULL LIMIT 1"
-            )
-            if rows and rows[0][0] > 0:
-                numeric_dimensions.append({"value": name, "label": name.replace("_", " ").title()})
+            row = db.execute(f"SELECT {cast_cols} FROM events")
+            if row:
+                for i, p in enumerate(candidates):
+                    if row[0][i] is not None:
+                        numeric_names.add(p["name"])
         except Exception:
             pass
+    numeric_dimensions = [
+        {"value": p["name"], "label": p["name"].replace("_", " ").title()}
+        for p in custom_props
+        if p.get("name") in numeric_names
+    ]
     return {
         "dimensions": [{"value": k, "label": v} for k, v in dimensions.items()],
         "measures": [
