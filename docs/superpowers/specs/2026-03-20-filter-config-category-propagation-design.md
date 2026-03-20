@@ -2,6 +2,7 @@
 
 **Date:** 2026-03-20
 **Status:** Approved
+**Depends on:** `feature/dimension-category-schema` merged first (adds `category` to `CustomProperty` and `DimensionOption`, and the `groupDimensionsByCategory` short-circuit)
 
 ---
 
@@ -13,9 +14,8 @@
 
 ## Background
 
-- `CustomProperty` gained an optional `category: string | undefined` field (see `2026-03-20-dimension-category-schema-design.md`).
-- `groupDimensionsByCategory` already short-circuits regex when `DimensionOption.category` is set.
-- `FilterConfigTab` builds its candidates as a flat `string[]` and maps each to `{ value: f, label: f }`, discarding category information.
+- `CustomProperty` gains `category?: string` and `DimensionOption` gains `category?: string` in the `feature/dimension-category-schema` branch. `groupDimensionsByCategory` is also updated there to short-circuit regex when `DimensionOption.category` is set. This spec assumes that branch is already merged.
+- `FilterConfigTab` currently builds its candidates as a flat `string[]` and maps each to `{ value: f, label: f }`, discarding category information.
 
 ---
 
@@ -45,6 +45,9 @@ groupDimensionsByCategory(
 
 **After:**
 ```tsx
+// Import: add DimensionOption to the existing @/types import
+import type { FilterField, DimensionCategoryConfig, DimensionOption } from '@/types'
+
 const candidateOptions: DimensionOption[] = schema
   ? [
       { value: schema.user_id_field, label: schema.user_id_field },
@@ -58,7 +61,10 @@ const candidateOptions: DimensionOption[] = schema
     ]
   : []
 
-// ...later in JSX...
+// Empty-state guard (was `candidates.length === 0`):
+{candidateOptions.length === 0 ? ... }
+
+// ...grouping in JSX...
 groupDimensionsByCategory(candidateOptions, CATEGORIES)
 ```
 
