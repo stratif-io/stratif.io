@@ -19,6 +19,8 @@ export interface UseTrendDataOptions {
   measure?: string
 }
 
+const GRANULARITY_DIM = { day: 'date', week: 'week' } as const
+
 export interface UseTrendDataReturn {
   trendData: Array<Record<string, unknown>>
   events: string[]
@@ -92,7 +94,8 @@ export function useTrendData({
   })
 
   // ── Pivot query (breakdown OR non-default measure) ────────────────────────
-  const pivotRowDims = breakdownDimension ? ['date', breakdownDimension] : ['date']
+  const dateDim = GRANULARITY_DIM[granularity]
+  const pivotRowDims = breakdownDimension ? [dateDim, breakdownDimension] : [dateDim]
 
   const {
     data: pivotResponse,
@@ -104,6 +107,7 @@ export function useTrendData({
       'trend-breakdown',
       breakdownDimension,
       measure,
+      granularity,
       selectedEvent,
       startDate,
       endDate,
@@ -135,14 +139,16 @@ export function useTrendData({
 
     // No-breakdown pivot path: just normalise to { date, fullDate, count }
     if (!breakdownDimension) {
-      const data = rows.map((row) => ({
-        date: new Date(String(row['date'] ?? '')).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        }),
-        fullDate: String(row['date'] ?? ''),
-        count: Number(row[rowKey] ?? 0),
-      }))
+      const data = rows
+        .map((row) => ({
+          date: new Date(String(row[dateDim] ?? '')).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          }),
+          fullDate: String(row[dateDim] ?? ''),
+          count: Number(row[rowKey] ?? 0),
+        }))
+        .sort((a, b) => a.fullDate.localeCompare(b.fullDate))
       return { stackedData: data, seriesKeys: null }
     }
 
@@ -160,7 +166,7 @@ export function useTrendData({
 
     const byDate = new Map<string, Record<string, unknown>>()
     for (const row of rows) {
-      const rawDate = String(row['date'] ?? '')
+      const rawDate = String(row[dateDim] ?? '')
       const dimVal = String(row[breakdownDimension] ?? '(unknown)')
       const cnt = Number(row[rowKey] ?? 0)
       const key = topKeys.includes(dimVal) ? dimVal : '(other)'
@@ -182,7 +188,7 @@ export function useTrendData({
       String(a.fullDate).localeCompare(String(b.fullDate))
     )
     return { stackedData: data, seriesKeys: finalKeys }
-  }, [usePivot, breakdownDimension, measure, pivotResponse])
+  }, [usePivot, breakdownDimension, measure, dateDim, pivotResponse])
 
   // ── Non-pivot trend data ───────────────────────────────────────────────────
   const trendData = useMemo(() => {
