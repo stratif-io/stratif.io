@@ -33,6 +33,22 @@ import { TableSkeleton } from './TableSkeleton'
 import { EmptyState } from './EmptyState'
 import { cn } from '@/lib/utils'
 
+function MobileTableSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="rounded-lg border bg-card p-4 mb-3">
+          <Skeleton className="h-20 w-full" />
+        </div>
+      ))}
+    </>
+  )
+}
+
+function MobileEmptyState({ message = 'No data' }: { message?: string }) {
+  return <div className="text-center py-10 text-muted-foreground">{message}</div>
+}
+
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
@@ -407,13 +423,9 @@ export function DataTable<TData, TValue>({
       </div>
       <div className="md:hidden">
         {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-lg border bg-card p-4 mb-3">
-              <Skeleton className="h-20 w-full" />
-            </div>
-          ))
+          <MobileTableSkeleton />
         ) : isEmpty ? (
-          <div className="text-center py-10 text-muted-foreground">{emptyMessage}</div>
+          <MobileEmptyState message={emptyMessage} />
         ) : (
           rows.map(renderMobileCard)
         )}
