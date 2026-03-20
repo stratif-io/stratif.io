@@ -17,7 +17,7 @@ export interface UseTrendDataOptions {
   granularity: 'day' | 'week'
   breakdownDimension?: string | null
   measure?: string
-  localFilters?: Record<string, string | null>
+  localFilters?: Record<string, string[]>
 }
 
 const GRANULARITY_DIM = { day: 'date', week: 'week' } as const
@@ -55,7 +55,14 @@ export function useTrendData({
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
   const { activeFilters, activeConnectionId } = useAppStore()
-  const mergedFilters = localFilters ? { ...activeFilters, ...localFilters } : activeFilters
+  // Serialize localFilters (string[]) to pipe-joined strings and merge with global filters
+  const serializedLocal: Record<string, string | null> = {}
+  if (localFilters) {
+    for (const [field, values] of Object.entries(localFilters)) {
+      if (values.length > 0) serializedLocal[field] = values.join('|')
+    }
+  }
+  const mergedFilters = localFilters ? { ...activeFilters, ...serializedLocal } : activeFilters
 
   const usePivot = !!breakdownDimension || (measure !== 'count_events' && measure !== 'unique_users')
 
