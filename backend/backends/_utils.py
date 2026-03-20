@@ -45,3 +45,38 @@ def infer_type(sql_type: str) -> str:
     if any(x in t for x in ("TIMESTAMP", "DATE", "TIME")):
         return "timestamp"
     return "string"
+
+
+def sample_property_types(
+    execute_fn,
+    table: str,
+    prop_exprs: dict[str, str],
+    numeric_cast: str,
+) -> dict[str, str]:
+    """Sample up to 500 rows to detect numeric JSON properties.
+
+    Args:
+        execute_fn: callable(sql: str) -> list[row] | None
+        table: events table name
+        prop_exprs: {property_name: sql_expression} for string-typed props
+        numeric_cast: dialect-specific template with {expr} placeholder;
+                      should return non-null for numeric values, null otherwise.
+    Returns:
+        dict mapping name -> "number" for each upgraded property (empty = no upgrades)
+    """
+    if not prop_exprs:
+        return {}
+    try:
+        names = list(prop_exprs.keys())
+        cast_cols = ", ".join(
+            f'MAX({numeric_cast.format(expr=prop_exprs[name])}) AS col_{i}'
+            for i, name in enumerate(names)
+        )
+        sql = f'SELECT {cast_cols} FROM (SELECT * FROM "{table}" LIMIT 500)'
+        rows = execute_fn(sql)
+        if not rows:
+            return {}
+        row = rows[0]
+        return {names[i]: "number" for i, val in enumerate(row) if val is not None}
+    except Exception:
+        return {}

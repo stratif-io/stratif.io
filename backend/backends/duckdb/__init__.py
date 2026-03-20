@@ -9,10 +9,11 @@ import duckdb
 from pydantic import BaseModel
 
 from backend.backends.base import ColumnInfo, SchemaInfo
-from backend.backends._utils import infer_type, pick_events_table, suggest_fields
+from backend.backends._utils import infer_type, pick_events_table, sample_property_types, suggest_fields
 from backend.backends.duckdb.credentials import DuckDBCredentials
 
 _EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
+_DUCKDB_NUMERIC_CAST = "TRY_CAST({expr} AS DOUBLE)"
 
 
 class DuckDBBackend:
@@ -117,6 +118,24 @@ class DuckDBBackend:
                     proposed.append({"name": col.name, "path": col.name, "type": "string"})
             else:
                 proposed.append({"name": col.name, "path": col.name, "type": infer_type(sql_type)})
+
+        # Upgrade string-typed JSON properties to number where sampling confirms it
+        string_json_props = [p for p in proposed if p["type"] == "string" and "." in p["path"]]
+        if string_json_props:
+            col_name, _ = string_json_props[0]["path"].split(".", 1)
+            prop_exprs = {
+                p["name"]: self.json_extract_string(col_name, p["name"])
+                for p in string_json_props
+            }
+            upgrades = sample_property_types(
+                lambda sql: conn.execute(sql).fetchall(),
+                events_table,
+                prop_exprs,
+                _DUCKDB_NUMERIC_CAST,
+            )
+            for p in proposed:
+                if p["name"] in upgrades:
+                    p["type"] = upgrades[p["name"]]
 
         return SchemaInfo(tables=tables, events_table=events_table, columns=columns,
                           suggestions=suggestions, proposed_custom_properties=proposed)
