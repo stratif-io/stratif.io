@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,7 +16,11 @@ import {
   useSchemaConfig,
   useUpsertFilterConfig,
 } from '../hooks/useConnectionsData'
-import type { FilterField } from '@/types'
+import type { FilterField, DimensionCategoryConfig } from '@/types'
+import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
+import categoriesConfig from '@/config/dimension-categories.json'
+
+const CATEGORIES = categoriesConfig as DimensionCategoryConfig[]
 
 const ICON_OPTIONS = ['Globe', 'Chrome', 'Monitor', 'Building', 'Tag', 'Layers'] as const
 
@@ -34,13 +39,26 @@ export function FilterConfigTab({ connId }: Props) {
 
   const initialized = useRef(false)
 
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    () => new Set(CATEGORIES.map((c) => c.id))
+  )
+
+  function toggleCategory(id: string) {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   const candidates: string[] = schema
     ? [
         schema.user_id_field,
         schema.timestamp_field,
         schema.event_name_field,
         ...schema.custom_properties.map((p) => p.name),
-      ].sort((a, b) => a.localeCompare(b))
+      ]
     : []
 
   // Sync from saved filter config (initial load only)
@@ -131,47 +149,78 @@ export function FilterConfigTab({ connId }: Props) {
           No fields available. Add custom properties in the Schema tab.
         </p>
       ) : (
-        <div className="space-y-3 rounded-md border p-4">
-          {candidates.map((field) => {
-            const isEnabled = field in enabledFields
+        <div className="rounded-md border divide-y">
+          {groupDimensionsByCategory(
+            candidates.map((f) => ({ value: f, label: f })),
+            CATEGORIES,
+          ).map((group) => {
+            const isExpanded = expandedCategories.has(group.category.id)
             return (
-              <div key={field} className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id={`filter-${field}`}
-                    checked={isEnabled}
-                    onCheckedChange={() => toggleField(field)}
-                  />
-                  <Label
-                    htmlFor={`filter-${field}`}
-                    className="cursor-pointer font-mono text-sm flex-1"
-                  >
-                    {field}
-                  </Label>
-                </div>
-                {isEnabled && (
-                  <div className="ml-7 flex gap-2">
-                    <Input
-                      value={enabledFields[field].label}
-                      onChange={(e) => setLabel(field, e.target.value)}
-                      placeholder="Display label"
-                      className="h-8 text-sm flex-1"
-                    />
-                    <Select
-                      value={enabledFields[field].icon}
-                      onValueChange={(v) => setIcon(field, v)}
-                    >
-                      <SelectTrigger className="h-8 text-sm w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ICON_OPTIONS.map((icon) => (
-                          <SelectItem key={icon} value={icon}>
-                            {icon}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              <div key={group.category.id}>
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-accent/30 transition-colors"
+                  onClick={() => toggleCategory(group.category.id)}
+                >
+                  {isExpanded
+                    ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  }
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    {group.category.label}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {group.dimensions.filter((d) => d.value in enabledFields).length}/{group.dimensions.length}
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div className="space-y-2 px-4 pb-3 pt-1">
+                    {group.dimensions.map((dim) => {
+                      const field = dim.value
+                      const isEnabled = field in enabledFields
+                      return (
+                        <div key={field} className="space-y-2">
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              id={`filter-${field}`}
+                              checked={isEnabled}
+                              onCheckedChange={() => toggleField(field)}
+                            />
+                            <Label
+                              htmlFor={`filter-${field}`}
+                              className="cursor-pointer font-mono text-sm flex-1"
+                            >
+                              {field}
+                            </Label>
+                          </div>
+                          {isEnabled && (
+                            <div className="ml-7 flex gap-2">
+                              <Input
+                                value={enabledFields[field].label}
+                                onChange={(e) => setLabel(field, e.target.value)}
+                                placeholder="Display label"
+                                className="h-8 text-sm flex-1"
+                              />
+                              <Select
+                                value={enabledFields[field].icon}
+                                onValueChange={(v) => setIcon(field, v)}
+                              >
+                                <SelectTrigger className="h-8 text-sm w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ICON_OPTIONS.map((icon) => (
+                                    <SelectItem key={icon} value={icon}>
+                                      {icon}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>

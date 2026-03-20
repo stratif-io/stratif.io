@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
+import categoriesConfig from '@/config/dimension-categories.json'
 import type { ZoneCol, LeafMeta } from './types'
+import type { DimensionCategoryConfig } from '@/types'
+
+const CATEGORIES = categoriesConfig as DimensionCategoryConfig[]
 
 const DEFAULT_AGG_CYCLE = ['sum', 'count', 'avg', 'min', 'max', 'countDistinct']
 const AGG_LABELS: Record<string, string> = {
@@ -74,17 +79,29 @@ export function ZoneBar({
   return (
     <div className="border-b border-border bg-muted/20 px-4 py-2 space-y-2">
       {available.length > 0 && (
-        <div className="flex flex-wrap gap-1 items-center">
-          <span className="text-xs text-muted-foreground mr-1">Available:</span>
-          {available.map((col) => (
-            <span
-              key={col.colId}
-              draggable
-              onDragStart={() => setDragging({ colId: col.colId, from: 'picker' })}
-              className="text-xs px-2 py-0.5 rounded border border-border bg-background cursor-grab active:cursor-grabbing hover:bg-accent/50"
-            >
-              {col.label}
-            </span>
+        <div className="flex flex-wrap gap-x-3 gap-y-1.5 items-start">
+          {groupDimensionsByCategory(
+            available.map((c) => ({ value: c.colId, label: c.label })),
+            CATEGORIES,
+          ).map((group) => (
+            <div key={group.category.id} className="flex flex-wrap gap-1 items-center">
+              <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wide mr-0.5">
+                {group.category.label}
+              </span>
+              {group.dimensions.map((dim) => {
+                const col = available.find((c) => c.colId === dim.value)!
+                return (
+                  <span
+                    key={col.colId}
+                    draggable
+                    onDragStart={() => setDragging({ colId: col.colId, from: 'picker' })}
+                    className="text-xs px-2 py-0.5 rounded border border-border bg-background cursor-grab active:cursor-grabbing hover:bg-accent/50"
+                  >
+                    {col.label}
+                  </span>
+                )
+              })}
+            </div>
           ))}
         </div>
       )}

@@ -22,6 +22,7 @@ import { fetchPivotOptions } from '@/lib/api'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendChart } from './components/TrendChart'
 import { TrendFilters } from './components/TrendFilters'
+import { DimensionTreeSelect } from '@/components/DimensionTreeSelect'
 import { SPACING, TYPOGRAPHY, ICON_SIZES, QUERY_STALE_TIME } from '@/lib/constants'
 
 export function TrendsPage() {
@@ -258,24 +259,26 @@ export function TrendsPage() {
 
                   {/* Breakdown selector */}
                   {dimensions.length > 0 && (
-                    <Select
-                      value={breakdownDimension ?? 'none'}
-                      onValueChange={(val) => setBreakdownDimension(val === 'none' ? null : val)}
-                    >
-                      <SelectTrigger
-                        className={`w-[min(180px,45vw)] ${breakdownDimension ? 'border-primary text-primary' : ''}`}
-                      >
-                        <SelectValue placeholder="Break down by…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No breakdown</SelectItem>
-                        {dimensions.map((d) => (
-                          <SelectItem key={d.value} value={d.value}>
-                            {d.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="w-[min(180px,45vw)] flex gap-1">
+                      <div className="flex-1">
+                        <DimensionTreeSelect
+                          value={breakdownDimension}
+                          onChange={(val) => setBreakdownDimension(val)}
+                          dimensions={dimensions}
+                          placeholder="Break down by…"
+                        />
+                      </div>
+                      {breakdownDimension && (
+                        <button
+                          type="button"
+                          onClick={() => setBreakdownDimension(null)}
+                          className="h-9 px-2 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
+                          title="Clear breakdown"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

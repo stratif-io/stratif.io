@@ -175,13 +175,29 @@ export interface MetricCard {
   description: string
 }
 
+export interface DimensionOption {
+  value: string
+  label: string
+}
+
+export interface DimensionCategoryConfig {
+  id: string
+  label: string       // includes emoji, e.g. "🕐 Time"
+  patterns: string[]  // raw regex strings
+}
+
+export interface DimensionGroup {
+  category: DimensionCategoryConfig
+  dimensions: DimensionOption[]
+}
+
 export interface PivotOptionsResponse {
-  dimensions: Array<{ value: string; label: string }>
-  measures: Array<{ value: string; label: string }>
-  numeric_dimensions?: Array<{ value: string; label: string }>
+  dimensions: DimensionOption[]
+  measures: DimensionOption[]
+  numeric_dimensions?: DimensionOption[]
   event_names: string[]
   /** Dynamic filter options keyed by field name, e.g. { country: [...], browser: [...] } */
-  [key: string]: string[] | Array<{ value: string; label: string }> | undefined
+  [key: string]: string[] | DimensionOption[] | undefined
 }
 
 export interface PivotResponse {
