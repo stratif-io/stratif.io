@@ -142,6 +142,7 @@ export function TrendChart({
                 stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
                 strokeWidth={2}
                 dot={false}
+                connectNulls
                 name={key}
               />
             ))}
