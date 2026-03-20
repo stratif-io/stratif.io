@@ -1,5 +1,5 @@
 import { AreaChart as RechartsAreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
-import { CHART_COLORS } from '@/lib/constants'
+import { CHART_COLORS, CHART_MARGINS } from '@/lib/constants'
 import { CustomTooltip } from './CustomTooltip'
 import { useReducedMotion } from '@/hooks'
 
@@ -30,7 +30,7 @@ export function AreaChartComponent({
       className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
     >
       <ResponsiveContainer width="100%" height={height}>
-        <RechartsAreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+        <RechartsAreaChart data={data} margin={CHART_MARGINS.default}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={color} stopOpacity={0.3} />

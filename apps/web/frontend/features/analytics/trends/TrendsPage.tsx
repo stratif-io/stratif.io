@@ -22,7 +22,7 @@ import { fetchPivotOptions } from '@/lib/api'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendChart } from './components/TrendChart'
 import { TrendFilters } from './components/TrendFilters'
-import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
+import { SPACING, TYPOGRAPHY, ICON_SIZES, QUERY_STALE_TIME } from '@/lib/constants'
 
 export function TrendsPage() {
   useEffect(() => {
@@ -55,7 +55,7 @@ export function TrendsPage() {
   const { data: pivotOptions } = useQuery({
     queryKey: ['pivot-options', activeConnectionId],
     queryFn: () => fetchPivotOptions(activeConnectionId ?? undefined),
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
   const sortByLabel = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label)
   const dimensions = (pivotOptions?.dimensions ?? []).slice().sort(sortByLabel)

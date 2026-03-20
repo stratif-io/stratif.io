@@ -1,3 +1,4 @@
+import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronRight, Database, FolderOpen, Table2, Check, Loader2, ChevronLeft } from 'lucide-react'
@@ -33,7 +34,7 @@ function useBrowse(connId: string, catalog?: string, schema?: string) {
   return useQuery({
     queryKey: ['browse', connId, catalog ?? '', schema ?? ''],
     queryFn: () => fetchBrowse(connId, catalog, schema),
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 }
 

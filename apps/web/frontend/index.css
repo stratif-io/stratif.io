@@ -48,6 +48,23 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
+  /* Sidebar dimensions */
+  --sidebar-expanded: 220px;
+  --sidebar-collapsed: 60px;
+
+  /* Content max-width — prevents excessive stretching on ultra-wide screens */
+  --content-max-width: 1600px;
+
+  /* Z-index scale */
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 30;
+  --z-header: 40;
+  --z-sidebar-overlay: 40;
+  --z-sidebar: 50;
+  --z-modal: 50;
+  --z-tooltip: 60;
+
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
