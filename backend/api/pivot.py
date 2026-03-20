@@ -644,7 +644,19 @@ def get_pivot_grid(
     other_cols = []
     for field, label in BASE_DIMS.items():
         if field == "user_id":
-            continue  # too high cardinality for grouping
+            other_cols.append(
+                {
+                    "field": field,
+                    "headerName": label,
+                    "enableRowGroup": True,
+                    "enablePivot": False,  # too high cardinality to pivot across
+                    "enableValue": True,
+                    "allowedAggFuncs": ["countDistinct"],
+                    "resizable": True,
+                    "filter": "agTextColumnFilter",
+                }
+            )
+            continue
         other_cols.append(
             {
                 "field": field,
