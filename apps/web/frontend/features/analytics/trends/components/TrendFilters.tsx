@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { fetchPivotGridFilterValues } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { DimensionTreeSelect } from '@/components/DimensionTreeSelect'
 
 interface Dimension {
   value: string
@@ -127,73 +128,6 @@ function ValueMultiSelect({
   )
 }
 
-// ── Dimension picker ────────────────────────────────────────────────────────
-
-function DimensionSelect({
-  dimensions,
-  value,
-  usedFields,
-  onChange,
-}: {
-  dimensions: Dimension[]
-  value: string
-  usedFields: string[]
-  onChange: (field: string) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState('')
-
-  const available = dimensions.filter(
-    (d) => d.value === value || !usedFields.includes(d.value)
-  )
-  const filtered = search
-    ? available.filter((d) => d.label.toLowerCase().includes(search.toLowerCase()))
-    : available
-
-  const current = dimensions.find((d) => d.value === value)
-
-  return (
-    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSearch('') }}>
-      <PopoverTrigger asChild>
-        <button
-          className="h-7 flex items-center gap-1 px-2.5 rounded-l-md text-xs font-medium border border-border text-foreground bg-muted/40 hover:bg-accent/60 transition-colors"
-        >
-          <span>{current?.label ?? 'Dimension'}</span>
-          <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-44 p-0" align="start">
-        <div className="p-2 border-b">
-          <Input
-            placeholder="Search…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-7 text-sm"
-            autoFocus
-          />
-        </div>
-        <div className="max-h-56 overflow-y-auto">
-          <div className="p-1">
-            {filtered.map((d) => (
-              <button
-                key={d.value}
-                className={cn(
-                  'w-full text-left px-2 py-1.5 rounded text-sm truncate',
-                  'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
-                  d.value === value && 'bg-accent font-medium'
-                )}
-                onClick={() => { onChange(d.value); setOpen(false); setSearch('') }}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
-  )
-}
-
 // ── Main TrendFilters ───────────────────────────────────────────────────────
 
 interface FilterRow {
@@ -263,11 +197,10 @@ export function TrendFilters({ dimensions, filters, connectionId, onChange }: Tr
         <div className="mt-3 flex flex-col gap-2">
           {rows.map((row) => (
             <div key={row.field} className="flex items-center gap-2">
-              <DimensionSelect
-                dimensions={dimensions}
+              <DimensionTreeSelect
                 value={row.field}
-                usedFields={usedFields}
                 onChange={(newField) => changeField(row.field, newField)}
+                dimensions={dimensions.filter((d) => d.value === row.field || !usedFields.includes(d.value))}
               />
               <ValueMultiSelect
                 dimension={dimensions.find((d) => d.value === row.field) ?? { value: row.field, label: row.field }}
