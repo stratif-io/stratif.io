@@ -3,6 +3,8 @@ import {
   Line,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -26,10 +28,11 @@ const SERIES_COLORS = [
 
 interface TrendChartProps {
   data: Array<Record<string, unknown>>
-  chartType: 'area' | 'line'
+  chartType: 'area' | 'line' | 'bar'
   averageValue: number
   eventName: string
   seriesKeys: string[] | null
+  measureKey?: string
 }
 
 function CustomTooltip({
@@ -56,7 +59,14 @@ function CustomTooltip({
   return null
 }
 
-export function TrendChart({ data, chartType, averageValue, eventName, seriesKeys }: TrendChartProps) {
+export function TrendChart({
+  data,
+  chartType,
+  averageValue,
+  eventName,
+  seriesKeys,
+  measureKey = 'count',
+}: TrendChartProps) {
   if (!data.length) {
     return (
       <div className="h-[400px] flex items-center justify-center text-muted-foreground">
@@ -70,7 +80,39 @@ export function TrendChart({ data, chartType, averageValue, eventName, seriesKey
     margin: { top: 10, right: 30, left: 0, bottom: 0 },
   }
 
-  // ── Stacked / multi-series mode ──────────────────────────────────────────
+  // ── Bar chart ─────────────────────────────────────────────────────────────
+  if (chartType === 'bar') {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart {...chartProps}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+          <YAxis
+            tickFormatter={(val) => val.toLocaleString()}
+            tick={{ fontSize: 12 }}
+            stroke="hsl(var(--muted-foreground))"
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          {seriesKeys ? (
+            seriesKeys.map((key, i) => (
+              <Bar
+                key={key}
+                dataKey={key}
+                stackId="stack"
+                fill={SERIES_COLORS[i % SERIES_COLORS.length]}
+                name={key}
+              />
+            ))
+          ) : (
+            <Bar dataKey={measureKey} fill="hsl(var(--primary))" name={eventName || 'All Events'} />
+          )}
+        </BarChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  // ── Stacked / multi-series mode (area or line) ────────────────────────────
   if (seriesKeys) {
     if (chartType === 'line') {
       return (
@@ -139,7 +181,7 @@ export function TrendChart({ data, chartType, averageValue, eventName, seriesKey
     )
   }
 
-  // ── Single-series mode (unchanged) ───────────────────────────────────────
+  // ── Single-series mode ────────────────────────────────────────────────────
   if (chartType === 'line') {
     return (
       <ResponsiveContainer width="100%" height="100%">
@@ -160,7 +202,7 @@ export function TrendChart({ data, chartType, averageValue, eventName, seriesKey
           />
           <Line
             type="monotone"
-            dataKey="count"
+            dataKey={measureKey}
             stroke="hsl(var(--primary))"
             strokeWidth={2}
             dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
@@ -173,6 +215,7 @@ export function TrendChart({ data, chartType, averageValue, eventName, seriesKey
     )
   }
 
+  // area (default single-series)
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart {...chartProps}>
@@ -203,7 +246,7 @@ export function TrendChart({ data, chartType, averageValue, eventName, seriesKey
         />
         <Area
           type="monotone"
-          dataKey="count"
+          dataKey={measureKey}
           stroke="hsl(var(--primary))"
           strokeWidth={2}
           fillOpacity={1}
