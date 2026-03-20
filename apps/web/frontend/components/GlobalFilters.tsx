@@ -90,7 +90,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
       <PopoverTrigger asChild>
         <button
           className={cn(
-            'h-9 flex items-center gap-1.5 px-3 text-sm font-medium shrink-0',
+            'h-10 flex items-center gap-1.5 px-3 text-sm font-medium shrink-0',
             'hover:bg-accent/60 transition-colors',
             value ? 'text-foreground' : 'text-muted-foreground'
           )}
@@ -115,7 +115,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
         </button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-52 p-0" align="start">
+      <PopoverContent className="w-56 p-0" align="start">
         <div className="p-2 border-b">
           <Input
             placeholder={`Search ${pluralize(field.label.toLowerCase())}…`}
@@ -130,7 +130,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
           />
         </div>
 
-        <div className="max-h-56 overflow-y-auto">
+        <div className="max-h-60 overflow-y-auto">
           <div className="p-1">
             {allItems.length === 0 ? (
               <p className="px-2 py-3 text-xs text-muted-foreground text-center">No results</p>
