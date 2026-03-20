@@ -36,7 +36,7 @@ describe('FilterSelect', () => {
         onChange={vi.fn()}
       />
     )
-    expect(screen.getByRole('button')).toHaveTextContent('2 values')
+    expect(screen.getByRole('button', { name: '2 values' })).toBeInTheDocument()
   })
 
   it('tree mode opens to the group containing the active value', async () => {
@@ -49,10 +49,12 @@ describe('FilterSelect', () => {
         onChange={vi.fn()}
       />
     )
-    await userEvent.click(screen.getByRole('button'))
-    // Implementation uses conditional rendering — collapsed items are not in the DOM at all
-    expect(screen.getByText('Browser')).toBeInTheDocument()
-    expect(screen.queryByText('Country')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Browser' }))
+    // Implementation uses conditional rendering — collapsed items are not in the DOM at all.
+    // The trigger label also shows "Browser" (aria-hidden span), so we look for the option button.
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveTextContent('Browser')
+    expect(dialog).not.toHaveTextContent('Country')
   })
 
   it('searchable mode filters options client-side case-insensitively', async () => {
