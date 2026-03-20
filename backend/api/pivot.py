@@ -447,7 +447,7 @@ def get_pivot(
     if all_dims:
         group_by_exprs = [get_dimension_expr(dim) for dim in all_dims]
         group_by_clause = "GROUP BY " + ", ".join(group_by_exprs)
-        order_by_clause = f"ORDER BY {measure_list[0]} DESC"
+        order_by_clause = f"ORDER BY {measure_alias(measure_list[0])} DESC"
     else:
         group_by_clause = ""
         order_by_clause = ""
