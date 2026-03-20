@@ -18,7 +18,7 @@ Store dimension category assignments per custom property in the database. Catego
 
 `CustomProperty` gains one optional field:
 
-- **Python** (`stratifio/api/connections/models.py`): `category: str | None = None`
+- **Python** (`backend/api/connections/models.py`): `category: str | None = None`
 - **TypeScript** (`apps/web/frontend/types/index.ts`): `category?: string`
 
 ### Storage
@@ -33,7 +33,7 @@ Categories are stored as part of the existing `custom_properties` JSON blob insi
 
 ### Client-side auto-suggestion on detect
 
-When the user triggers schema detection, the frontend receives properties without category. It then runs each property's `name` through the existing `groupDimensionsByCategory` utility (backed by `dimension-categories.json`) to pre-fill category pickers before the user saves.
+When the user triggers schema detection, the frontend receives properties without category. It wraps each property's `name` as a `DimensionOption` (`{ value: name, label: name }`) and passes the array to the existing `groupDimensionsByCategory` utility (backed by `apps/web/frontend/config/dimension-categories.json`) to determine the matched category id. The result pre-fills the category pickers in SchemaConfigTab before the user saves.
 
 ---
 
@@ -51,7 +51,7 @@ The category cell is always visible (Option A — no hover-to-reveal).
 
 ### Category picker
 
-- A small Popover dropdown listing the 7 category options, each with its emoji label (matching the existing dimension category config)
+- A small Popover dropdown listing the categories from `apps/web/frontend/config/dimension-categories.json` (currently 7), each with its emoji label
 - An explicit "— none —" option maps to `null`/`undefined`, representing an uncategorized property
 - Pattern follows existing pickers in the codebase (Popover + Command or simple select)
 - No new shared component — the dropdown is local to the SchemaConfigTab row
@@ -72,9 +72,29 @@ Event name field, enabled toggles, and type overrides in SchemaConfigTab are not
 
 After save, `GET /api/connections/{conn_id}/schema` returns `category` per custom property. The existing `useSchemaData` hook exposes this data as-is to consumers.
 
+### `DimensionOption` gains an optional `category` field
+
+`DimensionOption` in `apps/web/frontend/types/index.ts` is extended:
+
+```typescript
+export interface DimensionOption {
+  value: string
+  label: string
+  category?: string  // stored category id; if set, skips regex matching
+}
+```
+
+### Mapping layer: schema hook → DimensionOption
+
+The layer that maps `CustomProperty[]` to `DimensionOption[]` (in `apps/web/frontend/lib/api/queries.ts` or the relevant hook) must forward the `category` field:
+
+```typescript
+{ value: prop.path, label: prop.name, category: prop.category }
+```
+
 ### Change to `groupDimensionsByCategory`
 
-`apps/web/frontend/lib/utils/dimensionCategories.ts` is updated so that when a `DimensionOption` already carries a `category` field, it is placed directly into that category bucket without running the regex. The regex config remains the fallback for dimensions that have no stored category (e.g. standard event properties).
+`apps/web/frontend/lib/utils/dimensionCategories.ts` is updated so that when a `DimensionOption` already carries a `category` field, it is placed directly into that category bucket without running the regex. The regex config (from `dimension-categories.json`) remains the fallback for dimensions that have no stored category (e.g. standard event properties).
 
 ```
 if (dimension.category) {
@@ -83,6 +103,8 @@ if (dimension.category) {
   // fall back to regex matching against dimension-categories.json
 }
 ```
+
+The `dimensionCategories.test.ts` unit tests should be extended to cover the stored-category short-circuit path.
 
 ### Downstream benefits (no direct changes needed)
 
@@ -101,16 +123,17 @@ Because `DimensionTreeSelect` already groups by category via `groupDimensionsByC
 
 | File | Change |
 |------|--------|
-| `stratifio/api/connections/models.py` | Add `category: str | None = None` to `CustomProperty` |
+| `backend/api/connections/models.py` | Add `category: str | None = None` to `CustomProperty` (note: Pydantic model has `extra = "ignore"` — unknown fields sent by old clients are silently dropped, which is the correct backward-compat behavior) |
 
 ### Frontend
 
 | File | Change |
 |------|--------|
-| `apps/web/frontend/types/index.ts` | Add `category?: string` to `CustomProperty` type |
-| `apps/web/frontend/lib/utils/dimensionCategories.ts` | Extend `groupDimensionsByCategory` to use stored category when present |
+| `apps/web/frontend/types/index.ts` | Add `category?: string` to `CustomProperty` and `DimensionOption` types |
+| `apps/web/frontend/lib/schemas/api-schemas.ts` | Add `category: z.string().optional()` to `CustomPropertySchema` (note: schema already has a `flatten` field absent from the TS interface — do not remove it, just add `category`) |
+| `apps/web/frontend/lib/utils/dimensionCategories.ts` | Extend `groupDimensionsByCategory` to use stored category when present; extend tests |
+| `apps/web/frontend/lib/api/queries.ts` | Forward `category` when mapping `CustomProperty` → `DimensionOption` |
 | `apps/web/frontend/features/connections/components/SchemaConfigTab.tsx` | Add inline category picker per custom property row; auto-fill on detect |
-| `apps/web/frontend/lib/schemas/` | Update Zod schema for `CustomProperty` to include optional `category` |
 
 ---
 
@@ -120,3 +143,4 @@ Because `DimensionTreeSelect` already groups by category via `groupDimensionsByC
 - No database migration
 - No changes to schema detect endpoint response
 - No direct changes to TrendsPage, TrendFilters, PivotTable, or FilterConfigTab (they benefit automatically via `DimensionTreeSelect`)
+- `SchemaConfigBody` (`apps/web/frontend/types/index.ts`) references `CustomProperty[]` and picks up the `category` field automatically — no separate change needed, but verify any place that constructs a `SchemaConfigBody` literal still compiles
