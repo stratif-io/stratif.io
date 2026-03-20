@@ -16,7 +16,7 @@ import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { TrendingUp, BarChart3, LineChart as LineChartIcon } from 'lucide-react'
 import { useAppStore } from '@/stores'
-import { fetchFilterConfig } from '@/lib/api'
+import { fetchPivotOptions } from '@/lib/api'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendChart } from './components/TrendChart'
 import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
@@ -37,13 +37,13 @@ export function TrendsPage() {
     setBreakdownDimension(null)
   }, [activeConnectionId])
 
-  // Load filter fields for the "Break down by" selector
-  const { data: filterConfig } = useQuery({
-    queryKey: ['filter-config', activeConnectionId],
-    queryFn: () => fetchFilterConfig(activeConnectionId!),
-    enabled: !!activeConnectionId,
+  // Load all available dimensions for the "Break down by" selector
+  const { data: pivotOptions } = useQuery({
+    queryKey: ['pivot-options', activeConnectionId],
+    queryFn: () => fetchPivotOptions(activeConnectionId ?? undefined),
+    staleTime: 5 * 60 * 1000,
   })
-  const filterFields = filterConfig?.filter_fields ?? []
+  const dimensions = pivotOptions?.dimensions ?? []
 
   const { trendData, events, isLoading, isError, error, totalEvents, averageValue, maxValue, seriesKeys } =
     useTrendData({
@@ -149,7 +149,7 @@ export function TrendsPage() {
                       <SelectItem value="week">Weekly</SelectItem>
                     </SelectContent>
                   </Select>
-                  {filterFields.length > 0 && (
+                  {dimensions.length > 0 && (
                     <Select
                       value={breakdownDimension ?? 'none'}
                       onValueChange={(val) => setBreakdownDimension(val === 'none' ? null : val)}
@@ -161,9 +161,9 @@ export function TrendsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No breakdown</SelectItem>
-                        {filterFields.map((f) => (
-                          <SelectItem key={f.field} value={f.field}>
-                            {f.label}
+                        {dimensions.map((d) => (
+                          <SelectItem key={d.value} value={d.value}>
+                            {d.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
