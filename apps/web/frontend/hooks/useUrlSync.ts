@@ -66,9 +66,11 @@ export function useUrlSync() {
 
     if (activeConnectionId) params.set('conn', activeConnectionId)
 
-    if (dateRange.from && dateRange.to) {
-      params.set('from', dateRange.from.toISOString().slice(0, 10))
-      params.set('to', dateRange.to.toISOString().slice(0, 10))
+    const from = dateRange.from ? new Date(dateRange.from) : null
+    const to = dateRange.to ? new Date(dateRange.to) : null
+    if (from && to && !isNaN(from.getTime()) && !isNaN(to.getTime())) {
+      params.set('from', from.toISOString().slice(0, 10))
+      params.set('to', to.toISOString().slice(0, 10))
     }
 
     Object.entries(activeFilters).forEach(([field, value]) => {
