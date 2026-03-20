@@ -54,9 +54,10 @@ export function TrendsPage() {
     queryFn: () => fetchPivotOptions(activeConnectionId ?? undefined),
     staleTime: 5 * 60 * 1000,
   })
-  const dimensions = pivotOptions?.dimensions ?? []
+  const sortByLabel = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label)
+  const dimensions = (pivotOptions?.dimensions ?? []).slice().sort(sortByLabel)
   const standardMeasures = pivotOptions?.measures ?? []
-  const numericDimensions = pivotOptions?.numeric_dimensions ?? []
+  const numericDimensions = (pivotOptions?.numeric_dimensions ?? []).slice().sort(sortByLabel)
 
   const isCustomField = measureField !== 'count_events' && measureField !== 'unique_users'
   const numericValues = new Set(numericDimensions.map((d) => d.value))
