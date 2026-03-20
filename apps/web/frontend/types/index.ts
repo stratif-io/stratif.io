@@ -277,7 +277,7 @@ export interface SchemaDetectResponse {
     timestamp_field?: string
     event_name_field?: string
   }
-  proposed_custom_properties: Array<{ name: string; path: string; type: PropertyType }>
+  proposed_custom_properties: Array<{ name: string; path: string; type: PropertyType; category?: string }>
 }
 
 export interface Connection {

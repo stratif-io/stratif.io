@@ -283,6 +283,7 @@ def get_pivot_options(
         p["name"]: p["name"].replace("_", " ").title() for p in custom_props
     }
     dimensions = {**AVAILABLE_DIMENSIONS, **custom_dimensions}
+    category_map = {p["name"]: p.get("category") for p in custom_props}
     # A prop is numeric if explicitly typed as 'number', OR if a sample TRY_CAST to DOUBLE succeeds.
     # Check all candidate props in a single query to avoid N round-trips.
     custom_prop_exprs = db.get_custom_prop_exprs()
@@ -309,12 +310,12 @@ def get_pivot_options(
         except Exception:
             pass
     numeric_dimensions = [
-        {"value": p["name"], "label": p["name"].replace("_", " ").title()}
+        {"value": p["name"], "label": p["name"].replace("_", " ").title(), "category": p.get("category")}
         for p in custom_props
         if p.get("name") in numeric_names
     ]
     result = {
-        "dimensions": [{"value": k, "label": v} for k, v in dimensions.items()],
+        "dimensions": [{"value": k, "label": v, "category": category_map.get(k)} for k, v in dimensions.items()],
         "measures": [
             {"value": "count_events", "label": "Event Count"},
             {"value": "unique_users", "label": "Unique Users"},
