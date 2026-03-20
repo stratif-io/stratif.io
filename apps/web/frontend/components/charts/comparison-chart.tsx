@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { CHART_MARGINS } from '@/lib/constants'
 import {
   LineChart as RechartsLineChart,
   Line,
@@ -140,7 +141,7 @@ export function ComparisonChart({
       <ResponsiveContainer width="100%" height={height}>
         <RechartsLineChart
           data={data}
-          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          margin={CHART_MARGINS.default}
           syncId={syncId}
           onMouseMove={(e) => {
             if (e?.activeTooltipIndex !== undefined) {

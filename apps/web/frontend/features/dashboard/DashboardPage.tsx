@@ -10,6 +10,7 @@ import { QueryError } from '@/components/ui/query-error'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Database } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 function DashboardFirstRun() {
   const navigate = useNavigate()
@@ -20,8 +21,8 @@ function DashboardFirstRun() {
       </div>
 
       <div className="space-y-2">
-        <h2 className="text-lg font-semibold tracking-tight">Connect your warehouse</h2>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <h2 className={TYPOGRAPHY.sectionTitleSm}>Connect your warehouse</h2>
+        <p className={cn(TYPOGRAPHY.muted, 'leading-relaxed')}>
           stratif.io queries your database directly — no data pipelines, no per-event fees. Connect
           once and your events are available immediately.
         </p>

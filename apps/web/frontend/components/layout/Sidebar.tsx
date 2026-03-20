@@ -120,15 +120,17 @@ export function Sidebar() {
         <button
           aria-hidden="true"
           tabIndex={-1}
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden cursor-default"
+          className="fixed inset-0 z-[var(--z-sidebar-overlay)] bg-background/80 backdrop-blur-sm lg:hidden cursor-default"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-background transition-[width,transform] duration-300 ease-in-out',
-          sidebarOpen ? 'w-[220px]' : 'w-[60px] -translate-x-full lg:translate-x-0'
+          'fixed inset-y-0 left-0 z-[var(--z-sidebar)] flex flex-col border-r bg-background transition-[width,transform] duration-300 ease-in-out',
+          sidebarOpen
+            ? 'w-[var(--sidebar-expanded)]'
+            : 'w-[var(--sidebar-collapsed)] -translate-x-full lg:translate-x-0'
         )}
       >
         {/* Logo */}

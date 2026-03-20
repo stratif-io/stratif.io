@@ -101,7 +101,7 @@ export function SparklineChart({
         {/* Tooltip */}
         {hoveredPoint && (
           <div
-            className="absolute z-50 pointer-events-none bg-popover border border-border rounded px-2 py-1 text-xs shadow-md whitespace-nowrap"
+            className="absolute z-[var(--z-tooltip)] pointer-events-none bg-popover border border-border rounded px-2 py-1 text-xs shadow-md whitespace-nowrap"
             style={{
               left: hoveredPoint.x,
               top: hoveredPoint.y,
