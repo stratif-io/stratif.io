@@ -140,7 +140,6 @@ export function TrendsPage() {
                       variant={chartType === 'area' ? 'secondary' : 'ghost'}
                       size="sm"
                       onClick={() => setChartType('area')}
-                      className="h-8"
                     >
                       Area
                     </Button>
@@ -148,7 +147,6 @@ export function TrendsPage() {
                       variant={chartType === 'line' ? 'secondary' : 'ghost'}
                       size="sm"
                       onClick={() => setChartType('line')}
-                      className="h-8"
                     >
                       Line
                     </Button>
@@ -156,7 +154,6 @@ export function TrendsPage() {
                       variant={chartType === 'bar' ? 'secondary' : 'ghost'}
                       size="sm"
                       onClick={() => setChartType('bar')}
-                      className="h-8"
                     >
                       Bar
                     </Button>

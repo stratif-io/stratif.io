@@ -1,131 +1,49 @@
 import { QUERY_STALE_TIME } from '@/lib/constants'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, X, Plus, Filter } from 'lucide-react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { fetchPivotGridFilterValues } from '@/lib/api'
-import { cn } from '@/lib/utils'
-import { DimensionTreeSelect } from '@/components/DimensionTreeSelect'
+import { FilterSelect } from '@/components/FilterSelect'
 
 interface Dimension {
   value: string
   label: string
 }
 
-// ── Value multi-select ──────────────────────────────────────────────────────
+// ── Per-row value select (own query, avoids conditional hook call) ────────────
 
-function ValueMultiSelect({
-  dimension,
-  selected,
+function FilterRowValueSelect({
+  field,
   connectionId,
+  selected,
   onChange,
 }: {
-  dimension: Dimension
-  selected: string[]
+  field: string
   connectionId: string | undefined
+  selected: string[]
   onChange: (values: string[]) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-
   const { data, isLoading } = useQuery({
-    queryKey: ['trend-filter-values', dimension.value, connectionId],
-    queryFn: () => fetchPivotGridFilterValues({ field: dimension.value, connection_id: connectionId }),
+    queryKey: ['trend-filter-values', field, connectionId],
+    queryFn: () => fetchPivotGridFilterValues({ field, connection_id: connectionId }),
     staleTime: QUERY_STALE_TIME.default,
-    enabled: open,
   })
 
-  const options = (data?.values ?? []).map(String).filter(Boolean)
-  const filtered = search
-    ? options.filter((o) => o.toLowerCase().includes(search.toLowerCase()))
-    : options
-
-  function toggle(val: string) {
-    onChange(
-      selected.includes(val) ? selected.filter((v) => v !== val) : [...selected, val]
-    )
-  }
-
-  const label =
-    selected.length === 0
-      ? 'Any value'
-      : selected.length === 1
-      ? selected[0]
-      : `${selected.length} values`
+  const options = (data?.values ?? []).map(String).filter(Boolean).map((v) => ({ value: v, label: v }))
 
   return (
-    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSearch('') }}>
-      <PopoverTrigger asChild>
-        <button
-          className={cn(
-            'h-7 flex items-center gap-1 px-2.5 rounded-r-md text-xs font-medium border border-l-0 transition-colors',
-            selected.length > 0
-              ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
-              : 'border-border text-muted-foreground hover:bg-accent/60'
-          )}
-        >
-          <span className="max-w-[140px] truncate">{label}</span>
-          <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-52 p-0" align="start">
-        <div className="p-2 border-b">
-          <Input
-            ref={inputRef}
-            placeholder={`Search…`}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-7 text-sm"
-            autoFocus
-          />
-        </div>
-        <div className="max-h-56 overflow-y-auto">
-          <div className="p-1">
-            {isLoading ? (
-              <p className="px-2 py-3 text-xs text-muted-foreground text-center">Loading…</p>
-            ) : filtered.length === 0 ? (
-              <p className="px-2 py-3 text-xs text-muted-foreground text-center">No results</p>
-            ) : (
-              filtered.map((opt) => (
-                <button
-                  key={opt}
-                  className={cn(
-                    'w-full text-left px-2 py-1.5 rounded text-sm truncate flex items-center gap-2',
-                    'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
-                    selected.includes(opt) && 'font-medium'
-                  )}
-                  onClick={() => toggle(opt)}
-                >
-                  <span
-                    className={cn(
-                      'h-3.5 w-3.5 shrink-0 rounded-sm border',
-                      selected.includes(opt)
-                        ? 'bg-primary border-primary'
-                        : 'border-muted-foreground/40'
-                    )}
-                  />
-                  {opt}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-        {selected.length > 0 && (
-          <div className="p-2 border-t">
-            <button
-              className="text-xs text-muted-foreground hover:text-foreground w-full text-left"
-              onClick={() => onChange([])}
-            >
-              Clear selection
-            </button>
-          </div>
-        )}
-      </PopoverContent>
-    </Popover>
+    <FilterSelect
+      mode="multi"
+      searchable={true}
+      value={selected}
+      onChange={(v) => onChange(v as string[])}
+      options={options}
+      isLoading={isLoading}
+      size="sm"
+      className="rounded-r-md rounded-l-none border-l-0"
+    />
   )
 }
 
@@ -198,16 +116,21 @@ export function TrendFilters({ dimensions, filters, connectionId, onChange }: Tr
         <div className="mt-3 flex flex-col gap-2">
           {rows.map((row) => (
             <div key={row.field} className="flex items-center gap-2">
-              <DimensionTreeSelect
+              <FilterSelect
+                mode="single"
+                tree={true}
+                size="sm"
                 value={row.field}
-                onChange={(newField) => changeField(row.field, newField)}
-                dimensions={dimensions.filter((d) => d.value === row.field || !usedFields.includes(d.value))}
-                className="h-7 w-48 text-xs px-2 rounded-l-md rounded-r-none"
+                onChange={(v) => changeField(row.field, v as string)}
+                options={dimensions
+                  .filter((d) => d.value === row.field || !usedFields.includes(d.value))
+                  .map((d) => ({ value: d.value, label: d.label }))}
+                className="w-48 rounded-l-md rounded-r-none"
               />
-              <ValueMultiSelect
-                dimension={dimensions.find((d) => d.value === row.field) ?? { value: row.field, label: row.field }}
-                selected={row.values}
+              <FilterRowValueSelect
+                field={row.field}
                 connectionId={connectionId}
+                selected={row.values}
                 onChange={(values) => updateValues(row.field, values)}
               />
               <button
