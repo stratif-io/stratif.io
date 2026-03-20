@@ -221,7 +221,14 @@ The only place `CustomProperty` data is mapped to `DimensionOption`-shaped dicts
 - Modify: `backend/api/pivot.py`
 - Modify: `apps/web/frontend/types/index.ts` (line ~278, `SchemaDetectResult.proposed_custom_properties`)
 
-- [ ] Open `backend/api/pivot.py` and find line 312 (the `numeric_dimensions` list comprehension). Update it to forward `category`:
+- [ ] Open `backend/api/pivot.py`. Find `custom_props = db.get_custom_properties()` (around line 281) and add a `category_map` dict right after it:
+
+  ```python
+  custom_props = db.get_custom_properties()
+  category_map = {p["name"]: p.get("category") for p in custom_props}
+  ```
+
+- [ ] Find the `numeric_dimensions` list comprehension (around line 312) and add `"category"`:
 
   ```python
   # Before:
@@ -239,7 +246,17 @@ The only place `CustomProperty` data is mapped to `DimensionOption`-shaped dicts
   ]
   ```
 
-- [ ] In the same file, check the `result["dimensions"]` construction a few lines below (around line 317). The standard dimensions come from a `dimensions` dict of field names (user_id, timestamp, etc.) — these are not `CustomProperty` objects and do not have a category, so leave them as-is.
+- [ ] Find the `result["dimensions"]` construction (a few lines below — it produces `[{"value": k, "label": v} for k, v in dimensions.items()]`). Update it to include `category` via the `category_map` (yields `None` for built-in dimensions, stored category for custom props):
+
+  ```python
+  # Before:
+  "dimensions": [{"value": k, "label": v} for k, v in dimensions.items()],
+
+  # After:
+  "dimensions": [{"value": k, "label": v, "category": category_map.get(k)} for k, v in dimensions.items()],
+  ```
+
+  Note: `category_map.get(k)` returns `None` for built-in dimension keys (e.g. `"event_name"`, `"user_id"`) — this is correct since built-in dimensions have no stored category.
 
 - [ ] Verify the backend still starts without import errors:
 
