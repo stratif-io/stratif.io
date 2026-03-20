@@ -169,16 +169,8 @@ export function TrendsPage() {
                   <Select
                     value={granularity}
                     onValueChange={(val) => setGranularity(val as 'day' | 'week')}
-                    disabled={!!breakdownDimension}
                   >
-                    <SelectTrigger
-                      className="w-[min(120px,35vw)]"
-                      title={
-                        breakdownDimension
-                          ? 'Granularity is not available in breakdown mode'
-                          : undefined
-                      }
-                    >
+                    <SelectTrigger className="w-[min(120px,35vw)]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
