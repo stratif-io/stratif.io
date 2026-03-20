@@ -1,19 +1,60 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
+import { ColumnDef } from '@tanstack/react-table'
 import { useAppStore } from '@/stores'
 import { fetchSessions } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataTable } from '@/components/data-table/DataTable'
 import { Clock } from 'lucide-react'
+import { TYPOGRAPHY } from '@/lib/constants'
+import type { Session } from '@/types'
+
+const formatDuration = (seconds: number) => {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.round(seconds % 60)
+  return `${mins}m ${secs}s`
+}
+
+const columns: ColumnDef<Session>[] = [
+  {
+    accessorKey: 'session_id',
+    header: 'Session ID',
+    cell: ({ row }) => (
+      <span className="font-mono text-xs">{row.getValue('session_id')}</span>
+    ),
+  },
+  {
+    accessorKey: 'user_id',
+    header: 'User ID',
+    cell: ({ row }) => (
+      <span className="font-mono text-xs">{row.getValue('user_id')}</span>
+    ),
+  },
+  {
+    accessorKey: 'device_type',
+    header: 'Device',
+    cell: ({ row }) => row.getValue('device_type') || 'Unknown',
+  },
+  {
+    accessorKey: 'event_count',
+    header: 'Events',
+    cell: ({ row }) => row.getValue('event_count') ?? 0,
+  },
+  {
+    accessorKey: 'duration_sec',
+    header: 'Duration',
+    cell: ({ row }) => formatDuration(row.getValue('duration_sec') ?? 0),
+  },
+  {
+    accessorKey: 'start_time',
+    header: 'Start Time',
+    cell: ({ row }) => {
+      const val = row.getValue('start_time') as string | undefined
+      return val ? format(new Date(val), 'MMM d, HH:mm') : '-'
+    },
+  },
+]
 
 export default function SessionsPage() {
   useEffect(() => {
@@ -21,33 +62,23 @@ export default function SessionsPage() {
   }, [])
 
   const { dateRange } = useAppStore()
-  const [page, setPage] = useState(1)
-  const limit = 20
 
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
 
   const { data: sessionsData, isLoading } = useQuery({
-    queryKey: ['sessions', page, startDate, endDate],
-    queryFn: () => fetchSessions({ limit, offset: (page - 1) * limit }),
+    queryKey: ['sessions', startDate, endDate],
+    queryFn: () => fetchSessions({ limit: 200, offset: 0 }),
     staleTime: 5 * 60 * 1000,
   })
 
-  const sessions = sessionsData?.data || []
-  const totalSessions = sessionsData?.total || 0
-  const totalPages = Math.ceil(totalSessions / limit)
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.round(seconds % 60)
-    return `${mins}m ${secs}s`
-  }
+  const sessions = useMemo(() => sessionsData?.data ?? [], [sessionsData])
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Sessions</h1>
-        <p className="text-muted-foreground mt-1">Browse individual user sessions.</p>
+        <h1 className={TYPOGRAPHY.pageTitle}>Sessions</h1>
+        <p className={`${TYPOGRAPHY.muted} mt-1`}>Browse individual user sessions.</p>
       </div>
 
       <Card>
@@ -59,67 +90,16 @@ export default function SessionsPage() {
           <CardDescription>Recent user sessions</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(10)].map((_, i) => (
-                <Skeleton key={i} className="h-12" />
-              ))}
-            </div>
-          ) : sessions.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No sessions found</p>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Session ID</TableHead>
-                    <TableHead>User ID</TableHead>
-                    <TableHead>Device</TableHead>
-                    <TableHead>Events</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Start Time</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sessions.map((session) => (
-                    <TableRow key={session.session_id}>
-                      <TableCell className="font-mono text-xs">{session.session_id}</TableCell>
-                      <TableCell className="font-mono text-xs">{session.user_id}</TableCell>
-                      <TableCell>{session.device_type || 'Unknown'}</TableCell>
-                      <TableCell>{session.event_count || 0}</TableCell>
-                      <TableCell>{formatDuration(session.duration_sec || 0)}</TableCell>
-                      <TableCell>
-                        {session.start_time
-                          ? format(new Date(session.start_time), 'MMM d, HH:mm')
-                          : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Showing {sessions.length} of {totalSessions} sessions
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    className="px-3 py-1 border rounded disabled:opacity-50"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    className="px-3 py-1 border rounded disabled:opacity-50"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+          <DataTable
+            columns={columns}
+            data={sessions}
+            isLoading={isLoading}
+            emptyMessage="No sessions found"
+            showRowSelection={false}
+            showRowActions={false}
+            showSearch={false}
+            showColumnVisibility={false}
+          />
         </CardContent>
       </Card>
     </div>
