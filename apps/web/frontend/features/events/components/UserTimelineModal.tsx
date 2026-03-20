@@ -1,3 +1,4 @@
+import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format, formatDistanceToNow } from 'date-fns'
@@ -167,7 +168,7 @@ export function UserTimelineModal({ userId, connectionId, open, onClose }: UserT
     queryKey: ['userEvents', userId, connectionId, limit],
     queryFn: () => fetchUserEvents({ user_id: userId!, connection_id: connectionId ?? undefined, limit }),
     enabled: open && !!userId,
-    staleTime: 60_000,
+    staleTime: QUERY_STALE_TIME.short,
   })
 
   const events = data?.data ?? []

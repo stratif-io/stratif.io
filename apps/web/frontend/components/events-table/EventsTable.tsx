@@ -119,6 +119,20 @@ export function EventsTable({
   const [colVisibility, setColVisibility] = useState<VisibilityState>(
     () => loadColVisibility(storageKey) ?? defaultVisibility(dimCols, filterFields)
   )
+  // Re-apply saved (or default) visibility when storageKey or dimCols changes.
+  // This handles the case where filterFields/customProperties are empty on first
+  // render (still loading) and resolve later — useState only runs once at mount.
+  const dimColsLengthRef = useRef(dimCols.length)
+  useEffect(() => {
+    // Only re-initialise when dimCols first becomes non-empty (i.e. data just loaded)
+    // or when the active connection changes (different storageKey).
+    if (dimCols.length === 0) return
+    if (dimCols.length === dimColsLengthRef.current && dimColsLengthRef.current !== 0) return
+    dimColsLengthRef.current = dimCols.length
+    const saved = loadColVisibility(storageKey)
+    setColVisibility(saved ?? defaultVisibility(dimCols, filterFields))
+  }, [storageKey, dimCols, filterFields])
+
   // Per-dim-col input state for inline header filters
   const [dimFilterInputs, setDimFilterInputs] = useState<Record<string, string>>(() => ({ ...columnFilters }))
   const parentRef = useRef<HTMLDivElement>(null)

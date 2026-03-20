@@ -1,3 +1,4 @@
+import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
@@ -41,7 +42,7 @@ export function useRetentionData({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!startDate && !!endDate,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   const retentionData = useMemo(() => retentionResponse?.data ?? [], [retentionResponse])

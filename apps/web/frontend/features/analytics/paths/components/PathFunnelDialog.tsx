@@ -105,9 +105,9 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Copy permalink" onClick={copyPermalink}>
+                    <Button variant="ghost" size="icon" aria-label="Copy permalink" onClick={copyPermalink}>
                       {copied ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 text-xs font-medium">Copied!</span>
+                        <span className="text-success text-xs font-medium">Copied!</span>
                       ) : (
                         <Copy className="h-4 w-4" />
                       )}
@@ -117,7 +117,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Open full page" onClick={openFullPage}>
+                    <Button variant="ghost" size="icon" aria-label="Open full page" onClick={openFullPage}>
                       <ExternalLink className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
@@ -186,7 +186,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
               </div>
               <div className="rounded-lg bg-muted/50 p-3">
                 <div className="text-xs text-muted-foreground mb-1">Biggest drop</div>
-                <div className="font-bold text-base text-red-600 dark:text-red-400">
+                <div className="font-bold text-base text-destructive">
                   {worstStep ? `${worstStep.dropoff_rate}%` : '—'}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">
