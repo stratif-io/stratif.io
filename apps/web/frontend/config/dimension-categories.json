@@ -1,0 +1,37 @@
+[
+  {
+    "id": "time",
+    "label": "🕐 Time",
+    "patterns": ["^ts_", "^(date|week|hour|month|quarter|year)$", "_(at|date|time|ts)$"]
+  },
+  {
+    "id": "event",
+    "label": "📣 Event",
+    "patterns": ["^event_", "^day_of_week$"]
+  },
+  {
+    "id": "user",
+    "label": "👤 User",
+    "patterns": ["^user_", "_(user|account|customer|tenant)$"]
+  },
+  {
+    "id": "geography",
+    "label": "🌍 Geography",
+    "patterns": ["(country|city|region|state|geo|locale|timezone)"]
+  },
+  {
+    "id": "device",
+    "label": "💻 Device & Platform",
+    "patterns": ["(device|browser|os|platform|screen|viewport)"]
+  },
+  {
+    "id": "marketing",
+    "label": "📢 Marketing",
+    "patterns": ["^utm_", "(referrer|campaign|channel|source|medium)"]
+  },
+  {
+    "id": "other",
+    "label": "⚙️ Other",
+    "patterns": [".*"]
+  }
+]
