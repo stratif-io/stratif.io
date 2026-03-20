@@ -5,7 +5,7 @@ import { MetricCardSkeleton } from '@/components/ui/loading-state'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { HelpCircle } from 'lucide-react'
 import { useCountUp } from '@/hooks/useCountUp'
-import { TYPOGRAPHY } from '@/lib/constants'
+import { TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 export interface MetricCardProps {
@@ -48,8 +48,9 @@ export function MetricCard({
           <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
           {tooltip && (
             <Tooltip>
-              <TooltipTrigger asChild>
-                <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/60 cursor-help" />
+              <TooltipTrigger className="cursor-help rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <HelpCircle className={cn(ICON_SIZES.xs, 'text-muted-foreground/60')} />
+                <span className="sr-only">More information</span>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p className="text-sm">{tooltip}</p>

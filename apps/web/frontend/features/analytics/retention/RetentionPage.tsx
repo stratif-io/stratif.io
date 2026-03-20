@@ -13,6 +13,7 @@ import { useAppStore } from '@/stores'
 import { useRetentionData, type RetentionGranularity } from './hooks/useRetentionData'
 import { RetentionTable } from './components/RetentionTable'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
+import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 
 const GRANULARITIES: { value: RetentionGranularity; label: string }[] = [
@@ -66,6 +67,7 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
   const { label, color } = getRetentionLabel(value, granularity, milestone)
+  const animatedValue = useCountUp(value, { decimals: 1 })
   return (
     <Card hover="lift">
       <CardHeader className="pb-2">
@@ -73,7 +75,7 @@ function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
       </CardHeader>
       <CardContent className="space-y-1">
         <div className="flex items-end gap-2">
-          <span className={TYPOGRAPHY.metric}>{value.toFixed(1)}%</span>
+          <span className={TYPOGRAPHY.metric}>{animatedValue.toFixed(1)}%</span>
           <span className={cn('text-xs font-medium pb-0.5', color)}>{label}</span>
         </div>
       </CardContent>

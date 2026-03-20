@@ -1,3 +1,4 @@
+import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createConnection,
@@ -27,7 +28,7 @@ export function useConnections() {
   return useQuery({
     queryKey: ['connections'],
     queryFn: fetchConnections,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 }
 
@@ -36,7 +37,7 @@ export function useConnection(id: string) {
     queryKey: ['connections', id],
     queryFn: () => fetchConnection(id),
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 }
 
@@ -79,7 +80,7 @@ export function useSchemaConfig(connId: string) {
     queryFn: () => fetchSchemaConfig(connId),
     enabled: !!connId,
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 }
 
@@ -97,7 +98,7 @@ export function useFilterConfig(connId: string) {
     queryFn: () => fetchFilterConfig(connId),
     enabled: !!connId,
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 }
 
@@ -118,7 +119,7 @@ export function useFilterOptions(connId: string) {
     queryFn: () => fetchFilterOptions(connId),
     enabled: !!connId,
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 }
 
@@ -127,7 +128,7 @@ export function useConnectionString(connId: string) {
     queryKey: ['connections', connId, 'string'],
     queryFn: () => fetchConnectionString(connId),
     enabled: !!connId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 }
 
@@ -142,7 +143,7 @@ export function useConnectionCredentials(connId: string) {
     queryKey: ['connections', connId, 'credentials'],
     queryFn: () => fetchConnectionCredentials(connId),
     enabled: !!connId,
-    staleTime: Infinity,
+    staleTime: QUERY_STALE_TIME.never,
   })
 }
 
@@ -151,7 +152,7 @@ export function useConnectionTables(connId: string, enabled = false) {
     queryKey: ['connections', connId, 'tables'],
     queryFn: () => fetchConnectionTables(connId),
     enabled: !!connId && enabled,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
     retry: false,
   })
 }

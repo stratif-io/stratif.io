@@ -1,3 +1,4 @@
+import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, X, Plus, Filter } from 'lucide-react'
@@ -33,7 +34,7 @@ function ValueMultiSelect({
   const { data, isLoading } = useQuery({
     queryKey: ['trend-filter-values', dimension.value, connectionId],
     queryFn: () => fetchPivotGridFilterValues({ field: dimension.value, connection_id: connectionId }),
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
     enabled: open,
   })
 
