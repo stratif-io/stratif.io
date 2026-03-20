@@ -33,12 +33,17 @@ export function TrendsPage() {
   const [granularity, setGranularity] = useState<'day' | 'week'>('day')
   const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area')
   const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
-  const [measure, setMeasure] = useState<string>('count_events')
+  const [measureField, setMeasureField] = useState<string>('count_events')
+  const [aggregation, setAggregation] = useState<'sum' | 'avg' | 'min' | 'max'>('sum')
 
   useEffect(() => {
     setBreakdownDimension(null)
-    setMeasure('count_events')
+    setMeasureField('count_events')
+    setAggregation('sum')
   }, [activeConnectionId])
+
+  const isNumericField = measureField !== 'count_events' && measureField !== 'unique_users'
+  const measure = isNumericField ? `${aggregation}:${measureField}` : measureField
 
   const { data: pivotOptions } = useQuery({
     queryKey: ['pivot-options', activeConnectionId],
@@ -182,10 +187,10 @@ export function TrendsPage() {
                     </SelectContent>
                   </Select>
 
-                  {/* Measure selector */}
-                  <Select value={measure} onValueChange={setMeasure}>
+                  {/* Measure field selector */}
+                  <Select value={measureField} onValueChange={setMeasureField}>
                     <SelectTrigger
-                      className={`w-[min(200px,50vw)] ${measureIsNonDefault ? 'border-primary text-primary' : ''}`}
+                      className={`w-[min(180px,45vw)] ${measureIsNonDefault ? 'border-primary text-primary' : ''}`}
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -201,17 +206,33 @@ export function TrendsPage() {
                       {numericDimensions.length > 0 && (
                         <SelectGroup>
                           <SelectLabel>Numeric fields</SelectLabel>
-                          {numericDimensions.flatMap((d) =>
-                            (['sum', 'avg', 'min', 'max'] as const).map((agg) => (
-                              <SelectItem key={`${agg}:${d.value}`} value={`${agg}:${d.value}`}>
-                                {agg.charAt(0).toUpperCase() + agg.slice(1)} of {d.label}
-                              </SelectItem>
-                            ))
-                          )}
+                          {numericDimensions.map((d) => (
+                            <SelectItem key={d.value} value={d.value}>
+                              {d.label}
+                            </SelectItem>
+                          ))}
                         </SelectGroup>
                       )}
                     </SelectContent>
                   </Select>
+
+                  {/* Aggregation selector — only shown for numeric fields */}
+                  {isNumericField && (
+                    <Select
+                      value={aggregation}
+                      onValueChange={(val) => setAggregation(val as typeof aggregation)}
+                    >
+                      <SelectTrigger className="w-[min(100px,30vw)] border-primary text-primary">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sum">Sum</SelectItem>
+                        <SelectItem value="avg">Avg</SelectItem>
+                        <SelectItem value="min">Min</SelectItem>
+                        <SelectItem value="max">Max</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
 
                   {/* Breakdown selector */}
                   {dimensions.length > 0 && (
