@@ -100,6 +100,21 @@ class TestSQLiteDetectSchema:
         info = backend.detect_schema(mem_conn, None)
         assert info.suggestions.get("user_id_field") == "user_id"
 
+    def test_detect_schema_infers_numeric_json_property(self, backend):
+        import sqlite3 as _sqlite3
+        conn = _sqlite3.connect(":memory:")
+        conn.execute(
+            "CREATE TABLE purchases (user_id TEXT, timestamp TEXT, event_name TEXT, props TEXT)"
+        )
+        conn.execute("INSERT INTO purchases VALUES ('u1', '2024-01-01', 'Buy', '{\"price\": \"9.99\"}')")
+        conn.execute("INSERT INTO purchases VALUES ('u2', '2024-01-02', 'Buy', '{\"price\": \"19.99\"}')")
+        conn.commit()
+        info = backend.detect_schema(conn, "purchases")
+        conn.close()
+        prop = next((p for p in info.proposed_custom_properties if p["name"] == "price"), None)
+        assert prop is not None, "price should be in proposed_custom_properties"
+        assert prop["type"] == "number", f"expected 'number', got '{prop['type']}'"
+
 
 class TestSQLiteCTE:
     def test_prepend_events_cte_uses_regex(self, backend):

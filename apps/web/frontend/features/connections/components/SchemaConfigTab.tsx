@@ -11,15 +11,54 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { LoadingState } from '@/components/ui/loading-state'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   useSchemaConfig,
   useUpsertSchemaConfig,
   useDetectSchema,
 } from '../hooks/useConnectionsData'
 import { TableBrowserPicker } from './TableBrowserPicker'
-import type { CustomProperty, PropertyType } from '@/types'
+import dimensionCategories from '@/config/dimension-categories.json'
+import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
+import type { CustomProperty, PropertyType, DimensionCategoryConfig } from '@/types'
 
 const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
+
+function CategoryPicker({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+  const [open, setOpen] = useState(false)
+  const selected = (dimensionCategories as DimensionCategoryConfig[]).find((c) => c.id === value)
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="h-8 w-full truncate rounded-md border border-input bg-background px-2 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground focus:outline-none"
+        >
+          {selected ? selected.label : '— none —'}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-1" align="start">
+        <button
+          type="button"
+          className="w-full rounded px-2 py-1 text-left text-xs text-muted-foreground hover:bg-accent"
+          onClick={() => { onChange(null); setOpen(false) }}
+        >
+          — none —
+        </button>
+        {(dimensionCategories as DimensionCategoryConfig[]).map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            className="w-full rounded px-2 py-1 text-left text-xs hover:bg-accent"
+            onClick={() => { onChange(cat.id); setOpen(false) }}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 interface Props {
   connId: string
@@ -71,7 +110,7 @@ export function SchemaConfigTab({ connId }: Props) {
   }, [userIdField, timestampField, eventNameField, eventsTable, sessionTimeoutMinutes, customProps])
 
   function addProp() {
-    setCustomProps((prev) => [...prev, { name: '', path: '', type: 'string' }])
+    setCustomProps((prev) => [...prev, { name: '', path: '', type: 'string', category: undefined }])
   }
 
   function removeProp(idx: number) {
@@ -95,7 +134,23 @@ export function SchemaConfigTab({ connId }: Props) {
         const existingPaths = new Set(customProps.map((p) => p.path))
         const newProps = proposed_custom_properties.filter((p) => !existingPaths.has(p.path))
         if (newProps.length > 0) {
-          setCustomProps((prev) => [...prev, ...newProps])
+          // Auto-suggest categories using regex config
+          const allCategories = dimensionCategories as DimensionCategoryConfig[]
+          const groups = groupDimensionsByCategory(
+            newProps.map((p) => ({ value: p.name, label: p.name })),
+            allCategories,
+          )
+          const categoryMap = new Map<string, string>()
+          for (const group of groups) {
+            for (const dim of group.dimensions) {
+              categoryMap.set(dim.value, group.category.id)
+            }
+          }
+          const propsWithCategory = newProps.map((p) => ({
+            ...p,
+            category: categoryMap.get(p.name),
+          }))
+          setCustomProps((prev) => [...prev, ...propsWithCategory])
         }
       },
     })
@@ -220,8 +275,8 @@ export function SchemaConfigTab({ connId }: Props) {
           </p>
         ) : (
           <div className="space-y-2">
-            <div className="hidden sm:grid grid-cols-[1fr_1.5fr_100px_32px] gap-2 px-1">
-              {['Name', 'Path', 'Type', ''].map((h) => (
+            <div className="hidden sm:grid grid-cols-[1fr_1.5fr_100px_110px_32px] gap-2 px-1">
+              {['Name', 'Path', 'Type', 'Category', ''].map((h) => (
                 <span key={h} className="text-xs font-medium text-muted-foreground">
                   {h}
                 </span>
@@ -231,7 +286,7 @@ export function SchemaConfigTab({ connId }: Props) {
             {[...customProps.map((prop, idx) => ({ prop, idx }))].sort((a, b) =>
               a.prop.name.localeCompare(b.prop.name)
             ).map(({ prop, idx }) => (
-              <div key={idx} className="grid grid-cols-[1fr_1.5fr_100px_32px] gap-2 items-center">
+              <div key={idx} className="grid grid-cols-[1fr_1.5fr_100px_110px_32px] gap-2 items-center">
                 <Input
                   value={prop.name}
                   onChange={(e) => updateProp(idx, { name: e.target.value })}
@@ -259,6 +314,10 @@ export function SchemaConfigTab({ connId }: Props) {
                     ))}
                   </SelectContent>
                 </Select>
+                <CategoryPicker
+                  value={prop.category ?? null}
+                  onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
+                />
                 <Button
                   size="icon"
                   variant="ghost"

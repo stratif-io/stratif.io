@@ -178,6 +178,7 @@ export interface MetricCard {
 export interface DimensionOption {
   value: string
   label: string
+  category?: string
 }
 
 export interface DimensionCategoryConfig {
@@ -259,6 +260,7 @@ export interface CustomProperty {
   name: string
   path: string
   type: PropertyType
+  category?: string
 }
 
 export interface SchemaDetectColumn {
@@ -275,7 +277,7 @@ export interface SchemaDetectResponse {
     timestamp_field?: string
     event_name_field?: string
   }
-  proposed_custom_properties: Array<{ name: string; path: string; type: PropertyType }>
+  proposed_custom_properties: Array<{ name: string; path: string; type: PropertyType; category?: string }>
 }
 
 export interface Connection {

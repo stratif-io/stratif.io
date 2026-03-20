@@ -139,6 +139,23 @@ class TestDuckDBDetectSchema:
         info = backend.detect_schema(mem_conn, "other_table")
         assert info.events_table == "other_table"
 
+    def test_detect_schema_infers_numeric_json_property(self, backend):
+        import duckdb as _duckdb
+        conn = _duckdb.connect(":memory:")
+        conn.execute(
+            "CREATE TABLE events (user_id VARCHAR, timestamp TIMESTAMP, event_name VARCHAR, properties JSON)"
+        )
+        conn.execute(
+            "INSERT INTO events VALUES "
+            "('u1', '2024-01-01', 'Purchase', '{\"total_amount\": 99.99}'), "
+            "('u2', '2024-01-02', 'Purchase', '{\"total_amount\": 49.50}')"
+        )
+        info = backend.detect_schema(conn, None)
+        conn.close()
+        prop = next((p for p in info.proposed_custom_properties if p["name"] == "total_amount"), None)
+        assert prop is not None, "total_amount should be in proposed_custom_properties"
+        assert prop["type"] == "number", f"expected 'number', got '{prop['type']}'"
+
 
 class TestDuckDBCTE:
     def test_build_events_cte_with_remap(self, backend):
