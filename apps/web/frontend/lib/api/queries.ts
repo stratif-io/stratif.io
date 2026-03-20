@@ -303,6 +303,7 @@ export const fetchPivot = (params: {
   end_date?: string
   event_filter?: string
   filters?: Record<string, string | null>
+  connection_id?: string
 }) => {
   const searchParams = new URLSearchParams()
   searchParams.set('row_dimensions', params.row_dimensions.join(','))
@@ -313,6 +314,7 @@ export const fetchPivot = (params: {
   if (params.event_filter) searchParams.set('event_filter', params.event_filter)
   const f = serializeFilters(params.filters)
   if (f) searchParams.set('filters', f)
+  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
 
   return fetchApi<PivotResponse>(`/api/pivot?${searchParams}`)
 }
