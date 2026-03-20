@@ -1,11 +1,12 @@
 import { QueryClient } from '@tanstack/react-query'
 import type { z } from 'zod'
 import { ZodError } from 'zod'
+import { QUERY_STALE_TIME } from '@/lib/constants'
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,
+      staleTime: QUERY_STALE_TIME.default,
       retry: 1,
       refetchOnWindowFocus: false,
     },

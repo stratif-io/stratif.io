@@ -11,7 +11,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card'
 import { QueryError } from '@/components/ui/query-error'
 import { PageTransition } from '@/components/layout/PageTransition'
-import { SPACING } from '@/lib/constants'
+import { SPACING, QUERY_STALE_TIME } from '@/lib/constants'
 import { EventsTable } from '@/components/events-table/EventsTable'
 import { UserTimelineModal } from './components/UserTimelineModal'
 import type { RawEvent } from '@/components/events-table/types'
@@ -62,7 +62,7 @@ export function EventsPage() {
       return Object.fromEntries(results.map((r) => [r.field, r.values]))
     },
     enabled: !!activeConnectionId && customPropFields.length > 0,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
   const mergedFilterOptions = useMemo(
     () => ({ ...(filterOptions ?? {}), ...(customPropOptions ?? {}) }),
@@ -73,7 +73,7 @@ export function EventsPage() {
   const { data: eventsData } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
   const allEventNames = eventsData?.events ?? []
 
@@ -113,7 +113,7 @@ export function EventsPage() {
         filters: mergedFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   const events: RawEvent[] = (rawEventsData?.data ?? []).map((e, i) => ({

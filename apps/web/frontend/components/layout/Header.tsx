@@ -16,7 +16,7 @@ export function Header() {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const { theme, setTheme } = useTheme()
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background">
+    <header className="sticky top-0 z-[var(--z-header)] w-full border-b bg-background">
       <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
         {/* Mobile hamburger */}
         <Button

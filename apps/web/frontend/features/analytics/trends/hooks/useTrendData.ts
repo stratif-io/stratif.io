@@ -1,3 +1,4 @@
+import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
@@ -70,7 +71,7 @@ export function useTrendData({
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   // ── Trend query (count_events or unique_users, no breakdown) ──────────────
@@ -100,7 +101,7 @@ export function useTrendData({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !usePivot && !!startDate && !!endDate,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   // ── Pivot query (breakdown OR non-default measure) ────────────────────────
@@ -135,7 +136,7 @@ export function useTrendData({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: usePivot && !!startDate && !!endDate,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   // ── Transform: flat pivot rows → wide-format (breakdown) or single (no breakdown) ──

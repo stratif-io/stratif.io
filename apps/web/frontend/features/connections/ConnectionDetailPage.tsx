@@ -4,7 +4,7 @@ import { ArrowLeft, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading-state'
 import { Separator } from '@/components/ui/separator'
-import { SPACING } from '@/lib/constants'
+import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { useConnection } from './hooks/useConnectionsData'
 import { ConnectionConfigTab } from './components/ConnectionConfigTab'
@@ -70,8 +70,8 @@ export function ConnectionDetailPage() {
             <Database className="h-5 w-5 text-muted-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold">{connection.name}</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className={TYPOGRAPHY.sectionTitle}>{connection.name}</h1>
+            <p className={TYPOGRAPHY.muted}>
               {DB_TYPE_LABELS[connection.db_type] ?? connection.db_type}
             </p>
           </div>

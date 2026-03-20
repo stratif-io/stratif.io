@@ -1,3 +1,4 @@
+import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format, parseISO, isValid } from 'date-fns'
@@ -43,7 +44,7 @@ export function useDashboardMetrics({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!activeConnectionId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   const { data: topEventsData, isLoading: eventsLoading } = useQuery({
@@ -57,7 +58,7 @@ export function useDashboardMetrics({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!activeConnectionId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   const { data: _conversion } = useQuery({
@@ -69,7 +70,7 @@ export function useDashboardMetrics({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!activeConnectionId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   const { data: sessionsSummary } = useQuery({
@@ -82,7 +83,7 @@ export function useDashboardMetrics({
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !!activeConnectionId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   const chartData = useMemo(() => {

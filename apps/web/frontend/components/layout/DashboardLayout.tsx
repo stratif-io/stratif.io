@@ -17,12 +17,14 @@ export function DashboardLayout() {
       <div
         className={cn(
           'flex-1 transition-[margin] duration-300 ease-in-out',
-          sidebarOpen ? 'lg:ml-[220px]' : 'lg:ml-[60px]'
+          sidebarOpen ? 'lg:ml-[var(--sidebar-expanded)]' : 'lg:ml-[var(--sidebar-collapsed)]'
         )}
       >
         <Header />
         <main className="p-4 sm:p-6 lg:p-8">
-          <Outlet />
+          <div className="mx-auto w-full max-w-[var(--content-max-width)]">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
