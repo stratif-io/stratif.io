@@ -4,8 +4,10 @@ import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { useUrlSync } from '@/hooks'
 
 export function DashboardLayout() {
+  useUrlSync()
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
 
   return (

@@ -134,7 +134,7 @@ class AnalyticsDatabase:
         return self._filter_fields
 
     def get_filter_options(self) -> dict[str, list[str]]:
-        """Return distinct values for configured filter fields only (not custom props — too slow)."""
+        """Return distinct values for configured filter fields (one query per field)."""
         options: dict[str, list[str]] = {}
         for ff in self._filter_fields:
             field = ff["field"]
