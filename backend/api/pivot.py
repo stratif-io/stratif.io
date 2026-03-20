@@ -2,15 +2,10 @@
 
 import json
 import re
-import time
 import traceback as _traceback
 from datetime import date, datetime
 from enum import Enum
 from typing import Annotated, Any
-
-# Simple TTL cache for /pivot/options — keyed by connection_id
-_pivot_options_cache: dict[str, tuple[float, dict]] = {}
-_PIVOT_OPTIONS_TTL = 300  # seconds
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -277,21 +272,14 @@ def _build_ag_filter_clauses(
 @router.get("/pivot/options")
 def get_pivot_options(
     db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
-    connection_id: str | None = Query(None),
 ) -> dict:
     """Get available dimensions, measures, and filter options for pivot table."""
-    cache_key = connection_id or "__default__"
-    cached = _pivot_options_cache.get(cache_key)
-    if cached and (time.time() - cached[0]) < _PIVOT_OPTIONS_TTL:
-        return cached[1]
-
     events = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
     custom_props = db.get_custom_properties()
     custom_dimensions = {
         p["name"]: p["name"].replace("_", " ").title() for p in custom_props
     }
     dimensions = {**AVAILABLE_DIMENSIONS, **custom_dimensions}
-    filter_options = db.get_filter_options()
     # A prop is numeric if explicitly typed as 'number', OR if a sample TRY_CAST to DOUBLE succeeds.
     # Check all candidate props in a single query to avoid N round-trips.
     custom_prop_exprs = db.get_custom_prop_exprs()
@@ -330,9 +318,7 @@ def get_pivot_options(
         ],
         "numeric_dimensions": numeric_dimensions,
         "event_names": [row[0] for row in events],
-        **filter_options,
     }
-    _pivot_options_cache[cache_key] = (time.time(), result)
     return result
 
 
