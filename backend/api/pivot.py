@@ -281,11 +281,27 @@ def get_pivot_options(
     }
     dimensions = {**AVAILABLE_DIMENSIONS, **custom_dimensions}
     filter_options = db.get_filter_options()
-    numeric_dimensions = [
-        {"value": p["name"], "label": p["name"].replace("_", " ").title()}
-        for p in custom_props
-        if p.get("type") == "number"
-    ]
+    # A prop is numeric if explicitly typed as 'number', OR if a sample TRY_CAST to DOUBLE succeeds.
+    custom_prop_exprs = db.get_custom_prop_exprs()
+    numeric_dimensions = []
+    for p in custom_props:
+        name = p.get("name", "")
+        if not name:
+            continue
+        if p.get("type") == "number":
+            numeric_dimensions.append({"value": name, "label": name.replace("_", " ").title()})
+            continue
+        expr = custom_prop_exprs.get(name)
+        if not expr:
+            continue
+        try:
+            rows = db.execute(
+                f"SELECT COUNT(*) FROM events WHERE TRY_CAST({expr} AS DOUBLE) IS NOT NULL LIMIT 1"
+            )
+            if rows and rows[0][0] > 0:
+                numeric_dimensions.append({"value": name, "label": name.replace("_", " ").title()})
+        except Exception:
+            pass
     return {
         "dimensions": [{"value": k, "label": v} for k, v in dimensions.items()],
         "measures": [
@@ -339,7 +355,7 @@ def get_pivot(
             "data": [],
         }
 
-    numeric_prop_names = {p["name"] for p in custom_props if p.get("type") == "number"}
+    numeric_prop_names = {p["name"] for p in custom_props if p.get("name")}
     NUMERIC_AGGS = {"sum", "avg", "min", "max", "count", "count_distinct"}
 
     def parse_measure(m: str) -> tuple | None:
@@ -397,11 +413,12 @@ def get_pivot(
         if parsed:
             agg, field = parsed
             alias = f"{agg}_{field}"
+            field_expr = custom_prop_exprs.get(field, field)
             if agg == "count":
                 return f"COUNT(*) AS {alias}"
             if agg == "count_distinct":
-                return f"COUNT(DISTINCT {field}) AS {alias}"
-            return f"{agg.upper()}({field}) AS {alias}"
+                return f"COUNT(DISTINCT {field_expr}) AS {alias}"
+            return f"{agg.upper()}(CAST({field_expr} AS DOUBLE)) AS {alias}"
         return "COUNT(*)"
 
     def measure_alias(measure: str) -> str:
