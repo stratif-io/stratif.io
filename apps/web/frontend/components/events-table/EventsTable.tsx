@@ -1,19 +1,11 @@
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  type ColumnDef,
-  type SortingState,
-  type VisibilityState,
-} from '@tanstack/react-table'
-import { useRef, useState, useMemo, useCallback, useEffect } from 'react'
-import { useVirtualizer } from '@tanstack/react-virtual'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import type { ColumnDef, SortingState, VisibilityState } from '@tanstack/react-table'
 import { format } from 'date-fns'
-import { User, Columns3, ArrowUp, ArrowDown, ArrowUpDown, Filter, X } from 'lucide-react'
+import { User, Filter, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FilterBar } from '@/components/shared/FilterBar'
 import { Pagination } from '@/components/shared/Pagination'
-import { ColumnPanel } from './ColumnPanel'
+import { DataTable } from '@/components/data-table/DataTable'
 import { Spinner } from '@/components/ui/spinner'
 import type { EventsTableProps, FilterField, CustomProperty } from './types'
 
@@ -27,7 +19,9 @@ function parseProperties(raw: unknown): Record<string, unknown> {
     try {
       const p = JSON.parse(raw)
       return Array.isArray(p) ? {} : typeof p === 'object' && p !== null ? p : {}
-    } catch { return {} }
+    } catch {
+      return {}
+    }
   }
   return {}
 }
@@ -43,7 +37,11 @@ function extractFromPath(props: Record<string, unknown>, path: string): unknown 
   return cur
 }
 
-interface DimCol { id: string; label: string; getValue: (props: Record<string, unknown>) => unknown }
+interface DimCol {
+  id: string
+  label: string
+  getValue: (props: Record<string, unknown>) => unknown
+}
 
 function buildDimCols(fields: FilterField[], custom: CustomProperty[]): DimCol[] {
   const seen = new Set<string>()
@@ -66,14 +64,11 @@ function buildDimCols(fields: FilterField[], custom: CustomProperty[]): DimCol[]
   return result
 }
 
-const ALWAYS_VISIBLE = new Set(['user_id', 'event_name', 'timestamp'])
-
 /** Default visibility: show core cols + filter fields; hide custom properties. */
 function defaultVisibility(dimCols: DimCol[], filterFields: FilterField[]): VisibilityState {
   const filterFieldIds = new Set(filterFields.map((f) => f.field))
   const state: VisibilityState = {}
   for (const col of dimCols) {
-    // filter fields are visible by default; custom properties are hidden
     state[col.id] = filterFieldIds.has(col.id)
   }
   return state
@@ -89,43 +84,60 @@ function loadColVisibility(key: string): VisibilityState | null {
       return null
     }
     const r = localStorage.getItem(key)
-    return r ? JSON.parse(r) as VisibilityState : null
-  } catch { return null }
+    return r ? (JSON.parse(r) as VisibilityState) : null
+  } catch {
+    return null
+  }
 }
 
 function saveColVisibility(key: string, state: VisibilityState) {
-  try { localStorage.setItem(key, JSON.stringify(state)) } catch { /* ignore */ }
+  try {
+    localStorage.setItem(key, JSON.stringify(state))
+  } catch {
+    /* ignore */
+  }
 }
-
-const ROW_HEIGHT_PX = 40
 
 // ── EventsTable ─────────────────────────────────────────────────────────────
 
 export function EventsTable({
-  data, total, page, pageSize, loading, isFetching,
-  sortField, sortOrder, onSortChange,
-  filterFields, customProperties,
+  data,
+  total,
+  page,
+  pageSize,
+  loading,
+  isFetching,
+  sortField,
+  sortOrder,
+  onSortChange,
+  filterFields,
+  customProperties,
   filterOptions,
   allEventNames,
-  columnFilters, onColumnFilterChange, onColumnFilterClear,
-  eventNameFilter, onEventNameFilterChange,
-  userIdFilter, onUserIdFilterChange,
-  onPageChange, onUserClick, connectionId,
+  columnFilters,
+  onColumnFilterChange,
+  onColumnFilterClear,
+  eventNameFilter,
+  onEventNameFilterChange,
+  userIdFilter,
+  onUserIdFilterChange,
+  onPageChange,
+  onUserClick,
+  connectionId,
 }: EventsTableProps) {
   const storageKey = `of_events_colstate_v2_${connectionId ?? 'default'}`
-  const [showColumnPanel, setShowColumnPanel] = useState(false)
   const [userIdInput, setUserIdInput] = useState(userIdFilter)
-  const dimCols = useMemo(() => buildDimCols(filterFields, customProperties), [filterFields, customProperties])
-  const [colVisibility, setColVisibility] = useState<VisibilityState>(
-    () => loadColVisibility(storageKey) ?? defaultVisibility(dimCols, filterFields)
+  const dimCols = useMemo(
+    () => buildDimCols(filterFields, customProperties),
+    [filterFields, customProperties],
   )
+  const [colVisibility, setColVisibility] = useState<VisibilityState>(
+    () => loadColVisibility(storageKey) ?? defaultVisibility(dimCols, filterFields),
+  )
+
   // Re-apply saved (or default) visibility when storageKey or dimCols changes.
-  // This handles the case where filterFields/customProperties are empty on first
-  // render (still loading) and resolve later — useState only runs once at mount.
   const dimColsLengthRef = useRef(dimCols.length)
   useEffect(() => {
-    // Only re-initialise when dimCols first becomes non-empty (i.e. data just loaded)
-    // or when the active connection changes (different storageKey).
     if (dimCols.length === 0) return
     if (dimCols.length === dimColsLengthRef.current && dimColsLengthRef.current !== 0) return
     dimColsLengthRef.current = dimCols.length
@@ -133,336 +145,322 @@ export function EventsTable({
     setColVisibility(saved ?? defaultVisibility(dimCols, filterFields))
   }, [storageKey, dimCols, filterFields])
 
-  // Per-dim-col input state for inline header filters
-  const [dimFilterInputs, setDimFilterInputs] = useState<Record<string, string>>(() => ({ ...columnFilters }))
-  const parentRef = useRef<HTMLDivElement>(null)
+  // Per-dim-col input state for inline filters
+  const [dimFilterInputs, setDimFilterInputs] = useState<Record<string, string>>(
+    () => ({ ...columnFilters }),
+  )
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dimDebounceRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
-  useEffect(() => { setUserIdInput(userIdFilter) }, [userIdFilter])
-  // Sync dim filter inputs when columnFilters reset externally
-  useEffect(() => { setDimFilterInputs((prev) => ({ ...prev, ...columnFilters })) }, [columnFilters])
+  useEffect(() => {
+    setUserIdInput(userIdFilter)
+  }, [userIdFilter])
+  useEffect(() => {
+    setDimFilterInputs((prev) => ({ ...prev, ...columnFilters }))
+  }, [columnFilters])
 
-  const rowData = useMemo(() =>
-    data.map((event) => {
-      const props = parseProperties(event.properties)
-      const row: Record<string, unknown> = {
-        event_id: event.event_id,
-        user_id: event.user_id,
-        event_name: event.event_name,
-        timestamp: event.timestamp,
-      }
-      for (const col of dimCols) row[col.id] = col.getValue(props)
-      return row
-    }),
-    [data, dimCols]
+  const rowData = useMemo(
+    () =>
+      data.map((event) => {
+        const props = parseProperties(event.properties)
+        const row: Record<string, unknown> = {
+          event_id: event.event_id,
+          user_id: event.user_id,
+          event_name: event.event_name,
+          timestamp: event.timestamp,
+        }
+        for (const col of dimCols) row[col.id] = col.getValue(props)
+        return row
+      }),
+    [data, dimCols],
   )
 
-  const handleUserClick = useCallback((uid: string) => { if (uid) onUserClick(uid) }, [onUserClick])
-  const handleEventNameFilter = useCallback((name: string) => onEventNameFilterChange(name), [onEventNameFilterChange])
-  const handleDimFilter = useCallback((field: string, val: string) => onColumnFilterChange(field, val), [onColumnFilterChange])
+  const handleUserClick = useCallback(
+    (uid: string) => {
+      if (uid) onUserClick(uid)
+    },
+    [onUserClick],
+  )
+  const handleEventNameFilter = useCallback(
+    (name: string) => onEventNameFilterChange(name),
+    [onEventNameFilterChange],
+  )
+  const handleDimFilter = useCallback(
+    (field: string, val: string) => onColumnFilterChange(field, val),
+    [onColumnFilterChange],
+  )
 
-  const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => [
-    {
-      id: 'user_id', accessorKey: 'user_id', header: 'User ID', size: 220, enableSorting: true,
-      cell: ({ getValue }) => {
-        const v = String(getValue() ?? '')
-        return (
-          <div className="flex items-center gap-1.5 h-full cursor-pointer" onClick={() => handleUserClick(v)}>
-            <span className="font-mono text-xs">{v}</span>
-            <User size={11} className="opacity-40 shrink-0" />
-          </div>
-        )
+  const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(
+    () => [
+      {
+        id: 'user_id',
+        accessorKey: 'user_id',
+        header: 'User ID',
+        size: 220,
+        enableSorting: true,
+        cell: ({ getValue }) => {
+          const v = String(getValue() ?? '')
+          return (
+            <div
+              className="flex items-center gap-1.5 h-full cursor-pointer"
+              onClick={() => handleUserClick(v)}
+            >
+              <span className="font-mono text-xs">{v}</span>
+              <User size={11} className="opacity-40 shrink-0" />
+            </div>
+          )
+        },
       },
-    },
-    {
-      id: 'event_name', accessorKey: 'event_name', header: 'Event Name', size: 180, enableSorting: true,
-      cell: ({ getValue }) => {
-        const name = String(getValue() ?? '')
-        return (
-          <span
-            className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary cursor-pointer"
-            onClick={() => handleEventNameFilter(name)}
-          >
-            {name}
-          </span>
-        )
+      {
+        id: 'event_name',
+        accessorKey: 'event_name',
+        header: 'Event Name',
+        size: 180,
+        enableSorting: true,
+        cell: ({ getValue }) => {
+          const name = String(getValue() ?? '')
+          return (
+            <span
+              className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary cursor-pointer"
+              onClick={() => handleEventNameFilter(name)}
+            >
+              {name}
+            </span>
+          )
+        },
       },
-    },
-    ...dimCols.map<ColumnDef<Record<string, unknown>>>((col) => ({
-      id: col.id, accessorKey: col.id, header: col.label, size: 150, enableSorting: false,
-      cell: ({ getValue }) => {
-        const v = getValue()
-        if (v == null || v === '') return <span className="opacity-30 text-xs">—</span>
-        const str = String(v)
-        return (
-          <span
-            className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground cursor-pointer"
-            onClick={() => handleDimFilter(col.id, str)}
-          >
-            {str}
-          </span>
-        )
+      ...dimCols.map<ColumnDef<Record<string, unknown>>>((col) => ({
+        id: col.id,
+        accessorKey: col.id,
+        header: col.label,
+        size: 150,
+        enableSorting: false,
+        cell: ({ getValue }: { getValue: () => unknown }) => {
+          const v = getValue()
+          if (v == null || v === '') return <span className="opacity-30 text-xs">—</span>
+          const str = String(v)
+          return (
+            <span
+              className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground cursor-pointer"
+              onClick={() => handleDimFilter(col.id, str)}
+            >
+              {str}
+            </span>
+          )
+        },
+      })),
+      {
+        id: 'timestamp',
+        accessorKey: 'timestamp',
+        header: 'Timestamp',
+        size: 210,
+        enableSorting: true,
+        cell: ({ getValue }) => {
+          const v = getValue() as string
+          return (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {v ? format(new Date(v), 'MMM d, yyyy HH:mm:ss') : '—'}
+            </span>
+          )
+        },
       },
-    })),
-    {
-      id: 'timestamp', accessorKey: 'timestamp', header: 'Timestamp', size: 210, enableSorting: true,
-      cell: ({ getValue }) => {
-        const v = getValue() as string
-        return <span className="text-xs text-muted-foreground tabular-nums">{v ? format(new Date(v), 'MMM d, yyyy HH:mm:ss') : '—'}</span>
-      },
-    },
-  ], [dimCols, handleUserClick, handleEventNameFilter, handleDimFilter])
+    ],
+    [dimCols, handleUserClick, handleEventNameFilter, handleDimFilter],
+  )
 
   const [sorting, setSorting] = useState<SortingState>([{ id: sortField, desc: sortOrder === 'desc' }])
 
-  const table = useReactTable({
-    data: rowData,
-    columns,
-    state: { sorting, columnVisibility: colVisibility },
-    onSortingChange: (updater) => {
-      const next = typeof updater === 'function' ? updater(sorting) : updater
+  const handleSortingChange = useCallback(
+    (next: SortingState) => {
       setSorting(next)
       if (next.length > 0) onSortChange(next[0].id, next[0].desc ? 'desc' : 'asc')
     },
-    onColumnVisibilityChange: (updater) => {
-      const next = typeof updater === 'function' ? updater(colVisibility) : updater
+    [onSortChange],
+  )
+
+  const handleColumnVisibilityChange = useCallback(
+    (next: VisibilityState) => {
       setColVisibility(next)
       saveColVisibility(storageKey, next)
     },
-    getCoreRowModel: getCoreRowModel(),
-    manualSorting: true,
-    manualPagination: true,
-  })
-
-  const rows = table.getRowModel().rows
-
-  const virtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT_PX,
-    overscan: 10,
-  })
+    [storageKey],
+  )
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
   const to = Math.min(page * pageSize, total)
 
   const activeFilters = [
-    ...(eventNameFilter ? [{ label: 'event', value: eventNameFilter, onClear: () => onEventNameFilterChange('') }] : []),
-    ...(userIdFilter ? [{ label: 'user', value: userIdFilter, onClear: () => onUserIdFilterChange('') }] : []),
-    ...Object.entries(columnFilters).filter(([, v]) => v).map(([field, value]) => ({
-      label: field, value, onClear: () => {
-        onColumnFilterClear(field)
-        setDimFilterInputs((prev) => { const next = { ...prev }; delete next[field]; return next })
-      },
-    })),
+    ...(eventNameFilter
+      ? [{ label: 'event', value: eventNameFilter, onClear: () => onEventNameFilterChange('') }]
+      : []),
+    ...(userIdFilter
+      ? [{ label: 'user', value: userIdFilter, onClear: () => onUserIdFilterChange('') }]
+      : []),
+    ...Object.entries(columnFilters)
+      .filter(([, v]) => v)
+      .map(([field, value]) => ({
+        label: field,
+        value,
+        onClear: () => {
+          onColumnFilterClear(field)
+          setDimFilterInputs((prev) => {
+            const next = { ...prev }
+            delete next[field]
+            return next
+          })
+        },
+      })),
   ]
 
-  const columnPanelEntries = table.getAllColumns()
-    .filter((col) => !ALWAYS_VISIBLE.has(col.id))
-    .map((col) => ({
-      id: col.id,
-      label: typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id,
-      visible: col.getIsVisible(),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label))
+  // Filter controls rendered in the toolbar
+  const filterToolbar = (
+    <div className="flex flex-wrap items-center gap-2">
+      {isFetching && <Spinner className="h-3.5 w-3.5" />}
+      {/* User ID filter */}
+      <input
+        type="text"
+        placeholder="Filter by user ID…"
+        value={userIdInput}
+        onChange={(e) => {
+          setUserIdInput(e.target.value)
+          if (debounceRef.current) clearTimeout(debounceRef.current)
+          debounceRef.current = setTimeout(() => onUserIdFilterChange(e.target.value), 400)
+        }}
+        className="h-7 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring w-44"
+      />
+      {/* Event name filter */}
+      <select
+        value={eventNameFilter}
+        onChange={(e) => onEventNameFilterChange(e.target.value)}
+        className="h-7 text-xs px-1 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+      >
+        <option value="">All events</option>
+        {allEventNames.map((name) => (
+          <option key={name} value={name}>
+            {name}
+          </option>
+        ))}
+      </select>
+      {/* Dim col filters */}
+      {dimCols
+        .filter((col) => colVisibility[col.id] !== false)
+        .map((col) => {
+          const colId = col.id
+          const active = columnFilters[colId]
+          const suggestions = filterOptions[colId] ?? []
+          const isLowCardinality = suggestions.length > 0 && suggestions.length < 200
+          const inputVal = dimFilterInputs[colId] ?? ''
 
-  const dimColIds = new Set(dimCols.map((c) => c.id))
+          const applyFilter = (val: string) => {
+            if (dimDebounceRefs.current[colId]) clearTimeout(dimDebounceRefs.current[colId])
+            if (val) onColumnFilterChange(colId, val)
+            else onColumnFilterClear(colId)
+          }
+
+          return (
+            <div key={colId} className="relative flex items-center">
+              {isLowCardinality ? (
+                <select
+                  value={active ?? ''}
+                  onChange={(e) => applyFilter(e.target.value)}
+                  className="h-7 text-xs px-1 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                  aria-label={`Filter ${col.label}`}
+                >
+                  <option value="">All {col.label}</option>
+                  {[...suggestions]
+                    .sort((a, b) => a.localeCompare(b))
+                    .map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                </select>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    placeholder={`${col.label}… (Enter)`}
+                    value={inputVal}
+                    onChange={(e) =>
+                      setDimFilterInputs((prev) => ({ ...prev, [colId]: e.target.value }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') applyFilter(inputVal)
+                    }}
+                    onBlur={() => {
+                      if (inputVal !== (active ?? '')) applyFilter(inputVal)
+                    }}
+                    className={cn(
+                      'h-7 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring w-32',
+                      active ? 'pr-5' : 'pr-5',
+                    )}
+                  />
+                  {active ? (
+                    <button
+                      className="absolute right-1 text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        onColumnFilterClear(colId)
+                        setDimFilterInputs((prev) => {
+                          const next = { ...prev }
+                          delete next[colId]
+                          return next
+                        })
+                      }}
+                      aria-label={`Clear ${colId} filter`}
+                    >
+                      <X size={10} />
+                    </button>
+                  ) : (
+                    <Filter size={10} className="absolute right-1.5 opacity-20 pointer-events-none" />
+                  )}
+                </>
+              )}
+            </div>
+          )
+        })}
+    </div>
+  )
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border">
-        <span className="text-xs text-muted-foreground">Events</span>
-        <div className="ml-auto relative flex items-center gap-2">
-          {isFetching && <Spinner className="h-3.5 w-3.5" />}
-          <button
-            onClick={() => setShowColumnPanel((s) => !s)}
-            className="h-7 text-xs px-2.5 rounded border border-border bg-background hover:bg-accent flex items-center gap-1.5"
-            aria-label="Show/hide columns"
-          >
-            <Columns3 size={13} />
-            Columns
-          </button>
-          {showColumnPanel && (
-            <ColumnPanel
-              columns={columnPanelEntries}
-              onToggle={(id) => table.getColumn(id)?.toggleVisibility()}
-              onClose={() => setShowColumnPanel(false)}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Active filters */}
+      {/* Active filter chips */}
       {activeFilters.length > 0 && (
         <div className="px-4 pt-2">
           <FilterBar filters={activeFilters} />
         </div>
       )}
 
-      {/* Table */}
-      <div ref={parentRef} className="flex-1 overflow-auto" style={{ minHeight: 0 }}>
-        {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <Spinner className="h-5 w-5" />
-          </div>
-        ) : (
-          <table className="w-full border-collapse text-sm" style={{ opacity: isFetching ? 0.6 : 1 }}>
-            <thead className="sticky top-0 z-10 bg-background border-b border-border">
-              {/* Sort headers */}
-              {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id}>
-                  {hg.headers.map((header) => {
-                    const canSort = header.column.getCanSort()
-                    const sortDir = header.column.getIsSorted()
-                    return (
-                      <th
-                        key={header.id}
-                        className={cn('px-3 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap overflow-hidden', canSort && 'cursor-pointer select-none hover:text-foreground')}
-                        onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                      >
-                        <span className="flex items-center gap-1">
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && (sortDir === 'desc' ? <ArrowDown size={11} /> : sortDir === 'asc' ? <ArrowUp size={11} /> : <ArrowUpDown size={11} className="opacity-30" />)}
-                        </span>
-                      </th>
-                    )
-                  })}
-                </tr>
-              ))}
-              {/* Filter row */}
-              {table.getHeaderGroups().map((hg) => (
-                <tr key={`${hg.id}-filters`} className="border-b border-border/60 bg-muted/20">
-                  {hg.headers.map((header) => {
-                    const colId = header.column.id
-                    if (colId === 'user_id') {
-                      return (
-                        <th key={header.id} className="px-2 py-1">
-                          <input
-                            type="text"
-                            placeholder="Filter by user ID…"
-                            value={userIdInput}
-                            onChange={(e) => {
-                              setUserIdInput(e.target.value)
-                              if (debounceRef.current) clearTimeout(debounceRef.current)
-                              debounceRef.current = setTimeout(() => onUserIdFilterChange(e.target.value), 400)
-                            }}
-                            className="w-full h-6 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                          />
-                        </th>
-                      )
-                    }
-                    if (colId === 'event_name') {
-                      return (
-                        <th key={header.id} className="px-2 py-1">
-                          <select
-                            value={eventNameFilter}
-                            onChange={(e) => onEventNameFilterChange(e.target.value)}
-                            className="w-full h-6 text-xs px-1 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-                          >
-                            <option value="">All events</option>
-                            {allEventNames.map((name) => (
-                              <option key={name} value={name}>{name}</option>
-                            ))}
-                          </select>
-                        </th>
-                      )
-                    }
-                    if (dimColIds.has(colId)) {
-                      const active = columnFilters[colId]
-                      const suggestions = filterOptions[colId] ?? []
-                      const isLowCardinality = suggestions.length > 0 && suggestions.length < 200
-                      const inputVal = dimFilterInputs[colId] ?? ''
-
-                      const applyFilter = (val: string) => {
-                        if (dimDebounceRefs.current[colId]) clearTimeout(dimDebounceRefs.current[colId])
-                        if (val) onColumnFilterChange(colId, val)
-                        else onColumnFilterClear(colId)
-                      }
-
-                      return (
-                        <th key={header.id} className="px-2 py-1">
-                          <div className="relative flex items-center">
-                            {isLowCardinality ? (
-                              <select
-                                value={active ?? ''}
-                                onChange={(e) => applyFilter(e.target.value)}
-                                className="w-full h-6 text-xs px-1 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-                              >
-                                <option value="">All</option>
-                                {[...suggestions].sort((a, b) => a.localeCompare(b)).map((v) => <option key={v} value={v}>{v}</option>)}
-                              </select>
-                            ) : (
-                              <input
-                                type="text"
-                                placeholder="Filter… (Enter)"
-                                value={inputVal}
-                                onChange={(e) => setDimFilterInputs((prev) => ({ ...prev, [colId]: e.target.value }))}
-                                onKeyDown={(e) => { if (e.key === 'Enter') applyFilter(inputVal) }}
-                                onBlur={() => { if (inputVal !== (active ?? '')) applyFilter(inputVal) }}
-                                className="w-full h-6 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring pr-5"
-                              />
-                            )}
-                            {!isLowCardinality && active && (
-                              <button
-                                className="absolute right-1 text-muted-foreground hover:text-foreground"
-                                onClick={() => {
-                                  onColumnFilterClear(colId)
-                                  setDimFilterInputs((prev) => { const next = { ...prev }; delete next[colId]; return next })
-                                }}
-                                aria-label={`Clear ${colId} filter`}
-                              >
-                                <X size={10} />
-                              </button>
-                            )}
-                            {!isLowCardinality && !active && <Filter size={10} className="absolute right-1.5 opacity-20 pointer-events-none" />}
-                          </div>
-                        </th>
-                      )
-                    }
-                    return <th key={header.id} className="px-2 py-1" />
-                  })}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {/* top spacer */}
-              {virtualizer.getVirtualItems().length > 0 && virtualizer.getVirtualItems()[0].start > 0 && (
-                <tr><td colSpan={table.getVisibleLeafColumns().length} style={{ height: virtualizer.getVirtualItems()[0].start, padding: 0 }} /></tr>
-              )}
-              {virtualizer.getVirtualItems().map((vi) => {
-                const row = rows[vi.index]
-                return (
-                  <tr
-                    key={row.id}
-                    style={{ height: ROW_HEIGHT_PX }}
-                    className="border-b border-border/50 hover:bg-accent/30"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-3 overflow-hidden text-ellipsis whitespace-nowrap align-middle">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
-                  </tr>
-                )
-              })}
-              {/* bottom spacer */}
-              {(() => {
-                const items = virtualizer.getVirtualItems()
-                const lastEnd = items.length > 0 ? items[items.length - 1].end : 0
-                const remaining = virtualizer.getTotalSize() - lastEnd
-                return remaining > 0 ? (
-                  <tr><td colSpan={table.getVisibleLeafColumns().length} style={{ height: remaining, padding: 0 }} /></tr>
-                ) : null
-              })()}
-            </tbody>
-          </table>
-        )}
+      {/* Table via DataTable primitive */}
+      <div className="flex-1 overflow-auto" style={{ minHeight: 0 }}>
+        <DataTable
+          columns={columns}
+          data={rowData}
+          isLoading={loading}
+          emptyMessage="No events found."
+          showSearch={false}
+          showPagination={false}
+          showRowSelection={false}
+          showRowActions={false}
+          showColumnVisibility={true}
+          state={{
+            sorting,
+            columnVisibility: colVisibility,
+          }}
+          onSortingChange={handleSortingChange}
+          onColumnVisibilityChange={handleColumnVisibilityChange}
+          toolbarActions={filterToolbar}
+        />
       </div>
 
-      <Pagination page={page} totalPages={totalPages} from={from} to={to} total={total} onPageChange={onPageChange} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        from={from}
+        to={to}
+        total={total}
+        onPageChange={onPageChange}
+      />
     </div>
   )
 }
