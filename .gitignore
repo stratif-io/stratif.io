@@ -48,7 +48,7 @@ apps/video/public/*.mp3
 apps/web/playwright-report/
 apps/web/test-results/
 .superpowers/
-docs/superpowers/
+docs/superpowers/brainstorm/
 
 # Skillfish
 skills-lock.json
