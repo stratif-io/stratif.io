@@ -178,6 +178,7 @@ export interface MetricCard {
 export interface DimensionOption {
   value: string
   label: string
+  category?: string
 }
 
 export interface DimensionCategoryConfig {
@@ -259,6 +260,7 @@ export interface CustomProperty {
   name: string
   path: string
   type: PropertyType
+  category?: string
 }
 
 export interface SchemaDetectColumn {

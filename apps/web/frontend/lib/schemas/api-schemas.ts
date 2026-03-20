@@ -195,6 +195,7 @@ export const CustomPropertySchema = z.object({
   path: z.string().regex(/^[a-zA-Z_][a-zA-Z0-9_.]*$/),
   type: PropertyTypeSchema,
   flatten: z.boolean().optional(),
+  category: z.string().optional(),
 })
 
 export const ConnectionSchema = z.object({
