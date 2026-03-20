@@ -202,6 +202,7 @@ export function TrendFilters({ dimensions, filters, connectionId, onChange }: Tr
                 value={row.field}
                 onChange={(newField) => changeField(row.field, newField)}
                 dimensions={dimensions.filter((d) => d.value === row.field || !usedFields.includes(d.value))}
+                className="h-7 w-48 text-xs px-2 rounded-l-md rounded-r-none"
               />
               <ValueMultiSelect
                 dimension={dimensions.find((d) => d.value === row.field) ?? { value: row.field, label: row.field }}
