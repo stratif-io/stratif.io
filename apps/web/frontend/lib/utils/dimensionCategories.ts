@@ -29,7 +29,12 @@ export function groupDimensionsByCategory(
   const grouped = new Map<string, DimensionOption[]>()
 
   for (const dim of dimensions) {
-    const cat = findCategory(dim.value)
+    let cat: DimensionCategoryConfig
+    if (dim.category) {
+      cat = categories.find((c) => c.id === dim.category) ?? categories[categories.length - 1]
+    } else {
+      cat = findCategory(dim.value)
+    }
     if (!grouped.has(cat.id)) grouped.set(cat.id, [])
     grouped.get(cat.id)!.push(dim)
   }

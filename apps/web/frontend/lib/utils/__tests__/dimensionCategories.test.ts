@@ -5,6 +5,7 @@ import type { DimensionOption, DimensionCategoryConfig } from '@/types'
 const categories: DimensionCategoryConfig[] = [
   { id: 'time', label: '🕐 Time', patterns: ['^ts_', '^(date|week|hour)$'] },
   { id: 'user', label: '👤 User', patterns: ['^user_'] },
+  { id: 'marketing', label: '📊 Marketing', patterns: ['^marketing_'] },
   { id: 'other', label: '⚙️ Other', patterns: ['.*'] },
 ]
 
@@ -63,5 +64,27 @@ describe('groupDimensionsByCategory', () => {
     const dims: DimensionOption[] = [{ value: 'User_Name', label: 'User Name' }]
     const groups = groupDimensionsByCategory(dims, categories)
     expect(groups[0].category.id).toBe('user')
+  })
+
+  it('stored category is used directly without regex matching', () => {
+    // 'never_matches_anything' would fall through to 'other' by regex,
+    // but the stored category 'marketing' should override that.
+    const dims: DimensionOption[] = [
+      { value: 'never_matches_anything', label: 'Never', category: 'marketing' },
+    ]
+    const result = groupDimensionsByCategory(dims, categories)
+    expect(result).toHaveLength(1)
+    expect(result[0].category.id).toBe('marketing')
+    expect(result[0].dimensions[0].label).toBe('Never')
+  })
+
+  it('unknown stored category id falls back to last category', () => {
+    const dims: DimensionOption[] = [
+      { value: 'some_prop', label: 'Some', category: 'nonexistent_category_id' },
+    ]
+    const result = groupDimensionsByCategory(dims, categories)
+    expect(result).toHaveLength(1)
+    // 'other' is the last category in the test fixture
+    expect(result[0].category.id).toBe('other')
   })
 })

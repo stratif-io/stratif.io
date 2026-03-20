@@ -14,6 +14,7 @@ class CustomProperty(BaseModel):
     name: str
     path: str
     type: Literal["string", "number", "boolean", "timestamp"]
+    category: str | None = None
 
     @field_validator("path")
     @classmethod

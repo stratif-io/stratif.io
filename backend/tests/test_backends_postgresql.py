@@ -104,6 +104,28 @@ class TestPostgreSQLCTE:
         assert result.startswith("WITH events AS")
 
 
+class TestPostgreSQLDetectSchema:
+    def test_detect_schema_infers_numeric_json_property(self, backend):
+        """Mock cursors: table list → columns (with jsonb) → key extraction → sampling."""
+        # Cursor 1: table list
+        c1 = _make_cursor([("events",)])
+        # Cursor 2: column list — user_id + properties jsonb
+        c2 = _make_cursor([("user_id", "character varying"), ("properties", "jsonb")])
+        # Cursor 3: jsonb_object_keys for 'properties'
+        c3 = _make_cursor([("amount",)])
+        # Cursor 4: sampling query — non-null means numeric
+        c4 = _make_cursor([(1.0,)])
+
+        cursor_seq = iter([c1, c2, c3, c4])
+        conn = MagicMock()
+        conn.cursor.side_effect = lambda: next(cursor_seq)
+
+        info = backend.detect_schema(conn, None)
+        prop = next((p for p in info.proposed_custom_properties if p["name"] == "amount"), None)
+        assert prop is not None, "amount should be in proposed_custom_properties"
+        assert prop["type"] == "number", f"expected 'number', got '{prop['type']}'"
+
+
 class TestPostgreSQLSQLFragments:
     def test_date_trunc(self, backend):
         assert backend.date_trunc("day", "ts") == "DATE_TRUNC('day', ts)"
