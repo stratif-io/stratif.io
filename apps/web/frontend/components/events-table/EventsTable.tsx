@@ -331,15 +331,12 @@ export function EventsTable({
         className="h-7 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring w-44"
       />
       {/* Event name filter */}
-      <Select
-        value={eventNameFilter || '__all__'}
-        onValueChange={(v) => onEventNameFilterChange(v === '__all__' ? '' : v)}
-      >
+      <Select value={eventNameFilter} onValueChange={onEventNameFilterChange}>
         <SelectTrigger className="h-7 text-xs w-36">
           <SelectValue placeholder="All events" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="__all__">All events</SelectItem>
+          <SelectItem value="">All events</SelectItem>
           {allEventNames.map((name) => (
             <SelectItem key={name} value={name}>
               {name}
@@ -366,15 +363,12 @@ export function EventsTable({
           return (
             <div key={colId} className="relative flex items-center">
               {isLowCardinality ? (
-                <Select
-                  value={active ?? '__all__'}
-                  onValueChange={(v) => applyFilter(v === '__all__' ? '' : v)}
-                >
+                <Select value={active ?? ''} onValueChange={applyFilter}>
                   <SelectTrigger className="h-7 text-xs w-32" aria-label={`Filter ${col.label}`}>
                     <SelectValue placeholder={`All ${col.label}`} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__all__">All {col.label}</SelectItem>
+                    <SelectItem value="">All {col.label}</SelectItem>
                     {[...suggestions]
                       .sort((a, b) => a.localeCompare(b))
                       .map((v) => (
