@@ -213,61 +213,68 @@
 
 ---
 
-## Task 4: Update CustomProperty→DimensionOption mapping
+## Task 4: Propagate `category` through backend pivot endpoint + frontend detect type
+
+The only place `CustomProperty` data is mapped to `DimensionOption`-shaped dicts is in the **backend** at `backend/api/pivot.py` line 312. The frontend `SchemaDetectResult` type also needs updating so Task 5's auto-suggest compiles cleanly.
 
 **Files:**
-- Search and modify all files that map `CustomProperty` objects to `DimensionOption` objects.
+- Modify: `backend/api/pivot.py`
+- Modify: `apps/web/frontend/types/index.ts` (line ~278, `SchemaDetectResult.proposed_custom_properties`)
 
-- [ ] Find all files that construct `DimensionOption` from `CustomProperty` fields:
+- [ ] Open `backend/api/pivot.py` and find line 312 (the `numeric_dimensions` list comprehension). Update it to forward `category`:
 
-  ```bash
-  cd /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feature/dimension-category-schema/apps/web && \
-  grep -r "prop\.path\|prop\.name\|custom_properties" frontend/ --include="*.ts" --include="*.tsx" -l
+  ```python
+  # Before:
+  numeric_dimensions = [
+      {"value": p["name"], "label": p["name"].replace("_", " ").title()}
+      for p in custom_props
+      if p.get("name") in numeric_names
+  ]
+
+  # After:
+  numeric_dimensions = [
+      {"value": p["name"], "label": p["name"].replace("_", " ").title(), "category": p.get("category")}
+      for p in custom_props
+      if p.get("name") in numeric_names
+  ]
   ```
 
-  Note the file paths returned — these are candidates. Then narrow down to those actually constructing `DimensionOption`-shaped objects:
+- [ ] In the same file, check the `result["dimensions"]` construction a few lines below (around line 317). The standard dimensions come from a `dimensions` dict of field names (user_id, timestamp, etc.) — these are not `CustomProperty` objects and do not have a category, so leave them as-is.
+
+- [ ] Verify the backend still starts without import errors:
 
   ```bash
-  cd /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feature/dimension-category-schema/apps/web && \
-  grep -rn "value: prop\.path\|value: p\.path\|label: prop\.name\|label: p\.name" frontend/ --include="*.ts" --include="*.tsx"
+  cd /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feature/dimension-category-schema && \
+  python -c "from backend.api.pivot import router; print('ok')"
   ```
 
-- [ ] For each mapping site found (pattern: `{ value: prop.path, label: prop.name }` or equivalent), add `category: prop.category` to propagate the stored category:
+  Expected: `ok`
+
+- [ ] In `apps/web/frontend/types/index.ts`, update `SchemaDetectResult.proposed_custom_properties` to include the optional `category` field (so Task 5's spread compiles without type errors):
 
   ```typescript
   // Before:
-  { value: prop.path, label: prop.name }
+  proposed_custom_properties: Array<{ name: string; path: string; type: PropertyType }>
 
   // After:
-  { value: prop.path, label: prop.name, category: prop.category }
+  proposed_custom_properties: Array<{ name: string; path: string; type: PropertyType; category?: string }>
   ```
 
-  Apply the same change for any aliased variable names (e.g., `p`, `cp`, `property`) found in the grep results.
-
-- [ ] Run TypeScript check to verify no new errors:
+- [ ] Run TypeScript check:
 
   ```bash
   cd /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feature/dimension-category-schema/apps/web && \
   npm run build 2>&1 | tail -20
   ```
 
-  Expected: 0 type errors.
+  Expected: 0 errors.
 
-- [ ] Run the full test suite to confirm nothing broke:
-
-  ```bash
-  cd /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feature/dimension-category-schema/apps/web && \
-  npm run test:run 2>&1 | tail -20
-  ```
-
-  Expected: all tests pass.
-
-- [ ] Commit (stage only the files you modified):
+- [ ] Commit:
 
   ```bash
   cd /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feature/dimension-category-schema && \
-  git add -p && \
-  git commit -m "feat: propagate category from CustomProperty to DimensionOption in all mapping sites"
+  git add backend/api/pivot.py apps/web/frontend/types/index.ts && \
+  git commit -m "feat: propagate category in pivot numeric_dimensions and SchemaDetectResult type"
   ```
 
 ---
