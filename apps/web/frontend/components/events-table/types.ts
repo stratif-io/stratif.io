@@ -33,8 +33,8 @@ export interface EventsTableProps {
   columnFilters: Record<string, string>
   onColumnFilterChange: (field: string, value: string) => void
   onColumnFilterClear: (field: string) => void
-  eventNameFilter: string
-  onEventNameFilterChange: (v: string) => void
+  eventNameFilter: string[]
+  onEventNameFilterChange: (v: string[]) => void
   userIdFilter: string
   onUserIdFilterChange: (v: string) => void
   onPageChange: (page: number) => void
