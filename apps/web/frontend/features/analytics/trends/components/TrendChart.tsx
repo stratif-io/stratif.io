@@ -12,13 +12,24 @@ import {
   ReferenceLine,
   Brush,
 } from 'recharts'
-import type { TrendDataItem } from '../hooks/useTrendData'
+
+const SERIES_COLORS = [
+  'hsl(262, 83%, 70%)',
+  'hsl(199, 89%, 60%)',
+  'hsl(142, 71%, 55%)',
+  'hsl(32, 95%, 65%)',
+  'hsl(346, 84%, 65%)',
+  'hsl(221, 83%, 65%)',
+  'hsl(0, 72%, 65%)',
+  'hsl(174, 72%, 50%)',
+]
 
 interface TrendChartProps {
-  data: TrendDataItem[]
+  data: Array<Record<string, unknown>>
   chartType: 'area' | 'line'
   averageValue: number
   eventName: string
+  seriesKeys: string[] | null
 }
 
 function CustomTooltip({
@@ -45,7 +56,7 @@ function CustomTooltip({
   return null
 }
 
-export function TrendChart({ data, chartType, averageValue, eventName }: TrendChartProps) {
+export function TrendChart({ data, chartType, averageValue, eventName, seriesKeys }: TrendChartProps) {
   if (!data.length) {
     return (
       <div className="h-[400px] flex items-center justify-center text-muted-foreground">
@@ -59,6 +70,76 @@ export function TrendChart({ data, chartType, averageValue, eventName }: TrendCh
     margin: { top: 10, right: 30, left: 0, bottom: 0 },
   }
 
+  // ── Stacked / multi-series mode ──────────────────────────────────────────
+  if (seriesKeys) {
+    if (chartType === 'line') {
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart {...chartProps}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+            <YAxis
+              tickFormatter={(val) => val.toLocaleString()}
+              tick={{ fontSize: 12 }}
+              stroke="hsl(var(--muted-foreground))"
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            {seriesKeys.map((key, i) => (
+              <Line
+                key={key}
+                type="monotone"
+                dataKey={key}
+                stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+                strokeWidth={2}
+                dot={false}
+                name={key}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      )
+    }
+
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart {...chartProps}>
+          <defs>
+            {seriesKeys.map((key, i) => (
+              <linearGradient key={key} id={`colorKey-${i}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={SERIES_COLORS[i % SERIES_COLORS.length]} stopOpacity={0.5} />
+                <stop offset="95%" stopColor={SERIES_COLORS[i % SERIES_COLORS.length]} stopOpacity={0.05} />
+              </linearGradient>
+            ))}
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+          <YAxis
+            tickFormatter={(val) => val.toLocaleString()}
+            tick={{ fontSize: 12 }}
+            stroke="hsl(var(--muted-foreground))"
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          {seriesKeys.map((key, i) => (
+            <Area
+              key={key}
+              type="monotone"
+              dataKey={key}
+              stackId="stack"
+              stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+              strokeWidth={2}
+              fillOpacity={1}
+              fill={`url(#colorKey-${i})`}
+              name={key}
+            />
+          ))}
+        </AreaChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  // ── Single-series mode (unchanged) ───────────────────────────────────────
   if (chartType === 'line') {
     return (
       <ResponsiveContainer width="100%" height="100%">

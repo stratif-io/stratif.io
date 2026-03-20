@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
@@ -15,6 +16,7 @@ import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { TrendingUp, BarChart3, LineChart as LineChartIcon } from 'lucide-react'
 import { useAppStore } from '@/stores'
+import { fetchFilterConfig } from '@/lib/api'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendChart } from './components/TrendChart'
 import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
@@ -24,16 +26,32 @@ export function TrendsPage() {
     document.title = 'Trends — stratif.io'
   }, [])
 
-  const { dateRange } = useAppStore()
+  const { dateRange, activeConnectionId } = useAppStore()
   const [selectedEvent, setSelectedEvent] = useState<string>('')
   const [granularity, setGranularity] = useState<'day' | 'week'>('day')
   const [chartType, setChartType] = useState<'area' | 'line'>('area')
+  const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
 
-  const { trendData, events, isLoading, isError, error, totalEvents, averageValue, maxValue } = useTrendData({
-    dateRange,
-    selectedEvent,
-    granularity,
+  // Reset breakdown when connection changes
+  useEffect(() => {
+    setBreakdownDimension(null)
+  }, [activeConnectionId])
+
+  // Load filter fields for the "Break down by" selector
+  const { data: filterConfig } = useQuery({
+    queryKey: ['filter-config', activeConnectionId],
+    queryFn: () => fetchFilterConfig(activeConnectionId!),
+    enabled: !!activeConnectionId,
   })
+  const filterFields = filterConfig?.filter_fields ?? []
+
+  const { trendData, events, isLoading, isError, error, totalEvents, averageValue, maxValue, seriesKeys } =
+    useTrendData({
+      dateRange,
+      selectedEvent,
+      granularity,
+      breakdownDimension,
+    })
 
   if (isError) return <QueryError error={error} />
 
@@ -116,8 +134,14 @@ export function TrendsPage() {
                   <Select
                     value={granularity}
                     onValueChange={(val) => setGranularity(val as 'day' | 'week')}
+                    disabled={!!breakdownDimension}
                   >
-                    <SelectTrigger className="w-[min(120px,35vw)]">
+                    <SelectTrigger
+                      className="w-[min(120px,35vw)]"
+                      title={
+                        breakdownDimension ? 'Granularity is not available in breakdown mode' : undefined
+                      }
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -125,6 +149,26 @@ export function TrendsPage() {
                       <SelectItem value="week">Weekly</SelectItem>
                     </SelectContent>
                   </Select>
+                  {filterFields.length > 0 && (
+                    <Select
+                      value={breakdownDimension ?? 'none'}
+                      onValueChange={(val) => setBreakdownDimension(val === 'none' ? null : val)}
+                    >
+                      <SelectTrigger
+                        className={`w-[min(180px,45vw)] ${breakdownDimension ? 'border-primary text-primary' : ''}`}
+                      >
+                        <SelectValue placeholder="Break down by…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No breakdown</SelectItem>
+                        {filterFields.map((f) => (
+                          <SelectItem key={f.field} value={f.field}>
+                            {f.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -145,6 +189,7 @@ export function TrendsPage() {
                     chartType={chartType}
                     averageValue={averageValue}
                     eventName={selectedEvent || 'All Events'}
+                    seriesKeys={seriesKeys}
                   />
                 </div>
               )}
