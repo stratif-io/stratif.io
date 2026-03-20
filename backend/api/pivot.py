@@ -59,6 +59,7 @@ BASE_DIMS: dict[str, str] = {
 AVAILABLE_DIMENSIONS = {
     "event_name": "Event Name",
     "date": "Date",
+    "week": "Week",
     "hour": "Hour of Day",
     "day_of_week": "Day of Week",
     "user_id": "User ID",
@@ -124,6 +125,8 @@ def _get_dim_expr(
         # Legacy flat pivot dims
         case "date":
             return date_trunc("day", "timestamp", dialect)
+        case "week":
+            return date_trunc("week", "timestamp", dialect)
         case "hour":
             return extract_hour("timestamp", dialect)
         case _:
@@ -280,16 +283,46 @@ def get_pivot_options(
         p["name"]: p["name"].replace("_", " ").title() for p in custom_props
     }
     dimensions = {**AVAILABLE_DIMENSIONS, **custom_dimensions}
-    filter_options = db.get_filter_options()
-    return {
+    # A prop is numeric if explicitly typed as 'number', OR if a sample TRY_CAST to DOUBLE succeeds.
+    # Check all candidate props in a single query to avoid N round-trips.
+    custom_prop_exprs = db.get_custom_prop_exprs()
+    candidates = [
+        p for p in custom_props
+        if p.get("name") and p.get("type") != "number" and custom_prop_exprs.get(p["name"])
+    ]
+    numeric_names: set[str] = {
+        p["name"] for p in custom_props if p.get("type") == "number"
+    }
+    if candidates:
+        cast_cols = ", ".join(
+            f"MAX(TRY_CAST({custom_prop_exprs[p['name']]} AS DOUBLE)) AS {p['name']}"
+            for p in candidates
+        )
+        try:
+            row = db.execute(
+                f"SELECT {cast_cols} FROM (SELECT * FROM events LIMIT 500)"
+            )
+            if row:
+                for i, p in enumerate(candidates):
+                    if row[0][i] is not None:
+                        numeric_names.add(p["name"])
+        except Exception:
+            pass
+    numeric_dimensions = [
+        {"value": p["name"], "label": p["name"].replace("_", " ").title()}
+        for p in custom_props
+        if p.get("name") in numeric_names
+    ]
+    result = {
         "dimensions": [{"value": k, "label": v} for k, v in dimensions.items()],
         "measures": [
             {"value": "count_events", "label": "Event Count"},
             {"value": "unique_users", "label": "Unique Users"},
         ],
+        "numeric_dimensions": numeric_dimensions,
         "event_names": [row[0] for row in events],
-        **filter_options,
     }
+    return result
 
 
 @router.get("/pivot")
@@ -333,8 +366,32 @@ def get_pivot(
             "data": [],
         }
 
-    valid_measures = {"count_events", "unique_users"}
-    invalid_measures = [m for m in measure_list if m not in valid_measures]
+    all_prop_names = {p["name"] for p in custom_props if p.get("name")}
+    numeric_prop_names = {p["name"] for p in custom_props if p.get("name")}
+    NUMERIC_AGGS = {"sum", "avg", "min", "max"}
+    COUNT_AGGS = {"count", "count_distinct"}
+
+    def parse_measure(m: str) -> tuple | None:
+        """Return (agg, field) for 'agg:field' expressions, else None."""
+        if ":" in m:
+            parts = m.split(":", 1)
+            if len(parts) == 2:
+                return parts[0].lower(), parts[1]
+        return None
+
+    valid_base_measures = {"count_events", "unique_users"}
+    invalid_measures = []
+    for m in measure_list:
+        parsed = parse_measure(m)
+        if m in valid_base_measures:
+            continue
+        elif parsed and parsed[0] in COUNT_AGGS and parsed[1] in all_prop_names:
+            continue
+        elif parsed and parsed[0] in NUMERIC_AGGS and parsed[1] in numeric_prop_names:
+            continue
+        else:
+            invalid_measures.append(m)
+
     if invalid_measures:
         return {"error": f"Invalid measures: {invalid_measures}", "data": []}
 
@@ -367,16 +424,37 @@ def get_pivot(
             return "COUNT(*)"
         if measure == "unique_users":
             return "COUNT(DISTINCT user_id)"
+        parsed = parse_measure(measure)
+        if parsed:
+            agg, field = parsed
+            alias = f"{agg}_{field}"
+            field_expr = custom_prop_exprs.get(field, field)
+            if agg == "count":
+                return f"COUNT(*) AS {alias}"
+            if agg == "count_distinct":
+                return f"COUNT(DISTINCT {field_expr}) AS {alias}"
+            return f"{agg.upper()}(CAST({field_expr} AS DOUBLE)) AS {alias}"
         return "COUNT(*)"
+
+    def measure_alias(measure: str) -> str:
+        parsed = parse_measure(measure)
+        return f"{parsed[0]}_{parsed[1]}" if parsed else measure
+
+    def get_measure_select(measure: str) -> str:
+        expr = get_measure_expr(measure)
+        parsed = parse_measure(measure)
+        if parsed:
+            return expr  # expr already contains the alias
+        return f"{expr} AS {measure}"
 
     all_dims = row_dims + col_dims
     select_parts = [f"{get_dimension_expr(dim)} AS {dim}" for dim in all_dims]
-    select_parts += [f"{get_measure_expr(m)} AS {m}" for m in measure_list]
+    select_parts += [get_measure_select(m) for m in measure_list]
 
     if all_dims:
         group_by_exprs = [get_dimension_expr(dim) for dim in all_dims]
         group_by_clause = "GROUP BY " + ", ".join(group_by_exprs)
-        order_by_clause = f"ORDER BY {measure_list[0]} DESC"
+        order_by_clause = f"ORDER BY {measure_alias(measure_list[0])} DESC"
     else:
         group_by_clause = ""
         order_by_clause = ""
@@ -397,7 +475,7 @@ def get_pivot(
             val = row[i]
             record[dim] = val.isoformat() if isinstance(val, datetime) else val
         for i, measure in enumerate(measure_list):
-            record[measure] = row[len(all_dims) + i]
+            record[measure_alias(measure)] = row[len(all_dims) + i]
         data.append(record)
 
     if not col_dims:
