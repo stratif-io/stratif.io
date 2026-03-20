@@ -8,10 +8,12 @@ from typing import Any
 from pydantic import BaseModel
 
 from backend.backends.base import ColumnInfo, SchemaInfo
-from backend.backends._utils import infer_type, pick_events_table, suggest_fields
+from backend.backends._utils import infer_type, pick_events_table, suggest_fields, sample_property_types
 from backend.backends.postgresql.credentials import PostgreSQLCredentials
 
 _EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
+
+_PG_NUMERIC_CAST = r"(CASE WHEN {expr} ~ '^-?[0-9]+(\.[0-9]+)?$' THEN 1.0 ELSE NULL END)"
 
 
 class PostgreSQLBackend:
@@ -119,26 +121,33 @@ class PostgreSQLBackend:
                 cursor.close()
 
     def detect_schema(self, conn: Any, events_table_hint: str | None) -> SchemaInfo:
-        cursor = conn.cursor()
+        cur1 = conn.cursor()
         try:
-            cursor.execute(
+            cur1.execute(
                 "SELECT table_name FROM information_schema.tables "
                 "WHERE table_schema = 'public' AND table_type IN ('BASE TABLE','VIEW') ORDER BY table_name"
             )
-            tables = [r[0] for r in cursor.fetchall()]
-            events_table = pick_events_table(tables, events_table_hint)
-            if not events_table:
-                return SchemaInfo(tables=tables, events_table="", columns=[], suggestions={},
-                                  proposed_custom_properties=[])
-            cursor.execute(
+            tables = [r[0] for r in cur1.fetchall()]
+        finally:
+            with contextlib.suppress(Exception):
+                cur1.close()
+
+        events_table = pick_events_table(tables, events_table_hint)
+        if not events_table:
+            return SchemaInfo(tables=tables, events_table="", columns=[], suggestions={},
+                              proposed_custom_properties=[])
+
+        cur2 = conn.cursor()
+        try:
+            cur2.execute(
                 "SELECT column_name, data_type FROM information_schema.columns "
                 "WHERE table_schema = 'public' AND table_name = %s ORDER BY ordinal_position",
                 (events_table,),
             )
-            columns = [ColumnInfo(name=r[0], type=r[1]) for r in cursor.fetchall()]
+            columns = [ColumnInfo(name=r[0], type=r[1]) for r in cur2.fetchall()]
         finally:
             with contextlib.suppress(Exception):
-                cursor.close()
+                cur2.close()
 
         suggestions = suggest_fields(columns)
         core_values = set(suggestions.values())
@@ -149,22 +158,47 @@ class PostgreSQLBackend:
             sql_type = col.type.upper()
             if any(t in sql_type for t in ("JSON", "JSONB")):
                 try:
-                    cur2 = conn.cursor()
+                    cur_keys = conn.cursor()
                     try:
-                        cur2.execute(
+                        cur_keys.execute(
                             f'SELECT DISTINCT jsonb_object_keys("{col.name}"::jsonb) '
                             f'FROM "{events_table}" WHERE "{col.name}" IS NOT NULL LIMIT 2000'
                         )
-                        for (key,) in cur2.fetchall():
+                        for (key,) in cur_keys.fetchall():
                             if key:
                                 proposed.append({"name": key, "path": f"{col.name}.{key}", "type": "string"})
                     finally:
                         with contextlib.suppress(Exception):
-                            cur2.close()
+                            cur_keys.close()
                 except Exception:
                     proposed.append({"name": col.name, "path": col.name, "type": "string"})
             else:
                 proposed.append({"name": col.name, "path": col.name, "type": infer_type(sql_type)})
+
+        # Upgrade string-typed JSON properties to number where sampling confirms it
+        string_json_props = [p for p in proposed if p["type"] == "string" and "." in p["path"]]
+        if string_json_props:
+            col_name, _ = string_json_props[0]["path"].split(".", 1)
+            prop_exprs = {
+                p["name"]: self.json_extract_string(col_name, p["name"])
+                for p in string_json_props
+            }
+
+            def _pg_execute(sql: str):
+                try:
+                    cur = conn.cursor()
+                    cur.execute(sql)
+                    return cur.fetchall()
+                except Exception:
+                    return None
+                finally:
+                    with contextlib.suppress(Exception):
+                        cur.close()
+
+            upgrades = sample_property_types(_pg_execute, events_table, prop_exprs, _PG_NUMERIC_CAST)
+            for p in proposed:
+                if p["name"] in upgrades:
+                    p["type"] = upgrades[p["name"]]
 
         return SchemaInfo(tables=tables, events_table=events_table, columns=columns,
                           suggestions=suggestions, proposed_custom_properties=proposed)
