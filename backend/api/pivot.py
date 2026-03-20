@@ -297,7 +297,9 @@ def get_pivot_options(
             for p in candidates
         )
         try:
-            row = db.execute(f"SELECT {cast_cols} FROM events")
+            row = db.execute(
+                f"SELECT {cast_cols} FROM (SELECT * FROM events LIMIT 500)"
+            )
             if row:
                 for i, p in enumerate(candidates):
                     if row[0][i] is not None:
