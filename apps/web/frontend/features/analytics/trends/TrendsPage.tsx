@@ -34,7 +34,7 @@ export function TrendsPage() {
   const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area')
   const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
   const [measureField, setMeasureField] = useState<string>('count_events')
-  const [aggregation, setAggregation] = useState<'sum' | 'avg' | 'min' | 'max'>('sum')
+  const [aggregation, setAggregation] = useState<'sum' | 'avg' | 'min' | 'max' | 'count' | 'count_distinct'>('sum')
 
   useEffect(() => {
     setBreakdownDimension(null)
@@ -226,6 +226,8 @@ export function TrendsPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="count">Count</SelectItem>
+                        <SelectItem value="count_distinct">Count Distinct</SelectItem>
                         <SelectItem value="sum">Sum</SelectItem>
                         <SelectItem value="avg">Avg</SelectItem>
                         <SelectItem value="min">Min</SelectItem>

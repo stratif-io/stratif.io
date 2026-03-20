@@ -340,7 +340,7 @@ def get_pivot(
         }
 
     numeric_prop_names = {p["name"] for p in custom_props if p.get("type") == "number"}
-    NUMERIC_AGGS = {"sum", "avg", "min", "max"}
+    NUMERIC_AGGS = {"sum", "avg", "min", "max", "count", "count_distinct"}
 
     def parse_measure(m: str) -> tuple | None:
         """Return (agg, field) for 'agg:field' expressions, else None."""
@@ -397,6 +397,10 @@ def get_pivot(
         if parsed:
             agg, field = parsed
             alias = f"{agg}_{field}"
+            if agg == "count":
+                return f"COUNT(*) AS {alias}"
+            if agg == "count_distinct":
+                return f"COUNT(DISTINCT {field}) AS {alias}"
             return f"{agg.upper()}({field}) AS {alias}"
         return "COUNT(*)"
 
