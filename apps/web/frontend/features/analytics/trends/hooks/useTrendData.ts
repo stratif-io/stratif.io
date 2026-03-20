@@ -91,7 +91,7 @@ export function useTrendData({
     queryFn: () =>
       fetchPivot({
         row_dimensions: ['date', breakdownDimension!],
-        measures: ['event_count'],
+        measures: ['count_events'],
         start_date: startDate,
         end_date: endDate,
         event_filter: selectedEvent || undefined,
@@ -114,7 +114,7 @@ export function useTrendData({
     const totals: Record<string, number> = {}
     for (const row of rows) {
       const dimVal = String(row[breakdownDimension] ?? '(unknown)')
-      const cnt = Number(row['event_count'] ?? 0)
+      const cnt = Number(row['count_events'] ?? 0)
       totals[dimVal] = (totals[dimVal] ?? 0) + cnt
     }
 
@@ -128,7 +128,7 @@ export function useTrendData({
     for (const row of rows) {
       const rawDate = String(row['date'] ?? '')
       const dimVal = String(row[breakdownDimension] ?? '(unknown)')
-      const cnt = Number(row['event_count'] ?? 0)
+      const cnt = Number(row['count_events'] ?? 0)
       const key = topKeys.includes(dimVal) ? dimVal : '(other)'
 
       if (!byDate.has(rawDate)) {
