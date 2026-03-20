@@ -14,6 +14,7 @@ interface DimensionTreeSelectProps {
   dimensions: DimensionOption[]
   placeholder?: string
   disabled?: boolean
+  className?: string
 }
 
 export function DimensionTreeSelect({
@@ -22,6 +23,7 @@ export function DimensionTreeSelect({
   dimensions,
   placeholder = 'Select dimension…',
   disabled = false,
+  className,
 }: DimensionTreeSelectProps) {
   const [open, setOpen] = useState(false)
 
@@ -71,6 +73,7 @@ export function DimensionTreeSelect({
             'hover:bg-accent/60 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             value && 'border-primary text-primary',
+            className,
           )}
         >
           <span className="truncate">{selectedLabel ?? <span className="text-muted-foreground">{placeholder}</span>}</span>
