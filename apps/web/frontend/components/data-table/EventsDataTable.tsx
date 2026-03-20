@@ -26,7 +26,7 @@ export interface Event {
 
 interface EventsDataTableProps {
   events: Event[]
-  loading?: boolean
+  isLoading?: boolean
   onEventView?: (event: Event) => void
   onEventEdit?: (event: Event) => void
   onEventDelete?: (event: Event) => void
@@ -45,7 +45,7 @@ const statusVariants: Record<Event['status'], 'default' | 'secondary' | 'destruc
 
 export function EventsDataTable({
   events,
-  loading = false,
+  isLoading = false,
   onEventView,
   onEventEdit,
   onEventDelete,
@@ -296,7 +296,7 @@ export function EventsDataTable({
     <DataTable
       columns={columns}
       data={events}
-      loading={loading}
+      isLoading={isLoading}
       searchPlaceholder="Search events..."
       showSearch={showToolbar}
       showColumnVisibility={showToolbar}

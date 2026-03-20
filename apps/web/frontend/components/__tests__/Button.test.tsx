@@ -86,8 +86,8 @@ describe('Button', () => {
     it('applies icon size', () => {
       render(<Button size="icon">Icon</Button>)
       const button = screen.getByRole('button')
-      expect(button).toHaveClass('h-10')
-      expect(button).toHaveClass('w-10')
+      expect(button).toHaveClass('h-11')
+      expect(button).toHaveClass('w-11')
     })
   })
 

@@ -29,12 +29,30 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { DataTablePagination } from './DataTablePagination'
 import { DataTableToolbar } from './DataTableToolbar'
 import { DataTableRowActions, RowAction } from './DataTableRowActions'
+import { TableSkeleton } from './TableSkeleton'
+import { EmptyState } from './EmptyState'
 import { cn } from '@/lib/utils'
+
+function MobileTableSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="rounded-lg border bg-card p-4 mb-3">
+          <Skeleton className="h-20 w-full" />
+        </div>
+      ))}
+    </>
+  )
+}
+
+function MobileEmptyState({ message = 'No data' }: { message?: string }) {
+  return <div className="text-center py-10 text-muted-foreground">{message}</div>
+}
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  loading?: boolean
+  isLoading?: boolean
   searchPlaceholder?: string
   showSearch?: boolean
   showColumnVisibility?: boolean
@@ -80,7 +98,7 @@ export interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  loading = false,
+  isLoading = false,
   searchPlaceholder = 'Search...',
   showSearch = true,
   showColumnVisibility = true,
@@ -343,7 +361,7 @@ export function DataTable<TData, TValue>({
   }
 
   const rows = table.getRowModel().rows
-  const isEmpty = !loading && rows.length === 0
+  const isEmpty = !isLoading && rows.length === 0
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -379,25 +397,13 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {tableColumns.map((_, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : isEmpty ? (
-              <TableRow>
-                <TableCell colSpan={tableColumns.length} className="h-24 text-center">
-                  {emptyMessage}
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => (
+          {isLoading ? (
+            <TableSkeleton columns={table.getAllColumns().length} />
+          ) : isEmpty ? (
+            <EmptyState colSpan={table.getAllColumns().length} message={emptyMessage} />
+          ) : (
+            <TableBody>
+              {rows.map((row) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
@@ -410,20 +416,16 @@ export function DataTable<TData, TValue>({
                     </TableCell>
                   ))}
                 </TableRow>
-              ))
-            )}
-          </TableBody>
+              ))}
+            </TableBody>
+          )}
         </Table>
       </div>
       <div className="md:hidden">
-        {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-lg border bg-card p-4 mb-3">
-              <Skeleton className="h-20 w-full" />
-            </div>
-          ))
+        {isLoading ? (
+          <MobileTableSkeleton />
         ) : isEmpty ? (
-          <div className="text-center py-10 text-muted-foreground">{emptyMessage}</div>
+          <MobileEmptyState message={emptyMessage} />
         ) : (
           rows.map(renderMobileCard)
         )}
