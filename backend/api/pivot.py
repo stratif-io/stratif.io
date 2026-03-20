@@ -2,10 +2,15 @@
 
 import json
 import re
+import time
 import traceback as _traceback
 from datetime import date, datetime
 from enum import Enum
 from typing import Annotated, Any
+
+# Simple TTL cache for /pivot/options — keyed by connection_id
+_pivot_options_cache: dict[str, tuple[float, dict]] = {}
+_PIVOT_OPTIONS_TTL = 300  # seconds
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -272,8 +277,14 @@ def _build_ag_filter_clauses(
 @router.get("/pivot/options")
 def get_pivot_options(
     db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
+    connection_id: str | None = Query(None),
 ) -> dict:
     """Get available dimensions, measures, and filter options for pivot table."""
+    cache_key = connection_id or "__default__"
+    cached = _pivot_options_cache.get(cache_key)
+    if cached and (time.time() - cached[0]) < _PIVOT_OPTIONS_TTL:
+        return cached[1]
+
     events = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
     custom_props = db.get_custom_properties()
     custom_dimensions = {
@@ -311,7 +322,7 @@ def get_pivot_options(
         for p in custom_props
         if p.get("name") in numeric_names
     ]
-    return {
+    result = {
         "dimensions": [{"value": k, "label": v} for k, v in dimensions.items()],
         "measures": [
             {"value": "count_events", "label": "Event Count"},
@@ -321,6 +332,8 @@ def get_pivot_options(
         "event_names": [row[0] for row in events],
         **filter_options,
     }
+    _pivot_options_cache[cache_key] = (time.time(), result)
+    return result
 
 
 @router.get("/pivot")
