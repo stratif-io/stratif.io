@@ -59,6 +59,7 @@ BASE_DIMS: dict[str, str] = {
 AVAILABLE_DIMENSIONS = {
     "event_name": "Event Name",
     "date": "Date",
+    "week": "Week",
     "hour": "Hour of Day",
     "day_of_week": "Day of Week",
     "user_id": "User ID",
@@ -124,6 +125,8 @@ def _get_dim_expr(
         # Legacy flat pivot dims
         case "date":
             return date_trunc("day", "timestamp", dialect)
+        case "week":
+            return date_trunc("week", "timestamp", dialect)
         case "hour":
             return extract_hour("timestamp", dialect)
         case _:
@@ -363,8 +366,10 @@ def get_pivot(
             "data": [],
         }
 
+    all_prop_names = {p["name"] for p in custom_props if p.get("name")}
     numeric_prop_names = {p["name"] for p in custom_props if p.get("name")}
-    NUMERIC_AGGS = {"sum", "avg", "min", "max", "count", "count_distinct"}
+    NUMERIC_AGGS = {"sum", "avg", "min", "max"}
+    COUNT_AGGS = {"count", "count_distinct"}
 
     def parse_measure(m: str) -> tuple | None:
         """Return (agg, field) for 'agg:field' expressions, else None."""
@@ -379,6 +384,8 @@ def get_pivot(
     for m in measure_list:
         parsed = parse_measure(m)
         if m in valid_base_measures:
+            continue
+        elif parsed and parsed[0] in COUNT_AGGS and parsed[1] in all_prop_names:
             continue
         elif parsed and parsed[0] in NUMERIC_AGGS and parsed[1] in numeric_prop_names:
             continue

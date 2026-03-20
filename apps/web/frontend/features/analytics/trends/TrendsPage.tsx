@@ -42,8 +42,12 @@ export function TrendsPage() {
     setAggregation('sum')
   }, [activeConnectionId])
 
-  const isNumericField = measureField !== 'count_events' && measureField !== 'unique_users'
-  const measure = isNumericField ? `${aggregation}:${measureField}` : measureField
+  // When switching to a non-numeric field, reset aggregation to 'count'
+  useEffect(() => {
+    if (isCustomField && !isNumericField && !['count', 'count_distinct'].includes(aggregation)) {
+      setAggregation('count')
+    }
+  }, [measureField]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: pivotOptions } = useQuery({
     queryKey: ['pivot-options', activeConnectionId],
@@ -53,6 +57,11 @@ export function TrendsPage() {
   const dimensions = pivotOptions?.dimensions ?? []
   const standardMeasures = pivotOptions?.measures ?? []
   const numericDimensions = pivotOptions?.numeric_dimensions ?? []
+
+  const isCustomField = measureField !== 'count_events' && measureField !== 'unique_users'
+  const numericValues = new Set(numericDimensions.map((d) => d.value))
+  const isNumericField = isCustomField && numericValues.has(measureField)
+  const measure = isCustomField ? `${aggregation}:${measureField}` : measureField
 
   const {
     trendData,
@@ -205,11 +214,21 @@ export function TrendsPage() {
                           ))}
                         </SelectGroup>
                       )}
+                      {dimensions.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Categorical fields</SelectLabel>
+                          {dimensions.map((d) => (
+                            <SelectItem key={d.value} value={d.value}>
+                              {d.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
                     </SelectContent>
                   </Select>
 
-                  {/* Aggregation selector — only shown for numeric fields */}
-                  {isNumericField && (
+                  {/* Aggregation selector — shown for any custom field */}
+                  {isCustomField && (
                     <Select
                       value={aggregation}
                       onValueChange={(val) => setAggregation(val as typeof aggregation)}
@@ -220,10 +239,14 @@ export function TrendsPage() {
                       <SelectContent>
                         <SelectItem value="count">Count</SelectItem>
                         <SelectItem value="count_distinct">Count Distinct</SelectItem>
-                        <SelectItem value="sum">Sum</SelectItem>
-                        <SelectItem value="avg">Avg</SelectItem>
-                        <SelectItem value="min">Min</SelectItem>
-                        <SelectItem value="max">Max</SelectItem>
+                        {isNumericField && (
+                          <>
+                            <SelectItem value="sum">Sum</SelectItem>
+                            <SelectItem value="avg">Avg</SelectItem>
+                            <SelectItem value="min">Min</SelectItem>
+                            <SelectItem value="max">Max</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   )}
