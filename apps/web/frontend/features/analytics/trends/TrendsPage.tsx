@@ -21,6 +21,7 @@ import { useAppStore } from '@/stores'
 import { fetchPivotOptions } from '@/lib/api'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendChart } from './components/TrendChart'
+import { TrendFilters } from './components/TrendFilters'
 import { SPACING, TYPOGRAPHY, ICON_SIZES } from '@/lib/constants'
 
 export function TrendsPage() {
@@ -35,11 +36,13 @@ export function TrendsPage() {
   const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
   const [measureField, setMeasureField] = useState<string>('count_events')
   const [aggregation, setAggregation] = useState<'sum' | 'avg' | 'min' | 'max' | 'count' | 'count_distinct'>('sum')
+  const [localFilters, setLocalFilters] = useState<Record<string, string | null>>({})
 
   useEffect(() => {
     setBreakdownDimension(null)
     setMeasureField('count_events')
     setAggregation('sum')
+    setLocalFilters({})
   }, [activeConnectionId])
 
   // When switching to a non-numeric field, reset aggregation to 'count'
@@ -81,6 +84,7 @@ export function TrendsPage() {
     granularity,
     breakdownDimension,
     measure,
+    localFilters,
   })
 
   if (isError) return <QueryError error={error} />
@@ -276,7 +280,18 @@ export function TrendsPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
+              <div className="pb-4">
+                <TrendFilters
+                  dimensions={[...dimensions, ...numericDimensions]}
+                  filters={localFilters}
+                  connectionId={activeConnectionId ?? undefined}
+                  onChange={(field, value) =>
+                    setLocalFilters((prev) => ({ ...prev, [field]: value }))
+                  }
+                  onClearAll={() => setLocalFilters({})}
+                />
+              </div>
               {isLoading ? (
                 <ChartSkeleton height="h-[300px] sm:h-[380px] lg:h-[450px]" />
               ) : trendData.length === 0 ? (

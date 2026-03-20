@@ -17,6 +17,7 @@ export interface UseTrendDataOptions {
   granularity: 'day' | 'week'
   breakdownDimension?: string | null
   measure?: string
+  localFilters?: Record<string, string | null>
 }
 
 const GRANULARITY_DIM = { day: 'date', week: 'week' } as const
@@ -49,10 +50,12 @@ export function useTrendData({
   granularity,
   breakdownDimension = null,
   measure = 'count_events',
+  localFilters,
 }: UseTrendDataOptions): UseTrendDataReturn {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
   const { activeFilters, activeConnectionId } = useAppStore()
+  const mergedFilters = localFilters ? { ...activeFilters, ...localFilters } : activeFilters
 
   const usePivot = !!breakdownDimension || (measure !== 'count_events' && measure !== 'unique_users')
 
@@ -76,7 +79,7 @@ export function useTrendData({
       granularity,
       startDate,
       endDate,
-      activeFilters,
+      mergedFilters,
       activeConnectionId,
       measure,
     ],
@@ -86,7 +89,7 @@ export function useTrendData({
         granularity,
         start_date: startDate,
         end_date: endDate,
-        filters: activeFilters,
+        filters: mergedFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: !usePivot && !!startDate && !!endDate,
@@ -111,7 +114,7 @@ export function useTrendData({
       selectedEvent,
       startDate,
       endDate,
-      activeFilters,
+      mergedFilters,
       activeConnectionId,
     ],
     queryFn: () =>
@@ -121,7 +124,7 @@ export function useTrendData({
         start_date: startDate,
         end_date: endDate,
         event_filter: selectedEvent || undefined,
-        filters: activeFilters,
+        filters: mergedFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
     enabled: usePivot && !!startDate && !!endDate,
