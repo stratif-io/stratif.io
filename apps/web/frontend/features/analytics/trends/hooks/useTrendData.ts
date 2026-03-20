@@ -16,6 +16,7 @@ export interface UseTrendDataOptions {
   selectedEvent: string
   granularity: 'day' | 'week'
   breakdownDimension?: string | null
+  measure?: string
 }
 
 export interface UseTrendDataReturn {
@@ -29,20 +30,29 @@ export interface UseTrendDataReturn {
   averageValue: number
   maxValue: number
   seriesKeys: string[] | null
+  measureKey: string
 }
 
 /** Top-N cap for stacked series. Values beyond this are merged into "(other)". */
 const MAX_SERIES = 8
+
+/** Derive the row key used in pivot response rows for a given measure string. */
+function measureRowKey(measure: string): string {
+  return measure.includes(':') ? measure.replace(':', '_') : measure
+}
 
 export function useTrendData({
   dateRange,
   selectedEvent,
   granularity,
   breakdownDimension = null,
+  measure = 'count_events',
 }: UseTrendDataOptions): UseTrendDataReturn {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
   const { activeFilters, activeConnectionId } = useAppStore()
+
+  const usePivot = !!breakdownDimension || (measure !== 'count_events' && measure !== 'unique_users')
 
   // ── Events list (always needed for the event selector) ───────────────────
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
@@ -51,14 +61,23 @@ export function useTrendData({
     staleTime: 5 * 60 * 1000,
   })
 
-  // ── Trend query (no breakdown) ────────────────────────────────────────────
+  // ── Trend query (count_events or unique_users, no breakdown) ──────────────
   const {
     data: trendResponse,
     isLoading: trendLoading,
     isError: trendIsError,
     error: trendError,
   } = useQuery({
-    queryKey: ['trend', selectedEvent, granularity, startDate, endDate, activeFilters, activeConnectionId],
+    queryKey: [
+      'trend',
+      selectedEvent,
+      granularity,
+      startDate,
+      endDate,
+      activeFilters,
+      activeConnectionId,
+      measure,
+    ],
     queryFn: () =>
       fetchTrend({
         event_name: selectedEvent || undefined,
@@ -68,11 +87,13 @@ export function useTrendData({
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
-    enabled: !breakdownDimension && !!startDate && !!endDate,
+    enabled: !usePivot && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
   })
 
-  // ── Pivot / breakdown query ───────────────────────────────────────────────
+  // ── Pivot query (breakdown OR non-default measure) ────────────────────────
+  const pivotRowDims = breakdownDimension ? ['date', breakdownDimension] : ['date']
+
   const {
     data: pivotResponse,
     isLoading: pivotLoading,
@@ -82,6 +103,7 @@ export function useTrendData({
     queryKey: [
       'trend-breakdown',
       breakdownDimension,
+      measure,
       selectedEvent,
       startDate,
       endDate,
@@ -90,45 +112,57 @@ export function useTrendData({
     ],
     queryFn: () =>
       fetchPivot({
-        row_dimensions: ['date', breakdownDimension!],
-        measures: ['count_events'],
+        row_dimensions: pivotRowDims,
+        measures: [measure],
         start_date: startDate,
         end_date: endDate,
         event_filter: selectedEvent || undefined,
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
-    enabled: !!breakdownDimension && !!startDate && !!endDate,
+    enabled: usePivot && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
   })
 
-  // ── Transform: flat pivot rows → wide-format records ─────────────────────
+  // ── Transform: flat pivot rows → wide-format (breakdown) or single (no breakdown) ──
   const { stackedData, seriesKeys } = useMemo(() => {
-    if (!breakdownDimension || !pivotResponse?.data?.length) {
+    if (!usePivot || !pivotResponse?.data?.length) {
       return { stackedData: [], seriesKeys: null }
     }
 
     const rows = pivotResponse.data as Array<Record<string, unknown>>
+    const rowKey = measureRowKey(measure)
 
-    // Count totals per dimension value to determine top-N
+    // No-breakdown pivot path: just normalise to { date, fullDate, count }
+    if (!breakdownDimension) {
+      const data = rows.map((row) => ({
+        date: new Date(String(row['date'] ?? '')).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        }),
+        fullDate: String(row['date'] ?? ''),
+        count: Number(row[rowKey] ?? 0),
+      }))
+      return { stackedData: data, seriesKeys: null }
+    }
+
+    // Breakdown pivot path: flat → wide
     const totals: Record<string, number> = {}
     for (const row of rows) {
       const dimVal = String(row[breakdownDimension] ?? '(unknown)')
-      const cnt = Number(row['count_events'] ?? 0)
+      const cnt = Number(row[rowKey] ?? 0)
       totals[dimVal] = (totals[dimVal] ?? 0) + cnt
     }
 
-    // Sort by total desc, cap at MAX_SERIES
     const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1])
     const topKeys = sorted.slice(0, MAX_SERIES).map(([k]) => k)
     const hasOther = sorted.length > MAX_SERIES
 
-    // Group rows by date
     const byDate = new Map<string, Record<string, unknown>>()
     for (const row of rows) {
       const rawDate = String(row['date'] ?? '')
       const dimVal = String(row[breakdownDimension] ?? '(unknown)')
-      const cnt = Number(row['count_events'] ?? 0)
+      const cnt = Number(row[rowKey] ?? 0)
       const key = topKeys.includes(dimVal) ? dimVal : '(other)'
 
       if (!byDate.has(rawDate)) {
@@ -147,20 +181,20 @@ export function useTrendData({
     const data = Array.from(byDate.values()).sort((a, b) =>
       String(a.fullDate).localeCompare(String(b.fullDate))
     )
-
     return { stackedData: data, seriesKeys: finalKeys }
-  }, [breakdownDimension, pivotResponse])
+  }, [usePivot, breakdownDimension, measure, pivotResponse])
 
-  // ── Non-breakdown trend data (existing logic, unchanged) ─────────────────
+  // ── Non-pivot trend data ───────────────────────────────────────────────────
   const trendData = useMemo(() => {
-    if (breakdownDimension) return stackedData
+    if (usePivot) return stackedData
     if (!trendResponse?.data) return []
+    const field = measure === 'unique_users' ? 'unique_users' : 'count'
     return trendResponse.data.map((d) => ({
       date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       fullDate: d.date,
-      count: d.count,
+      count: (d as Record<string, number>)[field] ?? d.count,
     }))
-  }, [breakdownDimension, trendResponse, stackedData])
+  }, [usePivot, trendResponse, stackedData, measure])
 
   // ── Metrics ──────────────────────────────────────────────────────────────
   const totalEvents = useMemo(() => {
@@ -190,13 +224,14 @@ export function useTrendData({
   return {
     trendData,
     events: eventsResponse?.events || [],
-    isLoading: breakdownDimension ? pivotLoading : trendLoading,
-    isError: breakdownDimension ? pivotIsError : trendIsError,
-    error: (breakdownDimension ? pivotError : trendError) as Error | null,
+    isLoading: usePivot ? pivotLoading : trendLoading,
+    isError: usePivot ? pivotIsError : trendIsError,
+    error: (usePivot ? pivotError : trendError) as Error | null,
     eventsLoading,
     totalEvents,
     averageValue,
     maxValue,
     seriesKeys: breakdownDimension ? seriesKeys : null,
+    measureKey: 'count',
   }
 }

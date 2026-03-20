@@ -184,3 +184,101 @@ describe('useTrendData — with breakdown', () => {
     expect(result.current.maxValue).toBe(300)
   })
 })
+
+describe('useTrendData — measure selection', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  it('uses fetchTrend for unique_users and normalises to count key', async () => {
+    vi.mocked(fetchTrend).mockResolvedValue({
+      total_unique_users: 3,
+      data: [{ date: '2026-01-01', count: 10, unique_users: 3 }],
+    })
+    vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
+
+    const { result } = renderHook(
+      () => useTrendData({ dateRange, selectedEvent: '', granularity: 'day', measure: 'unique_users' }),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.trendData.length).toBe(1))
+    // data normalised under 'count' key, unique_users value used
+    expect(result.current.trendData[0]).toMatchObject({ count: 3 })
+    expect(result.current.measureKey).toBe('count')
+    expect(fetchPivot).not.toHaveBeenCalled()
+  })
+
+  it('uses fetchPivot for non-standard measure (sum:total_amount)', async () => {
+    vi.mocked(fetchPivot).mockResolvedValue({
+      dimensions: ['date'],
+      measures: ['sum:total_amount'],
+      data: [{ date: '2026-01-01', sum_total_amount: 500 }],
+    })
+    vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
+
+    const { result } = renderHook(
+      () =>
+        useTrendData({
+          dateRange,
+          selectedEvent: '',
+          granularity: 'day',
+          measure: 'sum:total_amount',
+        }),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.trendData.length).toBe(1))
+    expect(fetchPivot).toHaveBeenCalledWith(
+      expect.objectContaining({ measures: ['sum:total_amount'] })
+    )
+    expect(result.current.trendData[0]).toMatchObject({ count: 500 })
+    expect(result.current.measureKey).toBe('count')
+  })
+
+  it('includes measure in the pivot query key', async () => {
+    vi.mocked(fetchPivot).mockResolvedValue({ dimensions: ['date'], measures: ['sum:quantity'], data: [] })
+    vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
+
+    renderHook(
+      () =>
+        useTrendData({
+          dateRange,
+          selectedEvent: '',
+          granularity: 'day',
+          measure: 'sum:quantity',
+        }),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(fetchPivot).toHaveBeenCalled())
+    expect(fetchPivot).toHaveBeenCalledWith(
+      expect.objectContaining({ measures: ['sum:quantity'], row_dimensions: ['date'] })
+    )
+  })
+
+  it('breakdown + non-standard measure: reads correct row key', async () => {
+    vi.mocked(fetchPivot).mockResolvedValue({
+      dimensions: ['date', 'device_type'],
+      measures: ['sum:total_amount'],
+      data: [
+        { date: '2026-01-01', device_type: 'mobile', sum_total_amount: 200 },
+        { date: '2026-01-01', device_type: 'desktop', sum_total_amount: 300 },
+      ],
+    })
+    vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
+
+    const { result } = renderHook(
+      () =>
+        useTrendData({
+          dateRange,
+          selectedEvent: '',
+          granularity: 'day',
+          breakdownDimension: 'device_type',
+          measure: 'sum:total_amount',
+        }),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.trendData.length).toBe(1))
+    expect(result.current.trendData[0]).toMatchObject({ mobile: 200, desktop: 300 })
+  })
+})
