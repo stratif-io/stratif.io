@@ -68,7 +68,7 @@ export default function SessionsPage() {
 
   const { data: sessionsData, isLoading } = useQuery({
     queryKey: ['sessions', startDate, endDate],
-    queryFn: () => fetchSessions({ limit: 200, offset: 0 }),
+    queryFn: () => fetchSessions({ limit: 200, offset: 0, start_date: startDate, end_date: endDate }),
     staleTime: 5 * 60 * 1000,
   })
 
