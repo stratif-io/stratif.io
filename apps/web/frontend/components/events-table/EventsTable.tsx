@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { User, Filter, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FilterBar } from '@/components/shared/FilterBar'
+import { FilterSelect } from '@/components/FilterSelect'
 import { Pagination } from '@/components/shared/Pagination'
 import { DataTable } from '@/components/data-table/DataTable'
 import { Spinner } from '@/components/ui/spinner'
@@ -183,8 +184,13 @@ export function EventsTable({
     [onUserClick],
   )
   const handleEventNameFilter = useCallback(
-    (name: string) => onEventNameFilterChange(name),
-    [onEventNameFilterChange],
+    (name: string) =>
+      onEventNameFilterChange(
+        eventNameFilter.includes(name)
+          ? eventNameFilter.filter((n) => n !== name)
+          : [...eventNameFilter, name],
+      ),
+    [onEventNameFilterChange, eventNameFilter],
   )
   const handleDimFilter = useCallback(
     (field: string, val: string) => onColumnFilterChange(field, val),
@@ -292,9 +298,11 @@ export function EventsTable({
   const to = Math.min(page * pageSize, total)
 
   const activeFilters = [
-    ...(eventNameFilter
-      ? [{ label: 'event', value: eventNameFilter, onClear: () => onEventNameFilterChange('') }]
-      : []),
+    ...eventNameFilter.map((name) => ({
+      label: 'event',
+      value: name,
+      onClear: () => onEventNameFilterChange(eventNameFilter.filter((n) => n !== name)),
+    })),
     ...(userIdFilter
       ? [{ label: 'user', value: userIdFilter, onClear: () => onUserIdFilterChange('') }]
       : []),
@@ -331,22 +339,16 @@ export function EventsTable({
         className="h-7 text-xs px-2 rounded border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring w-44"
       />
       {/* Event name filter */}
-      <Select
-        value={eventNameFilter || '__all__'}
-        onValueChange={(v) => onEventNameFilterChange(v === '__all__' ? '' : v)}
-      >
-        <SelectTrigger className="h-7 text-xs w-36">
-          <SelectValue placeholder="All events" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__all__">All events</SelectItem>
-          {allEventNames.map((name) => (
-            <SelectItem key={name} value={name}>
-              {name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <FilterSelect
+        mode="multi"
+        searchable={true}
+        size="sm"
+        value={eventNameFilter}
+        onChange={(v) => onEventNameFilterChange(v as string[])}
+        options={allEventNames.map((name) => ({ value: name, label: name }))}
+        placeholder="All events"
+        className="w-40"
+      />
       {/* Dim col filters */}
       {dimCols
         .filter((col) => colVisibility[col.id] !== false)

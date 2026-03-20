@@ -29,7 +29,7 @@ export function EventsPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   // Column-level filters (local to this page)
-  const [eventNameFilter, setEventNameFilter] = useState('')
+  const [eventNameFilter, setEventNameFilter] = useState<string[]>([])
   const [userIdFilter, setUserIdFilter] = useState('')
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({})
 
@@ -104,7 +104,7 @@ export function EventsPage() {
       fetchRawEvents({
         limit,
         offset: (page - 1) * limit,
-        event_name: eventNameFilter || undefined,
+        event_name: eventNameFilter.length ? eventNameFilter.join('|') : undefined,
         user_id: userIdFilter || undefined,
         sort_field: sortField,
         sort_order: sortOrder,
@@ -138,7 +138,7 @@ export function EventsPage() {
     setPage(1)
   }, [])
 
-  const handleEventNameFilterChange = useCallback((v: string) => {
+  const handleEventNameFilterChange = useCallback((v: string[]) => {
     setEventNameFilter(v)
     setPage(1)
   }, [])
