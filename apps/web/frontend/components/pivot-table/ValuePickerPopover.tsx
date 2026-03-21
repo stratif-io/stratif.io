@@ -27,7 +27,7 @@ export function ValuePickerPopover({ leafCols, onSelect }: ValuePickerPopoverPro
 
   const groups = groupDimensionsByCategory(
     eligible.map((c) => ({ value: c.colId, label: c.label })),
-    CATEGORIES as DimensionCategoryConfig[],
+    CATEGORIES,
   )
 
   function handleDimSelect(col: LeafMeta) {
