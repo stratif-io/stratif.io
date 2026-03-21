@@ -186,7 +186,7 @@ export function PivotTable({
         {rows.length === 0 && !isQuerying ? (
           <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
             {rowGroups.length === 0 && valueCols.length === 0
-              ? 'Drag columns to Rows and Values to build a pivot table.'
+              ? 'Use + Add in the Rows and Values zones to build a pivot table.'
               : 'No data for current selection.'}
           </div>
         ) : (
