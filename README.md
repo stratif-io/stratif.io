@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/logo.png" alt="stratif.io" width="320"/>
+  <img src="docs/logo.svg" alt="stratif.io" width="320"/>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](pyproject.toml)

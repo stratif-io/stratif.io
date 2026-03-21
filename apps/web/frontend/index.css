@@ -50,7 +50,7 @@
   --radius-sm: calc(var(--radius) - 4px);
 
   /* Sidebar dimensions */
-  --sidebar-expanded: 280px;
+  --sidebar-expanded: 220px;
   --sidebar-collapsed: 60px;
 
   /* Content max-width — prevents excessive stretching on ultra-wide screens */
