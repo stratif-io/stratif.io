@@ -599,6 +599,7 @@ Before writing, read:
 - `apps/web/frontend/components/FilterSelect.tsx`
 - `apps/web/frontend/components/DbLogo.tsx`
 - `apps/web/frontend/components/shared/FilterBar.tsx`
+- `apps/web/frontend/components/GlobalFilters.tsx`
 
 - [ ] **Step 1: Read the app component files** to understand their props
 
@@ -636,12 +637,15 @@ export function AppComponentsSection() {
 
       {/* Add FilterBar here after reading its props in Step 1.
           Import from '@/components/shared/FilterBar'. It likely reads from Zustand store — render without extra props. */}
+
+      {/* Add GlobalFilters here after reading its props in Step 1.
+          Import from '@/components/GlobalFilters'. It reads from Zustand store — render without extra props. */}
     </ComponentSection>
   )
 }
 ```
 
-> **Note:** Adjust `FilterSelect` and `DbLogo` props to match what you find in Step 1. `DateRangePicker` and `FilterBar` likely connect to the Zustand store directly — render without extra props.
+> **Note:** Adjust `FilterSelect` and `DbLogo` props to match what you find in Step 1. `DateRangePicker`, `FilterBar`, and `GlobalFilters` likely connect to the Zustand store directly — render without extra props.
 
 - [ ] **Step 3: Commit**
 
@@ -685,7 +689,7 @@ export function DesignSystemPage() {
     <PageTransition>
       <div className="flex gap-8">
         {/* Inner sticky sidebar */}
-        <aside className="hidden lg:block w-44 shrink-0">
+        <aside className="hidden lg:block w-56 shrink-0">
           <div className="sticky top-6 space-y-1">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 px-2 pb-2">
               Components
