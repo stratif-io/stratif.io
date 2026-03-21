@@ -137,21 +137,25 @@ export function Sidebar() {
         <div className="flex h-20 shrink-0 items-center border-b px-4">
           <Link
             to={{ pathname: '/dashboard', search: location.search }}
-            className={cn(
-              'flex items-center overflow-hidden',
-              sidebarOpen ? 'w-full gap-3' : 'justify-center w-full'
-            )}
+            className="flex items-center w-full gap-2 overflow-hidden"
           >
-            {sidebarOpen ? (
-              <>
-                <img src="/favicon-color.svg" alt="" className="h-10 w-10 shrink-0 dark:hidden" />
-                <img src="/text-light.svg" alt="stratif.io" className="h-10 w-auto dark:hidden" />
-                <img src="/favicon-color.svg" alt="" className="h-10 w-10 shrink-0 hidden dark:block" />
-                <img src="/text-dark.svg" alt="stratif.io" className="h-10 w-auto hidden dark:block" />
-              </>
-            ) : (
-              <img src="/favicon-color.svg" alt="stratif.io" className="h-8 w-8" />
-            )}
+            <img src="/favicon-color.svg" alt="stratif.io" className="h-7 w-7 shrink-0" />
+            <img
+              src="/text-light.svg"
+              alt=""
+              className={cn(
+                'h-7 w-auto shrink-0 dark:hidden transition-opacity duration-300',
+                sidebarOpen ? 'opacity-100' : 'opacity-0'
+              )}
+            />
+            <img
+              src="/text-dark.svg"
+              alt=""
+              className={cn(
+                'h-7 w-auto shrink-0 hidden dark:block transition-opacity duration-300',
+                sidebarOpen ? 'opacity-100' : 'opacity-0'
+              )}
+            />
           </Link>
         </div>
 
