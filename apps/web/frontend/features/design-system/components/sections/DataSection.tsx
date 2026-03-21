@@ -1,6 +1,5 @@
 import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { DataTable } from '@/components/data-table'
-import { EventsDataTable, generateMockEvents } from '@/components/data-table'
 import { EventsTable } from '@/components/events-table/EventsTable'
 import { PivotTable } from '@/components/pivot-table/PivotTable'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -24,8 +23,6 @@ const sampleRows: SampleRow[] = [
   { id: '3', name: 'signup', value: 142, status: 'active' },
   { id: '4', name: 'purchase', value: 38, status: 'inactive' },
 ]
-
-const mockEvents = generateMockEvents(5)
 
 const eventsTableProps = {
   data: [
@@ -61,11 +58,6 @@ export function DataSection() {
       <ComponentRow label="DataTable">
         <div className="w-full border rounded-md overflow-hidden">
           <DataTable columns={sampleColumns} data={sampleRows} />
-        </div>
-      </ComponentRow>
-      <ComponentRow label="EventsDataTable">
-        <div className="w-full border rounded-md overflow-hidden">
-          <EventsDataTable events={mockEvents} />
         </div>
       </ComponentRow>
       <ComponentRow label="EventsTable">
