@@ -24,7 +24,7 @@ The app's actual theme (CSS variables, Tailwind config, dark/light mode) applies
 ## Categories & Components
 
 ### UI Primitives
-Button (all variants: default, secondary, outline, ghost, destructive, sizes), Badge, Input, Select, Checkbox, Switch, Slider, Progress, Skeleton, Spinner, Avatar, Separator, Tooltip, Popover, Dialog, DropdownMenu, Card, ScrollArea
+Button (all variants: default, secondary, outline, ghost, destructive, sizes), Badge, Input, Select, Checkbox, Switch, Slider, Progress, Skeleton, Spinner (raw primitive from `ui/spinner.tsx`), Avatar, Separator, Tooltip, Popover, Dialog, DropdownMenu, Card, ScrollArea
 
 ### Feedback States
 LoadingState, EmptyState, QueryError, CardLoadingBar, UnderConstruction
@@ -33,10 +33,12 @@ LoadingState, EmptyState, QueryError, CardLoadingBar, UnderConstruction
 AreaChart, BarChart, LineChart, DonutChart, FunnelChart, HeatmapChart, SparklineChart, ComparisonChart — each rendered with static sample data
 
 ### Data Display
-DataTable, EventsDataTable, PivotTable — each rendered with static fixture data
+DataTable, EventsDataTable (`components/data-table/EventsDataTable.tsx`), PivotTable — each rendered with static fixture data
 
 ### App Components
-DateRangePicker, FilterSelect, FilterBar, GlobalFilters, DbLogo
+DateRangePicker, FilterSelect, FilterBar (`components/shared/FilterBar.tsx`), GlobalFilters, DbLogo
+
+Note: `FilterBar` and `GlobalFilters` depend on Zustand store state; render them wrapped in the store provider (already present via `DashboardLayout`) with the store's default state.
 
 ## File Structure
 
@@ -56,18 +58,29 @@ apps/web/frontend/features/design-system/
 ## Routing
 
 In `App.tsx`:
-- Import `DesignSystemPage` lazily with `React.lazy`
-- Add route: `{ path: '/design-system', element: import.meta.env.DEV ? <DesignSystemPage /> : <Navigate to="/dashboard" /> }`
-- Wrap in existing `Suspense` boundary
+- The `React.lazy` call itself must be guarded so the module is excluded from production bundles:
+  ```tsx
+  const DesignSystemPage = import.meta.env.DEV
+    ? lazy(() => import('@/features/design-system/DesignSystemPage'))
+    : null
+  ```
+- Add route inside the dev guard:
+  ```tsx
+  {import.meta.env.DEV && DesignSystemPage && (
+    <Route path="/design-system" element={<DesignSystemPage />} />
+  )}
+  ```
+- Wrap in existing `Suspense` boundary (already present in `App.tsx`)
 
 ## Sidebar Entry
 
-In `Sidebar.tsx`, add a footer nav item that renders only when `import.meta.env.DEV`:
-```tsx
-{import.meta.env.DEV && (
-  <NavItem to="/design-system" icon={<Palette />} label="Design System" />
-)}
-```
+In `Sidebar.tsx`, add a footer link that renders only when `import.meta.env.DEV`. Follow the existing `NavLink` + `NavItem` object pattern used for all other nav items, including the collapsed icon-rail state (tooltip + centered icon). Add `Palette` from lucide-react to the existing icon imports.
+
+## Inner Layout
+
+The design system page adds its own inner two-column layout inside `DashboardLayout`'s content area:
+- Inner sidebar: `position: sticky; top: 0` inside a flex row — not `position: fixed`, so it coexists correctly with the app sidebar in both expanded and collapsed states
+- Anchor link scroll: use `element.scrollIntoView({ behavior: 'smooth' })` via `onClick` handlers rather than native fragment navigation, since `DashboardLayout` uses an `overflow-y: auto` content wrapper rather than window-level scrolling
 
 ## Design Decisions
 
