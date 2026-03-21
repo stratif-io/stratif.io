@@ -6,7 +6,7 @@ import { PivotToolbar } from './PivotToolbar'
 import { ZoneBar } from './ZoneBar'
 import { FilterBar } from '../shared/FilterBar'
 import { rowsToCsv, downloadCsv } from './csvExport'
-import type { ZoneCol, LeafMeta, FilterEntry, PivotTableProps } from './types'
+import type { ZoneCol, FilterEntry, PivotTableProps } from './types'
 import { buildLeafMeta } from './types'
 // FilterEntry used for pivotFilters state
 
