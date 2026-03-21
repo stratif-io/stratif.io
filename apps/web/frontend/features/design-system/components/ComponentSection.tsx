@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
+
 interface ComponentSectionProps {
   id: string
   title: string
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export function ComponentSection({ id, title, children }: ComponentSectionProps) {
@@ -15,7 +17,7 @@ export function ComponentSection({ id, title, children }: ComponentSectionProps)
 
 interface ComponentRowProps {
   label: string
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export function ComponentRow({ label, children }: ComponentRowProps) {
