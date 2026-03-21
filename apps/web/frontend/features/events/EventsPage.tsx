@@ -11,6 +11,7 @@ import {
   useSchemaConfig,
 } from '@/features/connections/hooks/useConnectionsData'
 import { Card, CardContent } from '@/components/ui/card'
+import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Button } from '@/components/ui/button'
 import { QueryError } from '@/components/ui/query-error'
 import { PageTransition } from '@/components/layout/PageTransition'
@@ -273,7 +274,8 @@ export function EventsPage() {
             </Button>
           </div>
         </div>
-        <Card>
+        <Card className="relative overflow-hidden">
+          <CardLoadingBar loading={isFetching} />
           <CardContent className="p-0">
             <EventsTable
                 data={events}

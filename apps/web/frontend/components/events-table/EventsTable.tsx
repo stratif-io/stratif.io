@@ -6,7 +6,6 @@ import { FilterBar } from '@/components/shared/FilterBar'
 import { FilterSelect } from '@/components/FilterSelect'
 import { Pagination } from '@/components/shared/Pagination'
 import { DataTable } from '@/components/data-table/DataTable'
-import { Spinner } from '@/components/ui/spinner'
 import type { EventsTableProps, FilterField, CustomProperty } from './types'
 
 // ── ColumnTextFilter ─────────────────────────────────────────────────────────
@@ -397,7 +396,7 @@ export function EventsTable({
       })),
   ]
 
-  const filterToolbar = isFetching ? <Spinner className="h-3.5 w-3.5" /> : null
+  const filterToolbar = null
 
   return (
     <div className="flex flex-col h-full">
