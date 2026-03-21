@@ -53,7 +53,7 @@ export function EventsPage() {
   const { data: filterConfig } = useFilterConfig(activeConnectionId ?? '')
   const { data: filterOptions } = useFilterOptions(activeConnectionId ?? '')
   const { data: schemaConfig } = useSchemaConfig(activeConnectionId ?? '')
-  const filterFields = filterConfig?.filter_fields ?? []
+  const filterFields = useMemo(() => filterConfig?.filter_fields ?? [], [filterConfig?.filter_fields])
   const customProperties = useMemo(
     () => schemaConfig?.custom_properties ?? [],
     [schemaConfig?.custom_properties]
