@@ -5,7 +5,6 @@ import { FilterSelect } from '@/components/FilterSelect'
 import { DbLogo } from '@/components/DbLogo'
 import { FilterBar } from '@/components/shared/FilterBar'
 import { GlobalFilters } from '@/components/GlobalFilters'
-import { DimensionTreeSelect } from '@/components/DimensionTreeSelect'
 import { subDays } from 'date-fns'
 import type { DateRange } from '@/types'
 
@@ -65,6 +64,25 @@ export function AppComponentsSection() {
         </div>
       </ComponentRow>
 
+      <ComponentRow label="FilterSelect (tree)">
+        <div className="w-56">
+          <FilterSelect
+            mode="single"
+            tree={true}
+            options={[
+              { value: 'country', label: 'Country', category: 'Location' },
+              { value: 'city', label: 'City', category: 'Location' },
+              { value: 'browser', label: 'Browser', category: 'Device' },
+              { value: 'os', label: 'OS', category: 'Device' },
+              { value: 'event_name', label: 'Event Name', category: 'Event' },
+            ]}
+            value={null}
+            onChange={() => {}}
+            placeholder="Select dimension…"
+          />
+        </div>
+      </ComponentRow>
+
       <ComponentRow label="DbLogo">
         <div className="flex items-center gap-4">
           <DbLogo dbType="duckdb" size={28} />
@@ -97,21 +115,6 @@ export function AppComponentsSection() {
         </div>
       </ComponentRow>
 
-      <ComponentRow label="DimensionTreeSelect (deprecated)">
-        <div className="w-56">
-          <DimensionTreeSelect
-            value={null}
-            onChange={() => {}}
-            dimensions={[
-              { value: 'country', label: 'Country', category: 'Location' },
-              { value: 'city', label: 'City', category: 'Location' },
-              { value: 'browser', label: 'Browser', category: 'Device' },
-              { value: 'os', label: 'OS', category: 'Device' },
-            ]}
-            placeholder="Select dimension…"
-          />
-        </div>
-      </ComponentRow>
     </ComponentSection>
   )
 }
