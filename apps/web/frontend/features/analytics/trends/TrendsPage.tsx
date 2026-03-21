@@ -22,7 +22,7 @@ import { fetchPivotOptions } from '@/lib/api'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendChart } from './components/TrendChart'
 import { TrendFilters } from './components/TrendFilters'
-import { DimensionTreeSelect } from '@/components/DimensionTreeSelect'
+import { FilterSelect } from '@/components/FilterSelect'
 import { SPACING, TYPOGRAPHY, ICON_SIZES, QUERY_STALE_TIME } from '@/lib/constants'
 
 export function TrendsPage() {
@@ -258,10 +258,12 @@ export function TrendsPage() {
                   {dimensions.length > 0 && (
                     <div className="w-[min(180px,45vw)] flex gap-1">
                       <div className="flex-1">
-                        <DimensionTreeSelect
+                        <FilterSelect
+                          mode="single"
+                          tree={true}
+                          options={dimensions}
                           value={breakdownDimension}
-                          onChange={(val) => setBreakdownDimension(val)}
-                          dimensions={dimensions}
+                          onChange={(val) => setBreakdownDimension(val as string)}
                           placeholder="Break down by…"
                         />
                       </div>
