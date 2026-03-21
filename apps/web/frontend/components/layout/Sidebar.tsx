@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   ChevronLeft,
   ChevronRight,
@@ -114,7 +114,7 @@ export function Sidebar() {
   }
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <button
@@ -134,19 +134,23 @@ export function Sidebar() {
         )}
       >
         {/* Logo */}
-        <div className="flex h-14 shrink-0 items-center border-b px-3">
+        <div className="flex h-20 shrink-0 items-center border-b px-4">
           <Link
             to={{ pathname: '/dashboard', search: location.search }}
             className={cn(
               'flex items-center overflow-hidden',
-              sidebarOpen ? 'gap-1.5' : 'justify-center w-full'
+              sidebarOpen ? 'w-full gap-3' : 'justify-center w-full'
             )}
           >
-            <span className="text-xs text-muted-foreground shrink-0">$</span>
-            {sidebarOpen && (
-              <span className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
-                stratif.io
-              </span>
+            {sidebarOpen ? (
+              <>
+                <img src="/favicon-color.svg" alt="" className="h-10 w-10 shrink-0 dark:hidden" />
+                <img src="/text-light.svg" alt="stratif.io" className="h-10 w-auto dark:hidden" />
+                <img src="/favicon-color.svg" alt="" className="h-10 w-10 shrink-0 hidden dark:block" />
+                <img src="/text-dark.svg" alt="stratif.io" className="h-10 w-auto hidden dark:block" />
+              </>
+            ) : (
+              <img src="/favicon-color.svg" alt="stratif.io" className="h-8 w-8" />
             )}
           </Link>
         </div>
@@ -219,6 +223,6 @@ export function Sidebar() {
           </button>
         </div>
       </aside>
-    </TooltipProvider>
+    </>
   )
 }

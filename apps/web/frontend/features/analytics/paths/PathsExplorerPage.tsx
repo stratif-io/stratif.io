@@ -29,12 +29,12 @@ const TIME_UNITS = [
 ] as const
 
 const STEP_COLORS = [
-  'bg-chart-1/15 text-chart-1',
-  'bg-chart-2/15 text-chart-2',
-  'bg-chart-3/15 text-chart-3',
-  'bg-chart-4/15 text-chart-4',
-  'bg-chart-5/15 text-chart-5',
-  'bg-chart-1/10 text-chart-1',
+  'bg-[hsl(var(--chart-1)/0.15)] text-[hsl(var(--chart-1))]',
+  'bg-[hsl(var(--chart-2)/0.15)] text-[hsl(var(--chart-2))]',
+  'bg-[hsl(var(--chart-3)/0.15)] text-[hsl(var(--chart-3))]',
+  'bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))]',
+  'bg-[hsl(var(--chart-5)/0.15)] text-[hsl(var(--chart-5))]',
+  'bg-[hsl(var(--chart-1)/0.10)] text-[hsl(var(--chart-1))]',
 ]
 
 function hashEventName(s: string): number {
@@ -57,9 +57,9 @@ function formatTime(seconds: number | null): string {
 }
 
 function getRankLabel(idx: number) {
-  if (idx === 0) return 'text-yellow-600 dark:text-yellow-400'
+  if (idx === 0) return 'text-[hsl(var(--chart-4))]'
   if (idx === 1) return 'text-muted-foreground'
-  if (idx === 2) return 'text-orange-600 dark:text-orange-400'
+  if (idx === 2) return 'text-[hsl(var(--chart-3))]'
   return 'text-muted-foreground'
 }
 
@@ -468,7 +468,7 @@ export function PathsExplorerPage() {
             {hasActiveFilters && (
               <button
                 onClick={handleReset}
-                className="flex items-center gap-1.5 h-9 px-3 rounded-lg border bg-background shadow-sm text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 h-10 px-3 rounded-lg border bg-background shadow-sm text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Reset

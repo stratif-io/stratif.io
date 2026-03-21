@@ -26,6 +26,7 @@ interface LineChartProps {
   showLegend?: boolean
   loading?: boolean
   ariaLabel?: string
+  ariaDescription?: string
 }
 
 export function LineChartComponent({
@@ -36,15 +37,23 @@ export function LineChartComponent({
   showGrid = true,
   showLegend = true,
   ariaLabel,
+  ariaDescription,
 }: LineChartProps) {
   const reducedMotion = useReducedMotion()
   const defaultLabel = lines.map((l) => l.name || l.dataKey).join(' and ') + ' line chart'
+  const descId = `line-chart-desc-${lines.map((l) => l.dataKey).join('-')}`
   return (
     <div
       role="img"
       aria-label={ariaLabel ?? defaultLabel}
+      aria-describedby={ariaDescription ? descId : undefined}
       className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
     >
+      {ariaDescription && (
+        <p id={descId} className="sr-only">
+          {ariaDescription}
+        </p>
+      )}
       <ResponsiveContainer width="100%" height={height}>
         <RechartsLineChart data={data} margin={CHART_MARGINS.default}>
           {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border opacity-50" />}

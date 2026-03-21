@@ -40,4 +40,6 @@ export interface EventsTableProps {
   onPageChange: (page: number) => void
   onUserClick: (userId: string) => void
   connectionId?: string | null
+  colVisibility?: import('@tanstack/react-table').VisibilityState
+  onColumnVisibilityChange?: (v: import('@tanstack/react-table').VisibilityState) => void
 }

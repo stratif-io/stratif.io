@@ -11,6 +11,7 @@ interface AreaChartProps {
   gradientId?: string
   height?: number
   ariaLabel?: string
+  ariaDescription?: string
 }
 
 export function AreaChartComponent({
@@ -21,14 +22,22 @@ export function AreaChartComponent({
   gradientId = 'colorGradient',
   height = 300,
   ariaLabel,
+  ariaDescription,
 }: AreaChartProps) {
   const reducedMotion = useReducedMotion()
+  const descId = `area-chart-desc-${gradientId}`
   return (
     <div
       role="img"
       aria-label={ariaLabel ?? `${name || dataKey} area chart`}
+      aria-describedby={ariaDescription ? descId : undefined}
       className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
     >
+      {ariaDescription && (
+        <p id={descId} className="sr-only">
+          {ariaDescription}
+        </p>
+      )}
       <ResponsiveContainer width="100%" height={height}>
         <RechartsAreaChart data={data} margin={CHART_MARGINS.default}>
           <defs>

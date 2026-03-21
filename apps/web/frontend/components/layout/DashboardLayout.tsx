@@ -21,7 +21,7 @@ export function DashboardLayout() {
         )}
       >
         <Header />
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main id="main-content" className="p-4 sm:p-6 lg:p-8">
           <div className="mx-auto w-full max-w-[var(--content-max-width)]">
             <Outlet />
           </div>
