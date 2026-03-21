@@ -30,8 +30,8 @@ export interface EventsTableProps {
   customProperties: CustomProperty[]
   filterOptions: Record<string, string[]> // accepted for API compat; dim cols use click-to-filter
   allEventNames: string[]
-  columnFilters: Record<string, string>
-  onColumnFilterChange: (field: string, value: string) => void
+  columnFilters: Record<string, string[]>
+  onColumnFilterChange: (field: string, values: string[]) => void
   onColumnFilterClear: (field: string) => void
   eventNameFilter: string[]
   onEventNameFilterChange: (v: string[]) => void

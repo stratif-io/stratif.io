@@ -6,7 +6,6 @@ import { FilterBar } from '@/components/shared/FilterBar'
 import { FilterSelect } from '@/components/FilterSelect'
 import { Pagination } from '@/components/shared/Pagination'
 import { DataTable } from '@/components/data-table/DataTable'
-import { Spinner } from '@/components/ui/spinner'
 import type { EventsTableProps, FilterField, CustomProperty } from './types'
 
 // ── ColumnTextFilter ─────────────────────────────────────────────────────────
@@ -223,8 +222,13 @@ export function EventsTable({
     [onEventNameFilterChange, eventNameFilter],
   )
   const handleDimFilter = useCallback(
-    (field: string, val: string) => onColumnFilterChange(field, val),
-    [onColumnFilterChange],
+    (field: string, val: string) => {
+      const current = columnFilters[field] ?? []
+      const next = current.includes(val) ? current.filter((v) => v !== val) : [...current, val]
+      if (next.length === 0) onColumnFilterClear(field)
+      else onColumnFilterChange(field, next)
+    },
+    [columnFilters, onColumnFilterChange, onColumnFilterClear],
   )
 
   const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(
@@ -297,11 +301,11 @@ export function EventsTable({
                 mode="multi"
                 searchable={suggestions.length > 8}
                 size="sm"
-                value={columnFilters[col.id] ? [columnFilters[col.id]] : []}
+                value={columnFilters[col.id] ?? []}
                 onChange={(v) => {
                   const vals = v as string[]
                   if (vals.length === 0) onColumnFilterClear(col.id)
-                  else onColumnFilterChange(col.id, vals[vals.length - 1])
+                  else onColumnFilterChange(col.id, vals)
                 }}
                 options={[...suggestions].sort((a, b) => a.localeCompare(b)).map((v) => ({ value: v, label: v }))}
                 placeholder={col.label}
@@ -311,8 +315,8 @@ export function EventsTable({
           ) : (
             <ColumnTextFilter
               placeholder={col.label}
-              value={columnFilters[col.id] ?? ''}
-              onChange={(v) => v ? onColumnFilterChange(col.id, v) : onColumnFilterClear(col.id)}
+              value={columnFilters[col.id]?.[0] ?? ''}
+              onChange={(v) => v ? onColumnFilterChange(col.id, [v]) : onColumnFilterClear(col.id)}
             />
           ),
           size: 150,
@@ -384,15 +388,15 @@ export function EventsTable({
       ? [{ label: 'user', value: userIdFilter, onClear: () => onUserIdFilterChange('') }]
       : []),
     ...Object.entries(columnFilters)
-      .filter(([, v]) => v)
-      .map(([field, value]) => ({
+      .filter(([, v]) => v?.length)
+      .map(([field, values]) => ({
         label: field,
-        value,
+        value: values.join(', '),
         onClear: () => onColumnFilterClear(field),
       })),
   ]
 
-  const filterToolbar = isFetching ? <Spinner className="h-3.5 w-3.5" /> : null
+  const filterToolbar = null
 
   return (
     <div className="flex flex-col h-full">
