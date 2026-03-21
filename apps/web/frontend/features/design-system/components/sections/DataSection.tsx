@@ -84,8 +84,55 @@ export function DataSection() {
             ] }}
             colDefsLoading={false}
             activeFilters={{}}
-            fetchRows={async () => ({ rows: [] })}
-            fetchFilterValues={async () => []}
+            fetchRows={async ({ rowGroups, valueCols, pivotCols }) => {
+              if (rowGroups.length === 0 && valueCols.length === 0) return { rows: [] }
+              const fakeRows = [
+                { event_name: 'page_view', country: 'US', browser: 'Chrome', count: 1240, users: 890 },
+                { event_name: 'page_view', country: 'GB', browser: 'Safari', count: 540, users: 410 },
+                { event_name: 'click', country: 'US', browser: 'Chrome', count: 830, users: 620 },
+                { event_name: 'click', country: 'DE', browser: 'Firefox', count: 310, users: 280 },
+                { event_name: 'signup', country: 'US', browser: 'Chrome', count: 142, users: 142 },
+                { event_name: 'signup', country: 'FR', browser: 'Safari', count: 58, users: 58 },
+                { event_name: 'purchase', country: 'US', browser: 'Chrome', count: 38, users: 35 },
+                { event_name: 'purchase', country: 'GB', browser: 'Safari', count: 12, users: 12 },
+              ]
+              if (pivotCols.length > 0) {
+                const pivotField = pivotCols[0].colId
+                const valueField = valueCols[0]?.colId ?? 'count'
+                const pivotValues = [...new Set(fakeRows.map((r) => r[pivotField as keyof typeof r] as string))]
+                const grouped: Record<string, Record<string, unknown>> = {}
+                const rowField = rowGroups[0]?.colId ?? 'event_name'
+                for (const row of fakeRows) {
+                  const key = row[rowField as keyof typeof row] as string
+                  if (!grouped[key]) grouped[key] = { [rowField]: key }
+                  const pv = row[pivotField as keyof typeof row] as string
+                  grouped[key][pv] = row[valueField as keyof typeof row]
+                }
+                const colDefs = [
+                  { field: rowField, headerName: rowField },
+                  ...pivotValues.map((v) => ({ field: v, headerName: v })),
+                ]
+                return { rows: Object.values(grouped), columnDefs: colDefs }
+              }
+              const rowField = rowGroups[0]?.colId ?? 'event_name'
+              const grouped: Record<string, Record<string, unknown>> = {}
+              for (const row of fakeRows) {
+                const key = row[rowField as keyof typeof row] as string
+                if (!grouped[key]) grouped[key] = { [rowField]: key }
+                for (const vc of valueCols) {
+                  grouped[key][vc.colId] = ((grouped[key][vc.colId] as number) ?? 0) + (row[vc.colId as keyof typeof row] as number ?? 0)
+                }
+              }
+              return { rows: Object.values(grouped) }
+            }}
+            fetchFilterValues={async (field) => {
+              const vals: Record<string, string[]> = {
+                event_name: ['page_view', 'click', 'signup', 'purchase'],
+                country: ['US', 'GB', 'DE', 'FR'],
+                browser: ['Chrome', 'Safari', 'Firefox'],
+              }
+              return vals[field] ?? []
+            }}
           />
         </div>
       </ComponentRow>
