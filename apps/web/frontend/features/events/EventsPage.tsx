@@ -36,7 +36,7 @@ export function EventsPage() {
   // Column-level filters (local to this page)
   const [eventNameFilter, setEventNameFilter] = useState<string[]>([])
   const [userIdFilter, setUserIdFilter] = useState('')
-  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({})
+  const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
 
   // Timeline modal
   const [timelineUserId, setTimelineUserId] = useState<string | null>(null)
@@ -86,7 +86,12 @@ export function EventsPage() {
   const allEventNames = eventsData?.events ?? []
 
   // Merge global store filters with local column filters (local takes precedence)
-  const mergedFilters: Record<string, string | null> = { ...activeFilters, ...columnFilters }
+  const mergedFilters: Record<string, string | null> = {
+    ...activeFilters,
+    ...Object.fromEntries(
+      Object.entries(columnFilters).map(([k, v]) => [k, v.length ? v.join('|') : null])
+    ),
+  }
 
   const {
     data: rawEventsData,
@@ -132,8 +137,8 @@ export function EventsPage() {
     properties: e.properties,
   }))
 
-  const handleColumnFilterChange = useCallback((field: string, value: string) => {
-    setColumnFilters((prev) => ({ ...prev, [field]: value }))
+  const handleColumnFilterChange = useCallback((field: string, values: string[]) => {
+    setColumnFilters((prev) => ({ ...prev, [field]: values }))
     setPage(1)
   }, [])
 
