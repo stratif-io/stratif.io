@@ -82,3 +82,37 @@ class TestMissionControlEndpoint:
         )
         body = response.json()
         assert 0.0 <= body["current"]["dau_mau_ratio"] <= 1.0
+
+    def test_new_users_excludes_users_with_earlier_history(self, client):
+        # user-1's first event is 2024-01-15, user-2's first event is 2024-01-16
+        # Querying only 2024-01-16: user-2 is new, user-1 is returning
+        response = client.get(
+            "/api/mission-control",
+            params={"start_date": "2024-01-16", "end_date": "2024-01-16"},
+        )
+        body = response.json()
+        # user-1's first event (2024-01-15) is outside this window, so not new
+        # user-1 has no events on 2024-01-16, so unique_users=1 (user-2 only)
+        assert body["current"]["new_users"] == 1  # only user-2
+        assert body["current"]["returning_users"] == 0  # user-1 not active on 2024-01-16
+
+    def test_dau_mau_ratio_nonzero_when_data_exists(self, client):
+        response = client.get(
+            "/api/mission-control",
+            params={"start_date": "2024-01-15", "end_date": "2024-01-16"},
+        )
+        body = response.json()
+        # There are 2 users active in this 2-day window — ratio must be > 0
+        assert body["current"]["dau_mau_ratio"] > 0.0
+
+    def test_dau_mau_mau_includes_users_before_start_date(self, client):
+        # Querying only 2024-01-16: user-1 (from 2024-01-15) is in the 28-day MAU window
+        response = client.get(
+            "/api/mission-control",
+            params={"start_date": "2024-01-16", "end_date": "2024-01-16"},
+        )
+        body = response.json()
+        # DAU = users on 2024-01-16 = 1 (user-2)
+        # MAU = users in 28 days ending 2024-01-16 = 2 (user-1 + user-2)
+        # ratio = 1/2 = 0.5
+        assert body["current"]["dau_mau_ratio"] == pytest.approx(0.5, abs=0.01)
