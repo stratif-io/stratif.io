@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { format } from 'date-fns'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import * as XLSX from 'xlsx'
 import { Download, Columns3 } from 'lucide-react'
 import { useAppStore } from '@/stores'
@@ -11,6 +11,7 @@ import {
   useSchemaConfig,
 } from '@/features/connections/hooks/useConnectionsData'
 import { Card, CardContent } from '@/components/ui/card'
+import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Button } from '@/components/ui/button'
 import { QueryError } from '@/components/ui/query-error'
 import { PageTransition } from '@/components/layout/PageTransition'
@@ -36,7 +37,7 @@ export function EventsPage() {
   // Column-level filters (local to this page)
   const [eventNameFilter, setEventNameFilter] = useState<string[]>([])
   const [userIdFilter, setUserIdFilter] = useState('')
-  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({})
+  const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
 
   // Timeline modal
   const [timelineUserId, setTimelineUserId] = useState<string | null>(null)
@@ -86,7 +87,12 @@ export function EventsPage() {
   const allEventNames = eventsData?.events ?? []
 
   // Merge global store filters with local column filters (local takes precedence)
-  const mergedFilters: Record<string, string | null> = { ...activeFilters, ...columnFilters }
+  const mergedFilters: Record<string, string | null> = {
+    ...activeFilters,
+    ...Object.fromEntries(
+      Object.entries(columnFilters).map(([k, v]) => [k, v.length ? v.join('|') : null])
+    ),
+  }
 
   const {
     data: rawEventsData,
@@ -122,6 +128,7 @@ export function EventsPage() {
         connection_id: activeConnectionId ?? undefined,
       }),
     staleTime: QUERY_STALE_TIME.default,
+    placeholderData: keepPreviousData,
   })
 
   const events: RawEvent[] = (rawEventsData?.data ?? []).map((e, i) => ({
@@ -132,8 +139,8 @@ export function EventsPage() {
     properties: e.properties,
   }))
 
-  const handleColumnFilterChange = useCallback((field: string, value: string) => {
-    setColumnFilters((prev) => ({ ...prev, [field]: value }))
+  const handleColumnFilterChange = useCallback((field: string, values: string[]) => {
+    setColumnFilters((prev) => ({ ...prev, [field]: values }))
     setPage(1)
   }, [])
 
@@ -267,14 +274,15 @@ export function EventsPage() {
             </Button>
           </div>
         </div>
-        <Card>
+        <Card className="relative overflow-hidden">
+          <CardLoadingBar loading={isFetching} />
           <CardContent className="p-0">
             <EventsTable
                 data={events}
                 total={rawEventsData?.total ?? 0}
                 page={page}
                 pageSize={limit}
-                loading={isLoading || isFetching}
+                loading={isLoading}
                 isFetching={isFetching}
                 sortField={sortField}
                 sortOrder={sortOrder}
