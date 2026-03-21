@@ -129,3 +129,85 @@ class TestMissionControlEndpoint:
         # MAU = users in 28 days ending 2024-01-16 = 2 (user-1 + user-2)
         # ratio = 1/2 = 0.5
         assert body["current"]["dau_mau_ratio"] == pytest.approx(0.5, abs=0.01)
+
+
+class TestMissionControlTrendEndpoint:
+    def test_trend_happy_path(self, client):
+        response = client.get(
+            "/api/mission-control/trend",
+            params={
+                "metric": "total_events",
+                "start_date": "2024-01-15",
+                "end_date": "2024-01-16",
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["metric"] == "total_events"
+        assert isinstance(body["data"], list)
+        assert all("date" in d and "value" in d for d in body["data"])
+
+    def test_trend_unknown_metric_returns_400(self, client):
+        response = client.get(
+            "/api/mission-control/trend",
+            params={
+                "metric": "bogus_metric",
+                "start_date": "2024-01-15",
+                "end_date": "2024-01-16",
+            },
+        )
+        assert response.status_code == 400
+
+    def test_trend_unique_users_returns_daily_counts(self, client):
+        response = client.get(
+            "/api/mission-control/trend",
+            params={
+                "metric": "unique_users",
+                "start_date": "2024-01-15",
+                "end_date": "2024-01-16",
+            },
+        )
+        body = response.json()
+        assert all(d["value"] >= 0 for d in body["data"])
+
+    def test_trend_new_users_non_negative(self, client):
+        response = client.get(
+            "/api/mission-control/trend",
+            params={
+                "metric": "new_users",
+                "start_date": "2024-01-15",
+                "end_date": "2024-01-16",
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert all(d["value"] >= 0 for d in body["data"])
+
+    def test_trend_dau_mau_ratio_between_0_and_1(self, client):
+        response = client.get(
+            "/api/mission-control/trend",
+            params={
+                "metric": "dau_mau_ratio",
+                "start_date": "2024-01-15",
+                "end_date": "2024-01-16",
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert all(0.0 <= d["value"] <= 1.0 for d in body["data"])
+
+    def test_trend_returns_all_dates_in_range(self, client):
+        """new_users and returning_users fill in 0s for empty days."""
+        response = client.get(
+            "/api/mission-control/trend",
+            params={
+                "metric": "new_users",
+                "start_date": "2024-01-14",
+                "end_date": "2024-01-16",
+            },
+        )
+        body = response.json()
+        dates = [d["date"] for d in body["data"]]
+        assert "2024-01-14" in dates
+        assert "2024-01-15" in dates
+        assert "2024-01-16" in dates
