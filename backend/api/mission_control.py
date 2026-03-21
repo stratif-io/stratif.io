@@ -230,16 +230,19 @@ def get_mission_control_trend(
     elif metric == "new_users":
         rows = db.execute(
             """
-            SELECT DATE(MIN(timestamp)) AS first_day, COUNT(*) AS cnt
-            FROM events
-            GROUP BY user_id
-            HAVING DATE(MIN(timestamp)) >= ? AND DATE(MIN(timestamp)) <= ?
+            SELECT first_day, COUNT(*) AS cnt
+            FROM (
+                SELECT user_id, DATE(MIN(timestamp)) AS first_day
+                FROM events
+                GROUP BY user_id
+            ) sub
+            WHERE first_day >= ? AND first_day <= ?
+            GROUP BY first_day
+            ORDER BY first_day
             """,
             [str(start), str(end)],
         )
-        by_day: dict[str, int] = {}
-        for r in rows:
-            by_day[str(r[0])] = r[1] or 0
+        by_day: dict[str, int] = {str(r[0]): r[1] or 0 for r in rows}
         current_day = start
         data = []
         while current_day <= end:
@@ -255,10 +258,15 @@ def get_mission_control_trend(
 
         new_rows = db.execute(
             """
-            SELECT DATE(MIN(timestamp)) AS first_day, COUNT(*) AS cnt
-            FROM events
-            GROUP BY user_id
-            HAVING DATE(MIN(timestamp)) >= ? AND DATE(MIN(timestamp)) <= ?
+            SELECT first_day, COUNT(*) AS cnt
+            FROM (
+                SELECT user_id, DATE(MIN(timestamp)) AS first_day
+                FROM events
+                GROUP BY user_id
+            ) sub
+            WHERE first_day >= ? AND first_day <= ?
+            GROUP BY first_day
+            ORDER BY first_day
             """,
             [str(start), str(end)],
         )
