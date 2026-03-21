@@ -5,6 +5,7 @@ import { FilterSelect } from '@/components/FilterSelect'
 import { DbLogo } from '@/components/DbLogo'
 import { FilterBar } from '@/components/shared/FilterBar'
 import { GlobalFilters } from '@/components/GlobalFilters'
+import { DimensionTreeSelect } from '@/components/DimensionTreeSelect'
 import { subDays } from 'date-fns'
 import type { DateRange } from '@/types'
 
@@ -93,6 +94,22 @@ export function AppComponentsSection() {
       <ComponentRow label="GlobalFilters">
         <div className="w-full max-w-2xl">
           <GlobalFilters />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="DimensionTreeSelect (deprecated)">
+        <div className="w-56">
+          <DimensionTreeSelect
+            value={null}
+            onChange={() => {}}
+            dimensions={[
+              { value: 'country', label: 'Country', category: 'Location' },
+              { value: 'city', label: 'City', category: 'Location' },
+              { value: 'browser', label: 'Browser', category: 'Device' },
+              { value: 'os', label: 'OS', category: 'Device' },
+            ]}
+            placeholder="Select dimension…"
+          />
         </div>
       </ComponentRow>
     </ComponentSection>

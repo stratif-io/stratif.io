@@ -1,6 +1,7 @@
 import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { DataTable } from '@/components/data-table'
 import { EventsDataTable, generateMockEvents } from '@/components/data-table'
+import { EventsTable } from '@/components/events-table/EventsTable'
 import type { ColumnDef } from '@tanstack/react-table'
 
 interface SampleRow {
@@ -25,6 +26,34 @@ const sampleRows: SampleRow[] = [
 
 const mockEvents = generateMockEvents(5)
 
+const eventsTableProps = {
+  data: [
+    { event_id: '1', user_id: 'u1', event_name: 'page_view', timestamp: '2024-01-07T10:00:00Z' },
+    { event_id: '2', user_id: 'u2', event_name: 'click', timestamp: '2024-01-07T10:01:00Z' },
+    { event_id: '3', user_id: 'u1', event_name: 'signup', timestamp: '2024-01-07T10:02:00Z' },
+  ],
+  total: 3,
+  page: 1,
+  pageSize: 20,
+  loading: false,
+  sortField: 'timestamp',
+  sortOrder: 'desc' as const,
+  onSortChange: () => {},
+  filterFields: [{ field: 'event_name', label: 'Event' }],
+  customProperties: [],
+  filterOptions: {},
+  allEventNames: ['page_view', 'click', 'signup'],
+  columnFilters: {},
+  onColumnFilterChange: () => {},
+  onColumnFilterClear: () => {},
+  eventNameFilter: [],
+  onEventNameFilterChange: () => {},
+  userIdFilter: '',
+  onUserIdFilterChange: () => {},
+  onPageChange: () => {},
+  onUserClick: () => {},
+}
+
 export function DataSection() {
   return (
     <ComponentSection id="data" title="Data Display">
@@ -38,6 +67,12 @@ export function DataSection() {
           <EventsDataTable events={mockEvents} />
         </div>
       </ComponentRow>
+      <ComponentRow label="EventsTable">
+        <div className="w-full border rounded-md overflow-hidden">
+          <EventsTable {...eventsTableProps} />
+        </div>
+      </ComponentRow>
+
       <ComponentRow label="PivotTable">
         <p className="text-sm text-muted-foreground">Requires live data connection.</p>
       </ComponentRow>
