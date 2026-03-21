@@ -34,23 +34,15 @@ export function ZoneBar({
 }: ZoneBarProps) {
   const usedIds = new Set([...rowGroups, ...pivotCols, ...valueCols].map((c) => c.colId))
 
-  function addToZone(
-    setter: (cols: ZoneCol[]) => void,
-    current: ZoneCol[],
-    colId: string,
-    aggFunc?: string,
-  ) {
+  function addToZone(setter: (cols: ZoneCol[]) => void, current: ZoneCol[], colId: string) {
     const meta = leafCols.find((c) => c.colId === colId)
     if (!meta) return
-    setter([
-      ...current,
-      {
-        colId: meta.colId,
-        label: meta.label,
-        aggFunc: aggFunc ?? meta.allowedAggFuncs?.[0] ?? 'sum',
-        allowedAggFuncs: meta.allowedAggFuncs,
-      },
-    ])
+    setter([...current, {
+      colId: meta.colId,
+      label: meta.label,
+      aggFunc: meta.allowedAggFuncs?.[0] ?? 'sum',
+      allowedAggFuncs: meta.allowedAggFuncs,
+    }])
   }
 
   function removeFromZone(setter: (cols: ZoneCol[]) => void, current: ZoneCol[], colId: string) {
