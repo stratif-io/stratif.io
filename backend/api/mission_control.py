@@ -149,7 +149,11 @@ def get_mission_control(
     filter_clauses: list[str] = []
     filter_params: list = []
     if filters:
-        filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+        try:
+            filters_dict = json.loads(filters)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+        filter_clauses, filter_params = db.build_filter_clauses(filters_dict)
 
     prev_start, prev_end = _compute_previous_period(start, end)
 

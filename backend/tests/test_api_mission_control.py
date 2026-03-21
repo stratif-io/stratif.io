@@ -105,6 +105,19 @@ class TestMissionControlEndpoint:
         # There are 2 users active in this 2-day window — ratio must be > 0
         assert body["current"]["dau_mau_ratio"] > 0.0
 
+    def test_filters_param_accepted(self, client):
+        """Filters param is accepted without error and scopes results."""
+        import json
+        response = client.get(
+            "/api/mission-control",
+            params={
+                "start_date": "2024-01-15",
+                "end_date": "2024-01-16",
+                "filters": json.dumps({}),
+            },
+        )
+        assert response.status_code == 200
+
     def test_dau_mau_mau_includes_users_before_start_date(self, client):
         # Querying only 2024-01-16: user-1 (from 2024-01-15) is in the 28-day MAU window
         response = client.get(
