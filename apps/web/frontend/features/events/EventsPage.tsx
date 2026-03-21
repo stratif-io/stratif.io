@@ -279,7 +279,7 @@ export function EventsPage() {
                 total={rawEventsData?.total ?? 0}
                 page={page}
                 pageSize={limit}
-                loading={isLoading || isFetching}
+                loading={isLoading}
                 isFetching={isFetching}
                 sortField={sortField}
                 sortOrder={sortOrder}
