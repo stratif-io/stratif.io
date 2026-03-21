@@ -51,3 +51,33 @@ export interface PivotTableProps {
   fetchRows: (params: PivotRowsRequest) => Promise<PivotRowsResponse>
   fetchFilterValues: (field: string) => Promise<string[]>
 }
+
+type ColDefInput = {
+  field?: string
+  headerName?: string
+  enableRowGroup?: boolean
+  enablePivot?: boolean
+  enableValue?: boolean
+  allowedAggFuncs?: string[]
+  children?: ColDefInput[]
+}
+
+export function buildLeafMeta(colDefs: ColDefInput[]): LeafMeta[] {
+  const result: LeafMeta[] = []
+  const walk = (cols: ColDefInput[]) => {
+    for (const c of cols) {
+      if (c.children) { walk(c.children); continue }
+      if (!c.field) continue
+      result.push({
+        colId: c.field,
+        label: c.headerName ?? c.field,
+        enableRowGroup: c.enableRowGroup ?? false,
+        enablePivot: c.enablePivot ?? false,
+        enableValue: c.enableValue ?? false,
+        allowedAggFuncs: c.allowedAggFuncs,
+      })
+    }
+  }
+  walk(colDefs)
+  return result
+}
