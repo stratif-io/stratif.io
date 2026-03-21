@@ -81,13 +81,13 @@ const comparisonSeries = [
 export function ChartsSection() {
   return (
     <ComponentSection id="charts" title="Charts">
-      <ComponentRow title="Area Chart" description="Filled area chart for time series data">
+      <ComponentRow label="Area Chart">
         <div className="w-full h-48 border rounded-md p-2">
           <AreaChartComponent data={timeSeriesData} dataKey="value" name="Events" height={160} />
         </div>
       </ComponentRow>
 
-      <ComponentRow title="Bar Chart" description="Grouped bar chart with multiple series">
+      <ComponentRow label="Bar Chart">
         <div className="w-full h-48 border rounded-md p-2">
           <BarChartComponent
             data={barData}
@@ -101,7 +101,7 @@ export function ChartsSection() {
         </div>
       </ComponentRow>
 
-      <ComponentRow title="Line Chart" description="Multi-line chart for trend comparison">
+      <ComponentRow label="Line Chart">
         <div className="w-full h-48 border rounded-md p-2">
           <LineChartComponent
             data={lineData}
@@ -115,25 +115,25 @@ export function ChartsSection() {
         </div>
       </ComponentRow>
 
-      <ComponentRow title="Donut Chart" description="Pie/donut chart for proportional data">
+      <ComponentRow label="Donut Chart">
         <div className="w-64 h-64 border rounded-md p-2">
           <DonutChart data={donutData} height={224} innerRadius={50} outerRadius={85} />
         </div>
       </ComponentRow>
 
-      <ComponentRow title="Funnel Chart" description="Conversion funnel visualization">
+      <ComponentRow label="Funnel Chart">
         <div className="w-full h-64 border rounded-md p-2">
           <FunnelChart data={funnelData} height={224} orientation="horizontal" />
         </div>
       </ComponentRow>
 
-      <ComponentRow title="Heatmap Chart" description="Activity heatmap by day and hour">
+      <ComponentRow label="Heatmap Chart">
         <div className="w-full h-56 border rounded-md p-2 overflow-auto">
           <HeatmapChart data={heatmapData} height={200} cellSize={18} />
         </div>
       </ComponentRow>
 
-      <ComponentRow title="Sparkline Chart" description="Compact inline trend indicator">
+      <ComponentRow label="Sparkline Chart">
         <div className="flex items-center gap-6 border rounded-md p-4">
           <div className="flex flex-col gap-1">
             <span className="text-sm text-muted-foreground">Default</span>
@@ -146,10 +146,7 @@ export function ChartsSection() {
         </div>
       </ComponentRow>
 
-      <ComponentRow
-        title="Comparison Chart"
-        description="Current vs previous period line comparison"
-      >
+      <ComponentRow label="Comparison Chart">
         <div className="w-full h-48 border rounded-md p-2">
           <ComparisonChart
             data={comparisonData}
