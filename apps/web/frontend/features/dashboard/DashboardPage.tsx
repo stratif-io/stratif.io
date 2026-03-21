@@ -54,7 +54,7 @@ function DashboardFirstRun() {
           <div>
             <p className="font-medium">Explore your data</p>
             <p className="text-muted-foreground mt-0.5">
-              Dashboard metrics, activity charts, and top events — all queried live from your
+              Mission Control metrics, activity charts, and top events — all queried live from your
               warehouse.
             </p>
           </div>
@@ -69,7 +69,7 @@ function DashboardFirstRun() {
 export function DashboardPage() {
 
   useEffect(() => {
-    document.title = 'Dashboard — stratif.io'
+    document.title = 'Mission Control — stratif.io'
   }, [])
 
   const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()
@@ -95,7 +95,7 @@ export function DashboardPage() {
     return (
       <PageTransition>
         <div className={SPACING.page}>
-          <h1 className="sr-only">Dashboard</h1>
+          <h1 className="sr-only">Mission Control</h1>
           <DashboardFirstRun />
         </div>
       </PageTransition>
@@ -108,8 +108,8 @@ export function DashboardPage() {
     <PageTransition>
         <div className={SPACING.page}>
           <div className={SPACING.section}>
-            <h1 className="sr-only">Dashboard</h1>
-            <span className={TYPOGRAPHY.pageLabel}>Dashboard</span>
+            <h1 className="sr-only">Mission Control</h1>
+            <span className={TYPOGRAPHY.pageLabel}>Mission Control</span>
 
             {/* Metric Cards */}
             <div className={`grid grid-cols-2 lg:grid-cols-4 ${SPACING.gridGap}`}>
