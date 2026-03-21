@@ -2,6 +2,7 @@ import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { DataTable } from '@/components/data-table'
 import { EventsDataTable, generateMockEvents } from '@/components/data-table'
 import { EventsTable } from '@/components/events-table/EventsTable'
+import { PivotTable } from '@/components/pivot-table/PivotTable'
 import type { ColumnDef } from '@tanstack/react-table'
 
 interface SampleRow {
@@ -74,7 +75,19 @@ export function DataSection() {
       </ComponentRow>
 
       <ComponentRow label="PivotTable">
-        <p className="text-sm text-muted-foreground">Requires live data connection.</p>
+        <div className="w-full border rounded-md overflow-hidden" style={{ height: 400 }}>
+          <PivotTable
+            colDefsData={{ columnDefs: [
+              { field: 'event_name', headerName: 'Event', enableRowGroup: true },
+              { field: 'country', headerName: 'Country', enableRowGroup: true, enablePivot: true },
+              { field: 'count', headerName: 'Count', enableValue: true, allowedAggFuncs: ['sum'] },
+            ] }}
+            colDefsLoading={false}
+            activeFilters={{}}
+            fetchRows={async () => ({ rows: [] })}
+            fetchFilterValues={async () => []}
+          />
+        </div>
       </ComponentRow>
     </ComponentSection>
   )
