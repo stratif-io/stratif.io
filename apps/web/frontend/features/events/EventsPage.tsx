@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { format } from 'date-fns'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import * as XLSX from 'xlsx'
 import { Download, Columns3 } from 'lucide-react'
 import { useAppStore } from '@/stores'
@@ -127,6 +127,7 @@ export function EventsPage() {
         connection_id: activeConnectionId ?? undefined,
       }),
     staleTime: QUERY_STALE_TIME.default,
+    placeholderData: keepPreviousData,
   })
 
   const events: RawEvent[] = (rawEventsData?.data ?? []).map((e, i) => ({
