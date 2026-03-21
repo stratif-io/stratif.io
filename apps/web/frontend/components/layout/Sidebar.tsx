@@ -13,6 +13,7 @@ import {
   Settings,
   Table,
   Database,
+  Palette,
 } from 'lucide-react'
 
 interface NavItem {
@@ -54,6 +55,15 @@ const navGroups: NavGroup[] = [
       { title: 'Connections', href: '/connections', icon: Database },
     ],
   },
+  ...(import.meta.env.DEV
+    ? [
+        {
+          title: 'Developer',
+          icon: Palette,
+          items: [{ title: 'Design System', href: '/design-system', icon: Palette }],
+        } satisfies NavGroup,
+      ]
+    : []),
 ]
 
 function NavLink({

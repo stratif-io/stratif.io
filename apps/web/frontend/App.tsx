@@ -30,6 +30,14 @@ const ConnectionDetailPage = lazy(() =>
   import('@/features/connections').then((m) => ({ default: m.ConnectionDetailPage }))
 )
 
+const DesignSystemPage = import.meta.env.DEV
+  ? lazy(() =>
+      import('@/features/design-system/DesignSystemPage').then((m) => ({
+        default: m.DesignSystemPage,
+      }))
+    )
+  : null
+
 function PageLoader() {
   return (
     <div className={SPACING.page}>
@@ -59,6 +67,9 @@ function App() {
           <Route path="/events" element={<EventsPage />} />
           <Route path="/connections" element={<ConnectionsPage />} />
           <Route path="/connections/:id" element={<ConnectionDetailPage />} />
+          {import.meta.env.DEV && DesignSystemPage && (
+            <Route path="/design-system" element={<DesignSystemPage />} />
+          )}
           <Route path="/settings" element={<Navigate to="/connections" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
