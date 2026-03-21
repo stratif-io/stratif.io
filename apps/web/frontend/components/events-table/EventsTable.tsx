@@ -84,6 +84,7 @@ export interface DimCol {
   getValue: (props: Record<string, unknown>) => unknown
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function buildDimCols(fields: FilterField[], custom: CustomProperty[]): DimCol[] {
   const seen = new Set<string>()
   const STANDARD = new Set(['user_id', 'event_name', 'timestamp', 'session_id'])
@@ -106,6 +107,7 @@ export function buildDimCols(fields: FilterField[], custom: CustomProperty[]): D
 }
 
 /** Default visibility: show core cols + filter fields; hide custom properties. */
+// eslint-disable-next-line react-refresh/only-export-components
 export function defaultVisibility(dimCols: DimCol[], filterFields: FilterField[]): VisibilityState {
   const filterFieldIds = new Set(filterFields.map((f) => f.field))
   const state: VisibilityState = {}
@@ -147,7 +149,7 @@ export function EventsTable({
   page,
   pageSize,
   loading,
-  isFetching,
+  isFetching: _isFetching,
   sortField,
   sortOrder,
   onSortChange,

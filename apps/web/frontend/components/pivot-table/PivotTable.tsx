@@ -6,34 +6,13 @@ import { PivotToolbar } from './PivotToolbar'
 import { ZoneBar } from './ZoneBar'
 import { FilterBar } from '../shared/FilterBar'
 import { rowsToCsv, downloadCsv } from './csvExport'
-import type { ZoneCol, LeafMeta, FilterEntry, PivotTableProps } from './types'
+import type { ZoneCol, FilterEntry, PivotTableProps } from './types'
+import { buildLeafMeta } from './types'
 // FilterEntry used for pivotFilters state
 
 const DEFAULT_ROW_GROUPS: ZoneCol[] = []
 const DEFAULT_PIVOT_COLS: ZoneCol[] = []
 const DEFAULT_VALUE_COLS: ZoneCol[] = []
-
-type ColDefInput = { field?: string; headerName?: string; enableRowGroup?: boolean; enablePivot?: boolean; enableValue?: boolean; allowedAggFuncs?: string[]; children?: ColDefInput[] }
-
-function buildLeafMeta(colDefs: ColDefInput[]): LeafMeta[] {
-  const result: LeafMeta[] = []
-  const walk = (cols: ColDefInput[]) => {
-    for (const c of cols) {
-      if (c.children) { walk(c.children); continue }
-      if (!c.field) continue
-      result.push({
-        colId: c.field,
-        label: c.headerName ?? c.field,
-        enableRowGroup: c.enableRowGroup ?? false,
-        enablePivot: c.enablePivot ?? false,
-        enableValue: c.enableValue ?? false,
-        allowedAggFuncs: c.allowedAggFuncs,
-      })
-    }
-  }
-  walk(colDefs)
-  return result
-}
 
 
 export function PivotTable({
@@ -207,7 +186,7 @@ export function PivotTable({
         {rows.length === 0 && !isQuerying ? (
           <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
             {rowGroups.length === 0 && valueCols.length === 0
-              ? 'Drag columns to Rows and Values to build a pivot table.'
+              ? 'Use + Add in the Rows and Values zones to build a pivot table.'
               : 'No data for current selection.'}
           </div>
         ) : (
