@@ -59,6 +59,7 @@ export interface DataTableProps<TData, TValue> {
   showPagination?: boolean
   showRowSelection?: boolean
   showRowActions?: boolean
+  showExport?: boolean
   rowActions?: RowAction<TData>[]
   onRowClick?: (row: Row<TData>) => void
   onRowView?: (row: Row<TData>) => void
@@ -105,6 +106,7 @@ export function DataTable<TData, TValue>({
   showPagination = true,
   showRowSelection = true,
   showRowActions = true,
+  showExport = true,
   rowActions,
   onRowClick,
   onRowView,
@@ -375,10 +377,12 @@ export function DataTable<TData, TValue>({
         actions={
           <>
             {toolbarActions}
-            <Button variant="outline" size="sm" onClick={exportToCSV}>
-              <Download className="mr-2 h-4 w-4" />
-              Export CSV
-            </Button>
+            {showExport && (
+              <Button variant="outline" size="sm" onClick={exportToCSV}>
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+            )}
           </>
         }
       />

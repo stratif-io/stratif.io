@@ -64,7 +64,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               <Icon
                 className={cn(
                   ICON_SIZES.sm,
-                  loading && 'animate-spin',
+                  loading && 'animate-spin [animation-timing-function:linear]',
                   success && 'animate-in zoom-in-50 duration-300'
                 )}
               />

@@ -26,6 +26,7 @@ interface BarChartProps {
   showLegend?: boolean
   layout?: 'horizontal' | 'vertical'
   ariaLabel?: string
+  ariaDescription?: string
 }
 
 export function BarChartComponent({
@@ -37,16 +38,24 @@ export function BarChartComponent({
   showLegend = true,
   layout = 'horizontal',
   ariaLabel,
+  ariaDescription,
 }: BarChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const defaultLabel = bars.map((b) => b.name || b.dataKey).join(' and ') + ' bar chart'
+  const descId = `bar-chart-desc-${bars.map((b) => b.dataKey).join('-')}`
 
   return (
     <div
       role="img"
       aria-label={ariaLabel ?? defaultLabel}
+      aria-describedby={ariaDescription ? descId : undefined}
       className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
     >
+      {ariaDescription && (
+        <p id={descId} className="sr-only">
+          {ariaDescription}
+        </p>
+      )}
       <ResponsiveContainer width="100%" height={height}>
         <RechartsBarChart
           data={data}

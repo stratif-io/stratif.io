@@ -41,6 +41,12 @@ function PageLoader() {
 function App() {
   return (
     <Suspense fallback={<PageLoader />}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:rounded-md focus:ring-2 focus:ring-ring focus:outline-none"
+      >
+        Skip to content
+      </a>
       <Routes>
         <Route element={<DashboardLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />

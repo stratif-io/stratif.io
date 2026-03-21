@@ -189,6 +189,7 @@ export function GlobalFilters() {
     <div
       role="group"
       aria-label="Global filters"
+      aria-live="polite"
       className="flex items-center h-10 w-full rounded-lg border bg-background shadow-sm divide-x divide-border overflow-x-auto scrollbar-none"
     >
       <div className="shrink-0">
