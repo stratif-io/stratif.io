@@ -28,6 +28,8 @@ import {
   FilterConfigBody,
   SchemaDetectResponse,
   TablesResponse,
+  MissionControlResponse,
+  MissionControlTrendResponse,
 } from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -436,4 +438,38 @@ export const fetchBrowse = (connId: string, catalog?: string, schema?: string) =
 
 export const fetchConnectionCredentials = (connId: string) =>
   fetchApi<{ fields: Record<string, string | null> }>(`/api/connections/${connId}/credentials`)
+
+export const fetchMissionControl = (params: {
+  start_date: string
+  end_date: string
+  filters?: Record<string, string | null>
+  connection_id?: string
+}) => {
+  const searchParams = new URLSearchParams()
+  searchParams.set('start_date', params.start_date)
+  searchParams.set('end_date', params.end_date)
+  const f = serializeFilters(params.filters)
+  if (f) searchParams.set('filters', f)
+  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
+
+  return fetchApi<MissionControlResponse>(`/api/mission-control?${searchParams}`)
+}
+
+export const fetchMissionControlTrend = (params: {
+  metric: string
+  start_date: string
+  end_date: string
+  filters?: Record<string, string | null>
+  connection_id?: string
+}) => {
+  const searchParams = new URLSearchParams()
+  searchParams.set('metric', params.metric)
+  searchParams.set('start_date', params.start_date)
+  searchParams.set('end_date', params.end_date)
+  const f = serializeFilters(params.filters)
+  if (f) searchParams.set('filters', f)
+  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
+
+  return fetchApi<MissionControlTrendResponse>(`/api/mission-control/trend?${searchParams}`)
+}
 

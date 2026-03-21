@@ -349,3 +349,36 @@ export interface SchemaConfigBody {
 export interface FilterConfigBody {
   filter_fields: FilterField[]
 }
+
+export interface MissionControlMetrics {
+  total_events: number
+  unique_users: number
+  total_sessions: number
+  avg_session_duration_sec: number
+  avg_events_per_session: number
+  new_users: number
+  returning_users: number
+  dau_mau_ratio: number
+}
+
+export interface MissionControlPeriod {
+  start_date: string
+  end_date: string
+}
+
+export interface MissionControlResponse {
+  period: MissionControlPeriod
+  previous_period: MissionControlPeriod
+  current: MissionControlMetrics
+  previous: MissionControlMetrics
+}
+
+export interface MissionControlTrendPoint {
+  date: string
+  value: number
+}
+
+export interface MissionControlTrendResponse {
+  metric: string
+  data: MissionControlTrendPoint[]
+}
