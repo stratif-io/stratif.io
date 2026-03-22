@@ -91,7 +91,14 @@ function NavLink({
       )}
     >
       <item.icon className="h-4 w-4 shrink-0" />
-      {!collapsed && <span className="truncate min-w-0">{item.title}</span>}
+      <span
+        className={cn(
+          'truncate min-w-0 transition-[opacity,max-width] duration-200',
+          collapsed ? 'opacity-0 max-w-0 overflow-hidden' : 'opacity-100 max-w-xs'
+        )}
+      >
+        {item.title}
+      </span>
       {!collapsed && item.badge && (
         <span className="ml-auto text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full leading-none">
           {item.badge}
@@ -150,69 +157,49 @@ export function Sidebar() {
             className="flex items-center w-full gap-2 overflow-hidden"
           >
             <img src="/favicon-color.svg" alt="stratif.io" className="h-7 w-7 shrink-0" />
-            <img
-              src="/text-light.svg"
-              alt=""
+            <div
               className={cn(
-                'h-7 w-auto shrink-0 dark:hidden transition-opacity duration-300',
-                sidebarOpen ? 'opacity-100' : 'opacity-0'
+                'flex flex-1 justify-center transition-[opacity,max-width] duration-200 overflow-hidden',
+                sidebarOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'
               )}
-            />
-            <img
-              src="/text-dark.svg"
-              alt=""
-              className={cn(
-                'h-7 w-auto shrink-0 hidden dark:block transition-opacity duration-300',
-                sidebarOpen ? 'opacity-100' : 'opacity-0'
-              )}
-            />
+            >
+              <img src="/text-light.svg" alt="" className="h-7 w-auto shrink-0 dark:hidden" />
+              <img src="/text-dark.svg" alt="" className="h-7 w-auto shrink-0 hidden dark:block" />
+            </div>
           </Link>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
-          {sidebarOpen ? (
-            /* Expanded: flat groups separated by dividers */
-            navGroups.map((group, gi) => (
-              <div key={group.title} className={cn('space-y-0.5', gi > 0 && 'pt-3 mt-3 border-t border-border/40')}>
+          {navGroups.map((group, gi) => (
+            <div
+              key={group.title}
+              className={cn('space-y-0.5', gi > 0 && 'pt-3 mt-3 border-t border-border/40')}
+            >
+              <div
+                className={cn(
+                  'transition-[opacity,max-height] duration-200 overflow-hidden',
+                  sidebarOpen ? 'opacity-100 max-h-8' : 'opacity-0 max-h-0'
+                )}
+              >
                 <p className="px-2.5 pb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground/50">
                   {group.title}
                 </p>
-                {group.items.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    item={item}
-                    collapsed={false}
-                    onClick={handleMobileNavClick}
-                  />
-                ))}
               </div>
-            ))
-          ) : (
-            /* Collapsed: icon rail */
-            <>
-              {navGroups.map((group, gi) => (
-                <div
-                  key={group.title}
-                  className={cn('space-y-0.5', gi > 0 && 'pt-2 mt-2 border-t border-border/50')}
-                >
-                  {group.items.map((item) => (
-                    <NavLink
-                      key={item.href}
-                      item={item}
-                      collapsed={true}
-                      onClick={handleMobileNavClick}
-                    />
-                  ))}
-                </div>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  collapsed={!sidebarOpen}
+                  onClick={handleMobileNavClick}
+                />
               ))}
-            </>
-          )}
+            </div>
+          ))}
         </nav>
 
         {/* Bottom section */}
         <div className="shrink-0 border-t px-2 py-2 space-y-0.5">
-          {/* Collapse toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
@@ -222,18 +209,28 @@ export function Sidebar() {
               !sidebarOpen && 'justify-center px-2'
             )}
           >
-            {sidebarOpen ? (
-              <ChevronLeft className="h-4 w-4 shrink-0" />
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <ChevronRight className="h-4 w-4 shrink-0" />
-                </TooltipTrigger>
-                <TooltipContent side="right" className="text-xs">
-                  Expand sidebar
-                </TooltipContent>
-              </Tooltip>
-            )}
+            <span className="shrink-0">
+              {sidebarOpen ? (
+                <ChevronLeft className="h-4 w-4" />
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ChevronRight className="h-4 w-4" />
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="text-xs">
+                    Expand sidebar
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </span>
+            <span
+              className={cn(
+                'truncate text-sm transition-[opacity,max-width] duration-200',
+                sidebarOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0 overflow-hidden'
+              )}
+            >
+              Collapse
+            </span>
           </button>
         </div>
       </aside>

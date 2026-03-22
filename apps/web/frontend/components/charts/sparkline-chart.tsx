@@ -12,6 +12,7 @@ interface SparklineChartProps {
   showTrend?: boolean
   trendPosition?: 'start' | 'end'
   strokeWidth?: number
+  formatter?: (value: number) => string
 }
 
 export function SparklineChart({
@@ -25,6 +26,7 @@ export function SparklineChart({
   showTrend = false,
   trendPosition: _trendPosition = 'end',
   strokeWidth = 1.5,
+  formatter = (v: number) => v.toLocaleString(),
 }: SparklineChartProps) {
   const uid = useId()
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
@@ -114,7 +116,7 @@ export function SparklineChart({
             {hasLabels && hoveredIdx !== null && labels[hoveredIdx] && (
               <span className="text-muted-foreground">{labels[hoveredIdx]}: </span>
             )}
-            <span className="font-semibold">{hoveredPoint.value.toFixed(1)}%</span>
+            <span className="font-semibold">{formatter(hoveredPoint.value)}</span>
           </div>
         )}
 
