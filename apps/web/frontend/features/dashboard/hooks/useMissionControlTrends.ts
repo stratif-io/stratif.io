@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { fetchMissionControlTrend } from '@/lib/api'
@@ -43,6 +42,7 @@ export function useMissionControlTrends({
   // All share the same enabled flag and staleTime; TanStack Query deduplicates cache.
   // Array length is fixed at compile time via `as const`, so hook call count never changes at runtime.
   const results = METRICS.map((metric) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useQuery({
       queryKey: [
         'missionControlTrend',
