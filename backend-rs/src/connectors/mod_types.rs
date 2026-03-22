@@ -10,7 +10,19 @@ pub enum BackendConnection {
     Databricks(DatabricksClient),
 }
 
-// Stub client types — will be replaced in Task 14
-pub struct SnowflakeClient;
-pub struct ClickHouseClient;
-pub struct DatabricksClient;
+// Snowflake — reqwest-based HTTP client
+pub struct SnowflakeClient {
+    pub http: reqwest::Client,
+    pub account: String,
+    pub token: String,
+}
+
+// ClickHouse — from clickhouse crate
+pub type ClickHouseClient = clickhouse::Client;
+
+// Databricks — reqwest-based HTTP client
+pub struct DatabricksClient {
+    pub http: reqwest::Client,
+    pub host: String,
+    pub token: String,
+}

@@ -1,8 +1,60 @@
+use serde::Deserialize;
+use async_trait::async_trait;
+use anyhow::{Result, anyhow};
+use crate::connectors::backend::DatabaseBackend;
 use crate::connectors::dialect::SqlDialect;
-use crate::connectors::types::CustomProperty;
+use crate::connectors::mod_types::{BackendConnection, DatabricksClient};
+use crate::connectors::types::{BrowseNode, ColumnInfo, CustomProperty, Row, SchemaInfo, SqlValue};
 
 pub struct DatabricksBackend;
 impl DatabricksBackend { pub fn new() -> Self { Self } }
+
+#[derive(Deserialize)]
+pub struct DatabricksCredentials {
+    pub host: String,
+    pub http_path: String,
+    pub token: String,
+}
+
+#[async_trait]
+impl DatabaseBackend for DatabricksBackend {
+    type Credentials = DatabricksCredentials;
+
+    async fn open(&self, creds: &DatabricksCredentials) -> Result<BackendConnection> {
+        let http = reqwest::Client::new();
+        Ok(BackendConnection::Databricks(DatabricksClient {
+            http,
+            host: creds.host.clone(),
+            token: creds.token.clone(),
+        }))
+    }
+
+    async fn execute(&self, _conn: &mut BackendConnection, _query: &str, _params: Vec<SqlValue>) -> Result<Vec<Row>> {
+        Err(anyhow!("Databricks execute: not yet implemented"))
+    }
+    async fn get_tables(&self, _conn: &mut BackendConnection) -> Result<Vec<String>> {
+        Err(anyhow!("Databricks get_tables: not yet implemented"))
+    }
+    async fn table_exists(&self, _conn: &mut BackendConnection, _table_name: &str) -> Result<bool> {
+        Err(anyhow!("Databricks table_exists: not yet implemented"))
+    }
+    async fn get_table_columns(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<ColumnInfo>> {
+        Err(anyhow!("Databricks get_table_columns: not yet implemented"))
+    }
+    async fn get_columns_for_browse(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<String>> {
+        Err(anyhow!("Databricks get_columns_for_browse: not yet implemented"))
+    }
+    async fn detect_schema(&self, _conn: &mut BackendConnection, _hint: Option<&str>) -> Result<SchemaInfo> {
+        Err(anyhow!("Databricks detect_schema: not yet implemented"))
+    }
+    async fn browse(&self, _conn: &mut BackendConnection, _catalog: Option<&str>, _schema: Option<&str>) -> Result<Vec<BrowseNode>> {
+        Err(anyhow!("Databricks browse: not yet implemented"))
+    }
+    fn is_connection_error(&self, err: &anyhow::Error) -> bool {
+        let msg = err.to_string();
+        msg.contains("connection") || msg.contains("401")
+    }
+}
 
 impl SqlDialect for DatabricksBackend {
     fn dialect_name(&self) -> &'static str { "databricks" }
