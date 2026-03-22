@@ -5,7 +5,7 @@ import { PageTransition } from '@/components/layout/PageTransition'
 import { MetricCard } from './components/MetricCard'
 import { ActivityChart } from './components/ActivityChart'
 import { TopEvents } from './components/TopEvents'
-import { useDashboardMetrics } from './hooks/useDashboardMetrics'
+import { useMissionControl } from './hooks/useMissionControl'
 import { QueryError } from '@/components/ui/query-error'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
@@ -54,7 +54,7 @@ function DashboardFirstRun() {
           <div>
             <p className="font-medium">Explore your data</p>
             <p className="text-muted-foreground mt-0.5">
-              Dashboard metrics, activity charts, and top events — all queried live from your
+              Mission Control metrics, activity charts, and top events — all queried live from your
               warehouse.
             </p>
           </div>
@@ -69,11 +69,18 @@ function DashboardFirstRun() {
 export function DashboardPage() {
 
   useEffect(() => {
-    document.title = 'Dashboard — stratif.io'
+    document.title = 'Mission Control — stratif.io'
   }, [])
 
   const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()
-  const { metrics, isLoading, isError, error, eventsLoading } = useDashboardMetrics({ dateRange })
+  const { data, isLoading, isError, error, trendData, trendLoading, topEvents, eventsLoading } =
+    useMissionControl({ dateRange, trendMetric: 'total_events' })
+
+  const chartData = (trendData?.data ?? []).map((d) => ({
+    day: d.date,
+    events: d.value,
+    users: 0,
+  }))
 
   const isConnectionNotFound =
     isError && error instanceof Error && error.message.toLowerCase().includes('connection not found')
@@ -88,7 +95,7 @@ export function DashboardPage() {
     return (
       <PageTransition>
         <div className={SPACING.page}>
-          <h1 className="sr-only">Dashboard</h1>
+          <h1 className="sr-only">Mission Control</h1>
           <DashboardFirstRun />
         </div>
       </PageTransition>
@@ -101,26 +108,30 @@ export function DashboardPage() {
     <PageTransition>
         <div className={SPACING.page}>
           <div className={SPACING.section}>
-            <h1 className="sr-only">Dashboard</h1>
-            <span className={TYPOGRAPHY.pageLabel}>Dashboard</span>
+            <h1 className="sr-only">Mission Control</h1>
+            <span className={TYPOGRAPHY.pageLabel}>Mission Control</span>
 
             {/* Metric Cards */}
             <div className={`grid grid-cols-2 lg:grid-cols-4 ${SPACING.gridGap}`}>
               <MetricCard
                 title="Total Events"
-                value={metrics.totalEvents.toLocaleString()}
-                numericValue={metrics.totalEvents}
+                value={(data?.current.total_events ?? 0).toLocaleString()}
+                numericValue={data?.current.total_events ?? 0}
                 change={0}
                 changeType="neutral"
                 description="in selected period"
-                subtitle={metrics.uniqueUsers > 0 ? `${(metrics.totalEvents / metrics.uniqueUsers).toFixed(1)} events / user` : undefined}
+                subtitle={
+                  (data?.current.unique_users ?? 0) > 0
+                    ? `${((data?.current.total_events ?? 0) / (data?.current.unique_users ?? 1)).toFixed(1)} events / user`
+                    : undefined
+                }
                 loading={isLoading}
                 className="col-span-2 lg:col-span-2"
               />
               <MetricCard
                 title="Unique Users"
-                value={metrics.uniqueUsers.toLocaleString()}
-                numericValue={metrics.uniqueUsers}
+                value={(data?.current.unique_users ?? 0).toLocaleString()}
+                numericValue={data?.current.unique_users ?? 0}
                 change={0}
                 changeType="neutral"
                 description="in selected period"
@@ -129,12 +140,16 @@ export function DashboardPage() {
               />
               <MetricCard
                 title="Total Sessions"
-                value={metrics.totalSessions.toLocaleString()}
-                numericValue={metrics.totalSessions}
+                value={(data?.current.total_sessions ?? 0).toLocaleString()}
+                numericValue={data?.current.total_sessions ?? 0}
                 change={0}
                 changeType="neutral"
                 description="in selected period"
-                subtitle={metrics.uniqueUsers > 0 ? `${(metrics.totalSessions / metrics.uniqueUsers).toFixed(1)} sessions / user` : undefined}
+                subtitle={
+                  (data?.current.unique_users ?? 0) > 0
+                    ? `${((data?.current.total_sessions ?? 0) / (data?.current.unique_users ?? 1)).toFixed(1)} sessions / user`
+                    : undefined
+                }
                 loading={isLoading}
                 className="col-span-1 motion-safe:[animation-delay:150ms]"
               />
@@ -142,8 +157,8 @@ export function DashboardPage() {
 
             {/* Charts Grid */}
             <div className={`grid ${SPACING.gridGap} lg:grid-cols-3`}>
-              <ActivityChart data={metrics.chartData} loading={isLoading} />
-              <TopEvents events={metrics.topEvents} loading={eventsLoading} />
+              <ActivityChart data={chartData} loading={trendLoading} />
+              <TopEvents events={topEvents} loading={eventsLoading} />
             </div>
           </div>
         </div>

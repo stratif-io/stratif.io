@@ -233,3 +233,40 @@ export type ConnectionType = z.infer<typeof ConnectionSchema>
 export type SchemaConfigType = z.infer<typeof SchemaConfigSchema>
 export type FilterConfigType = z.infer<typeof FilterConfigSchema>
 export type CustomPropertyType = z.infer<typeof CustomPropertySchema>
+
+export const MissionControlMetricsSchema = z.object({
+  total_events: z.number().int().nonnegative(),
+  unique_users: z.number().int().nonnegative(),
+  total_sessions: z.number().int().nonnegative(),
+  avg_session_duration_sec: z.number().nonnegative(),
+  avg_events_per_session: z.number().nonnegative(),
+  new_users: z.number().int().nonnegative(),
+  returning_users: z.number().int().nonnegative(),
+  dau_mau_ratio: z.number().min(0).max(1),
+})
+
+export const MissionControlPeriodSchema = z.object({
+  start_date: z.string(),
+  end_date: z.string(),
+})
+
+export const MissionControlResponseSchema = z.object({
+  period: MissionControlPeriodSchema,
+  previous_period: MissionControlPeriodSchema,
+  current: MissionControlMetricsSchema,
+  previous: MissionControlMetricsSchema,
+})
+
+export const MissionControlTrendPointSchema = z.object({
+  date: z.string(),
+  value: z.number(),
+})
+
+export const MissionControlTrendResponseSchema = z.object({
+  metric: z.string(),
+  data: z.array(MissionControlTrendPointSchema),
+})
+
+export type MissionControlMetricsType = z.infer<typeof MissionControlMetricsSchema>
+export type MissionControlResponseType = z.infer<typeof MissionControlResponseSchema>
+export type MissionControlTrendResponseType = z.infer<typeof MissionControlTrendResponseSchema>
