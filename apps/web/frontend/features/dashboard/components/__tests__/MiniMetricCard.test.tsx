@@ -38,6 +38,13 @@ describe('MiniMetricCard', () => {
     expect(screen.getByText(/↓/)).toBeInTheDocument()
   })
 
+  it('renders "0.0%" with no directional arrow when pctChange is 0', () => {
+    render(<MiniMetricCard {...baseProps} pctChange={0} />)
+    expect(screen.getByText('0.0%')).toBeInTheDocument()
+    expect(screen.queryByText('↑')).not.toBeInTheDocument()
+    expect(screen.queryByText('↓')).not.toBeInTheDocument()
+  })
+
   it('renders "—" when pctChange is null', () => {
     render(<MiniMetricCard {...baseProps} pctChange={null} />)
     expect(screen.getByText('—')).toBeInTheDocument()
