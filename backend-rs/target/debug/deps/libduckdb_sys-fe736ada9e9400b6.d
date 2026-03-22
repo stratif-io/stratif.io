@@ -1,0 +1,12 @@
+/Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/deps/libduckdb_sys-fe736ada9e9400b6.d: /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/lib.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/string.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/error.rs /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/build/libduckdb-sys-ef96d5a8730dd56f/out/bindgen.rs
+
+/Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/deps/liblibduckdb_sys-fe736ada9e9400b6.rlib: /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/lib.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/string.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/error.rs /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/build/libduckdb-sys-ef96d5a8730dd56f/out/bindgen.rs
+
+/Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/deps/liblibduckdb_sys-fe736ada9e9400b6.rmeta: /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/lib.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/string.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/error.rs /Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/build/libduckdb-sys-ef96d5a8730dd56f/out/bindgen.rs
+
+/Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/lib.rs:
+/Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/string.rs:
+/Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libduckdb-sys-1.10500.0/src/error.rs:
+/Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/build/libduckdb-sys-ef96d5a8730dd56f/out/bindgen.rs:
+
+# env-dep:OUT_DIR=/Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/build/libduckdb-sys-ef96d5a8730dd56f/out
