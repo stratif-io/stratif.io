@@ -40,8 +40,9 @@ export function MiniMetricCard({
     )
   }
 
-  const isPositive = pctChange !== null && pctChange >= 0
+  const isPositive = pctChange !== null && pctChange > 0
   const isNegative = pctChange !== null && pctChange < 0
+  const isNeutral = pctChange !== null && pctChange === 0
 
   return (
     <button
@@ -64,6 +65,10 @@ export function MiniMetricCard({
           <div className="mt-1.5">
             {pctChange === null ? (
               <span className="text-xs text-muted-foreground">—</span>
+            ) : isNeutral ? (
+              <span className="inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded text-muted-foreground bg-muted">
+                0.0%
+              </span>
             ) : (
               <span
                 className={cn(
