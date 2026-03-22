@@ -9,6 +9,7 @@ use crate::connectors::backend::DatabaseBackend;
 use crate::connectors::mod_types::BackendConnection;
 use crate::connectors::types::{SqlValue};
 
+#[allow(dead_code)]
 pub(crate) enum DuckDbRequest {
     Execute {
         query: String,
@@ -118,6 +119,7 @@ fn map_value(val: duckdb::types::ValueRef<'_>) -> SqlValue {
 
 pub struct DuckDbBackend;
 
+#[allow(clippy::new_without_default)]
 impl DuckDbBackend {
     pub fn new() -> Self {
         Self

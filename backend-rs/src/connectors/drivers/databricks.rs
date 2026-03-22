@@ -7,6 +7,7 @@ use crate::connectors::mod_types::{BackendConnection, DatabricksClient};
 use crate::connectors::types::{BrowseNode, ColumnInfo, CustomProperty, Row, SchemaInfo, SqlValue};
 
 pub struct DatabricksBackend;
+#[allow(clippy::new_without_default)]
 impl DatabricksBackend { pub fn new() -> Self { Self } }
 
 #[derive(Deserialize)]
