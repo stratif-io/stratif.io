@@ -64,9 +64,10 @@ At startup, open the product DB from the `STRATIFIO_PRODUCT_DB_PATH` env var (de
 Every analytics endpoint receives `connection_id: String` as a query parameter. Handler steps:
 
 1. Lock product DB, query `SELECT credentials, driver FROM connections WHERE id = ?`
-2. Decrypt credentials using Fernet (`fernet` crate)
-3. Call `registry.open(driver, credentials_json)` → `BackendConnection`
-4. Run query, close connection
+2. Decrypt credentials using Fernet (`fernet` crate). Derive the Fernet key as `base64url(SHA-256(STRATIFIO_ENCRYPTION_KEY.as_bytes()))` — this replicates the Python key derivation. Use the `sha2` crate for hashing.
+3. Look up the backend: `let backend: &dyn AnyBackend = registry.get(driver)?;`
+4. Open connection: `let mut conn = backend.open_any(serde_json::from_str(&decrypted)?)  .await?;`
+5. Run query, close connection
 
 No connection pooling for analytics connections. A fresh connection is opened per request.
 
@@ -132,7 +133,7 @@ All endpoints are prefixed with `/api/`.
 | GET | `/api/events` | `connection_id`, `start_date`, `end_date` | `{data: [str]}` |
 | GET | `/api/events/top` | `connection_id`, `start_date`, `end_date`, `limit` (default 10) | `{data: [{event_name: str, count: int}]}` |
 | GET | `/api/raw/events` | `connection_id`, `start_date`, `end_date`, `event_name` (opt), `user_id` (opt), `limit`, `offset` | `{data: [{...event fields}], total: int, limit: int, offset: int}` |
-| GET | `/api/events/user` | `connection_id`, `user_id`, `limit`, `offset` | `{data: [{...}], total: int}` |
+| GET | `/api/users/{user_id}/events` | `connection_id`, `limit`, `offset` (query params); `user_id` is a path param | `{data: [{...}], total: int}` |
 
 ### Sessions
 
@@ -197,4 +198,5 @@ tower-http = { version = "0.5", features = ["cors"] }
 serde = { version = "1", features = ["derive"] }  # already present
 serde_json = "1"  # already present
 fernet = "0.2"
+sha2 = "0.10"
 ```
