@@ -3,6 +3,11 @@ use crate::connectors::types::{BrowseNode, ColumnInfo, Row, SchemaInfo};
 use anyhow::Result;
 use crate::connectors::dialect::SqlDialect;
 use crate::connectors::types::CustomProperty;
+use serde::Deserialize;
+use async_trait::async_trait;
+use crate::connectors::backend::DatabaseBackend;
+use crate::connectors::mod_types::BackendConnection;
+use crate::connectors::types::{SqlValue};
 
 pub(crate) enum SqliteRequest {
     Execute { query: String, reply: oneshot::Sender<Result<Vec<Row>>> },
@@ -17,6 +22,21 @@ pub(crate) enum SqliteRequest {
 #[derive(Clone)]
 pub struct SqliteHandle {
     pub(crate) tx: mpsc::Sender<SqliteRequest>,
+}
+
+#[derive(Deserialize)]
+pub struct SqliteCredentials {
+    pub file_path: String,  // use ":memory:" for in-memory
+}
+
+fn map_sqlite_value(val: rusqlite::types::Value) -> SqlValue {
+    match val {
+        rusqlite::types::Value::Integer(i) => SqlValue::Int(i),
+        rusqlite::types::Value::Real(f) => SqlValue::Float(f),
+        rusqlite::types::Value::Text(s) => SqlValue::Text(s),
+        rusqlite::types::Value::Blob(_) => SqlValue::Null,
+        rusqlite::types::Value::Null => SqlValue::Null,
+    }
 }
 
 fn run_sqlite_actor(conn: rusqlite::Connection, mut rx: mpsc::Receiver<SqliteRequest>) {
@@ -37,6 +57,24 @@ fn run_sqlite_actor(conn: rusqlite::Connection, mut rx: mpsc::Receiver<SqliteReq
                 ).map(|n| n > 0).unwrap_or(false);
                 let _ = reply.send(Ok(exists));
             }
+            SqliteRequest::Execute { query, reply } => {
+                let result = conn.prepare(&query)
+                    .and_then(|mut stmt| {
+                        let col_count = stmt.column_count();
+                        let rows = stmt.query_map([], |row| {
+                            let vals = (0..col_count)
+                                .map(|i| {
+                                    let v: rusqlite::types::Value = row.get(i).unwrap_or(rusqlite::types::Value::Null);
+                                    Ok(map_sqlite_value(v))
+                                })
+                                .collect::<rusqlite::Result<Vec<_>>>()?;
+                            Ok(vals)
+                        })?;
+                        rows.collect::<rusqlite::Result<Vec<_>>>()
+                    })
+                    .map_err(|e| anyhow::anyhow!("{e}"));
+                let _ = reply.send(result);
+            }
             _ => {}
         }
     }
@@ -44,6 +82,53 @@ fn run_sqlite_actor(conn: rusqlite::Connection, mut rx: mpsc::Receiver<SqliteReq
 
 pub struct SqliteBackend;
 impl SqliteBackend { pub fn new() -> Self { Self } }
+
+#[async_trait]
+impl DatabaseBackend for SqliteBackend {
+    type Credentials = SqliteCredentials;
+
+    async fn open(&self, creds: &SqliteCredentials) -> Result<BackendConnection> {
+        let file_path = creds.file_path.clone();
+        let (tx, rx) = tokio::sync::mpsc::channel(32);
+        std::thread::spawn(move || {
+            let conn = if file_path == ":memory:" {
+                rusqlite::Connection::open_in_memory().expect("sqlite open_in_memory")
+            } else {
+                rusqlite::Connection::open(&file_path).expect("sqlite open")
+            };
+            run_sqlite_actor(conn, rx);
+        });
+        Ok(BackendConnection::Sqlite(SqliteHandle { tx }))
+    }
+
+    async fn execute(&self, conn: &mut BackendConnection, query: &str, _params: Vec<SqlValue>) -> Result<Vec<Row>> {
+        let BackendConnection::Sqlite(handle) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        handle.tx.send(SqliteRequest::Execute { query: query.to_owned(), reply: tx }).await?;
+        rx.await?
+    }
+
+    async fn get_tables(&self, conn: &mut BackendConnection) -> Result<Vec<String>> {
+        let BackendConnection::Sqlite(handle) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        handle.tx.send(SqliteRequest::GetTables { reply: tx }).await?;
+        rx.await?
+    }
+
+    async fn table_exists(&self, conn: &mut BackendConnection, table_name: &str) -> Result<bool> {
+        let BackendConnection::Sqlite(handle) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        handle.tx.send(SqliteRequest::TableExists { table_name: table_name.to_owned(), reply: tx }).await?;
+        rx.await?
+    }
+
+    fn is_connection_error(&self, _err: &anyhow::Error) -> bool { false }
+
+    async fn get_table_columns(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<ColumnInfo>> { todo!() }
+    async fn get_columns_for_browse(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<String>> { todo!() }
+    async fn detect_schema(&self, _conn: &mut BackendConnection, _hint: Option<&str>) -> Result<SchemaInfo> { todo!() }
+    async fn browse(&self, _conn: &mut BackendConnection, _catalog: Option<&str>, _schema: Option<&str>) -> Result<Vec<BrowseNode>> { todo!() }
+}
 
 impl SqlDialect for SqliteBackend {
     fn dialect_name(&self) -> &'static str { "sqlite" }
@@ -120,4 +205,37 @@ mod tests {
     #[test] fn extract_hour() { assert_eq!(b().extract_hour("ts"), "CAST(STRFTIME('%H', ts) AS INTEGER)"); }
     #[test] fn extract_day_of_week() { assert_eq!(b().extract_day_of_week("ts"), "CAST(STRFTIME('%w', ts) AS INTEGER)"); }
     #[test] fn string_concat() { assert_eq!(b().string_concat(&["a", "b"]), "a || b"); }
+}
+
+#[cfg(test)]
+mod integration {
+    use super::*;
+    use crate::connectors::any_backend::AnyBackend;
+    use crate::connectors::backend::DatabaseBackend;
+
+    #[tokio::test]
+    async fn open_and_get_tables_empty() {
+        let b = SqliteBackend::new();
+        let raw = serde_json::json!({ "file_path": ":memory:" });
+        let mut conn = AnyBackend::open_any(&b, raw).await.unwrap();
+        let tables = DatabaseBackend::get_tables(&b, &mut conn).await.unwrap();
+        assert!(tables.is_empty());
+    }
+
+    #[tokio::test]
+    async fn execute_select_1() {
+        let b = SqliteBackend::new();
+        let raw = serde_json::json!({ "file_path": ":memory:" });
+        let mut conn = AnyBackend::open_any(&b, raw).await.unwrap();
+        let rows = DatabaseBackend::execute(&b, &mut conn, "SELECT 1", vec![]).await.unwrap();
+        assert_eq!(rows.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn table_exists_false() {
+        let b = SqliteBackend::new();
+        let raw = serde_json::json!({ "file_path": ":memory:" });
+        let mut conn = AnyBackend::open_any(&b, raw).await.unwrap();
+        assert!(!DatabaseBackend::table_exists(&b, &mut conn, "nope").await.unwrap());
+    }
 }
