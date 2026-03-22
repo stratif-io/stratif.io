@@ -13,7 +13,7 @@ This is sub-project 2 of the stratif.io Rust backend rewrite. It assumes no othe
 ## Scope
 
 **In scope:**
-- Core types (`SqlValue`, `Row`, `ColumnInfo`, `SchemaInfo`, `CustomProperty`, `BrowseNode`)
+- Core types (`SqlValue`, `Row`, `ColumnInfo`, `SchemaInfo`, `CustomProperty`, `BrowseNode`, `BrowseKind`)
 - `SqlDialect` trait — pure, sync, dialect-specific SQL generation
 - `DatabaseBackend` trait — async I/O (extends `SqlDialect`)
 - `AnyBackend` trait — object-safe, used by registry
@@ -22,11 +22,10 @@ This is sub-project 2 of the stratif.io Rust backend rewrite. It assumes no othe
 - `BackendRegistry` — `HashMap<String, Box<dyn AnyBackend>>`
 - 6 driver implementations: DuckDB, SQLite, PostgreSQL, Snowflake, ClickHouse, Databricks
 - Unit tests for all `SqlDialect` implementations (no DB required)
-- Integration tests for `execute`, `get_tables`, `detect_schema` per driver (require live DB or testcontainer)
+- Integration tests for `execute`, `get_tables`, `detect_schema`, `table_exists` per driver
 
 **Out of scope:**
 - Credential encryption (crypto subsystem, separate sub-project)
-- Connection pooling above the driver level (each driver owns its pool internally)
 - SQL builder / analytics query generation (separate sub-project)
 - API routes (separate sub-project)
 - Auth / JWT (separate sub-project)
@@ -93,11 +92,15 @@ pub struct CustomProperty {
     pub prop_type: String,  // "string" | "number" | "boolean" | "timestamp"
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BrowseKind { Schema, Table }
+
 #[derive(Debug, Clone, Serialize)]
 pub struct BrowseNode {
     pub name: String,
     pub full_name: String,
-    pub kind: String,       // "schema" | "table"
+    pub kind: BrowseKind,
 }
 ```
 
@@ -150,7 +153,7 @@ pub trait SqlDialect: Send + Sync {
 
 ## `DatabaseBackend` Trait
 
-Async I/O. Extends `SqlDialect`. Has an associated `Credentials` type — parsed from `serde_json::Value` at the `AnyBackend` boundary.
+Async I/O. Extends `SqlDialect`. Has an associated `Credentials` type — parsed from `serde_json::Value` at the `AnyBackend` boundary. Credential validation is the responsibility of the `Deserialize` impl on each `Credentials` type; there is no separate `parse_credentials` method (unlike Python).
 
 ```rust
 // connectors/backend.rs
@@ -170,11 +173,24 @@ pub trait DatabaseBackend: SqlDialect {
 
     async fn get_tables(&self, conn: &mut BackendConnection) -> Result<Vec<String>>;
 
+    async fn table_exists(
+        &self,
+        conn: &mut BackendConnection,
+        table_name: &str,
+    ) -> Result<bool>;
+
     async fn get_table_columns(
         &self,
         conn: &mut BackendConnection,
         table: &str,
     ) -> Result<Vec<ColumnInfo>>;
+
+    /// Returns column names for a given table, used during browse.
+    async fn get_columns_for_browse(
+        &self,
+        conn: &mut BackendConnection,
+        table: &str,
+    ) -> Result<Vec<String>>;
 
     async fn detect_schema(
         &self,
@@ -197,14 +213,14 @@ pub trait DatabaseBackend: SqlDialect {
 
 ## `AnyBackend` Trait & Registry
 
-Object-safe (no associated types). `open_any` deserializes credentials from `serde_json::Value`. A blanket impl converts every `DatabaseBackend` to `AnyBackend` automatically.
+Object-safe (no associated types). `open_any` deserializes credentials from `serde_json::Value`. A blanket impl converts every `DatabaseBackend` to `AnyBackend` automatically. All `SqlDialect` methods in `AnyBackend` forward via `<Self as SqlDialect>::method_name(self, ...)`.
 
 ```rust
 // connectors/any_backend.rs
 
 #[async_trait]
 pub trait AnyBackend: Send + Sync {
-    // Dialect (pure, sync)
+    // Dialect (pure, sync) — all forward to SqlDialect impl
     fn dialect_name(&self) -> &'static str;
     fn identifier_quote_char(&self) -> char;
     fn date_trunc(&self, unit: &str, col: &str) -> String;
@@ -234,9 +250,13 @@ pub trait AnyBackend: Send + Sync {
         query: &str, params: Vec<SqlValue>,
     ) -> Result<Vec<Row>>;
     async fn get_tables(&self, conn: &mut BackendConnection) -> Result<Vec<String>>;
+    async fn table_exists(&self, conn: &mut BackendConnection, table_name: &str) -> Result<bool>;
     async fn get_table_columns(
         &self, conn: &mut BackendConnection, table: &str,
     ) -> Result<Vec<ColumnInfo>>;
+    async fn get_columns_for_browse(
+        &self, conn: &mut BackendConnection, table: &str,
+    ) -> Result<Vec<String>>;
     async fn detect_schema(
         &self, conn: &mut BackendConnection, hint: Option<&str>,
     ) -> Result<SchemaInfo>;
@@ -247,23 +267,116 @@ pub trait AnyBackend: Send + Sync {
     fn is_connection_error(&self, err: &anyhow::Error) -> bool;
 }
 
-// Blanket impl
+// Blanket impl — all methods delegate to DatabaseBackend / SqlDialect
 #[async_trait]
 impl<B> AnyBackend for B
 where
     B: DatabaseBackend + Send + Sync,
     B::Credentials: DeserializeOwned + Send + Sync,
 {
-    fn dialect_name(&self) -> &'static str { SqlDialect::dialect_name(self) }
-    // ... all dialect methods delegate to self via SqlDialect ...
+    fn dialect_name(&self) -> &'static str {
+        <Self as SqlDialect>::dialect_name(self)
+    }
+    // ... all other SqlDialect methods forward the same way ...
 
     async fn open_any(&self, raw: serde_json::Value) -> Result<BackendConnection> {
         let creds = serde_json::from_value::<B::Credentials>(raw)?;
         self.open(&creds).await
     }
-    // ... all I/O methods delegate to self via DatabaseBackend ...
+    // ... all other DatabaseBackend methods forward directly ...
 }
 ```
+
+---
+
+## `BackendConnection` Enum
+
+```rust
+// connectors/mod.rs
+
+pub enum BackendConnection {
+    DuckDb(DuckDbHandle),           // actor handle — see Driver Design Notes
+    Sqlite(SqliteHandle),           // actor handle — see Driver Design Notes
+    Postgres(sqlx::pool::PoolConnection<sqlx::Postgres>),
+    Snowflake(SnowflakeClient),     // HTTP client + session
+    ClickHouse(clickhouse::Client), // from clickhouse-rs
+    Databricks(DatabricksClient),   // HTTP client + token
+}
+```
+
+`BackendConnection` is `Send + Sync` because `DuckDbHandle` and `SqliteHandle` are actor handles (channels), not raw driver connections (see below).
+
+---
+
+## Driver Design Notes
+
+### DuckDB & SQLite — actor pattern for non-`Send` connections
+
+`duckdb::Connection` and `rusqlite::Connection` are not `Send`. They cannot be placed directly in `BackendConnection` or passed across async boundaries.
+
+**Solution: dedicated thread actor.** Each `DuckDbBackend::open()` spawns a single OS thread that owns the `duckdb::Connection` for the lifetime of that connection. The actor receives query requests over a `tokio::sync::oneshot` channel and sends results back. The handle exposed to the async layer is `DuckDbHandle` — a `tokio::sync::mpsc::Sender` that is `Send + Sync`.
+
+```rust
+// Conceptual shape
+pub struct DuckDbHandle {
+    tx: mpsc::Sender<DbRequest>,
+}
+
+enum DbRequest {
+    Execute { query: String, params: Vec<SqlValue>, reply: oneshot::Sender<Result<Vec<Row>>> },
+    GetTables { reply: oneshot::Sender<Result<Vec<String>>> },
+    // ...
+}
+
+impl DuckDbBackend {
+    async fn open(&self, creds: &DuckDbCredentials) -> Result<BackendConnection> {
+        let path = creds.resolved_path()?.to_owned();
+        let (tx, rx) = mpsc::channel(32);
+        std::thread::spawn(move || {
+            let conn = duckdb::Connection::open(&path).expect("open");
+            // drive the rx loop, execute requests, send back results
+            run_actor(conn, rx);
+        });
+        Ok(BackendConnection::DuckDb(DuckDbHandle { tx }))
+    }
+}
+```
+
+This pattern keeps non-`Send` connections on a dedicated thread, gives back a `Send` handle, and avoids `spawn_blocking` (which would require re-opening the connection on every query).
+
+**Connection lifetime:** The actor thread exits when all `DuckDbHandle` senders are dropped. Pooling for DuckDB/SQLite is not needed — each connection is a single-file database; the Python backend also sets `use_pool = False` for these.
+
+### PostgreSQL — internal sqlx pool
+
+`PostgresBackend` holds a `sqlx::PgPool` internally. `open()` checks out a connection from the pool (`pool.acquire().await`). The pool is initialized lazily on first call using `tokio::sync::OnceCell`. No external pooling management needed.
+
+**Connection lifetime / pool_key:** The `PgPool` is keyed by the full connection string derived from credentials. The `BackendRegistry` holds one `PostgresBackend` per registered driver type, not per connection — the internal pool handles per-credential multiplexing. The connection management layer (future sub-project) passes credentials to `open_any` each time; the pool deduplicates internally.
+
+### Snowflake, ClickHouse, Databricks — HTTP clients
+
+No mature native Rust drivers exist. These use HTTP-based clients:
+- **Snowflake** — Snowflake SQL REST API (reqwest + JWT auth)
+- **ClickHouse** — `clickhouse-rs` crate (native binary protocol, async)
+- **Databricks** — Databricks SQL Statement REST API (reqwest + token auth)
+
+These are async natively. `BackendConnection` variants for these hold the HTTP client + any session state. All are `Send + Sync`.
+
+### Registry keys
+
+Registry keys match the Python backend exactly to preserve API contract:
+
+| Driver     | Key           |
+|------------|---------------|
+| DuckDB     | `"duckdb"`    |
+| SQLite     | `"sqlite"`    |
+| PostgreSQL | `"postgresql"`|
+| Snowflake  | `"snowflake"` |
+| ClickHouse | `"clickhouse"`|
+| Databricks | `"databricks"`|
+
+---
+
+## `BackendRegistry`
 
 ```rust
 // connectors/mod.rs
@@ -277,7 +390,7 @@ impl BackendRegistry {
         let mut r = Self { backends: HashMap::new() };
         r.register("duckdb",      DuckDbBackend::new());
         r.register("sqlite",      SqliteBackend::new());
-        r.register("postgres",    PostgresBackend::new());
+        r.register("postgresql",  PostgresBackend::new());
         r.register("snowflake",   SnowflakeBackend::new());
         r.register("clickhouse",  ClickHouseBackend::new());
         r.register("databricks",  DatabricksBackend::new());
@@ -298,56 +411,6 @@ impl BackendRegistry {
 
 ---
 
-## `BackendConnection` Enum
-
-```rust
-// connectors/mod.rs
-
-pub enum BackendConnection {
-    DuckDb(duckdb::Connection),
-    Sqlite(rusqlite::Connection),
-    Postgres(sqlx::pool::PoolConnection<sqlx::Postgres>),
-    Snowflake(SnowflakeConnection),     // from snowflake-connector-rs or HTTP client
-    ClickHouse(clickhouse::Client),     // from clickhouse-rs
-    Databricks(DatabricksConnection),   // HTTP client wrapping Databricks SQL REST API
-}
-```
-
----
-
-## Driver Design Notes
-
-### DuckDB & SQLite — sync drivers
-
-`duckdb-rs` and `rusqlite` are synchronous. All calls must go through `tokio::task::spawn_blocking` to avoid blocking the async runtime.
-
-```rust
-async fn open(&self, creds: &DuckDbCredentials) -> Result<BackendConnection> {
-    let path = creds.resolved_path()?.to_owned();
-    let conn = tokio::task::spawn_blocking(move || {
-        duckdb::Connection::open(&path)
-    }).await??;
-    Ok(BackendConnection::DuckDb(conn))
-}
-```
-
-Note: `duckdb::Connection` is not `Send` — it must be created and used within the same `spawn_blocking` closure or pinned to a dedicated thread. Each query spawns its own blocking task with a fresh or cloned connection handle.
-
-### PostgreSQL — sqlx
-
-`PostgresBackend` holds a `sqlx::PgPool` internally, initialized at `new()` time or lazily on first `open()`. `open()` checks out a connection from the pool.
-
-### Snowflake, ClickHouse, Databricks
-
-No mature pure-Rust drivers exist for all of these. Use HTTP-based clients:
-- **Snowflake** — Snowflake SQL REST API (HTTP + JWT auth)
-- **ClickHouse** — `clickhouse-rs` crate (native protocol) or HTTP interface
-- **Databricks** — Databricks SQL REST API (HTTP + token auth)
-
-These are async natively (reqwest-based). `BackendConnection` for these holds the HTTP client + session state.
-
----
-
 ## Key Dependencies
 
 ```toml
@@ -358,9 +421,10 @@ anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 duckdb = "1"
-rusqlite = { version = "0.31", features = ["bundled"] }
-sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls"] }
-reqwest = { version = "0.11", features = ["json"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls"] }
+reqwest = { version = "0.12", features = ["json"] }
+clickhouse = "0.11"
 ```
 
 ---
@@ -390,11 +454,28 @@ fn duckdb_json_extract() {
 
 ### Integration tests — I/O methods
 
-Live DB or testcontainer per driver. Test `open`, `get_tables`, `execute`, `detect_schema`. These are gated behind a feature flag or env var so CI can run unit tests only without DB infrastructure.
+Test `open`, `execute`, `get_tables`, `table_exists`, `detect_schema` per driver.
+
+**DuckDB and SQLite:** Use an in-memory or temp-file database — no external infrastructure needed. Always run in CI.
+
+**PostgreSQL:** Use a `testcontainers` Docker container. Run in CI when Docker is available. Gated by env var `STRATIFIO_TEST_POSTGRES=1`.
+
+**Snowflake, ClickHouse, Databricks:** Cloud-only, no container available. Gated by env var `STRATIFIO_TEST_<DRIVER>=1` (e.g. `STRATIFIO_TEST_SNOWFLAKE=1`). These run only in dedicated integration CI jobs with real credentials, never in standard unit CI. A minimal smoke test (connect + `SELECT 1`) is sufficient.
 
 ### Registry test
 
 Verify all 6 drivers are registered and `get()` returns the correct `dialect_name`.
+
+```rust
+#[test]
+fn registry_has_all_drivers() {
+    let reg = BackendRegistry::default();
+    for key in ["duckdb","sqlite","postgresql","snowflake","clickhouse","databricks"] {
+        let b = reg.get(key).unwrap();
+        assert_eq!(b.dialect_name(), key.replace("postgresql","postgres"));
+    }
+}
+```
 
 ---
 
