@@ -42,7 +42,8 @@ pub struct Filter {
 impl Filter {
     /// Convert to a SQL WHERE fragment using the dialect's quoting.
     pub fn to_sql(&self, quote: char) -> String {
-        let col = format!("{quote}{}{quote}", self.property);
+        let safe_prop = self.property.replace(quote, "");
+        let col = format!("{quote}{safe_prop}{quote}");
         let val = self.value.replace('\'', "''"); // basic SQL escape
         match self.operator.as_str() {
             "equals" => format!("{col} = '{val}'"),
