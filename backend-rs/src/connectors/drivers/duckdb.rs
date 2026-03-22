@@ -1,5 +1,79 @@
+use tokio::sync::{mpsc, oneshot};
+use crate::connectors::types::{BrowseNode, ColumnInfo, Row, SchemaInfo};
+use anyhow::Result;
 use crate::connectors::dialect::SqlDialect;
 use crate::connectors::types::CustomProperty;
+
+pub(crate) enum DuckDbRequest {
+    Execute {
+        query: String,
+        params: Vec<String>,
+        reply: oneshot::Sender<Result<Vec<Row>>>,
+    },
+    GetTables {
+        reply: oneshot::Sender<Result<Vec<String>>>,
+    },
+    TableExists {
+        table_name: String,
+        reply: oneshot::Sender<Result<bool>>,
+    },
+    GetTableColumns {
+        table: String,
+        reply: oneshot::Sender<Result<Vec<ColumnInfo>>>,
+    },
+    GetColumnsForBrowse {
+        table: String,
+        reply: oneshot::Sender<Result<Vec<String>>>,
+    },
+    DetectSchema {
+        hint: Option<String>,
+        reply: oneshot::Sender<Result<SchemaInfo>>,
+    },
+    Browse {
+        catalog: Option<String>,
+        schema: Option<String>,
+        reply: oneshot::Sender<Result<Vec<BrowseNode>>>,
+    },
+}
+
+/// Send handle for a DuckDB actor thread. Is `Send + Sync`.
+#[derive(Clone)]
+pub struct DuckDbHandle {
+    pub(crate) tx: mpsc::Sender<DuckDbRequest>,
+}
+
+fn run_duckdb_actor(conn: duckdb::Connection, mut rx: mpsc::Receiver<DuckDbRequest>) {
+    while let Some(req) = rx.blocking_recv() {
+        match req {
+            DuckDbRequest::Execute { query, params: _, reply } => {
+                let result = conn.prepare(&query)
+                    .and_then(|mut stmt| {
+                        let rows = stmt.query_map([], |_row| Ok(vec![]))?;
+                        rows.collect::<Result<Vec<_>, _>>()
+                    })
+                    .map_err(|e| anyhow::anyhow!("{e}"));
+                let _ = reply.send(result);
+            }
+            DuckDbRequest::GetTables { reply } => {
+                let result = conn.prepare(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' ORDER BY 1"
+                ).and_then(|mut stmt| {
+                    stmt.query_map([], |r| r.get::<_, String>(0))?.collect::<Result<Vec<_>, _>>()
+                }).map_err(|e| anyhow::anyhow!("{e}"));
+                let _ = reply.send(result);
+            }
+            DuckDbRequest::TableExists { table_name, reply } => {
+                let exists = conn.query_row(
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
+                    [&table_name],
+                    |r| r.get::<_, i64>(0),
+                ).map(|n| n > 0).unwrap_or(false);
+                let _ = reply.send(Ok(exists));
+            }
+            _ => {}
+        }
+    }
+}
 
 pub struct DuckDbBackend;
 
