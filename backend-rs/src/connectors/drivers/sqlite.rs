@@ -186,6 +186,25 @@ impl SqlDialect for SqliteBackend {
     }
 }
 
+/// Execute a query on a bare SqliteHandle (used for product DB queries in the API layer).
+/// This avoids needing a full `BackendConnection` just to run a query on the product DB.
+pub async fn execute_on_handle(
+    handle: &SqliteHandle,
+    sql: &str,
+) -> anyhow::Result<Vec<crate::connectors::types::Row>> {
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    handle
+        .tx
+        .send(SqliteRequest::Execute {
+            query: sql.to_owned(),
+            reply: tx,
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!("sqlite actor channel closed"))?;
+    rx.await
+        .map_err(|_| anyhow::anyhow!("sqlite actor dropped reply"))?
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
