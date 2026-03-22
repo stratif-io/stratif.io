@@ -96,7 +96,7 @@ Stack: ${this.state.error?.stack}`
                 </Button>
                 <Button onClick={this.handleGoHome} variant="outline" className="w-full">
                   <Home className="mr-2 h-4 w-4" />
-                  Go to Dashboard
+                  Go to Mission Control
                 </Button>
                 <Button onClick={this.handleCopyError} variant="ghost" size="sm" className="w-full">
                   <Copy className="mr-2 h-3.5 w-3.5" />

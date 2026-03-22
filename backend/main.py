@@ -25,6 +25,7 @@ from backend.api import (
     connections_router,
     conversion_router,
     events_router,
+    mission_control_router,
     paths_router,
     pivot_router,
     retention_router,
@@ -65,6 +66,7 @@ app.include_router(conversion_router)
 app.include_router(pivot_router)
 app.include_router(sessions_router)
 app.include_router(connections_router)
+app.include_router(mission_control_router)
 
 
 @app.get("/api/health")
@@ -104,6 +106,7 @@ def create_analytics_app() -> FastAPI:
     router_app.include_router(pivot_router)
     router_app.include_router(sessions_router)
     router_app.include_router(connections_router)
+    router_app.include_router(mission_control_router)
     return router_app
 
 

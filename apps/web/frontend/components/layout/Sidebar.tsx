@@ -34,7 +34,7 @@ const navGroups: NavGroup[] = [
     title: 'Analytics',
     icon: LayoutDashboard,
     items: [
-      { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { title: 'Mission Control', href: '/dashboard', icon: LayoutDashboard },
       { title: 'Trends', href: '/trends', icon: TrendingUp },
       { title: 'Retention', href: '/retention', icon: Users },
       { title: 'Paths', href: '/paths', icon: Route },
