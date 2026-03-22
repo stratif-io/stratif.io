@@ -13,6 +13,8 @@ pub struct PathsParams {
     pub end_date: String,
     #[serde(default = "default_limit")]
     pub limit: u32,
+    pub start_event: Option<String>,
+    pub end_event: Option<String>,
 }
 fn default_limit() -> u32 { 20 }
 
@@ -24,7 +26,7 @@ pub async fn get_paths(
     Query(params): Query<PathsParams>,
 ) -> Result<Json<DataResponse<Vec<PathEntry>>>, ApiError> {
     let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
-    let sql = build_paths_query(backend, &params.start_date, &params.end_date, params.limit);
+    let sql = build_paths_query(backend, &params.start_date, &params.end_date, params.limit, params.start_event.as_deref(), params.end_event.as_deref());
     let rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
     let data: Vec<PathEntry> = rows.into_iter().map(|r| {
         let e1 = match &r[0] { SqlValue::Text(s) => s.clone(), _ => String::new() };

@@ -7,7 +7,23 @@ pub fn build_paths_query(
     start_date: &str,
     end_date: &str,
     limit: u32,
+    start_event: Option<&str>,
+    end_event: Option<&str>,
 ) -> String {
+    let start_filter = match start_event {
+        Some(e) => {
+            let escaped = e.replace('\'', "''");
+            format!(" AND e1.event_name = '{escaped}'")
+        }
+        None => String::new(),
+    };
+    let end_filter = match end_event {
+        Some(e) => {
+            let escaped = e.replace('\'', "''");
+            format!(" AND e3.event_name = '{escaped}'")
+        }
+        None => String::new(),
+    };
     format!(
         "WITH e AS (
             SELECT user_id, timestamp, event_name
@@ -25,7 +41,7 @@ pub fn build_paths_query(
         AND NOT EXISTS (
             SELECT 1 FROM e ex
             WHERE ex.user_id = e2.user_id AND ex.timestamp > e2.timestamp AND ex.timestamp < e3.timestamp
-        )
+        ){start_filter}{end_filter}
         GROUP BY e1.event_name, e2.event_name, e3.event_name ORDER BY count DESC LIMIT {limit}"
     )
 }
@@ -145,7 +161,7 @@ mod tests {
     async fn test_paths_query_runs() {
         let (mut conn, backend) = make_duckdb().await;
         seed(&mut conn, backend).await;
-        let sql = build_paths_query(backend, "2024-01-01", "2024-02-01", 10);
+        let sql = build_paths_query(backend, "2024-01-01", "2024-02-01", 10, None, None);
         let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
         assert_eq!(rows.len(), 1);
     }

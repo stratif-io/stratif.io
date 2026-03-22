@@ -12,8 +12,8 @@ use crate::query::pivot::{
 #[derive(Deserialize)]
 pub struct PivotOptionsParams {
     pub connection_id: String,
-    pub start_date: String,
-    pub end_date: String,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -24,7 +24,9 @@ pub async fn get_pivot_options(
     Query(params): Query<PivotOptionsParams>,
 ) -> Result<Json<DataResponse<PivotOptions>>, ApiError> {
     let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
-    let sql = build_pivot_options_events_query(backend, &params.start_date, &params.end_date);
+    let start = params.start_date.as_deref().unwrap_or("1970-01-01");
+    let end = params.end_date.as_deref().unwrap_or("9999-12-31");
+    let sql = build_pivot_options_events_query(backend, start, end);
     let rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
     let dimensions: Vec<String> = rows.into_iter()
         .filter_map(|r| match &r[0] { SqlValue::Text(s) => Some(s.clone()), _ => None })
@@ -41,6 +43,8 @@ pub struct PivotParams {
     pub end_date: String,
     #[serde(default)]
     pub rows: Option<String>, // JSON array
+    #[serde(default)]
+    pub cols: Option<String>, // JSON array
     #[serde(default)]
     pub values: Option<String>, // JSON array
     #[serde(default = "default_agg")]
@@ -71,20 +75,53 @@ pub async fn get_pivot(
 ) -> Result<Json<DataResponse<Vec<PivotRow>>>, ApiError> {
     let rows_dims: Vec<String> = params.rows.as_deref()
         .and_then(|s| serde_json::from_str(s).ok()).unwrap_or_default();
+    let cols_dims: Vec<String> = params.cols.as_deref()
+        .and_then(|s| serde_json::from_str(s).ok()).unwrap_or_default();
     let values: Vec<String> = params.values.as_deref()
         .and_then(|s| serde_json::from_str(s).ok()).unwrap_or_default();
     let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
-    let sql = build_pivot_query(backend, &rows_dims, &values, &params.agg_func, &params.start_date, &params.end_date);
+    let sql = build_pivot_query(backend, &rows_dims, &cols_dims, &values, &params.agg_func, &params.start_date, &params.end_date);
     let db_rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
     Ok(Json(DataResponse { data: rows_to_json(db_rows) }))
 }
 
 // --- GET /api/pivot/grid ---
+#[derive(Serialize)]
+pub struct PivotGridData {
+    pub columns: Vec<String>,
+    pub rows: Vec<PivotRow>,
+}
+
 pub async fn get_pivot_grid(
     State(state): State<AppState>,
     Query(params): Query<PivotParams>,
-) -> Result<Json<DataResponse<Vec<PivotRow>>>, ApiError> {
-    get_pivot(State(state), Query(params)).await
+) -> Result<Json<DataResponse<PivotGridData>>, ApiError> {
+    let rows_dims: Vec<String> = params.rows.as_deref()
+        .and_then(|s| serde_json::from_str(s).ok()).unwrap_or_default();
+    let cols_dims: Vec<String> = params.cols.as_deref()
+        .and_then(|s| serde_json::from_str(s).ok()).unwrap_or_default();
+    let values: Vec<String> = params.values.as_deref()
+        .and_then(|s| serde_json::from_str(s).ok()).unwrap_or_default();
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
+    let sql = build_pivot_query(backend, &rows_dims, &cols_dims, &values, &params.agg_func, &params.start_date, &params.end_date);
+    let db_rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
+
+    // Derive column names from rows + cols + values params
+    let mut columns: Vec<String> = rows_dims.iter().chain(cols_dims.iter()).cloned().collect();
+    if values.is_empty() {
+        columns.push("count".to_string());
+    } else {
+        for v in &values {
+            columns.push(format!("{v}_agg"));
+        }
+    }
+    if columns.is_empty() {
+        columns.push("event_name".to_string());
+        columns.push("count".to_string());
+    }
+
+    let rows = rows_to_json(db_rows);
+    Ok(Json(DataResponse { data: PivotGridData { columns, rows } }))
 }
 
 // --- GET /api/pivot/grid/filter-values ---
@@ -118,6 +155,8 @@ pub struct PivotGridRowsRequest {
     #[serde(default)]
     pub rows: Vec<String>,
     #[serde(default)]
+    pub cols: Vec<String>,
+    #[serde(default)]
     pub values: Vec<String>,
     #[serde(default = "default_agg")]
     pub agg_func: String,
@@ -125,15 +164,28 @@ pub struct PivotGridRowsRequest {
     pub limit: u32,
     #[serde(default)]
     pub offset: u32,
+    pub sort_by: Option<String>,
+    pub sort_dir: Option<String>,
 }
 fn default_limit() -> u32 { 100 }
+
+#[derive(Serialize)]
+pub struct PivotGridRowsData {
+    pub rows: Vec<PivotRow>,
+    pub total: usize,
+}
 
 pub async fn post_pivot_grid_rows(
     State(state): State<AppState>,
     Json(req): Json<PivotGridRowsRequest>,
-) -> Result<Json<DataResponse<Vec<PivotRow>>>, ApiError> {
+) -> Result<Json<DataResponse<PivotGridRowsData>>, ApiError> {
     let (mut conn, backend) = open_analytics_conn(&state, &req.connection_id).await?;
-    let sql = build_pivot_grid_rows_query(backend, &req.rows, &req.values, &req.agg_func, &req.start_date, &req.end_date, req.limit, req.offset);
+    // Get total count using no-pagination query
+    let all_dims: Vec<String> = req.rows.iter().chain(req.cols.iter()).cloned().collect();
+    let count_sql = build_pivot_grid_rows_query(backend, &all_dims, &req.values, &req.agg_func, &req.start_date, &req.end_date, u32::MAX, 0, req.sort_by.as_deref(), req.sort_dir.as_deref());
+    let all_rows = backend.execute_any(&mut conn, &count_sql, vec![]).await?;
+    let total = all_rows.len();
+    let sql = build_pivot_grid_rows_query(backend, &all_dims, &req.values, &req.agg_func, &req.start_date, &req.end_date, req.limit, req.offset, req.sort_by.as_deref(), req.sort_dir.as_deref());
     let db_rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
-    Ok(Json(DataResponse { data: rows_to_json(db_rows) }))
+    Ok(Json(DataResponse { data: PivotGridRowsData { rows: rows_to_json(db_rows), total } }))
 }

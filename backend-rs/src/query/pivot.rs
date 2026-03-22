@@ -13,6 +13,7 @@ pub fn build_pivot_options_events_query(_backend: &dyn AnyBackend, start_date: &
 pub fn build_pivot_query(
     backend: &dyn AnyBackend,
     rows_dims: &[String],
+    cols_dims: &[String],
     values: &[String],
     agg_func: &str,
     start_date: &str,
@@ -21,10 +22,11 @@ pub fn build_pivot_query(
     let q = backend.identifier_quote_char();
     let safe_agg = match agg_func { "avg" | "min" | "max" | "sum" => agg_func, _ => "count" };
 
-    let group_cols = if rows_dims.is_empty() {
+    let all_dims: Vec<&String> = rows_dims.iter().chain(cols_dims.iter()).collect();
+    let group_cols = if all_dims.is_empty() {
         "event_name".to_string()
     } else {
-        rows_dims.iter().map(|d| format!("{q}{d}{q}")).collect::<Vec<_>>().join(", ")
+        all_dims.iter().map(|d| format!("{q}{d}{q}")).collect::<Vec<_>>().join(", ")
     };
 
     let value_exprs = if values.is_empty() {
@@ -64,6 +66,8 @@ pub fn build_pivot_grid_rows_query(
     end_date: &str,
     limit: u32,
     offset: u32,
+    sort_by: Option<&str>,
+    sort_dir: Option<&str>,
 ) -> String {
     let q = backend.identifier_quote_char();
     let safe_agg = match agg_func { "avg" | "min" | "max" | "sum" => agg_func, _ => "count" };
@@ -80,11 +84,19 @@ pub fn build_pivot_grid_rows_query(
             format!("{safe_agg}({q}{safe_v}{q}) AS {q}{safe_v}_agg{q}")
         }).collect::<Vec<_>>().join(", ")
     };
+    let order_clause = match sort_by {
+        Some(col) => {
+            let safe_col = col.replace('\'', "''");
+            let dir = match sort_dir { Some("desc") => "DESC", _ => "ASC" };
+            format!("{q}{safe_col}{q} {dir}")
+        }
+        None => "1".to_string(),
+    };
     format!(
         "SELECT {group_cols}, {value_exprs} \
          FROM events \
          WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
-         GROUP BY {group_cols} ORDER BY 1 LIMIT {limit} OFFSET {offset}"
+         GROUP BY {group_cols} ORDER BY {order_clause} LIMIT {limit} OFFSET {offset}"
     )
 }
 
@@ -124,7 +136,7 @@ mod tests {
     async fn test_pivot_query_runs() {
         let (mut conn, backend) = make_duckdb().await;
         seed(&mut conn, backend).await;
-        let sql = build_pivot_query(backend, &[], &[], "count", "2024-01-01", "2024-02-01");
+        let sql = build_pivot_query(backend, &[], &[], &[], "count", "2024-01-01", "2024-02-01");
         let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
         assert_eq!(rows.len(), 2);
     }
