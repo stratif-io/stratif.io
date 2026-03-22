@@ -25,8 +25,12 @@ export function computePctChange(current: number, previous: number): number | nu
 }
 
 function formatDuration(sec: number): string {
-  const m = Math.floor(sec / 60)
-  const s = Math.round(sec % 60)
+  let m = Math.floor(sec / 60)
+  let s = Math.round(sec % 60)
+  if (s === 60) {
+    m += 1
+    s = 0
+  }
   return m > 0 ? `${m}m ${s}s` : `${s}s`
 }
 
@@ -37,5 +41,5 @@ function formatCompactNumber(n: number): string {
   if (n >= 1_000) {
     return `${(n / 1_000).toFixed(1).replace(/\.?0+$/, '')}K`
   }
-  return n.toLocaleString()
+  return String(Math.round(n))
 }
