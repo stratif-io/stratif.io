@@ -1,4 +1,7 @@
 import { SparklineChart } from '@/components/charts/sparkline-chart'
+import { CardLoadingBar } from '@/components/ui/card-loading-bar'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export interface MiniMetricCardProps {
@@ -11,6 +14,9 @@ export interface MiniMetricCardProps {
   onClick?: () => void
   loading?: boolean
   fullWidth?: boolean     // true for DAU/MAU which spans 2 cols
+  description?: string
+  changeLabel?: string
+  sparklineFormatter?: (value: number) => string
 }
 
 export function MiniMetricCard({
@@ -23,23 +29,10 @@ export function MiniMetricCard({
   onClick,
   loading,
   fullWidth,
+  description,
+  changeLabel,
+  sparklineFormatter,
 }: MiniMetricCardProps) {
-  if (loading) {
-    return (
-      <div
-        className={cn(
-          'rounded-xl border border-border p-3 animate-pulse',
-          fullWidth && 'col-span-2'
-        )}
-        aria-busy="true"
-      >
-        <div className="h-3 w-16 bg-muted rounded mb-3" />
-        <div className="h-5 w-20 bg-muted rounded mb-2" />
-        <div className="h-3 w-12 bg-muted rounded" />
-      </div>
-    )
-  }
-
   const isPositive = pctChange !== null && pctChange > 0
   const isNegative = pctChange !== null && pctChange < 0
   const isNeutral = pctChange !== null && pctChange === 0
@@ -49,39 +42,59 @@ export function MiniMetricCard({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-xl border p-3 text-left w-full transition-colors',
+        'relative overflow-hidden rounded-xl border p-3 text-left w-full transition-colors',
         'hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         isHero ? 'border-2 border-primary' : 'border-border',
         fullWidth && 'col-span-2'
       )}
     >
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-        {label}
+      <CardLoadingBar loading={loading} />
+      <div className="flex items-center gap-1 mb-1">
+        <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {label}
+        </div>
+        {description && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-2.5 w-2.5 text-muted-foreground/50 cursor-help flex-shrink-0" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[180px] text-xs">
+              {description}
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       <div className="flex items-end justify-between gap-2">
         <div>
           <div className="text-lg font-bold tracking-tight leading-none">{value}</div>
           <div className="mt-1.5">
-            {pctChange === null ? (
-              <span className="text-xs text-muted-foreground">—</span>
-            ) : isNeutral ? (
-              <span className="inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded text-muted-foreground bg-muted">
-                0.0%
-              </span>
-            ) : (
-              <span
-                className={cn(
-                  'inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded',
-                  isPositive && 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40',
-                  isNegative && 'text-destructive bg-destructive/10'
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {pctChange === null ? (
+                  <span className="text-xs text-muted-foreground cursor-default">—</span>
+                ) : isNeutral ? (
+                  <span className="inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded text-muted-foreground bg-muted cursor-default">
+                    0.0%
+                  </span>
+                ) : (
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded cursor-default',
+                      isPositive && 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40',
+                      isNegative && 'text-destructive bg-destructive/10'
+                    )}
+                  >
+                    <span aria-hidden="true">{isPositive ? '↑' : '↓'}</span>
+                    <span className="sr-only">{isPositive ? 'increased by' : 'decreased by'}</span>
+                    {Math.abs(pctChange).toFixed(1)}%
+                  </span>
                 )}
-              >
-                <span aria-hidden="true">{isPositive ? '↑' : '↓'}</span>
-                <span className="sr-only">{isPositive ? 'increased by' : 'decreased by'}</span>
-                {Math.abs(pctChange).toFixed(1)}%
-              </span>
-            )}
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs max-w-[180px]">
+                {changeLabel ?? 'Change vs. previous period'}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -92,6 +105,7 @@ export function MiniMetricCard({
           color={color}
           showArea={false}
           strokeWidth={1.5}
+          formatter={sparklineFormatter}
         />
       </div>
     </button>

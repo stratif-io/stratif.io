@@ -1,5 +1,5 @@
 import { useQueries } from '@tanstack/react-query'
-import { format } from 'date-fns'
+import { format, subDays, differenceInDays } from 'date-fns'
 import { fetchMissionControlTrend } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import { QUERY_STALE_TIME } from '@/lib/constants'
@@ -20,6 +20,9 @@ export type TrendMetric = (typeof METRICS)[number]
 
 export interface MetricTrend {
   values: number[]
+  dates: string[]
+  previousValues: number[]
+  previousDates: string[]
   loading: boolean
 }
 
@@ -36,36 +39,75 @@ export function useMissionControlTrends({
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
   const { activeFilters, activeConnectionId } = useAppStore()
 
+  // Calculate the previous period (same length, immediately before)
+  const periodDays =
+    dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) + 1 : 0
+  const prevEndDate = dateRange.from
+    ? format(subDays(dateRange.from, 1), 'yyyy-MM-dd')
+    : undefined
+  const prevStartDate =
+    dateRange.from && periodDays > 0
+      ? format(subDays(dateRange.from, periodDays), 'yyyy-MM-dd')
+      : undefined
+
   const enabled = !!activeConnectionId && !!startDate && !!endDate
 
+  // Current period queries (indices 0..N-1)
+  // Previous period queries (indices N..2N-1)
   const results = useQueries({
-    queries: METRICS.map((metric) => ({
-      queryKey: [
-        'missionControlTrend',
-        metric,
-        startDate,
-        endDate,
-        activeFilters,
-        activeConnectionId,
-      ],
-      queryFn: () =>
-        fetchMissionControlTrend({
+    queries: [
+      ...METRICS.map((metric) => ({
+        queryKey: [
+          'missionControlTrend',
           metric,
-          start_date: startDate!,
-          end_date: endDate!,
-          filters: activeFilters,
-          connection_id: activeConnectionId ?? undefined,
-        }),
-      enabled,
-      staleTime: QUERY_STALE_TIME.default,
-    })),
+          startDate,
+          endDate,
+          activeFilters,
+          activeConnectionId,
+        ],
+        queryFn: () =>
+          fetchMissionControlTrend({
+            metric,
+            start_date: startDate!,
+            end_date: endDate!,
+            filters: activeFilters,
+            connection_id: activeConnectionId ?? undefined,
+          }),
+        enabled,
+        staleTime: QUERY_STALE_TIME.default,
+      })),
+      ...METRICS.map((metric) => ({
+        queryKey: [
+          'missionControlTrend',
+          metric,
+          prevStartDate,
+          prevEndDate,
+          activeFilters,
+          activeConnectionId,
+        ],
+        queryFn: () =>
+          fetchMissionControlTrend({
+            metric,
+            start_date: prevStartDate!,
+            end_date: prevEndDate!,
+            filters: activeFilters,
+            connection_id: activeConnectionId ?? undefined,
+          }),
+        enabled: enabled && !!prevStartDate && !!prevEndDate,
+        staleTime: QUERY_STALE_TIME.default,
+      })),
+    ],
   })
 
+  const n = METRICS.length
   const trends = Object.fromEntries(
     METRICS.map((metric, i) => [
       metric,
       {
         values: results[i].data?.data.map((d) => d.value) ?? [],
+        dates: results[i].data?.data.map((d) => d.date) ?? [],
+        previousValues: results[n + i].data?.data.map((d) => d.value) ?? [],
+        previousDates: results[n + i].data?.data.map((d) => d.date) ?? [],
         loading: results[i].isLoading,
       },
     ])

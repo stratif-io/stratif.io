@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-stratif.io Analytics — a full-stack product analytics dashboard with a React/TypeScript frontend and Python/FastAPI backend using DuckDB (embedded).
+stratif.io Analytics — a full-stack product analytics dashboard with a React/TypeScript frontend and Python/FastAPI backend. Connects to any SQL analytics warehouse (DuckDB, BigQuery, Snowflake, Redshift, etc.) via SQLGlot for dialect transpilation.
 
 ## Commands
 
@@ -30,7 +30,7 @@ npm run build            # TypeScript type-check + production build
 
 **Frontend** (`apps/web/frontend/`): React 18, Vite 6, Tailwind CSS v4, shadcn/ui, React Router v6
 
-**Backend** (`stratifio/`): FastAPI, DuckDB, pydantic-settings, SQLGlot for SQL transpilation
+**Backend** (`stratifio/`): FastAPI, pydantic-settings, SQLGlot for SQL transpilation across analytics warehouses (DuckDB, BigQuery, Snowflake, Redshift, etc.). Product DB (users, connections, credentials) defaults to SQLite in local/dev but can be any SQL database in production.
 
 ### Two-tier state management
 
@@ -117,6 +117,10 @@ Feature work should be done in an isolated worktree, not directly on `main`. Use
 5. Add route in `apps/web/frontend/App.tsx` (lazy-loaded with Suspense)
 6. Add nav item in `apps/web/frontend/components/layout/Sidebar.tsx`
 7. Add types in `apps/web/frontend/types/index.ts` and Zod schema in `apps/web/frontend/lib/schemas/`
+
+## After a Frontend Change
+
+After any frontend UI change, update the design system to reflect new components, patterns, tokens, or conventions introduced. This keeps the design system in sync with the codebase.
 
 ## Adding a Chart
 
