@@ -1,3 +1,4 @@
+pub mod connections;
 pub mod error;
 pub mod state;
 pub mod trend;
@@ -17,6 +18,19 @@ pub fn build_router(state: AppState) -> Router {
     use axum::routing::{get, post};
 
     Router::new()
+        // connections
+        .route("/api/connections", get(connections::list_connections).post(connections::create_connection))
+        .route("/api/connections/:conn_id", get(connections::get_connection).patch(connections::update_connection).delete(connections::delete_connection))
+        .route("/api/connections/:conn_id/test", post(connections::test_connection))
+        .route("/api/connections/:conn_id/schema/detect", get(connections::detect_schema))
+        .route("/api/connections/:conn_id/schema", get(connections::get_schema_config).put(connections::upsert_schema_config))
+        .route("/api/connections/:conn_id/filters", get(connections::get_filter_config).put(connections::upsert_filter_config))
+        .route("/api/connections/:conn_id/filter-options", get(connections::get_filter_options))
+        .route("/api/connections/:conn_id/field-options", get(connections::get_field_options))
+        .route("/api/connections/:conn_id/credentials", get(connections::get_credentials))
+        .route("/api/connections/:conn_id/browse", get(connections::browse_connection))
+        .route("/api/connections/:conn_id/tables", get(connections::list_tables))
+        // analytics
         .route("/api/trend", get(trend::get_trend))
         .route("/api/events", get(events::get_events))
         .route("/api/events/top", get(events::get_top_events))

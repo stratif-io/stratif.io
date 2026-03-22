@@ -20,14 +20,26 @@ pub struct AppState {
     pub encryption_key: Arc<String>,
 }
 
+/// Build a Fernet instance from the raw encryption key.
+fn make_fernet(encryption_key: &str) -> Result<fernet::Fernet> {
+    let hash = Sha256::digest(encryption_key.as_bytes());
+    let fernet_key = base64::engine::general_purpose::URL_SAFE.encode(hash);
+    fernet::Fernet::new(&fernet_key)
+        .ok_or_else(|| anyhow!("invalid fernet key derived from STRATIFIO_ENCRYPTION_KEY"))
+}
+
+/// Encrypt a JSON value to a Fernet-encrypted string.
+pub(crate) fn encrypt_credentials(json: &serde_json::Value, encryption_key: &str) -> Result<String> {
+    let fernet = make_fernet(encryption_key)?;
+    let plaintext = serde_json::to_string(json)?;
+    Ok(fernet.encrypt(plaintext.as_bytes()))
+}
+
 /// Decrypt a Fernet-encrypted credential string.
 /// Key derivation: SHA-256(raw_key_bytes) → URL-safe base64 → Fernet key.
 /// This matches the Python backend's crypto.py derivation.
-fn decrypt_credentials(encrypted: &str, encryption_key: &str) -> Result<String> {
-    let hash = Sha256::digest(encryption_key.as_bytes());
-    let fernet_key = base64::engine::general_purpose::URL_SAFE.encode(hash);
-    let fernet = fernet::Fernet::new(&fernet_key)
-        .ok_or_else(|| anyhow!("invalid fernet key derived from STRATIFIO_ENCRYPTION_KEY"))?;
+pub(crate) fn decrypt_credentials(encrypted: &str, encryption_key: &str) -> Result<String> {
+    let fernet = make_fernet(encryption_key)?;
     let decrypted_bytes = fernet
         .decrypt(encrypted)
         .map_err(|e| anyhow!("fernet decrypt failed: {e}"))?;
