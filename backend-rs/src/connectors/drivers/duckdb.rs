@@ -3,6 +3,11 @@ use crate::connectors::types::{BrowseNode, ColumnInfo, Row, SchemaInfo};
 use anyhow::Result;
 use crate::connectors::dialect::SqlDialect;
 use crate::connectors::types::CustomProperty;
+use serde::Deserialize;
+use async_trait::async_trait;
+use crate::connectors::backend::DatabaseBackend;
+use crate::connectors::mod_types::BackendConnection;
+use crate::connectors::types::{SqlValue};
 
 pub(crate) enum DuckDbRequest {
     Execute {
@@ -48,7 +53,13 @@ fn run_duckdb_actor(conn: duckdb::Connection, mut rx: mpsc::Receiver<DuckDbReque
             DuckDbRequest::Execute { query, params: _, reply } => {
                 let result = conn.prepare(&query)
                     .and_then(|mut stmt| {
-                        let rows = stmt.query_map([], |_row| Ok(vec![]))?;
+                        let rows = stmt.query_map([], |row| {
+                            let col_count = row.as_ref().column_count();
+                            let vals = (0..col_count)
+                                .map(|i| map_value(row.get_ref(i).unwrap_or(duckdb::types::ValueRef::Null)))
+                                .collect();
+                            Ok(vals)
+                        })?;
                         rows.collect::<Result<Vec<_>, _>>()
                     })
                     .map_err(|e| anyhow::anyhow!("{e}"));
@@ -72,6 +83,36 @@ fn run_duckdb_actor(conn: duckdb::Connection, mut rx: mpsc::Receiver<DuckDbReque
             }
             _ => {}
         }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct DuckDbCredentials {
+    pub file_path: Option<String>,
+    pub s3_path: Option<String>,
+}
+
+impl DuckDbCredentials {
+    fn resolved_path(&self) -> anyhow::Result<&str> {
+        self.file_path.as_deref()
+            .or(self.s3_path.as_deref())
+            .ok_or_else(|| anyhow::anyhow!("DuckDB requires file_path or s3_path"))
+    }
+}
+
+fn map_value(val: duckdb::types::ValueRef<'_>) -> SqlValue {
+    use duckdb::types::ValueRef;
+    match val {
+        ValueRef::Null => SqlValue::Null,
+        ValueRef::Boolean(b) => SqlValue::Bool(b),
+        ValueRef::TinyInt(i) => SqlValue::Int(i as i64),
+        ValueRef::SmallInt(i) => SqlValue::Int(i as i64),
+        ValueRef::Int(i) => SqlValue::Int(i as i64),
+        ValueRef::BigInt(i) => SqlValue::Int(i),
+        ValueRef::Float(f) => SqlValue::Float(f as f64),
+        ValueRef::Double(f) => SqlValue::Float(f),
+        ValueRef::Text(s) => SqlValue::Text(String::from_utf8_lossy(s).into_owned()),
+        other => SqlValue::Text(format!("{other:?}")),
     }
 }
 
@@ -178,6 +219,87 @@ impl SqlDialect for DuckDbBackend {
         } else {
             format!("WITH {cte_def} {q}")
         }
+    }
+}
+
+#[async_trait]
+impl DatabaseBackend for DuckDbBackend {
+    type Credentials = DuckDbCredentials;
+
+    async fn open(&self, creds: &DuckDbCredentials) -> anyhow::Result<BackendConnection> {
+        let path = creds.resolved_path()?.to_owned();
+        let (tx, rx) = tokio::sync::mpsc::channel(32);
+        std::thread::spawn(move || {
+            let conn = if path == ":memory:" {
+                duckdb::Connection::open_in_memory().expect("duckdb open_in_memory")
+            } else {
+                duckdb::Connection::open(&path).expect("duckdb open")
+            };
+            run_duckdb_actor(conn, rx);
+        });
+        Ok(BackendConnection::DuckDb(DuckDbHandle { tx }))
+    }
+
+    async fn execute(&self, conn: &mut BackendConnection, query: &str, _params: Vec<SqlValue>) -> anyhow::Result<Vec<Row>> {
+        let BackendConnection::DuckDb(handle) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        handle.tx.send(DuckDbRequest::Execute { query: query.to_owned(), params: vec![], reply: tx }).await?;
+        rx.await?
+    }
+
+    async fn get_tables(&self, conn: &mut BackendConnection) -> anyhow::Result<Vec<String>> {
+        let BackendConnection::DuckDb(handle) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        handle.tx.send(DuckDbRequest::GetTables { reply: tx }).await?;
+        rx.await?
+    }
+
+    async fn table_exists(&self, conn: &mut BackendConnection, table_name: &str) -> anyhow::Result<bool> {
+        let BackendConnection::DuckDb(handle) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        handle.tx.send(DuckDbRequest::TableExists { table_name: table_name.to_owned(), reply: tx }).await?;
+        rx.await?
+    }
+
+    fn is_connection_error(&self, _err: &anyhow::Error) -> bool { false }
+
+    async fn get_table_columns(&self, _conn: &mut BackendConnection, _table: &str) -> anyhow::Result<Vec<ColumnInfo>> { todo!() }
+    async fn get_columns_for_browse(&self, _conn: &mut BackendConnection, _table: &str) -> anyhow::Result<Vec<String>> { todo!() }
+    async fn detect_schema(&self, _conn: &mut BackendConnection, _hint: Option<&str>) -> anyhow::Result<SchemaInfo> { todo!() }
+    async fn browse(&self, _conn: &mut BackendConnection, _catalog: Option<&str>, _schema: Option<&str>) -> anyhow::Result<Vec<BrowseNode>> { todo!() }
+}
+
+#[cfg(test)]
+mod integration {
+    use super::*;
+    use crate::connectors::any_backend::AnyBackend;
+    use crate::connectors::backend::DatabaseBackend;
+
+    #[tokio::test]
+    async fn open_and_get_tables() {
+        let b = DuckDbBackend::new();
+        let raw = serde_json::json!({ "file_path": ":memory:" });
+        let mut conn = AnyBackend::open_any(&b, raw).await.unwrap();
+        let tables = DatabaseBackend::get_tables(&b, &mut conn).await.unwrap();
+        assert!(tables.is_empty()); // fresh in-memory DB
+    }
+
+    #[tokio::test]
+    async fn table_exists_false() {
+        let b = DuckDbBackend::new();
+        let raw = serde_json::json!({ "file_path": ":memory:" });
+        let mut conn = AnyBackend::open_any(&b, raw).await.unwrap();
+        let exists = DatabaseBackend::table_exists(&b, &mut conn, "no_such_table").await.unwrap();
+        assert!(!exists);
+    }
+
+    #[tokio::test]
+    async fn execute_select_1() {
+        let b = DuckDbBackend::new();
+        let raw = serde_json::json!({ "file_path": ":memory:" });
+        let mut conn = AnyBackend::open_any(&b, raw).await.unwrap();
+        let rows = DatabaseBackend::execute(&b, &mut conn, "SELECT 1", vec![]).await.unwrap();
+        assert_eq!(rows.len(), 1);
     }
 }
 
