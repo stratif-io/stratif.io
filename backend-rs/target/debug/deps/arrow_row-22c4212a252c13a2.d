@@ -1,0 +1,11 @@
+/Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/deps/arrow_row-22c4212a252c13a2.d: /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/lib.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/fixed.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/list.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/run.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/variable.rs
+
+/Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/deps/libarrow_row-22c4212a252c13a2.rlib: /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/lib.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/fixed.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/list.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/run.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/variable.rs
+
+/Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/feat/rust-backend/backend-rs/target/debug/deps/libarrow_row-22c4212a252c13a2.rmeta: /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/lib.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/fixed.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/list.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/run.rs /Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/variable.rs
+
+/Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/lib.rs:
+/Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/fixed.rs:
+/Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/list.rs:
+/Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/run.rs:
+/Users/carlo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-row-57.3.0/src/variable.rs:

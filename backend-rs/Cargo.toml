@@ -1,0 +1,23 @@
+[package]
+name = "stratifio-backend"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "stratifio-backend"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+duckdb = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "macros"] }
+reqwest = { version = "0.12", features = ["json"] }
+clickhouse = "0.11"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }
