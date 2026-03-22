@@ -123,6 +123,7 @@ pub mod any_backend;
 pub mod backend;
 pub mod dialect;
 pub mod drivers;
+pub mod mod_types;  // BackendConnection lives here to avoid circular imports
 pub mod types;
 ```
 
@@ -621,7 +622,7 @@ mod tests {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::duckdb
+cargo test -p stratifio-backend -- connectors::drivers::duckdb
 ```
 Expected: FAIL — `SqlDialect` not implemented for `DuckDbBackend`
 
@@ -704,8 +705,8 @@ impl SqlDialect for DuckDbBackend {
         let q = query.trim();
         let cte_def = format!("events AS {cte_body}");
         let upper = q.to_uppercase();
-        if let Some(pos) = upper.find("WITH ") {
-            format!("{}WITH {} {}", &q[..pos], cte_def + ", ", &q[pos + 5..])
+        if upper.starts_with("WITH ") {
+            format!("WITH {cte_def}, {}", &q[5..])
         } else {
             format!("WITH {cte_def} {q}")
         }
@@ -716,7 +717,7 @@ impl SqlDialect for DuckDbBackend {
 - [ ] **Step 4: Run tests — all must pass**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::duckdb
+cargo test -p stratifio-backend -- connectors::drivers::duckdb
 ```
 Expected: all 16 tests pass
 
@@ -769,7 +770,7 @@ mod tests {
 - [ ] **Step 2: Run tests — verify they fail**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::sqlite
+cargo test -p stratifio-backend -- connectors::drivers::sqlite
 ```
 
 - [ ] **Step 3: Implement `SqlDialect` for `SqliteBackend`**
@@ -837,7 +838,7 @@ impl SqlDialect for SqliteBackend {
 - [ ] **Step 4: Run tests — all pass**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::sqlite
+cargo test -p stratifio-backend -- connectors::drivers::sqlite
 ```
 
 - [ ] **Step 5: Commit**
@@ -896,7 +897,7 @@ mod tests {
 - [ ] **Step 2: Run tests — verify they fail**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::postgres
+cargo test -p stratifio-backend -- connectors::drivers::postgres
 ```
 
 - [ ] **Step 3: Implement `SqlDialect` for `PostgresBackend`**
@@ -960,7 +961,7 @@ impl SqlDialect for PostgresBackend {
 - [ ] **Step 4: Run tests — all pass**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::postgres
+cargo test -p stratifio-backend -- connectors::drivers::postgres
 ```
 
 - [ ] **Step 5: Commit**
@@ -1022,7 +1023,7 @@ mod tests {
 - [ ] **Step 2: Run tests — verify they fail**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::clickhouse
+cargo test -p stratifio-backend -- connectors::drivers::clickhouse
 ```
 
 - [ ] **Step 3: Implement `SqlDialect` for `ClickHouseBackend`**
@@ -1086,7 +1087,7 @@ impl SqlDialect for ClickHouseBackend {
 - [ ] **Step 4: Run tests — all pass**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::clickhouse
+cargo test -p stratifio-backend -- connectors::drivers::clickhouse
 ```
 
 - [ ] **Step 5: Commit**
@@ -1138,7 +1139,7 @@ mod tests {
 - [ ] **Step 2: Run tests — verify they fail**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::snowflake
+cargo test -p stratifio-backend -- connectors::drivers::snowflake
 ```
 
 - [ ] **Step 3: Implement `SqlDialect` for `SnowflakeBackend`**
@@ -1187,7 +1188,7 @@ impl SqlDialect for SnowflakeBackend {
 - [ ] **Step 4: Run tests — all pass**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::snowflake
+cargo test -p stratifio-backend -- connectors::drivers::snowflake
 ```
 
 - [ ] **Step 5: Commit**
@@ -1242,7 +1243,7 @@ mod tests {
 - [ ] **Step 2: Run tests — verify they fail**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::databricks
+cargo test -p stratifio-backend -- connectors::drivers::databricks
 ```
 
 - [ ] **Step 3: Implement `SqlDialect` for `DatabricksBackend`**
@@ -1295,7 +1296,7 @@ impl SqlDialect for DatabricksBackend {
 - [ ] **Step 4: Run tests — all pass**
 
 ```bash
-cargo test -p stratifio-backend connectors::drivers::databricks
+cargo test -p stratifio-backend -- connectors::drivers::databricks
 ```
 
 - [ ] **Step 5: Run all dialect tests together**
@@ -1399,7 +1400,12 @@ fn run_duckdb_actor(conn: duckdb::Connection, mut rx: mpsc::Receiver<DuckDbReque
                 let _ = reply.send(result);
             }
             DuckDbRequest::TableExists { table_name, reply } => {
-                let exists = conn.execute(&format!("SELECT 1 FROM \"{}\" LIMIT 1", table_name), []).is_ok();
+                // Query information_schema — avoids triggering a scan and correctly returns false
+                let exists = conn.query_row(
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
+                    [&table_name],
+                    |r| r.get::<_, i64>(0),
+                ).map(|n| n > 0).unwrap_or(false);
                 let _ = reply.send(Ok(exists));
             }
             // DetectSchema, Browse, GetTableColumns, GetColumnsForBrowse: full impl in Task 12
@@ -1411,9 +1417,60 @@ fn run_duckdb_actor(conn: duckdb::Connection, mut rx: mpsc::Receiver<DuckDbReque
 
 - [ ] **Step 3: Define `SqliteHandle` and actor in `sqlite.rs`**
 
-Mirror the same pattern as `DuckDbHandle` / `run_duckdb_actor` for SQLite using `rusqlite::Connection`. Define `SqliteRequest` and `SqliteHandle` with the same request variants. The actor body calls `rusqlite` APIs instead of `duckdb`.
+Mirror the DuckDB pattern using `rusqlite`. Key differences from duckdb:
+- In-memory: `rusqlite::Connection::open_in_memory()` (works correctly, no special-casing needed for `":memory:"`)
+- Row access: `row.get::<usize, Value>(i)` with `rusqlite::types::Value`
+- Params: use `rusqlite::params![]` macro or `[]` for no params
+- `get_tables` query: `SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`
+- `table_exists` query: `SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?1`
+
+Provide this skeleton and fill in the actor loop:
+
+```rust
+pub(crate) enum SqliteRequest {
+    Execute { query: String, reply: oneshot::Sender<Result<Vec<Row>>> },
+    GetTables { reply: oneshot::Sender<Result<Vec<String>>> },
+    TableExists { table_name: String, reply: oneshot::Sender<Result<bool>> },
+    GetTableColumns { table: String, reply: oneshot::Sender<Result<Vec<ColumnInfo>>> },
+    GetColumnsForBrowse { table: String, reply: oneshot::Sender<Result<Vec<String>>> },
+    DetectSchema { hint: Option<String>, reply: oneshot::Sender<Result<SchemaInfo>> },
+    Browse { catalog: Option<String>, schema: Option<String>, reply: oneshot::Sender<Result<Vec<BrowseNode>>> },
+}
+
+#[derive(Clone)]
+pub struct SqliteHandle {
+    pub(crate) tx: mpsc::Sender<SqliteRequest>,
+}
+
+fn run_sqlite_actor(conn: rusqlite::Connection, mut rx: mpsc::Receiver<SqliteRequest>) {
+    while let Some(req) = rx.blocking_recv() {
+        match req {
+            SqliteRequest::GetTables { reply } => {
+                let result = conn.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+                    .and_then(|mut stmt| stmt.query_map([], |r| r.get::<_, String>(0))
+                        .and_then(|rows| rows.collect::<rusqlite::Result<Vec<_>>>()))
+                    .map_err(|e| anyhow::anyhow!("{e}"));
+                let _ = reply.send(result);
+            }
+            SqliteRequest::TableExists { table_name, reply } => {
+                let exists = conn.query_row(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?1",
+                    rusqlite::params![table_name],
+                    |r| r.get::<_, i64>(0),
+                ).map(|n| n > 0).unwrap_or(false);
+                let _ = reply.send(Ok(exists));
+            }
+            // Implement Execute, GetTableColumns, GetColumnsForBrowse, DetectSchema, Browse
+            // following the same pattern. Mirror Python backend/backends/sqlite/__init__.py logic.
+            _ => {}
+        }
+    }
+}
+```
 
 - [ ] **Step 4: Replace `BackendConnection` placeholder in `mod_types.rs`**
+
+> **Note:** `BackendConnection` is `Send` but **not** `Sync` because `sqlx::pool::PoolConnection<Postgres>` is `Send` but not `Sync`. This is fine for passing `&mut BackendConnection` across async boundaries. If you ever need to share a connection across threads, use `tokio::sync::Mutex<BackendConnection>` (not `std::sync::Mutex`).
 
 ```rust
 use crate::connectors::drivers::duckdb::DuckDbHandle;
@@ -1463,17 +1520,15 @@ Integration tests use DuckDB in-memory — no external infrastructure needed.
 #[cfg(test)]
 mod integration {
     use super::*;
+    use crate::connectors::any_backend::AnyBackend;  // needed for open_any
     use crate::connectors::backend::DatabaseBackend;
-
-    #[derive(serde::Deserialize)]
-    struct InMemCreds { path: String }
 
     #[tokio::test]
     async fn open_and_get_tables() {
         let b = DuckDbBackend::new();
-        // DuckDB in-memory via :memory:
+        // ":memory:" is special-cased in open() to call open_in_memory()
         let raw = serde_json::json!({ "file_path": ":memory:" });
-        let mut conn = b.open_any(raw).await.unwrap();
+        let mut conn = AnyBackend::open_any(&b, raw).await.unwrap();
         let tables = DatabaseBackend::get_tables(&b, &mut conn).await.unwrap();
         assert!(tables.is_empty()); // fresh in-memory DB
     }
@@ -1482,7 +1537,7 @@ mod integration {
     async fn table_exists_false() {
         let b = DuckDbBackend::new();
         let raw = serde_json::json!({ "file_path": ":memory:" });
-        let mut conn = b.open_any(raw).await.unwrap();
+        let mut conn = AnyBackend::open_any(&b, raw).await.unwrap();
         let exists = DatabaseBackend::table_exists(&b, &mut conn, "no_such_table").await.unwrap();
         assert!(!exists);
     }
@@ -1491,7 +1546,7 @@ mod integration {
     async fn execute_select_1() {
         let b = DuckDbBackend::new();
         let raw = serde_json::json!({ "file_path": ":memory:" });
-        let mut conn = b.open_any(raw).await.unwrap();
+        let mut conn = AnyBackend::open_any(&b, raw).await.unwrap();
         let rows = DatabaseBackend::execute(&b, &mut conn, "SELECT 1", vec![]).await.unwrap();
         assert_eq!(rows.len(), 1);
     }
@@ -1501,7 +1556,7 @@ mod integration {
 - [ ] **Step 2: Run tests — verify they fail**
 
 ```bash
-cargo test -p stratifio-backend integration
+cargo test -p stratifio-backend -- integration
 ```
 
 - [ ] **Step 3: Add `DuckDbCredentials` and `DatabaseBackend` impl**
@@ -1540,7 +1595,12 @@ impl DatabaseBackend for DuckDbBackend {
         let path = creds.resolved_path()?.to_owned();
         let (tx, rx) = tokio::sync::mpsc::channel(32);
         std::thread::spawn(move || {
-            let conn = duckdb::Connection::open(&path).expect("duckdb open");
+            // Special-case ":memory:" — duckdb-rs does not treat it as a magic path
+            let conn = if path == ":memory:" {
+                duckdb::Connection::open_in_memory().expect("duckdb open_in_memory")
+            } else {
+                duckdb::Connection::open(&path).expect("duckdb open")
+            };
             run_duckdb_actor(conn, rx);
         });
         Ok(BackendConnection::DuckDb(DuckDbHandle { tx }))
@@ -1584,29 +1644,31 @@ impl DatabaseBackend for DuckDbBackend {
 
 Replace the skeleton `run_duckdb_actor` with full row-to-`SqlValue` mapping, and implement `DetectSchema`, `GetTableColumns`, `GetColumnsForBrowse`, `Browse` request handlers. Mirror the Python `DuckDBBackend` logic directly.
 
-Row mapping (inside actor execute handler):
+Row mapping (inside actor execute handler). **Important:** check the actual `duckdb::types::ValueRef` enum variant names in the crate docs before writing this — the names differ between versions (e.g. `Integer` not `SmallInt`, `Real` not `Float`). A safe starting point:
+
 ```rust
-// Map duckdb column type to SqlValue
-fn map_value(val: &duckdb::types::ValueRef) -> SqlValue {
-    use duckdb::types::ValueRef::*;
+fn map_value(val: duckdb::types::ValueRef<'_>) -> SqlValue {
     match val {
-        Null => SqlValue::Null,
-        Boolean(b) => SqlValue::Bool(*b),
-        SmallInt(i) => SqlValue::Int(*i as i64),
-        Int(i) => SqlValue::Int(*i as i64),
-        BigInt(i) => SqlValue::Int(*i),
-        Float(f) => SqlValue::Float(*f as f64),
-        Double(f) => SqlValue::Float(*f),
-        Text(s) => SqlValue::Text(s.to_string()),
-        _ => SqlValue::Text(format!("{val:?}")),
+        duckdb::types::ValueRef::Null => SqlValue::Null,
+        duckdb::types::ValueRef::Boolean(b) => SqlValue::Bool(b),
+        duckdb::types::ValueRef::TinyInt(i) => SqlValue::Int(i as i64),
+        duckdb::types::ValueRef::SmallInt(i) => SqlValue::Int(i as i64),
+        duckdb::types::ValueRef::Int(i) => SqlValue::Int(i as i64),
+        duckdb::types::ValueRef::BigInt(i) => SqlValue::Int(i),
+        duckdb::types::ValueRef::Float(f) => SqlValue::Float(f as f64),
+        duckdb::types::ValueRef::Double(f) => SqlValue::Float(f),
+        duckdb::types::ValueRef::Text(s) => SqlValue::Text(String::from_utf8_lossy(s).into_owned()),
+        other => SqlValue::Text(format!("{other:?}")),
     }
 }
 ```
 
+Verify variant names compile against your installed `duckdb` version; adjust if needed.
+
 - [ ] **Step 5: Run integration tests — all pass**
 
 ```bash
-cargo test -p stratifio-backend integration
+cargo test -p stratifio-backend -- integration
 ```
 
 - [ ] **Step 6: Run all tests**
@@ -1667,13 +1729,23 @@ mod integration {
 }
 ```
 
-- [ ] **Step 2: Implement `SqliteCredentials`, `SqliteHandle`, actor, `DatabaseBackend`**
+- [ ] **Step 2: Add `SqliteCredentials` and implement `DatabaseBackend`**
 
-Mirror the DuckDB pattern exactly using `rusqlite` APIs. Key differences:
-- `rusqlite::Connection::open(":memory:")` for in-memory
-- `get_tables` query: `SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`
-- `table_exists`: `SELECT 1 FROM sqlite_master WHERE type='table' AND name=?`
-- Row mapping: `rusqlite::types::Value::Integer(i)` → `SqlValue::Int(i)`, etc.
+```rust
+#[derive(serde::Deserialize)]
+pub struct SqliteCredentials {
+    pub file_path: String,  // use ":memory:" for in-memory
+}
+```
+
+Then implement `DatabaseBackend for SqliteBackend`. `open()` spawns the actor thread using `SqliteHandle` from Task 10. All I/O methods send requests to the actor and await `oneshot` replies.
+
+Row mapping from `rusqlite::types::Value`:
+- `Value::Integer(i)` → `SqlValue::Int(i)`
+- `Value::Real(f)` → `SqlValue::Float(f)`
+- `Value::Text(s)` → `SqlValue::Text(s)`
+- `Value::Blob(_)` → `SqlValue::Null`
+- `Value::Null` → `SqlValue::Null`
 
 - [ ] **Step 3: Run all tests**
 
@@ -1901,6 +1973,8 @@ git commit -m "feat(rust/connectors): Snowflake, ClickHouse, Databricks stub Dat
 
 - [ ] **Step 1: Write failing registry test**
 
+> **Note on testcontainers:** The spec mentions PostgreSQL testcontainers for integration tests. This plan instead gates PostgreSQL tests behind `STRATIFIO_TEST_POSTGRES=1` and assumes Postgres is running locally (e.g. via `docker run -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres`). Adding testcontainers is a follow-up.
+
 ```rust
 #[cfg(test)]
 mod tests {
@@ -1908,7 +1982,7 @@ mod tests {
 
     #[test]
     fn registry_has_all_drivers() {
-        let reg = BackendRegistry::default();
+        let reg = BackendRegistry::default();  // impl Default
         let cases = [
             ("duckdb",      "duckdb"),
             ("sqlite",      "sqlite"),
@@ -1934,7 +2008,7 @@ mod tests {
 - [ ] **Step 2: Run — verify test fails**
 
 ```bash
-cargo test -p stratifio-backend registry
+cargo test -p stratifio-backend -- registry
 ```
 Expected: FAIL — `BackendRegistry` not defined
 
@@ -1958,8 +2032,8 @@ pub struct BackendRegistry {
     backends: HashMap<String, Box<dyn AnyBackend>>,
 }
 
-impl BackendRegistry {
-    pub fn default() -> Self {
+impl Default for BackendRegistry {
+    fn default() -> Self {
         let mut r = Self { backends: HashMap::new() };
         r.register("duckdb",      DuckDbBackend::new());
         r.register("sqlite",      SqliteBackend::new());
@@ -1969,7 +2043,9 @@ impl BackendRegistry {
         r.register("databricks",  DatabricksBackend::new());
         r
     }
+}
 
+impl BackendRegistry {
     pub fn register<B: AnyBackend + 'static>(&mut self, name: &str, backend: B) {
         self.backends.insert(name.to_string(), Box::new(backend));
     }
@@ -1981,12 +2057,15 @@ impl BackendRegistry {
             .ok_or_else(|| anyhow!("Unsupported db_type: {db_type}"))
     }
 }
+
+// Note: BackendRegistry::default() is now via `impl Default`.
+// Use `BackendRegistry::default()` or `BackendRegistry { ..Default::default() }` at call sites.
 ```
 
 - [ ] **Step 4: Run registry tests — both pass**
 
 ```bash
-cargo test -p stratifio-backend registry
+cargo test -p stratifio-backend -- registry
 ```
 
 - [ ] **Step 5: Run full test suite**
