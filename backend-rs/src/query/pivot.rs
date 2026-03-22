@@ -124,7 +124,32 @@ pub fn build_pivot_grid_rows_count_query(
     start_date: &str,
     end_date: &str,
 ) -> String {
-    let inner = build_pivot_grid_rows_query(backend, rows_dims, values, agg_func, start_date, end_date, u32::MAX, 0, None, None);
+    let q = backend.identifier_quote_char();
+    let safe_agg = match agg_func { "avg" | "min" | "max" | "sum" => agg_func, _ => "count" };
+    let group_cols = if rows_dims.is_empty() {
+        "event_name".to_string()
+    } else {
+        rows_dims.iter().map(|d| {
+            let safe_d = d.replace(q, "");
+            format!("{q}{safe_d}{q}")
+        }).collect::<Vec<_>>().join(", ")
+    };
+    let value_exprs = if values.is_empty() {
+        "COUNT(*) AS count".to_string()
+    } else {
+        values.iter().map(|v| {
+            let safe_v = v.replace(q, "");
+            format!("{safe_agg}({q}{safe_v}{q}) AS {q}{safe_v}_agg{q}")
+        }).collect::<Vec<_>>().join(", ")
+    };
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
+    let inner = format!(
+        "SELECT {group_cols}, {value_exprs} \
+         FROM events \
+         WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}' \
+         GROUP BY {group_cols}"
+    );
     format!("SELECT COUNT(*) AS total FROM ({inner}) AS _pivot_count")
 }
 
