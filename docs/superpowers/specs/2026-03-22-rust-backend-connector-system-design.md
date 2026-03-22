@@ -470,12 +470,30 @@ Verify all 6 drivers are registered and `get()` returns the correct `dialect_nam
 #[test]
 fn registry_has_all_drivers() {
     let reg = BackendRegistry::default();
-    for key in ["duckdb","sqlite","postgresql","snowflake","clickhouse","databricks"] {
-        let b = reg.get(key).unwrap();
-        assert_eq!(b.dialect_name(), key.replace("postgresql","postgres"));
+    let cases = [
+        ("duckdb",      "duckdb"),
+        ("sqlite",      "sqlite"),
+        ("postgresql",  "postgres"),   // registry key differs from dialect name
+        ("snowflake",   "snowflake"),
+        ("clickhouse",  "clickhouse"),
+        ("databricks",  "databricks"),
+    ];
+    for (key, expected_dialect) in cases {
+        let b = reg.get(key).expect(key);
+        assert_eq!(b.dialect_name(), expected_dialect, "dialect_name mismatch for {key}");
     }
 }
 ```
+
+---
+
+## Intentional Departures from Python
+
+- **`read_only` parameter dropped** — Python's `open(credentials, read_only=True)` is omitted. All connections are treated as read-only for analytics queries. If write access is ever needed (e.g. materializing intermediate results in DuckDB), the trait can be extended then. YAGNI.
+
+- **`string_concat` variadic → slice** — Python uses `*parts: str` (variadic). Rust uses `parts: &[&str]` (slice), which is idiomatically equivalent and avoids macros. Callers pass `&[a, b, c]`.
+
+- **`parse_credentials` removed** — Python exposes this as a protocol method. In Rust, credential parsing is handled by `serde_json::from_value::<B::Credentials>(raw)` inside `open_any`. Validation lives in the `Deserialize` impl of each `Credentials` type.
 
 ---
 
