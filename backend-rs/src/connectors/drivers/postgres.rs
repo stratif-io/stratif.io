@@ -7,6 +7,7 @@ use crate::connectors::dialect::SqlDialect;
 use crate::connectors::types::{BrowseNode, ColumnInfo, CustomProperty, Row, SchemaInfo, SqlValue};
 
 pub struct PostgresBackend;
+#[allow(clippy::new_without_default)]
 impl PostgresBackend { pub fn new() -> Self { Self } }
 
 #[derive(Deserialize)]
@@ -29,6 +30,7 @@ impl PostgresCredentials {
 
 fn map_pg_row(row: &sqlx::postgres::PgRow) -> Row {
     use sqlx::Row as SqlxRow;
+    #[allow(unused_imports)]
     use sqlx::Column;
     (0..row.columns().len()).map(|i| {
         row.try_get::<i64, _>(i).map(SqlValue::Int)

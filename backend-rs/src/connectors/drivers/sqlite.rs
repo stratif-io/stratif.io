@@ -9,6 +9,7 @@ use crate::connectors::backend::DatabaseBackend;
 use crate::connectors::mod_types::BackendConnection;
 use crate::connectors::types::{SqlValue};
 
+#[allow(dead_code)]
 pub(crate) enum SqliteRequest {
     Execute { query: String, reply: oneshot::Sender<Result<Vec<Row>>> },
     GetTables { reply: oneshot::Sender<Result<Vec<String>>> },
@@ -81,6 +82,7 @@ fn run_sqlite_actor(conn: rusqlite::Connection, mut rx: mpsc::Receiver<SqliteReq
 }
 
 pub struct SqliteBackend;
+#[allow(clippy::new_without_default)]
 impl SqliteBackend { pub fn new() -> Self { Self } }
 
 #[async_trait]

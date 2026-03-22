@@ -7,6 +7,7 @@ use crate::connectors::mod_types::{BackendConnection, SnowflakeClient};
 use crate::connectors::types::{BrowseNode, ColumnInfo, CustomProperty, Row, SchemaInfo, SqlValue};
 
 pub struct SnowflakeBackend;
+#[allow(clippy::new_without_default)]
 impl SnowflakeBackend { pub fn new() -> Self { Self } }
 
 #[derive(Deserialize)]

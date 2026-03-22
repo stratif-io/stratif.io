@@ -7,6 +7,7 @@ use crate::connectors::mod_types::{BackendConnection, ClickHouseClient};
 use crate::connectors::types::{BrowseNode, ColumnInfo, CustomProperty, Row, SchemaInfo, SqlValue};
 
 pub struct ClickHouseBackend;
+#[allow(clippy::new_without_default)]
 impl ClickHouseBackend { pub fn new() -> Self { Self } }
 
 #[derive(Deserialize)]
