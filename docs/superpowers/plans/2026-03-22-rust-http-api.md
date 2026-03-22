@@ -187,7 +187,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/events", get(events::get_events))
         .route("/api/events/top", get(events::get_top_events))
         .route("/api/raw/events", get(events::get_raw_events))
-        .route("/api/events/user/:user_id", get(events::get_user_events))
+        .route("/api/users/:user_id/events", get(events::get_user_events))
         .route("/api/raw/sessions", get(sessions::get_raw_sessions))
         .route("/api/sessions/summary", get(sessions::get_sessions_summary))
         .route("/api/retention", get(retention::get_retention))
@@ -523,7 +523,107 @@ git commit -m "feat(backend-rs): add axum deps, shared types, and module scaffol
 
 ### Steps
 
-- [ ] **2a. Implement `src/api/state.rs` with `open_analytics_conn`**
+- [ ] **2a. Write failing test for `open_analytics_conn`**
+
+Add to `backend-rs/src/api/state.rs` (the stub from Task 1):
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_decrypt_roundtrip() {
+        let key = "test-encryption-key-that-is-32-chars!!";
+        let hash = Sha256::digest(key.as_bytes());
+        let fernet_key = base64::engine::general_purpose::URL_SAFE.encode(hash);
+        let fernet = fernet::Fernet::new(&fernet_key).unwrap();
+
+        let plaintext = r#"{"file_path": ":memory:"}"#;
+        let encrypted = fernet.encrypt(plaintext.as_bytes());
+
+        let decrypted = decrypt_credentials(&encrypted, key).unwrap();
+        assert_eq!(decrypted, plaintext);
+    }
+
+    #[tokio::test]
+    async fn test_open_analytics_conn() {
+        use crate::connectors::BackendRegistry;
+        use crate::connectors::drivers::sqlite::SqliteBackend;
+        use crate::connectors::backend::DatabaseBackend;
+
+        let encryption_key = "test-encryption-key-that-is-32-chars!!";
+
+        // Derive fernet for encrypting test credentials
+        let hash = Sha256::digest(encryption_key.as_bytes());
+        let fernet_key = base64::engine::general_purpose::URL_SAFE.encode(hash);
+        let fernet_inst = fernet::Fernet::new(&fernet_key).unwrap();
+
+        // Create product DB (in-memory SQLite)
+        let sqlite_backend = SqliteBackend::new();
+        let mut product_conn = DatabaseBackend::open(
+            &sqlite_backend,
+            &crate::connectors::drivers::sqlite::SqliteCredentials {
+                file_path: ":memory:".into(),
+            },
+        )
+        .await
+        .unwrap();
+
+        // Extract the SqliteHandle from the BackendConnection
+        let product_handle = match &product_conn {
+            BackendConnection::Sqlite(h) => h.clone(),
+            _ => panic!("expected Sqlite variant"),
+        };
+
+        // Create connections table and insert a test row
+        DatabaseBackend::execute(
+            &sqlite_backend,
+            &mut product_conn,
+            "CREATE TABLE connections (id TEXT, credentials TEXT, driver TEXT)",
+            vec![],
+        )
+        .await
+        .unwrap();
+
+        let creds_json = r#"{"file_path": ":memory:"}"#;
+        let encrypted = fernet_inst.encrypt(creds_json.as_bytes());
+        let insert_sql = format!(
+            "INSERT INTO connections VALUES ('test-conn-1', '{}', 'duckdb')",
+            encrypted
+        );
+        DatabaseBackend::execute(&sqlite_backend, &mut product_conn, &insert_sql, vec![])
+            .await
+            .unwrap();
+
+        // Build AppState
+        let state = AppState {
+            registry: Arc::new(BackendRegistry::default()),
+            product_db: product_handle,
+            encryption_key: Arc::new(encryption_key.to_string()),
+        };
+
+        // open_analytics_conn should succeed and return a DuckDB connection
+        let (conn, backend) = open_analytics_conn(&state, "test-conn-1").await.unwrap();
+        assert_eq!(backend.dialect_name(), "duckdb");
+        // Verify we can execute on it
+        match conn {
+            BackendConnection::DuckDb(_) => {} // correct variant
+            _ => panic!("expected DuckDb connection"),
+        }
+    }
+}
+```
+
+- [ ] **2b. Run failing test — expect compile error**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- api::state::tests::test_open_analytics_conn 2>&1 | head -20
+```
+
+Expect: compile error — `open_analytics_conn`, `decrypt_credentials`, `AppState` not yet defined.
+
+- [ ] **2c. Implement `src/api/state.rs` with `open_analytics_conn`**
 
 File: `backend-rs/src/api/state.rs`
 
@@ -575,13 +675,13 @@ fn decrypt_credentials(encrypted: &str, encryption_key: &str) -> Result<String> 
 /// accessing dialect methods).
 pub async fn open_analytics_conn<'r>(
     state: &'r AppState,
+    connection_id: &str,
 ) -> Result<(BackendConnection, &'r dyn AnyBackend)> {
     // Query product DB for the active connection.
-    // For now we assume a single-connection setup: grab the first row from `connections`.
     let product_db = &state.product_db;
     let rows = crate::connectors::drivers::sqlite::execute_on_handle(
         product_db,
-        "SELECT credentials, driver FROM connections ORDER BY id LIMIT 1",
+        &format!("SELECT credentials, driver FROM connections WHERE id = '{connection_id}'"),
     )
     .await
     .context("failed to query product DB for connection")?;
@@ -654,7 +754,7 @@ mod tests {
 }
 ```
 
-- [ ] **2b. Add `execute_on_handle` helper to the sqlite driver**
+- [ ] **2d. Add `execute_on_handle` helper to the sqlite driver**
 
 The `open_analytics_conn` function needs to execute raw SQL on the product DB's `SqliteHandle` without going through the `DatabaseBackend` trait (which requires `&mut BackendConnection`). Add this public helper function at the end of `backend-rs/src/connectors/drivers/sqlite.rs` (before the `#[cfg(test)]` blocks):
 
@@ -680,97 +780,13 @@ pub async fn execute_on_handle(
 
 Note: `SqliteRequest` is `pub(crate)`, so this function must live inside the `drivers::sqlite` module.
 
-- [ ] **2c. Write integration test for `open_analytics_conn`**
+- [ ] **2e. Run tests — expect PASS**
 
-Add to `backend-rs/src/api/state.rs` tests module:
-
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_decrypt_roundtrip() {
-        let key = "test-encryption-key-that-is-32-chars!!";
-        let hash = Sha256::digest(key.as_bytes());
-        let fernet_key = base64::engine::general_purpose::URL_SAFE.encode(hash);
-        let fernet = fernet::Fernet::new(&fernet_key).unwrap();
-
-        let plaintext = r#"{"file_path": ":memory:"}"#;
-        let encrypted = fernet.encrypt(plaintext.as_bytes());
-
-        let decrypted = decrypt_credentials(&encrypted, key).unwrap();
-        assert_eq!(decrypted, plaintext);
-    }
-
-    #[tokio::test]
-    async fn test_open_analytics_conn() {
-        use crate::connectors::BackendRegistry;
-        use crate::connectors::drivers::sqlite::SqliteBackend;
-        use crate::connectors::backend::DatabaseBackend;
-
-        let encryption_key = "test-encryption-key-that-is-32-chars!!";
-
-        // Derive fernet for encrypting test credentials
-        let hash = Sha256::digest(encryption_key.as_bytes());
-        let fernet_key = base64::engine::general_purpose::URL_SAFE.encode(hash);
-        let fernet_inst = fernet::Fernet::new(&fernet_key).unwrap();
-
-        // Create product DB (in-memory SQLite)
-        let sqlite_backend = SqliteBackend::new();
-        let mut product_conn = DatabaseBackend::open(
-            &sqlite_backend,
-            &crate::connectors::drivers::sqlite::SqliteCredentials {
-                file_path: ":memory:".into(),
-            },
-        )
-        .await
-        .unwrap();
-
-        // Extract the SqliteHandle from the BackendConnection
-        let product_handle = match &product_conn {
-            BackendConnection::Sqlite(h) => h.clone(),
-            _ => panic!("expected Sqlite variant"),
-        };
-
-        // Create connections table and insert a test row
-        DatabaseBackend::execute(
-            &sqlite_backend,
-            &mut product_conn,
-            "CREATE TABLE connections (id TEXT, credentials TEXT, driver TEXT)",
-            vec![],
-        )
-        .await
-        .unwrap();
-
-        let creds_json = r#"{"file_path": ":memory:"}"#;
-        let encrypted = fernet_inst.encrypt(creds_json.as_bytes());
-        let insert_sql = format!(
-            "INSERT INTO connections VALUES ('conn1', '{}', 'duckdb')",
-            encrypted
-        );
-        DatabaseBackend::execute(&sqlite_backend, &mut product_conn, &insert_sql, vec![])
-            .await
-            .unwrap();
-
-        // Build AppState
-        let state = AppState {
-            registry: Arc::new(BackendRegistry::default()),
-            product_db: product_handle,
-            encryption_key: Arc::new(encryption_key.to_string()),
-        };
-
-        // open_analytics_conn should succeed and return a DuckDB connection
-        let (conn, backend) = open_analytics_conn(&state).await.unwrap();
-        assert_eq!(backend.dialect_name(), "duckdb");
-        // Verify we can execute on it
-        match conn {
-            BackendConnection::DuckDb(_) => {} // correct variant
-            _ => panic!("expected DuckDb connection"),
-        }
-    }
-}
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- api::state::tests 2>&1
 ```
+
+Expect: both `test_decrypt_roundtrip` and `test_open_analytics_conn` pass.
 
 ### Verify
 
@@ -904,63 +920,11 @@ git commit -m "feat(backend-rs): implement main.rs with Axum server startup and 
 
 ### Steps
 
-- [ ] **4a. Implement `src/query/trend.rs`**
+- [ ] **4a. Write failing tests for `src/query/trend.rs`**
 
-File: `backend-rs/src/query/trend.rs`
+Add to `backend-rs/src/query/trend.rs` (the placeholder file from Task 1):
 
 ```rust
-use crate::api::error::{filters_to_sql, Filter};
-use crate::connectors::AnyBackend;
-
-/// Build a time-series trend query.
-/// Returns SQL that produces rows: (date TEXT, count INT, unique_users INT).
-pub fn build_trend_query(
-    backend: &dyn AnyBackend,
-    event_name: &str,
-    granularity: &str,
-    start_date: &str,
-    end_date: &str,
-    filters: &[Filter],
-) -> String {
-    let date_expr = backend.date_trunc(granularity, "timestamp");
-    let q = backend.identifier_quote_char();
-    let filter_sql = filters_to_sql(filters, q);
-    let event_escaped = event_name.replace('\'', "''");
-
-    format!(
-        "SELECT {date_expr} AS date, \
-         COUNT(*) AS count, \
-         COUNT(DISTINCT user_id) AS unique_users \
-         FROM events \
-         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
-         AND event_name = '{event_escaped}'\
-         {filter_sql} \
-         GROUP BY 1 ORDER BY 1"
-    )
-}
-
-/// Build aggregate totals query for the same period.
-/// Returns SQL that produces one row: (total_unique_users INT).
-pub fn build_trend_total_query(
-    backend: &dyn AnyBackend,
-    event_name: &str,
-    start_date: &str,
-    end_date: &str,
-    filters: &[Filter],
-) -> String {
-    let q = backend.identifier_quote_char();
-    let filter_sql = filters_to_sql(filters, q);
-    let event_escaped = event_name.replace('\'', "''");
-
-    format!(
-        "SELECT COUNT(DISTINCT user_id) AS total_unique_users \
-         FROM events \
-         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
-         AND event_name = '{event_escaped}'\
-         {filter_sql}"
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1070,7 +1034,81 @@ mod tests {
 }
 ```
 
-- [ ] **4b. Implement `src/api/trend.rs`**
+- [ ] **4b. Run failing tests — expect compile error or "not found"**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::trend::tests 2>&1 | head -20
+```
+
+Expect: compile error — `build_trend_query`, `build_trend_total_query` not yet defined.
+
+- [ ] **4c. Implement `src/query/trend.rs`**
+
+File: `backend-rs/src/query/trend.rs`
+
+```rust
+use crate::api::error::{filters_to_sql, Filter};
+use crate::connectors::AnyBackend;
+
+/// Build a time-series trend query.
+/// Returns SQL that produces rows: (date TEXT, count INT, unique_users INT).
+pub fn build_trend_query(
+    backend: &dyn AnyBackend,
+    event_name: &str,
+    granularity: &str,
+    start_date: &str,
+    end_date: &str,
+    filters: &[Filter],
+) -> String {
+    let date_expr = backend.date_trunc(granularity, "timestamp");
+    let q = backend.identifier_quote_char();
+    let filter_sql = filters_to_sql(filters, q);
+    let event_escaped = event_name.replace('\'', "''");
+
+    format!(
+        "SELECT {date_expr} AS date, \
+         COUNT(*) AS count, \
+         COUNT(DISTINCT user_id) AS unique_users \
+         FROM events \
+         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
+         AND event_name = '{event_escaped}'\
+         {filter_sql} \
+         GROUP BY 1 ORDER BY 1"
+    )
+}
+
+/// Build aggregate totals query for the same period.
+/// Returns SQL that produces one row: (total_unique_users INT).
+pub fn build_trend_total_query(
+    backend: &dyn AnyBackend,
+    event_name: &str,
+    start_date: &str,
+    end_date: &str,
+    filters: &[Filter],
+) -> String {
+    let q = backend.identifier_quote_char();
+    let filter_sql = filters_to_sql(filters, q);
+    let event_escaped = event_name.replace('\'', "''");
+
+    format!(
+        "SELECT COUNT(DISTINCT user_id) AS total_unique_users \
+         FROM events \
+         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
+         AND event_name = '{event_escaped}'\
+         {filter_sql}"
+    )
+}
+```
+
+- [ ] **4d. Run tests — expect PASS**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::trend::tests 2>&1
+```
+
+Expect: 3 tests pass.
+
+- [ ] **4e. Implement `src/api/trend.rs`**
 
 File: `backend-rs/src/api/trend.rs`
 
@@ -1085,6 +1123,7 @@ use crate::query::trend::{build_trend_query, build_trend_total_query};
 
 #[derive(Deserialize)]
 pub struct TrendParams {
+    pub connection_id: String,
     pub event_name: String,
     pub start_date: String,
     pub end_date: String,
@@ -1120,7 +1159,7 @@ pub async fn get_trend(
         _ => vec![],
     };
 
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
 
     // Time-series query
     let sql = build_trend_query(
@@ -1203,98 +1242,11 @@ git commit -m "feat(backend-rs): implement trend query builder and handler"
 
 ### Steps
 
-- [ ] **5a. Implement `src/query/events.rs`**
+- [ ] **5a. Write failing tests for `src/query/events.rs`**
 
-File: `backend-rs/src/query/events.rs`
+Add to `backend-rs/src/query/events.rs` (the placeholder):
 
 ```rust
-use crate::api::error::{filters_to_sql, Filter};
-use crate::connectors::AnyBackend;
-
-/// Distinct event names in the date range.
-pub fn build_distinct_events_query(
-    _backend: &dyn AnyBackend,
-    start_date: &str,
-    end_date: &str,
-) -> String {
-    format!(
-        "SELECT DISTINCT event_name FROM events \
-         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
-         ORDER BY event_name"
-    )
-}
-
-/// Top N events by count.
-pub fn build_top_events_query(
-    _backend: &dyn AnyBackend,
-    start_date: &str,
-    end_date: &str,
-    limit: u32,
-) -> String {
-    format!(
-        "SELECT event_name, COUNT(*) AS count FROM events \
-         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
-         GROUP BY event_name ORDER BY count DESC LIMIT {limit}"
-    )
-}
-
-/// Raw events with optional event_name, user_id filters plus generic filters.
-/// Returns (data_query, count_query).
-pub fn build_raw_events_queries(
-    backend: &dyn AnyBackend,
-    start_date: &str,
-    end_date: &str,
-    event_name: Option<&str>,
-    user_id: Option<&str>,
-    filters: &[Filter],
-    limit: u32,
-    offset: u32,
-) -> (String, String) {
-    let q = backend.identifier_quote_char();
-    let mut where_clauses = format!(
-        "timestamp >= '{start_date}' AND timestamp < '{end_date}'"
-    );
-    if let Some(en) = event_name {
-        let escaped = en.replace('\'', "''");
-        where_clauses.push_str(&format!(" AND event_name = '{escaped}'"));
-    }
-    if let Some(uid) = user_id {
-        let escaped = uid.replace('\'', "''");
-        where_clauses.push_str(&format!(" AND user_id = '{escaped}'"));
-    }
-    where_clauses.push_str(&filters_to_sql(filters, q));
-
-    let data = format!(
-        "SELECT timestamp, user_id, event_name, properties \
-         FROM events WHERE {where_clauses} \
-         ORDER BY timestamp DESC LIMIT {limit} OFFSET {offset}"
-    );
-    let count = format!(
-        "SELECT COUNT(*) AS total FROM events WHERE {where_clauses}"
-    );
-    (data, count)
-}
-
-/// Events for a specific user (paginated).
-/// Returns (data_query, count_query).
-pub fn build_user_events_queries(
-    _backend: &dyn AnyBackend,
-    user_id: &str,
-    limit: u32,
-    offset: u32,
-) -> (String, String) {
-    let escaped = user_id.replace('\'', "''");
-    let data = format!(
-        "SELECT timestamp, user_id, event_name, properties \
-         FROM events WHERE user_id = '{escaped}' \
-         ORDER BY timestamp DESC LIMIT {limit} OFFSET {offset}"
-    );
-    let count = format!(
-        "SELECT COUNT(*) AS total FROM events WHERE user_id = '{escaped}'"
-    );
-    (data, count)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1395,7 +1347,116 @@ mod tests {
 }
 ```
 
-- [ ] **5b. Implement `src/api/events.rs`**
+- [ ] **5b. Run failing tests — expect compile error or "not found"**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::events::tests 2>&1 | head -20
+```
+
+Expect: compile error — query functions not yet defined.
+
+- [ ] **5c. Implement `src/query/events.rs`**
+
+File: `backend-rs/src/query/events.rs`
+
+```rust
+use crate::api::error::{filters_to_sql, Filter};
+use crate::connectors::AnyBackend;
+
+/// Distinct event names in the date range.
+pub fn build_distinct_events_query(
+    _backend: &dyn AnyBackend,
+    start_date: &str,
+    end_date: &str,
+) -> String {
+    format!(
+        "SELECT DISTINCT event_name FROM events \
+         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
+         ORDER BY event_name"
+    )
+}
+
+/// Top N events by count.
+pub fn build_top_events_query(
+    _backend: &dyn AnyBackend,
+    start_date: &str,
+    end_date: &str,
+    limit: u32,
+) -> String {
+    format!(
+        "SELECT event_name, COUNT(*) AS count FROM events \
+         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
+         GROUP BY event_name ORDER BY count DESC LIMIT {limit}"
+    )
+}
+
+/// Raw events with optional event_name, user_id filters plus generic filters.
+/// Returns (data_query, count_query).
+pub fn build_raw_events_queries(
+    backend: &dyn AnyBackend,
+    start_date: &str,
+    end_date: &str,
+    event_name: Option<&str>,
+    user_id: Option<&str>,
+    filters: &[Filter],
+    limit: u32,
+    offset: u32,
+) -> (String, String) {
+    let q = backend.identifier_quote_char();
+    let mut where_clauses = format!(
+        "timestamp >= '{start_date}' AND timestamp < '{end_date}'"
+    );
+    if let Some(en) = event_name {
+        let escaped = en.replace('\'', "''");
+        where_clauses.push_str(&format!(" AND event_name = '{escaped}'"));
+    }
+    if let Some(uid) = user_id {
+        let escaped = uid.replace('\'', "''");
+        where_clauses.push_str(&format!(" AND user_id = '{escaped}'"));
+    }
+    where_clauses.push_str(&filters_to_sql(filters, q));
+
+    let data = format!(
+        "SELECT timestamp, user_id, event_name, properties \
+         FROM events WHERE {where_clauses} \
+         ORDER BY timestamp DESC LIMIT {limit} OFFSET {offset}"
+    );
+    let count = format!(
+        "SELECT COUNT(*) AS total FROM events WHERE {where_clauses}"
+    );
+    (data, count)
+}
+
+/// Events for a specific user (paginated).
+/// Returns (data_query, count_query).
+pub fn build_user_events_queries(
+    _backend: &dyn AnyBackend,
+    user_id: &str,
+    limit: u32,
+    offset: u32,
+) -> (String, String) {
+    let escaped = user_id.replace('\'', "''");
+    let data = format!(
+        "SELECT timestamp, user_id, event_name, properties \
+         FROM events WHERE user_id = '{escaped}' \
+         ORDER BY timestamp DESC LIMIT {limit} OFFSET {offset}"
+    );
+    let count = format!(
+        "SELECT COUNT(*) AS total FROM events WHERE user_id = '{escaped}'"
+    );
+    (data, count)
+}
+```
+
+- [ ] **5d. Run tests — expect PASS**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::events::tests 2>&1
+```
+
+Expect: 4 tests pass.
+
+- [ ] **5e. Implement `src/api/events.rs`**
 
 File: `backend-rs/src/api/events.rs`
 
@@ -1418,6 +1479,7 @@ use crate::query::events::{
 
 #[derive(Deserialize)]
 pub struct EventsParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
 }
@@ -1426,7 +1488,7 @@ pub async fn get_events(
     State(state): State<AppState>,
     Query(params): Query<EventsParams>,
 ) -> Result<Json<DataResponse<Vec<String>>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_distinct_events_query(backend, &params.start_date, &params.end_date);
     let rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
     let events: Vec<String> = rows
@@ -1443,6 +1505,7 @@ pub async fn get_events(
 
 #[derive(Deserialize)]
 pub struct TopEventsParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
     #[serde(default = "default_limit")]
@@ -1463,7 +1526,7 @@ pub async fn get_top_events(
     State(state): State<AppState>,
     Query(params): Query<TopEventsParams>,
 ) -> Result<Json<DataResponse<Vec<TopEvent>>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_top_events_query(backend, &params.start_date, &params.end_date, params.limit);
     let rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
     let events: Vec<TopEvent> = rows
@@ -1486,6 +1549,7 @@ pub async fn get_top_events(
 
 #[derive(Deserialize)]
 pub struct RawEventsParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
     pub event_name: Option<String>,
@@ -1520,7 +1584,7 @@ pub async fn get_raw_events(
         _ => vec![],
     };
 
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let (data_sql, count_sql) = build_raw_events_queries(
         backend,
         &params.start_date,
@@ -1564,10 +1628,11 @@ pub async fn get_raw_events(
     }))
 }
 
-// --- GET /api/events/user/:user_id ---
+// --- GET /api/users/:user_id/events ---
 
 #[derive(Deserialize)]
 pub struct UserEventsParams {
+    pub connection_id: String,
     #[serde(default = "default_limit")]
     pub limit: u32,
     #[serde(default)]
@@ -1579,7 +1644,7 @@ pub async fn get_user_events(
     Path(user_id): Path<String>,
     Query(params): Query<UserEventsParams>,
 ) -> Result<Json<DataResponse<PaginatedEvents>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let (data_sql, count_sql) =
         build_user_events_queries(backend, &user_id, params.limit, params.offset);
 
@@ -1642,7 +1707,86 @@ git commit -m "feat(backend-rs): implement events query builders and handlers"
 
 ### Steps
 
-- [ ] **6a. Implement `src/query/sessions.rs`**
+- [ ] **6a. Write failing tests for `src/query/sessions.rs`**
+
+Add to `backend-rs/src/query/sessions.rs` (the placeholder):
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::connectors::{BackendRegistry, AnyBackend};
+    use crate::connectors::mod_types::BackendConnection;
+    use crate::connectors::types::SqlValue;
+
+    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
+        let reg = Box::leak(Box::new(BackendRegistry::default()));
+        let backend = reg.get("duckdb").unwrap();
+        let conn = backend
+            .open_any(serde_json::json!({"file_path": ":memory:"}))
+            .await
+            .unwrap();
+        (conn, backend)
+    }
+
+    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
+        backend
+            .execute_any(
+                conn,
+                "CREATE TABLE events (
+                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
+                )",
+                vec![],
+            )
+            .await
+            .unwrap();
+        // u1: two sessions (gap > 30 min between 10:05 and 12:00)
+        for sql in [
+            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-15 10:00:00', '{}')",
+            "INSERT INTO events VALUES ('u1', 'click', '2024-01-15 10:05:00', '{}')",
+            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-15 12:00:00', '{}')",
+            // u2: one session
+            "INSERT INTO events VALUES ('u2', 'page_view', '2024-01-15 11:00:00', '{}')",
+            "INSERT INTO events VALUES ('u2', 'click', '2024-01-15 11:10:00', '{}')",
+        ] {
+            backend.execute_any(conn, sql, vec![]).await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn test_sessions_query() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_sessions_query(backend, "2024-01-01", "2024-02-01", 10, 0);
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        // u1 has 2 sessions, u2 has 1 = 3 total
+        assert_eq!(rows.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn test_sessions_summary() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_sessions_summary_query(backend, "2024-01-01", "2024-02-01");
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 1);
+        match &rows[0][0] {
+            SqlValue::Int(n) => assert_eq!(*n, 3),
+            other => panic!("expected 3 sessions, got {other:?}"),
+        }
+    }
+}
+```
+
+- [ ] **6b. Run failing tests — expect compile error or "not found"**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::sessions::tests 2>&1 | head -20
+```
+
+Expect: compile error — `build_sessions_query`, `build_sessions_summary_query` not yet defined.
+
+- [ ] **6c. Implement `src/query/sessions.rs`**
 
 File: `backend-rs/src/query/sessions.rs`
 
@@ -1728,74 +1872,17 @@ pub fn build_sessions_summary_query(
         FROM sessions"
     )
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::connectors::{BackendRegistry, AnyBackend};
-    use crate::connectors::mod_types::BackendConnection;
-    use crate::connectors::types::SqlValue;
-
-    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
-        let reg = Box::leak(Box::new(BackendRegistry::default()));
-        let backend = reg.get("duckdb").unwrap();
-        let conn = backend
-            .open_any(serde_json::json!({"file_path": ":memory:"}))
-            .await
-            .unwrap();
-        (conn, backend)
-    }
-
-    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
-        backend
-            .execute_any(
-                conn,
-                "CREATE TABLE events (
-                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
-                )",
-                vec![],
-            )
-            .await
-            .unwrap();
-        // u1: two sessions (gap > 30 min between 10:05 and 12:00)
-        for sql in [
-            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-15 10:00:00', '{}')",
-            "INSERT INTO events VALUES ('u1', 'click', '2024-01-15 10:05:00', '{}')",
-            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-15 12:00:00', '{}')",
-            // u2: one session
-            "INSERT INTO events VALUES ('u2', 'page_view', '2024-01-15 11:00:00', '{}')",
-            "INSERT INTO events VALUES ('u2', 'click', '2024-01-15 11:10:00', '{}')",
-        ] {
-            backend.execute_any(conn, sql, vec![]).await.unwrap();
-        }
-    }
-
-    #[tokio::test]
-    async fn test_sessions_query() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_sessions_query(backend, "2024-01-01", "2024-02-01", 10, 0);
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        // u1 has 2 sessions, u2 has 1 = 3 total
-        assert_eq!(rows.len(), 3);
-    }
-
-    #[tokio::test]
-    async fn test_sessions_summary() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_sessions_summary_query(backend, "2024-01-01", "2024-02-01");
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 1);
-        match &rows[0][0] {
-            SqlValue::Int(n) => assert_eq!(*n, 3),
-            other => panic!("expected 3 sessions, got {other:?}"),
-        }
-    }
-}
 ```
 
-- [ ] **6b. Implement `src/api/sessions.rs`**
+- [ ] **6d. Run tests — expect PASS**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::sessions::tests 2>&1
+```
+
+Expect: 2 tests pass.
+
+- [ ] **6e. Implement `src/api/sessions.rs`**
 
 File: `backend-rs/src/api/sessions.rs`
 
@@ -1810,6 +1897,7 @@ use crate::query::sessions::{build_sessions_query, build_sessions_summary_query}
 
 #[derive(Deserialize)]
 pub struct SessionsParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
     #[serde(default = "default_limit")]
@@ -1836,7 +1924,7 @@ pub async fn get_raw_sessions(
     State(state): State<AppState>,
     Query(params): Query<SessionsParams>,
 ) -> Result<Json<DataResponse<Vec<Session>>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_sessions_query(
         backend,
         &params.start_date,
@@ -1876,6 +1964,7 @@ pub async fn get_raw_sessions(
 
 #[derive(Deserialize)]
 pub struct SessionsSummaryParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
 }
@@ -1891,7 +1980,7 @@ pub async fn get_sessions_summary(
     State(state): State<AppState>,
     Query(params): Query<SessionsSummaryParams>,
 ) -> Result<Json<DataResponse<SessionsSummary>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_sessions_summary_query(backend, &params.start_date, &params.end_date);
     let rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
 
@@ -1943,7 +2032,90 @@ git commit -m "feat(backend-rs): implement sessions query builders and handlers"
 
 ### Steps
 
-- [ ] **7a. Implement `src/query/retention.rs`**
+- [ ] **7a. Write failing tests for `src/query/retention.rs`**
+
+Add to `backend-rs/src/query/retention.rs` (the placeholder):
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::connectors::{BackendRegistry, AnyBackend};
+    use crate::connectors::mod_types::BackendConnection;
+
+    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
+        let reg = Box::leak(Box::new(BackendRegistry::default()));
+        let backend = reg.get("duckdb").unwrap();
+        let conn = backend
+            .open_any(serde_json::json!({"file_path": ":memory:"}))
+            .await
+            .unwrap();
+        (conn, backend)
+    }
+
+    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
+        backend
+            .execute_any(
+                conn,
+                "CREATE TABLE events (
+                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
+                )",
+                vec![],
+            )
+            .await
+            .unwrap();
+        for sql in [
+            // u1: active on Jan 15, 16, 17
+            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-15 10:00:00', '{}')",
+            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-16 10:00:00', '{}')",
+            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-17 10:00:00', '{}')",
+            // u2: active on Jan 15 only
+            "INSERT INTO events VALUES ('u2', 'page_view', '2024-01-15 11:00:00', '{}')",
+            // u3: active on Jan 16, 17
+            "INSERT INTO events VALUES ('u3', 'page_view', '2024-01-16 14:00:00', '{}')",
+            "INSERT INTO events VALUES ('u3', 'page_view', '2024-01-17 14:00:00', '{}')",
+        ] {
+            backend.execute_any(conn, sql, vec![]).await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn test_retention_query_runs() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_retention_query(backend, "2024-01-01", "2024-02-01", "day", None);
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert!(!rows.is_empty());
+        // Verify structure: each row has 4 columns
+        assert_eq!(rows[0].len(), 4);
+    }
+
+    #[tokio::test]
+    async fn test_retention_with_event_filter() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_retention_query(
+            backend,
+            "2024-01-01",
+            "2024-02-01",
+            "day",
+            Some("page_view"),
+        );
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert!(!rows.is_empty());
+    }
+}
+```
+
+- [ ] **7b. Run failing tests — expect compile error or "not found"**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::retention::tests 2>&1 | head -20
+```
+
+Expect: compile error — `build_retention_query` not yet defined.
+
+- [ ] **7c. Implement `src/query/retention.rs`**
 
 File: `backend-rs/src/query/retention.rs`
 
@@ -2013,79 +2185,17 @@ pub fn build_retention_query(
         ORDER BY cs.cohort_date, r.period"
     )
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::connectors::{BackendRegistry, AnyBackend};
-    use crate::connectors::mod_types::BackendConnection;
-    use crate::connectors::types::SqlValue;
-
-    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
-        let reg = Box::leak(Box::new(BackendRegistry::default()));
-        let backend = reg.get("duckdb").unwrap();
-        let conn = backend
-            .open_any(serde_json::json!({"file_path": ":memory:"}))
-            .await
-            .unwrap();
-        (conn, backend)
-    }
-
-    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
-        backend
-            .execute_any(
-                conn,
-                "CREATE TABLE events (
-                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
-                )",
-                vec![],
-            )
-            .await
-            .unwrap();
-        for sql in [
-            // u1: active on Jan 15, 16, 17
-            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-15 10:00:00', '{}')",
-            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-16 10:00:00', '{}')",
-            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-17 10:00:00', '{}')",
-            // u2: active on Jan 15 only
-            "INSERT INTO events VALUES ('u2', 'page_view', '2024-01-15 11:00:00', '{}')",
-            // u3: active on Jan 16, 17
-            "INSERT INTO events VALUES ('u3', 'page_view', '2024-01-16 14:00:00', '{}')",
-            "INSERT INTO events VALUES ('u3', 'page_view', '2024-01-17 14:00:00', '{}')",
-        ] {
-            backend.execute_any(conn, sql, vec![]).await.unwrap();
-        }
-    }
-
-    #[tokio::test]
-    async fn test_retention_query_runs() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_retention_query(backend, "2024-01-01", "2024-02-01", "day", None);
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert!(!rows.is_empty());
-        // Verify structure: each row has 4 columns
-        assert_eq!(rows[0].len(), 4);
-    }
-
-    #[tokio::test]
-    async fn test_retention_with_event_filter() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_retention_query(
-            backend,
-            "2024-01-01",
-            "2024-02-01",
-            "day",
-            Some("page_view"),
-        );
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert!(!rows.is_empty());
-    }
-}
 ```
 
-- [ ] **7b. Implement `src/api/retention.rs`**
+- [ ] **7d. Run tests — expect PASS**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::retention::tests 2>&1
+```
+
+Expect: 2 tests pass.
+
+- [ ] **7e. Implement `src/api/retention.rs`**
 
 File: `backend-rs/src/api/retention.rs`
 
@@ -2101,6 +2211,7 @@ use crate::query::retention::build_retention_query;
 
 #[derive(Deserialize)]
 pub struct RetentionParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
     #[serde(default = "default_granularity")]
@@ -2123,7 +2234,7 @@ pub async fn get_retention(
     State(state): State<AppState>,
     Query(params): Query<RetentionParams>,
 ) -> Result<Json<DataResponse<Vec<CohortRow>>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_retention_query(
         backend,
         &params.start_date,
@@ -2194,7 +2305,106 @@ git commit -m "feat(backend-rs): implement retention query builder and handler"
 
 ### Steps
 
-- [ ] **8a. Implement `src/query/paths.rs`**
+- [ ] **8a. Write failing tests for `src/query/paths.rs`**
+
+Add to `backend-rs/src/query/paths.rs` (the placeholder):
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::connectors::{BackendRegistry, AnyBackend};
+    use crate::connectors::mod_types::BackendConnection;
+    use crate::connectors::types::SqlValue;
+
+    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
+        let reg = Box::leak(Box::new(BackendRegistry::default()));
+        let backend = reg.get("duckdb").unwrap();
+        let conn = backend
+            .open_any(serde_json::json!({"file_path": ":memory:"}))
+            .await
+            .unwrap();
+        (conn, backend)
+    }
+
+    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
+        backend
+            .execute_any(
+                conn,
+                "CREATE TABLE events (
+                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
+                )",
+                vec![],
+            )
+            .await
+            .unwrap();
+        for sql in [
+            "INSERT INTO events VALUES ('u1', 'landing', '2024-01-15 10:00:00', '{}')",
+            "INSERT INTO events VALUES ('u1', 'sign_up', '2024-01-15 10:05:00', '{}')",
+            "INSERT INTO events VALUES ('u1', 'purchase', '2024-01-15 10:10:00', '{}')",
+            "INSERT INTO events VALUES ('u2', 'landing', '2024-01-15 11:00:00', '{}')",
+            "INSERT INTO events VALUES ('u2', 'sign_up', '2024-01-15 11:05:00', '{}')",
+            "INSERT INTO events VALUES ('u3', 'landing', '2024-01-15 12:00:00', '{}')",
+        ] {
+            backend.execute_any(conn, sql, vec![]).await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn test_paths_query() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_paths_query(backend, "2024-01-01", "2024-02-01", 10);
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert!(!rows.is_empty());
+        assert_eq!(rows[0].len(), 4); // e1, e2, e3, count
+    }
+
+    #[tokio::test]
+    async fn test_path_analysis() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_path_analysis_query(
+            backend, "sign_up", "2024-01-01", "2024-02-01", "before", 10,
+        );
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert!(!rows.is_empty());
+        let first_event = match &rows[0][0] {
+            SqlValue::Text(s) => s.clone(),
+            other => panic!("expected Text, got {other:?}"),
+        };
+        assert_eq!(first_event, "landing");
+    }
+
+    #[tokio::test]
+    async fn test_path_funnel() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let steps = vec!["landing".into(), "sign_up".into(), "purchase".into()];
+        let sql = build_path_funnel_query(backend, &steps, "2024-01-01", "2024-02-01");
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 1);
+        match (&rows[0][0], &rows[0][1], &rows[0][2]) {
+            (SqlValue::Int(c0), SqlValue::Int(c1), SqlValue::Int(c2)) => {
+                assert_eq!(*c0, 3);
+                assert_eq!(*c1, 2);
+                assert_eq!(*c2, 1);
+            }
+            other => panic!("unexpected types: {other:?}"),
+        }
+    }
+}
+```
+
+- [ ] **8b. Run failing tests — expect compile error or "not found"**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::paths::tests 2>&1 | head -20
+```
+
+Expect: compile error — `build_paths_query`, etc. not yet defined.
+
+- [ ] **8c. Implement `src/query/paths.rs`**
 
 File: `backend-rs/src/query/paths.rs`
 
@@ -2310,97 +2520,17 @@ pub fn build_path_funnel_query(
         joins.join(" ")
     )
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::connectors::{BackendRegistry, AnyBackend};
-    use crate::connectors::mod_types::BackendConnection;
-    use crate::connectors::types::SqlValue;
-
-    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
-        let reg = Box::leak(Box::new(BackendRegistry::default()));
-        let backend = reg.get("duckdb").unwrap();
-        let conn = backend
-            .open_any(serde_json::json!({"file_path": ":memory:"}))
-            .await
-            .unwrap();
-        (conn, backend)
-    }
-
-    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
-        backend
-            .execute_any(
-                conn,
-                "CREATE TABLE events (
-                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
-                )",
-                vec![],
-            )
-            .await
-            .unwrap();
-        for sql in [
-            "INSERT INTO events VALUES ('u1', 'landing', '2024-01-15 10:00:00', '{}')",
-            "INSERT INTO events VALUES ('u1', 'sign_up', '2024-01-15 10:05:00', '{}')",
-            "INSERT INTO events VALUES ('u1', 'purchase', '2024-01-15 10:10:00', '{}')",
-            "INSERT INTO events VALUES ('u2', 'landing', '2024-01-15 11:00:00', '{}')",
-            "INSERT INTO events VALUES ('u2', 'sign_up', '2024-01-15 11:05:00', '{}')",
-            "INSERT INTO events VALUES ('u3', 'landing', '2024-01-15 12:00:00', '{}')",
-        ] {
-            backend.execute_any(conn, sql, vec![]).await.unwrap();
-        }
-    }
-
-    #[tokio::test]
-    async fn test_paths_query() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_paths_query(backend, "2024-01-01", "2024-02-01", 10);
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert!(!rows.is_empty());
-        // Top path should be landing -> sign_up -> purchase (1 user) or landing -> sign_up (2 users)
-        assert_eq!(rows[0].len(), 4); // e1, e2, e3, count
-    }
-
-    #[tokio::test]
-    async fn test_path_analysis() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_path_analysis_query(
-            backend, "sign_up", "2024-01-01", "2024-02-01", "before", 10,
-        );
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert!(!rows.is_empty());
-        // "landing" should appear before "sign_up"
-        let first_event = match &rows[0][0] {
-            SqlValue::Text(s) => s.clone(),
-            other => panic!("expected Text, got {other:?}"),
-        };
-        assert_eq!(first_event, "landing");
-    }
-
-    #[tokio::test]
-    async fn test_path_funnel() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let steps = vec!["landing".into(), "sign_up".into(), "purchase".into()];
-        let sql = build_path_funnel_query(backend, &steps, "2024-01-01", "2024-02-01");
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 1);
-        // count0=3 (u1,u2,u3), count1=2 (u1,u2), count2=1 (u1)
-        match (&rows[0][0], &rows[0][1], &rows[0][2]) {
-            (SqlValue::Int(c0), SqlValue::Int(c1), SqlValue::Int(c2)) => {
-                assert_eq!(*c0, 3);
-                assert_eq!(*c1, 2);
-                assert_eq!(*c2, 1);
-            }
-            other => panic!("unexpected types: {other:?}"),
-        }
-    }
-}
 ```
 
-- [ ] **8b. Implement `src/api/paths.rs`**
+- [ ] **8d. Run tests — expect PASS**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::paths::tests 2>&1
+```
+
+Expect: 3 tests pass.
+
+- [ ] **8e. Implement `src/api/paths.rs`**
 
 File: `backend-rs/src/api/paths.rs`
 
@@ -2419,6 +2549,7 @@ use crate::query::paths::{
 
 #[derive(Deserialize)]
 pub struct PathsParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
     #[serde(default = "default_limit")]
@@ -2439,7 +2570,7 @@ pub async fn get_paths(
     State(state): State<AppState>,
     Query(params): Query<PathsParams>,
 ) -> Result<Json<DataResponse<Vec<PathEntry>>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_paths_query(backend, &params.start_date, &params.end_date, params.limit);
     let rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
 
@@ -2467,6 +2598,7 @@ pub async fn get_paths(
 
 #[derive(Deserialize)]
 pub struct PathAnalysisParams {
+    pub connection_id: String,
     pub event_name: String,
     pub start_date: String,
     pub end_date: String,
@@ -2490,7 +2622,7 @@ pub async fn get_path_analysis(
     State(state): State<AppState>,
     Query(params): Query<PathAnalysisParams>,
 ) -> Result<Json<DataResponse<Vec<PathAnalysisEntry>>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_path_analysis_query(
         backend,
         &params.event_name,
@@ -2522,6 +2654,7 @@ pub async fn get_path_analysis(
 
 #[derive(Deserialize)]
 pub struct PathFunnelParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
     pub steps: String, // JSON-encoded Vec<String>
@@ -2540,7 +2673,7 @@ pub async fn get_path_funnel(
 ) -> Result<Json<DataResponse<Vec<FunnelStep>>>, ApiError> {
     let steps: Vec<String> = serde_json::from_str(&params.steps)?;
 
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_path_funnel_query(backend, &steps, &params.start_date, &params.end_date);
     let rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
 
@@ -2589,7 +2722,77 @@ git commit -m "feat(backend-rs): implement paths query builders and handlers"
 
 ### Steps
 
-- [ ] **9a. Implement `src/query/conversion.rs`**
+- [ ] **9a. Write failing tests for `src/query/conversion.rs`**
+
+Add to `backend-rs/src/query/conversion.rs` (the placeholder):
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::connectors::{BackendRegistry, AnyBackend};
+    use crate::connectors::mod_types::BackendConnection;
+    use crate::connectors::types::SqlValue;
+
+    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
+        let reg = Box::leak(Box::new(BackendRegistry::default()));
+        let backend = reg.get("duckdb").unwrap();
+        let conn = backend
+            .open_any(serde_json::json!({"file_path": ":memory:"}))
+            .await
+            .unwrap();
+        (conn, backend)
+    }
+
+    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
+        backend
+            .execute_any(
+                conn,
+                "CREATE TABLE events (
+                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
+                )",
+                vec![],
+            )
+            .await
+            .unwrap();
+        for sql in [
+            "INSERT INTO events VALUES ('u1', 'sign_up', '2024-01-15 10:00:00', '{}')",
+            "INSERT INTO events VALUES ('u1', 'purchase', '2024-01-15 10:30:00', '{}')",
+            "INSERT INTO events VALUES ('u2', 'sign_up', '2024-01-15 11:00:00', '{}')",
+            "INSERT INTO events VALUES ('u3', 'sign_up', '2024-01-16 10:00:00', '{}')",
+            "INSERT INTO events VALUES ('u3', 'purchase', '2024-01-16 11:00:00', '{}')",
+        ] {
+            backend.execute_any(conn, sql, vec![]).await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn test_conversion_query() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_conversion_query(backend, "sign_up", "purchase", "2024-01-01", "2024-02-01");
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 1);
+        match (&rows[0][0], &rows[0][1]) {
+            (SqlValue::Int(entry), SqlValue::Int(converted)) => {
+                assert_eq!(*entry, 3);
+                assert_eq!(*converted, 2);
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+    }
+}
+```
+
+- [ ] **9b. Run failing tests — expect compile error or "not found"**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::conversion::tests 2>&1 | head -20
+```
+
+Expect: compile error — `build_conversion_query` not yet defined.
+
+- [ ] **9c. Implement `src/query/conversion.rs`**
 
 File: `backend-rs/src/query/conversion.rs`
 
@@ -2633,74 +2836,17 @@ pub fn build_conversion_query(
             (SELECT COUNT(*) FROM converted) AS converted_count"
     )
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::connectors::{BackendRegistry, AnyBackend};
-    use crate::connectors::mod_types::BackendConnection;
-    use crate::connectors::types::SqlValue;
-
-    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
-        let reg = Box::leak(Box::new(BackendRegistry::default()));
-        let backend = reg.get("duckdb").unwrap();
-        let conn = backend
-            .open_any(serde_json::json!({"file_path": ":memory:"}))
-            .await
-            .unwrap();
-        (conn, backend)
-    }
-
-    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
-        backend
-            .execute_any(
-                conn,
-                "CREATE TABLE events (
-                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
-                )",
-                vec![],
-            )
-            .await
-            .unwrap();
-        for sql in [
-            // u1: sign_up then purchase -> converted
-            "INSERT INTO events VALUES ('u1', 'sign_up', '2024-01-15 10:00:00', '{}')",
-            "INSERT INTO events VALUES ('u1', 'purchase', '2024-01-15 10:30:00', '{}')",
-            // u2: sign_up only -> not converted
-            "INSERT INTO events VALUES ('u2', 'sign_up', '2024-01-15 11:00:00', '{}')",
-            // u3: sign_up then purchase -> converted
-            "INSERT INTO events VALUES ('u3', 'sign_up', '2024-01-16 10:00:00', '{}')",
-            "INSERT INTO events VALUES ('u3', 'purchase', '2024-01-16 11:00:00', '{}')",
-        ] {
-            backend.execute_any(conn, sql, vec![]).await.unwrap();
-        }
-    }
-
-    #[tokio::test]
-    async fn test_conversion_query() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_conversion_query(
-            backend,
-            "sign_up",
-            "purchase",
-            "2024-01-01",
-            "2024-02-01",
-        );
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 1);
-        match (&rows[0][0], &rows[0][1]) {
-            (SqlValue::Int(entry), SqlValue::Int(converted)) => {
-                assert_eq!(*entry, 3);    // 3 users signed up
-                assert_eq!(*converted, 2); // 2 users purchased
-            }
-            other => panic!("unexpected: {other:?}"),
-        }
-    }
-}
 ```
 
-- [ ] **9b. Implement `src/api/conversion.rs`**
+- [ ] **9d. Run tests — expect PASS**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::conversion::tests 2>&1
+```
+
+Expect: 1 test passes.
+
+- [ ] **9e. Implement `src/api/conversion.rs`**
 
 File: `backend-rs/src/api/conversion.rs`
 
@@ -2715,6 +2861,7 @@ use crate::query::conversion::build_conversion_query;
 
 #[derive(Deserialize)]
 pub struct ConversionParams {
+    pub connection_id: String,
     pub entry_event: String,
     pub goal_event: String,
     pub start_date: String,
@@ -2732,7 +2879,7 @@ pub async fn get_conversion(
     State(state): State<AppState>,
     Query(params): Query<ConversionParams>,
 ) -> Result<Json<DataResponse<ConversionResponse>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_conversion_query(
         backend,
         &params.entry_event,
@@ -2796,7 +2943,105 @@ git commit -m "feat(backend-rs): implement conversion query builder and handler"
 
 ### Steps
 
-- [ ] **10a. Implement `src/query/mission_control.rs`**
+- [ ] **10a. Write failing tests for `src/query/mission_control.rs`**
+
+Add to `backend-rs/src/query/mission_control.rs` (the placeholder):
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::connectors::{BackendRegistry, AnyBackend};
+    use crate::connectors::mod_types::BackendConnection;
+    use crate::connectors::types::SqlValue;
+
+    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
+        let reg = Box::leak(Box::new(BackendRegistry::default()));
+        let backend = reg.get("duckdb").unwrap();
+        let conn = backend
+            .open_any(serde_json::json!({"file_path": ":memory:"}))
+            .await
+            .unwrap();
+        (conn, backend)
+    }
+
+    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
+        backend
+            .execute_any(
+                conn,
+                "CREATE TABLE events (
+                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
+                )",
+                vec![],
+            )
+            .await
+            .unwrap();
+        for sql in [
+            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-15 10:00:00', '{}')",
+            "INSERT INTO events VALUES ('u2', 'page_view', '2024-01-15 11:00:00', '{}')",
+            "INSERT INTO events VALUES ('u1', 'click', '2024-01-16 09:00:00', '{}')",
+        ] {
+            backend.execute_any(conn, sql, vec![]).await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn test_overview_query() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_overview_query(backend, "2024-01-01", "2024-02-01");
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 1);
+        match (&rows[0][0], &rows[0][1]) {
+            (SqlValue::Int(total), SqlValue::Int(unique)) => {
+                assert_eq!(*total, 3);
+                assert_eq!(*unique, 2);
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_new_users_query() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_new_users_query(backend, "2024-01-15", "2024-01-16");
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 1);
+        match &rows[0][0] {
+            SqlValue::Int(n) => assert_eq!(*n, 2),
+            other => panic!("expected Int, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_trend_total_events() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_trend_query(backend, "total_events", "2024-01-01", "2024-02-01")
+            .expect("total_events should be supported");
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_trend_unsupported_metric() {
+        let reg = Box::leak(Box::new(BackendRegistry::default()));
+        let backend = reg.get("duckdb").unwrap();
+        assert!(build_trend_query(backend, "dau_mau_ratio", "2024-01-01", "2024-02-01").is_none());
+    }
+}
+```
+
+- [ ] **10b. Run failing tests — expect compile error or "not found"**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::mission_control::tests 2>&1 | head -20
+```
+
+Expect: compile error — `build_overview_query`, etc. not yet defined.
+
+- [ ] **10c. Implement `src/query/mission_control.rs`**
 
 File: `backend-rs/src/query/mission_control.rs`
 
@@ -2872,93 +3117,17 @@ pub fn build_trend_query(
          GROUP BY 1 ORDER BY 1"
     ))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::connectors::{BackendRegistry, AnyBackend};
-    use crate::connectors::mod_types::BackendConnection;
-    use crate::connectors::types::SqlValue;
-
-    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
-        let reg = Box::leak(Box::new(BackendRegistry::default()));
-        let backend = reg.get("duckdb").unwrap();
-        let conn = backend
-            .open_any(serde_json::json!({"file_path": ":memory:"}))
-            .await
-            .unwrap();
-        (conn, backend)
-    }
-
-    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
-        backend
-            .execute_any(
-                conn,
-                "CREATE TABLE events (
-                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
-                )",
-                vec![],
-            )
-            .await
-            .unwrap();
-        for sql in [
-            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-15 10:00:00', '{}')",
-            "INSERT INTO events VALUES ('u2', 'page_view', '2024-01-15 11:00:00', '{}')",
-            "INSERT INTO events VALUES ('u1', 'click', '2024-01-16 09:00:00', '{}')",
-        ] {
-            backend.execute_any(conn, sql, vec![]).await.unwrap();
-        }
-    }
-
-    #[tokio::test]
-    async fn test_overview_query() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_overview_query(backend, "2024-01-01", "2024-02-01");
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 1);
-        match (&rows[0][0], &rows[0][1]) {
-            (SqlValue::Int(total), SqlValue::Int(unique)) => {
-                assert_eq!(*total, 3);
-                assert_eq!(*unique, 2);
-            }
-            other => panic!("unexpected: {other:?}"),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_new_users_query() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_new_users_query(backend, "2024-01-15", "2024-01-16");
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 1);
-        match &rows[0][0] {
-            SqlValue::Int(n) => assert_eq!(*n, 2), // u1 and u2 first appeared on Jan 15
-            other => panic!("expected Int, got {other:?}"),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_trend_total_events() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_trend_query(backend, "total_events", "2024-01-01", "2024-02-01")
-            .expect("total_events should be supported");
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 2); // Jan 15 (2 events) and Jan 16 (1 event)
-    }
-
-    #[tokio::test]
-    async fn test_trend_unsupported_metric() {
-        let reg = Box::leak(Box::new(BackendRegistry::default()));
-        let backend = reg.get("duckdb").unwrap();
-        assert!(build_trend_query(backend, "dau_mau_ratio", "2024-01-01", "2024-02-01").is_none());
-    }
-}
 ```
 
-- [ ] **10b. Implement `src/api/mission_control.rs`**
+- [ ] **10d. Run tests — expect PASS**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::mission_control::tests 2>&1
+```
+
+Expect: 4 tests pass.
+
+- [ ] **10e. Implement `src/api/mission_control.rs`**
 
 File: `backend-rs/src/api/mission_control.rs`
 
@@ -2981,6 +3150,7 @@ use crate::query::mission_control::{
 
 #[derive(Deserialize)]
 pub struct MissionControlParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
     /// Previous period start for comparison.
@@ -3008,10 +3178,11 @@ pub struct MissionControlResponse {
 
 async fn fetch_period_metrics(
     state: &AppState,
+    connection_id: &str,
     start: &str,
     end: &str,
 ) -> Result<PeriodMetrics, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(state).await?;
+    let (mut conn, backend) = open_analytics_conn(state, connection_id).await?;
 
     // Overview
     let overview_sql = build_overview_query(backend, start, end);
@@ -3069,10 +3240,10 @@ pub async fn get_mission_control(
     State(state): State<AppState>,
     Query(params): Query<MissionControlParams>,
 ) -> Result<Json<DataResponse<MissionControlResponse>>, ApiError> {
-    let current = fetch_period_metrics(&state, &params.start_date, &params.end_date).await?;
+    let current = fetch_period_metrics(&state, &params.connection_id, &params.start_date, &params.end_date).await?;
 
     let previous = match (&params.prev_start_date, &params.prev_end_date) {
-        (Some(ps), Some(pe)) => Some(fetch_period_metrics(&state, ps, pe).await?),
+        (Some(ps), Some(pe)) => Some(fetch_period_metrics(&state, &params.connection_id, ps, pe).await?),
         _ => None,
     };
 
@@ -3085,6 +3256,7 @@ pub async fn get_mission_control(
 
 #[derive(Deserialize)]
 pub struct MissionControlTrendParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
     pub metric: String,
@@ -3100,7 +3272,7 @@ pub async fn get_mission_control_trend(
     State(state): State<AppState>,
     Query(params): Query<MissionControlTrendParams>,
 ) -> Result<Json<DataResponse<Vec<TrendPoint>>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
 
     let sql = match build_trend_query(backend, &params.metric, &params.start_date, &params.end_date)
     {
@@ -3160,7 +3332,120 @@ git commit -m "feat(backend-rs): implement mission control query builders and ha
 
 ### Steps
 
-- [ ] **11a. Implement `src/query/pivot.rs`**
+- [ ] **11a. Write failing tests for `src/query/pivot.rs`**
+
+Add to `backend-rs/src/query/pivot.rs` (the placeholder):
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::connectors::{BackendRegistry, AnyBackend};
+    use crate::connectors::mod_types::BackendConnection;
+    use crate::connectors::types::SqlValue;
+
+    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
+        let reg = Box::leak(Box::new(BackendRegistry::default()));
+        let backend = reg.get("duckdb").unwrap();
+        let conn = backend
+            .open_any(serde_json::json!({"file_path": ":memory:"}))
+            .await
+            .unwrap();
+        (conn, backend)
+    }
+
+    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
+        backend
+            .execute_any(
+                conn,
+                "CREATE TABLE events (
+                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
+                )",
+                vec![],
+            )
+            .await
+            .unwrap();
+        for sql in [
+            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-15 10:00:00', '{}')",
+            "INSERT INTO events VALUES ('u2', 'page_view', '2024-01-15 11:00:00', '{}')",
+            "INSERT INTO events VALUES ('u1', 'click', '2024-01-15 10:05:00', '{}')",
+            "INSERT INTO events VALUES ('u3', 'page_view', '2024-01-16 14:00:00', '{}')",
+        ] {
+            backend.execute_any(conn, sql, vec![]).await.unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn test_pivot_options_events() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_pivot_options_events_query(backend, "2024-01-01", "2024-02-01");
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 2); // click, page_view
+    }
+
+    #[tokio::test]
+    async fn test_pivot_count_by_event() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_pivot_query(
+            backend, &["event_name".into()], "count", "", "2024-01-01", "2024-02-01", None,
+        );
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 2); // page_view (3), click (1)
+    }
+
+    #[tokio::test]
+    async fn test_pivot_unique_users() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_pivot_query(
+            backend, &["event_name".into()], "unique_users", "user_id",
+            "2024-01-01", "2024-02-01", None,
+        );
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 2);
+        match (&rows[0][0], &rows[0][1]) {
+            (SqlValue::Text(name), SqlValue::Int(n)) => {
+                assert_eq!(name, "page_view");
+                assert_eq!(*n, 3);
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_filter_values() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_filter_values_query(backend, "user_id", "2024-01-01", "2024-02-01", 100);
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 3); // u1, u2, u3
+    }
+
+    #[tokio::test]
+    async fn test_pivot_grid_rows_paginated() {
+        let (mut conn, backend) = make_duckdb().await;
+        seed(&mut conn, backend).await;
+        let sql = build_pivot_grid_rows_query(
+            backend, &["event_name".into()], "count", "", "2024-01-01", "2024-02-01",
+            None, None, None, 1, 0,
+        );
+        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
+        assert_eq!(rows.len(), 1); // only 1 row due to LIMIT
+    }
+}
+```
+
+- [ ] **11b. Run failing tests — expect compile error or "not found"**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::pivot::tests 2>&1 | head -20
+```
+
+Expect: compile error — pivot query functions not yet defined.
+
+- [ ] **11c. Implement `src/query/pivot.rs`**
 
 File: `backend-rs/src/query/pivot.rs`
 
@@ -3285,138 +3570,17 @@ pub fn build_pivot_grid_rows_query(
         format!("{base} {order} LIMIT {limit} OFFSET {offset}")
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::connectors::{BackendRegistry, AnyBackend};
-    use crate::connectors::mod_types::BackendConnection;
-    use crate::connectors::types::SqlValue;
-
-    async fn make_duckdb() -> (BackendConnection, &'static dyn AnyBackend) {
-        let reg = Box::leak(Box::new(BackendRegistry::default()));
-        let backend = reg.get("duckdb").unwrap();
-        let conn = backend
-            .open_any(serde_json::json!({"file_path": ":memory:"}))
-            .await
-            .unwrap();
-        (conn, backend)
-    }
-
-    async fn seed(conn: &mut BackendConnection, backend: &dyn AnyBackend) {
-        backend
-            .execute_any(
-                conn,
-                "CREATE TABLE events (
-                    user_id TEXT, event_name TEXT, timestamp TIMESTAMP, properties TEXT
-                )",
-                vec![],
-            )
-            .await
-            .unwrap();
-        for sql in [
-            "INSERT INTO events VALUES ('u1', 'page_view', '2024-01-15 10:00:00', '{}')",
-            "INSERT INTO events VALUES ('u2', 'page_view', '2024-01-15 11:00:00', '{}')",
-            "INSERT INTO events VALUES ('u1', 'click', '2024-01-15 10:05:00', '{}')",
-            "INSERT INTO events VALUES ('u3', 'page_view', '2024-01-16 14:00:00', '{}')",
-        ] {
-            backend.execute_any(conn, sql, vec![]).await.unwrap();
-        }
-    }
-
-    #[tokio::test]
-    async fn test_pivot_options_events() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_pivot_options_events_query(backend, "2024-01-01", "2024-02-01");
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 2); // click, page_view
-    }
-
-    #[tokio::test]
-    async fn test_pivot_count_by_event() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_pivot_query(
-            backend,
-            &["event_name".into()],
-            "count",
-            "",
-            "2024-01-01",
-            "2024-02-01",
-            None,
-        );
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 2); // page_view and click
-        // page_view should be first (3 events, ordered DESC)
-        match &rows[0][0] {
-            SqlValue::Text(s) => assert_eq!(s, "page_view"),
-            other => panic!("expected Text, got {other:?}"),
-        }
-        match &rows[0][1] {
-            SqlValue::Int(n) => assert_eq!(*n, 3),
-            other => panic!("expected Int(3), got {other:?}"),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_pivot_unique_users() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_pivot_query(
-            backend,
-            &["event_name".into()],
-            "unique_users",
-            "user_id",
-            "2024-01-01",
-            "2024-02-01",
-            None,
-        );
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 2);
-        // page_view has 3 unique users, click has 1
-        match (&rows[0][0], &rows[0][1]) {
-            (SqlValue::Text(name), SqlValue::Int(n)) => {
-                assert_eq!(name, "page_view");
-                assert_eq!(*n, 3);
-            }
-            other => panic!("unexpected: {other:?}"),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_filter_values() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_filter_values_query(backend, "user_id", "2024-01-01", "2024-02-01", 100);
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 3); // u1, u2, u3
-    }
-
-    #[tokio::test]
-    async fn test_pivot_grid_rows_paginated() {
-        let (mut conn, backend) = make_duckdb().await;
-        seed(&mut conn, backend).await;
-        let sql = build_pivot_grid_rows_query(
-            backend,
-            &["event_name".into()],
-            "count",
-            "",
-            "2024-01-01",
-            "2024-02-01",
-            None,
-            None,
-            None,
-            1, // limit 1
-            0,
-        );
-        let rows = backend.execute_any(&mut conn, &sql, vec![]).await.unwrap();
-        assert_eq!(rows.len(), 1); // only 1 row due to LIMIT
-    }
-}
 ```
 
-- [ ] **11b. Implement `src/api/pivot.rs`**
+- [ ] **11d. Run tests — expect PASS**
+
+```bash
+cd backend-rs && cargo test -p stratifio-backend -- query::pivot::tests 2>&1
+```
+
+Expect: 5 tests pass.
+
+- [ ] **11e. Implement `src/api/pivot.rs`**
 
 File: `backend-rs/src/api/pivot.rs`
 
@@ -3436,6 +3600,7 @@ use crate::query::pivot::{
 
 #[derive(Deserialize)]
 pub struct PivotOptionsParams {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
 }
@@ -3451,7 +3616,7 @@ pub async fn get_pivot_options(
     State(state): State<AppState>,
     Query(params): Query<PivotOptionsParams>,
 ) -> Result<Json<DataResponse<PivotOptions>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_pivot_options_events_query(backend, &params.start_date, &params.end_date);
     let rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
 
@@ -3482,6 +3647,7 @@ pub async fn get_pivot_options(
 
 #[derive(Deserialize)]
 pub struct PivotRequest {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
     pub rows: Vec<String>,
@@ -3506,7 +3672,7 @@ pub async fn post_pivot(
     State(state): State<AppState>,
     Json(req): Json<PivotRequest>,
 ) -> Result<Json<DataResponse<Vec<PivotRow>>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &req.connection_id).await?;
     let sql = build_pivot_query(
         backend,
         &req.rows,
@@ -3558,6 +3724,7 @@ pub async fn post_pivot_grid(
 
 #[derive(Deserialize)]
 pub struct FilterValuesParams {
+    pub connection_id: String,
     pub field: String,
     pub start_date: String,
     pub end_date: String,
@@ -3573,7 +3740,7 @@ pub async fn get_pivot_filter_values(
     State(state): State<AppState>,
     Query(params): Query<FilterValuesParams>,
 ) -> Result<Json<DataResponse<Vec<String>>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
     let sql = build_filter_values_query(
         backend,
         &params.field,
@@ -3598,6 +3765,7 @@ pub async fn get_pivot_filter_values(
 
 #[derive(Deserialize)]
 pub struct PivotGridRowsRequest {
+    pub connection_id: String,
     pub start_date: String,
     pub end_date: String,
     pub rows: Vec<String>,
@@ -3622,7 +3790,7 @@ pub async fn post_pivot_grid_rows(
     State(state): State<AppState>,
     Json(req): Json<PivotGridRowsRequest>,
 ) -> Result<Json<DataResponse<Vec<PivotRow>>>, ApiError> {
-    let (mut conn, backend) = open_analytics_conn(&state).await?;
+    let (mut conn, backend) = open_analytics_conn(&state, &req.connection_id).await?;
     let sql = build_pivot_grid_rows_query(
         backend,
         &req.rows,
