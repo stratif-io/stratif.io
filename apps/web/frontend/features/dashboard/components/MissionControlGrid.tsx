@@ -22,8 +22,8 @@ const METRIC_CONFIG: Array<{
   { key: 'total_sessions', label: 'Sessions', color: 'hsl(var(--chart-3))' },
   { key: 'avg_session_duration_sec', label: 'Avg Session', color: 'hsl(var(--chart-4))' },
   { key: 'avg_events_per_session', label: 'Events / Session', color: 'hsl(var(--chart-5))' },
-  { key: 'new_users', label: 'New Users', color: 'hsl(var(--chart-2))' },
-  { key: 'returning_users', label: 'Returning Users', color: 'hsl(var(--chart-1))' },
+  { key: 'new_users', label: 'New Users', color: 'hsl(var(--chart-3))' },
+  { key: 'returning_users', label: 'Returning Users', color: 'hsl(var(--chart-4))' },
   { key: 'dau_mau_ratio', label: 'DAU / MAU', color: 'hsl(var(--chart-5))' },
 ]
 

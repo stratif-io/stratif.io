@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQueries } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { fetchMissionControlTrend } from '@/lib/api'
 import { useAppStore } from '@/stores'
@@ -38,12 +38,8 @@ export function useMissionControlTrends({
 
   const enabled = !!activeConnectionId && !!startDate && !!endDate
 
-  // 8 unconditional useQuery calls — Rules of Hooks requires consistent call order.
-  // All share the same enabled flag and staleTime; TanStack Query deduplicates cache.
-  // Array length is fixed at compile time via `as const`, so hook call count never changes at runtime.
-  const results = METRICS.map((metric) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useQuery({
+  const results = useQueries({
+    queries: METRICS.map((metric) => ({
       queryKey: [
         'missionControlTrend',
         metric,
@@ -62,8 +58,8 @@ export function useMissionControlTrends({
         }),
       enabled,
       staleTime: QUERY_STALE_TIME.default,
-    })
-  )
+    })),
+  })
 
   const trends = Object.fromEntries(
     METRICS.map((metric, i) => [
