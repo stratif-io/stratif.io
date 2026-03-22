@@ -1,8 +1,62 @@
+use serde::Deserialize;
+use async_trait::async_trait;
+use anyhow::{Result, anyhow};
+use crate::connectors::backend::DatabaseBackend;
 use crate::connectors::dialect::SqlDialect;
-use crate::connectors::types::CustomProperty;
+use crate::connectors::mod_types::{BackendConnection, ClickHouseClient};
+use crate::connectors::types::{BrowseNode, ColumnInfo, CustomProperty, Row, SchemaInfo, SqlValue};
 
 pub struct ClickHouseBackend;
 impl ClickHouseBackend { pub fn new() -> Self { Self } }
+
+#[derive(Deserialize)]
+pub struct ClickHouseCredentials {
+    pub host: String,
+    pub port: u16,
+    pub database: String,
+    pub user: String,
+    pub password: String,
+}
+
+#[async_trait]
+impl DatabaseBackend for ClickHouseBackend {
+    type Credentials = ClickHouseCredentials;
+
+    async fn open(&self, creds: &ClickHouseCredentials) -> Result<BackendConnection> {
+        let client: ClickHouseClient = clickhouse::Client::default()
+            .with_url(format!("http://{}:{}", creds.host, creds.port))
+            .with_database(&creds.database)
+            .with_user(&creds.user)
+            .with_password(&creds.password);
+        Ok(BackendConnection::ClickHouse(client))
+    }
+
+    async fn execute(&self, _conn: &mut BackendConnection, _query: &str, _params: Vec<SqlValue>) -> Result<Vec<Row>> {
+        Err(anyhow!("ClickHouse execute: not yet implemented"))
+    }
+    async fn get_tables(&self, _conn: &mut BackendConnection) -> Result<Vec<String>> {
+        Err(anyhow!("ClickHouse get_tables: not yet implemented"))
+    }
+    async fn table_exists(&self, _conn: &mut BackendConnection, _table_name: &str) -> Result<bool> {
+        Err(anyhow!("ClickHouse table_exists: not yet implemented"))
+    }
+    async fn get_table_columns(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<ColumnInfo>> {
+        Err(anyhow!("ClickHouse get_table_columns: not yet implemented"))
+    }
+    async fn get_columns_for_browse(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<String>> {
+        Err(anyhow!("ClickHouse get_columns_for_browse: not yet implemented"))
+    }
+    async fn detect_schema(&self, _conn: &mut BackendConnection, _hint: Option<&str>) -> Result<SchemaInfo> {
+        Err(anyhow!("ClickHouse detect_schema: not yet implemented"))
+    }
+    async fn browse(&self, _conn: &mut BackendConnection, _catalog: Option<&str>, _schema: Option<&str>) -> Result<Vec<BrowseNode>> {
+        Err(anyhow!("ClickHouse browse: not yet implemented"))
+    }
+    fn is_connection_error(&self, err: &anyhow::Error) -> bool {
+        let msg = err.to_string();
+        msg.contains("connection") || msg.contains("refused")
+    }
+}
 
 impl SqlDialect for ClickHouseBackend {
     fn dialect_name(&self) -> &'static str { "clickhouse" }

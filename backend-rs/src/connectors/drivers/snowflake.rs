@@ -1,8 +1,63 @@
+use serde::Deserialize;
+use async_trait::async_trait;
+use anyhow::{Result, anyhow};
+use crate::connectors::backend::DatabaseBackend;
 use crate::connectors::dialect::SqlDialect;
-use crate::connectors::types::CustomProperty;
+use crate::connectors::mod_types::{BackendConnection, SnowflakeClient};
+use crate::connectors::types::{BrowseNode, ColumnInfo, CustomProperty, Row, SchemaInfo, SqlValue};
 
 pub struct SnowflakeBackend;
 impl SnowflakeBackend { pub fn new() -> Self { Self } }
+
+#[derive(Deserialize)]
+pub struct SnowflakeCredentials {
+    pub account: String,
+    pub user: String,
+    pub password: String,
+    pub warehouse: Option<String>,
+    pub database: Option<String>,
+    pub schema: Option<String>,
+}
+
+#[async_trait]
+impl DatabaseBackend for SnowflakeBackend {
+    type Credentials = SnowflakeCredentials;
+
+    async fn open(&self, creds: &SnowflakeCredentials) -> Result<BackendConnection> {
+        let http = reqwest::Client::new();
+        Ok(BackendConnection::Snowflake(SnowflakeClient {
+            http,
+            account: creds.account.clone(),
+            token: String::new(),
+        }))
+    }
+
+    async fn execute(&self, _conn: &mut BackendConnection, _query: &str, _params: Vec<SqlValue>) -> Result<Vec<Row>> {
+        Err(anyhow!("Snowflake execute: not yet implemented"))
+    }
+    async fn get_tables(&self, _conn: &mut BackendConnection) -> Result<Vec<String>> {
+        Err(anyhow!("Snowflake get_tables: not yet implemented"))
+    }
+    async fn table_exists(&self, _conn: &mut BackendConnection, _table_name: &str) -> Result<bool> {
+        Err(anyhow!("Snowflake table_exists: not yet implemented"))
+    }
+    async fn get_table_columns(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<ColumnInfo>> {
+        Err(anyhow!("Snowflake get_table_columns: not yet implemented"))
+    }
+    async fn get_columns_for_browse(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<String>> {
+        Err(anyhow!("Snowflake get_columns_for_browse: not yet implemented"))
+    }
+    async fn detect_schema(&self, _conn: &mut BackendConnection, _hint: Option<&str>) -> Result<SchemaInfo> {
+        Err(anyhow!("Snowflake detect_schema: not yet implemented"))
+    }
+    async fn browse(&self, _conn: &mut BackendConnection, _catalog: Option<&str>, _schema: Option<&str>) -> Result<Vec<BrowseNode>> {
+        Err(anyhow!("Snowflake browse: not yet implemented"))
+    }
+    fn is_connection_error(&self, err: &anyhow::Error) -> bool {
+        let msg = err.to_string();
+        msg.contains("401") || msg.contains("403") || msg.contains("connection")
+    }
+}
 
 impl SqlDialect for SnowflakeBackend {
     fn dialect_name(&self) -> &'static str { "snowflake" }
