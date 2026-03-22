@@ -51,21 +51,22 @@ pub struct MissionControlResponse {
     pub previous: PeriodMetrics,
 }
 
-fn previous_period(start_date: &str, end_date: &str) -> (String, String) {
-    use std::str::FromStr;
-    let start = chrono::NaiveDate::from_str(start_date).unwrap_or_default();
-    let end = chrono::NaiveDate::from_str(end_date).unwrap_or_default();
+fn previous_period(start_date: &str, end_date: &str) -> Result<(String, String), anyhow::Error> {
+    let start = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d")
+        .map_err(|e| anyhow::anyhow!("invalid start_date: {e}"))?;
+    let end = chrono::NaiveDate::parse_from_str(end_date, "%Y-%m-%d")
+        .map_err(|e| anyhow::anyhow!("invalid end_date: {e}"))?;
     let duration = end.signed_duration_since(start);
     let prev_end = start;
     let prev_start = prev_end - duration;
-    (prev_start.to_string(), prev_end.to_string())
+    Ok((prev_start.to_string(), prev_end.to_string()))
 }
 
 pub async fn get_mission_control(
     State(state): State<AppState>,
     Query(params): Query<MissionControlParams>,
 ) -> Result<Json<DataResponse<MissionControlResponse>>, ApiError> {
-    let (prev_start, prev_end) = previous_period(&params.start_date, &params.end_date);
+    let (prev_start, prev_end) = previous_period(&params.start_date, &params.end_date)?;
     let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
 
     let current_sql = build_mission_control_query(backend, &params.start_date, &params.end_date);

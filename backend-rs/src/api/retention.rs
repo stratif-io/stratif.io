@@ -49,7 +49,7 @@ pub async fn get_retention(
     let mut cohorts: BTreeMap<String, (i64, Vec<RetentionMilestone>)> = BTreeMap::new();
 
     for row in rows {
-        let cohort_date = match &row[0] { SqlValue::Text(s) => s.clone(), other => format!("{other:?}") };
+        let cohort_date = match &row[0] { SqlValue::Text(s) => s.clone(), _ => continue };
         let cohort_size = match &row[1] { SqlValue::Int(n) => *n, _ => 0 };
         let period = match &row[2] { SqlValue::Int(n) => *n, _ => continue };
         let retained = match &row[3] { SqlValue::Int(n) => *n, _ => 0 };

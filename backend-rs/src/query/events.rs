@@ -7,9 +7,11 @@ pub fn build_distinct_events_query(
     start_date: &str,
     end_date: &str,
 ) -> String {
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     format!(
         "SELECT DISTINCT event_name FROM events \
-         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
+         WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}' \
          ORDER BY event_name"
     )
 }
@@ -21,9 +23,11 @@ pub fn build_top_events_query(
     end_date: &str,
     limit: u32,
 ) -> String {
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     format!(
         "SELECT event_name, COUNT(*) AS count FROM events \
-         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
+         WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}' \
          GROUP BY event_name ORDER BY count DESC LIMIT {limit}"
     )
 }
@@ -40,8 +44,10 @@ pub fn build_raw_events_queries(
     offset: u32,
 ) -> (String, String) {
     let q = backend.identifier_quote_char();
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     let mut where_parts = vec![
-        format!("timestamp >= '{start_date}' AND timestamp < '{end_date}'"),
+        format!("timestamp >= '{safe_start}' AND timestamp < '{safe_end}'"),
     ];
     if let Some(en) = event_name {
         where_parts.push(format!("event_name = '{}'", en.replace('\'', "''")));

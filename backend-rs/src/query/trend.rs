@@ -15,13 +15,15 @@ pub fn build_trend_query(
     let q = backend.identifier_quote_char();
     let filter_sql = filters_to_sql(filters, q);
     let event_escaped = event_name.replace('\'', "''");
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
 
     format!(
         "SELECT {date_expr} AS date, \
          COUNT(*) AS count, \
          COUNT(DISTINCT user_id) AS unique_users \
          FROM events \
-         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
+         WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}' \
          AND event_name = '{event_escaped}'\
          {filter_sql} \
          GROUP BY 1 ORDER BY 1"
@@ -40,11 +42,13 @@ pub fn build_trend_total_query(
     let q = backend.identifier_quote_char();
     let filter_sql = filters_to_sql(filters, q);
     let event_escaped = event_name.replace('\'', "''");
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
 
     format!(
         "SELECT COUNT(DISTINCT user_id) AS total_unique_users \
          FROM events \
-         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}' \
+         WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}' \
          AND event_name = '{event_escaped}'\
          {filter_sql}"
     )

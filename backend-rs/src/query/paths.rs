@@ -24,11 +24,13 @@ pub fn build_paths_query(
         }
         None => String::new(),
     };
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     format!(
         "WITH e AS (
             SELECT user_id, timestamp, event_name
             FROM events
-            WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}'
+            WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}'
         )
         SELECT e1.event_name AS e1, e2.event_name AS e2, e3.event_name AS e3, COUNT(*) AS count
         FROM e e1
@@ -55,19 +57,21 @@ pub fn build_path_analysis_query(
     event_name: &str,
 ) -> String {
     let escaped = event_name.replace('\'', "''");
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     format!(
         "SELECT 'before' AS direction, prev.event_name, COUNT(*) AS count
         FROM events curr
         JOIN events prev ON curr.user_id = prev.user_id AND prev.timestamp < curr.timestamp
         WHERE curr.event_name = '{escaped}'
-          AND curr.timestamp >= '{start_date}' AND curr.timestamp < '{end_date}'
+          AND curr.timestamp >= '{safe_start}' AND curr.timestamp < '{safe_end}'
         GROUP BY prev.event_name
         UNION ALL
         SELECT 'after' AS direction, nxt.event_name, COUNT(*) AS count
         FROM events curr
         JOIN events nxt ON curr.user_id = nxt.user_id AND nxt.timestamp > curr.timestamp
         WHERE curr.event_name = '{escaped}'
-          AND curr.timestamp >= '{start_date}' AND curr.timestamp < '{end_date}'
+          AND curr.timestamp >= '{safe_start}' AND curr.timestamp < '{safe_end}'
         GROUP BY nxt.event_name
         ORDER BY direction, count DESC"
     )
@@ -91,6 +95,8 @@ pub fn build_path_funnel_query(
     let mut join_parts = Vec::new();
     let mut prev_alias = String::new();
 
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     for (i, step) in steps.iter().enumerate() {
         let escaped = step.replace('\'', "''");
         let alias = format!("step{i}");
@@ -101,7 +107,7 @@ pub fn build_path_funnel_query(
                     SELECT user_id, MIN(timestamp) AS ts
                     FROM events
                     WHERE event_name = '{escaped}'
-                      AND timestamp >= '{start_date}' AND timestamp < '{end_date}'
+                      AND timestamp >= '{safe_start}' AND timestamp < '{safe_end}'
                     GROUP BY user_id
                 )"
             ));

@@ -9,6 +9,8 @@ pub fn build_mission_control_query(
     start_date: &str,
     end_date: &str,
 ) -> String {
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     let session_cte = build_session_cte(backend, start_date, end_date);
     format!(
         "WITH {session_cte},
@@ -17,7 +19,7 @@ pub fn build_mission_control_query(
                 COUNT(*) AS total_events,
                 COUNT(DISTINCT user_id) AS unique_users
             FROM events
-            WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}'
+            WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}'
         ),
         session_stats AS (
             SELECT
@@ -30,7 +32,7 @@ pub fn build_mission_control_query(
             SELECT user_id
             FROM events
             GROUP BY user_id
-            HAVING MIN(timestamp) >= '{start_date}' AND MIN(timestamp) < '{end_date}'
+            HAVING MIN(timestamp) >= '{safe_start}' AND MIN(timestamp) < '{safe_end}'
         )
         SELECT
             e.total_events,
@@ -59,10 +61,12 @@ pub fn build_mission_control_trend_query(
         "unique_users" => "COUNT(DISTINCT user_id)",
         _ => return None,
     };
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     Some(format!(
         "SELECT {date_expr} AS date, {agg_expr} AS value
          FROM events
-         WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}'
+         WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}'
          GROUP BY 1 ORDER BY 1"
     ))
 }

@@ -5,7 +5,7 @@ use super::state::{open_analytics_conn, AppState};
 use crate::connectors::types::SqlValue;
 use crate::query::pivot::{
     build_pivot_options_events_query, build_pivot_query,
-    build_filter_values_query, build_pivot_grid_rows_query,
+    build_filter_values_query, build_pivot_grid_rows_query, build_pivot_grid_rows_count_query,
 };
 
 // --- GET /api/pivot/options ---
@@ -180,11 +180,14 @@ pub async fn post_pivot_grid_rows(
     Json(req): Json<PivotGridRowsRequest>,
 ) -> Result<Json<DataResponse<PivotGridRowsData>>, ApiError> {
     let (mut conn, backend) = open_analytics_conn(&state, &req.connection_id).await?;
-    // Get total count using no-pagination query
     let all_dims: Vec<String> = req.rows.iter().chain(req.cols.iter()).cloned().collect();
-    let count_sql = build_pivot_grid_rows_query(backend, &all_dims, &req.values, &req.agg_func, &req.start_date, &req.end_date, u32::MAX, 0, req.sort_by.as_deref(), req.sort_dir.as_deref());
-    let all_rows = backend.execute_any(&mut conn, &count_sql, vec![]).await?;
-    let total = all_rows.len();
+    // Get total count via a COUNT(*) wrapper query (avoids loading all rows)
+    let count_sql = build_pivot_grid_rows_count_query(backend, &all_dims, &req.values, &req.agg_func, &req.start_date, &req.end_date);
+    let count_rows = backend.execute_any(&mut conn, &count_sql, vec![]).await?;
+    let total = count_rows.first()
+        .and_then(|r| r.first())
+        .map(|v| match v { SqlValue::Int(n) => *n as usize, _ => 0 })
+        .unwrap_or(0);
     let sql = build_pivot_grid_rows_query(backend, &all_dims, &req.values, &req.agg_func, &req.start_date, &req.end_date, req.limit, req.offset, req.sort_by.as_deref(), req.sort_dir.as_deref());
     let db_rows = backend.execute_any(&mut conn, &sql, vec![]).await?;
     Ok(Json(DataResponse { data: PivotGridRowsData { rows: rows_to_json(db_rows), total } }))

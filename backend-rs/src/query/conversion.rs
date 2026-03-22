@@ -11,11 +11,13 @@ pub fn build_conversion_query(
 ) -> String {
     let entry_esc = entry_event.replace('\'', "''");
     let goal_esc = goal_event.replace('\'', "''");
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     format!(
         "WITH entry_users AS (
             SELECT DISTINCT user_id FROM events
             WHERE event_name = '{entry_esc}'
-              AND timestamp >= '{start_date}' AND timestamp < '{end_date}'
+              AND timestamp >= '{safe_start}' AND timestamp < '{safe_end}'
         ),
         converted AS (
             SELECT DISTINCT e.user_id FROM entry_users e

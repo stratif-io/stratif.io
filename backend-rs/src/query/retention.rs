@@ -21,6 +21,8 @@ pub fn build_retention_query(
         String::new()
     };
 
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     let cohort_date_expr = backend.date_trunc(granularity, "MIN(timestamp)");
     let active_date_expr = backend.date_trunc(granularity, "timestamp");
     let diff_days = backend.date_diff_days("f.cohort_date", "a.active_date");
@@ -29,13 +31,13 @@ pub fn build_retention_query(
         "WITH first_seen AS (
             SELECT user_id, {cohort_date_expr} AS cohort_date
             FROM events
-            WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}'{event_filter}
+            WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}'{event_filter}
             GROUP BY user_id
         ),
         activity AS (
             SELECT DISTINCT user_id, {active_date_expr} AS active_date
             FROM events
-            WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}'{event_filter}
+            WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}'{event_filter}
         ),
         cohort_activity AS (
             SELECT f.user_id, f.cohort_date,

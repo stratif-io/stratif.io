@@ -3,6 +3,8 @@ use crate::connectors::AnyBackend;
 /// Build the session derivation CTE.
 /// Creates a `sessions` CTE with columns: session_id, user_id, start_time, end_time, event_count, duration_sec.
 pub fn build_session_cte(backend: &dyn AnyBackend, start_date: &str, end_date: &str) -> String {
+    let safe_start = start_date.replace('\'', "''");
+    let safe_end = end_date.replace('\'', "''");
     let epoch_gap = backend.epoch_diff_seconds("prev_ts", "timestamp");
     let epoch_dur = backend.epoch_diff_seconds("MIN(timestamp)", "MAX(timestamp)");
     let concat = backend.string_concat(&["user_id", "'-'", "CAST(session_num AS VARCHAR)"]);
@@ -12,7 +14,7 @@ pub fn build_session_cte(backend: &dyn AnyBackend, start_date: &str, end_date: &
             SELECT user_id, timestamp, event_name,
                 LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp) AS prev_ts
             FROM events
-            WHERE timestamp >= '{start_date}' AND timestamp < '{end_date}'
+            WHERE timestamp >= '{safe_start}' AND timestamp < '{safe_end}'
         ),
         boundaries AS (
             SELECT *,
