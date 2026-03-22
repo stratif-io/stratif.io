@@ -12,6 +12,13 @@ name = "stratifio-backend"
 path = "src/main.rs"
 
 [dependencies]
+axum = "0.7"
+tower-http = { version = "0.5", features = ["cors"] }
+fernet = "0.2"
+sha2 = "0.10"
+base64 = "0.22"
+tower = "0.4"
+tracing = "0.1"
 tokio = { version = "1", features = ["full"] }
 async-trait = "0.1"
 anyhow = "1"
