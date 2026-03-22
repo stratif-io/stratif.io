@@ -1,8 +1,86 @@
+use serde::Deserialize;
+use async_trait::async_trait;
+use anyhow::Result;
+use crate::connectors::backend::DatabaseBackend;
+use crate::connectors::mod_types::BackendConnection;
 use crate::connectors::dialect::SqlDialect;
-use crate::connectors::types::CustomProperty;
+use crate::connectors::types::{BrowseNode, ColumnInfo, CustomProperty, Row, SchemaInfo, SqlValue};
 
 pub struct PostgresBackend;
 impl PostgresBackend { pub fn new() -> Self { Self } }
+
+#[derive(Deserialize)]
+pub struct PostgresCredentials {
+    pub host: String,
+    pub port: u16,
+    pub database: String,
+    pub user: String,
+    pub password: String,
+}
+
+impl PostgresCredentials {
+    pub fn connection_string(&self) -> String {
+        format!(
+            "postgresql://{}:{}@{}:{}/{}",
+            self.user, self.password, self.host, self.port, self.database
+        )
+    }
+}
+
+fn map_pg_row(row: &sqlx::postgres::PgRow) -> Row {
+    use sqlx::Row as SqlxRow;
+    use sqlx::Column;
+    (0..row.columns().len()).map(|i| {
+        row.try_get::<i64, _>(i).map(SqlValue::Int)
+            .or_else(|_| row.try_get::<f64, _>(i).map(SqlValue::Float))
+            .or_else(|_| row.try_get::<bool, _>(i).map(SqlValue::Bool))
+            .or_else(|_| row.try_get::<String, _>(i).map(SqlValue::Text))
+            .unwrap_or(SqlValue::Null)
+    }).collect()
+}
+
+#[async_trait]
+impl DatabaseBackend for PostgresBackend {
+    type Credentials = PostgresCredentials;
+
+    async fn open(&self, creds: &PostgresCredentials) -> Result<BackendConnection> {
+        let pool = sqlx::PgPool::connect(&creds.connection_string()).await?;
+        let conn = pool.acquire().await?;
+        Ok(BackendConnection::Postgres(conn))
+    }
+
+    async fn execute(&self, conn: &mut BackendConnection, query: &str, _params: Vec<SqlValue>) -> Result<Vec<Row>> {
+        let BackendConnection::Postgres(pg_conn) = conn else { anyhow::bail!("wrong connection type") };
+        let rows = sqlx::query(query).fetch_all(pg_conn.as_mut()).await?;
+        Ok(rows.iter().map(map_pg_row).collect())
+    }
+
+    async fn get_tables(&self, conn: &mut BackendConnection) -> Result<Vec<String>> {
+        let rows = self.execute(conn,
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1",
+            vec![]).await?;
+        Ok(rows.into_iter().filter_map(|r| {
+            r.into_iter().next().and_then(|v| if let SqlValue::Text(s) = v { Some(s) } else { None })
+        }).collect())
+    }
+
+    async fn table_exists(&self, conn: &mut BackendConnection, table_name: &str) -> Result<bool> {
+        let rows = self.execute(conn,
+            &format!("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '{table_name}' LIMIT 1"),
+            vec![]).await?;
+        Ok(!rows.is_empty())
+    }
+
+    fn is_connection_error(&self, err: &anyhow::Error) -> bool {
+        let msg = err.to_string();
+        msg.contains("connection refused") || msg.contains("timeout")
+    }
+
+    async fn get_table_columns(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<ColumnInfo>> { todo!() }
+    async fn get_columns_for_browse(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<String>> { todo!() }
+    async fn detect_schema(&self, _conn: &mut BackendConnection, _hint: Option<&str>) -> Result<SchemaInfo> { todo!() }
+    async fn browse(&self, _conn: &mut BackendConnection, _catalog: Option<&str>, _schema: Option<&str>) -> Result<Vec<BrowseNode>> { todo!() }
+}
 
 impl SqlDialect for PostgresBackend {
     fn dialect_name(&self) -> &'static str { "postgres" }
@@ -52,6 +130,34 @@ impl SqlDialect for PostgresBackend {
         } else {
             format!("WITH {cte_def} {q}")
         }
+    }
+}
+
+#[cfg(test)]
+mod integration {
+    use super::*;
+    use crate::connectors::backend::DatabaseBackend;
+
+    fn pg_creds() -> Option<PostgresCredentials> {
+        std::env::var("STRATIFIO_TEST_POSTGRES").ok().map(|_| {
+            let _url = std::env::var("STRATIFIO_POSTGRES_URL")
+                .unwrap_or_else(|_| "postgresql://postgres:postgres@localhost:5432/postgres".to_string());
+            PostgresCredentials {
+                host: "localhost".to_string(),
+                port: 5432,
+                database: "postgres".to_string(),
+                user: "postgres".to_string(),
+                password: "postgres".to_string(),
+            }
+        })
+    }
+
+    #[tokio::test]
+    async fn get_tables_smoke() {
+        let Some(creds) = pg_creds() else { return };
+        let b = PostgresBackend::new();
+        let mut conn = b.open(&creds).await.unwrap();
+        let _ = DatabaseBackend::get_tables(&b, &mut conn).await.unwrap();
     }
 }
 
