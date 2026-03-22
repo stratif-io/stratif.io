@@ -29,6 +29,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "macros"] }
 reqwest = { version = "0.12", features = ["json"] }
 clickhouse = "0.11"
+chrono = "0.4"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
