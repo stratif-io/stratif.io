@@ -37,7 +37,7 @@ fn decrypt_credentials(encrypted: &str, encryption_key: &str) -> Result<String> 
 /// Open a fresh analytics database connection for the given `connection_id`.
 ///
 /// Steps:
-/// 1. Query the product DB: `SELECT credentials, driver FROM connections WHERE id = '{connection_id}'`
+/// 1. Query the product DB: `SELECT credentials_encrypted, db_type FROM connections WHERE id = '{connection_id}'`
 /// 2. Decrypt credentials with Fernet.
 /// 3. Look up the backend driver: `registry.get(&driver)`.
 /// 4. Open a new connection: `backend.open_any(creds_json_value).await`.
@@ -51,7 +51,7 @@ pub async fn open_analytics_conn<'r>(
     let rows = crate::connectors::drivers::sqlite::execute_on_handle(
         &state.product_db,
         &format!(
-            "SELECT credentials, driver FROM connections WHERE id = '{}'",
+            "SELECT credentials_encrypted, db_type FROM connections WHERE id = '{}'",
             connection_id.replace('\'', "''")
         ),
     )
@@ -128,7 +128,7 @@ mod tests {
         DatabaseBackend::execute(
             &sqlite_backend,
             &mut product_conn,
-            "CREATE TABLE connections (id TEXT, credentials TEXT, driver TEXT)",
+            "CREATE TABLE connections (id TEXT, credentials_encrypted TEXT, db_type TEXT)",
             vec![],
         )
         .await
@@ -138,6 +138,7 @@ mod tests {
         let encrypted = fernet_inst.encrypt(creds_json.as_bytes());
         let insert_sql = format!(
             "INSERT INTO connections VALUES ('test-conn-1', '{}', 'duckdb')",
+            // columns: id, credentials_encrypted, db_type
             encrypted
         );
         DatabaseBackend::execute(&sqlite_backend, &mut product_conn, &insert_sql, vec![])
