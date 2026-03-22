@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MissionControlGrid } from '../MissionControlGrid'
 import type { MissionControlResponse } from '@/types'
+import type { TrendMetric, MetricTrend } from '../../hooks/useMissionControlTrends'
 
 vi.mock('../MiniMetricCard', () => ({
   MiniMetricCard: ({ label, isHero, onClick }: { label: string; isHero?: boolean; onClick?: () => void }) => (
@@ -47,7 +48,7 @@ const emptyTrends = Object.fromEntries(
     'total_events', 'unique_users', 'total_sessions', 'avg_session_duration_sec',
     'avg_events_per_session', 'new_users', 'returning_users', 'dau_mau_ratio',
   ].map((k) => [k, { values: [], loading: false }])
-) as any
+) as Record<TrendMetric, MetricTrend>
 
 describe('MissionControlGrid', () => {
   it('renders the hero card with Total Events by default', () => {
