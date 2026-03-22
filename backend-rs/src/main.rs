@@ -7,9 +7,16 @@ use stratifio_backend::connectors::backend::DatabaseBackend;
 use stratifio_backend::connectors::mod_types::BackendConnection;
 
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::trace::TraceLayer;
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "info,stratifio_backend=debug".parse().unwrap()),
+        )
+        .init();
     // Read configuration from environment
     let host = std::env::var("STRATIFIO_HOST").unwrap_or_else(|_| "0.0.0.0".into());
     let port: u16 = std::env::var("STRATIFIO_PORT")
@@ -62,10 +69,10 @@ async fn main() {
             .allow_headers(Any)
     };
 
-    let app = build_router(state).layer(cors);
+    let app = build_router(state).layer(cors).layer(TraceLayer::new_for_http());
 
     let addr = format!("{host}:{port}");
-    println!("stratifio-backend listening on {addr}");
+    tracing::info!("stratifio-backend listening on {addr}");
 
     let listener = tokio::net::TcpListener::bind(&addr)
         .await
