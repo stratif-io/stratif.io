@@ -18,6 +18,10 @@ describe('formatMetricValue', () => {
     it('formats exactly one minute', () => {
       expect(formatMetricValue('avg_session_duration_sec', 60)).toBe('1m 0s')
     })
+
+    it('handles 59.5 seconds rounding correctly (rollover to 1m 0s)', () => {
+      expect(formatMetricValue('avg_session_duration_sec', 59.5)).toBe('1m 0s')
+    })
   })
 
   describe('dau_mau_ratio', () => {
