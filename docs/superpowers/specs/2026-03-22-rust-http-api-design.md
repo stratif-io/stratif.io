@@ -51,9 +51,11 @@ backend-rs/src/
 #[derive(Clone)]
 pub struct AppState {
     pub registry: Arc<BackendRegistry>,
-    pub product_db: Arc<tokio::sync::Mutex<SqliteHandle>>,  // SqliteHandle from existing SQLite actor
+    pub product_db: Arc<tokio::sync::Mutex<SqliteHandle>>,  // crate::connectors::drivers::sqlite::SqliteHandle
 }
 ```
+
+`SqliteHandle` is defined in `backend-rs/src/connectors/drivers/sqlite.rs` but not re-exported from `connectors/mod.rs`. Import it directly: `use crate::connectors::drivers::sqlite::SqliteHandle;`.
 
 At startup, open the product DB from the `STRATIFIO_PRODUCT_DB_PATH` env var (defaults to `stratifio_product.db`) using `SqliteBackend::open()` — the same backend already implemented. The product DB stores the `connections` table with encrypted credentials.
 
