@@ -154,7 +154,7 @@ pub async fn list_connections(
         })
         .collect();
 
-    Ok(Json(serde_json::json!({ "data": conns })))
+    Ok(Json(serde_json::json!(conns)))
 }
 
 /// POST /api/connections
@@ -185,7 +185,7 @@ pub async fn create_connection(
         created_at: now.clone(),
         updated_at: now,
     };
-    Ok((StatusCode::CREATED, Json(serde_json::json!({ "data": conn }))))
+    Ok((StatusCode::CREATED, Json(serde_json::json!(conn))))
 }
 
 /// GET /api/connections/:id
@@ -210,7 +210,7 @@ pub async fn get_connection(
         created_at: extract_text(&r[3]),
         updated_at: extract_text(&r[4]),
     };
-    Ok(Json(serde_json::json!({ "data": conn })))
+    Ok(Json(serde_json::json!(conn)))
 }
 
 /// PATCH /api/connections/:id
@@ -337,9 +337,9 @@ pub async fn get_schema_config(
                 session_timeout_minutes: extract_int(&r[7]),
                 updated_at: extract_text(&r[8]),
             };
-            Ok(Json(serde_json::json!({ "data": config })))
+            Ok(Json(serde_json::json!(config)))
         }
-        _ => Ok(Json(serde_json::json!({ "data": null }))),
+        _ => Ok(Json(serde_json::json!(null))),
     }
 }
 
@@ -426,9 +426,9 @@ pub async fn get_filter_config(
                 filter_fields,
                 updated_at: extract_text(&r[3]),
             };
-            Ok(Json(serde_json::json!({ "data": config })))
+            Ok(Json(serde_json::json!(config)))
         }
-        _ => Ok(Json(serde_json::json!({ "data": null }))),
+        _ => Ok(Json(serde_json::json!(null))),
     }
 }
 
@@ -498,7 +498,7 @@ pub async fn get_filter_options(
     };
 
     if filter_fields.is_empty() {
-        return Ok(Json(serde_json::json!({ "data": { "options": {} } })));
+        return Ok(Json(serde_json::json!({ "options": {} })));
     }
 
     // Get schema config to know the events table
@@ -514,7 +514,7 @@ pub async fn get_filter_options(
     let events_table = match schema_rows {
         Ok(ref rows) if !rows.is_empty() => extract_text(&rows[0][0]),
         _ => {
-            return Ok(Json(serde_json::json!({ "data": { "options": {} } })));
+            return Ok(Json(serde_json::json!({ "options": {} })));
         }
     };
 
@@ -556,7 +556,7 @@ pub async fn get_filter_options(
         }
     }
 
-    Ok(Json(serde_json::json!({ "data": { "options": options } })))
+    Ok(Json(serde_json::json!({ "options": options })))
 }
 
 /// GET /api/connections/:id/field-options?field=
@@ -607,7 +607,7 @@ pub async fn get_field_options(
         })
         .collect();
 
-    Ok(Json(serde_json::json!({ "data": { "values": values } })))
+    Ok(Json(serde_json::json!({ "field": q.field, "values": values })))
 }
 
 /// GET /api/connections/:id/credentials
@@ -647,7 +647,7 @@ pub async fn get_credentials(
         other => other,
     };
 
-    Ok(Json(serde_json::json!({ "data": { "fields": masked } })))
+    Ok(Json(serde_json::json!({ "fields": masked })))
 }
 
 /// GET /api/connections/:id/schema/detect
@@ -671,13 +671,11 @@ pub async fn detect_schema(
         .collect();
 
     Ok(Json(serde_json::json!({
-        "data": {
-            "tables": schema_info.tables,
-            "events_table": schema_info.events_table,
-            "columns": columns,
-            "suggestions": schema_info.suggestions,
-            "proposed_custom_properties": proposed,
-        }
+        "tables": schema_info.tables,
+        "events_table": schema_info.events_table,
+        "columns": columns,
+        "suggestions": schema_info.suggestions,
+        "proposed_custom_properties": proposed,
     })))
 }
 
@@ -696,7 +694,7 @@ pub async fn browse_connection(
         )
         .await?;
 
-    Ok(Json(serde_json::json!({ "data": { "items": items } })))
+    Ok(Json(serde_json::json!({ "items": items })))
 }
 
 /// GET /api/connections/:id/tables
@@ -706,5 +704,5 @@ pub async fn list_tables(
 ) -> Result<impl IntoResponse, ApiError> {
     let (mut conn, backend) = open_analytics_conn(&state, &conn_id).await?;
     let tables = backend.get_tables(&mut conn).await?;
-    Ok(Json(serde_json::json!({ "data": { "tables": tables } })))
+    Ok(Json(serde_json::json!({ "tables": tables })))
 }
