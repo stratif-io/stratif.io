@@ -40,7 +40,7 @@ export function useMissionControl({
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
   const { activeFilters, activeConnectionId } = useAppStore()
 
-  const enabled = !!activeConnectionId && !!startDate && !!endDate
+  const enabled = !!activeConnectionId
 
   // Previous period calculation (same as useMissionControlTrends)
   const periodDays =
@@ -67,8 +67,8 @@ export function useMissionControl({
       queryFn: () =>
         fetchMissionControlMetric({
           metric,
-          start_date: startDate!,
-          end_date: endDate!,
+          start_date: startDate,
+          end_date: endDate,
           filters: activeFilters,
           connection_id: activeConnectionId ?? undefined,
         }),
@@ -104,17 +104,17 @@ export function useMissionControl({
   // data is undefined only when queries are disabled (no connection / no dates).
   const data: MissionControlResponse | undefined = enabled
     ? {
-        period: { start_date: startDate!, end_date: endDate! },
+        period: { start_date: startDate, end_date: endDate },
         previous_period: {
-          start_date: prevStartDate!,
-          end_date: prevEndDate!,
+          start_date: prevStartDate,
+          end_date: prevEndDate,
         },
         current: Object.fromEntries(
           METRICS.map((metric, i) => [metric, metricResults[i].data?.current ?? 0])
         ) as Record<MetricKey, number>,
         previous: Object.fromEntries(
-          METRICS.map((metric, i) => [metric, metricResults[i].data?.previous ?? 0])
-        ) as Record<MetricKey, number>,
+          METRICS.map((metric, i) => [metric, metricResults[i].data?.previous ?? null])
+        ) as Record<MetricKey, number | null>,
       }
     : undefined
 

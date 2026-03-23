@@ -458,15 +458,15 @@ export const fetchMissionControl = (params: {
 
 export const fetchMissionControlTrend = (params: {
   metric: string
-  start_date: string
-  end_date: string
+  start_date?: string
+  end_date?: string
   filters?: Record<string, string | null>
   connection_id?: string
 }) => {
   const searchParams = new URLSearchParams()
   searchParams.set('metric', params.metric)
-  searchParams.set('start_date', params.start_date)
-  searchParams.set('end_date', params.end_date)
+  if (params.start_date) searchParams.set('start_date', params.start_date)
+  if (params.end_date) searchParams.set('end_date', params.end_date)
   const f = serializeFilters(params.filters)
   if (f) searchParams.set('filters', f)
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
@@ -476,15 +476,15 @@ export const fetchMissionControlTrend = (params: {
 
 export const fetchMissionControlMetric = (params: {
   metric: string
-  start_date: string
-  end_date: string
+  start_date?: string
+  end_date?: string
   filters?: Record<string, string | null>
   connection_id?: string
 }) => {
   const searchParams = new URLSearchParams()
   searchParams.set('metric', params.metric)
-  searchParams.set('start_date', params.start_date)
-  searchParams.set('end_date', params.end_date)
+  if (params.start_date) searchParams.set('start_date', params.start_date)
+  if (params.end_date) searchParams.set('end_date', params.end_date)
   const f = serializeFilters(params.filters)
   if (f) searchParams.set('filters', f)
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
