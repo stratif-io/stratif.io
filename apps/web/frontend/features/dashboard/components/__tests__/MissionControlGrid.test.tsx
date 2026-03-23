@@ -50,14 +50,21 @@ const emptyTrends = Object.fromEntries(
   ].map((k) => [k, { values: [], loading: false }])
 ) as Record<TrendMetric, MetricTrend>
 
+const noMetricLoading = Object.fromEntries(
+  [
+    'total_events', 'unique_users', 'total_sessions', 'avg_session_duration_sec',
+    'avg_events_per_session', 'new_users', 'returning_users', 'dau_mau_ratio',
+  ].map((k) => [k, false])
+) as Record<TrendMetric, boolean>
+
 describe('MissionControlGrid', () => {
   it('renders the hero card with Total Events by default', () => {
-    render(<MissionControlGrid data={mockData} trends={emptyTrends} isLoading={false} />)
+    render(<MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />)
     expect(screen.getByTestId('hero-card')).toHaveTextContent('Total Events')
   })
 
   it('renders all 7 supporting mini cards', () => {
-    render(<MissionControlGrid data={mockData} trends={emptyTrends} isLoading={false} />)
+    render(<MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />)
     expect(screen.getByTestId('mini-Unique Users')).toBeInTheDocument()
     expect(screen.getByTestId('mini-Sessions')).toBeInTheDocument()
     expect(screen.getByTestId('mini-Avg Session')).toBeInTheDocument()
@@ -68,7 +75,7 @@ describe('MissionControlGrid', () => {
   })
 
   it('shows category headers', () => {
-    render(<MissionControlGrid data={mockData} trends={emptyTrends} isLoading={false} />)
+    render(<MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />)
     expect(screen.getByText('Volume')).toBeInTheDocument()
     expect(screen.getByText('Engagement')).toBeInTheDocument()
     expect(screen.getByText('Acquisition')).toBeInTheDocument()
@@ -76,7 +83,7 @@ describe('MissionControlGrid', () => {
   })
 
   it('promotes a mini card to hero when clicked', () => {
-    render(<MissionControlGrid data={mockData} trends={emptyTrends} isLoading={false} />)
+    render(<MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />)
 
     // Initially hero is Total Events
     expect(screen.getByTestId('hero-card')).toHaveTextContent('Total Events')
@@ -89,7 +96,7 @@ describe('MissionControlGrid', () => {
   })
 
   it('marks the promoted mini card with isHero', () => {
-    render(<MissionControlGrid data={mockData} trends={emptyTrends} isLoading={false} />)
+    render(<MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />)
     fireEvent.click(screen.getByTestId('mini-Sessions'))
     expect(screen.getByTestId('mini-Sessions')).toHaveAttribute('data-hero', 'true')
   })

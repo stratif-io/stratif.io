@@ -53,12 +53,14 @@ describe('useMissionControl', () => {
     vi.mocked(fetchTopEvents).mockResolvedValue({ data: [] })
   })
 
-  it('returns undefined data while queries are loading', () => {
+  it('is loading while queries are in flight, data populated with zeros', () => {
     const { result } = renderHook(() => useMissionControl({ dateRange }), {
       wrapper: makeWrapper(),
     })
     expect(result.current.isLoading).toBe(true)
-    expect(result.current.data).toBeUndefined()
+    // data is immediately available (zeros) for progressive rendering
+    expect(result.current.data).toBeDefined()
+    expect(result.current.data!.current.total_events).toBe(0)
   })
 
   it('reconstructs MissionControlResponse from 8 individual results', async () => {
@@ -101,7 +103,6 @@ describe('useMissionControl', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(result.current.error).toBeInstanceOf(Error)
-    expect(result.current.data).toBeUndefined()
   })
 
   it('does not fire queries when activeConnectionId is missing', () => {
@@ -120,6 +121,20 @@ describe('useMissionControl', () => {
       { wrapper: makeWrapper() }
     )
     expect(fetchMissionControlMetric).not.toHaveBeenCalled()
+  })
+
+  it('exposes per-metric loading flags', async () => {
+    const { result } = renderHook(() => useMissionControl({ dateRange }), {
+      wrapper: makeWrapper(),
+    })
+    // Initially all metrics are loading
+    for (const m of METRICS) {
+      expect(result.current.metricLoading[m]).toBe(true)
+    }
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    for (const m of METRICS) {
+      expect(result.current.metricLoading[m]).toBe(false)
+    }
   })
 
   it('calls fetchMissionControlMetric once per metric (8 times)', async () => {

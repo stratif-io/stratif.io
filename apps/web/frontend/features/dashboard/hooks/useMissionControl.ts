@@ -25,6 +25,7 @@ export interface UseMissionControlOptions {
 export interface UseMissionControlReturn {
   data: MissionControlResponse | undefined
   isLoading: boolean
+  metricLoading: Record<MetricKey, boolean>
   isError: boolean
   error: Error | null
   topEvents: Array<{ name: string; count: number }>
@@ -93,9 +94,14 @@ export function useMissionControl({
   const isError = metricResults.some((r) => r.isError)
   const error = (metricResults.find((r) => r.error)?.error as Error | null) ?? null
 
-  // Reconstruct MissionControlResponse only when all 8 queries have data
-  const allResolved = metricResults.every((r) => r.status === 'success')
-  const data: MissionControlResponse | undefined = allResolved
+  // Per-metric loading map — each card uses its own flag
+  const metricLoading = Object.fromEntries(
+    METRICS.map((metric, i) => [metric, metricResults[i].isLoading])
+  ) as Record<MetricKey, boolean>
+
+  // Build data progressively: populate resolved metrics immediately, use 0 for still-loading ones.
+  // data is undefined only when queries are disabled (no connection / no dates).
+  const data: MissionControlResponse | undefined = enabled
     ? {
         period: { start_date: startDate!, end_date: endDate! },
         previous_period: {
@@ -103,10 +109,10 @@ export function useMissionControl({
           end_date: prevEndDate!,
         },
         current: Object.fromEntries(
-          METRICS.map((metric, i) => [metric, metricResults[i].data!.current])
+          METRICS.map((metric, i) => [metric, metricResults[i].data?.current ?? 0])
         ) as Record<MetricKey, number>,
         previous: Object.fromEntries(
-          METRICS.map((metric, i) => [metric, metricResults[i].data!.previous])
+          METRICS.map((metric, i) => [metric, metricResults[i].data?.previous ?? 0])
         ) as Record<MetricKey, number>,
       }
     : undefined
@@ -114,6 +120,7 @@ export function useMissionControl({
   return {
     data,
     isLoading,
+    metricLoading,
     isError,
     error,
     topEvents: topEventsData?.data ?? [],

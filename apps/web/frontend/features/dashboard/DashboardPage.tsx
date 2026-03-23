@@ -72,7 +72,7 @@ export function DashboardPage() {
   }, [])
 
   const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()
-  const { data, isLoading, isError, error, topEvents, eventsLoading } = useMissionControl({
+  const { data, metricLoading, isError, error, topEvents, eventsLoading } = useMissionControl({
     dateRange,
   })
   const { trends } = useMissionControlTrends({ dateRange })
@@ -106,7 +106,7 @@ export function DashboardPage() {
           <h1 className="sr-only">Mission Control</h1>
           <span className={TYPOGRAPHY.pageLabel}>Mission Control</span>
 
-          <MissionControlGrid data={data} trends={trends} isLoading={isLoading} />
+          <MissionControlGrid data={data} trends={trends} metricLoading={metricLoading} />
 
           <TopEvents events={topEvents} loading={eventsLoading} />
         </div>
