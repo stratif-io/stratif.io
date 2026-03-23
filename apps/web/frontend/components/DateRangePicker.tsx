@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DayPicker } from 'react-day-picker'
 import type { DateRange as DayPickerRange } from 'react-day-picker'
-import 'react-day-picker/style.css'
 import {
   format,
   subDays, subWeeks, subMonths, subQuarters,
@@ -87,6 +86,44 @@ function applyTimeToDate(dateStr: string, timeStr: string): Date {
   const d = new Date(`${dateStr}T00:00:00`)
   d.setHours(h ?? 0, m ?? 0, s ?? 0, 0)
   return d
+}
+
+// ─── DayPicker classNames — use design-system tokens instead of default CSS ──
+
+const DAY_PICKER_CLASSES = {
+  root:           'text-sm',
+  months:         'flex gap-6',
+  month:          'space-y-3',
+  month_caption:  'flex items-center justify-center px-1 h-7 relative',
+  caption_label:  'text-xs font-medium text-foreground',
+  nav:            'flex items-center gap-1',
+  button_previous: cn(
+    'absolute left-0 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground',
+    'hover:bg-accent hover:text-foreground transition-colors',
+  ),
+  button_next: cn(
+    'absolute right-0 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground',
+    'hover:bg-accent hover:text-foreground transition-colors',
+  ),
+  month_grid:     'w-full border-collapse',
+  weekdays:       '',
+  weekday:        'text-[10px] font-medium text-muted-foreground/60 text-center w-8 h-7 uppercase',
+  week:           '',
+  day:            'p-0 text-center',
+  day_button: cn(
+    'h-8 w-8 rounded-md text-xs font-normal text-foreground transition-colors',
+    'hover:bg-accent hover:text-accent-foreground',
+    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+    'disabled:opacity-30 disabled:pointer-events-none',
+  ),
+  selected:       '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary [&>button]:hover:text-primary-foreground [&>button]:rounded-md',
+  range_start:    '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:rounded-md',
+  range_end:      '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:rounded-md',
+  range_middle:   '[&>button]:bg-accent [&>button]:text-accent-foreground [&>button]:rounded-none',
+  today:          '[&>button]:font-semibold [&>button]:text-primary',
+  outside:        '[&>button]:text-muted-foreground/30 [&>button]:pointer-events-none',
+  hidden:         'invisible',
+  chevron:        'h-3.5 w-3.5',
 }
 
 // ─── Component ────────────────────────────────────────────────────────────
@@ -289,6 +326,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
               onSelect={handleDayPickerSelect}
               month={calendarMonth}
               onMonthChange={setCalendarMonth}
+              classNames={DAY_PICKER_CLASSES}
             />
 
             {/* Date + time inputs */}
