@@ -229,6 +229,34 @@ describe('useAppStore', () => {
     })
   })
 
+  describe('presetId and applyPreset', () => {
+    beforeEach(() => {
+      useAppStore.setState({
+        presetId: '7d',
+        dateRange: { from: new Date('2025-03-16'), to: new Date('2025-03-23') },
+      })
+    })
+
+    it('applyPreset updates dateRange and presetId atomically', () => {
+      const range = { from: new Date('2025-01-01'), to: new Date('2025-03-23') }
+      useAppStore.getState().applyPreset(range, 'ytd')
+
+      const state = useAppStore.getState()
+      expect(state.presetId).toBe('ytd')
+      expect(state.dateRange).toEqual(range)
+    })
+
+    it('applyPreset with null id marks custom range', () => {
+      useAppStore.getState().applyPreset({ from: new Date('2025-03-01'), to: new Date('2025-03-10') }, null)
+      expect(useAppStore.getState().presetId).toBeNull()
+    })
+
+    it('initial presetId is 7d (matches default dateRange)', () => {
+      useAppStore.setState({ presetId: '7d' })
+      expect(useAppStore.getState().presetId).toBe('7d')
+    })
+  })
+
   describe('hook usage', () => {
     it('can select specific state slices', () => {
       const { result } = renderHook(() => useAppStore((state) => state.theme))
