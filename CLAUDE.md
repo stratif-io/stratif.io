@@ -106,6 +106,8 @@ stratif.io stores encrypted credentials for client analytics databases. Security
 
 ## Git Worktrees
 
+**Never commit directly to `main`.** All work — features, fixes, refactors, even single-line changes — must go through a branch and PR.
+
 Feature work should be done in an isolated worktree, not directly on `main`. Use the `superpowers:using-git-worktrees` skill to set one up — it handles directory selection, `.gitignore` verification, dependency install, and baseline test check automatically. The `.worktrees/` directory is already in `.gitignore`.
 
 ## Adding a Feature
