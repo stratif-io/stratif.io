@@ -1,8 +1,8 @@
 import { useMemo, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { useAppStore } from '@/stores'
+import { formatDateParam } from '@/lib/utils'
 import {
   fetchPivotGridColDefs,
   fetchPivotGridRows,
@@ -29,8 +29,8 @@ export function NewPivotPage() {
 
   const { dateRange, activeFilters, activeConnectionId, setActiveFilter } = useAppStore()
 
-  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
-  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+  const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
+  const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
 
   const { data: colDefsData, isLoading: colDefsLoading } = useQuery({
     queryKey: ['pivot-grid-col-defs', activeConnectionId],

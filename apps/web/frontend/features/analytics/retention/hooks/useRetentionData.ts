@@ -1,8 +1,8 @@
 import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
 import { fetchRetention } from '@/lib/api'
+import { formatDateParam } from '@/lib/utils'
 import { useAppStore } from '@/stores'
 import type { DateRange, RetentionCohort } from '@/types'
 
@@ -27,8 +27,8 @@ export function useRetentionData({
   dateRange,
   granularity,
 }: UseRetentionDataOptions): UseRetentionDataReturn {
-  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
-  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
+  const startDate = dateRange.from ? formatDateParam(dateRange.from) : ''
+  const endDate = dateRange.to ? formatDateParam(dateRange.to) : ''
   const { activeFilters, activeConnectionId } = useAppStore()
 
   const { data: retentionResponse, isLoading, isError, error } = useQuery({
