@@ -19,6 +19,7 @@ export interface MiniMetricCardProps {
   description?: string
   changeLabel?: string
   sparklineFormatter?: (value: number) => string
+  decimalsOverride?: number
 }
 
 export function MiniMetricCard({
@@ -35,11 +36,12 @@ export function MiniMetricCard({
   description,
   changeLabel,
   sparklineFormatter,
+  decimalsOverride = 0,
 }: MiniMetricCardProps) {
   const animatedTarget = loading ? 0 : (rawValue ?? 0)
   const animatedValue = useFormattedCountUp(animatedTarget, {
     duration: 700,
-    decimals: 2,
+    decimals: decimalsOverride,
     formatter: sparklineFormatter ?? ((v) => String(v)),
   })
 
@@ -57,6 +59,8 @@ export function MiniMetricCard({
     <button
       type="button"
       onClick={onClick}
+      aria-label={`View ${label} trend`}
+      aria-pressed={isHero}
       className={cn(
         'relative overflow-hidden rounded-xl border p-3 text-left w-full transition-colors',
         'hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -122,8 +126,8 @@ export function MiniMetricCard({
         <SparklineChart
           key={loading ? 'loading' : 'loaded'}
           data={sparklineValues}
-          width={fullWidth ? 100 : 60}
-          height={24}
+          width={fullWidth ? 120 : 80}
+          height={32}
           color={color}
           showArea={false}
           strokeWidth={1.5}

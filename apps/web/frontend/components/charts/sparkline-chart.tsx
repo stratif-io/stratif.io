@@ -143,8 +143,10 @@ export function SparklineChart({
                   x={0}
                   y={-4}
                   height={height + 8}
-                  initial={{ width: 0 }}
-                  animate={{ width: width + 4 }}
+                  width={width + 4}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  style={{ transformOrigin: 'left center' }}
                   transition={{ duration: 0.55, ease: 'easeOut', delay: 0.05 }}
                 />
               </clipPath>
