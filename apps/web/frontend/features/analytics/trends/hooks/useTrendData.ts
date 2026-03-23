@@ -100,7 +100,7 @@ export function useTrendData({
         filters: mergedFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
-    enabled: !usePivot && !!startDate && !!endDate,
+    enabled: !usePivot,
     staleTime: QUERY_STALE_TIME.default,
   })
 
@@ -135,7 +135,7 @@ export function useTrendData({
         filters: mergedFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
-    enabled: usePivot && !!startDate && !!endDate,
+    enabled: usePivot,
     staleTime: QUERY_STALE_TIME.default,
   })
 

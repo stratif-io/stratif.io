@@ -19,7 +19,7 @@ from backend.services.sql_builder import (
     extract_quarter,
     extract_year,
 )
-from backend.services.validators import parse_date
+from backend.services.validators import parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["pivot"])
 
@@ -403,10 +403,10 @@ def get_pivot(
 
     if start_date:
         where_clauses.append("timestamp >= ?")
-        params.append(f"{start_date} 00:00:00")
+        params.append(to_sql_datetime(start_date, "00:00:00"))
     if end_date:
         where_clauses.append("timestamp <= ?")
-        params.append(f"{end_date} 23:59:59")
+        params.append(to_sql_datetime(end_date, "23:59:59"))
     if event_filter:
         where_clauses.append("event_name = ?")
         params.append(event_filter)
@@ -569,10 +569,10 @@ def get_pivot_grid_filter_values(
     params: list = []
     if start_date:
         where_clauses.append("timestamp >= ?")
-        params.append(f"{start_date} 00:00:00")
+        params.append(to_sql_datetime(start_date, "00:00:00"))
     if end_date:
         where_clauses.append("timestamp <= ?")
-        params.append(f"{end_date} 23:59:59")
+        params.append(to_sql_datetime(end_date, "23:59:59"))
     if event_filter:
         where_clauses.append("event_name = ?")
         params.append(event_filter)
@@ -822,10 +822,10 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
 
     if body.start_date:
         where_clauses.append("timestamp >= ?")
-        where_params.append(f"{body.start_date} 00:00:00")
+        where_params.append(to_sql_datetime(body.start_date, "00:00:00"))
     if body.end_date:
         where_clauses.append("timestamp <= ?")
-        where_params.append(f"{body.end_date} 23:59:59")
+        where_params.append(to_sql_datetime(body.end_date, "23:59:59"))
     if body.event_filter:
         where_clauses.append("event_name = ?")
         where_params.append(body.event_filter)
