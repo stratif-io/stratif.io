@@ -122,6 +122,10 @@ Feature work should be done in an isolated worktree, not directly on `main`. Use
 
 After any frontend UI change, update the design system to reflect new components, patterns, tokens, or conventions introduced. This keeps the design system in sync with the codebase.
 
+## Adding a SQL Backend Feature
+
+When adding a SQL capability (a new method, query pattern, or dialect-specific behavior), implement it directly in each backend under `backend/backends/<dialect>/`. Never use `if dialect == 'xxx'` branching in shared/service code — dialect differences belong in the backend class, not in callers.
+
 ## Adding a Chart
 
 - Feature-specific: create in `apps/web/frontend/features/<feature>/components/`

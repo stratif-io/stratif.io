@@ -1,27 +1,59 @@
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useReducedMotion } from '@/hooks'
+import { useEffect, useState } from 'react'
+
+type Phase = 'idle' | 'loading' | 'completing'
 
 /**
- * A thin indeterminate progress bar that sits at the top of a card while
- * data is loading. The parent card must have `relative overflow-hidden`.
+ * A thin progress bar at the top of a card.
+ * - While loading: indeterminate sweep
+ * - On completion: fills to 100% then fades out
+ * Parent card must have `relative overflow-hidden`.
  */
 export function CardLoadingBar({ loading }: { loading?: boolean }) {
   const prefersReducedMotion = useReducedMotion()
+  const [phase, setPhase] = useState<Phase>(loading ? 'loading' : 'idle')
 
-  if (!loading) return null
+  useEffect(() => {
+    if (loading) {
+      setPhase('loading')
+    } else if (phase === 'loading') {
+      setPhase('completing')
+    }
+    // idle is terminal — reset handled by next loading=true
+  }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (phase === 'idle') return null
 
   if (prefersReducedMotion) {
     return <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary/50" />
   }
 
+  if (phase === 'loading') {
+    return (
+      <div className="absolute top-0 left-0 right-0 h-[2px] overflow-hidden">
+        <motion.div
+          className="absolute h-full bg-primary/60"
+          style={{ width: '45%' }}
+          animate={{ left: ['-45%', '100%'] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </div>
+    )
+  }
+
+  // completing — fill to 100% then exit
   return (
-    <div className="absolute top-0 left-0 right-0 h-[2px] overflow-hidden">
+    <AnimatePresence>
       <motion.div
-        className="absolute h-full bg-primary/60"
-        style={{ width: '45%' }}
-        animate={{ left: ['-45%', '100%'] }}
-        transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+        key="completing"
+        className="absolute top-0 left-0 right-0 h-[2px] bg-primary/70"
+        initial={{ scaleX: 0, originX: 0 }}
+        animate={{ scaleX: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        onAnimationComplete={() => setPhase('idle')}
       />
-    </div>
+    </AnimatePresence>
   )
 }

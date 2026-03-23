@@ -106,6 +106,7 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
         label={heroConfig.label}
         metricKey={heroMetric}
         value={formatMetricValue(heroMetric, heroCurrentValue)}
+        rawValue={heroCurrentValue}
         pctChange={computePctChange(heroCurrentValue, heroPreviousValue)}
         previousValue={formatMetricValue(heroMetric, heroPreviousValue)}
         sparklineValues={trends[heroMetric]?.values ?? []}
@@ -138,6 +139,7 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
                     key={metricKey}
                     label={cfg.label}
                     value={formatMetricValue(metricKey, current)}
+                    rawValue={current}
                     pctChange={computePctChange(current, previous)}
                     sparklineValues={trends[metricKey]?.values ?? []}
                     color={cfg.color}

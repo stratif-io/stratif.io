@@ -3,10 +3,12 @@ import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useCountUp, useFormattedCountUp } from '@/hooks/useCountUp'
 
 export interface MiniMetricCardProps {
   label: string
-  value: string           // pre-formatted (e.g. "48.2K", "2m 22s", "34.0%")
+  value: string           // pre-formatted fallback
+  rawValue?: number       // raw number for count-up animation
   pctChange: number | null  // null → show "—"
   sparklineValues: number[]
   color: string           // CSS color string for sparkline stroke
@@ -22,6 +24,7 @@ export interface MiniMetricCardProps {
 export function MiniMetricCard({
   label,
   value,
+  rawValue,
   pctChange,
   sparklineValues,
   color,
@@ -33,6 +36,19 @@ export function MiniMetricCard({
   changeLabel,
   sparklineFormatter,
 }: MiniMetricCardProps) {
+  const animatedTarget = loading ? 0 : (rawValue ?? 0)
+  const animatedValue = useFormattedCountUp(animatedTarget, {
+    duration: 700,
+    decimals: 2,
+    formatter: sparklineFormatter ?? ((v) => String(v)),
+  })
+
+  const pctTarget = loading || pctChange === null ? 0 : pctChange
+  const animatedPct = useCountUp(pctTarget, { duration: 700, decimals: 1 })
+
+  const displayValue = rawValue !== undefined ? animatedValue : value
+  const displayPct = pctChange !== null ? animatedPct : null
+
   const isPositive = pctChange !== null && pctChange > 0
   const isNegative = pctChange !== null && pctChange < 0
   const isNeutral = pctChange !== null && pctChange === 0
@@ -66,12 +82,17 @@ export function MiniMetricCard({
       </div>
 
       <div className="flex items-end justify-between gap-2">
-        <div>
-          <div className="text-lg font-bold tracking-tight leading-none">{value}</div>
+        <div
+          className={cn(
+            'transition-opacity duration-500',
+            loading ? 'opacity-0' : 'opacity-100'
+          )}
+        >
+          <div className="text-lg font-bold tracking-tight leading-none">{displayValue}</div>
           <div className="mt-1.5">
             <Tooltip>
               <TooltipTrigger asChild>
-                {pctChange === null ? (
+                {displayPct === null ? (
                   <span className="text-xs text-muted-foreground cursor-default">—</span>
                 ) : isNeutral ? (
                   <span className="inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded text-muted-foreground bg-muted cursor-default">
@@ -87,7 +108,7 @@ export function MiniMetricCard({
                   >
                     <span aria-hidden="true">{isPositive ? '↑' : '↓'}</span>
                     <span className="sr-only">{isPositive ? 'increased by' : 'decreased by'}</span>
-                    {Math.abs(pctChange).toFixed(1)}%
+                    {Math.abs(displayPct).toFixed(1)}%
                   </span>
                 )}
               </TooltipTrigger>
@@ -99,6 +120,7 @@ export function MiniMetricCard({
         </div>
 
         <SparklineChart
+          key={loading ? 'loading' : 'loaded'}
           data={sparklineValues}
           width={fullWidth ? 100 : 60}
           height={24}
@@ -106,6 +128,7 @@ export function MiniMetricCard({
           showArea={false}
           strokeWidth={1.5}
           formatter={sparklineFormatter}
+          animated={!loading}
         />
       </div>
     </button>
