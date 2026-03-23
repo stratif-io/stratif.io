@@ -7,6 +7,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
+import { SparklineChart } from '@/components/charts/sparkline-chart'
 import type { RetentionCohort } from '@/types'
 import type { RetentionGranularity } from '../hooks/useRetentionData'
 
@@ -16,14 +17,6 @@ interface RetentionTableProps {
   milestones: number[]
 }
 
-function getTrend(data: number[]): 'up' | 'down' | 'flat' {
-  const valid = data.filter((v) => v != null && !isNaN(v))
-  if (valid.length < 2) return 'flat'
-  const delta = valid[valid.length - 1] - valid[0]
-  if (delta > 1) return 'up'
-  if (delta < -1) return 'down'
-  return 'flat'
-}
 
 function getCellStyle(percent: number): React.CSSProperties {
   const opacity = 0.06 + (percent / 100) * 0.44
@@ -78,12 +71,6 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
           {data.map((row, idx) => {
             // Skip unit 0 (signup day — always ~100%, not meaningful in the trend)
             const sparkData = row.retention_series.slice(1)
-            const trend = getTrend(sparkData)
-            const trendConfig = {
-              up:   { label: 'Improving', icon: '↑', className: 'text-success' },
-              down: { label: 'Declining',  icon: '↓', className: 'text-destructive' },
-              flat: { label: 'Stable',    icon: '→', className: 'text-muted-foreground' },
-            }[trend]
             return (
               <TableRow key={idx} className="hover:bg-muted/20 transition-colors">
                 <TableCell className="font-medium whitespace-nowrap">
@@ -93,10 +80,15 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                   {row.cohort_size.toLocaleString()}
                 </TableCell>
                 <TableCell className="py-1.5 pr-4">
-                  <span className={cn('inline-flex items-center gap-1 text-xs font-medium tabular-nums', trendConfig.className)}>
-                    <span aria-hidden="true">{trendConfig.icon}</span>
-                    <span className="sr-only">{trendConfig.label}</span>
-                  </span>
+                  <SparklineChart
+                    data={sparkData}
+                    width={80}
+                    height={28}
+                    color={`hsl(var(--chart-2))`}
+                    showArea={false}
+                    strokeWidth={1.5}
+                    formatter={(v) => `${v.toFixed(1)}%`}
+                  />
                 </TableCell>
                 {milestones.map((unit, i) => {
                   const pct = row.milestone_values[i] ?? 0

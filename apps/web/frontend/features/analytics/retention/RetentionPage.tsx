@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 
 import { Button } from '@/components/ui/button'
@@ -69,17 +69,13 @@ function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
   const { label, color } = getRetentionLabel(value, granularity, milestone)
   const animatedValue = useCountUp(value, { decimals: 1 })
   return (
-    <Card hover="lift">
-      <CardHeader className="pb-2">
-        <CardTitle className={TYPOGRAPHY.label}>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-1">
-        <div className="flex items-end gap-2">
-          <span className={TYPOGRAPHY.metric}>{animatedValue.toFixed(1)}%</span>
-          <span className={cn('text-xs font-medium pb-0.5', color)}>{label}</span>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 transition-colors hover:border-primary/50">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{title}</p>
+      <div className="flex items-end gap-2">
+        <p className="text-lg font-bold tracking-tight leading-none">{animatedValue.toFixed(1)}%</p>
+        <span className={cn('text-xs font-medium pb-0.5', color)}>{label}</span>
+      </div>
+    </div>
   )
 }
 

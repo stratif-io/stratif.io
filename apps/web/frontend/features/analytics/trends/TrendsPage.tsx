@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import {
   Select,
@@ -16,14 +16,14 @@ import { PageTransition } from '@/components/layout/PageTransition'
 import { ChartSkeleton } from '@/components/ui/loading-state'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
-import { TrendingUp, BarChart3, LineChart as LineChartIcon } from 'lucide-react'
+import { TrendingUp } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { fetchPivotOptions } from '@/lib/api'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendChart } from './components/TrendChart'
 import { TrendFilters } from './components/TrendFilters'
 import { FilterSelect } from '@/components/FilterSelect'
-import { SPACING, TYPOGRAPHY, ICON_SIZES, QUERY_STALE_TIME } from '@/lib/constants'
+import { SPACING, TYPOGRAPHY, QUERY_STALE_TIME } from '@/lib/constants'
 
 export function TrendsPage() {
   useEffect(() => {
@@ -99,34 +99,20 @@ export function TrendsPage() {
           <h1 className="sr-only">Trends</h1>
           <span className={TYPOGRAPHY.pageLabel}>Trend Analysis</span>
 
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <Card hover="lift" className="col-span-2 lg:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className={TYPOGRAPHY.label}>Total Events</CardTitle>
-                <TrendingUp className={`${ICON_SIZES.sm} text-muted-foreground`} />
-              </CardHeader>
-              <CardContent>
-                <div className={TYPOGRAPHY.metric}>{totalEvents.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-            <Card hover="lift" className="col-span-1">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className={TYPOGRAPHY.label}>Daily Average</CardTitle>
-                <BarChart3 className={`${ICON_SIZES.sm} text-muted-foreground`} />
-              </CardHeader>
-              <CardContent>
-                <div className={TYPOGRAPHY.metric}>{averageValue.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-            <Card hover="lift" className="col-span-1">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className={TYPOGRAPHY.label}>Daily Peak</CardTitle>
-                <LineChartIcon className={`${ICON_SIZES.sm} text-muted-foreground`} />
-              </CardHeader>
-              <CardContent>
-                <div className={TYPOGRAPHY.metric}>{maxValue.toLocaleString()}</div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            {[
+              { label: 'Total Events', value: totalEvents.toLocaleString(), span: 'col-span-2 lg:col-span-2' },
+              { label: 'Daily Average', value: averageValue.toLocaleString(), span: 'col-span-1' },
+              { label: 'Daily Peak',    value: maxValue.toLocaleString(),     span: 'col-span-1' },
+            ].map(({ label, value, span }) => (
+              <div
+                key={label}
+                className={`relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 transition-colors hover:border-primary/50 ${span}`}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{label}</p>
+                <p className="text-lg font-bold tracking-tight leading-none">{value}</p>
+              </div>
+            ))}
           </div>
 
           <Card className="relative overflow-hidden">
