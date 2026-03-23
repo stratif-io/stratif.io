@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
-import { format } from 'date-fns'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import * as XLSX from 'xlsx'
 import { Download, Columns3 } from 'lucide-react'
 import { useAppStore } from '@/stores'
+import { formatDateParam } from '@/lib/utils'
 import { fetchRawEvents, fetchEvents, fetchFieldOptions } from '@/lib/api'
 import {
   useFilterConfig,
@@ -46,8 +46,8 @@ export function EventsPage() {
   const [colVisibility, setColVisibility] = useState<VisibilityState>({})
 
   const limit = 50
-  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
-  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+  const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
+  const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
 
   // Filter config, schema config, and filter options for dynamic dimension columns
   const { data: filterConfig } = useFilterConfig(activeConnectionId ?? '')

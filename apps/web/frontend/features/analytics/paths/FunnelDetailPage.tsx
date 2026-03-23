@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
 import {
   ArrowLeft,
   Check,
@@ -30,7 +29,7 @@ import { FunnelSteps } from './components/FunnelSteps'
 import { fetchPathFunnel, fetchEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import { SPACING, TYPOGRAPHY, FILTER_TRIGGER_CLASS } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { cn, formatDateParam } from '@/lib/utils'
 
 const MAX_STEPS = 10
 
@@ -76,8 +75,8 @@ export function FunnelDetailPage() {
     if (dateRange.from && dateRange.to) {
       setSearchParams({
         ...Object.fromEntries(searchParams),
-        start_date: format(dateRange.from, 'yyyy-MM-dd'),
-        end_date: format(dateRange.to, 'yyyy-MM-dd'),
+        start_date: formatDateParam(dateRange.from),
+        end_date: formatDateParam(dateRange.to),
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -121,8 +120,8 @@ export function FunnelDetailPage() {
     return 'Any event'
   }
 
-  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
-  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+  const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
+  const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
 
   const {
     data: funnelData,

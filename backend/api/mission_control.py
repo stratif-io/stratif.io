@@ -1,7 +1,7 @@
 """Mission Control API endpoints."""
 
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -30,8 +30,8 @@ def _parse_request_params(
     """Parse and validate common query params; raise HTTP 400 on invalid input."""
     parse_date(start_date)
     parse_date(end_date)
-    start = date.fromisoformat(start_date)
-    end = date.fromisoformat(end_date)
+    start = datetime.fromisoformat(start_date).date()
+    end = datetime.fromisoformat(end_date).date()
     if start > end:
         raise HTTPException(status_code=400, detail="start_date must be <= end_date.")
 

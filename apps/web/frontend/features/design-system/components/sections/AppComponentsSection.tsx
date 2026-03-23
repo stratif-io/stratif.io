@@ -16,6 +16,18 @@ function DateRangePickerDemo() {
   return <DateRangePicker value={value} onChange={setValue} />
 }
 
+function DateRangePickerInlineDemo() {
+  const [value, setValue] = useState<DateRange>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  })
+  return (
+    <div className="flex items-center rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border px-2">
+      <DateRangePicker value={value} onChange={setValue} inlineMode />
+    </div>
+  )
+}
+
 function FilterSelectDemo() {
   const [value, setValue] = useState<string>('page_view')
   return (
@@ -39,6 +51,10 @@ export function AppComponentsSection() {
     <ComponentSection id="app" title="App Components">
       <ComponentRow label="DateRangePicker">
         <DateRangePickerDemo />
+      </ComponentRow>
+
+      <ComponentRow label="DateRangePicker (inlineMode)">
+        <DateRangePickerInlineDemo />
       </ComponentRow>
 
       <ComponentRow label="FilterSelect (single)">

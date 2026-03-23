@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from backend.services.views import session_ctes
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
-from backend.services.validators import parse_date
+from backend.services.validators import parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["sessions"])
 
@@ -30,10 +30,10 @@ def get_raw_sessions(
     params: list = []
     if start_date:
         where.append("ds.start_time >= ?")
-        params.append(f"{start_date} 00:00:00")
+        params.append(to_sql_datetime(start_date, "00:00:00"))
     if end_date:
         where.append("ds.start_time <= ?")
-        params.append(f"{end_date} 23:59:59")
+        params.append(to_sql_datetime(end_date, "23:59:59"))
     where_sql = ("WHERE " + " AND ".join(where)) if where else ""
 
     ctes = session_ctes(timeout, dialect)
@@ -95,10 +95,10 @@ def get_sessions_summary(
 
     if start_date:
         event_where.append("timestamp >= ?")
-        params.append(f"{start_date} 00:00:00")
+        params.append(to_sql_datetime(start_date, "00:00:00"))
     if end_date:
         event_where.append("timestamp <= ?")
-        params.append(f"{end_date} 23:59:59")
+        params.append(to_sql_datetime(end_date, "23:59:59"))
 
     filter_clauses: list[str] = []
     if filters:
@@ -113,10 +113,10 @@ def get_sessions_summary(
     session_params: list = []
     if start_date:
         session_where.append("ds.start_time >= ?")
-        session_params.append(f"{start_date} 00:00:00")
+        session_params.append(to_sql_datetime(start_date, "00:00:00"))
     if end_date:
         session_where.append("ds.start_time <= ?")
-        session_params.append(f"{end_date} 23:59:59")
+        session_params.append(to_sql_datetime(end_date, "23:59:59"))
 
     if filters and filter_clauses:
         session_where.append(

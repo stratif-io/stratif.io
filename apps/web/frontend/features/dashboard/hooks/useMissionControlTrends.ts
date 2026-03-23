@@ -1,7 +1,8 @@
 import { useQueries } from '@tanstack/react-query'
-import { format, subDays, differenceInDays } from 'date-fns'
+import { subDays, differenceInDays } from 'date-fns'
 import { fetchMissionControlTrend } from '@/lib/api'
 import { useAppStore } from '@/stores'
+import { formatDateParam } from '@/lib/utils'
 import { QUERY_STALE_TIME } from '@/lib/constants'
 import type { DateRange } from '@/types'
 
@@ -35,19 +36,19 @@ export function useMissionControlTrends({
 }: {
   dateRange: DateRange
 }): UseMissionControlTrendsReturn {
-  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
-  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+  const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
+  const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
   const { activeFilters, activeConnectionId } = useAppStore()
 
   // Calculate the previous period (same length, immediately before)
   const periodDays =
     dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) + 1 : 0
   const prevEndDate = dateRange.from
-    ? format(subDays(dateRange.from, 1), 'yyyy-MM-dd')
+    ? formatDateParam(subDays(dateRange.from, 1))
     : undefined
   const prevStartDate =
     dateRange.from && periodDays > 0
-      ? format(subDays(dateRange.from, periodDays), 'yyyy-MM-dd')
+      ? formatDateParam(subDays(dateRange.from, periodDays))
       : undefined
 
   const enabled = !!activeConnectionId && !!startDate && !!endDate

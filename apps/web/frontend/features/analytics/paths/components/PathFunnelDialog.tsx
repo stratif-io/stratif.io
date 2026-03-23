@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
 import { ChevronDown, Copy, ExternalLink, Monitor, Smartphone, TrendingDown } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -19,7 +18,7 @@ import {
 import { FunnelSteps } from './FunnelSteps'
 import { fetchPathFunnel } from '@/lib/api'
 import type { DateRange, PathAnalysisData } from '@/types'
-import { cn } from '@/lib/utils'
+import { cn, formatDateParam } from '@/lib/utils'
 import { FILTER_TRIGGER_CLASS } from '@/lib/constants'
 
 const segTrigger = FILTER_TRIGGER_CLASS
@@ -37,8 +36,8 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
   const [deviceType, setDeviceType] = useState<string>('')
   const navigate = useNavigate()
   const { activeFilters } = useAppStore()
-  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
-  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+  const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
+  const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
 
   const events = (path?.path ?? '').split(' -> ').filter(Boolean)
 
