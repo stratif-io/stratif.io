@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { Plus } from 'lucide-react'
 import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { DateRangePicker } from '@/components/DateRangePicker'
 import { FilterSelect } from '@/components/FilterSelect'
+import { Button } from '@/components/ui/button'
 import { DbLogo } from '@/components/DbLogo'
 import { FilterBar } from '@/components/shared/FilterBar'
 import { GlobalFilters } from '@/components/GlobalFilters'
@@ -97,6 +99,43 @@ export function AppComponentsSection() {
             placeholder="Select dimension…"
           />
         </div>
+      </ComponentRow>
+
+      <ComponentRow label="FilterSelect (disabled options)">
+        <div className="w-48">
+          <FilterSelect
+            mode="single"
+            options={[
+              { value: 'country', label: 'Country' },
+              { value: 'browser', label: 'Browser', disabled: true },
+              { value: 'os', label: 'OS', disabled: true },
+              { value: 'event_name', label: 'Event Name' },
+            ]}
+            value={null}
+            onChange={() => {}}
+            placeholder="Select dimension…"
+          />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="FilterSelect (triggerContent)">
+        <FilterSelect
+          mode="single"
+          tree={true}
+          options={[
+            { value: 'country', label: 'Country', category: 'Location' },
+            { value: 'browser', label: 'Browser', category: 'Device' },
+            { value: 'browser', label: 'Browser (used)', category: 'Device', disabled: true },
+          ]}
+          value={null}
+          onChange={() => {}}
+          triggerContent={
+            <Button variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs text-muted-foreground">
+              <Plus className="h-3 w-3" />
+              Add
+            </Button>
+          }
+        />
       </ComponentRow>
 
       <ComponentRow label="DbLogo">
