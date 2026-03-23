@@ -500,7 +500,7 @@ pub async fn get_filter_options(
     };
 
     if filter_fields.is_empty() {
-        return Ok(Json(serde_json::json!({ "options": {} })));
+        return Ok(Json(serde_json::json!({})));
     }
 
     // Get schema config to know the events table
@@ -516,7 +516,7 @@ pub async fn get_filter_options(
     let events_table = match schema_rows {
         Ok(ref rows) if !rows.is_empty() => extract_text(&rows[0][0]),
         _ => {
-            return Ok(Json(serde_json::json!({ "options": {} })));
+            return Ok(Json(serde_json::json!({})));
         }
     };
 
@@ -558,7 +558,7 @@ pub async fn get_filter_options(
         }
     }
 
-    Ok(Json(serde_json::json!({ "options": options })))
+    Ok(Json(serde_json::json!(options)))
 }
 
 /// GET /api/connections/:id/field-options?field=
