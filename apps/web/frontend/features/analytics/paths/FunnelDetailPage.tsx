@@ -75,8 +75,8 @@ export function FunnelDetailPage() {
     if (dateRange.from && dateRange.to) {
       setSearchParams({
         ...Object.fromEntries(searchParams),
-        start_date: dateRange.from ? formatDateParam(dateRange.from) : '',
-        end_date: dateRange.to ? formatDateParam(dateRange.to) : '',
+        start_date: formatDateParam(dateRange.from),
+        end_date: formatDateParam(dateRange.to),
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
