@@ -94,13 +94,13 @@ export function useMissionControl({
   const error = (metricResults.find((r) => r.error)?.error as Error | null) ?? null
 
   // Reconstruct MissionControlResponse only when all 8 queries have data
-  const allResolved = metricResults.every((r) => r.data !== undefined)
+  const allResolved = metricResults.every((r) => r.status === 'success')
   const data: MissionControlResponse | undefined = allResolved
     ? {
         period: { start_date: startDate!, end_date: endDate! },
         previous_period: {
-          start_date: prevStartDate ?? startDate!,
-          end_date: prevEndDate ?? endDate!,
+          start_date: prevStartDate!,
+          end_date: prevEndDate!,
         },
         current: Object.fromEntries(
           METRICS.map((metric, i) => [metric, metricResults[i].data!.current])
