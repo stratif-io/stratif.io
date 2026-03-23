@@ -145,7 +145,33 @@ fn run_duckdb_actor(conn: duckdb::Connection, mut rx: mpsc::Receiver<DuckDbReque
                         }
                     }
 
-                    Ok(SchemaInfo { tables, events_table, columns, suggestions, proposed_custom_properties: vec![] })
+                    // For JSON/STRUCT columns, sample keys and propose as custom properties
+                    let mut proposed: Vec<CustomProperty> = vec![];
+                    for col in &columns {
+                        let upper = col.sql_type.to_uppercase();
+                        if upper == "JSON" || upper == "JSONB" {
+                            let safe_table = events_table.replace('"', "");
+                            let safe_col = col.name.replace('"', "");
+                            let sql = format!(
+                                "SELECT DISTINCT unnest(json_keys(\"{safe_col}\")) FROM \"{safe_table}\" WHERE \"{safe_col}\" IS NOT NULL LIMIT 500"
+                            );
+                            if let Ok(mut stmt) = conn.prepare(&sql) {
+                                if let Ok(keys) = stmt.query_map([], |r| r.get::<_, String>(0))
+                                    .and_then(|rows| rows.collect::<Result<Vec<_>, _>>())
+                                {
+                                    for key in keys {
+                                        proposed.push(CustomProperty {
+                                            name: key.clone(),
+                                            path: format!("{}.{}", col.name, key),
+                                            prop_type: "string".to_string(),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Ok(SchemaInfo { tables, events_table, columns, suggestions, proposed_custom_properties: proposed })
                 });
                 let _ = reply.send(result);
             }
