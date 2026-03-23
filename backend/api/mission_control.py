@@ -130,6 +130,121 @@ def _fetch_period_metrics(
     }
 
 
+def _fetch_single_metric(
+    db: AnalyticsDatabase,
+    metric: str,
+    period_start: date,
+    period_end: date,
+    filter_clauses: list[str],
+    filter_params: list,
+) -> float:
+    """Run only the SQL needed for the requested metric; return a single scalar."""
+    ps = f"{period_start} 00:00:00"
+    pe = f"{period_end} 23:59:59"
+    ev_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+    ev_params: list = [ps, pe]
+    ev_where.extend(filter_clauses)
+    ev_params.extend(filter_params)
+    ev_where_sql = "WHERE " + " AND ".join(ev_where)
+
+    if metric == "total_events":
+        rows = db.execute(f"SELECT COUNT(*) FROM events {ev_where_sql}", ev_params)
+        return rows[0][0] if rows else 0
+
+    if metric == "unique_users":
+        rows = db.execute(
+            f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}", ev_params
+        )
+        return rows[0][0] if rows else 0
+
+    if metric in ("total_sessions", "avg_session_duration_sec", "avg_events_per_session"):
+        sess_where: list[str] = ["ds.start_time >= ?", "ds.start_time <= ?"]
+        sess_params: list = [ps, pe]
+        if filter_clauses:
+            sess_where.append(
+                f"ds.user_id IN (SELECT DISTINCT user_id FROM events {ev_where_sql})"
+            )
+            sess_params.extend(ev_params)
+        sess_where_sql = "WHERE " + " AND ".join(sess_where)
+        timeout = db.get_session_timeout_minutes()
+        dialect = db.get_dialect()
+
+        if metric == "total_sessions":
+            agg = "COUNT(*)"
+        elif metric == "avg_session_duration_sec":
+            agg = "AVG(ds.duration_sec)"
+        else:
+            agg = "AVG(ds.event_count)"
+
+        rows = db.execute(
+            f"""
+            WITH {session_ctes(timeout, dialect)}
+            SELECT {agg} FROM derived_sessions ds {sess_where_sql}
+            """,
+            sess_params,
+        )
+        return round(rows[0][0] or 0.0, 2) if rows else 0.0
+
+    if metric == "new_users":
+        rows = db.execute(
+            """
+            SELECT COUNT(*)
+            FROM (
+                SELECT user_id FROM events
+                GROUP BY user_id
+                HAVING DATE(MIN(timestamp)) >= ? AND DATE(MIN(timestamp)) <= ?
+            ) t
+            """,
+            [str(period_start), str(period_end)],
+        )
+        return rows[0][0] if rows else 0
+
+    if metric == "returning_users":
+        uniq_rows = db.execute(
+            f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}", ev_params
+        )
+        unique_users = uniq_rows[0][0] if uniq_rows else 0
+        new_rows = db.execute(
+            """
+            SELECT COUNT(*)
+            FROM (
+                SELECT user_id FROM events
+                GROUP BY user_id
+                HAVING DATE(MIN(timestamp)) >= ? AND DATE(MIN(timestamp)) <= ?
+            ) t
+            """,
+            [str(period_start), str(period_end)],
+        )
+        new_users = new_rows[0][0] if new_rows else 0
+        return max(0, unique_users - new_users)
+
+    # dau_mau_ratio
+    dau_rows = db.execute(
+        f"""
+        SELECT AVG(daily_count)
+        FROM (
+            SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) AS daily_count
+            FROM events {ev_where_sql}
+            GROUP BY DATE(timestamp)
+        ) t
+        """,
+        ev_params,
+    )
+    dau = dau_rows[0][0] if dau_rows else 0.0
+
+    mau_start = period_end - timedelta(days=27)
+    mau_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+    mau_params: list = [f"{mau_start} 00:00:00", pe]
+    mau_where.extend(filter_clauses)
+    mau_params.extend(filter_params)
+    mau_where_sql = "WHERE " + " AND ".join(mau_where)
+    mau_rows = db.execute(
+        f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql}", mau_params
+    )
+    mau = mau_rows[0][0] if mau_rows else 0
+    return round(dau / mau, 4) if mau else 0.0
+
+
 SUPPORTED_METRICS = {
     "total_events",
     "unique_users",
@@ -140,6 +255,44 @@ SUPPORTED_METRICS = {
     "returning_users",
     "dau_mau_ratio",
 }
+
+
+@router.get("/mission-control/metric")
+def get_mission_control_metric(
+    db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
+    metric: str = Query(..., description="Metric name"),
+    start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
+    filters: str | None = Query(None, description="JSON dict of dimension filters"),
+) -> dict:
+    """Return current and previous period scalar for a single metric."""
+    if metric not in SUPPORTED_METRICS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported metric '{metric}'. Supported: {sorted(SUPPORTED_METRICS)}",
+        )
+
+    parse_date(start_date)
+    parse_date(end_date)
+    start = date.fromisoformat(start_date)
+    end = date.fromisoformat(end_date)
+    if start > end:
+        raise HTTPException(status_code=400, detail="start_date must be <= end_date.")
+
+    filter_clauses: list[str] = []
+    filter_params: list = []
+    if filters:
+        try:
+            filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+
+    prev_start, prev_end = _compute_previous_period(start, end)
+
+    current_value = _fetch_single_metric(db, metric, start, end, filter_clauses, filter_params)
+    previous_value = _fetch_single_metric(db, metric, prev_start, prev_end, filter_clauses, filter_params)
+
+    return {"metric": metric, "current": current_value, "previous": previous_value}
 
 
 @router.get("/mission-control/trend")

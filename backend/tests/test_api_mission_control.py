@@ -211,3 +211,90 @@ class TestMissionControlTrendEndpoint:
         assert "2024-01-14" in dates
         assert "2024-01-15" in dates
         assert "2024-01-16" in dates
+
+
+class TestMissionControlMetricEndpoint:
+    def test_returns_metric_current_previous(self, client):
+        response = client.get(
+            "/api/mission-control/metric",
+            params={"metric": "total_events", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["metric"] == "total_events"
+        assert isinstance(body["current"], (int, float))
+        assert isinstance(body["previous"], (int, float))
+
+    def test_unsupported_metric_returns_400(self, client):
+        response = client.get(
+            "/api/mission-control/metric",
+            params={"metric": "bogus", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+        )
+        assert response.status_code == 400
+
+    def test_invalid_date_returns_400(self, client):
+        response = client.get(
+            "/api/mission-control/metric",
+            params={"metric": "total_events", "start_date": "not-a-date", "end_date": "2024-01-16"},
+        )
+        assert response.status_code == 400
+
+    def test_start_after_end_returns_400(self, client):
+        response = client.get(
+            "/api/mission-control/metric",
+            params={"metric": "total_events", "start_date": "2024-01-31", "end_date": "2024-01-01"},
+        )
+        assert response.status_code == 400
+
+    def test_same_day_is_valid(self, client):
+        response = client.get(
+            "/api/mission-control/metric",
+            params={"metric": "unique_users", "start_date": "2024-01-15", "end_date": "2024-01-15"},
+        )
+        assert response.status_code == 200
+        assert response.json()["metric"] == "unique_users"
+
+    def test_empty_range_returns_zeros(self, client):
+        response = client.get(
+            "/api/mission-control/metric",
+            params={"metric": "total_events", "start_date": "2000-01-01", "end_date": "2000-01-02"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["current"] == 0
+        assert body["previous"] == 0
+
+    def test_total_events_nonzero_for_seeded_data(self, client):
+        response = client.get(
+            "/api/mission-control/metric",
+            params={"metric": "total_events", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+        )
+        assert response.json()["current"] >= 1
+
+    def test_returning_users_non_negative(self, client):
+        response = client.get(
+            "/api/mission-control/metric",
+            params={"metric": "returning_users", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+        )
+        assert response.json()["current"] >= 0
+
+    def test_dau_mau_ratio_between_0_and_1(self, client):
+        response = client.get(
+            "/api/mission-control/metric",
+            params={"metric": "dau_mau_ratio", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+        )
+        body = response.json()
+        assert 0.0 <= body["current"] <= 1.0
+
+    def test_all_8_metrics_return_200(self, client):
+        metrics = [
+            "total_events", "unique_users", "total_sessions",
+            "avg_session_duration_sec", "avg_events_per_session",
+            "new_users", "returning_users", "dau_mau_ratio",
+        ]
+        for m in metrics:
+            r = client.get(
+                "/api/mission-control/metric",
+                params={"metric": m, "start_date": "2024-01-15", "end_date": "2024-01-16"},
+            )
+            assert r.status_code == 200, f"metric {m} returned {r.status_code}"
