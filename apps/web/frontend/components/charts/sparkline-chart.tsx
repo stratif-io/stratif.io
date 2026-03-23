@@ -1,4 +1,5 @@
 import { useId, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { DEFAULT_CHART_COLORS } from './chart-colors'
 
 interface SparklineChartProps {
@@ -13,6 +14,7 @@ interface SparklineChartProps {
   trendPosition?: 'start' | 'end'
   strokeWidth?: number
   formatter?: (value: number) => string
+  animated?: boolean  // reveal path left-to-right on mount
 }
 
 export function SparklineChart({
@@ -27,6 +29,7 @@ export function SparklineChart({
   trendPosition: _trendPosition = 'end',
   strokeWidth = 1.5,
   formatter = (v: number) => v.toLocaleString(),
+  animated = false,
 }: SparklineChartProps) {
   const uid = useId()
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
@@ -134,9 +137,27 @@ export function SparklineChart({
               <stop offset="0%" stopColor={color} stopOpacity={0.3} />
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
+            {animated && (
+              <clipPath id={`sc-${uid}`}>
+                <motion.rect
+                  x={0}
+                  y={-4}
+                  height={height + 8}
+                  initial={{ width: 0 }}
+                  animate={{ width: width + 4 }}
+                  transition={{ duration: 0.55, ease: 'easeOut', delay: 0.05 }}
+                />
+              </clipPath>
+            )}
           </defs>
 
-          {showArea && <path d={areaPath} fill={`url(#sg-${uid})`} />}
+          {showArea && (
+            <path
+              d={areaPath}
+              fill={`url(#sg-${uid})`}
+              clipPath={animated ? `url(#sc-${uid})` : undefined}
+            />
+          )}
 
           <path
             d={path}
@@ -146,6 +167,7 @@ export function SparklineChart({
             strokeLinecap="round"
             strokeLinejoin="round"
             className="transition-all duration-200"
+            clipPath={animated ? `url(#sc-${uid})` : undefined}
           />
 
           {dots.map((dot, index) => (

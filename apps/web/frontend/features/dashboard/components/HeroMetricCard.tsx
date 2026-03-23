@@ -12,11 +12,13 @@ import { cn } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { useReducedMotion } from '@/hooks'
 import { formatMetricValue } from '@/lib/format-metric'
+import { useCountUp, useFormattedCountUp } from '@/hooks/useCountUp'
 
 export interface HeroMetricCardProps {
   label: string
   metricKey: string
   value: string
+  rawValue?: number
   pctChange: number | null
   previousValue: string
   sparklineValues: number[]
@@ -41,6 +43,7 @@ export function HeroMetricCard({
   label,
   metricKey,
   value,
+  rawValue,
   pctChange,
   previousValue,
   sparklineValues,
@@ -53,6 +56,19 @@ export function HeroMetricCard({
   changeLabel,
 }: HeroMetricCardProps) {
   const reducedMotion = useReducedMotion()
+
+  const animatedTarget = loading ? 0 : (rawValue ?? 0)
+  const animatedValue = useFormattedCountUp(animatedTarget, {
+    duration: 900,
+    decimals: 2,
+    formatter: (v) => formatMetricValue(metricKey, v),
+  })
+
+  const pctTarget = loading || pctChange === null ? 0 : pctChange
+  const animatedPct = useCountUp(pctTarget, { duration: 700, decimals: 1 })
+
+  const displayValue = rawValue !== undefined ? animatedValue : value
+  const displayPct = pctChange !== null ? animatedPct : null
 
   const isPositive = pctChange !== null && pctChange > 0
   const isNegative = pctChange !== null && pctChange < 0
@@ -103,12 +119,18 @@ export function HeroMetricCard({
         )}
       </div>
 
-      <div className="text-4xl font-extrabold tracking-tight leading-none">{value}</div>
+      <div
+        className={cn(
+          'transition-opacity duration-500',
+          loading ? 'opacity-0' : 'opacity-100'
+        )}
+      >
+        <div className="text-4xl font-extrabold tracking-tight leading-none">{displayValue}</div>
 
-      <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-2 mt-2">
         <UITooltip>
           <TooltipTrigger asChild>
-            {pctChange === null ? (
+            {displayPct === null ? (
               <span className="text-sm text-muted-foreground cursor-default">—</span>
             ) : isNeutral ? (
               <span className="inline-flex items-center text-sm font-bold px-2 py-0.5 rounded-md text-muted-foreground bg-muted cursor-default">
@@ -125,7 +147,7 @@ export function HeroMetricCard({
               >
                 <span aria-hidden="true">{isPositive ? '↑' : '↓'}</span>
                 <span className="sr-only">{isPositive ? 'increased by' : 'decreased by'}</span>
-                {Math.abs(pctChange).toFixed(1)}%
+                {Math.abs(displayPct).toFixed(1)}%
               </span>
             )}
           </TooltipTrigger>
@@ -137,10 +159,16 @@ export function HeroMetricCard({
           prev. period: <span className="font-medium">{previousValue}</span>
         </span>
       </div>
+      </div>
 
-      <div className="mt-4 flex-1 min-h-[120px] h-0">
+      <div
+        className={cn(
+          'mt-4 flex-1 min-h-[120px] h-0 transition-opacity duration-700',
+          loading ? 'opacity-0' : 'opacity-100'
+        )}
+      >
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={color} stopOpacity={0.3} />
@@ -154,6 +182,7 @@ export function HeroMetricCard({
               axisLine={false}
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
               tickFormatter={formatAxisDate}
+              padding={{ left: 24, right: 24 }}
               interval={0}
               ticks={chartData.filter((d) => tickDates.has(d.date)).map((d) => d.date)}
             />
