@@ -533,7 +533,22 @@ pub async fn get_filter_options(
             field = safe_field,
             table = safe_table,
         );
-        match backend.execute_any(&mut conn, &sql, vec![]).await {
+        tracing::debug!("filter-options sql: {sql}");
+        let rows_result = backend.execute_any(&mut conn, &sql, vec![]).await;
+        // If top-level column not found, try extracting from properties JSON
+        let rows_result = if rows_result.is_err() {
+            let json_sql = format!(
+                "SELECT DISTINCT properties->>''{field}'' FROM {q}{table}{q} WHERE properties->>''{field}'' IS NOT NULL ORDER BY 1 LIMIT 500",
+                field = safe_field,
+                q = quote,
+                table = safe_table,
+            );
+            tracing::debug!("filter-options json fallback sql: {json_sql}");
+            backend.execute_any(&mut conn, &json_sql, vec![]).await
+        } else {
+            rows_result
+        };
+        match rows_result {
             Ok(rows) => {
                 let vals: Vec<Value> = rows
                     .into_iter()
@@ -552,7 +567,8 @@ pub async fn get_filter_options(
                     .collect();
                 options.insert(ff.label.clone(), Value::Array(vals));
             }
-            Err(_) => {
+            Err(e) => {
+                tracing::warn!("filter-options query failed for field '{}': {e}", ff.field);
                 options.insert(ff.label.clone(), Value::Array(vec![]));
             }
         }
