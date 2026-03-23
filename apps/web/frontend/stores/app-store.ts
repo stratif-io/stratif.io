@@ -23,6 +23,7 @@ interface AppState {
   selectedDevice: string | null
   setSelectedDevice: (device: string | null) => void
 
+  /** Generic dimension filters keyed by field name, driven by connection filter config. */
   activeFilters: Record<string, string | null>
   setActiveFilter: (field: string, value: string | null) => void
   clearAllFilters: () => void
