@@ -76,6 +76,74 @@ fn run_sqlite_actor(conn: rusqlite::Connection, mut rx: mpsc::Receiver<SqliteReq
                     .map_err(|e| anyhow::anyhow!("{e}"));
                 let _ = reply.send(result);
             }
+            SqliteRequest::GetTableColumns { table, reply } => {
+                let result = conn.prepare(&format!("PRAGMA table_info(\"{}\")", table.replace('"', "")))
+                    .and_then(|mut stmt| stmt.query_map([], |r| Ok(ColumnInfo {
+                        name: r.get::<_, String>(1)?,
+                        sql_type: r.get::<_, String>(2)?,
+                    }))?.collect::<rusqlite::Result<Vec<_>>>())
+                    .map_err(|e| anyhow::anyhow!("{e}"));
+                let _ = reply.send(result);
+            }
+            SqliteRequest::DetectSchema { hint, reply } => {
+                let tables_result: Result<Vec<String>> = conn.prepare(
+                    "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+                ).and_then(|mut stmt| stmt.query_map([], |r| r.get::<_, String>(0))
+                    .and_then(|rows| rows.collect::<rusqlite::Result<Vec<_>>>()))
+                    .map_err(|e| anyhow::anyhow!("{e}"));
+
+                let result = tables_result.and_then(|tables| {
+                    let events_table = hint
+                        .as_deref()
+                        .filter(|h| tables.contains(&h.to_string()))
+                        .map(|s| s.to_string())
+                        .or_else(|| tables.iter().find(|t| matches!(t.to_lowercase().as_str(), "events" | "event" | "analytics")).cloned())
+                        .or_else(|| tables.first().cloned())
+                        .unwrap_or_default();
+
+                    let columns: Vec<ColumnInfo> = if !events_table.is_empty() {
+                        conn.prepare(&format!("PRAGMA table_info(\"{}\")", events_table.replace('"', "")))
+                            .and_then(|mut stmt| stmt.query_map([], |r| Ok(ColumnInfo {
+                                name: r.get::<_, String>(1)?,
+                                sql_type: r.get::<_, String>(2)?,
+                            }))?.collect::<rusqlite::Result<Vec<_>>>())
+                            .unwrap_or_default()
+                    } else { vec![] };
+
+                    let mut suggestions = std::collections::HashMap::new();
+                    let col_map: std::collections::HashMap<String, String> = columns.iter()
+                        .map(|c| (c.name.to_lowercase(), c.name.clone())).collect();
+                    for c in &["user_id", "userid", "user", "account_id", "customer_id", "uid"] {
+                        if let Some(n) = col_map.get(*c) { suggestions.insert("user_id_field".to_string(), n.clone()); break; }
+                    }
+                    for c in &["timestamp", "ts", "created_at", "event_time", "time", "datetime", "date"] {
+                        if let Some(n) = col_map.get(*c) { suggestions.insert("timestamp_field".to_string(), n.clone()); break; }
+                    }
+                    for c in &["event_name", "event", "action", "event_type", "name", "type"] {
+                        if let Some(n) = col_map.get(*c) { suggestions.insert("event_name_field".to_string(), n.clone()); break; }
+                    }
+                    Ok(SchemaInfo { tables, events_table, columns, suggestions, proposed_custom_properties: vec![] })
+                });
+                let _ = reply.send(result);
+            }
+            SqliteRequest::Browse { reply, .. } => {
+                let result = conn.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+                    .and_then(|mut stmt| stmt.query_map([], |r| r.get::<_, String>(0))
+                        .and_then(|rows| rows.collect::<rusqlite::Result<Vec<_>>>()))
+                    .map(|tables| tables.into_iter().map(|t| BrowseNode {
+                        full_name: t.clone(), name: t,
+                        kind: crate::connectors::types::BrowseKind::Table,
+                    }).collect::<Vec<_>>())
+                    .map_err(|e| anyhow::anyhow!("{e}"));
+                let _ = reply.send(result);
+            }
+            SqliteRequest::GetColumnsForBrowse { table, reply } => {
+                let result = conn.prepare(&format!("PRAGMA table_info(\"{}\")", table.replace('"', "")))
+                    .and_then(|mut stmt| stmt.query_map([], |r| r.get::<_, String>(1))
+                        .and_then(|rows| rows.collect::<rusqlite::Result<Vec<_>>>()))
+                    .map_err(|e| anyhow::anyhow!("{e}"));
+                let _ = reply.send(result);
+            }
             _ => {}
         }
     }
@@ -126,10 +194,30 @@ impl DatabaseBackend for SqliteBackend {
 
     fn is_connection_error(&self, _err: &anyhow::Error) -> bool { false }
 
-    async fn get_table_columns(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<ColumnInfo>> { todo!() }
-    async fn get_columns_for_browse(&self, _conn: &mut BackendConnection, _table: &str) -> Result<Vec<String>> { todo!() }
-    async fn detect_schema(&self, _conn: &mut BackendConnection, _hint: Option<&str>) -> Result<SchemaInfo> { todo!() }
-    async fn browse(&self, _conn: &mut BackendConnection, _catalog: Option<&str>, _schema: Option<&str>) -> Result<Vec<BrowseNode>> { todo!() }
+    async fn get_table_columns(&self, conn: &mut BackendConnection, table: &str) -> Result<Vec<ColumnInfo>> {
+        let BackendConnection::Sqlite(h) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        h.tx.send(SqliteRequest::GetTableColumns { table: table.to_owned(), reply: tx }).await?;
+        rx.await?
+    }
+    async fn get_columns_for_browse(&self, conn: &mut BackendConnection, table: &str) -> Result<Vec<String>> {
+        let BackendConnection::Sqlite(h) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        h.tx.send(SqliteRequest::GetColumnsForBrowse { table: table.to_owned(), reply: tx }).await?;
+        rx.await?
+    }
+    async fn detect_schema(&self, conn: &mut BackendConnection, hint: Option<&str>) -> Result<SchemaInfo> {
+        let BackendConnection::Sqlite(h) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        h.tx.send(SqliteRequest::DetectSchema { hint: hint.map(|s| s.to_owned()), reply: tx }).await?;
+        rx.await?
+    }
+    async fn browse(&self, conn: &mut BackendConnection, catalog: Option<&str>, schema: Option<&str>) -> Result<Vec<BrowseNode>> {
+        let BackendConnection::Sqlite(h) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        h.tx.send(SqliteRequest::Browse { catalog: catalog.map(|s| s.to_owned()), schema: schema.map(|s| s.to_owned()), reply: tx }).await?;
+        rx.await?
+    }
 }
 
 impl SqlDialect for SqliteBackend {
