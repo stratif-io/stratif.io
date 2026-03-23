@@ -29,6 +29,15 @@ class SnowflakeBackend:
     def parse_credentials(self, raw: dict) -> SnowflakeCredentials:
         return SnowflakeCredentials.model_validate(raw)
 
+    def connection_string(self, credentials: BaseModel) -> str | None:
+        creds = SnowflakeCredentials.model_validate(credentials.model_dump())
+        role_part = f"&role={creds.role}" if creds.role else ""
+        return (
+            f"snowflake://{creds.user}:****@{creds.account}"
+            f"/{creds.database}/{creds.schema}"
+            f"?warehouse={creds.warehouse}{role_part}"
+        )
+
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         import snowflake.connector
         creds = SnowflakeCredentials.model_validate(credentials.model_dump())

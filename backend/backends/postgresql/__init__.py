@@ -33,6 +33,11 @@ class PostgreSQLBackend:
     def parse_credentials(self, raw: dict) -> PostgreSQLCredentials:
         return PostgreSQLCredentials.model_validate(raw)
 
+    def connection_string(self, credentials: BaseModel) -> str | None:
+        creds = PostgreSQLCredentials.model_validate(credentials.model_dump())
+        ssl = f"?sslmode={creds.sslmode}" if creds.sslmode else ""
+        return f"postgresql://{creds.user}:****@{creds.host}:{creds.port}/{creds.database}{ssl}"
+
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         import psycopg2
         creds = PostgreSQLCredentials.model_validate(credentials.model_dump())

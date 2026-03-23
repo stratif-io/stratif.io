@@ -39,6 +39,10 @@ class SQLiteBackend:
     def parse_credentials(self, raw: dict) -> SQLiteCredentials:
         return SQLiteCredentials.model_validate(raw)
 
+    def connection_string(self, credentials: BaseModel) -> str | None:
+        creds = SQLiteCredentials.model_validate(credentials.model_dump())
+        return f"sqlite:///{creds.file_path}"
+
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         creds = SQLiteCredentials.model_validate(credentials.model_dump())
         return _sqlite3.connect(creds.file_path, check_same_thread=False)

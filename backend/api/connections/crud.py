@@ -225,6 +225,24 @@ async def get_field_options(conn_id: str, field: str):
 
 
 # ---------------------------------------------------------------------------
+# Connection string (read-only, password redacted)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{conn_id}/string")
+async def get_connection_string(conn_id: str):
+    from backend.backends import get_backend
+    row = _get_connection_or_404(conn_id)
+    try:
+        creds = decrypt_credentials(row["credentials_encrypted"])
+    except ValueError:
+        raise HTTPException(500, "Failed to decrypt credentials")
+    backend = get_backend(row["db_type"])
+    credentials = backend.parse_credentials(creds)
+    return {"connection_string": backend.connection_string(credentials)}
+
+
+# ---------------------------------------------------------------------------
 # Credentials (masked)
 # ---------------------------------------------------------------------------
 

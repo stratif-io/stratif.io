@@ -82,6 +82,10 @@ class DatabricksBackend:
     def parse_credentials(self, raw: dict) -> DatabricksCredentials:
         return DatabricksCredentials.model_validate(raw)
 
+    def connection_string(self, credentials: BaseModel) -> str | None:
+        creds = DatabricksCredentials.model_validate(credentials.model_dump())
+        return f"databricks://token:****@{creds.host}?http_path={creds.http_path}"
+
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         from databricks import sql as dbsql
         creds = DatabricksCredentials.model_validate(credentials.model_dump())
