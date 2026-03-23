@@ -21,6 +21,31 @@ def _compute_previous_period(start: date, end: date) -> tuple[date, date]:
     return prev_start, prev_end
 
 
+def _parse_request_params(
+    start_date: str,
+    end_date: str,
+    filters: str | None,
+    db: AnalyticsDatabase,
+) -> tuple[date, date, list[str], list]:
+    """Parse and validate common query params; raise HTTP 400 on invalid input."""
+    parse_date(start_date)
+    parse_date(end_date)
+    start = date.fromisoformat(start_date)
+    end = date.fromisoformat(end_date)
+    if start > end:
+        raise HTTPException(status_code=400, detail="start_date must be <= end_date.")
+
+    filter_clauses: list[str] = []
+    filter_params: list = []
+    if filters:
+        try:
+            filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+
+    return start, end, filter_clauses, filter_params
+
+
 def _fetch_period_metrics(
     db: AnalyticsDatabase,
     period_start: date,
@@ -187,15 +212,17 @@ def _fetch_single_metric(
 
     if metric == "new_users":
         rows = db.execute(
-            """
+            f"""
             SELECT COUNT(*)
             FROM (
-                SELECT user_id FROM events
+                SELECT user_id
+                FROM events
+                {ev_where_sql}
                 GROUP BY user_id
                 HAVING DATE(MIN(timestamp)) >= ? AND DATE(MIN(timestamp)) <= ?
             ) t
             """,
-            [str(period_start), str(period_end)],
+            ev_params + [str(period_start), str(period_end)],
         )
         return rows[0][0] if rows else 0
 
@@ -205,20 +232,25 @@ def _fetch_single_metric(
         )
         unique_users = uniq_rows[0][0] if uniq_rows else 0
         new_rows = db.execute(
-            """
+            f"""
             SELECT COUNT(*)
             FROM (
-                SELECT user_id FROM events
+                SELECT user_id
+                FROM events
+                {ev_where_sql}
                 GROUP BY user_id
                 HAVING DATE(MIN(timestamp)) >= ? AND DATE(MIN(timestamp)) <= ?
             ) t
             """,
-            [str(period_start), str(period_end)],
+            ev_params + [str(period_start), str(period_end)],
         )
         new_users = new_rows[0][0] if new_rows else 0
         return max(0, unique_users - new_users)
 
     # dau_mau_ratio
+    if metric != "dau_mau_ratio":
+        raise ValueError(f"Unknown metric: {metric}")
+
     dau_rows = db.execute(
         f"""
         SELECT AVG(daily_count)
@@ -272,20 +304,7 @@ def get_mission_control_metric(
             detail=f"Unsupported metric '{metric}'. Supported: {sorted(SUPPORTED_METRICS)}",
         )
 
-    parse_date(start_date)
-    parse_date(end_date)
-    start = date.fromisoformat(start_date)
-    end = date.fromisoformat(end_date)
-    if start > end:
-        raise HTTPException(status_code=400, detail="start_date must be <= end_date.")
-
-    filter_clauses: list[str] = []
-    filter_params: list = []
-    if filters:
-        try:
-            filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+    start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
 
     prev_start, prev_end = _compute_previous_period(start, end)
 
@@ -310,20 +329,7 @@ def get_mission_control_trend(
             detail=f"Unsupported metric '{metric}'. Supported: {sorted(SUPPORTED_METRICS)}",
         )
 
-    parse_date(start_date)
-    parse_date(end_date)
-    start = date.fromisoformat(start_date)
-    end = date.fromisoformat(end_date)
-    if start > end:
-        raise HTTPException(status_code=400, detail="start_date must be <= end_date.")
-
-    filter_clauses: list[str] = []
-    filter_params: list = []
-    if filters:
-        try:
-            filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+    start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
 
     ps = f"{start} 00:00:00"
     pe = f"{end} 23:59:59"
@@ -382,18 +388,19 @@ def get_mission_control_trend(
 
     elif metric == "new_users":
         rows = db.execute(
-            """
+            f"""
             SELECT first_day, COUNT(*) AS cnt
             FROM (
                 SELECT user_id, DATE(MIN(timestamp)) AS first_day
                 FROM events
+                {ev_where_sql}
                 GROUP BY user_id
             ) sub
             WHERE first_day >= ? AND first_day <= ?
             GROUP BY first_day
             ORDER BY first_day
             """,
-            [str(start), str(end)],
+            ev_params + [str(start), str(end)],
         )
         by_day: dict[str, int] = {str(r[0]): r[1] or 0 for r in rows}
         current_day = start
@@ -410,18 +417,19 @@ def get_mission_control_trend(
         daily_uniq: dict[str, int] = {str(r[0]): r[1] or 0 for r in uniq_rows}
 
         new_rows = db.execute(
-            """
+            f"""
             SELECT first_day, COUNT(*) AS cnt
             FROM (
                 SELECT user_id, DATE(MIN(timestamp)) AS first_day
                 FROM events
+                {ev_where_sql}
                 GROUP BY user_id
             ) sub
             WHERE first_day >= ? AND first_day <= ?
             GROUP BY first_day
             ORDER BY first_day
             """,
-            [str(start), str(end)],
+            ev_params + [str(start), str(end)],
         )
         new_by_day: dict[str, int] = {str(r[0]): r[1] or 0 for r in new_rows}
 
@@ -471,22 +479,7 @@ def get_mission_control(
     filters: str | None = Query(None, description="JSON dict of dimension filters"),
 ) -> dict:
     """Return current and previous period KPI metrics."""
-    # parse_date validates format and raises HTTP 400; then convert to date for arithmetic
-    parse_date(start_date)
-    parse_date(end_date)
-    start = date.fromisoformat(start_date)
-    end = date.fromisoformat(end_date)
-    if start > end:
-        raise HTTPException(status_code=400, detail="start_date must be <= end_date.")
-
-    filter_clauses: list[str] = []
-    filter_params: list = []
-    if filters:
-        try:
-            filters_dict = json.loads(filters)
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
-        filter_clauses, filter_params = db.build_filter_clauses(filters_dict)
+    start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
 
     prev_start, prev_end = _compute_previous_period(start, end)
 
