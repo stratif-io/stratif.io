@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { DayPicker } from 'react-day-picker'
 import type { DateRange as DayPickerRange } from 'react-day-picker'
 import {
@@ -86,6 +86,96 @@ function applyTimeToDate(dateStr: string, timeStr: string): Date {
   const d = new Date(`${dateStr}T00:00:00`)
   d.setHours(h ?? 0, m ?? 0, s ?? 0, 0)
   return d
+}
+
+// ─── Segmented time input (HH : MM : SS) ──────────────────────────────────
+
+interface TimeSegmentInputProps {
+  value: string        // "HH:MM:SS"
+  onChange: (v: string) => void
+}
+
+function TimeSegmentInput({ value, onChange }: TimeSegmentInputProps) {
+  const [h, m, s] = value.split(':')
+  const hRef = useRef<HTMLInputElement>(null)
+  const mRef = useRef<HTMLInputElement>(null)
+  const sRef = useRef<HTMLInputElement>(null)
+
+  function clamp(n: number, max: number) {
+    return String(Math.max(0, Math.min(max, n))).padStart(2, '0')
+  }
+
+  function emit(hh: string, mm: string, ss: string) {
+    onChange(`${hh}:${mm}:${ss}`)
+  }
+
+  function makeHandlers(
+    field: 'h' | 'm' | 's',
+    max: number,
+    nextRef?: React.RefObject<HTMLInputElement | null>,
+  ) {
+    const current = field === 'h' ? h : field === 'm' ? m : s
+
+    return {
+      value: current,
+      maxLength: 2,
+      onFocus: (e: React.FocusEvent<HTMLInputElement>) => e.target.select(),
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+        const raw = e.target.value.replace(/\D/g, '').slice(-2)
+        const padded = raw.padStart(2, '0')
+        const clamped = clamp(Number(padded), max)
+        if (field === 'h') emit(clamped, m, s)
+        if (field === 'm') emit(h, clamped, s)
+        if (field === 's') emit(h, m, clamped)
+        // Auto-advance when two digits entered
+        if (raw.length === 2 && nextRef?.current) nextRef.current.focus()
+      },
+      onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+        const n = Number(current)
+        if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          const next = clamp(n + 1, max)
+          if (field === 'h') emit(next, m, s)
+          if (field === 'm') emit(h, next, s)
+          if (field === 's') emit(h, m, next)
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          const next = clamp(n - 1, max)
+          if (field === 'h') emit(next, m, s)
+          if (field === 'm') emit(h, next, s)
+          if (field === 's') emit(h, m, next)
+        }
+      },
+    }
+  }
+
+  return (
+    <div className="flex items-center h-8 rounded-md border border-input bg-background px-2 gap-0.5 text-sm font-mono focus-within:ring-1 focus-within:ring-ring">
+      <input
+        ref={hRef}
+        type="text"
+        inputMode="numeric"
+        className="w-5 text-center bg-transparent outline-none text-foreground tabular-nums"
+        {...makeHandlers('h', 23, mRef)}
+      />
+      <span className="text-muted-foreground/50 select-none">:</span>
+      <input
+        ref={mRef}
+        type="text"
+        inputMode="numeric"
+        className="w-5 text-center bg-transparent outline-none text-foreground tabular-nums"
+        {...makeHandlers('m', 59, sRef)}
+      />
+      <span className="text-muted-foreground/50 select-none">:</span>
+      <input
+        ref={sRef}
+        type="text"
+        inputMode="numeric"
+        className="w-5 text-center bg-transparent outline-none text-foreground tabular-nums"
+        {...makeHandlers('s', 59)}
+      />
+    </div>
+  )
 }
 
 // ─── DayPicker classNames — use design-system tokens instead of default CSS ──
@@ -340,13 +430,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
                     onChange={handleFromDateInput}
                     className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
-                  <input
-                    type="time"
-                    step="1"
-                    value={fromTime}
-                    onChange={(e) => setFromTime(e.target.value)}
-                    className="flex h-8 w-24 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  />
+                  <TimeSegmentInput value={fromTime} onChange={setFromTime} />
                 </div>
               </div>
               <div className="space-y-1">
@@ -358,13 +442,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
                     onChange={handleToDateInput}
                     className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
-                  <input
-                    type="time"
-                    step="1"
-                    value={toTime}
-                    onChange={(e) => setToTime(e.target.value)}
-                    className="flex h-8 w-24 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  />
+                  <TimeSegmentInput value={toTime} onChange={setToTime} />
                 </div>
               </div>
             </div>
