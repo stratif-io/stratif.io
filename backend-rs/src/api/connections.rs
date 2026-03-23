@@ -538,7 +538,7 @@ pub async fn get_filter_options(
         // If top-level column not found, try extracting from properties JSON
         let rows_result = if rows_result.is_err() {
             let json_sql = format!(
-                "SELECT DISTINCT properties->>''{field}'' FROM {q}{table}{q} WHERE properties->>''{field}'' IS NOT NULL ORDER BY 1 LIMIT 500",
+                "SELECT DISTINCT properties->>'{field}' FROM {q}{table}{q} WHERE properties->>'{field}' IS NOT NULL ORDER BY 1 LIMIT 500",
                 field = safe_field,
                 q = quote,
                 table = safe_table,
