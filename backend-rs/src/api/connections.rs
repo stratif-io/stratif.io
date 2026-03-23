@@ -49,6 +49,8 @@ struct CustomPropertyDto {
     name: String,
     path: String,
     r#type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    category: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -667,7 +669,7 @@ pub async fn detect_schema(
     let proposed: Vec<Value> = schema_info
         .proposed_custom_properties
         .iter()
-        .map(|p| serde_json::json!({ "name": p.name, "path": p.path, "type": p.prop_type }))
+        .map(|p| serde_json::json!({ "name": p.name, "path": p.path, "type": p.prop_type, "category": p.category }))
         .collect();
 
     Ok(Json(serde_json::json!({

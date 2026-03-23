@@ -32,6 +32,7 @@ pub struct CustomProperty {
     pub name: String,
     pub path: String,
     pub prop_type: String,
+    pub category: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

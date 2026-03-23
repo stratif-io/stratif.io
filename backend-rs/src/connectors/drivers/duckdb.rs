@@ -164,6 +164,7 @@ fn run_duckdb_actor(conn: duckdb::Connection, mut rx: mpsc::Receiver<DuckDbReque
                                             name: key.clone(),
                                             path: format!("{}.{}", col.name, key),
                                             prop_type: "string".to_string(),
+                                            category: None,
                                         });
                                     }
                                 }
