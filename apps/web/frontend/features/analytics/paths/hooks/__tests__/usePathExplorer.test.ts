@@ -21,7 +21,7 @@ const createWrapper = () => {
 }
 
 const defaultOptions = {
-  dateRange: { from: new Date('2026-01-01'), to: new Date('2026-01-31') },
+  dateRange: { from: new Date(2026, 0, 1), to: new Date(2026, 0, 31) },
   startEvent: null,
   endEvent: null,
   minPathLength: 2,

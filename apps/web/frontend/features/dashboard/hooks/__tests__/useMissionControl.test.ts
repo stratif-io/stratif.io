@@ -27,7 +27,7 @@ function makeWrapper() {
     createElement(QueryClientProvider, { client: queryClient }, children)
 }
 
-const dateRange = { from: new Date('2024-01-15'), to: new Date('2024-01-16') }
+const dateRange = { from: new Date(2024, 0, 15), to: new Date(2024, 0, 16) }
 
 const METRICS = [
   'total_events',

@@ -1,7 +1,8 @@
 import { useQuery, useQueries } from '@tanstack/react-query'
-import { format, subDays, differenceInDays } from 'date-fns'
+import { subDays, differenceInDays } from 'date-fns'
 import { fetchMissionControlMetric, fetchTopEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
+import { formatDateParam } from '@/lib/utils'
 import { QUERY_STALE_TIME } from '@/lib/constants'
 import type { DateRange, MissionControlResponse } from '@/types'
 
@@ -35,8 +36,8 @@ export interface UseMissionControlReturn {
 export function useMissionControl({
   dateRange,
 }: UseMissionControlOptions): UseMissionControlReturn {
-  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
-  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+  const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
+  const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
   const { activeFilters, activeConnectionId } = useAppStore()
 
   const enabled = !!activeConnectionId && !!startDate && !!endDate
@@ -45,11 +46,11 @@ export function useMissionControl({
   const periodDays =
     dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) + 1 : 0
   const prevEndDate = dateRange.from
-    ? format(subDays(dateRange.from, 1), 'yyyy-MM-dd')
+    ? formatDateParam(subDays(dateRange.from, 1))
     : undefined
   const prevStartDate =
     dateRange.from && periodDays > 0
-      ? format(subDays(dateRange.from, periodDays), 'yyyy-MM-dd')
+      ? formatDateParam(subDays(dateRange.from, periodDays))
       : undefined
 
   // 8 per-metric queries run in parallel
