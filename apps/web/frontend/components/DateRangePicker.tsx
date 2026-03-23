@@ -178,10 +178,22 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
     }
   }
 
-  // Calendar opening month: show `to` month on right, previous on left
-  const calendarMonth = value.to
+  // Calendar controlled month state — initialised to show `to` month on right
+  const initialCalendarMonth = value.to
     ? new Date(value.to.getFullYear(), value.to.getMonth() - 1, 1)
     : new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)
+  const [calendarMonth, setCalendarMonth] = useState(initialCalendarMonth)
+
+  // Re-anchor calendar when popover opens
+  useEffect(() => {
+    if (open) {
+      setCalendarMonth(
+        value.to
+          ? new Date(value.to.getFullYear(), value.to.getMonth() - 1, 1)
+          : new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)
+      )
+    }
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerText = getDisplayText(value, presetId)
 
@@ -270,7 +282,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
               selected={pending}
               onSelect={handleDayPickerSelect}
               month={calendarMonth}
-              onMonthChange={() => {}}
+              onMonthChange={setCalendarMonth}
             />
 
             {/* Date + time inputs */}
