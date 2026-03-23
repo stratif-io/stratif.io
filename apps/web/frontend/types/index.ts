@@ -373,6 +373,12 @@ export interface MissionControlResponse {
   previous: MissionControlMetrics
 }
 
+export interface MissionControlMetricResponse {
+  metric: string
+  current: number
+  previous: number
+}
+
 export interface MissionControlTrendPoint {
   date: string
   value: number

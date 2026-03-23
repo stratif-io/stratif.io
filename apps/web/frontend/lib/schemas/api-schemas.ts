@@ -257,6 +257,14 @@ export const MissionControlResponseSchema = z.object({
   previous: MissionControlMetricsSchema,
 })
 
+export const MissionControlMetricResponseSchema = z.object({
+  metric: z.string(),
+  current: z.number(),
+  previous: z.number(),
+})
+
+export type MissionControlMetricResponseType = z.infer<typeof MissionControlMetricResponseSchema>
+
 export const MissionControlTrendPointSchema = z.object({
   date: z.string(),
   value: z.number(),
