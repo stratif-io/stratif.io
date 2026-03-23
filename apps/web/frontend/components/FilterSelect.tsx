@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { ChevronDown, ChevronRight, Check, Loader2 } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,8 @@ export interface FilterSelectOption {
   value: string
   label: string
   category?: string
+  /** When true the option is shown but not selectable (e.g. already used in another zone). */
+  disabled?: boolean
 }
 
 export interface FilterSelectProps {
@@ -30,6 +32,8 @@ export interface FilterSelectProps {
   searchable?: boolean
   /** Enables category accordion grouping using dimension-categories.json config. */
   tree?: boolean
+  /** Override the entire trigger button content (e.g. an "+ Add" button for the pivot zone bar). */
+  triggerContent?: ReactNode
 }
 
 export function FilterSelect({
@@ -44,6 +48,7 @@ export function FilterSelect({
   size = 'default',
   searchable = false,
   tree = false,
+  triggerContent,
 }: FilterSelectProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -92,14 +97,15 @@ export function FilterSelect({
     })
   }
 
-  function handleSelect(optValue: string) {
+  function handleSelect(opt: FilterSelectOption) {
+    if (opt.disabled) return
     if (mode === 'single') {
-      onChange(optValue)
+      onChange(opt.value)
       setOpen(false)
     } else {
-      const next = selectedValues.includes(optValue)
-        ? selectedValues.filter((v) => v !== optValue)
-        : [...selectedValues, optValue]
+      const next = selectedValues.includes(opt.value)
+        ? selectedValues.filter((v) => v !== opt.value)
+        : [...selectedValues, opt.value]
       onChange(next)
     }
   }
@@ -114,28 +120,32 @@ export function FilterSelect({
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          disabled={disabled}
-          aria-label={triggerLabel ?? placeholder}
-          className={cn(
-            'w-full flex items-center justify-between gap-2 rounded-md border border-input bg-background',
-            'hover:bg-accent/60 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-            triggerHeight,
-            hasValue && 'border-primary text-primary',
-            className,
-          )}
-        >
-          <span aria-hidden="true" className="truncate">
-            {triggerLabel != null ? (
-              triggerLabel
-            ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
+        {triggerContent ? (
+          <span>{triggerContent}</span>
+        ) : (
+          <button
+            type="button"
+            disabled={disabled}
+            aria-label={triggerLabel ?? placeholder}
+            className={cn(
+              'w-full flex items-center justify-between gap-2 rounded-md border border-input bg-background',
+              'hover:bg-accent/60 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              triggerHeight,
+              hasValue && 'border-primary text-primary',
+              className,
             )}
-          </span>
-          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-        </button>
+          >
+            <span aria-hidden="true" className="truncate">
+              {triggerLabel != null ? (
+                triggerLabel
+              ) : (
+                <span className="text-muted-foreground">{placeholder}</span>
+              )}
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          </button>
+        )}
       </PopoverTrigger>
 
       <PopoverContent className="w-56 p-0" align="start">
@@ -179,17 +189,21 @@ export function FilterSelect({
                     </button>
                     {isExpanded &&
                       group.dimensions.map((dim) => {
+                        const opt = options.find((o) => o.value === dim.value)
+                        const isDisabled = opt?.disabled ?? false
                         const isSelected = selectedValues.includes(dim.value)
                         return (
                           <button
                             key={dim.value}
                             type="button"
+                            disabled={isDisabled}
                             className={cn(
                               'w-full text-left px-3 py-1.5 pl-8 text-sm truncate flex items-center gap-2',
                               'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
                               isSelected && 'bg-accent font-medium text-accent-foreground',
+                              isDisabled && 'opacity-40 cursor-not-allowed hover:bg-transparent',
                             )}
-                            onClick={() => handleSelect(dim.value)}
+                            onClick={() => opt && handleSelect(opt)}
                           >
                             {mode === 'multi' && (
                               <span
@@ -226,12 +240,14 @@ export function FilterSelect({
                     <button
                       key={opt.value}
                       type="button"
+                      disabled={opt.disabled}
                       className={cn(
                         'w-full text-left px-2 py-1.5 rounded text-sm truncate flex items-center gap-2',
                         'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
                         isSelected && 'font-medium',
+                        opt.disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent',
                       )}
-                      onClick={() => handleSelect(opt.value)}
+                      onClick={() => handleSelect(opt)}
                     >
                       {mode === 'multi' && (
                         <span
