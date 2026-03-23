@@ -28,6 +28,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/connections/:conn_id/filter-options", get(connections::get_filter_options))
         .route("/api/connections/:conn_id/field-options", get(connections::get_field_options))
         .route("/api/connections/:conn_id/credentials", get(connections::get_credentials))
+        .route("/api/connections/:conn_id/string", get(connections::get_connection_string))
         .route("/api/connections/:conn_id/browse", get(connections::browse_connection))
         .route("/api/connections/:conn_id/tables", get(connections::list_tables))
         // analytics

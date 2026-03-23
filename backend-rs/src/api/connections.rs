@@ -697,6 +697,46 @@ pub async fn browse_connection(
     Ok(Json(serde_json::json!({ "items": items })))
 }
 
+/// GET /api/connections/:id/string
+pub async fn get_connection_string(
+    State(state): State<AppState>,
+    Path(conn_id): Path<String>,
+) -> Result<impl IntoResponse, ApiError> {
+    let rows = execute_on_handle(
+        &state.product_db,
+        &format!(
+            "SELECT db_type, credentials_encrypted FROM connections WHERE id = '{}'",
+            sql_escape(&conn_id)
+        ),
+    )
+    .await?;
+    let r = rows.first().ok_or_else(|| anyhow::anyhow!("connection not found"))?;
+    let db_type = extract_text(&r[0]);
+    let encrypted = extract_text(&r[1]);
+    let decrypted = decrypt_credentials(&encrypted, &state.encryption_key)?;
+    let creds: serde_json::Value = serde_json::from_str(&decrypted)?;
+
+    let connection_string = match db_type.as_str() {
+        "duckdb" => creds.get("file_path")
+            .or_else(|| creds.get("s3_path"))
+            .and_then(|v| v.as_str())
+            .map(|p| format!("duckdb://{p}")),
+        "sqlite" => creds.get("file_path")
+            .and_then(|v| v.as_str())
+            .map(|p| format!("sqlite://{p}")),
+        "postgresql" => {
+            let host = creds.get("host").and_then(|v| v.as_str()).unwrap_or("localhost");
+            let port = creds.get("port").and_then(|v| v.as_u64()).unwrap_or(5432);
+            let db = creds.get("database").and_then(|v| v.as_str()).unwrap_or("");
+            let user = creds.get("user").or_else(|| creds.get("username")).and_then(|v| v.as_str()).unwrap_or("");
+            Some(format!("postgresql://{user}@{host}:{port}/{db}"))
+        }
+        _ => None,
+    };
+
+    Ok(Json(serde_json::json!({ "connection_string": connection_string })))
+}
+
 /// GET /api/connections/:id/tables
 pub async fn list_tables(
     State(state): State<AppState>,
