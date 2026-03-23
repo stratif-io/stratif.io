@@ -76,6 +76,15 @@ export const useAppStore = create<AppState>()(
         activeConnectionId: state.activeConnectionId,
         activeFilters: state.activeFilters,
       }),
+      // JSON serialization turns Date objects into strings — revive them on load.
+      onRehydrateStorage: () => (state) => {
+        if (state?.dateRange) {
+          state.dateRange = {
+            from: state.dateRange.from ? new Date(state.dateRange.from as unknown as string) : null,
+            to: state.dateRange.to ? new Date(state.dateRange.to as unknown as string) : null,
+          }
+        }
+      },
     }
   )
 )
