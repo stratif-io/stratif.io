@@ -53,7 +53,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
   )
 
   return (
-    <div className="overflow-auto rounded-lg border">
+    <div className="overflow-auto">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">

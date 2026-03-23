@@ -62,7 +62,7 @@ export function MiniMetricCard({
       aria-label={`View ${label} trend`}
       aria-pressed={isHero}
       className={cn(
-        'relative overflow-hidden rounded-xl border p-3 text-left w-full transition-colors',
+        'relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 text-left w-full transition-colors',
         'hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         isHero ? 'border-2 border-primary' : 'border-border',
         fullWidth && 'col-span-2'

@@ -203,15 +203,53 @@ export function PrimitivesSection() {
         </DropdownMenu>
       </ComponentRow>
 
-      <ComponentRow label="Card">
-        <Card className="w-48">
-          <CardHeader>
-            <CardTitle className="text-sm">Card title</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">Card body content.</p>
-          </CardContent>
-        </Card>
+      <ComponentRow label="Card — elevation">
+        <div className="flex items-start gap-3 flex-wrap">
+          {(['none', 'subtle', 'medium', 'prominent'] as const).map((e) => (
+            <Card key={e} elevation={e} className="w-36">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">{e}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">shadow variant</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="Card — hover">
+        <div className="flex items-start gap-3 flex-wrap">
+          {(['none', 'lift', 'glow'] as const).map((h) => (
+            <Card key={h} hover={h} className="w-36">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">{h}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">hover over me</p>
+              </CardContent>
+            </Card>
+          ))}
+          <Card clickable className="w-36">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">clickable</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">cursor + lift</p>
+            </CardContent>
+          </Card>
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="Card — compact (metric)">
+        <div className="flex items-start gap-3">
+          <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 w-36">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Metric label</p>
+            <p className="text-lg font-bold tracking-tight">48.2K</p>
+            <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40 mt-1">↑ 3.2%</span>
+          </div>
+          <p className="text-xs text-muted-foreground max-w-[160px] pt-1">Used for mission control metric cards. Same border-radius and bg as <code className="font-mono">Card</code>, but compact padding and button semantics.</p>
+        </div>
       </ComponentRow>
 
       <ComponentRow label="ScrollArea">
