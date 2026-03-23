@@ -55,9 +55,9 @@ struct CustomPropertyDto {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct FilterFieldDto {
-    name: String,
     field: String,
-    r#type: String,
+    label: String,
+    icon: String,
 }
 
 #[derive(Deserialize)]
@@ -550,10 +550,10 @@ pub async fn get_filter_options(
                         SqlValue::Null => Value::Null,
                     })
                     .collect();
-                options.insert(ff.name.clone(), Value::Array(vals));
+                options.insert(ff.label.clone(), Value::Array(vals));
             }
             Err(_) => {
-                options.insert(ff.name.clone(), Value::Array(vec![]));
+                options.insert(ff.label.clone(), Value::Array(vec![]));
             }
         }
     }
