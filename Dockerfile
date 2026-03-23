@@ -4,12 +4,21 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/package.json
 RUN npm ci && \
-    npm install --no-save \
-      @rollup/rollup-linux-x64-gnu \
-      lightningcss-linux-x64-gnu \
-      "@tailwindcss/oxide-linux-x64-gnu"
+    ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ]; then \
+      npm install --no-save \
+        @rollup/rollup-linux-arm64-gnu \
+        lightningcss-linux-arm64-gnu \
+        "@tailwindcss/oxide-linux-arm64-gnu"; \
+    else \
+      npm install --no-save \
+        @rollup/rollup-linux-x64-gnu \
+        lightningcss-linux-x64-gnu \
+        "@tailwindcss/oxide-linux-x64-gnu"; \
+    fi
 COPY apps/web/index.html apps/web/tsconfig.json apps/web/tsconfig.node.json \
      apps/web/vite.config.ts apps/web/postcss.config.js ./apps/web/
+COPY apps/web/public ./apps/web/public
 COPY apps/web/frontend ./apps/web/frontend
 RUN npm run build
 
