@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
-from backend.services.validators import parse_date
+from backend.services.validators import parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["conversion"])
 
@@ -32,10 +32,10 @@ def get_conversion(
 
     if start_date:
         date_clauses.append("timestamp >= ?")
-        date_params.append(f"{start_date} 00:00:00")
+        date_params.append(to_sql_datetime(start_date, "00:00:00"))
     if end_date:
         date_clauses.append("timestamp <= ?")
-        date_params.append(f"{end_date} 23:59:59")
+        date_params.append(to_sql_datetime(end_date, "23:59:59"))
 
     date_filter = (" AND " + " AND ".join(date_clauses)) if date_clauses else ""
 

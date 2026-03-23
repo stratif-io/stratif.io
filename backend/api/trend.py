@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.sql_builder import date_trunc
-from backend.services.validators import parse_date
+from backend.services.validators import parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["trends"])
 
@@ -37,10 +37,10 @@ def get_trend(
         params.append(event_name)
     if start_date:
         where_clauses.append("timestamp >= ?")
-        params.append(f"{start_date} 00:00:00")
+        params.append(to_sql_datetime(start_date, "00:00:00"))
     if end_date:
         where_clauses.append("timestamp <= ?")
-        params.append(f"{end_date} 23:59:59")
+        params.append(to_sql_datetime(end_date, "23:59:59"))
 
     if filters:
         filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
