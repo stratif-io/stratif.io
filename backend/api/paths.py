@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from backend.services.views import path_analysis_ctes
 from backend.services import generate_path_analysis_query, get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
-from backend.services.validators import parse_date
+from backend.services.validators import parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["paths"])
 
@@ -44,10 +44,10 @@ def get_paths(
         date_conditions = []
         if start_date:
             date_conditions.append("timestamp >= ?")
-            date_params.append(f"{start_date} 00:00:00")
+            date_params.append(to_sql_datetime(start_date, "00:00:00"))
         if end_date:
             date_conditions.append("timestamp <= ?")
-            date_params.append(f"{end_date} 23:59:59")
+            date_params.append(to_sql_datetime(end_date, "23:59:59"))
         date_filter = " AND ".join(date_conditions)
         date_subquery = (
             f"AND user_id IN (SELECT DISTINCT user_id FROM events WHERE {date_filter})"
@@ -255,10 +255,10 @@ def get_path_funnel(
 
     if start_date:
         filter_clauses.append("timestamp >= ?")
-        filter_params.append(f"{start_date} 00:00:00")
+        filter_params.append(to_sql_datetime(start_date, "00:00:00"))
     if end_date:
         filter_clauses.append("timestamp <= ?")
-        filter_params.append(f"{end_date} 23:59:59")
+        filter_params.append(to_sql_datetime(end_date, "23:59:59"))
     if device_type:
         filter_clauses.append("device_type = ?")
         filter_params.append(device_type)

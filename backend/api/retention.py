@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.sql_builder import date_diff_days, date_trunc
-from backend.services.validators import parse_date
+from backend.services.validators import parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["retention"])
 
@@ -76,10 +76,10 @@ def get_retention(
 
     if start_date:
         cohort_clauses.append("timestamp >= ?")
-        cohort_params.append(f"{start_date} 00:00:00")
+        cohort_params.append(to_sql_datetime(start_date, "00:00:00"))
     if end_date:
         cohort_clauses.append("timestamp <= ?")
-        cohort_params.append(f"{end_date} 23:59:59")
+        cohort_params.append(to_sql_datetime(end_date, "23:59:59"))
 
     filter_clauses: list[str] = []
     filter_params: list = []

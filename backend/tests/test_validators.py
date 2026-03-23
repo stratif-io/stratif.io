@@ -3,7 +3,7 @@
 import pytest
 from fastapi import HTTPException
 
-from backend.services.validators import parse_date
+from backend.services.validators import parse_date, to_sql_datetime
 
 
 class TestParseDate:
@@ -62,3 +62,17 @@ class TestParseDate:
         with pytest.raises(HTTPException) as exc_info:
             parse_date("2024-01-01T25:00:00")
         assert exc_info.value.status_code == 400
+
+
+class TestToSqlDatetime:
+    def test_date_only_appends_default_time(self):
+        assert to_sql_datetime("2025-03-22", "00:00:00") == "2025-03-22 00:00:00"
+
+    def test_date_only_appends_end_of_day(self):
+        assert to_sql_datetime("2025-03-22", "23:59:59") == "2025-03-22 23:59:59"
+
+    def test_datetime_preserves_time_ignores_default(self):
+        assert to_sql_datetime("2025-03-22T14:30:00", "00:00:00") == "2025-03-22 14:30:00"
+
+    def test_datetime_replaces_T_with_space(self):
+        assert to_sql_datetime("2025-03-22T23:59:59", "00:00:00") == "2025-03-22 23:59:59"
