@@ -64,7 +64,7 @@ describe('usePathsData', () => {
     const { result } = renderHook(
       () =>
         usePathsData({
-          dateRange: { from: new Date('2026-01-01'), to: new Date('2026-01-31') },
+          dateRange: { from: new Date(2026, 0, 1), to: new Date(2026, 0, 31) },
           targetEvent: 'purchase',
           deviceType: '',
         }),
@@ -95,7 +95,7 @@ describe('usePathsData', () => {
     const { result } = renderHook(
       () =>
         usePathsData({
-          dateRange: { from: new Date('2026-01-01'), to: new Date('2026-01-31') },
+          dateRange: { from: new Date(2026, 0, 1), to: new Date(2026, 0, 31) },
           targetEvent: 'purchase',
           deviceType: '',
         }),
@@ -120,7 +120,7 @@ describe('usePathsData', () => {
     const { result } = renderHook(
       () =>
         usePathsData({
-          dateRange: { from: new Date('2026-01-01'), to: new Date('2026-01-31') },
+          dateRange: { from: new Date(2026, 0, 1), to: new Date(2026, 0, 31) },
           targetEvent: 'purchase',
           deviceType: '',
         }),
@@ -137,7 +137,7 @@ describe('usePathsData', () => {
     const { result } = renderHook(
       () =>
         usePathsData({
-          dateRange: { from: new Date('2026-01-01'), to: new Date('2026-01-31') },
+          dateRange: { from: new Date(2026, 0, 1), to: new Date(2026, 0, 31) },
           targetEvent: 'purchase',
           deviceType: '',
         }),
@@ -160,7 +160,7 @@ describe('usePathsData', () => {
     renderHook(
       () =>
         usePathsData({
-          dateRange: { from: new Date('2026-01-01'), to: new Date('2026-01-31') },
+          dateRange: { from: new Date(2026, 0, 1), to: new Date(2026, 0, 31) },
           targetEvent: 'purchase',
           deviceType: 'mobile',
         }),

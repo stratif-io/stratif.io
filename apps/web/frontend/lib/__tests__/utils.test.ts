@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cn } from '../utils'
+import { cn, formatDateParam } from '../utils'
 
 describe('cn utility function', () => {
   it('merges class names correctly', () => {
@@ -76,5 +76,32 @@ describe('cn utility function', () => {
   it('handles state variants', () => {
     const result = cn('hover:bg-red-500', 'hover:bg-blue-500')
     expect(result).toBe('hover:bg-blue-500')
+  })
+})
+
+describe('formatDateParam', () => {
+  it('returns yyyy-MM-dd for a midnight date', () => {
+    const d = new Date(2025, 2, 1, 0, 0, 0, 0)
+    expect(formatDateParam(d)).toBe('2025-03-01')
+  })
+
+  it('returns ISO datetime string when hours are non-zero', () => {
+    const d = new Date('2025-03-01T14:30:00.000')
+    expect(formatDateParam(d)).toBe('2025-03-01T14:30:00')
+  })
+
+  it('returns ISO datetime string when minutes are non-zero', () => {
+    const d = new Date('2025-03-01T00:05:00.000')
+    expect(formatDateParam(d)).toBe('2025-03-01T00:05:00')
+  })
+
+  it('returns ISO datetime string when seconds are non-zero', () => {
+    const d = new Date('2025-03-23T00:00:01.000')
+    expect(formatDateParam(d)).toBe('2025-03-23T00:00:01')
+  })
+
+  it('returns ISO datetime string for 23:59:59 (preset endOfDay)', () => {
+    const d = new Date('2025-03-01T23:59:59.999')
+    expect(formatDateParam(d)).toBe('2025-03-01T23:59:59')
   })
 })

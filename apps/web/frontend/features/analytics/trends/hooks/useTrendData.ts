@@ -1,8 +1,8 @@
 import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
 import { fetchTrend, fetchEvents, fetchPivot } from '@/lib/api'
+import { formatDateParam } from '@/lib/utils'
 import { useAppStore } from '@/stores'
 import type { DateRange } from '@/types'
 
@@ -53,8 +53,8 @@ export function useTrendData({
   measure = 'count_events',
   localFilters,
 }: UseTrendDataOptions): UseTrendDataReturn {
-  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
-  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
+  const startDate = dateRange.from ? formatDateParam(dateRange.from) : ''
+  const endDate = dateRange.to ? formatDateParam(dateRange.to) : ''
   const { activeFilters, activeConnectionId } = useAppStore()
   // Serialize localFilters (string[]) to pipe-joined strings and merge with global filters
   const serializedLocal: Record<string, string | null> = {}
