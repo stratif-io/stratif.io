@@ -29,6 +29,7 @@ import {
   SchemaDetectResponse,
   TablesResponse,
   MissionControlResponse,
+  MissionControlMetricResponse,
   MissionControlTrendResponse,
 } from '@/types'
 
@@ -471,5 +472,23 @@ export const fetchMissionControlTrend = (params: {
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
 
   return fetchApi<MissionControlTrendResponse>(`/api/mission-control/trend?${searchParams}`)
+}
+
+export const fetchMissionControlMetric = (params: {
+  metric: string
+  start_date: string
+  end_date: string
+  filters?: Record<string, string | null>
+  connection_id?: string
+}) => {
+  const searchParams = new URLSearchParams()
+  searchParams.set('metric', params.metric)
+  searchParams.set('start_date', params.start_date)
+  searchParams.set('end_date', params.end_date)
+  const f = serializeFilters(params.filters)
+  if (f) searchParams.set('filters', f)
+  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
+
+  return fetchApi<MissionControlMetricResponse>(`/api/mission-control/metric?${searchParams}`)
 }
 
