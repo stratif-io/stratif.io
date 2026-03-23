@@ -34,6 +34,10 @@ class DuckDBBackend:
     def parse_credentials(self, raw: dict) -> DuckDBCredentials:
         return DuckDBCredentials.model_validate(raw)
 
+    def connection_string(self, credentials: BaseModel) -> str | None:
+        creds = DuckDBCredentials.model_validate(credentials.model_dump())
+        return f"duckdb:///{creds.resolved_path}"
+
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         creds = DuckDBCredentials.model_validate(credentials.model_dump())
         return duckdb.connect(creds.resolved_path, read_only=read_only)

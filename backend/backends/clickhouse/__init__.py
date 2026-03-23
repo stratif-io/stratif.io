@@ -40,6 +40,11 @@ class ClickHouseBackend:
     def parse_credentials(self, raw: dict) -> ClickHouseCredentials:
         return ClickHouseCredentials.model_validate(raw)
 
+    def connection_string(self, credentials: BaseModel) -> str | None:
+        creds = ClickHouseCredentials.model_validate(credentials.model_dump())
+        scheme = "clickhouses" if creds.secure else "clickhouse"
+        return f"{scheme}://{creds.user}:****@{creds.host}:{creds.port}/{creds.database}"
+
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         import clickhouse_connect
         creds = ClickHouseCredentials.model_validate(credentials.model_dump())
