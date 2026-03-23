@@ -30,7 +30,7 @@ function DashboardFirstRun() {
 
       <ol className="space-y-4 text-sm">
         <li className="flex gap-3">
-          <span className="shrink-0 font-mono text-xs text-muted-foreground w-5 pt-0.5">01</span>
+          <span className="shrink-0 font-medium text-xs text-muted-foreground w-5 pt-0.5">01</span>
           <div>
             <p className="font-medium">Add a connection</p>
             <p className="text-muted-foreground mt-0.5">
@@ -40,7 +40,7 @@ function DashboardFirstRun() {
           </div>
         </li>
         <li className="flex gap-3">
-          <span className="shrink-0 font-mono text-xs text-muted-foreground w-5 pt-0.5">02</span>
+          <span className="shrink-0 font-medium text-xs text-muted-foreground w-5 pt-0.5">02</span>
           <div>
             <p className="font-medium">Point to your events table</p>
             <p className="text-muted-foreground mt-0.5">
@@ -50,7 +50,7 @@ function DashboardFirstRun() {
           </div>
         </li>
         <li className="flex gap-3">
-          <span className="shrink-0 font-mono text-xs text-muted-foreground w-5 pt-0.5">03</span>
+          <span className="shrink-0 font-medium text-xs text-muted-foreground w-5 pt-0.5">03</span>
           <div>
             <p className="font-medium">Explore your data</p>
             <p className="text-muted-foreground mt-0.5">
@@ -90,7 +90,6 @@ export function DashboardPage() {
     return (
       <PageTransition>
         <div className={SPACING.page}>
-          <h1 className="sr-only">Mission Control</h1>
           <DashboardFirstRun />
         </div>
       </PageTransition>
@@ -103,8 +102,7 @@ export function DashboardPage() {
     <PageTransition>
       <div className={SPACING.page}>
         <div className={SPACING.section}>
-          <h1 className="sr-only">Mission Control</h1>
-          <span className={TYPOGRAPHY.pageLabel}>Mission Control</span>
+          <h1 className={TYPOGRAPHY.pageLabel}>Mission Control</h1>
 
           <MissionControlGrid data={data} trends={trends} metricLoading={metricLoading} />
 

@@ -114,7 +114,7 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
         sparklinePreviousValues={trends[heroMetric]?.previousValues}
         sparklinePreviousDates={trends[heroMetric]?.previousDates}
         color={heroConfig.color}
-        loading={metricLoading[heroMetric] ?? true}
+        loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
         description={heroConfig.description}
         changeLabel={heroConfig.changeLabel}
       />
@@ -123,17 +123,20 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
       <div className="flex flex-col gap-4">
         {CATEGORIES.map(({ label, metrics }) => (
           <div key={label}>
-            <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
               {label}
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {metrics.map((metricKey) => {
                 const cfg = getConfig(metricKey)
                 const current = data?.current[metricKey as keyof typeof data.current] ?? 0
                 const previous = data?.previous[metricKey as keyof typeof data.previous] ?? 0
                 // total_events spans full width in the Volume row
                 const isFullWidth = metricKey === 'dau_mau_ratio' || metricKey === 'total_events'
-                const cardLoading = metricLoading[metricKey] ?? true
+                const cardLoading = (metricLoading[metricKey] ?? true) || (trends[metricKey]?.loading ?? true)
+                // Float metrics need 2 decimal places during count-up animation
+                const decimalsOverride =
+                  metricKey === 'dau_mau_ratio' || metricKey === 'avg_events_per_session' ? 2 : 0
                 return (
                   <MiniMetricCard
                     key={metricKey}
@@ -150,6 +153,7 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
                     description={cfg.description}
                     changeLabel={cfg.changeLabel}
                     sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
+                    decimalsOverride={decimalsOverride}
                   />
                 )
               })}

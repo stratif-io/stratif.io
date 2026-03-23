@@ -24,14 +24,18 @@ export function useCountUp(
   const frameRef = useRef<number>()
   const startTimeRef = useRef<number>()
   const prevEndRef = useRef(end)
+  const currentCountRef = useRef(prefersReducedMotion ? end : start)
+  const animationStartValueRef = useRef(prefersReducedMotion ? end : start)
 
   useEffect(() => {
     if (prefersReducedMotion) {
       setCount(end)
+      currentCountRef.current = end
       return
     }
-    // Reset start time if end value changes
+    // Reset start time if end value changes, but animate from current position
     if (prevEndRef.current !== end) {
+      animationStartValueRef.current = currentCountRef.current
       startTimeRef.current = undefined
       prevEndRef.current = end
     }
@@ -46,14 +50,16 @@ export function useCountUp(
       // Easing function (ease-out cubic)
       const easedProgress = useEasing ? 1 - Math.pow(1 - progress, 3) : progress
 
-      const currentCount = start + (end - start) * easedProgress
+      const currentCount = animationStartValueRef.current + (end - animationStartValueRef.current) * easedProgress
 
       setCount(currentCount)
+      currentCountRef.current = currentCount
 
       if (progress < 1) {
         frameRef.current = requestAnimationFrame(animate)
       } else {
         setCount(end) // Ensure we end at exact value
+        currentCountRef.current = end
       }
     }
 

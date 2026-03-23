@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useReducedMotion } from '@/hooks'
 import { useEffect, useState } from 'react'
 
@@ -16,7 +16,7 @@ export function CardLoadingBar({ loading }: { loading?: boolean }) {
 
   useEffect(() => {
     if (loading) {
-      setPhase('loading')
+      setPhase('loading') // H4: always reset unconditionally
     } else if (phase === 'loading') {
       setPhase('completing')
     }
@@ -35,25 +35,24 @@ export function CardLoadingBar({ loading }: { loading?: boolean }) {
         <motion.div
           className="absolute h-full bg-primary/60"
           style={{ width: '45%' }}
-          animate={{ left: ['-45%', '100%'] }}
+          initial={{ x: '-145%' }}
+          animate={{ x: '220%' }}
           transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
         />
       </div>
     )
   }
 
-  // completing — fill to 100% then exit
+  // completing — fill to 100% then fade out in one sequence
   return (
-    <AnimatePresence>
-      <motion.div
-        key="completing"
-        className="absolute top-0 left-0 right-0 h-[2px] bg-primary/70"
-        initial={{ scaleX: 0, originX: 0 }}
-        animate={{ scaleX: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
-        onAnimationComplete={() => setPhase('idle')}
-      />
-    </AnimatePresence>
+    <motion.div
+      key="completing"
+      className="absolute top-0 left-0 right-0 h-[2px] bg-primary/70"
+      style={{ transformOrigin: 'left center' }}
+      initial={{ scaleX: 0 }}
+      animate={{ scaleX: 1, opacity: [1, 1, 0] }}
+      transition={{ duration: 0.5, times: [0, 0.6, 1] }}
+      onAnimationComplete={() => setPhase('idle')}
+    />
   )
 }
