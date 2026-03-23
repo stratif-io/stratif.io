@@ -8,7 +8,7 @@ import type { TrendMetric, MetricTrend } from '../hooks/useMissionControlTrends'
 export interface MissionControlGridProps {
   data: MissionControlResponse | undefined
   trends: Record<TrendMetric, MetricTrend>
-  isLoading: boolean
+  metricLoading: Record<TrendMetric, boolean>
 }
 
 // Per-metric display config
@@ -92,7 +92,7 @@ function getConfig(key: TrendMetric) {
   return METRIC_CONFIG.find((m) => m.key === key)!
 }
 
-export function MissionControlGrid({ data, trends, isLoading }: MissionControlGridProps) {
+export function MissionControlGrid({ data, trends, metricLoading }: MissionControlGridProps) {
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
 
   const heroConfig = getConfig(heroMetric)
@@ -113,7 +113,7 @@ export function MissionControlGrid({ data, trends, isLoading }: MissionControlGr
         sparklinePreviousValues={trends[heroMetric]?.previousValues}
         sparklinePreviousDates={trends[heroMetric]?.previousDates}
         color={heroConfig.color}
-        loading={isLoading || (trends[heroMetric]?.loading ?? true)}
+        loading={metricLoading[heroMetric] ?? true}
         description={heroConfig.description}
         changeLabel={heroConfig.changeLabel}
       />
@@ -132,7 +132,7 @@ export function MissionControlGrid({ data, trends, isLoading }: MissionControlGr
                 const previous = data?.previous[metricKey as keyof typeof data.previous] ?? 0
                 // total_events spans full width in the Volume row
                 const isFullWidth = metricKey === 'dau_mau_ratio' || metricKey === 'total_events'
-                const cardLoading = isLoading || (trends[metricKey]?.loading ?? true)
+                const cardLoading = metricLoading[metricKey] ?? true
                 return (
                   <MiniMetricCard
                     key={metricKey}
