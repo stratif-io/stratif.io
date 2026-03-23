@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { DayPicker } from 'react-day-picker'
 import type { DateRange as DayPickerRange } from 'react-day-picker'
 import 'react-day-picker/style.css'
@@ -83,7 +83,8 @@ function toDateInputValue(d: Date | null): string {
 
 function applyTimeToDate(dateStr: string, timeStr: string): Date {
   const [h, m, s] = timeStr.split(':').map(Number)
-  const d = new Date(dateStr)
+  // Use 'T00:00:00' suffix to force local-time parsing (bare yyyy-MM-dd parses as UTC)
+  const d = new Date(`${dateStr}T00:00:00`)
   d.setHours(h ?? 0, m ?? 0, s ?? 0, 0)
   return d
 }
@@ -94,6 +95,7 @@ interface DateRangePickerProps {
   value: DateRange
   onChange: (value: DateRange) => void
   className?: string
+  /** When true, renders as a borderless segment for use inside a filter container */
   inlineMode?: boolean
 }
 
@@ -101,10 +103,11 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
   const { presetId, applyPreset } = useAppStore()
   const [open, setOpen] = useState(false)
 
-  const presets = buildPresets()
-  const quickChips = presets.filter((p) => QUICK_CHIP_IDS.includes(p.id))
-  const rollingPresets = presets.filter((p) => p.group === 'rolling')
-  const calendarPresets = presets.filter((p) => p.group === 'calendar')
+  // Memoized so preset Date objects aren't rebuilt on every render
+  const presets = useMemo(() => buildPresets(), [])
+  const quickChips = useMemo(() => presets.filter((p) => QUICK_CHIP_IDS.includes(p.id)), [presets])
+  const rollingPresets = useMemo(() => presets.filter((p) => p.group === 'rolling'), [presets])
+  const calendarPresets = useMemo(() => presets.filter((p) => p.group === 'calendar'), [presets])
 
   // Pending custom range state (local only until Apply)
   const [pending, setPending] = useState<DayPickerRange | undefined>(
@@ -115,7 +118,8 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
   const [fromDateStr, setFromDateStr] = useState(toDateInputValue(value.from))
   const [toDateStr, setToDateStr] = useState(toDateInputValue(value.to))
 
-  // Sync pending state when popover opens
+  // Snapshot value when the popover opens. Intentionally omit `value` from
+  // deps — live value changes should not reset pending state mid-session.
   useEffect(() => {
     if (open) {
       setPending(value.from && value.to ? { from: value.from, to: value.to } : undefined)
@@ -184,7 +188,9 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
     : new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)
   const [calendarMonth, setCalendarMonth] = useState(initialCalendarMonth)
 
-  // Re-anchor calendar when popover opens
+  // Re-anchor calendar to the current range when the popover opens.
+  // Intentionally omit `value` from deps — user navigation within the
+  // calendar should not be reset by external store changes.
   useEffect(() => {
     if (open) {
       setCalendarMonth(
