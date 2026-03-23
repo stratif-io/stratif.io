@@ -1,9 +1,22 @@
-import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
-import { fetchMissionControl, fetchTopEvents } from '@/lib/api'
+import { useQuery, useQueries } from '@tanstack/react-query'
+import { format, subDays, differenceInDays } from 'date-fns'
+import { fetchMissionControlMetric, fetchTopEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import { QUERY_STALE_TIME } from '@/lib/constants'
 import type { DateRange, MissionControlResponse } from '@/types'
+
+const METRICS = [
+  'total_events',
+  'unique_users',
+  'total_sessions',
+  'avg_session_duration_sec',
+  'avg_events_per_session',
+  'new_users',
+  'returning_users',
+  'dau_mau_ratio',
+] as const
+
+type MetricKey = (typeof METRICS)[number]
 
 export interface UseMissionControlOptions {
   dateRange: DateRange
@@ -12,6 +25,7 @@ export interface UseMissionControlOptions {
 export interface UseMissionControlReturn {
   data: MissionControlResponse | undefined
   isLoading: boolean
+  metricLoading: Record<MetricKey, boolean>
   isError: boolean
   error: Error | null
   topEvents: Array<{ name: string; count: number }>
@@ -25,17 +39,41 @@ export function useMissionControl({
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
   const { activeFilters, activeConnectionId } = useAppStore()
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['missionControl', startDate, endDate, activeFilters, activeConnectionId],
-    queryFn: () =>
-      fetchMissionControl({
-        start_date: startDate!,
-        end_date: endDate!,
-        filters: activeFilters,
-        connection_id: activeConnectionId ?? undefined,
-      }),
-    enabled: !!activeConnectionId && !!startDate && !!endDate,
-    staleTime: QUERY_STALE_TIME.default,
+  const enabled = !!activeConnectionId && !!startDate && !!endDate
+
+  // Previous period calculation (same as useMissionControlTrends)
+  const periodDays =
+    dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) + 1 : 0
+  const prevEndDate = dateRange.from
+    ? format(subDays(dateRange.from, 1), 'yyyy-MM-dd')
+    : undefined
+  const prevStartDate =
+    dateRange.from && periodDays > 0
+      ? format(subDays(dateRange.from, periodDays), 'yyyy-MM-dd')
+      : undefined
+
+  // 8 per-metric queries run in parallel
+  const metricResults = useQueries({
+    queries: METRICS.map((metric) => ({
+      queryKey: [
+        'missionControlMetric',
+        metric,
+        startDate,
+        endDate,
+        activeFilters,
+        activeConnectionId,
+      ],
+      queryFn: () =>
+        fetchMissionControlMetric({
+          metric,
+          start_date: startDate!,
+          end_date: endDate!,
+          filters: activeFilters,
+          connection_id: activeConnectionId ?? undefined,
+        }),
+      enabled,
+      staleTime: QUERY_STALE_TIME.default,
+    })),
   })
 
   const { data: topEventsData, isLoading: eventsLoading } = useQuery({
@@ -48,15 +86,43 @@ export function useMissionControl({
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
-    enabled: !!activeConnectionId && !!startDate && !!endDate,
+    enabled,
     staleTime: QUERY_STALE_TIME.default,
   })
+
+  const isLoading = metricResults.some((r) => r.isLoading)
+  const isError = metricResults.some((r) => r.isError)
+  const error = (metricResults.find((r) => r.error)?.error as Error | null) ?? null
+
+  // Per-metric loading map — each card uses its own flag
+  const metricLoading = Object.fromEntries(
+    METRICS.map((metric, i) => [metric, metricResults[i].isLoading])
+  ) as Record<MetricKey, boolean>
+
+  // Build data progressively: populate resolved metrics immediately, use 0 for still-loading ones.
+  // data is undefined only when queries are disabled (no connection / no dates).
+  const data: MissionControlResponse | undefined = enabled
+    ? {
+        period: { start_date: startDate!, end_date: endDate! },
+        previous_period: {
+          start_date: prevStartDate!,
+          end_date: prevEndDate!,
+        },
+        current: Object.fromEntries(
+          METRICS.map((metric, i) => [metric, metricResults[i].data?.current ?? 0])
+        ) as Record<MetricKey, number>,
+        previous: Object.fromEntries(
+          METRICS.map((metric, i) => [metric, metricResults[i].data?.previous ?? 0])
+        ) as Record<MetricKey, number>,
+      }
+    : undefined
 
   return {
     data,
     isLoading,
+    metricLoading,
     isError,
-    error: error as Error | null,
+    error,
     topEvents: topEventsData?.data ?? [],
     eventsLoading,
   }
