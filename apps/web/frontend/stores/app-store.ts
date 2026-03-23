@@ -9,6 +9,11 @@ interface AppState {
   dateRange: DateRange
   setDateRange: (range: DateRange) => void
 
+  /** Stable preset key (e.g. '7d', 'ytd', 'all_time') or null for custom range. */
+  presetId: string | null
+  /** Atomically sets dateRange + presetId in one store update. Use for all preset/custom applications. */
+  applyPreset: (range: DateRange, id: string | null) => void
+
   sidebarOpen: boolean
   setSidebarOpen: (open: boolean) => void
 
@@ -18,7 +23,6 @@ interface AppState {
   selectedDevice: string | null
   setSelectedDevice: (device: string | null) => void
 
-  /** Generic dimension filters keyed by field name, driven by connection filter config. */
   activeFilters: Record<string, string | null>
   setActiveFilter: (field: string, value: string | null) => void
   clearAllFilters: () => void
@@ -38,6 +42,9 @@ export const useAppStore = create<AppState>()(
         to: new Date(),
       },
       setDateRange: (dateRange) => set({ dateRange }),
+
+      presetId: '7d',
+      applyPreset: (dateRange, presetId) => set({ dateRange, presetId }),
 
       sidebarOpen: true,
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
@@ -63,6 +70,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         theme: state.theme,
         dateRange: state.dateRange,
+        presetId: state.presetId,
         sidebarOpen: state.sidebarOpen,
         activeConnectionId: state.activeConnectionId,
         activeFilters: state.activeFilters,
