@@ -82,6 +82,96 @@ fn run_duckdb_actor(conn: duckdb::Connection, mut rx: mpsc::Receiver<DuckDbReque
                 ).map(|n| n > 0).unwrap_or(false);
                 let _ = reply.send(Ok(exists));
             }
+            DuckDbRequest::GetTableColumns { table, reply } => {
+                let result = conn.prepare(
+                    "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ? ORDER BY ordinal_position"
+                ).and_then(|mut stmt| {
+                    stmt.query_map([&table], |r| Ok(ColumnInfo {
+                        name: r.get::<_, String>(0)?,
+                        sql_type: r.get::<_, String>(1)?,
+                    }))?.collect::<Result<Vec<_>, _>>()
+                }).map_err(|e| anyhow::anyhow!("{e}"));
+                let _ = reply.send(result);
+            }
+            DuckDbRequest::DetectSchema { hint, reply } => {
+                let tables_result: Result<Vec<String>> = conn.prepare(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' ORDER BY 1"
+                ).and_then(|mut stmt| {
+                    stmt.query_map([], |r| r.get::<_, String>(0))?.collect::<Result<Vec<_>, _>>()
+                }).map_err(|e| anyhow::anyhow!("{e}"));
+
+                let result = tables_result.and_then(|tables| {
+                    let events_table = hint
+                        .as_deref()
+                        .filter(|h| tables.contains(&h.to_string()))
+                        .map(|s| s.to_string())
+                        .or_else(|| tables.iter().find(|t| matches!(t.to_lowercase().as_str(), "events" | "event" | "analytics")).cloned())
+                        .or_else(|| tables.first().cloned())
+                        .unwrap_or_default();
+
+                    let columns: Vec<ColumnInfo> = if !events_table.is_empty() {
+                        conn.prepare(
+                            "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ? ORDER BY ordinal_position"
+                        ).and_then(|mut stmt| {
+                            stmt.query_map([&events_table], |r| Ok(ColumnInfo {
+                                name: r.get::<_, String>(0)?,
+                                sql_type: r.get::<_, String>(1)?,
+                            }))?.collect::<Result<Vec<_>, _>>()
+                        }).unwrap_or_default()
+                    } else {
+                        vec![]
+                    };
+
+                    let mut suggestions = std::collections::HashMap::new();
+                    let col_map: std::collections::HashMap<String, String> = columns.iter()
+                        .map(|c| (c.name.to_lowercase(), c.name.clone()))
+                        .collect();
+                    for candidate in &["user_id", "userid", "user", "account_id", "customer_id", "uid"] {
+                        if let Some(name) = col_map.get(*candidate) {
+                            suggestions.insert("user_id_field".to_string(), name.clone());
+                            break;
+                        }
+                    }
+                    for candidate in &["timestamp", "ts", "created_at", "event_time", "time", "datetime", "date"] {
+                        if let Some(name) = col_map.get(*candidate) {
+                            suggestions.insert("timestamp_field".to_string(), name.clone());
+                            break;
+                        }
+                    }
+                    for candidate in &["event_name", "event", "action", "event_type", "name", "type"] {
+                        if let Some(name) = col_map.get(*candidate) {
+                            suggestions.insert("event_name_field".to_string(), name.clone());
+                            break;
+                        }
+                    }
+
+                    Ok(SchemaInfo { tables, events_table, columns, suggestions, proposed_custom_properties: vec![] })
+                });
+                let _ = reply.send(result);
+            }
+            DuckDbRequest::Browse { catalog: _, schema, reply } => {
+                let schema_filter = schema.as_deref().unwrap_or("main");
+                let result = conn.prepare(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = ? ORDER BY 1"
+                ).and_then(|mut stmt| {
+                    stmt.query_map([schema_filter], |r| r.get::<_, String>(0))?.collect::<Result<Vec<_>, _>>()
+                }).map(|tables| {
+                    tables.into_iter().map(|t| BrowseNode {
+                        full_name: t.clone(),
+                        name: t,
+                        kind: crate::connectors::types::BrowseKind::Table,
+                    }).collect::<Vec<_>>()
+                }).map_err(|e| anyhow::anyhow!("{e}"));
+                let _ = reply.send(result);
+            }
+            DuckDbRequest::GetColumnsForBrowse { table, reply } => {
+                let result = conn.prepare(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name = ? ORDER BY ordinal_position"
+                ).and_then(|mut stmt| {
+                    stmt.query_map([&table], |r| r.get::<_, String>(0))?.collect::<Result<Vec<_>, _>>()
+                }).map_err(|e| anyhow::anyhow!("{e}"));
+                let _ = reply.send(result);
+            }
             _ => {}
         }
     }
@@ -265,10 +355,30 @@ impl DatabaseBackend for DuckDbBackend {
 
     fn is_connection_error(&self, _err: &anyhow::Error) -> bool { false }
 
-    async fn get_table_columns(&self, _conn: &mut BackendConnection, _table: &str) -> anyhow::Result<Vec<ColumnInfo>> { todo!() }
-    async fn get_columns_for_browse(&self, _conn: &mut BackendConnection, _table: &str) -> anyhow::Result<Vec<String>> { todo!() }
-    async fn detect_schema(&self, _conn: &mut BackendConnection, _hint: Option<&str>) -> anyhow::Result<SchemaInfo> { todo!() }
-    async fn browse(&self, _conn: &mut BackendConnection, _catalog: Option<&str>, _schema: Option<&str>) -> anyhow::Result<Vec<BrowseNode>> { todo!() }
+    async fn get_table_columns(&self, conn: &mut BackendConnection, table: &str) -> anyhow::Result<Vec<ColumnInfo>> {
+        let BackendConnection::DuckDb(handle) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        handle.tx.send(DuckDbRequest::GetTableColumns { table: table.to_owned(), reply: tx }).await?;
+        rx.await?
+    }
+    async fn get_columns_for_browse(&self, conn: &mut BackendConnection, table: &str) -> anyhow::Result<Vec<String>> {
+        let BackendConnection::DuckDb(handle) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        handle.tx.send(DuckDbRequest::GetColumnsForBrowse { table: table.to_owned(), reply: tx }).await?;
+        rx.await?
+    }
+    async fn detect_schema(&self, conn: &mut BackendConnection, hint: Option<&str>) -> anyhow::Result<SchemaInfo> {
+        let BackendConnection::DuckDb(handle) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        handle.tx.send(DuckDbRequest::DetectSchema { hint: hint.map(|s| s.to_owned()), reply: tx }).await?;
+        rx.await?
+    }
+    async fn browse(&self, conn: &mut BackendConnection, catalog: Option<&str>, schema: Option<&str>) -> anyhow::Result<Vec<BrowseNode>> {
+        let BackendConnection::DuckDb(handle) = conn else { anyhow::bail!("wrong connection type") };
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        handle.tx.send(DuckDbRequest::Browse { catalog: catalog.map(|s| s.to_owned()), schema: schema.map(|s| s.to_owned()), reply: tx }).await?;
+        rx.await?
+    }
 }
 
 #[cfg(test)]
