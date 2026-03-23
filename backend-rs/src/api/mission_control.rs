@@ -1,6 +1,6 @@
 use axum::{extract::{Query, State}, Json};
 use serde::{Deserialize, Serialize};
-use super::error::ApiError;
+use super::error::{ApiError, DataResponse};
 use super::state::{open_analytics_conn, AppState};
 use crate::connectors::types::SqlValue;
 use crate::query::mission_control::{build_mission_control_query, build_mission_control_trend_query};
