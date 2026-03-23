@@ -1,6 +1,6 @@
 use axum::{extract::{Query, State}, Json};
 use serde::{Deserialize, Serialize};
-use super::error::{ApiError, DataResponse};
+use super::error::ApiError;
 use super::state::{open_analytics_conn, AppState};
 use crate::connectors::types::SqlValue;
 use crate::query::mission_control::{build_mission_control_query, build_mission_control_trend_query};
@@ -46,7 +46,15 @@ fn extract_metrics(row: &[SqlValue]) -> PeriodMetrics {
 }
 
 #[derive(Serialize)]
+pub struct DateRange {
+    pub start_date: String,
+    pub end_date: String,
+}
+
+#[derive(Serialize)]
 pub struct MissionControlResponse {
+    pub period: DateRange,
+    pub previous_period: DateRange,
     pub current: PeriodMetrics,
     pub previous: PeriodMetrics,
 }
@@ -65,7 +73,7 @@ fn previous_period(start_date: &str, end_date: &str) -> Result<(String, String),
 pub async fn get_mission_control(
     State(state): State<AppState>,
     Query(params): Query<MissionControlParams>,
-) -> Result<Json<DataResponse<MissionControlResponse>>, ApiError> {
+) -> Result<Json<MissionControlResponse>, ApiError> {
     let (prev_start, prev_end) = previous_period(&params.start_date, &params.end_date)?;
     let (mut conn, backend) = open_analytics_conn(&state, &params.connection_id).await?;
 
@@ -77,7 +85,12 @@ pub async fn get_mission_control(
     let prev_rows = backend.execute_any(&mut conn, &prev_sql, vec![]).await?;
     let previous = prev_rows.first().map(|r| extract_metrics(r)).unwrap_or_else(default_metrics);
 
-    Ok(Json(DataResponse { data: MissionControlResponse { current, previous } }))
+    Ok(Json(MissionControlResponse {
+        period: DateRange { start_date: params.start_date.clone(), end_date: params.end_date.clone() },
+        previous_period: DateRange { start_date: prev_start, end_date: prev_end },
+        current,
+        previous,
+    }))
 }
 
 // --- GET /api/mission-control/trend ---
