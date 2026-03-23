@@ -250,13 +250,13 @@ pub async fn delete_connection(
     let esc_id = sql_escape(&conn_id);
     execute_on_handle(
         &state.product_db,
-        &format!("DELETE FROM schema_configs WHERE connection_id = '{esc_id}'"),
+        &format!("DELETE FROM connection_schema_configs WHERE connection_id = '{esc_id}'"),
     )
     .await
     .ok(); // ignore if table doesn't exist
     execute_on_handle(
         &state.product_db,
-        &format!("DELETE FROM filter_configs WHERE connection_id = '{esc_id}'"),
+        &format!("DELETE FROM connection_filter_configs WHERE connection_id = '{esc_id}'"),
     )
     .await
     .ok();
@@ -315,7 +315,7 @@ pub async fn get_schema_config(
         &format!(
             "SELECT id, connection_id, user_id_field, timestamp_field, event_name_field, \
              events_table, custom_properties, session_timeout_minutes, updated_at \
-             FROM schema_configs WHERE connection_id = '{}'",
+             FROM connection_schema_configs WHERE connection_id = '{}'",
             sql_escape(&conn_id)
         ),
     )
@@ -356,14 +356,14 @@ pub async fn upsert_schema_config(
     // Check if exists
     let existing = execute_on_handle(
         &state.product_db,
-        &format!("SELECT id FROM schema_configs WHERE connection_id = '{esc_id}'"),
+        &format!("SELECT id FROM connection_schema_configs WHERE connection_id = '{esc_id}'"),
     )
     .await;
 
     if let Ok(ref rows) = existing {
         if !rows.is_empty() {
             let sql = format!(
-                "UPDATE schema_configs SET user_id_field = '{}', timestamp_field = '{}', \
+                "UPDATE connection_schema_configs SET user_id_field = '{}', timestamp_field = '{}', \
                  event_name_field = '{}', events_table = '{}', custom_properties = '{}', \
                  session_timeout_minutes = {}, updated_at = '{}' WHERE connection_id = '{}'",
                 sql_escape(&body.user_id_field),
@@ -383,7 +383,7 @@ pub async fn upsert_schema_config(
     // Insert
     let id = uuid::Uuid::new_v4().to_string();
     let sql = format!(
-        "INSERT INTO schema_configs (id, connection_id, user_id_field, timestamp_field, \
+        "INSERT INTO connection_schema_configs (id, connection_id, user_id_field, timestamp_field, \
          event_name_field, events_table, custom_properties, session_timeout_minutes, updated_at) \
          VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', {}, '{}')",
         sql_escape(&id),
@@ -409,7 +409,7 @@ pub async fn get_filter_config(
         &state.product_db,
         &format!(
             "SELECT id, connection_id, filter_fields, updated_at \
-             FROM filter_configs WHERE connection_id = '{}'",
+             FROM connection_filter_configs WHERE connection_id = '{}'",
             sql_escape(&conn_id)
         ),
     )
@@ -444,14 +444,14 @@ pub async fn upsert_filter_config(
 
     let existing = execute_on_handle(
         &state.product_db,
-        &format!("SELECT id FROM filter_configs WHERE connection_id = '{esc_id}'"),
+        &format!("SELECT id FROM connection_filter_configs WHERE connection_id = '{esc_id}'"),
     )
     .await;
 
     if let Ok(ref rows) = existing {
         if !rows.is_empty() {
             let sql = format!(
-                "UPDATE filter_configs SET filter_fields = '{}', updated_at = '{}' \
+                "UPDATE connection_filter_configs SET filter_fields = '{}', updated_at = '{}' \
                  WHERE connection_id = '{}'",
                 filter_fields_json,
                 sql_escape(&now),
@@ -464,7 +464,7 @@ pub async fn upsert_filter_config(
 
     let id = uuid::Uuid::new_v4().to_string();
     let sql = format!(
-        "INSERT INTO filter_configs (id, connection_id, filter_fields, updated_at) \
+        "INSERT INTO connection_filter_configs (id, connection_id, filter_fields, updated_at) \
          VALUES ('{}', '{}', '{}', '{}')",
         sql_escape(&id),
         esc_id,
@@ -484,7 +484,7 @@ pub async fn get_filter_options(
     let config_rows = execute_on_handle(
         &state.product_db,
         &format!(
-            "SELECT filter_fields FROM filter_configs WHERE connection_id = '{}'",
+            "SELECT filter_fields FROM connection_filter_configs WHERE connection_id = '{}'",
             sql_escape(&conn_id)
         ),
     )
@@ -505,7 +505,7 @@ pub async fn get_filter_options(
     let schema_rows = execute_on_handle(
         &state.product_db,
         &format!(
-            "SELECT events_table FROM schema_configs WHERE connection_id = '{}'",
+            "SELECT events_table FROM connection_schema_configs WHERE connection_id = '{}'",
             sql_escape(&conn_id)
         ),
     )
@@ -569,7 +569,7 @@ pub async fn get_field_options(
     let schema_rows = execute_on_handle(
         &state.product_db,
         &format!(
-            "SELECT events_table FROM schema_configs WHERE connection_id = '{}'",
+            "SELECT events_table FROM connection_schema_configs WHERE connection_id = '{}'",
             sql_escape(&conn_id)
         ),
     )
