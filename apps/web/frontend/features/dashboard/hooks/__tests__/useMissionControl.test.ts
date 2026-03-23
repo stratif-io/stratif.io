@@ -114,6 +114,14 @@ describe('useMissionControl', () => {
     expect(fetchMissionControlMetric).not.toHaveBeenCalled()
   })
 
+  it('does not fire queries when dates are missing', () => {
+    renderHook(
+      () => useMissionControl({ dateRange: { from: null, to: null } }),
+      { wrapper: makeWrapper() }
+    )
+    expect(fetchMissionControlMetric).not.toHaveBeenCalled()
+  })
+
   it('calls fetchMissionControlMetric once per metric (8 times)', async () => {
     const { result } = renderHook(() => useMissionControl({ dateRange }), {
       wrapper: makeWrapper(),
