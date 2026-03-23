@@ -48,3 +48,17 @@ class TestParseDate:
         with pytest.raises(HTTPException) as exc_info:
             parse_date("not-a-date")
         assert "YYYY-MM-DD" in exc_info.value.detail
+
+    def test_accepts_datetime_with_time_component(self):
+        assert parse_date("2024-01-15T14:30:00") == "2024-01-15T14:30:00"
+
+    def test_accepts_datetime_at_end_of_day(self):
+        assert parse_date("2024-12-31T23:59:59") == "2024-12-31T23:59:59"
+
+    def test_accepts_datetime_at_midnight(self):
+        assert parse_date("2024-01-01T00:00:00") == "2024-01-01T00:00:00"
+
+    def test_raises_400_for_datetime_with_invalid_hour(self):
+        with pytest.raises(HTTPException) as exc_info:
+            parse_date("2024-01-01T25:00:00")
+        assert exc_info.value.status_code == 400
