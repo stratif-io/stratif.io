@@ -22,7 +22,7 @@ import type { DateRange } from '@/types'
 interface Preset {
   id: string
   label: string
-  shortLabel?: string
+
   getValue: () => DateRange
   group: 'rolling' | 'calendar'
 }
@@ -34,10 +34,10 @@ function buildPresets(): Preset[] {
   return [
     { id: 'today',        label: 'Today',          group: 'rolling',  getValue: () => ({ from: startOfDay(now), to: endOfDay(now) }) },
     { id: 'yesterday',    label: 'Yesterday',      group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,1)), to: endOfDay(subDays(now,1)) }) },
-    { id: '7d',           label: 'Last 7 days',    shortLabel: '7D',  group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,7)),  to: endOfDay(now) }) },
+    { id: '7d',           label: 'Last 7 days',    group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,7)),  to: endOfDay(now) }) },
     { id: '14d',          label: 'Last 14 days',   group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,14)), to: endOfDay(now) }) },
-    { id: '30d',          label: 'Last 30 days',   shortLabel: '30D', group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,30)), to: endOfDay(now) }) },
-    { id: '90d',          label: 'Last 90 days',   shortLabel: '90D', group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,90)), to: endOfDay(now) }) },
+    { id: '30d',          label: 'Last 30 days',   group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,30)), to: endOfDay(now) }) },
+    { id: '90d',          label: 'Last 90 days',   group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,90)), to: endOfDay(now) }) },
     { id: '6m',           label: 'Last 6 months',  group: 'rolling',  getValue: () => ({ from: startOfDay(subMonths(now,6)),  to: endOfDay(now) }) },
     { id: '12m',          label: 'Last 12 months', group: 'rolling',  getValue: () => ({ from: startOfDay(subMonths(now,12)), to: endOfDay(now) }) },
     { id: 'this_week',    label: 'This week',      group: 'calendar', getValue: () => ({ from: startOfWeek(now,WS), to: endOfDay(now) }) },
@@ -46,12 +46,10 @@ function buildPresets(): Preset[] {
     { id: 'last_month',   label: 'Last month',     group: 'calendar', getValue: () => ({ from: startOfMonth(subMonths(now,1)), to: endOfMonth(subMonths(now,1)) }) },
     { id: 'this_quarter', label: 'This quarter',   group: 'calendar', getValue: () => ({ from: startOfQuarter(now), to: endOfDay(now) }) },
     { id: 'last_quarter', label: 'Last quarter',   group: 'calendar', getValue: () => ({ from: startOfQuarter(subQuarters(now,1)), to: endOfQuarter(subQuarters(now,1)) }) },
-    { id: 'ytd',          label: 'Year to date',   shortLabel: 'YTD', group: 'calendar', getValue: () => ({ from: startOfYear(now), to: endOfDay(now) }) },
-    { id: 'all_time',     label: 'All time',       shortLabel: 'All time', group: 'calendar', getValue: () => ({ from: null, to: null }) },
+    { id: 'ytd',          label: 'Year to date',   group: 'calendar', getValue: () => ({ from: startOfYear(now), to: endOfDay(now) }) },
+    { id: 'all_time',     label: 'All time',       group: 'calendar', getValue: () => ({ from: null, to: null }) },
   ]
 }
-
-const QUICK_CHIP_IDS = ['7d', '30d', '90d', 'ytd', 'all_time']
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -232,7 +230,6 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
 
   // Memoized so preset Date objects aren't rebuilt on every render
   const presets = useMemo(() => buildPresets(), [])
-  const quickChips = useMemo(() => presets.filter((p) => QUICK_CHIP_IDS.includes(p.id)), [presets])
   const rollingPresets = useMemo(() => presets.filter((p) => p.group === 'rolling'), [presets])
   const calendarPresets = useMemo(() => presets.filter((p) => p.group === 'calendar'), [presets])
 
@@ -262,12 +259,6 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
     applyPreset(range, preset.id)
     onChange(range)
     setOpen(false)
-  }
-
-  function handleQuickChip(preset: Preset) {
-    const range = preset.getValue()
-    applyPreset(range, preset.id)
-    onChange(range)
   }
 
   function handleDayPickerSelect(range: DayPickerRange | undefined) {
@@ -355,9 +346,8 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
   )
 
   return (
-    <div className="flex items-center">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>{triggerEl}</PopoverTrigger>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{triggerEl}</PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <div className="p-3 space-y-3 min-w-[520px]">
             {/* Rolling presets */}
@@ -452,26 +442,6 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
             </Button>
           </div>
         </PopoverContent>
-      </Popover>
-
-      {/* Quick chips */}
-      <div className="flex items-center">
-        <span className="w-px h-5 bg-border mx-1.5 shrink-0" aria-hidden />
-        {quickChips.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => handleQuickChip(p)}
-            className={cn(
-              'text-xs font-medium px-2.5 h-9 transition-colors whitespace-nowrap',
-              presetId === p.id
-                ? 'text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
-            )}
-          >
-            {p.shortLabel ?? p.label}
-          </button>
-        ))}
-      </div>
-    </div>
+    </Popover>
   )
 }
