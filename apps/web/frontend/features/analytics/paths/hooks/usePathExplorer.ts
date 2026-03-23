@@ -78,7 +78,7 @@ export function usePathExplorer({
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
-    enabled: !!startDate && !!endDate,
+    enabled: true,
     staleTime: QUERY_STALE_TIME.default,
   })
 

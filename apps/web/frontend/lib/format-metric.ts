@@ -19,8 +19,8 @@ export function formatMetricValue(metric: string, value: number): string {
  * Compute period-over-period % change.
  * Returns null if previous is 0 (avoid division by zero → show "—").
  */
-export function computePctChange(current: number, previous: number): number | null {
-  if (previous === 0) return null
+export function computePctChange(current: number, previous: number | null): number | null {
+  if (previous === null || previous === 0) return null
   return ((current - previous) / previous) * 100
 }
 

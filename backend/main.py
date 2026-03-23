@@ -83,9 +83,13 @@ if dist_path.exists():
     async def root_redirect():
         return RedirectResponse(url="/dashboard", status_code=302)
 
-    @app.get("/favicon.svg")
-    async def favicon():
-        return FileResponse(dist_path / "favicon.svg", media_type="image/svg+xml")
+    @app.get("/{filename}.svg")
+    async def serve_svg(filename: str):
+        svg_path = dist_path / f"{filename}.svg"
+        if not svg_path.exists():
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Not found")
+        return FileResponse(svg_path, media_type="image/svg+xml")
 
     @app.get("/{full_path:path}")
     async def spa_fallback(full_path: str):

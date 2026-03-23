@@ -97,7 +97,7 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
 
   const heroConfig = getConfig(heroMetric)
   const heroCurrentValue = data?.current[heroMetric as keyof typeof data.current] ?? 0
-  const heroPreviousValue = data?.previous[heroMetric as keyof typeof data.previous] ?? 0
+  const heroPreviousValue = data?.previous[heroMetric as keyof typeof data.previous] ?? null
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
@@ -108,7 +108,7 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
         value={formatMetricValue(heroMetric, heroCurrentValue)}
         rawValue={heroCurrentValue}
         pctChange={computePctChange(heroCurrentValue, heroPreviousValue)}
-        previousValue={formatMetricValue(heroMetric, heroPreviousValue)}
+        previousValue={heroPreviousValue !== null ? formatMetricValue(heroMetric, heroPreviousValue) : '—'}
         sparklineValues={trends[heroMetric]?.values ?? []}
         sparklineDates={trends[heroMetric]?.dates}
         sparklinePreviousValues={trends[heroMetric]?.previousValues}
@@ -130,7 +130,7 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
               {metrics.map((metricKey) => {
                 const cfg = getConfig(metricKey)
                 const current = data?.current[metricKey as keyof typeof data.current] ?? 0
-                const previous = data?.previous[metricKey as keyof typeof data.previous] ?? 0
+                const previous = data?.previous[metricKey as keyof typeof data.previous] ?? null
                 // total_events spans full width in the Volume row
                 const isFullWidth = metricKey === 'dau_mau_ratio' || metricKey === 'total_events'
                 const cardLoading = (metricLoading[metricKey] ?? true) || (trends[metricKey]?.loading ?? true)

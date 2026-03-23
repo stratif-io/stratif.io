@@ -362,21 +362,23 @@ export interface MissionControlMetrics {
 }
 
 export interface MissionControlPeriod {
-  start_date: string
-  end_date: string
+  start_date?: string
+  end_date?: string
 }
+
+export type MissionControlMetricsNullable = { [K in keyof MissionControlMetrics]: number | null }
 
 export interface MissionControlResponse {
   period: MissionControlPeriod
   previous_period: MissionControlPeriod
   current: MissionControlMetrics
-  previous: MissionControlMetrics
+  previous: MissionControlMetricsNullable
 }
 
 export interface MissionControlMetricResponse {
   metric: string
   current: number
-  previous: number
+  previous: number | null
 }
 
 export interface MissionControlTrendPoint {

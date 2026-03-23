@@ -95,7 +95,6 @@ export function HeroMetricCard({
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-sm p-0 flex flex-col">
-      <CardLoadingBar loading={loading} />
 
       {/* Chart fills the card — no padding, chart is the primary visual */}
       <div
@@ -252,6 +251,7 @@ export function HeroMetricCard({
           </span>
         </div>
       </div>
+      <CardLoadingBar loading={loading} />
     </div>
   )
 }

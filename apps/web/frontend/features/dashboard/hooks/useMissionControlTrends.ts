@@ -51,7 +51,7 @@ export function useMissionControlTrends({
       ? formatDateParam(subDays(dateRange.from, periodDays))
       : undefined
 
-  const enabled = !!activeConnectionId && !!startDate && !!endDate
+  const enabled = !!activeConnectionId
 
   // Current period queries (indices 0..N-1)
   // Previous period queries (indices N..2N-1)
@@ -69,8 +69,8 @@ export function useMissionControlTrends({
         queryFn: () =>
           fetchMissionControlTrend({
             metric,
-            start_date: startDate!,
-            end_date: endDate!,
+            start_date: startDate,
+            end_date: endDate,
             filters: activeFilters,
             connection_id: activeConnectionId ?? undefined,
           }),

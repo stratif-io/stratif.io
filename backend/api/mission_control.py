@@ -275,6 +275,51 @@ def _fetch_single_metric(
     return round(dau / mau, 4) if mau else 0.0
 
 
+def _fetch_single_metric_all_time(
+    db: AnalyticsDatabase,
+    metric: str,
+    filter_clauses: list[str],
+    filter_params: list,
+) -> float:
+    """Run the metric query over all time (no date bounds)."""
+    ev_where_sql = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+
+    if metric == "total_events":
+        rows = db.execute(f"SELECT COUNT(*) FROM events {ev_where_sql}", filter_params)
+        return rows[0][0] if rows else 0
+
+    if metric == "unique_users":
+        rows = db.execute(f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}", filter_params)
+        return rows[0][0] if rows else 0
+
+    if metric in ("total_sessions", "avg_session_duration_sec", "avg_events_per_session"):
+        sess_where_sql = ev_where_sql.replace("WHERE ", "WHERE ds.") if ev_where_sql else ""
+        timeout = db.get_session_timeout_minutes()
+        dialect = db.get_dialect()
+        if metric == "total_sessions":
+            agg = "COUNT(*)"
+        elif metric == "avg_session_duration_sec":
+            agg = "AVG(ds.duration_sec)"
+        else:
+            agg = "AVG(ds.event_count)"
+        rows = db.execute(
+            f"WITH {session_ctes(timeout, dialect)} SELECT {agg} FROM derived_sessions ds {sess_where_sql}",
+            filter_params,
+        )
+        return round(rows[0][0] or 0.0, 2) if rows else 0.0
+
+    if metric == "new_users":
+        # All users are "new" in all-time context — return unique users
+        rows = db.execute(f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}", filter_params)
+        return rows[0][0] if rows else 0
+
+    if metric == "returning_users":
+        return 0
+
+    # dau_mau_ratio — not meaningful without a fixed period, return 0
+    return 0.0
+
+
 SUPPORTED_METRICS = {
     "total_events",
     "unique_users",
@@ -291,8 +336,8 @@ SUPPORTED_METRICS = {
 def get_mission_control_metric(
     db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
     metric: str = Query(..., description="Metric name"),
-    start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
-    end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     filters: str | None = Query(None, description="JSON dict of dimension filters"),
 ) -> dict:
     """Return current and previous period scalar for a single metric."""
@@ -302,12 +347,22 @@ def get_mission_control_metric(
             detail=f"Unsupported metric '{metric}'. Supported: {sorted(SUPPORTED_METRICS)}",
         )
 
-    start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
+    filter_clauses: list[str] = []
+    filter_params: list = []
+    if filters:
+        try:
+            filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
 
-    prev_start, prev_end = _compute_previous_period(start, end)
-
-    current_value = _fetch_single_metric(db, metric, start, end, filter_clauses, filter_params)
-    previous_value = _fetch_single_metric(db, metric, prev_start, prev_end, filter_clauses, filter_params)
+    if start_date and end_date:
+        start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
+        prev_start, prev_end = _compute_previous_period(start, end)
+        current_value = _fetch_single_metric(db, metric, start, end, filter_clauses, filter_params)
+        previous_value = _fetch_single_metric(db, metric, prev_start, prev_end, filter_clauses, filter_params)
+    else:
+        current_value = _fetch_single_metric_all_time(db, metric, filter_clauses, filter_params)
+        previous_value = None
 
     return {"metric": metric, "current": current_value, "previous": previous_value}
 
@@ -316,8 +371,8 @@ def get_mission_control_metric(
 def get_mission_control_trend(
     db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
     metric: str = Query(..., description="Metric name"),
-    start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
-    end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     filters: str | None = Query(None, description="JSON dict of dimension filters"),
 ) -> dict:
     """Return daily time-series for a single metric."""
@@ -327,7 +382,25 @@ def get_mission_control_trend(
             detail=f"Unsupported metric '{metric}'. Supported: {sorted(SUPPORTED_METRICS)}",
         )
 
-    start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
+    if start_date and end_date:
+        start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
+    else:
+        # All-time: derive date range from the data itself
+        filter_clauses, filter_params = [], []
+        if filters:
+            try:
+                filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+        bounds_where = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        bounds = db.execute(
+            f"SELECT DATE(MIN(timestamp)), DATE(MAX(timestamp)) FROM events {bounds_where}",
+            filter_params,
+        )
+        if not bounds or bounds[0][0] is None:
+            return {"metric": metric, "data": []}
+        start = datetime.fromisoformat(str(bounds[0][0])).date()
+        end = datetime.fromisoformat(str(bounds[0][1])).date()
 
     ps = f"{start} 00:00:00"
     pe = f"{end} 23:59:59"
