@@ -1,6 +1,6 @@
-import { X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { DimensionPickerPopover } from './DimensionPickerPopover'
+import { FilterSelect } from '@/components/FilterSelect'
 import { ValuePickerPopover } from './ValuePickerPopover'
 import type { ZoneCol, LeafMeta } from './types'
 
@@ -37,12 +37,15 @@ export function ZoneBar({
   function addToZone(setter: (cols: ZoneCol[]) => void, current: ZoneCol[], colId: string) {
     const meta = leafCols.find((c) => c.colId === colId)
     if (!meta) return
-    setter([...current, {
-      colId: meta.colId,
-      label: meta.label,
-      aggFunc: meta.allowedAggFuncs?.[0] ?? 'sum',
-      allowedAggFuncs: meta.allowedAggFuncs,
-    }])
+    setter([
+      ...current,
+      {
+        colId: meta.colId,
+        label: meta.label,
+        aggFunc: meta.allowedAggFuncs?.[0] ?? 'sum',
+        allowedAggFuncs: meta.allowedAggFuncs,
+      },
+    ])
   }
 
   function removeFromZone(setter: (cols: ZoneCol[]) => void, current: ZoneCol[], colId: string) {
@@ -52,6 +55,19 @@ export function ZoneBar({
   function changeAgg(colId: string, aggFunc: string) {
     onValueColsChange(valueCols.map((c) => (c.colId === colId ? { ...c, aggFunc } : c)))
   }
+
+  function makeDimOptions(canAdd: (m: LeafMeta) => boolean) {
+    return leafCols
+      .filter(canAdd)
+      .map((c) => ({ value: c.colId, label: c.label, disabled: usedIds.has(c.colId) }))
+  }
+
+  const addTrigger = (
+    <Button variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs text-muted-foreground">
+      <Plus className="h-3 w-3" />
+      Add
+    </Button>
+  )
 
   return (
     <div className="border-b border-border bg-muted/20 px-4 py-2">
@@ -65,11 +81,13 @@ export function ZoneBar({
               onRemove={() => removeFromZone(onRowGroupsChange, rowGroups, col.colId)}
             />
           ))}
-          <DimensionPickerPopover
-            leafCols={leafCols}
-            usedIds={usedIds}
-            canAdd={(m) => m.enableRowGroup}
-            onSelect={(colId) => addToZone(onRowGroupsChange, rowGroups, colId)}
+          <FilterSelect
+            mode="single"
+            tree
+            options={makeDimOptions((m) => m.enableRowGroup)}
+            value={null}
+            onChange={(colId) => addToZone(onRowGroupsChange, rowGroups, colId as string)}
+            triggerContent={addTrigger}
           />
         </Zone>
 
@@ -82,11 +100,13 @@ export function ZoneBar({
               onRemove={() => removeFromZone(onPivotColsChange, pivotCols, col.colId)}
             />
           ))}
-          <DimensionPickerPopover
-            leafCols={leafCols}
-            usedIds={usedIds}
-            canAdd={(m) => m.enablePivot}
-            onSelect={(colId) => addToZone(onPivotColsChange, pivotCols, colId)}
+          <FilterSelect
+            mode="single"
+            tree
+            options={makeDimOptions((m) => m.enablePivot)}
+            value={null}
+            onChange={(colId) => addToZone(onPivotColsChange, pivotCols, colId as string)}
+            triggerContent={addTrigger}
           />
         </Zone>
 
