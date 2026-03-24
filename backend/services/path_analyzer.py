@@ -29,6 +29,7 @@ from backend.services.sql_builder import (
     epoch_diff_seconds,
     interval_minutes_exceeded,
     json_extract_string,
+    lag_expr,
     string_concat,
 )
 
@@ -165,8 +166,10 @@ class PathAnalyzer:
         conditions: list[str] = []
         if date_range:
             start, end = date_range
+            start_dt = start.replace("T", " ") if "T" in start else f"{start} 00:00:00"
+            end_dt = end.replace("T", " ") if "T" in end else f"{end} 23:59:59"
             conditions.append(
-                f"timestamp BETWEEN '{start} 00:00:00' AND '{end} 23:59:59'"
+                f"timestamp BETWEEN '{start_dt}' AND '{end_dt}'"
             )
         if extra_where_conditions:
             conditions.extend(extra_where_conditions)
@@ -512,6 +515,9 @@ events_sessionized AS (
             f"SELECT * FROM {name}" for name in path_cte_names
         )
 
+        lag_ts = lag_expr("timestamp", 1, dialect)
+        lag_frame = " ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING" if dialect == "clickhouse" else ""
+
         return f"""
 WITH filtered_events AS (
     SELECT user_id, event_name, timestamp
@@ -521,7 +527,7 @@ WITH filtered_events AS (
 prev_events AS (
     SELECT
         user_id, event_name, timestamp,
-        LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp) AS prev_ts
+        {lag_ts} OVER (PARTITION BY user_id ORDER BY timestamp{lag_frame}) AS prev_ts
     FROM filtered_events
 ),
 session_markers AS (

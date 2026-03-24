@@ -2,11 +2,16 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import traceback
+
+import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
+
+log = structlog.get_logger(__name__)
 
 
 class APITrailingSlashMiddleware(BaseHTTPMiddleware):
@@ -48,6 +53,20 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.debug else None,
     lifespan=lifespan,
 )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    log.error(
+        "unhandled_exception",
+        path=request.url.path,
+        error=str(exc),
+        traceback=traceback.format_exc(),
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc) or "Internal server error"},
+    )
+
 
 app.add_middleware(APITrailingSlashMiddleware)
 app.add_middleware(

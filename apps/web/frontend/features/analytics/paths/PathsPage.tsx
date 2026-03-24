@@ -38,8 +38,6 @@ export function PathsPage() {
     setSelectedEvent(val)
   }
 
-  if (isError) return <QueryError error={error} />
-
   return (
     <PageTransition>
       <div className={SPACING.page}>
@@ -82,7 +80,9 @@ export function PathsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {isLoading || eventsLoading ? (
+              {isError ? (
+                <QueryError error={error} />
+              ) : isLoading || eventsLoading ? (
                 <LoadingState message="Analyzing paths…" />
               ) : pathData.length === 0 ? (
                 <EmptyState
