@@ -70,7 +70,13 @@ async def update_connection(conn_id: str, body: ConnectionUpdate):
     db = get_product_db()
     now = _now()
     name = body.name if body.name is not None else row["name"]
-    encrypted = encrypt_credentials(body.credentials) if body.credentials is not None else row["credentials_encrypted"]
+    if body.credentials is not None:
+        # Merge partial credentials with existing ones so omitted fields (e.g. passwords) are preserved.
+        existing = decrypt_credentials(row["credentials_encrypted"])
+        merged = {**existing, **body.credentials}
+        encrypted = encrypt_credentials(merged)
+    else:
+        encrypted = row["credentials_encrypted"]
     db.execute(
         "UPDATE connections SET name = ?, credentials_encrypted = ?, updated_at = ? WHERE id = ?",
         (name, encrypted, now, conn_id),
@@ -252,7 +258,7 @@ async def get_connection_credentials(conn_id: str):
     row = _get_connection_or_404(conn_id)
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
-        return {"fields": {k: ("*" * 8 if "password" in k.lower() or "token" in k.lower() or "secret" in k.lower() else v)
+        return {"fields": {k: (None if "password" in k.lower() or "token" in k.lower() or "secret" in k.lower() else v)
                            for k, v in creds.items()}}
     except ValueError:
         raise HTTPException(500, "Failed to decrypt credentials")
