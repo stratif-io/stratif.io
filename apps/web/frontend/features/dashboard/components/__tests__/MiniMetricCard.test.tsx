@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { MiniMetricCard } from '../MiniMetricCard'
+
+const renderWithTooltip = (ui: React.ReactElement) =>
+  render(<TooltipProvider>{ui}</TooltipProvider>)
 
 // SparklineChart renders SVG — mock it to keep tests simple
 vi.mock('@/components/charts/sparkline-chart', () => ({
@@ -17,61 +21,60 @@ const baseProps = {
 
 describe('MiniMetricCard', () => {
   it('renders the label', () => {
-    render(<MiniMetricCard {...baseProps} />)
+    renderWithTooltip(<MiniMetricCard {...baseProps} />)
     expect(screen.getByText('Unique Users')).toBeInTheDocument()
   })
 
   it('renders the formatted value', () => {
-    render(<MiniMetricCard {...baseProps} />)
+    renderWithTooltip(<MiniMetricCard {...baseProps} />)
     expect(screen.getByText('48.2K')).toBeInTheDocument()
   })
 
   it('renders positive % change with up arrow', () => {
-    render(<MiniMetricCard {...baseProps} pctChange={8.1} />)
+    renderWithTooltip(<MiniMetricCard {...baseProps} pctChange={8.1} />)
     expect(screen.getByText(/8\.1%/)).toBeInTheDocument()
     expect(screen.getByText(/↑/)).toBeInTheDocument()
   })
 
   it('renders negative % change with down arrow', () => {
-    render(<MiniMetricCard {...baseProps} pctChange={-2.3} />)
+    renderWithTooltip(<MiniMetricCard {...baseProps} pctChange={-2.3} />)
     expect(screen.getByText(/2\.3%/)).toBeInTheDocument()
     expect(screen.getByText(/↓/)).toBeInTheDocument()
   })
 
   it('renders "0.0%" with no directional arrow when pctChange is 0', () => {
-    render(<MiniMetricCard {...baseProps} pctChange={0} />)
+    renderWithTooltip(<MiniMetricCard {...baseProps} pctChange={0} />)
     expect(screen.getByText('0.0%')).toBeInTheDocument()
     expect(screen.queryByText('↑')).not.toBeInTheDocument()
     expect(screen.queryByText('↓')).not.toBeInTheDocument()
   })
 
   it('renders "—" when pctChange is null', () => {
-    render(<MiniMetricCard {...baseProps} pctChange={null} />)
+    renderWithTooltip(<MiniMetricCard {...baseProps} pctChange={null} />)
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
   it('renders a sparkline', () => {
-    render(<MiniMetricCard {...baseProps} />)
+    renderWithTooltip(<MiniMetricCard {...baseProps} />)
     expect(screen.getByTestId('sparkline')).toBeInTheDocument()
   })
 
   it('calls onClick when clicked', () => {
     const onClick = vi.fn()
-    render(<MiniMetricCard {...baseProps} onClick={onClick} />)
+    renderWithTooltip(<MiniMetricCard {...baseProps} onClick={onClick} />)
     fireEvent.click(screen.getByRole('button'))
     expect(onClick).toHaveBeenCalledTimes(1)
   })
 
   it('applies hero border style when isHero is true', () => {
-    render(<MiniMetricCard {...baseProps} isHero />)
+    renderWithTooltip(<MiniMetricCard {...baseProps} isHero />)
     const card = screen.getByRole('button')
     expect(card.className).toMatch(/border-primary/)
   })
 
-  it('renders loading skeleton when loading is true', () => {
-    render(<MiniMetricCard {...baseProps} loading />)
-    expect(screen.queryByText('48.2K')).not.toBeInTheDocument()
-    // Skeleton is rendered instead
-    expect(document.querySelector('[class*="animate-pulse"]')).toBeTruthy()
+  it('renders loading bar when loading is true', () => {
+    renderWithTooltip(<MiniMetricCard {...baseProps} loading />)
+    // Content is opacity-0 but still in DOM; loading bar is rendered
+    expect(document.querySelector('.bg-primary\\/50')).toBeTruthy()
   })
 })

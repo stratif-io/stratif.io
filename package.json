@@ -32,5 +32,10 @@
       "prettier --write"
     ]
   },
-  "prepare": "husky"
+  "prepare": "husky",
+  "dependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.60.0",
+    "@tailwindcss/oxide-darwin-arm64": "^4.2.2",
+    "lightningcss-darwin-arm64": "^1.32.0"
+  }
 }
