@@ -32,6 +32,7 @@ import {
   MissionControlMetricResponse,
   MissionControlTrendResponse,
 } from '@/types'
+import { fetchWithSemaphore } from './semaphore'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -40,7 +41,7 @@ const headers: HeadersInit = {
 }
 
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const response = await fetchWithSemaphore(`${API_URL}${endpoint}`, {
     ...options,
     credentials: 'include',
     headers: { ...headers, ...options?.headers },
