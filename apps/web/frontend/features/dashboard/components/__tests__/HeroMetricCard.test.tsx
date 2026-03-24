@@ -1,11 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { TooltipProvider } from '@/components/ui/tooltip'
 import { HeroMetricCard } from '../HeroMetricCard'
 
-const renderWithTooltip = (ui: React.ReactElement) =>
-  render(<TooltipProvider>{ui}</TooltipProvider>)
-
+// Mock Recharts AreaChartComponent — it uses ResizeObserver which isn't in jsdom
+vi.mock('@/components/charts/area-chart', () => ({
+  AreaChartComponent: ({ ariaLabel }: { ariaLabel?: string }) => (
+    <div data-testid="area-chart" aria-label={ariaLabel} />
+  ),
+}))
 
 const baseProps = {
   label: 'Total Events',
@@ -18,52 +20,52 @@ const baseProps = {
 
 describe('HeroMetricCard', () => {
   it('renders the metric label', () => {
-    renderWithTooltip(<HeroMetricCard {...baseProps} />)
+    render(<HeroMetricCard {...baseProps} />)
     expect(screen.getByText('Total Events')).toBeInTheDocument()
   })
 
   it('renders the formatted value', () => {
-    renderWithTooltip(<HeroMetricCard {...baseProps} />)
+    render(<HeroMetricCard {...baseProps} />)
     expect(screen.getByText('1.24M')).toBeInTheDocument()
   })
 
   it('renders positive % change', () => {
-    renderWithTooltip(<HeroMetricCard {...baseProps} pctChange={12.4} />)
+    render(<HeroMetricCard {...baseProps} pctChange={12.4} />)
     expect(screen.getByText(/12\.4%/)).toBeInTheDocument()
     expect(screen.getByText(/↑/)).toBeInTheDocument()
   })
 
   it('renders negative % change', () => {
-    renderWithTooltip(<HeroMetricCard {...baseProps} pctChange={-2.3} />)
+    render(<HeroMetricCard {...baseProps} pctChange={-2.3} />)
     expect(screen.getByText(/2\.3%/)).toBeInTheDocument()
     expect(screen.getByText(/↓/)).toBeInTheDocument()
   })
 
   it('renders "—" when pctChange is null', () => {
-    renderWithTooltip(<HeroMetricCard {...baseProps} pctChange={null} />)
+    render(<HeroMetricCard {...baseProps} pctChange={null} />)
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
   it('renders "0.0%" with no directional arrow when pctChange is 0', () => {
-    renderWithTooltip(<HeroMetricCard {...baseProps} pctChange={0} />)
+    render(<HeroMetricCard {...baseProps} pctChange={0} />)
     expect(screen.getByText('0.0%')).toBeInTheDocument()
     expect(screen.queryByText('↑')).not.toBeInTheDocument()
     expect(screen.queryByText('↓')).not.toBeInTheDocument()
   })
 
   it('renders the previous value', () => {
-    renderWithTooltip(<HeroMetricCard {...baseProps} />)
-    expect(screen.getByText('1.10M')).toBeInTheDocument()
+    render(<HeroMetricCard {...baseProps} />)
+    expect(screen.getByText(/prev: 1\.10M/)).toBeInTheDocument()
   })
 
   it('renders the area chart', () => {
-    renderWithTooltip(<HeroMetricCard {...baseProps} />)
-    expect(document.querySelector('.recharts-responsive-container')).toBeTruthy()
+    render(<HeroMetricCard {...baseProps} />)
+    expect(screen.getByTestId('area-chart')).toBeInTheDocument()
   })
 
-  it('renders loading bar when loading is true', () => {
-    renderWithTooltip(<HeroMetricCard {...baseProps} loading />)
-    // Content is opacity-0 but still in DOM; loading bar is rendered
-    expect(document.querySelector('.bg-primary\\/50')).toBeTruthy()
+  it('renders loading skeleton when loading is true', () => {
+    render(<HeroMetricCard {...baseProps} loading />)
+    expect(screen.queryByText('1.24M')).not.toBeInTheDocument()
+    expect(document.querySelector('[class*="animate-pulse"]')).toBeTruthy()
   })
 })

@@ -4,7 +4,7 @@ import { vi } from 'vitest'
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
-    matches: query === '(prefers-reduced-motion: reduce)',
+    matches: false,
     media: query,
     onchange: null,
     addListener: vi.fn(),
