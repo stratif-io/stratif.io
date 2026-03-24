@@ -29,7 +29,8 @@ interface MaskedInputProps {
 }
 
 function MaskedInput({ id, name, placeholder, initialValue }: MaskedInputProps) {
-  const isMasked = initialValue === MASKED
+  // null = backend signals "field exists but is sensitive/hidden"; MASKED kept for safety
+  const isMasked = initialValue === null || initialValue === MASKED
   const [value, setValue] = useState(isMasked ? MASKED : (initialValue ?? ''))
   const [show, setShow] = useState(false)
   const [edited, setEdited] = useState(false)
