@@ -5,6 +5,7 @@ import { DateRangePicker } from '@/components/DateRangePicker'
 import { FilterSelect } from '@/components/FilterSelect'
 import { Button } from '@/components/ui/button'
 import { DbLogo } from '@/components/DbLogo'
+import { DB_BRAND_COLORS } from '@/lib/db-colors'
 import { FilterBar } from '@/components/shared/FilterBar'
 import { GlobalFilters } from '@/components/GlobalFilters'
 import { QueryStatusIndicator } from '@/components/layout/QueryStatusIndicator'
@@ -176,6 +177,19 @@ export function AppComponentsSection() {
           <DbLogo dbType="redshift" size={28} />
           <DbLogo dbType="mysql" size={28} />
           <DbLogo dbType="sqlite" size={28} />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="DbLogo (brand colors)">
+        <div className="flex items-center gap-4">
+          {(['duckdb','postgresql','bigquery','snowflake','databricks','clickhouse','redshift','mysql','sqlite'] as const).map((db) => (
+            <DbLogo
+              key={db}
+              dbType={db}
+              size={28}
+              style={{ color: DB_BRAND_COLORS[db] }}
+            />
+          ))}
         </div>
       </ComponentRow>
 
