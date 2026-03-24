@@ -49,6 +49,7 @@ class PostgreSQLSeeder(BaseSeeder):
     # ------------------------------------------------------------------
 
     def _create_events_table(self) -> None:
+        assert self._conn is not None, "_conn not initialized — call seed() first"
         with self._conn.cursor() as cur:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS events (
@@ -65,6 +66,7 @@ class PostgreSQLSeeder(BaseSeeder):
         self._conn.commit()
 
     def _insert_events(self, events: list[tuple]) -> None:
+        assert self._conn is not None, "_conn not initialized — call seed() first"
         if not events:
             return
         rows = [(e[0], e[1], e[2], json.dumps(e[3])) for e in events]

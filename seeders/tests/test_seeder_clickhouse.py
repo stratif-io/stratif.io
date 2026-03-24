@@ -7,7 +7,7 @@ from seeders.seeder_clickhouse import ClickHouseSeeder
 
 @pytest.fixture(scope="module")
 def clickhouse_container():
-    with ClickHouseContainer("clickhouse/clickhouse-server:latest") as ch:
+    with ClickHouseContainer("clickhouse/clickhouse-server:24.3") as ch:
         yield ch
 
 

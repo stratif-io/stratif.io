@@ -51,6 +51,7 @@ class ClickHouseSeeder(BaseSeeder):
     # ------------------------------------------------------------------
 
     def _create_events_table(self) -> None:
+        assert self._client is not None, "_client not initialized — call seed() first"
         self._client.command("""
             CREATE TABLE IF NOT EXISTS events (
                 user_id     String,
@@ -64,6 +65,7 @@ class ClickHouseSeeder(BaseSeeder):
         """)
 
     def _insert_events(self, events: list[tuple]) -> None:
+        assert self._client is not None, "_client not initialized — call seed() first"
         if not events:
             return
         self._client.insert(
