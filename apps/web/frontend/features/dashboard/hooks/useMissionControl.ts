@@ -40,7 +40,7 @@ export function useMissionControl({
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
   const { activeFilters, activeConnectionId } = useAppStore()
 
-  const enabled = !!activeConnectionId
+  const enabled = !!activeConnectionId && !!startDate && !!endDate
 
   // Previous period calculation (same as useMissionControlTrends)
   const periodDays =
