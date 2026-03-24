@@ -110,6 +110,11 @@ stratif.io stores encrypted credentials for client analytics databases. Security
 
 Feature work should be done in an isolated worktree, not directly on `main`. Use the `superpowers:using-git-worktrees` skill to set one up — it handles directory selection, `.gitignore` verification, dependency install, and baseline test check automatically. The `.worktrees/` directory is already in `.gitignore`.
 
+After creating a worktree, symlink `.env`:
+```bash
+ln -s "$(git rev-parse --show-toplevel)/.env" "$WORKTREE_PATH/.env"
+```
+
 ## Adding a Feature
 
 1. Create `apps/web/frontend/features/<feature>/` with `components/` and `hooks/` subdirectories
