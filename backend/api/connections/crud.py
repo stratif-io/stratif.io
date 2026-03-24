@@ -258,7 +258,7 @@ async def get_connection_credentials(conn_id: str):
     row = _get_connection_or_404(conn_id)
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
-        return {"fields": {k: ("*" * 8 if "password" in k.lower() or "token" in k.lower() or "secret" in k.lower() else v)
+        return {"fields": {k: (None if "password" in k.lower() or "token" in k.lower() or "secret" in k.lower() else v)
                            for k, v in creds.items()}}
     except ValueError:
         raise HTTPException(500, "Failed to decrypt credentials")
