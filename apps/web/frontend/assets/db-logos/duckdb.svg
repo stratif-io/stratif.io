@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+  <!-- DuckDB: not available in simple-icons — hand-crafted brand-approximate icon.
+       currentColor = the yellow half (brand color applied by DbLogo).
+       The dark half uses a hardcoded fill (#1C1C1C) — no theming hook. -->
+  <circle cx="12" cy="12" r="10"/>
+  <path fill="#1C1C1C" d="M12 2a10 10 0 0 1 0 20V2z"/>
+  <circle cx="15" cy="9.5" r="2" fill="#1C1C1C"/>
+  <circle cx="15.8" cy="8.8" r=".8" fill="currentColor"/>
+</svg>
