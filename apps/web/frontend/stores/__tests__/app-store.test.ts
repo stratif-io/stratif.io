@@ -257,6 +257,46 @@ describe('useAppStore', () => {
     })
   })
 
+  describe('query count state', () => {
+    beforeEach(() => {
+      useAppStore.setState({
+        runningQueries: 0,
+        queuedQueries: 0,
+        queryEverActive: false,
+      })
+    })
+
+    it('initializes with zero counts and queryEverActive false', () => {
+      const { runningQueries, queuedQueries, queryEverActive } = useAppStore.getState()
+      expect(runningQueries).toBe(0)
+      expect(queuedQueries).toBe(0)
+      expect(queryEverActive).toBe(false)
+    })
+
+    it('setQueryCounts updates running and queued', () => {
+      useAppStore.getState().setQueryCounts(3, 2)
+      const { runningQueries, queuedQueries } = useAppStore.getState()
+      expect(runningQueries).toBe(3)
+      expect(queuedQueries).toBe(2)
+    })
+
+    it('sets queryEverActive to true on first non-zero call', () => {
+      useAppStore.getState().setQueryCounts(1, 0)
+      expect(useAppStore.getState().queryEverActive).toBe(true)
+    })
+
+    it('keeps queryEverActive true after counts return to zero', () => {
+      useAppStore.getState().setQueryCounts(1, 0)
+      useAppStore.getState().setQueryCounts(0, 0)
+      expect(useAppStore.getState().queryEverActive).toBe(true)
+    })
+
+    it('does not set queryEverActive when called with zeros', () => {
+      useAppStore.getState().setQueryCounts(0, 0)
+      expect(useAppStore.getState().queryEverActive).toBe(false)
+    })
+  })
+
   describe('hook usage', () => {
     it('can select specific state slices', () => {
       const { result } = renderHook(() => useAppStore((state) => state.theme))
