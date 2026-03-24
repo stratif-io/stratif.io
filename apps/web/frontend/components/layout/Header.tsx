@@ -10,6 +10,7 @@ import {
 import { Moon, Sun, Menu, Monitor } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
+import { QueryStatusIndicator } from './QueryStatusIndicator'
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
@@ -38,7 +39,8 @@ export function Header() {
         </div>
 
         {/* Right actions */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <QueryStatusIndicator />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Change theme">
