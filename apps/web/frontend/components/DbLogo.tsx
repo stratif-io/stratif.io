@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import type { DbType } from '@/types'
+import { DB_BRAND_COLORS } from '@/lib/db-colors'
 
 import PostgreSQLIcon from '@/assets/db-logos/postgresql.svg?react'
 import DuckDBIcon from '@/assets/db-logos/duckdb.svg?react'
@@ -30,18 +31,6 @@ const DB_ICONS: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>
   bigquery: BigQueryIcon,
   redshift: RedshiftIcon,
   mysql: MySQLIcon,
-}
-
-export const DB_BRAND_COLORS: Record<string, string> = {
-  postgresql: '#336791',
-  duckdb: '#E6B800',
-  databricks: '#FF3621',
-  snowflake: '#29B5E8',
-  clickhouse: '#D4A800',
-  sqlite: '#003B57',
-  bigquery: '#4285F4',
-  redshift: '#8C4FFF',
-  mysql: '#4479A1',
 }
 
 function GenericDbLogo({ size }: { size: number }) {
