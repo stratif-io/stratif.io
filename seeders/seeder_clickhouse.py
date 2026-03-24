@@ -6,7 +6,7 @@ Usage:
 Install the optional clickhouse dep if needed:
     uv pip install ".[clickhouse]"
 
-Required env vars (or set in seeders/.env.seed):
+Required env vars (or set in seeders/.env):
     CLICKHOUSE_HOST, CLICKHOUSE_PORT, CLICKHOUSE_USER, CLICKHOUSE_PASSWORD, CLICKHOUSE_DATABASE
 """
 
@@ -32,7 +32,7 @@ class ClickHouseConfig(BaseSettings):
     clickhouse_database: str = "default"
 
     class Config:
-        env_file = str(Path(__file__).parent / ".env.seed")
+        env_file = str(Path(__file__).parent / ".env")
         env_file_encoding = "utf-8"
         extra = "ignore"
 
@@ -89,7 +89,9 @@ class ClickHouseSeeder(BaseSeeder):
             database=cfg.clickhouse_database,
         )
 
-        users: list[dict] = []
+        self._generate_products()
+        users = self._generate_users()
+
         total_events = 0
         self._client = clickhouse_connect.get_client(
             host=cfg.clickhouse_host,
@@ -99,9 +101,7 @@ class ClickHouseSeeder(BaseSeeder):
             database=cfg.clickhouse_database,
         )
         try:
-            self._generate_products()
             self._create_events_table()
-            users = self._generate_users()
 
             for batch in self._generate_events_batched(users):
                 self._insert_events(batch)

@@ -290,7 +290,7 @@ def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
         return db
 
     conn = backend.open(credentials, read_only=True)
-    cols = backend.get_table_columns(conn, f'"{events_table}"')
+    cols = backend.get_table_columns(conn, f'{_iq}{events_table}{_iq}')
     return AnalyticsDatabase(
         conn, backend, events_cte=events_cte, available_columns=cols or None, **shared_kwargs
     )

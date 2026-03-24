@@ -80,6 +80,16 @@ def date_trunc(unit: str, col_expr: str, dialect: str = "duckdb") -> str:
         }
         return _tsql_map.get(unit, f"CAST({col_expr} AS DATE)")
 
+    if dialect == "clickhouse":
+        _ch_map: dict[str, str] = {
+            "hour": f"toStartOfHour({col_expr})",
+            "day": f"toStartOfDay({col_expr})",
+            "week": f"toStartOfWeek({col_expr})",
+            "month": f"toStartOfMonth({col_expr})",
+            "year": f"toStartOfYear({col_expr})",
+        }
+        return _ch_map.get(unit, f"toStartOfDay({col_expr})")
+
     # DuckDB, Postgres, Snowflake, Redshift
     return f"DATE_TRUNC('{unit}', {col_expr})"
 
@@ -158,6 +168,8 @@ def epoch_diff_seconds(start_expr: str, end_expr: str, dialect: str = "duckdb") 
         return f"DATEDIFF(second, {start_expr}, {end_expr})"
     if dialect == "databricks":
         return f"(unix_timestamp({end_expr}) - unix_timestamp({start_expr}))"
+    if dialect == "clickhouse":
+        return f"dateDiff('second', {start_expr}, {end_expr})"
     # DuckDB, Postgres
     return f"EXTRACT(EPOCH FROM ({end_expr} - {start_expr}))"
 
@@ -207,6 +219,8 @@ def interval_minutes_exceeded(
         return f"DATEDIFF(minute, {col_earlier}, {col_later}) > {minutes}"
     if dialect == "databricks":
         return f"(unix_timestamp({col_later}) - unix_timestamp({col_earlier})) > {minutes * 60}"
+    if dialect == "clickhouse":
+        return f"dateDiff('minute', {col_earlier}, {col_later}) > {minutes}"
     # DuckDB, Postgres, Snowflake
     return f"{col_later} - {col_earlier} > INTERVAL '{minutes} minutes'"
 
@@ -233,7 +247,7 @@ def string_concat(*parts: str, dialect: str = "duckdb") -> str:
         string_concat("user_id", "'-'", "CAST(n AS TEXT)", dialect="mysql")
         → CONCAT(user_id, '-', CAST(n AS TEXT))
     """
-    if dialect == "mysql":
+    if dialect in ("mysql", "clickhouse"):
         return f"CONCAT({', '.join(parts)})"
     return " || ".join(parts)
 
@@ -257,7 +271,26 @@ def cast_to_text(expr: str, dialect: str = "duckdb") -> str:
         return f"CAST({expr} AS CHAR)"
     if dialect == "databricks":
         return f"CAST({expr} AS STRING)"
+    if dialect == "clickhouse":
+        return f"toString({expr})"
     return f"CAST({expr} AS TEXT)"
+
+
+def lag_expr(col_expr: str, offset: int = 1, dialect: str = "duckdb") -> str:
+    """LAG window function fragment (without OVER clause).
+
+    ClickHouse uses ``lagInFrame`` and requires an explicit frame spec on the
+    OVER clause; all other dialects support standard ``LAG``.
+
+    Returns just the function call — the caller must append the OVER clause,
+    e.g. ``f"{lag_expr('timestamp', dialect=d)} OVER (PARTITION BY ...)"``
+
+    For ClickHouse the caller must include
+    ``ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING`` in the frame.
+    """
+    if dialect == "clickhouse":
+        return f"lagInFrame({col_expr}, {offset})"
+    return f"LAG({col_expr}, {offset})"
 
 
 # ---------------------------------------------------------------------------
@@ -313,6 +346,10 @@ def json_extract_string(col: str, key: str, dialect: str = "duckdb") -> str:
     if dialect == "databricks":
         # For JSON / VARIANT string columns use get_json_object
         return f"get_json_object({col}, '{json_path}')"
+    if dialect == "clickhouse":
+        if len(parts) == 1:
+            return f"JSONExtractString({col}, '{key}')"
+        return f"JSONExtractString({col}, {', '.join(repr(p) for p in parts)})"
     # DuckDB: always use json_extract_string() which explicitly returns VARCHAR.
     # The ->> operator on DuckDB JSON columns returns a JSON type (not VARCHAR),
     # which causes ConversionException when compared to a bound string parameter.

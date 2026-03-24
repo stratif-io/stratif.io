@@ -88,8 +88,6 @@ export function TrendsPage() {
     localFilters,
   })
 
-  if (isError) return <QueryError error={error} />
-
   const measureIsNonDefault = measure !== 'count_events'
 
   return (
@@ -277,7 +275,9 @@ export function TrendsPage() {
                   onChange={setLocalFilters}
                 />
               </div>
-              {isLoading ? (
+              {isError ? (
+                <QueryError error={error} className="h-[300px] sm:h-[380px] lg:h-[450px]" />
+              ) : isLoading ? (
                 <ChartSkeleton height="h-[300px] sm:h-[380px] lg:h-[450px]" />
               ) : trendData.length === 0 ? (
                 <EmptyState
