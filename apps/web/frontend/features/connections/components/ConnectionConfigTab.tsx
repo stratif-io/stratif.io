@@ -438,9 +438,13 @@ export function ConnectionConfigTab({ connection }: Props) {
   function saveCredentials() {
     if (!formRef.current) return
     const credentials = buildCredentials(connection.db_type, formRef.current)
-    const hasCredentials = Object.values(credentials).some((v) => v !== '' && v !== null)
-    if (hasCredentials) {
-      update.mutate({ credentials })
+    // Strip empty-string values — masked fields return '' to signal "unchanged".
+    // The backend merges partial credentials with existing stored ones.
+    const changedCredentials = Object.fromEntries(
+      Object.entries(credentials).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+    )
+    if (Object.keys(changedCredentials).length > 0) {
+      update.mutate({ credentials: changedCredentials })
     }
   }
 
