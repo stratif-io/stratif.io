@@ -98,7 +98,7 @@ async def test_connection(conn_id: str):
         creds = decrypt_credentials(row["credentials_encrypted"])
         credentials = backend.parse_credentials(creds)
         conn = backend.open(credentials, read_only=True)
-        conn.execute("SELECT 1")
+        backend.execute(conn, "SELECT 1", None)
         conn.close()
 
     try:

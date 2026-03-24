@@ -111,7 +111,6 @@ export function RetentionPage() {
 
   const isEmpty = !isLoading && retentionData.length === 0
 
-  if (isError) return <QueryError error={error} />
 
   return (
     <PageTransition>
@@ -174,7 +173,11 @@ export function RetentionPage() {
           <Card className="relative overflow-hidden">
             <CardLoadingBar loading={isLoading} />
             <CardContent className="p-0 pb-0">
-              {isLoading ? (
+              {isError ? (
+                <div className="p-6">
+                  <QueryError error={error} />
+                </div>
+              ) : isLoading ? (
                 <div className="p-6">
                   <TableSkeleton />
                 </div>

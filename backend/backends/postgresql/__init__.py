@@ -45,7 +45,9 @@ class PostgreSQLBackend:
                             user=creds.user, password=creds.password)
         if creds.sslmode:
             kwargs["sslmode"] = creds.sslmode
-        return psycopg2.connect(**kwargs)
+        conn = psycopg2.connect(**kwargs)
+        conn.autocommit = True
+        return conn
 
     def pool_key(self, connection_id: str, credentials: BaseModel) -> tuple:
         return (connection_id, "postgres")

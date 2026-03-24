@@ -1,7 +1,7 @@
 """DuckDB seeder — writes analytics events to a DuckDB file.
 
 Usage:
-    uv run seed-duckdb                        # uses seeders/.env.seed defaults
+    uv run seed-duckdb                        # uses seeders/.env defaults
     uv run seed-duckdb --out db/custom.duckdb # custom path
     uv run seed-duckdb --users 5000           # fewer users
     uv run seed-duckdb --seed 42              # reproducible output

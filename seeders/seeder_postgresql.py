@@ -3,7 +3,7 @@
 Usage:
     uv run seed-postgres
 
-Required env vars (or set in seeders/.env.seed):
+Required env vars (or set in seeders/.env):
     POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DATABASE
 """
 
@@ -30,7 +30,7 @@ class PostgresConfig(BaseSettings):
     postgres_database: str = "postgres"
 
     class Config:
-        env_file = str(Path(__file__).parent / ".env.seed")
+        env_file = str(Path(__file__).parent / ".env")
         env_file_encoding = "utf-8"
         extra = "ignore"
 
@@ -50,7 +50,8 @@ class PostgreSQLSeeder(BaseSeeder):
 
     def _create_events_table(self) -> None:
         assert self._conn is not None, "_conn not initialized — call seed() first"
-        with self._conn.cursor() as cur:
+        cur = self._conn.cursor()
+        try:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS events (
                     user_id     TEXT        NOT NULL,
@@ -63,6 +64,8 @@ class PostgreSQLSeeder(BaseSeeder):
                 "CREATE INDEX IF NOT EXISTS idx_events_user_ts "
                 "ON events (user_id, timestamp)"
             )
+        finally:
+            cur.close()
         self._conn.commit()
 
     def _insert_events(self, events: list[tuple]) -> None:
@@ -70,7 +73,8 @@ class PostgreSQLSeeder(BaseSeeder):
         if not events:
             return
         rows = [(e[0], e[1], e[2], json.dumps(e[3])) for e in events]
-        with self._conn.cursor() as cur:
+        cur = self._conn.cursor()
+        try:
             psycopg2.extras.execute_batch(
                 cur,
                 "INSERT INTO events (user_id, event_name, timestamp, properties) "
@@ -78,6 +82,8 @@ class PostgreSQLSeeder(BaseSeeder):
                 rows,
                 page_size=1000,
             )
+        finally:
+            cur.close()
         self._conn.commit()
 
     def seed(self) -> dict[str, int]:
@@ -90,7 +96,9 @@ class PostgreSQLSeeder(BaseSeeder):
             database=cfg.postgres_database,
         )
 
-        users: list[dict] = []
+        self._generate_products()
+        users = self._generate_users()
+
         total_events = 0
         self._conn = psycopg2.connect(
             host=cfg.postgres_host,
@@ -100,9 +108,7 @@ class PostgreSQLSeeder(BaseSeeder):
             password=cfg.postgres_password,
         )
         try:
-            self._generate_products()
             self._create_events_table()
-            users = self._generate_users()
 
             for batch in self._generate_events_batched(users):
                 self._insert_events(batch)

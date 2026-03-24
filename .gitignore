@@ -34,6 +34,7 @@ Thumbs.db
 *.log
 .env
 seeders/.env.seed
+seeders/.env
 .worktrees/
 
 # Local secrets — never commit

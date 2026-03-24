@@ -243,8 +243,6 @@ export function EventsPage() {
     XLSX.writeFile(wb, 'events.xlsx')
   }, [getExportRows])
 
-  if (isError) return <QueryError error={error} />
-
   return (
     <PageTransition>
       <div className={SPACING.page}>
@@ -277,7 +275,7 @@ export function EventsPage() {
         <Card className="relative overflow-hidden">
           <CardLoadingBar loading={isFetching} />
           <CardContent className="p-0">
-            <EventsTable
+            {isError ? <QueryError error={error} className="py-16" /> : <EventsTable
                 data={events}
                 total={rawEventsData?.total ?? 0}
                 page={page}
@@ -303,7 +301,7 @@ export function EventsPage() {
                 connectionId={activeConnectionId}
                 colVisibility={colVisibility}
                 onColumnVisibilityChange={setColVisibility}
-              />
+              />}
           </CardContent>
         </Card>
       </div>
