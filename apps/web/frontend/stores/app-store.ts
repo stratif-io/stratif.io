@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { DateRange } from '@/types'
+import { initSemaphore } from '@/lib/api/semaphore'
 
 interface AppState {
   theme: 'light' | 'dark' | 'system'
@@ -30,6 +31,12 @@ interface AppState {
 
   activeConnectionId: string | null
   setActiveConnectionId: (id: string | null) => void
+
+  // Query concurrency tracking — ephemeral, not persisted
+  runningQueries: number
+  queuedQueries: number
+  queryEverActive: boolean
+  setQueryCounts: (running: number, queued: number) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -65,6 +72,16 @@ export const useAppStore = create<AppState>()(
 
       activeConnectionId: null,
       setActiveConnectionId: (activeConnectionId) => set({ activeConnectionId, activeFilters: {} }),
+
+      runningQueries: 0,
+      queuedQueries: 0,
+      queryEverActive: false,
+      setQueryCounts: (running, queued) =>
+        set((state) => ({
+          runningQueries: running,
+          queuedQueries: queued,
+          queryEverActive: state.queryEverActive || running > 0 || queued > 0,
+        })),
     }),
     {
       name: 'stratifio-storage',
@@ -88,3 +105,9 @@ export const useAppStore = create<AppState>()(
     }
   )
 )
+
+// Initialize the global query semaphore, wired to the Zustand store.
+// Must run after store creation to avoid circular dependency.
+initSemaphore((running, queued) => {
+  useAppStore.getState().setQueryCounts(running, queued)
+})

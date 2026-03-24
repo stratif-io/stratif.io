@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { DbLogo } from '@/components/DbLogo'
 import { FilterBar } from '@/components/shared/FilterBar'
 import { GlobalFilters } from '@/components/GlobalFilters'
+import { QueryStatusIndicator } from '@/components/layout/QueryStatusIndicator'
+import { useAppStore } from '@/stores'
 import { subDays } from 'date-fns'
 import type { DateRange } from '@/types'
 
@@ -45,6 +47,31 @@ function FilterSelectDemo() {
       onChange={(v) => setValue(v as string)}
       placeholder="Select event…"
     />
+  )
+}
+
+function QueryStatusIndicatorDemo() {
+  const setQueryCounts = useAppStore((s) => s.setQueryCounts)
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <QueryStatusIndicator />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => setQueryCounts(3, 2)}>
+            3 running · 2 queued
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setQueryCounts(1, 0)}>
+            1 running
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setQueryCounts(0, 0)}>
+            all done
+          </Button>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        After "all done", the pill fades out after 3 s. Click a running state to bring it back.
+      </p>
+    </div>
   )
 }
 
@@ -168,6 +195,10 @@ export function AppComponentsSection() {
         <div className="w-full max-w-2xl">
           <GlobalFilters />
         </div>
+      </ComponentRow>
+
+      <ComponentRow label="QueryStatusIndicator">
+        <QueryStatusIndicatorDemo />
       </ComponentRow>
 
     </ComponentSection>
