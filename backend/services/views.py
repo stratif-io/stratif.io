@@ -15,6 +15,7 @@ from backend.services.sql_builder import (
     epoch_diff_seconds,
     interval_minutes_exceeded,
     json_extract_string,
+    lag_expr,
     string_concat,
 )
 
@@ -46,6 +47,8 @@ def session_ctes(session_timeout_minutes: int = 30, dialect: str = "duckdb") -> 
     duration_expr = epoch_diff_seconds("MIN(timestamp)", "MAX(timestamp)", dialect)
     session_num_cast = cast_to_text("session_number", dialect)
     session_id_expr = string_concat("user_id", "'-'", session_num_cast, dialect=dialect)
+    lag_ts = lag_expr("timestamp", 1, dialect)
+    lag_frame = " ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING" if dialect == "clickhouse" else ""
 
     return f"""
 events_with_lag AS (
@@ -53,7 +56,7 @@ events_with_lag AS (
         user_id,
         event_name,
         timestamp,
-        LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp) AS prev_timestamp
+        {lag_ts} OVER (PARTITION BY user_id ORDER BY timestamp{lag_frame}) AS prev_timestamp
     FROM events
 ),
 session_markers AS (
@@ -138,6 +141,12 @@ def path_analysis_ctes(
     row_num_cast = cast_to_text("ROW_NUMBER() OVER (ORDER BY timestamp)", dialect)
     event_id_expr = string_concat("user_id", "'-'", row_num_cast, dialect=dialect)
 
+    lag_ts = lag_expr("timestamp", 1, dialect)
+    lag_en1 = lag_expr("event_name", 1, dialect)
+    lag_en2 = lag_expr("event_name", 2, dialect)
+    lag_en3 = lag_expr("event_name", 3, dialect)
+    lag_frame = " ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING" if dialect == "clickhouse" else ""
+
     return f"""
 events_with_lag AS (
     SELECT
@@ -145,10 +154,10 @@ events_with_lag AS (
         event_name,
         timestamp,
         {device_type_expr} AS device_type,
-        LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp) AS prev_timestamp,
-        LAG(event_name, 1) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_1,
-        LAG(event_name, 2) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_2,
-        LAG(event_name, 3) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_3
+        {lag_ts} OVER (PARTITION BY user_id ORDER BY timestamp{lag_frame}) AS prev_timestamp,
+        {lag_en1} OVER (PARTITION BY user_id ORDER BY timestamp{lag_frame}) AS step_minus_1,
+        {lag_en2} OVER (PARTITION BY user_id ORDER BY timestamp{lag_frame}) AS step_minus_2,
+        {lag_en3} OVER (PARTITION BY user_id ORDER BY timestamp{lag_frame}) AS step_minus_3
     FROM events
 ),
 events_with_session AS (

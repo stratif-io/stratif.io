@@ -144,14 +144,14 @@ def _fetch_period_metrics(
     dau_mau_ratio = round(dau / mau, 4) if mau else 0.0
 
     return {
-        "total_events": total_events,
-        "unique_users": unique_users,
-        "total_sessions": total_sessions,
-        "avg_session_duration_sec": avg_session_duration_sec,
-        "avg_events_per_session": avg_events_per_session,
-        "new_users": new_users,
-        "returning_users": returning_users,
-        "dau_mau_ratio": dau_mau_ratio,
+        "total_events": int(total_events),
+        "unique_users": int(unique_users),
+        "total_sessions": int(total_sessions),
+        "avg_session_duration_sec": float(avg_session_duration_sec),
+        "avg_events_per_session": float(avg_events_per_session),
+        "new_users": int(new_users),
+        "returning_users": int(returning_users),
+        "dau_mau_ratio": float(dau_mau_ratio),
     }
 
 
@@ -364,7 +364,11 @@ def get_mission_control_metric(
         current_value = _fetch_single_metric_all_time(db, metric, filter_clauses, filter_params)
         previous_value = None
 
-    return {"metric": metric, "current": current_value, "previous": previous_value}
+    return {
+        "metric": metric,
+        "current": float(current_value),
+        "previous": float(previous_value) if previous_value is not None else None,
+    }
 
 
 @router.get("/mission-control/trend")
@@ -539,7 +543,7 @@ def get_mission_control_trend(
             data.append({"date": str(current_day), "value": ratio})
             current_day += timedelta(days=1)
 
-    return {"metric": metric, "data": data}
+    return {"metric": metric, "data": [{"date": d["date"], "value": float(d["value"])} for d in data]}
 
 
 @router.get("/mission-control")

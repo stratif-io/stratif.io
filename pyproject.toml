@@ -32,6 +32,8 @@ clickhouse = ["clickhouse-connect>=0.7.0"]
 serve = "backend.main:main"
 seed-duckdb = "seeders.seeder_duckdb:main"
 seed-sqlite = "seeders.seeder_sqlite:main"
+seed-postgres = "seeders.seeder_postgresql:main"
+seed-clickhouse = "seeders.seeder_clickhouse:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -49,7 +51,7 @@ dev = [
     "pytest>=8.4.2",
     "ruff>=0.15.2",
     "ty>=0.0.17",
-    "testcontainers[clickhouse]>=4.8",
+    "testcontainers[clickhouse,postgres]>=4.8",
     "fakesnow>=0.9.0",
 ]
 

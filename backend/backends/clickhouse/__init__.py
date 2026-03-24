@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from backend.backends._utils import infer_type, pick_events_table, suggest_fields
+from backend.backends._utils import infer_type, pick_events_table, sample_property_types, suggest_fields
 from backend.backends.base import ColumnInfo, SchemaInfo
 from backend.backends.clickhouse.credentials import ClickHouseCredentials
 
@@ -35,7 +35,7 @@ class ClickHouseBackend:
 
     @property
     def use_pool(self) -> bool:
-        return True
+        return False
 
     def parse_credentials(self, raw: dict) -> ClickHouseCredentials:
         return ClickHouseCredentials.model_validate(raw)
@@ -64,8 +64,8 @@ class ClickHouseBackend:
 
     def is_connection_error(self, exc: Exception) -> bool:
         try:
-            from clickhouse_connect.driver.exceptions import DatabaseError
-            return isinstance(exc, DatabaseError)
+            from clickhouse_connect.driver.exceptions import OperationalError
+            return isinstance(exc, OperationalError)
         except ImportError:
             return False
 
@@ -101,25 +101,94 @@ class ClickHouseBackend:
         result = conn.query(f"SHOW TABLES FROM `{schema}`")
         return [{"name": r[0], "full_name": f"{schema}.{r[0]}", "kind": "table"} for r in result.result_rows]
 
+    _CH_NUMERIC_CAST = "multiIf(isNull(toFloat64OrNull(toString({expr}))), NULL, 1.0)"
+
     def detect_schema(self, conn: Any, events_table_hint: str | None) -> SchemaInfo:
         tables = self.get_tables(conn)
         events_table = pick_events_table(tables, events_table_hint)
         if not events_table:
             return SchemaInfo(tables=tables, events_table="", columns=[], suggestions={},
                               proposed_custom_properties=[])
+
         result = conn.query(f"DESCRIBE TABLE `{events_table}`")
-        columns = [ColumnInfo(name=r[0], type=r[1]) for r in result.result_rows]
+        all_rows = [(r[0], r[1]) for r in result.result_rows]
+
+        # Only top-level columns (no dots) form the schema columns list.
+        top_level = [(name, typ) for name, typ in all_rows if "." not in name]
+        columns = [ColumnInfo(name=name, type=typ) for name, typ in top_level]
         suggestions = suggest_fields(columns)
         core_values = set(suggestions.values())
+
         proposed: list[dict] = []
+        json_exploded: set[str] = set()
+
+        def _extract_json_keys(col_name: str) -> list[str]:
+            try:
+                r = conn.query(
+                    f"SELECT DISTINCT arrayJoin(JSONExtractKeys(`{col_name}`)) AS k "
+                    f"FROM `{events_table}` WHERE `{col_name}` != '' LIMIT 500"
+                )
+                return [row[0] for row in r.result_rows if row[0]]
+            except Exception:
+                return []
+
+        def _looks_like_json(col_name: str) -> bool:
+            """Sample one non-null value and check if it's a JSON object."""
+            try:
+                r = conn.query(
+                    f"SELECT `{col_name}` FROM `{events_table}` "
+                    f"WHERE `{col_name}` IS NOT NULL AND `{col_name}` != '' LIMIT 1"
+                )
+                if not r.result_rows:
+                    return False
+                val = str(r.result_rows[0][0]).strip()
+                return val.startswith("{")
+            except Exception:
+                return False
+
+        def _ch_execute(sql: str):
+            try:
+                r = conn.query(sql.replace(f'"{events_table}"', f'`{events_table}`'))
+                return [tuple(row) for row in r.result_rows]
+            except Exception:
+                return None
+
         for col in columns:
             if col.name in core_values:
                 continue
-            sql_type = col.type.upper()
-            if "JSON" in sql_type or "STRING" in sql_type:
-                proposed.append({"name": col.name, "path": col.name, "type": "string"})
+            typ_upper = col.type.upper()
+            is_json_type = any(t in typ_upper for t in ("JSON", "OBJECT"))
+            is_string_type = "STRING" in typ_upper
+
+            if is_json_type or is_string_type:
+                should_explode = is_json_type or _looks_like_json(col.name)
             else:
-                proposed.append({"name": col.name, "path": col.name, "type": infer_type(sql_type)})
+                should_explode = False
+
+            if should_explode:
+                keys = _extract_json_keys(col.name)
+                if keys:
+                    string_props = [
+                        {"name": k, "path": f"{col.name}.{k}", "type": "string"}
+                        for k in keys
+                    ]
+                    prop_exprs = {
+                        p["name"]: self.json_extract_string(col.name, p["name"])
+                        for p in string_props
+                    }
+                    upgrades = sample_property_types(
+                        _ch_execute, events_table, prop_exprs, self._CH_NUMERIC_CAST
+                    )
+                    for p in string_props:
+                        if p["name"] in upgrades:
+                            p["type"] = upgrades[p["name"]]
+                    proposed.extend(string_props)
+                    json_exploded.add(col.name)
+                    continue
+
+            # Not JSON or no keys found — propose the column directly.
+            proposed.append({"name": col.name, "path": col.name, "type": infer_type(typ_upper)})
+
         return SchemaInfo(tables=tables, events_table=events_table, columns=columns,
                           suggestions=suggestions, proposed_custom_properties=proposed)
 

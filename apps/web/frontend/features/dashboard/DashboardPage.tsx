@@ -96,17 +96,20 @@ export function DashboardPage() {
     )
   }
 
-  if (isError) return <QueryError error={error} />
-
   return (
     <PageTransition>
       <div className={SPACING.page}>
         <div className={SPACING.section}>
           <h1 className={TYPOGRAPHY.pageLabel}>Mission Control</h1>
 
-          <MissionControlGrid data={data} trends={trends} metricLoading={metricLoading} />
-
-          <TopEvents events={topEvents} loading={eventsLoading} />
+          {isError ? (
+            <QueryError error={error} />
+          ) : (
+            <>
+              <MissionControlGrid data={data} trends={trends} metricLoading={metricLoading} />
+              <TopEvents events={topEvents} loading={eventsLoading} />
+            </>
+          )}
         </div>
       </div>
     </PageTransition>

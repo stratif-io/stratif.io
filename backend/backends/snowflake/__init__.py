@@ -30,24 +30,24 @@ class SnowflakeBackend:
         return SnowflakeCredentials.model_validate(raw)
 
     def connection_string(self, credentials: BaseModel) -> str | None:
-        creds = SnowflakeCredentials.model_validate(credentials.model_dump())
+        creds = SnowflakeCredentials.model_validate(credentials.model_dump(by_alias=True))
         role_part = f"&role={creds.role}" if creds.role else ""
         return (
             f"snowflake://{creds.user}:****@{creds.account}"
-            f"/{creds.database}/{creds.schema}"
+            f"/{creds.database}/{creds.schema_}"
             f"?warehouse={creds.warehouse}{role_part}"
         )
 
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         import snowflake.connector
-        creds = SnowflakeCredentials.model_validate(credentials.model_dump())
+        creds = SnowflakeCredentials.model_validate(credentials.model_dump(by_alias=True))
         kwargs: dict = dict(
             account=creds.account,
             user=creds.user,
             password=creds.password,
             warehouse=creds.warehouse,
             database=creds.database,
-            schema=creds.schema,
+            schema=creds.schema_,
         )
         if creds.role:
             kwargs["role"] = creds.role
