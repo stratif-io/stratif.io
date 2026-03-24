@@ -51,7 +51,7 @@ export function useMissionControlTrends({
       ? formatDateParam(subDays(dateRange.from, periodDays))
       : undefined
 
-  const enabled = !!activeConnectionId
+  const enabled = !!activeConnectionId && !!startDate && !!endDate
 
   // Current period queries (indices 0..N-1)
   // Previous period queries (indices N..2N-1)
