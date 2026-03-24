@@ -29,19 +29,24 @@ interface MaskedInputProps {
 }
 
 function MaskedInput({ id, name, placeholder, initialValue }: MaskedInputProps) {
-  const isMasked = initialValue === MASKED
-  const [value, setValue] = useState(isMasked ? MASKED : (initialValue ?? ''))
+  // A field is "masked" if it has any value from the server (the backend returns
+  // a placeholder — currently "********" — for sensitive fields). We don't compare
+  // against a magic string; instead we use `edited` to track whether the user has
+  // actually typed a new value. Until they do, data-masked='true' tells buildCredentials
+  // to skip this field so the stored secret is never overwritten.
+  const hasServerValue = initialValue !== null && initialValue !== undefined && initialValue !== ''
+  const [value, setValue] = useState(hasServerValue ? MASKED : '')
   const [show, setShow] = useState(false)
   const [edited, setEdited] = useState(false)
 
   useEffect(() => {
     if (!edited) {
-      setValue(isMasked ? MASKED : (initialValue ?? ''))
+      setValue(hasServerValue ? MASKED : '')
     }
-  }, [initialValue, isMasked, edited])
+  }, [initialValue, hasServerValue, edited])
 
   function handleFocus() {
-    if (value === MASKED) {
+    if (!edited) {
       setValue('')
       setEdited(true)
     }
@@ -53,7 +58,7 @@ function MaskedInput({ id, name, placeholder, initialValue }: MaskedInputProps) 
   }
 
   const displayType = show ? 'text' : 'password'
-  const isPlaceholderMask = value === MASKED
+  const isPlaceholderMask = !edited
 
   return (
     <div className="relative">
@@ -66,10 +71,10 @@ function MaskedInput({ id, name, placeholder, initialValue }: MaskedInputProps) 
         onFocus={handleFocus}
         onChange={handleChange}
         className="pr-9 font-mono"
-        // When value is the mask string, submit empty so backend keeps existing
+        // data-masked signals buildCredentials to skip this field (user hasn't changed it)
         data-masked={isPlaceholderMask ? 'true' : undefined}
       />
-      {isMasked && (
+      {hasServerValue && (
         <button
           type="button"
           tabIndex={-1}
@@ -262,7 +267,8 @@ function CredentialFields({ dbType, fields, onCheckboxChange }: CredentialFields
       )
 
     case 'clickhouse': {
-      const isSecure = f.secure !== 'false'
+      // f.secure is a boolean from JSON — must compare to boolean false, not string 'false'
+      const isSecure = f.secure !== false && f.secure !== 'false'
       return (
         <>
           <div className="grid grid-cols-3 gap-2">
@@ -291,6 +297,7 @@ function CredentialFields({ dbType, fields, onCheckboxChange }: CredentialFields
           </div>
           <div className="flex items-center gap-2">
             <input
+              key={String(isSecure)}
               id="secure"
               name="secure"
               type="checkbox"
@@ -438,9 +445,13 @@ export function ConnectionConfigTab({ connection }: Props) {
   function saveCredentials() {
     if (!formRef.current) return
     const credentials = buildCredentials(connection.db_type, formRef.current)
-    const hasCredentials = Object.values(credentials).some((v) => v !== '' && v !== null)
-    if (hasCredentials) {
-      update.mutate({ credentials })
+    // Strip empty-string values — masked fields return '' to signal "unchanged".
+    // The backend merges partial credentials with existing stored ones.
+    const changedCredentials = Object.fromEntries(
+      Object.entries(credentials).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+    )
+    if (Object.keys(changedCredentials).length > 0) {
+      update.mutate({ credentials: changedCredentials })
     }
   }
 
