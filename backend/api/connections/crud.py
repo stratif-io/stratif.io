@@ -70,7 +70,13 @@ async def update_connection(conn_id: str, body: ConnectionUpdate):
     db = get_product_db()
     now = _now()
     name = body.name if body.name is not None else row["name"]
-    encrypted = encrypt_credentials(body.credentials) if body.credentials is not None else row["credentials_encrypted"]
+    if body.credentials is not None:
+        # Merge partial credentials with existing ones so omitted fields (e.g. passwords) are preserved.
+        existing = decrypt_credentials(row["credentials_encrypted"])
+        merged = {**existing, **body.credentials}
+        encrypted = encrypt_credentials(merged)
+    else:
+        encrypted = row["credentials_encrypted"]
     db.execute(
         "UPDATE connections SET name = ?, credentials_encrypted = ?, updated_at = ? WHERE id = ?",
         (name, encrypted, now, conn_id),

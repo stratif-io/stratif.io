@@ -244,7 +244,14 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
     const credentials = buildCredentials(dbType, form)
 
     if (isEdit) {
-      update.mutate({ name, credentials }, { onSuccess: () => onOpenChange(false) })
+      // Strip empty-string values so unmodified fields (especially passwords) are not overwritten.
+      // The backend merges partial credentials with existing stored ones.
+      const changedCredentials = Object.fromEntries(
+        Object.entries(credentials).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+      )
+      const credentialsUpdate =
+        Object.keys(changedCredentials).length > 0 ? changedCredentials : undefined
+      update.mutate({ name, credentials: credentialsUpdate }, { onSuccess: () => onOpenChange(false) })
     } else {
       create.mutate(
         { name, db_type: dbType, credentials },
