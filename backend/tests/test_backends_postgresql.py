@@ -103,6 +103,13 @@ class TestPostgreSQLCTE:
         result = backend.prepend_events_cte("(SELECT * FROM raw)", "SELECT 1 FROM events")
         assert result.startswith("WITH events AS")
 
+    def test_build_events_cte_with_custom_props_includes_root_col(self, backend):
+        cte = backend.build_events_cte(
+            "raw", "uid", "ts", "action",
+            [{"name": "device", "path": "properties.device"}],
+        )
+        assert '"properties"' in cte
+
 
 class TestPostgreSQLDetectSchema:
     def test_detect_schema_infers_numeric_json_property(self, backend):
@@ -154,6 +161,9 @@ class TestPostgreSQLSQLFragments:
 
     def test_extract_day_of_week(self, backend):
         assert "DOW" in backend.extract_day_of_week("ts").upper()
+
+    def test_string_concat(self, backend):
+        assert backend.string_concat("a", "b") == "a || b"
 
     def test_extract_quarter(self, backend):
         assert "QUARTER" in backend.extract_quarter("ts").upper()

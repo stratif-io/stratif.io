@@ -109,3 +109,34 @@ class TestSnowflakeDialect:
 
     def test_extract_quarter(self, backend):
         assert "QUARTER" in backend.extract_quarter("ts").upper()
+
+
+class TestSnowflakeSQLFragments:
+    def test_date_trunc_day(self, backend):
+        result = backend.date_trunc("day", "ts")
+        assert "DATE_TRUNC" in result.upper() and "day" in result
+
+    def test_date_diff_days(self, backend):
+        result = backend.date_diff_days("a", "b")
+        assert "DATEDIFF" in result.upper() or "TIMESTAMPDIFF" in result.upper()
+
+    def test_json_extract_string(self, backend):
+        result = backend.json_extract_string("v", "key")
+        assert "v" in result and "key" in result
+
+    def test_build_events_cte_no_exclude(self, backend):
+        cte = backend.build_events_cte("raw", "uid", "ts", "action", [])
+        assert "EXCLUDE" not in cte
+
+    def test_cast_to_text(self, backend):
+        result = backend.cast_to_text("x")
+        assert "x" in result
+        assert "TEXT" in result.upper() or "VARCHAR" in result.upper() or "STRING" in result.upper()
+
+    def test_interval_minutes_exceeded(self, backend):
+        result = backend.interval_minutes_exceeded("a", "b", 30)
+        assert "30" in result
+
+    def test_string_concat(self, backend):
+        result = backend.string_concat("a", "b")
+        assert "||" in result or "CONCAT" in result.upper()
