@@ -216,8 +216,8 @@ Methods are named `test_01_` through `test_11_` (zero-padded). Pytest's default 
 | `GET /api/trend` | Object with `data` key (list) |
 | `GET /api/retention` | Object with `data` key (list) |
 | `GET /api/conversion` | Object with `data` key (list) |
-| `GET /api/paths` | Object with `nodes` and `links` keys |
-| `GET /api/pivot` | Object with `rows` key (list) |
+| `GET /api/paths` | Object with `data` key (list) |
+| `GET /api/pivot` | Object with `data` key (list) and `measures` key (list) |
 | `GET /api/sessions/summary` | Object (non-null) |
 | `GET /api/raw/events` | Object with `data` key (list) |
 | `GET /api/raw/sessions` | Object with `data` key (list) |
