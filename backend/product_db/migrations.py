@@ -38,16 +38,22 @@ def init_product_db(db=None) -> None:
     db.executescript(SCHEMA)
     # Migrate existing connections table to allow clickhouse and snowflake db_types.
     # SQLite doesn't support ALTER COLUMN, so we recreate the table.
-    db.executescript("""
-        CREATE TABLE IF NOT EXISTS connections_new (
-            id                    TEXT PRIMARY KEY,
-            name                  TEXT NOT NULL,
-            db_type               TEXT NOT NULL CHECK(db_type IN ('duckdb', 'databricks', 'postgresql', 'sqlite', 'clickhouse', 'snowflake')),
-            credentials_encrypted TEXT NOT NULL,
-            created_at            TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-            updated_at            TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-        );
-        INSERT OR IGNORE INTO connections_new SELECT * FROM connections;
-        DROP TABLE connections;
-        ALTER TABLE connections_new RENAME TO connections;
-    """)
+    # Guard: only run if the old CHECK constraint (without clickhouse/snowflake) is present.
+    needs_migration = db.fetchone(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='connections' "
+        "AND sql NOT LIKE '%clickhouse%'"
+    )
+    if needs_migration:
+        db.executescript("""
+            CREATE TABLE IF NOT EXISTS connections_new (
+                id                    TEXT PRIMARY KEY,
+                name                  TEXT NOT NULL,
+                db_type               TEXT NOT NULL CHECK(db_type IN ('duckdb', 'databricks', 'postgresql', 'sqlite', 'clickhouse', 'snowflake')),
+                credentials_encrypted TEXT NOT NULL,
+                created_at            TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+                updated_at            TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+            );
+            INSERT OR IGNORE INTO connections_new SELECT * FROM connections;
+            DROP TABLE connections;
+            ALTER TABLE connections_new RENAME TO connections;
+        """)

@@ -126,7 +126,9 @@ class ClickHouseBackend:
             try:
                 r = conn.query(
                     f"SELECT DISTINCT arrayJoin(JSONExtractKeys(`{col_name}`)) AS k "
-                    f"FROM `{events_table}` WHERE `{col_name}` != '' LIMIT 500"
+                    f"FROM (SELECT `{col_name}` FROM `{events_table}` "
+                    f"WHERE `{col_name}` != '' LIMIT 1000) "
+                    f"LIMIT 500"
                 )
                 return [row[0] for row in r.result_rows if row[0]]
             except Exception:
