@@ -3,16 +3,16 @@
 from fastapi import APIRouter, HTTPException
 
 from backend.backends import get_backend
-from backend.product_db import SQLiteProductDB
+from backend.product_db import ProductDB, SQLiteProductDB
 from backend.config import settings
-
-
-def _get_product_db() -> SQLiteProductDB:
-    return SQLiteProductDB(settings.product_db_path)
 from backend.services.crypto import decrypt_credentials
 from backend.services.pool import _pool_get
 
 router = APIRouter()
+
+
+def _get_product_db() -> ProductDB:
+    return SQLiteProductDB(settings.product_db_path)
 
 
 def _get_connection_or_404(conn_id: str):

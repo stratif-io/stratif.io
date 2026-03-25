@@ -2,15 +2,16 @@
 
 from fastapi import APIRouter, HTTPException
 
-from backend.product_db import SQLiteProductDB
+from backend.product_db import ProductDB, SQLiteProductDB
 from backend.config import settings
-
-
-def _get_product_db() -> SQLiteProductDB:
-    return SQLiteProductDB(settings.product_db_path)
 from backend.services.crypto import decrypt_credentials
 
 router = APIRouter()
+
+
+def _get_product_db() -> ProductDB:
+    return SQLiteProductDB(settings.product_db_path)
+
 
 _KNOWN_USER_ID_COLS = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
 _KNOWN_TIMESTAMP_COLS = ("timestamp", "ts", "created_at", "event_time", "time", "datetime", "date")
