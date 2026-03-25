@@ -65,7 +65,7 @@ interface Props {
 }
 
 export function SchemaConfigTab({ connId }: Props) {
-  const { data, isLoading } = useSchemaConfig(connId)
+  const { data, isLoading, isError } = useSchemaConfig(connId)
   const upsert = useUpsertSchemaConfig(connId)
   const detect = useDetectSchema(connId)
   const [browseOpen, setBrowseOpen] = useState(false)
@@ -81,6 +81,7 @@ export function SchemaConfigTab({ connId }: Props) {
 
   useEffect(() => {
     if (initialized.current) return
+    if (isLoading || isError) return
     if (data) {
       setUserIdField(data.user_id_field)
       setTimestampField(data.timestamp_field)
@@ -89,8 +90,8 @@ export function SchemaConfigTab({ connId }: Props) {
       setSessionTimeoutMinutes(data.session_timeout_minutes ?? 30)
       setCustomProps(data.custom_properties)
     }
-    if (!isLoading) initialized.current = true
-  }, [data, isLoading])
+    initialized.current = true
+  }, [data, isLoading, isError])
 
   // Auto-save on any field change (debounced)
   useEffect(() => {
