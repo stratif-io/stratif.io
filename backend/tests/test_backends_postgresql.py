@@ -108,7 +108,7 @@ class TestPostgreSQLCTE:
             "raw", "uid", "ts", "action",
             [{"name": "device", "path": "properties.device"}],
         )
-        assert "properties" in cte
+        assert '"properties"' in cte
 
 
 class TestPostgreSQLDetectSchema:
