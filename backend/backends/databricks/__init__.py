@@ -8,23 +8,8 @@ from typing import Any
 from pydantic import BaseModel
 
 from backend.backends.base import ColumnInfo, SchemaInfo
-from backend.backends._utils import infer_type, pick_events_table, suggest_fields
+from backend.backends._utils import _to_named_params, infer_type, pick_events_table, suggest_fields
 from backend.backends.databricks.credentials import DatabricksCredentials
-
-_EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
-
-
-def _to_named_params(query: str, params: list) -> tuple[str, dict]:
-    """Convert positional ? params to Databricks-style :p0, :p1, ... named params."""
-    named: dict[str, Any] = {}
-    parts = query.split("?")
-    result: list[str] = [parts[0]]
-    for i, part in enumerate(parts[1:]):
-        key = f"p{i}"
-        named[key] = params[i] if i < len(params) else None
-        result.append(f":{key}")
-        result.append(part)
-    return "".join(result), named
 
 
 def _parse_struct_fields(sql_type: str, prefix: str = "") -> list[dict]:
