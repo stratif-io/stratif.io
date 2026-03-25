@@ -10,6 +10,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
+from backend.core.auth import get_current_user
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.sql_builder import (
@@ -21,7 +22,7 @@ from backend.services.sql_builder import (
 )
 from backend.services.validators import parse_date, to_sql_datetime
 
-router = APIRouter(prefix="/api", tags=["pivot"])
+router = APIRouter(prefix="/api", tags=["pivot"], dependencies=[Depends(get_current_user)])
 
 
 class MeasureType(Enum):
