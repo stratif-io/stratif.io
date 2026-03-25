@@ -1,20 +1,18 @@
 """Analytics database wrapper for stratif.io Analytics."""
 import contextlib
-import re
 from typing import Any
 
 import structlog
 from fastapi import HTTPException
 
 from backend.backends import get_backend
+from backend.backends._utils import _to_named_params  # noqa: F401 (re-exported for callers)
 from backend.backends.base import DatabaseBackend
 from backend.config import settings
 from backend.services.pool import _pool_get
 from backend.services.sql_builder import json_extract_string
 
 log = structlog.get_logger(__name__)
-
-_EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
 
 
 def _resolve_path_to_sql(path: str, dialect: str = "duckdb") -> str:
@@ -27,18 +25,6 @@ def _resolve_path_to_sql(path: str, dialect: str = "duckdb") -> str:
     col = parts[0]
     nested_key = ".".join(parts[1:])
     return json_extract_string(f'"{col}"', nested_key, dialect)
-
-
-def _to_named_params(query: str, params: list) -> tuple[str, dict]:
-    named: dict[str, Any] = {}
-    parts = query.split("?")
-    result: list[str] = [parts[0]]
-    for i, part in enumerate(parts[1:]):
-        key = f"p{i}"
-        named[key] = params[i] if i < len(params) else None
-        result.append(f":{key}")
-        result.append(part)
-    return "".join(result), named
 
 
 def _remap_exprs_for_available_cols(

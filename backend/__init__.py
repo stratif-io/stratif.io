@@ -1,7 +1,5 @@
 """stratif.io Analytics - Bare Metal Product Analytics"""
 
-from backend.main import create_analytics_app
-
 __version__ = "1.0.0"
 
-__all__ = ["create_analytics_app", "__version__"]
+__all__ = ["__version__"]

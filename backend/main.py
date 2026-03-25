@@ -118,21 +118,6 @@ if dist_path.exists():
         return FileResponse(dist_path / "index.html")
 
 
-def create_analytics_app() -> FastAPI:
-    """Create an stratif.io analytics FastAPI sub-application for embedding in a SaaS wrapper."""
-    router_app = FastAPI(title="stratif.io Analytics")
-    router_app.include_router(trend_router)
-    router_app.include_router(retention_router)
-    router_app.include_router(events_router)
-    router_app.include_router(paths_router)
-    router_app.include_router(conversion_router)
-    router_app.include_router(pivot_router)
-    router_app.include_router(sessions_router)
-    router_app.include_router(connections_router)
-    router_app.include_router(mission_control_router)
-    return router_app
-
-
 def main():
     import uvicorn
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=settings.debug)
