@@ -10,9 +10,13 @@ class Settings(BaseSettings):
 
     # Product DB (SQLite — stores connections and configs)
     product_db_path: str = "./stratifio_product.sqlite"
+    product_db_url: str = ""  # e.g. "sqlite:///./stratifio.sqlite" or "postgresql://..."
 
     # Encryption key for credentials (required to store connections)
     encryption_key: str = ""
+
+    # Auth
+    auth_enabled: bool = False  # set True in production to enforce API key check
 
     # Server
     cors_origins: str = "http://localhost:5173"
