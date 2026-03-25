@@ -11,6 +11,8 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from backend.core.middleware import RequestIdMiddleware
+
 log = structlog.get_logger(__name__)
 
 
@@ -69,6 +71,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 
 app.add_middleware(APITrailingSlashMiddleware)
+app.add_middleware(RequestIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_list,
@@ -116,21 +119,6 @@ if dist_path.exists():
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Not found")
         return FileResponse(dist_path / "index.html")
-
-
-def create_analytics_app() -> FastAPI:
-    """Create an stratif.io analytics FastAPI sub-application for embedding in a SaaS wrapper."""
-    router_app = FastAPI(title="stratif.io Analytics")
-    router_app.include_router(trend_router)
-    router_app.include_router(retention_router)
-    router_app.include_router(events_router)
-    router_app.include_router(paths_router)
-    router_app.include_router(conversion_router)
-    router_app.include_router(pivot_router)
-    router_app.include_router(sessions_router)
-    router_app.include_router(connections_router)
-    router_app.include_router(mission_control_router)
-    return router_app
 
 
 def main():

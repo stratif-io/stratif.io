@@ -1,5 +1,5 @@
 """Core package for stratif.io Analytics."""
 
-from .auth import verify_api_key
+from .auth import get_current_user
 
-__all__ = ["verify_api_key"]
+__all__ = ["get_current_user"]

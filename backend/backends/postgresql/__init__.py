@@ -11,8 +11,6 @@ from backend.backends.base import ColumnInfo, SchemaInfo
 from backend.backends._utils import infer_type, pick_events_table, suggest_fields, sample_property_types
 from backend.backends.postgresql.credentials import PostgreSQLCredentials
 
-_EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
-
 _PG_NUMERIC_CAST = r"(CASE WHEN {expr} ~ '^-?[0-9]+(\.[0-9]+)?$' THEN 1.0 ELSE NULL END)"
 
 

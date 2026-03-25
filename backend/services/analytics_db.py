@@ -1,20 +1,19 @@
 """Analytics database wrapper for stratif.io Analytics."""
 import contextlib
-import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from fastapi import HTTPException
 
-from backend.backends import get_backend
 from backend.backends.base import DatabaseBackend
 from backend.config import settings
 from backend.services.pool import _pool_get
 from backend.services.sql_builder import json_extract_string
 
-log = structlog.get_logger(__name__)
+if TYPE_CHECKING:
+    from backend.product_db import ProductDB
 
-_EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
+log = structlog.get_logger(__name__)
 
 
 def _resolve_path_to_sql(path: str, dialect: str = "duckdb") -> str:
@@ -27,18 +26,6 @@ def _resolve_path_to_sql(path: str, dialect: str = "duckdb") -> str:
     col = parts[0]
     nested_key = ".".join(parts[1:])
     return json_extract_string(f'"{col}"', nested_key, dialect)
-
-
-def _to_named_params(query: str, params: list) -> tuple[str, dict]:
-    named: dict[str, Any] = {}
-    parts = query.split("?")
-    result: list[str] = [parts[0]]
-    for i, part in enumerate(parts[1:]):
-        key = f"p{i}"
-        named[key] = params[i] if i < len(params) else None
-        result.append(f":{key}")
-        result.append(part)
-    return "".join(result), named
 
 
 def _remap_exprs_for_available_cols(
@@ -206,23 +193,24 @@ class AnalyticsDatabase:
         return self._session_timeout_minutes
 
 
-def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
+def open_analytics_db(
+    connection_id: str,
+    product_db: "ProductDB",
+    registry: "dict[str, DatabaseBackend]",
+) -> AnalyticsDatabase:
     """Open a schema-mapped analytics DB for the given connection ID."""
     import json
 
-    from backend.product_db import get_product_db
     from backend.services.crypto import decrypt_credentials
 
-    product_db = get_product_db()
     row = product_db.fetchone("SELECT * FROM connections WHERE id = ?", (connection_id,))
     if not row:
         raise HTTPException(status_code=404, detail="Connection not found")
 
     db_type: str = row["db_type"]
-    try:
-        backend = get_backend(db_type)
-    except ValueError:
+    if db_type not in registry:
         raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}")
+    backend = registry[db_type]
 
     creds = decrypt_credentials(row["credentials_encrypted"])
     credentials = backend.parse_credentials(creds)

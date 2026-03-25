@@ -208,10 +208,11 @@ async def upsert_filter_config(conn_id: str, body: FilterConfigBody):
 
 @router.get("/{conn_id}/filter-options")
 async def get_filter_options(conn_id: str):
-    from backend.services.connection_executor import open_analytics_db
+    from backend.backends import _REGISTRY
+    from backend.services.analytics_db import open_analytics_db
 
     _get_connection_or_404(conn_id)
-    db = open_analytics_db(conn_id)
+    db = open_analytics_db(conn_id, get_product_db(), _REGISTRY)
     try:
         return db.get_filter_options()
     finally:
@@ -220,10 +221,11 @@ async def get_filter_options(conn_id: str):
 
 @router.get("/{conn_id}/field-options")
 async def get_field_options(conn_id: str, field: str):
-    from backend.services.connection_executor import open_analytics_db
+    from backend.backends import _REGISTRY
+    from backend.services.analytics_db import open_analytics_db
 
     _get_connection_or_404(conn_id)
-    db = open_analytics_db(conn_id)
+    db = open_analytics_db(conn_id, get_product_db(), _REGISTRY)
     try:
         return {"field": field, "values": db.get_field_options(field)}
     finally:
