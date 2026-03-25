@@ -104,6 +104,34 @@ class TestPathAnalyzerQuery:
         assert "3600" in query  # 60 minutes = 3600 seconds
 
 
+class TestPathsTotalQueryParams:
+    """Regression test: total COUNT(*) query must receive the same params as the main query.
+
+    After removing parameterized LIMIT (fix for ClickHouse INVALID_LIMIT_EXPRESSION),
+    params[:-1] incorrectly strips end_date instead of the old limit value — leaving
+    fewer params than placeholders and causing TypeError / not enough arguments.
+    """
+
+    def test_total_query_receives_same_params_as_main_query(self):
+        db = CapturingDB()
+        get_paths(
+            db=db,
+            target_event="Purchase",
+            start_date="2026-01-01",
+            end_date="2026-01-31",
+            device_type=None,
+            limit=5,
+        )
+        # call 0 = main paths query, call 1 = total COUNT(*) query
+        assert len(db.calls) == 2
+        main_params = db.calls[0][1]
+        total_params = db.calls[1][1]
+        assert main_params == total_params, (
+            f"total query params {total_params!r} differ from main query params {main_params!r} — "
+            "both queries share the same WHERE clause and must receive identical params"
+        )
+
+
 class TestPathsLimitSQL:
     """Regression tests for ClickHouse LIMIT compatibility.
 
