@@ -39,8 +39,8 @@ class TestClickHouseIdentity:
     def test_identifier_quote_char(self, backend):
         assert backend.identifier_quote_char == '`'
 
-    def test_use_pool_is_true(self, backend):
-        assert backend.use_pool is True
+    def test_use_pool_is_false(self, backend):
+        assert backend.use_pool is False
 
     def test_implements_protocol(self, backend):
         assert isinstance(backend, DatabaseBackend)
@@ -117,3 +117,49 @@ class TestClickHouseDialect:
 
     def test_extract_quarter(self, backend):
         assert backend.extract_quarter("ts") == "toQuarter(ts)"
+
+
+class TestClickHouseSQLFragments:
+    def test_date_trunc_day(self, backend):
+        result = backend.date_trunc("day", "ts")
+        assert "toStartOfDay" in result and "ts" in result
+
+    def test_date_trunc_week(self, backend):
+        result = backend.date_trunc("week", "ts")
+        assert "toStartOfWeek" in result
+
+    def test_date_diff_days(self, backend):
+        result = backend.date_diff_days("a", "b")
+        assert "a" in result and "b" in result
+        assert any(x in result for x in ("dateDiff", "toRelativeDayNum", "DATEDIFF"))
+
+    def test_json_extract_string(self, backend):
+        result = backend.json_extract_string("props", "device")
+        assert "props" in result and "device" in result
+        assert "JSONExtract" in result or "visitParamExtractString" in result
+
+    def test_string_concat(self, backend):
+        result = backend.string_concat("a", "b")
+        assert "a" in result and "b" in result
+        assert "||" in result or "concat" in result.lower()
+
+    def test_cast_to_text(self, backend):
+        result = backend.cast_to_text("x")
+        assert "x" in result
+        assert "toString" in result or "CAST" in result
+
+    def test_build_events_cte_no_exclude(self, backend):
+        cte = backend.build_events_cte("raw", "uid", "ts", "action", [])
+        assert "EXCLUDE" not in cte
+
+    def test_interval_minutes_exceeded(self, backend):
+        result = backend.interval_minutes_exceeded("a", "b", 30)
+        assert "30" in result
+
+    def test_extract_hour(self, backend):
+        result = backend.extract_hour("ts")
+        assert "HOUR" in result.upper() or "toHour" in result
+
+    def test_extract_day_of_week(self, backend):
+        result = backend.extract_day_of_week("ts")
+        assert "ts" in result

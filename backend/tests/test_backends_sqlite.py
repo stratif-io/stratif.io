@@ -156,3 +156,13 @@ class TestSQLiteSQLFragments:
 
     def test_extract_quarter(self, backend):
         assert "QUARTER" in backend.extract_quarter("ts").upper() or "/" in backend.extract_quarter("ts")
+
+
+class TestSQLiteConnection:
+    def test_execute_returns_rows(self, backend, mem_conn):
+        rows = backend.execute(mem_conn, "SELECT COUNT(*) FROM events", None)
+        assert rows[0][0] == 1
+
+    def test_get_tables_returns_events(self, backend, mem_conn):
+        tables = backend.get_tables(mem_conn)
+        assert "events" in tables

@@ -238,7 +238,7 @@ class DatabricksBackend:
         return f"(unix_timestamp({end}) - unix_timestamp({start}))"
 
     def interval_minutes_exceeded(self, earlier: str, later: str, minutes: int) -> str:
-        return f"(unix_timestamp({later}) - unix_timestamp({earlier})) > {minutes * 60}"
+        return f"TIMESTAMPDIFF(MINUTE, {earlier}, {later}) > {minutes}"
 
     def string_concat(self, *parts: str) -> str:
         return " || ".join(parts)
