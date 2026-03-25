@@ -2,9 +2,6 @@
 
 import sqlite3
 
-from backend.product_db.database import SQLiteProductDB
-from backend.config import settings
-
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS connections (
     id                    TEXT PRIMARY KEY,
@@ -36,8 +33,10 @@ CREATE TABLE IF NOT EXISTS connection_filter_configs (
 """
 
 
-def init_product_db() -> None:
-    db = SQLiteProductDB(settings.product_db_path)
+def init_product_db(db=None) -> None:
+    if db is None:
+        from backend.product_db.deps import get_product_db
+        db = get_product_db()
     conn = sqlite3.connect(db.db_path)
     try:
         conn.executescript(SCHEMA)
