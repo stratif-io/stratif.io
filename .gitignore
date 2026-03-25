@@ -53,3 +53,8 @@ docs/superpowers/brainstorm/
 
 # Skillfish
 skills-lock.json
+
+# VitePress
+apps/docs/.vitepress/dist
+apps/docs/.vitepress/cache
+apps/docs/node_modules

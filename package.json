@@ -15,7 +15,10 @@
     "test:run": "npm run test:run --workspace=apps/web",
     "test:coverage": "npm run test:coverage --workspace=apps/web",
     "test:e2e": "npm run test:e2e --workspace=apps/web",
-    "test:e2e:ui": "npm run test:e2e:ui --workspace=apps/web"
+    "test:e2e:ui": "npm run test:e2e:ui --workspace=apps/web",
+    "docs:dev": "vitepress dev apps/docs",
+    "docs:build": "vitepress build apps/docs",
+    "docs:preview": "vitepress preview apps/docs"
   },
   "devDependencies": {
     "eslint": "^9.15.0",
