@@ -12,7 +12,6 @@ from backend.backends.base import ColumnInfo, SchemaInfo
 from backend.backends._utils import infer_type, pick_events_table, sample_property_types, suggest_fields
 from backend.backends.duckdb.credentials import DuckDBCredentials
 
-_EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
 _DUCKDB_NUMERIC_CAST = "TRY_CAST({expr} AS DOUBLE)"
 
 
