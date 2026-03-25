@@ -5,12 +5,8 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, status
 
-from backend.product_db import SQLiteProductDB
+from backend.product_db import ProductDB, SQLiteProductDB
 from backend.config import settings
-
-
-def __get_product_db() -> SQLiteProductDB:
-    return SQLiteProductDB(settings.product_db_path)
 from backend.services.crypto import decrypt_credentials, encrypt_credentials
 from backend.utils import utcnow_str as _now
 
@@ -25,6 +21,10 @@ from .models import (
 )
 
 router = APIRouter()
+
+
+def _get_product_db() -> ProductDB:
+    return SQLiteProductDB(settings.product_db_path)
 
 
 def _get_connection_or_404(conn_id: str):
