@@ -5,7 +5,12 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, status
 
-from backend.product_db import get_product_db
+from backend.product_db import SQLiteProductDB
+from backend.config import settings
+
+
+def __get_product_db() -> SQLiteProductDB:
+    return SQLiteProductDB(settings.product_db_path)
 from backend.services.crypto import decrypt_credentials, encrypt_credentials
 from backend.utils import utcnow_str as _now
 
@@ -23,7 +28,7 @@ router = APIRouter()
 
 
 def _get_connection_or_404(conn_id: str):
-    db = get_product_db()
+    db = _get_product_db()
     row = db.fetchone("SELECT * FROM connections WHERE id = ?", (conn_id,))
     if not row:
         raise HTTPException(status_code=404, detail="Connection not found")
@@ -37,7 +42,7 @@ def _get_connection_or_404(conn_id: str):
 
 @router.get("/", response_model=list[ConnectionResponse])
 async def list_connections():
-    db = get_product_db()
+    db = _get_product_db()
     rows = db.fetchall(
         "SELECT id, name, db_type, created_at, updated_at FROM connections ORDER BY created_at DESC"
     )
@@ -46,7 +51,7 @@ async def list_connections():
 
 @router.post("/", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)
 async def create_connection(body: ConnectionCreate):
-    db = get_product_db()
+    db = _get_product_db()
     conn_id = str(uuid.uuid4())
     now = _now()
     encrypted = encrypt_credentials(body.credentials)
@@ -67,7 +72,7 @@ async def get_connection(conn_id: str):
 @router.patch("/{conn_id}", response_model=ConnectionResponse)
 async def update_connection(conn_id: str, body: ConnectionUpdate):
     row = _get_connection_or_404(conn_id)
-    db = get_product_db()
+    db = _get_product_db()
     now = _now()
     name = body.name if body.name is not None else row["name"]
     if body.credentials is not None:
@@ -87,7 +92,7 @@ async def update_connection(conn_id: str, body: ConnectionUpdate):
 @router.delete("/{conn_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_connection(conn_id: str):
     _get_connection_or_404(conn_id)
-    get_product_db().execute("DELETE FROM connections WHERE id = ?", (conn_id,))
+    _get_product_db().execute("DELETE FROM connections WHERE id = ?", (conn_id,))
 
 
 @router.post("/{conn_id}/test")
@@ -126,7 +131,7 @@ async def test_connection(conn_id: str):
 @router.get("/{conn_id}/schema", response_model=SchemaConfigResponse | None)
 async def get_schema_config(conn_id: str):
     _get_connection_or_404(conn_id)
-    row = get_product_db().fetchone(
+    row = _get_product_db().fetchone(
         "SELECT * FROM connection_schema_configs WHERE connection_id = ?", (conn_id,)
     )
     if not row:
@@ -139,7 +144,7 @@ async def get_schema_config(conn_id: str):
 @router.put("/{conn_id}/schema", response_model=SchemaConfigResponse)
 async def upsert_schema_config(conn_id: str, body: SchemaConfigBody):
     _get_connection_or_404(conn_id)
-    db = get_product_db()
+    db = _get_product_db()
     now = _now()
     config_id = str(uuid.uuid4())
     custom_props_json = json.dumps([p.model_dump() for p in body.custom_properties])
@@ -172,7 +177,7 @@ async def upsert_schema_config(conn_id: str, body: SchemaConfigBody):
 @router.get("/{conn_id}/filters", response_model=FilterConfigResponse | None)
 async def get_filter_config(conn_id: str):
     _get_connection_or_404(conn_id)
-    row = get_product_db().fetchone(
+    row = _get_product_db().fetchone(
         "SELECT * FROM connection_filter_configs WHERE connection_id = ?", (conn_id,)
     )
     if not row:
@@ -185,7 +190,7 @@ async def get_filter_config(conn_id: str):
 @router.put("/{conn_id}/filters", response_model=FilterConfigResponse)
 async def upsert_filter_config(conn_id: str, body: FilterConfigBody):
     _get_connection_or_404(conn_id)
-    db = get_product_db()
+    db = _get_product_db()
     now = _now()
     config_id = str(uuid.uuid4())
     fields_json = json.dumps([f.model_dump() for f in body.filter_fields])

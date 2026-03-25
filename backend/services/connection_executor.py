@@ -11,10 +11,11 @@ async def get_analytics_db(
     connection_id: str | None = Query(None, description="Active connection ID"),
 ):
     """FastAPI dependency: yields the analytics DB for the active connection."""
-    from backend.product_db import get_product_db
+    from backend.product_db import SQLiteProductDB
+    from backend.config import settings
     resolved_id = connection_id
     if not resolved_id:
-        product_db = get_product_db()
+        product_db = SQLiteProductDB(settings.product_db_path)
         row = product_db.fetchone("SELECT id FROM connections ORDER BY created_at ASC LIMIT 1")
         if row:
             resolved_id = row["id"]

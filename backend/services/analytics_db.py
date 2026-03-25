@@ -195,10 +195,11 @@ def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
     """Open a schema-mapped analytics DB for the given connection ID."""
     import json
 
-    from backend.product_db import get_product_db
+    from backend.product_db import SQLiteProductDB
+    from backend.config import settings
     from backend.services.crypto import decrypt_credentials
 
-    product_db = get_product_db()
+    product_db = SQLiteProductDB(settings.product_db_path)
     row = product_db.fetchone("SELECT * FROM connections WHERE id = ?", (connection_id,))
     if not row:
         raise HTTPException(status_code=404, detail="Connection not found")
