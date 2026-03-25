@@ -49,7 +49,7 @@ exclude = ["db/"]
 [tool.pytest.ini_options]
 markers = [
     "integration: marks tests that require a real external database connection (deselect with '-m not integration')",
-    "e2e: marks end-to-end tests that require a pre-configured connection_id in the product DB (deselect with '-m not e2e')",
+    "e2e: marks self-bootstrapping end-to-end tests — credentials come from backend/tests/e2e/connections.yaml (deselect with '-m not e2e')",
 ]
 
 [dependency-groups]
