@@ -3,14 +3,12 @@
 import sqlite3
 from contextlib import contextmanager
 
-from backend.config import settings
 
-
-class ProductDatabase:
+class SQLiteProductDB:
     """Manages the SQLite product database (connections, configs)."""
 
-    def __init__(self):
-        self.db_path = settings.product_db_path
+    def __init__(self, db_path: str):
+        self.db_path = db_path
 
     @contextmanager
     def _conn(self):
@@ -42,19 +40,3 @@ class ProductDatabase:
     def executescript(self, script: str) -> None:
         with self._conn() as conn:
             conn.executescript(script)
-
-
-_product_db: ProductDatabase | None = None
-
-
-def get_product_db() -> ProductDatabase:
-    global _product_db
-    if _product_db is None:
-        _product_db = ProductDatabase()
-    return _product_db
-
-
-def _reset_product_db() -> None:
-    """Reset the product DB singleton — for use in tests only."""
-    global _product_db
-    _product_db = None
