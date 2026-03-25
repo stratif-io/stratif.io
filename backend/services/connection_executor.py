@@ -1,7 +1,7 @@
 """FastAPI dependency for the analytics database."""
+from backend.backends._utils import _to_named_params
 from backend.services.analytics_db import (  # noqa: F401
     AnalyticsDatabase,
-    _to_named_params,
     open_analytics_db,
 )
 from fastapi import HTTPException, Query

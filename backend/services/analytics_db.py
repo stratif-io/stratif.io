@@ -6,7 +6,6 @@ import structlog
 from fastapi import HTTPException
 
 from backend.backends import get_backend
-from backend.backends._utils import _to_named_params  # noqa: F401 (re-exported for callers)
 from backend.backends.base import DatabaseBackend
 from backend.config import settings
 from backend.services.pool import _pool_get
