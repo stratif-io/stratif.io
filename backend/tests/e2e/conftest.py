@@ -19,9 +19,9 @@ def make_client() -> TestClient:
 
 
 def default_params(connection_id: str) -> dict:
-    """Return base query params with last-30-days date window."""
+    """Return base query params with last-7-days date window."""
     end = date.today()
-    start = end - timedelta(days=30)
+    start = end - timedelta(days=7)
     return {
         "connection_id": connection_id,
         "start_date": start.isoformat(),
