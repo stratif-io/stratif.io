@@ -6,7 +6,7 @@ from typing import Any
 from backend.backends.base import ColumnInfo
 
 
-def _to_named_params(query: str, params: list) -> tuple[str, dict]:
+def _to_named_params(query: str, params: list[Any]) -> tuple[str, dict[str, Any]]:
     """Convert positional ? params to named :p0, :p1, ... params."""
     named: dict[str, Any] = {}
     parts = query.split("?")
@@ -17,6 +17,7 @@ def _to_named_params(query: str, params: list) -> tuple[str, dict]:
         result.append(f":{key}")
         result.append(part)
     return "".join(result), named
+
 
 _KNOWN_USER_ID = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
 _KNOWN_TIMESTAMP = ("timestamp", "ts", "created_at", "event_time", "time", "datetime", "date")
