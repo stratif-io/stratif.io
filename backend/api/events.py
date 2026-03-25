@@ -8,6 +8,7 @@ import structlog
 from fastapi import APIRouter, Depends, Query
 from structlog.stdlib import BoundLogger
 
+from backend.core.auth import get_current_user
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.validators import parse_date, to_sql_datetime
@@ -15,7 +16,7 @@ from backend.services.validators import parse_date, to_sql_datetime
 log: BoundLogger = structlog.get_logger(__name__)
 
 
-router = APIRouter(prefix="/api", tags=["events"])
+router = APIRouter(prefix="/api", tags=["events"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/events")

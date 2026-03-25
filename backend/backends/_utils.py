@@ -1,7 +1,23 @@
 """Shared helpers for backend schema detection."""
 from __future__ import annotations
 
+from typing import Any
+
 from backend.backends.base import ColumnInfo
+
+
+def _to_named_params(query: str, params: list[Any]) -> tuple[str, dict[str, Any]]:
+    """Convert positional ? params to named :p0, :p1, ... params."""
+    named: dict[str, Any] = {}
+    parts = query.split("?")
+    result: list[str] = [parts[0]]
+    for i, part in enumerate(parts[1:]):
+        key = f"p{i}"
+        named[key] = params[i] if i < len(params) else None
+        result.append(f":{key}")
+        result.append(part)
+    return "".join(result), named
+
 
 _KNOWN_USER_ID = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
 _KNOWN_TIMESTAMP = ("timestamp", "ts", "created_at", "event_time", "time", "datetime", "date")

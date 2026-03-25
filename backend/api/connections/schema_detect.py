@@ -7,6 +7,7 @@ from backend.services.crypto import decrypt_credentials
 
 router = APIRouter()
 
+
 _KNOWN_USER_ID_COLS = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
 _KNOWN_TIMESTAMP_COLS = ("timestamp", "ts", "created_at", "event_time", "time", "datetime", "date")
 _KNOWN_EVENT_NAME_COLS = ("event_name", "event", "action", "event_type", "name", "type")

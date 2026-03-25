@@ -1,20 +1,23 @@
-# backend/core/auth.py
-# OSS-only API key auth — NOT connected to SaaS JWT auth.
-# This dependency is wired to NO router in the current codebase.
-# Do NOT add Depends(verify_api_key) to any router expecting SaaS-level protection.
-# SaaS authentication is handled by app/core/jwt_auth.py in stratifio-saas.
-from fastapi import Header, HTTPException, status
+"""Auth dependency for stratif.io Analytics.
+
+OSS mode: optionally verify API key header.
+SaaS override: replace get_current_user via app.dependency_overrides with a JWT verifier.
+"""
+from fastapi import HTTPException, Request, status
+
 from backend.config import settings
+from backend.product_db import ProductDBDep
 
 
-async def verify_api_key(x_api_key: str = Header(default="")) -> None:
-    """Verify the API key header. Skip check if no key is configured (dev mode).
-
-    OSS standalone auth only. Not used in SaaS — see stratifio-saas/app/core/jwt_auth.py.
-    """
-    if not settings.api_key:
+async def get_current_user(
+    request: Request,
+    product_db: ProductDBDep,  # unused in OSS path; available for SaaS JWT lookup via dependency_overrides
+) -> None:
+    """OSS: verify X-API-Key header when auth_enabled=True. No-op otherwise."""
+    if not settings.auth_enabled:
         return
-    if x_api_key != settings.api_key:
+    api_key = request.headers.get("X-API-Key", "")
+    if api_key != settings.api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid API key",

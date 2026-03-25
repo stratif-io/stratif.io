@@ -6,12 +6,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
+from backend.core.auth import get_current_user
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.sql_builder import date_diff_days, date_trunc
 from backend.services.validators import parse_date, to_sql_datetime
 
-router = APIRouter(prefix="/api", tags=["retention"])
+router = APIRouter(prefix="/api", tags=["retention"], dependencies=[Depends(get_current_user)])
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Configurable retention milestones per granularity

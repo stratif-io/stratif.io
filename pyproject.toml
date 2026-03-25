@@ -46,6 +46,11 @@ packages = ["backend", "seeders"]
 [tool.hatch.build.targets.sdist]
 exclude = ["db/"]
 
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests that require a real external database connection (deselect with '-m not integration')",
+]
+
 [dependency-groups]
 dev = [
     "pre-commit>=4.3.0",
