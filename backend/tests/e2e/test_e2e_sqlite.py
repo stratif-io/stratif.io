@@ -1,18 +1,8 @@
-"""E2E test: all API endpoints against a real SQLite connection.
-
-Required env vars:
-    TEST_SQLITE_CONNECTION_ID   UUID of a pre-configured connection in the product DB
-    STRATIFIO_PRODUCT_DB_PATH   Path to the product DB containing the connection record
-    STRATIFIO_ENCRYPTION_KEY    Key used to encrypt credentials in the product DB
-"""
-import os
+"""E2E test: full lifecycle against a real SQLite connection."""
 import pytest
 from backend.tests.e2e.base import BaseE2ETest
 
-CONNECTION_ID = os.environ.get("TEST_SQLITE_CONNECTION_ID", "")
-
 
 @pytest.mark.e2e
-@pytest.mark.skipif(not CONNECTION_ID, reason="TEST_SQLITE_CONNECTION_ID not set")
 class TestSQLiteE2E(BaseE2ETest):
-    CONNECTION_ID = CONNECTION_ID
+    db_type = "sqlite"
