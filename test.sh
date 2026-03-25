@@ -6,6 +6,8 @@
 #   ./test.sh --frontend             # frontend only
 #   ./test.sh --integration          # integration tests only (requires DB credentials)
 #   ./test.sh --integration --env-file .env.test  # load credentials from a file
+#   ./test.sh --e2e                  # e2e tests only (requires pre-configured connection IDs)
+#   ./test.sh --e2e --env-file .env.test  # with credentials from file
 
 set -euo pipefail
 
@@ -13,6 +15,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 BACKEND_ONLY=false
 FRONTEND_ONLY=false
 INTEGRATION_ONLY=false
+E2E_ONLY=false
 ENV_FILE=""
 FILTER=""
 
@@ -21,6 +24,7 @@ for arg in "$@"; do
     --backend)        BACKEND_ONLY=true ;;
     --frontend)       FRONTEND_ONLY=true ;;
     --integration)    INTEGRATION_ONLY=true ;;
+    --e2e)            E2E_ONLY=true ;;
     --env-file)       shift; ENV_FILE="$1" ;;
     --env-file=*)     ENV_FILE="${arg#--env-file=}" ;;
     -k)               shift; FILTER="$1" ;;
@@ -53,13 +57,23 @@ run_integration() {
   pytest_cmd "${args[@]}" || FAILED+=("integration")
 }
 
+run_e2e() {
+  echo ""
+  echo "━━━ E2E tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  local args=("$ROOT/backend/tests/e2e/" -v -m e2e)
+  [ -n "$FILTER" ] && args+=(-k "$FILTER")
+  pytest_cmd "${args[@]}" || FAILED+=("e2e")
+}
+
 run_frontend() {
   echo ""
   echo "━━━ Frontend tests (TypeScript/Vitest) ━━━━━━━━━━━"
   npm run test:run --workspace=apps/web || FAILED+=("frontend")
 }
 
-if $INTEGRATION_ONLY; then
+if $E2E_ONLY; then
+  run_e2e
+elif $INTEGRATION_ONLY; then
   run_integration
 elif $BACKEND_ONLY; then
   run_backend
