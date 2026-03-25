@@ -85,10 +85,13 @@ class BaseE2ETest:
         assert isinstance(body["data"], list)
         assert isinstance(body["total_paths"], int)
 
-    def test_path_funnel(self, client, params, first_event):
-        if not first_event:
-            pytest.skip("No events in test DB")
-        r = client.get("/api/path-funnel", params={**params, "events": first_event})
+    def test_path_funnel(self, client, params):
+        r = client.get("/api/events", params={"connection_id": type(self).CONNECTION_ID})
+        events = r.json().get("events", [])
+        if len(events) < 2:
+            pytest.skip("Need at least 2 distinct events for funnel test")
+        funnel_events = ",".join(events[:2])
+        r = client.get("/api/path-funnel", params={**params, "events": funnel_events})
         assert r.status_code == 200
         body = r.json()
         assert isinstance(body["data"], list)
@@ -146,8 +149,18 @@ class BaseE2ETest:
     def test_connection_test(self, client):
         r = client.post(f"/api/connections/{type(self).CONNECTION_ID}/test")
         assert r.status_code == 200
+        assert r.json()["ok"] is True
 
     def test_connection_schema(self, client):
         r = client.get(f"/api/connections/{type(self).CONNECTION_ID}/schema")
         assert r.status_code == 200
-        assert isinstance(r.json(), dict)
+        # Returns null when no schema config has been saved yet, dict otherwise
+        assert r.json() is None or isinstance(r.json(), dict)
+
+    def test_connection_schema_detect(self, client):
+        r = client.get(f"/api/connections/{type(self).CONNECTION_ID}/schema/detect")
+        assert r.status_code == 200
+        body = r.json()
+        assert isinstance(body["tables"], list)
+        assert isinstance(body["columns"], list)
+        assert len(body["tables"]) > 0
