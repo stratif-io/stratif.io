@@ -46,3 +46,13 @@ def test_auth_enabled_accepts_correct_key(monkeypatch):
     client = TestClient(app)
     resp = client.get("/protected", headers={"X-API-Key": "secret"})
     assert resp.status_code == 200
+
+
+def test_request_id_header_present_in_response():
+    from backend.main import app
+    client = TestClient(app)
+    resp = client.get("/api/health")
+    assert "X-Request-ID" in resp.headers
+    # Verify it looks like a UUID
+    import uuid
+    uuid.UUID(resp.headers["X-Request-ID"])  # raises if invalid
