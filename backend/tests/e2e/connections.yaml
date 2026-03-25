@@ -1,0 +1,36 @@
+backends:
+  sqlite:
+    enabled: true
+    credentials:
+      file_path: ./backend/tests/e2e/fixtures/test.db
+    expected_columns:
+      - city
+      - country
+
+  duckdb:
+    enabled: true
+    credentials:
+      file_path: ./backend/tests/e2e/fixtures/test.duckdb
+    expected_columns:
+      - city
+      - country
+
+  postgresql:
+    enabled: false
+    credentials: {}
+    expected_columns: []
+
+  clickhouse:
+    enabled: false
+    credentials: {}
+    expected_columns: []
+
+  snowflake:
+    enabled: false
+    credentials: {}
+    expected_columns: []
+
+  databricks:
+    enabled: false
+    credentials: {}
+    expected_columns: []

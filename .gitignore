@@ -51,5 +51,9 @@ apps/web/test-results/
 .superpowers/
 docs/superpowers/brainstorm/
 
+# E2E test fixtures (generated — run backend/tests/e2e/fixtures/seed.py to create)
+backend/tests/e2e/fixtures/test.db
+backend/tests/e2e/fixtures/test.duckdb
+
 # Skillfish
 skills-lock.json
