@@ -193,7 +193,7 @@ When `STRATIFIO_AUTH_ENABLED=True`, the dependency checks the `X-API-Key` reques
 
 ### Wiring
 
-`get_current_user` is added as a router-level dependency on all 7 analytics routers at `include_router` time via `dependencies=[Depends(get_current_user)]`. The connections and mission_control routers follow the same pattern.
+`get_current_user` is added as a router-level dependency on the 7 analytics routers (trend, retention, events, paths, conversion, pivot, sessions) at router initialization via `dependencies=[Depends(get_current_user)]`. The `connections` and `mission_control` routers are currently NOT protected by `get_current_user`; they are admin endpoints accessible without authentication in the OSS implementation.
 
 ### SaaS JWT override
 
