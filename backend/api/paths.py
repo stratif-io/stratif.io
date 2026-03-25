@@ -76,9 +76,8 @@ def get_paths(
         WHERE {where_clause}
         GROUP BY step_minus_3, step_minus_2, step_minus_1, target_event, device_type
         ORDER BY path_count DESC
-        LIMIT ?
+        LIMIT {limit}
     """
-    params.append(str(limit))
     result = db.execute(query, params)
 
     total_query = f"""
