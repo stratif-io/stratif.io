@@ -40,41 +40,32 @@ def get_conversion(
 
     date_filter = (" AND " + " AND ".join(date_clauses)) if date_clauses else ""
 
-    # The query has three parameterised event_name bindings (entry, goal, entry)
-    # each followed by the same date filter params.
+    # Two parameterised event_name bindings (entry, goal), each followed by date params.
+    # Uses JOIN on a pre-aggregated CTE instead of correlated subqueries for broad
+    # dialect compatibility — ClickHouse rejects correlated references to outer columns.
     all_params = (
         [entry_event]
         + date_params
         + [goal_event]
         + date_params
-        + [entry_event]
-        + date_params
     )
 
     query = f"""
-        WITH entry_users AS (
-            SELECT DISTINCT user_id
+        WITH entry_times AS (
+            SELECT user_id, MIN(timestamp) AS first_entry
             FROM events
             WHERE event_name = ?{date_filter}
+            GROUP BY user_id
         ),
         converted_users AS (
-            SELECT DISTINCT h.user_id
-            FROM entry_users h
-            WHERE EXISTS (
-                SELECT 1 FROM events e
-                WHERE e.user_id = h.user_id
-                AND e.event_name = ?{date_filter}
-                AND e.timestamp > (
-                    SELECT MIN(e2.timestamp)
-                    FROM events e2
-                    WHERE e2.user_id = h.user_id
-                        AND e2.event_name = ?{date_filter}
-                        AND e2.timestamp IS NOT NULL
-                )
-            )
+            SELECT DISTINCT e.user_id
+            FROM events e
+            JOIN entry_times et ON e.user_id = et.user_id
+            WHERE e.event_name = ?{date_filter}
+            AND e.timestamp > et.first_entry
         )
         SELECT
-            (SELECT COUNT(*) FROM entry_users)     AS total_users,
+            (SELECT COUNT(*) FROM entry_times)     AS total_users,
             (SELECT COUNT(*) FROM converted_users) AS converted_users
     """
 
