@@ -5,6 +5,13 @@ export default defineConfig({
   description: 'Self-hosted product analytics. Your database, your infrastructure, your rules.',
   base: '/stratifio-oss/', // for GitHub Pages under repo name
 
+  ignoreDeadLinks: [
+    // Allow localhost URLs (runtime links, not available during static build)
+    /^http:\/\/localhost/,
+    // Allow placeholders like <your-instance>
+    /^http:\/\/<your-instance>/,
+  ],
+
   themeConfig: {
     logo: '/logo.svg',
     nav: [
