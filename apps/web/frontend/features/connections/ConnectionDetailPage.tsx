@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Database } from 'lucide-react'
+import { ArrowLeft, Database, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading-state'
 import { Separator } from '@/components/ui/separator'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { cn } from '@/lib/utils'
-import { useConnection } from './hooks/useConnectionsData'
+import { useConnection, useTestConnection } from './hooks/useConnectionsData'
+import { useAppStore } from '@/stores'
 import { ConnectionConfigTab } from './components/ConnectionConfigTab'
 import { SchemaConfigTab } from './components/SchemaConfigTab'
 import { FilterConfigTab } from './components/FilterConfigTab'
@@ -31,6 +32,19 @@ export function ConnectionDetailPage() {
   const navigate = useNavigate()
   const { data: connection, isLoading, error } = useConnection(id ?? '')
   const [tab, setTab] = useState<Tab>('connection')
+  const setActiveConnectionId = useAppStore((s) => s.setActiveConnectionId)
+  const autoTest = useTestConnection()
+
+  useEffect(() => {
+    if (!connection) return
+    autoTest.mutate(connection.id, {
+      onSuccess: (data) => {
+        if (data.ok) setActiveConnectionId(connection.id)
+      },
+    })
+  // Run once when connection data first becomes available
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connection?.id])
 
   if (isLoading) {
     return (
@@ -74,6 +88,26 @@ export function ConnectionDetailPage() {
             <p className={TYPOGRAPHY.muted}>
               {DB_TYPE_LABELS[connection.db_type] ?? connection.db_type}
             </p>
+            <div className="mt-1" data-testid="auto-test-status">
+              {autoTest.isPending && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Verifying…
+                </span>
+              )}
+              {!autoTest.isPending && autoTest.data?.ok && (
+                <span className="flex items-center gap-1 text-xs text-success">
+                  <CheckCircle className="h-3 w-3" />
+                  Active
+                </span>
+              )}
+              {!autoTest.isPending && (autoTest.error || autoTest.data?.ok === false) && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <XCircle className="h-3 w-3" />
+                  Connection failed
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
