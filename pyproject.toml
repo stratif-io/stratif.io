@@ -56,6 +56,7 @@ markers = [
 dev = [
     "pre-commit>=4.3.0",
     "pytest>=8.4.2",
+    "pyyaml>=6.0",
     "ruff>=0.15.2",
     "ty>=0.0.17",
     "testcontainers[clickhouse,postgres]>=4.8",
