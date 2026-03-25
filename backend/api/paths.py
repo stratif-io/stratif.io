@@ -84,7 +84,7 @@ def get_paths(
         WITH {ctes}
         SELECT COUNT(*) FROM derived_path_analysis WHERE {where_clause}
     """
-    total = db.execute(total_query, params[:-1])[0][0]
+    total = db.execute(total_query, params)[0][0]
 
     return {
         "target_event": target_event,
