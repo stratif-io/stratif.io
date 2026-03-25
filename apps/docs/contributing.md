@@ -31,7 +31,7 @@ Frontend runs at `http://localhost:5173`.
 npm run docs:dev
 ```
 
-Docs run at `http://localhost:5173/stratifio-oss/`.
+Docs will print the URL when started (typically `http://localhost:5174/stratifio-oss/` if the frontend is already running on 5173).
 
 ## Running Tests
 

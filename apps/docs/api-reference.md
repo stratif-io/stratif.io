@@ -35,6 +35,8 @@ You can use this to generate client SDKs or import into tools like Postman or In
 | `GET /api/trend` | Event counts over time |
 | `GET /api/retention` | Cohort retention table |
 | `GET /api/events` | Event list and top events |
+| `GET /api/events/top` | Top events by count |
+| `GET /api/mission-control` | Platform health metrics |
 | `GET /api/paths` | User journey paths |
 | `GET /api/conversion` | Funnel conversion steps |
 | `GET /api/pivot` | Pivot table data |

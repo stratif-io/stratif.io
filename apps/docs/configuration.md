@@ -14,7 +14,7 @@ Set them in a `.env` file at the project root, or pass directly to Docker.
 
 | Variable | Default | Description |
 |---|---|---|
-| `STRATIFIO_DEBUG` | `false` | Enables `/docs`, `/redoc`, verbose error responses. Never use in production. |
+| `STRATIFIO_DEBUG` | `false` | Enables `/docs`, `/redoc`, and verbose error responses. Never use in production. Note: `/api/reference` and `/openapi.json` are always available regardless of this setting. |
 | `STRATIFIO_CORS_ORIGINS` | `http://localhost:5173` | Comma-separated list of allowed frontend origins. |
 | `STRATIFIO_LOG_LEVEL` | `INFO` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR`. |
 | `STRATIFIO_LOG_FORMAT` | `json` | Log format: `json` or `console`. |
@@ -24,9 +24,8 @@ Set them in a `.env` file at the project root, or pass directly to Docker.
 
 | Variable | Default | Description |
 |---|---|---|
-| `STRATIFIO_AUTH_ENABLED` | `false` | Set `true` in production to enforce API key auth. |
-| `STRATIFIO_API_KEY` | `""` | API key for auth when `AUTH_ENABLED=true`. |
-| `STRATIFIO_ALLOW_REGISTRATION` | `false` | Allow new user registration. |
+| `STRATIFIO_AUTH_ENABLED` | `false` | Set `true` in production to enforce API key check. |
+| `STRATIFIO_API_KEY` | `""` | Required when `AUTH_ENABLED=true`. |
 
 ## Database
 
