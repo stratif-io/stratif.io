@@ -300,7 +300,7 @@ def get_path_funnel(
                     {(prev_time_selects + ", ") if prev_time_selects else ""}MIN(e.timestamp) AS t{i}
                 FROM {prev_cte} prev
                 JOIN events e ON prev.user_id = e.user_id
-                    AND e.event_name = ?
+                WHERE e.event_name = ?
                     AND e.timestamp > prev.t{i - 1}{extra_sql}
                 GROUP BY prev.user_id{(", " + prev_time_groups) if prev_time_groups else ""}
             )""")
