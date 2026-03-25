@@ -1,4 +1,19 @@
 """Tests for backend.services.connection_executor internals."""
+import inspect
+
+from backend.services.connection_executor import get_analytics_db
+
+
+def test_get_analytics_db_accepts_product_db_param():
+    sig = inspect.signature(get_analytics_db)
+    assert "product_db" in sig.parameters
+
+
+def test_get_analytics_db_accepts_registry_param():
+    sig = inspect.signature(get_analytics_db)
+    assert "registry" in sig.parameters
+
+
 
 import duckdb
 import pytest

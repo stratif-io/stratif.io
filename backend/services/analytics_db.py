@@ -1,15 +1,17 @@
 """Analytics database wrapper for stratif.io Analytics."""
 import contextlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from fastapi import HTTPException
 
-from backend.backends import get_backend
 from backend.backends.base import DatabaseBackend
 from backend.config import settings
 from backend.services.pool import _pool_get
 from backend.services.sql_builder import json_extract_string
+
+if TYPE_CHECKING:
+    from backend.product_db import ProductDB
 
 log = structlog.get_logger(__name__)
 
@@ -191,24 +193,24 @@ class AnalyticsDatabase:
         return self._session_timeout_minutes
 
 
-def open_analytics_db(connection_id: str) -> AnalyticsDatabase:
+def open_analytics_db(
+    connection_id: str,
+    product_db: "ProductDB",
+    registry: "dict[str, DatabaseBackend]",
+) -> AnalyticsDatabase:
     """Open a schema-mapped analytics DB for the given connection ID."""
     import json
 
-    from backend.product_db import SQLiteProductDB
-    from backend.config import settings
     from backend.services.crypto import decrypt_credentials
 
-    product_db = SQLiteProductDB(settings.product_db_path)
     row = product_db.fetchone("SELECT * FROM connections WHERE id = ?", (connection_id,))
     if not row:
         raise HTTPException(status_code=404, detail="Connection not found")
 
     db_type: str = row["db_type"]
-    try:
-        backend = get_backend(db_type)
-    except ValueError:
+    if db_type not in registry:
         raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}")
+    backend = registry[db_type]
 
     creds = decrypt_credentials(row["credentials_encrypted"])
     credentials = backend.parse_credentials(creds)
