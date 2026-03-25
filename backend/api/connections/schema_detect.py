@@ -2,15 +2,10 @@
 
 from fastapi import APIRouter, HTTPException
 
-from backend.product_db import ProductDB, SQLiteProductDB
-from backend.config import settings
+from backend.product_db import get_product_db
 from backend.services.crypto import decrypt_credentials
 
 router = APIRouter()
-
-
-def _get_product_db() -> ProductDB:
-    return SQLiteProductDB(settings.product_db_path)
 
 
 _KNOWN_USER_ID_COLS = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
@@ -103,7 +98,7 @@ def detect_schema(conn_id: str, events_table: str | None = None):
     """Detect columns from the target database and suggest field mappings."""
     from backend.backends import get_backend
 
-    db = _get_product_db()
+    db = get_product_db()
     row = db.fetchone("SELECT * FROM connections WHERE id = ?", (conn_id,))
     if not row:
         raise HTTPException(status_code=404, detail="Connection not found")
