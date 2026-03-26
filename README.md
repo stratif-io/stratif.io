@@ -106,15 +106,14 @@ stratifio-oss/
 
 ## ⚙️ Configuration
 
-| Variable                       | Default                      | Description                                                      |
-| ------------------------------ | ---------------------------- | ---------------------------------------------------------------- |
-| `STRATIFIO_ENCRYPTION_KEY`     | _(required)_                 | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
-| `STRATIFIO_PRODUCT_DB_PATH`    | `./stratifio_product.sqlite` | SQLite file storing connection configs                           |
-| `STRATIFIO_API_KEY`            | _(empty)_                    | Optional API key for the dashboard                               |
-| `STRATIFIO_CORS_ORIGINS`       | `http://localhost:9999`      | Allowed CORS origins                                             |
-| `STRATIFIO_DEBUG`              | `false`                      | Enable `/docs` and `/redoc` endpoints                            |
-| `STRATIFIO_ALLOW_REGISTRATION` | `false`                      | Allow open user registration                                     |
-| `STRATIFIO_LOG_LEVEL`          | `INFO`                       | `DEBUG` / `INFO` / `WARNING` / `ERROR`                           |
+| Variable                    | Default                      | Description                                                      |
+| --------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| `STRATIFIO_ENCRYPTION_KEY`  | _(required)_                 | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
+| `STRATIFIO_PRODUCT_DB_PATH` | `./stratifio_product.sqlite` | SQLite file storing connection configs                           |
+| `STRATIFIO_API_KEY`         | _(empty)_                    | Optional API key for the dashboard                               |
+| `STRATIFIO_CORS_ORIGINS`    | `http://localhost:9999`      | Allowed CORS origins                                             |
+| `STRATIFIO_DEBUG`           | `false`                      | Enable `/docs` and `/redoc` endpoints                            |
+| `STRATIFIO_LOG_LEVEL`       | `INFO`                       | `DEBUG` / `INFO` / `WARNING` / `ERROR`                           |
 
 Copy `.env.example` as a starting point:
 
@@ -195,7 +194,7 @@ app.mount("/analytics", analytics)
 - **Sessions** use HTTP-only, Secure, SameSite=Lax JWT cookies
 - **Rate limiting** on login (10 req/min) and registration (3 req/min)
 
-**For production:** set `STRATIFIO_DEBUG=false`, `STRATIFIO_ALLOW_REGISTRATION=false`, and pin `STRATIFIO_CORS_ORIGINS` to your frontend domain.
+**For production:** set `STRATIFIO_DEBUG=false` and pin `STRATIFIO_CORS_ORIGINS` to your frontend domain.
 
 ---
 
