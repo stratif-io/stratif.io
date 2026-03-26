@@ -339,10 +339,6 @@ input, select, textarea {
   animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Dev mode: warm beige background tint (light mode only) */
-.dev-mode-active {
-  --background: 40 30% 97%;
-}
 
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
