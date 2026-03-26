@@ -14,7 +14,7 @@ import sqlite3 as _sqlite3
 import uuid
 from datetime import UTC, datetime
 
-from backend.product_db.database import get_product_db
+from backend.product_db.deps import get_product_db
 from backend.product_db.migrations import init_product_db
 from backend.services.crypto import decrypt_credentials, encrypt_credentials
 
