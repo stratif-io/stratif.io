@@ -42,6 +42,11 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': 'http://localhost:8000',
       },
+      fs: {
+        allow: [
+          path.resolve(__dirname, '../..'), // monorepo root — allows root node_modules
+        ],
+      },
     },
     build: {
       rollupOptions: {
