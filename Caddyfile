@@ -1,0 +1,13 @@
+:80 {
+	# Serve VitePress docs directly from static files — never touches FastAPI
+	handle /docs* {
+		uri strip_prefix /docs
+		root * /srv/docs
+		file_server
+	}
+
+	# Everything else (React SPA + API) proxied to FastAPI
+	handle {
+		reverse_proxy app:8000
+	}
+}

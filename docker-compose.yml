@@ -1,9 +1,9 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: app
     env_file: .env
-    ports:
-      - '9999:8000'
     volumes:
       - analytics_data:/data
     environment:
@@ -12,8 +12,7 @@ services:
       STRATIFIO_PRODUCT_DB_PATH: /data/stratifio_product.sqlite
       # Optional API key — leave empty for local exploration
       STRATIFIO_API_KEY: ${STRATIFIO_API_KEY:-}
-      # CORS: keep as localhost:8000 for single-container local use
-      STRATIFIO_CORS_ORIGINS: ${STRATIFIO_CORS_ORIGINS:-http://localhost:8000}
+      STRATIFIO_CORS_ORIGINS: ${STRATIFIO_CORS_ORIGINS:-http://localhost:9999}
       STRATIFIO_DEBUG: ${STRATIFIO_DEBUG:-false}
       STRATIFIO_LOG_LEVEL: ${STRATIFIO_LOG_LEVEL:-INFO}
       STRATIFIO_LOG_FORMAT: ${STRATIFIO_LOG_FORMAT:-json}
@@ -28,6 +27,17 @@ services:
       timeout: 5s
       retries: 5
       start_period: 90s
+    restart: unless-stopped
+
+  caddy:
+    build:
+      context: .
+      target: caddy-server
+    ports:
+      - '9999:80'
+    depends_on:
+      app:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
