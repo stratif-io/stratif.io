@@ -15,13 +15,27 @@ function prettySql(q: string): string {
   }
 }
 
-function isDarkMode() {
-  return document.documentElement.classList.contains('dark')
+function useIsDark(): boolean {
+  const theme = useAppStore((s) => s.theme)
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
+
+  useEffect(() => {
+    if (theme === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)')
+      setDark(mq.matches)
+      const handler = (e: MediaQueryListEvent) => setDark(e.matches)
+      mq.addEventListener('change', handler)
+      return () => mq.removeEventListener('change', handler)
+    } else {
+      setDark(theme === 'dark')
+    }
+  }, [theme])
+
+  return dark
 }
 
-function SqlViewer({ query }: { query: string }) {
+function SqlViewer({ query, dark }: { query: string; dark: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const dark = isDarkMode()
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -56,9 +70,8 @@ interface DevCardProps {
 
 export function DevCard({ sql, children, className }: DevCardProps) {
   const devMode = useAppStore((s) => s.devMode)
-  useAppStore((s) => s.theme) // subscribe so we re-render on theme change
+  const dark = useIsDark()
   const [flipped, setFlipped] = useState(false)
-  const dark = isDarkMode()
 
   if (!devMode) return <>{children}</>
 
@@ -112,14 +125,18 @@ export function DevCard({ sql, children, className }: DevCardProps) {
             </button>
           )}
           {queries.length === 0 ? (
-            <p className={cn('text-[10px] italic', dark ? 'text-slate-500' : 'text-slate-400')}>No SQL available</p>
+            <p className={cn('text-[10px] italic', dark ? 'text-slate-500' : 'text-slate-400')}>
+              No SQL available
+            </p>
           ) : (
             queries.map((q, i) => (
               <div key={i}>
                 {queries.length > 1 && (
-                  <p className={cn('text-[9px] mb-1 font-mono', dark ? 'text-slate-500' : 'text-slate-400')}>-- Query {i + 1}</p>
+                  <p className={cn('text-[9px] mb-1 font-mono', dark ? 'text-slate-500' : 'text-slate-400')}>
+                    -- Query {i + 1}
+                  </p>
                 )}
-                <SqlViewer query={q} />
+                <SqlViewer query={q} dark={dark} />
                 {i < queries.length - 1 && <hr className="my-2 border-slate-700" />}
               </div>
             ))
