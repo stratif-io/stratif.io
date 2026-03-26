@@ -7,16 +7,24 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { autocompletion, closeBrackets } from '@codemirror/autocomplete'
 import { format } from 'sql-formatter'
 
+const LIMIT_OPTIONS = [100, 500, 1000, 5000, 10000]
+
 interface QueryEditorProps {
   value: string
   onChange: (value: string) => void
-  onExecute: () => void
+  onExecute: (limit: number) => void
+  limit: number
+  onLimitChange: (limit: number) => void
   tableNames?: string[]
 }
 
-export function QueryEditor({ value, onChange, onExecute, tableNames = [] }: QueryEditorProps) {
+export function QueryEditor({ value, onChange, onExecute, limit, onLimitChange, tableNames = [] }: QueryEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const limitRef = useRef(limit)
+  const onExecuteRef = useRef(onExecute)
+  useEffect(() => { limitRef.current = limit }, [limit])
+  useEffect(() => { onExecuteRef.current = onExecute }, [onExecute])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -43,7 +51,7 @@ export function QueryEditor({ value, onChange, onExecute, tableNames = [] }: Que
             {
               key: 'Mod-Enter',
               run: () => {
-                onExecute()
+                onExecuteRef.current(limitRef.current)
                 return true
               },
             },
@@ -110,8 +118,18 @@ export function QueryEditor({ value, onChange, onExecute, tableNames = [] }: Que
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b bg-background px-3 py-1.5">
+        <select
+          value={limit}
+          onChange={(e) => onLimitChange(Number(e.target.value))}
+          className="rounded-md border bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground focus:outline-none cursor-pointer"
+          aria-label="Row limit"
+        >
+          {LIMIT_OPTIONS.map((n) => (
+            <option key={n} value={n}>{n.toLocaleString()} rows</option>
+          ))}
+        </select>
         <button
-          onClick={onExecute}
+          onClick={() => onExecute(limit)}
           className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           ▶ Run

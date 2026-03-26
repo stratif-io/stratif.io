@@ -11,6 +11,7 @@ const MIN_RESULTS_HEIGHT = 60
 export function QueryStudioPage() {
   const { sql, setSql, result, isRunning, history, execute, restoreFromHistory } = useQueryStudio()
   const [editorHeight, setEditorHeight] = useState(380)
+  const [limit, setLimit] = useState(1000)
   const containerRef = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
 
@@ -62,7 +63,7 @@ export function QueryStudioPage() {
         {/* Editor + Results — flex column */}
         <div ref={containerRef} className="flex flex-1 flex-col overflow-hidden border-l">
           <div style={{ height: editorHeight }} className="shrink-0 overflow-hidden">
-            <QueryEditor value={sql} onChange={setSql} onExecute={execute} />
+            <QueryEditor value={sql} onChange={setSql} onExecute={execute} limit={limit} onLimitChange={setLimit} />
           </div>
 
           {/* Drag handle */}
