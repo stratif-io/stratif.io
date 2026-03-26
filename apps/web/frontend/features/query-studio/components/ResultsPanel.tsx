@@ -2,6 +2,28 @@ import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { QueryStudioResponse } from '@/types'
 
+function JsonCell({ value }: { value: object }) {
+  const [expanded, setExpanded] = useState(false)
+  const compact = JSON.stringify(value)
+  const pretty = JSON.stringify(value, null, 2)
+  return (
+    <span className="font-mono text-[10px]">
+      {expanded ? (
+        <span className="block whitespace-pre text-left">{pretty}</span>
+      ) : (
+        <span className="truncate max-w-[200px] inline-block align-bottom">{compact}</span>
+      )}
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        className="ml-1 rounded px-0.5 text-[9px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors align-middle"
+        title={expanded ? 'Collapse' : 'Expand'}
+      >
+        {expanded ? '▲' : '▼'}
+      </button>
+    </span>
+  )
+}
+
 interface ResultsPanelProps {
   result: QueryStudioResponse | null
   isRunning: boolean
@@ -124,7 +146,7 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
                           {cell === null || cell === undefined ? (
                             <span className="font-mono text-[10px] italic text-muted-foreground">null</span>
                           ) : typeof cell === 'object' ? (
-                            <span className="font-mono text-[10px]">{JSON.stringify(cell)}</span>
+                            <JsonCell value={cell} />
                           ) : (
                             String(cell)
                           )}
