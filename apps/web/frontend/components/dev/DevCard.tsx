@@ -67,13 +67,6 @@ function SqlViewer({ query, dark, fontSize = '11px' }: { query: string; dark: bo
 
 interface Rect { top: number; left: number; width: number; height: number }
 
-const EXPANDED: Rect = {
-  top: window.innerHeight * 0.1,
-  left: window.innerWidth * 0.1,
-  width: window.innerWidth * 0.8,
-  height: window.innerHeight * 0.75,
-}
-
 interface DevCardProps {
   sql?: string | string[] | null
   children: React.ReactNode
@@ -83,7 +76,7 @@ interface DevCardProps {
 export function DevCard({ sql, children, className }: DevCardProps) {
   const devMode = useAppStore((s) => s.devMode)
   const dark = useIsDark()
-  const [showSql, setShowSql] = useState(false)
+  const [flipped, setFlipped] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [cardRect, setCardRect] = useState<Rect | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -118,12 +111,6 @@ export function DevCard({ sql, children, className }: DevCardProps) {
     </>
   )
 
-  function openSql() {
-    const rect = cardRef.current?.getBoundingClientRect()
-    if (rect) setCardRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height })
-    setShowSql(true)
-  }
-
   function expand() {
     const rect = cardRef.current?.getBoundingClientRect()
     if (rect) setCardRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height })
@@ -135,89 +122,112 @@ export function DevCard({ sql, children, className }: DevCardProps) {
   }
 
   const collapsed: Rect = cardRect ?? { top: 0, left: 0, width: 200, height: 100 }
-  const target: Rect = expanded ? {
+  const expandedRect: Rect = {
     top: window.innerHeight * 0.1,
     left: window.innerWidth * 0.1,
     width: window.innerWidth * 0.8,
     height: window.innerHeight * 0.75,
-  } : collapsed
+  }
 
   return (
     <>
-      <div ref={cardRef} className={cn('relative', className)}>
-        <div style={{ height: '100%' }}>{children}</div>
+      {/* Card with 3D flip */}
+      <div ref={cardRef} className={cn('relative', className)} style={{ perspective: '1000px' }}>
+        <div
+          style={{
+            transformStyle: 'preserve-3d',
+            transition: 'transform 0.45s ease',
+            transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            position: 'relative',
+            height: '100%',
+          }}
+        >
+          {/* Front face */}
+          <div style={{ backfaceVisibility: 'hidden', height: '100%' }}>
+            {children}
+            <button
+              onClick={() => setFlipped(true)}
+              aria-label="Show SQL"
+              className="absolute top-2 right-2 z-10 rounded px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200 transition-colors"
+            >
+              SQL
+            </button>
+          </div>
 
-        {/* SQL badge */}
-        {!showSql && (
-          <button
-            onClick={openSql}
-            aria-label="Show SQL"
-            className="absolute top-2 right-2 z-10 rounded px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200 transition-colors"
+          {/* Back face */}
+          <div
+            style={{
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+              position: 'absolute',
+              inset: 0,
+            }}
+            className={cn('rounded-[inherit] overflow-auto p-3 border', sqlBg)}
           >
-            SQL
-          </button>
-        )}
-
-        {/* Placeholder to prevent layout shift when panel is fixed */}
-        {showSql && <div className="absolute inset-0 rounded-[inherit] border border-dashed border-amber-200 opacity-40 pointer-events-none" />}
+            {flipped && (
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+                <button
+                  onClick={expand}
+                  aria-label="Expand SQL"
+                  className={cn('transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M1 8v3h3M11 4V1H8M1 4V1h3M11 8v3H8" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setFlipped(false)}
+                  aria-label="Close SQL"
+                  className={cn('text-[10px] transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            {sqlContent('11px')}
+          </div>
+        </div>
       </div>
 
-      {/* Single fixed panel — animates between card rect and expanded rect */}
+      {/* Expand overlay — separate from the flip, animates via measured rect */}
       <AnimatePresence>
-        {showSql && (
+        {expanded && (
           <>
-            {expanded && (
-              <motion.div
-                key="backdrop"
-                className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={collapse}
-              />
-            )}
-
+            <motion.div
+              key="backdrop"
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={collapse}
+            />
             <motion.div
               key="panel"
               className={cn('fixed z-50 flex flex-col overflow-hidden border', sqlBg)}
-              initial={{ ...collapsed, borderRadius: 8, opacity: 0 }}
-              animate={{ ...target, borderRadius: expanded ? 12 : 8, opacity: 1 }}
-              exit={{ ...collapsed, opacity: 0 }}
+              initial={{ ...collapsed, borderRadius: 8 }}
+              animate={{ ...expandedRect, borderRadius: 12 }}
+              exit={{ ...collapsed, borderRadius: 8, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
-              {/* Toolbar */}
-              <div className={cn(
-                'flex items-center justify-between px-3 py-2 border-b shrink-0',
-                dark ? 'border-slate-700' : 'border-slate-200',
-              )}>
-                <span className={cn('text-[10px] font-mono font-semibold', dark ? 'text-slate-300' : 'text-slate-600')}>
-                  SQL{queries.length > 1 && <span className={cn('ml-1.5 font-normal', dark ? 'text-slate-500' : 'text-slate-400')}>{queries.length} queries</span>}
-                </span>
-                <div className="flex items-center gap-2">
-                  {expanded ? (
-                    <button onClick={collapse} aria-label="Collapse" className={cn('transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}>
-                      <Minimize2 className="h-3 w-3" />
-                    </button>
-                  ) : (
-                    <button onClick={expand} aria-label="Expand" className={cn('transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}>
-                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M1 8v3h3M11 4V1H8M1 4V1h3M11 8v3H8" />
-                      </svg>
-                    </button>
+              <div className={cn('flex items-center justify-between px-4 py-2.5 border-b shrink-0', dark ? 'border-slate-700' : 'border-slate-200')}>
+                <span className={cn('text-xs font-mono font-semibold', dark ? 'text-slate-300' : 'text-slate-600')}>
+                  SQL
+                  {queries.length > 1 && (
+                    <span className={cn('ml-2 font-normal', dark ? 'text-slate-500' : 'text-slate-400')}>
+                      {queries.length} queries
+                    </span>
                   )}
-                  <button
-                    onClick={() => { setShowSql(false); setExpanded(false) }}
-                    aria-label="Close SQL"
-                    className={cn('text-[10px] transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
-                  >
-                    ✕
-                  </button>
-                </div>
+                </span>
+                <button
+                  onClick={collapse}
+                  aria-label="Collapse"
+                  className={cn('transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
+                >
+                  <Minimize2 className="h-3.5 w-3.5" />
+                </button>
               </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-auto p-3">
-                {sqlContent(expanded ? '13px' : '11px')}
+              <div className="flex-1 overflow-auto p-4">
+                {sqlContent('13px')}
               </div>
             </motion.div>
           </>
