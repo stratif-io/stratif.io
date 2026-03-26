@@ -1,4 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { EditorView } from '@codemirror/view'
+import { EditorState } from '@codemirror/state'
+import { sql } from '@codemirror/lang-sql'
+import { oneDark } from '@codemirror/theme-one-dark'
 import { format as formatSql } from 'sql-formatter'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
@@ -9,6 +13,34 @@ function prettySql(q: string): string {
   } catch {
     return q
   }
+}
+
+function SqlViewer({ query }: { query: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const view = new EditorView({
+      state: EditorState.create({
+        doc: prettySql(query),
+        extensions: [
+          sql(),
+          oneDark,
+          EditorState.readOnly.of(true),
+          EditorView.theme({
+            '&': { fontSize: '11px', background: 'transparent' },
+            '.cm-content': { padding: '4px 0' },
+            '.cm-gutters': { display: 'none' },
+            '.cm-scroller': { overflow: 'auto' },
+          }),
+        ],
+      }),
+      parent: containerRef.current,
+    })
+    return () => view.destroy()
+  }, [query])
+
+  return <div ref={containerRef} />
 }
 
 interface DevCardProps {
@@ -55,7 +87,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
             position: 'absolute',
             inset: 0,
           }}
-          className="bg-[#1e1e2e] rounded-[inherit] overflow-auto p-3"
+          className="bg-[#282c34] rounded-[inherit] overflow-auto p-3"
         >
           {flipped && (
             <button
@@ -74,9 +106,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                 {queries.length > 1 && (
                   <p className="text-[9px] text-slate-500 mb-1 font-mono">-- Query {i + 1}</p>
                 )}
-                <pre className="text-[10px] leading-relaxed text-green-300 font-mono whitespace-pre-wrap break-all">
-                  {prettySql(q)}
-                </pre>
+                <SqlViewer query={q} />
                 {i < queries.length - 1 && <hr className="my-2 border-slate-700" />}
               </div>
             ))
