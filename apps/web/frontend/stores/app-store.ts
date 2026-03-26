@@ -32,6 +32,9 @@ interface AppState {
   activeConnectionId: string | null
   setActiveConnectionId: (id: string | null) => void
 
+  devMode: boolean
+  setDevMode: (enabled: boolean) => void
+
   // Query concurrency tracking — ephemeral, not persisted
   runningQueries: number
   queuedQueries: number
@@ -73,6 +76,9 @@ export const useAppStore = create<AppState>()(
       activeConnectionId: null,
       setActiveConnectionId: (activeConnectionId) => set({ activeConnectionId, activeFilters: {} }),
 
+      devMode: false,
+      setDevMode: (devMode) => set({ devMode }),
+
       runningQueries: 0,
       queuedQueries: 0,
       queryEverActive: false,
@@ -92,6 +98,7 @@ export const useAppStore = create<AppState>()(
         sidebarOpen: state.sidebarOpen,
         activeConnectionId: state.activeConnectionId,
         activeFilters: state.activeFilters,
+        devMode: state.devMode,
       }),
       // JSON serialization turns Date objects into strings — revive them on load.
       onRehydrateStorage: () => (state) => {
