@@ -207,6 +207,20 @@ class ClickHouseBackend:
             result = conn.query(query)
         return [tuple(row) for row in result.result_rows]
 
+    def execute_with_columns(
+        self, conn: Any, query: str, params: list | None
+    ) -> tuple[list[str], list[tuple]]:
+        if params:
+            query = query.replace("?", "%s")
+        creds = getattr(conn, "_creds", None)
+        always_final = getattr(creds, "always_final", False)
+        if always_final:
+            query = _FROM_TABLE_RE.sub(lambda m: m.group(0) + " FINAL", query, count=1)
+        result = conn.query(query, parameters=params) if params else conn.query(query)
+        columns = list(result.column_names)
+        rows = [tuple(row) for row in result.result_rows]
+        return columns, rows
+
     def build_events_cte(
         self, source_table: str, uid_field: str, ts_field: str,
         en_field: str, custom_props: list[dict],

@@ -209,6 +209,20 @@ class DatabricksBackend:
             with contextlib.suppress(Exception):
                 cursor.close()
 
+    def execute_with_columns(
+        self, conn: Any, query: str, params: list | None
+    ) -> tuple[list[str], list[tuple]]:
+        named_query, named_params = _to_named_params(query, params or [])
+        cursor = conn.cursor()
+        try:
+            cursor.execute(named_query, named_params or None)
+            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            rows = cursor.fetchall()
+            return columns, rows
+        finally:
+            with contextlib.suppress(Exception):
+                cursor.close()
+
     def build_events_cte(
         self, source_table: str, uid_field: str, ts_field: str,
         en_field: str, custom_props: list[dict],

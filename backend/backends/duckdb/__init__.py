@@ -148,6 +148,14 @@ class DuckDBBackend:
             return conn.execute(query, params).fetchall()
         return conn.execute(query).fetchall()
 
+    def execute_with_columns(
+        self, conn: Any, query: str, params: list | None
+    ) -> tuple[list[str], list[tuple]]:
+        rel = conn.execute(query, params) if params else conn.execute(query)
+        columns = [desc[0] for desc in rel.description] if rel.description else []
+        rows = rel.fetchall()
+        return columns, rows
+
     def build_events_cte(
         self, source_table: str, uid_field: str, ts_field: str,
         en_field: str, custom_props: list[dict],
