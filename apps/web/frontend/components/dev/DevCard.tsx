@@ -15,8 +15,13 @@ function prettySql(q: string): string {
   }
 }
 
+function isDarkMode() {
+  return document.documentElement.classList.contains('dark')
+}
+
 function SqlViewer({ query }: { query: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const dark = isDarkMode()
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -25,7 +30,7 @@ function SqlViewer({ query }: { query: string }) {
         doc: prettySql(query),
         extensions: [
           sql(),
-          oneDark,
+          ...(dark ? [oneDark] : []),
           EditorState.readOnly.of(true),
           EditorView.theme({
             '&': { fontSize: '11px', background: 'transparent' },
@@ -38,7 +43,7 @@ function SqlViewer({ query }: { query: string }) {
       parent: containerRef.current,
     })
     return () => view.destroy()
-  }, [query])
+  }, [query, dark])
 
   return <div ref={containerRef} />
 }
@@ -51,7 +56,9 @@ interface DevCardProps {
 
 export function DevCard({ sql, children, className }: DevCardProps) {
   const devMode = useAppStore((s) => s.devMode)
+  useAppStore((s) => s.theme) // subscribe so we re-render on theme change
   const [flipped, setFlipped] = useState(false)
+  const dark = isDarkMode()
 
   if (!devMode) return <>{children}</>
 
@@ -87,24 +94,30 @@ export function DevCard({ sql, children, className }: DevCardProps) {
             position: 'absolute',
             inset: 0,
           }}
-          className="bg-[#282c34] rounded-[inherit] overflow-auto p-3"
+          className={cn(
+            'rounded-[inherit] overflow-auto p-3',
+            dark ? 'bg-[#282c34]' : 'bg-slate-50 border border-slate-200',
+          )}
         >
           {flipped && (
             <button
               onClick={() => setFlipped(false)}
               aria-label="Close SQL"
-              className="absolute top-2 right-2 z-10 text-[10px] text-slate-400 hover:text-slate-200 transition-colors"
+              className={cn(
+                'absolute top-2 right-2 z-10 text-[10px] transition-colors',
+                dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800',
+              )}
             >
               ✕
             </button>
           )}
           {queries.length === 0 ? (
-            <p className="text-[10px] text-slate-500 italic">No SQL available</p>
+            <p className={cn('text-[10px] italic', dark ? 'text-slate-500' : 'text-slate-400')}>No SQL available</p>
           ) : (
             queries.map((q, i) => (
               <div key={i}>
                 {queries.length > 1 && (
-                  <p className="text-[9px] text-slate-500 mb-1 font-mono">-- Query {i + 1}</p>
+                  <p className={cn('text-[9px] mb-1 font-mono', dark ? 'text-slate-500' : 'text-slate-400')}>-- Query {i + 1}</p>
                 )}
                 <SqlViewer query={q} />
                 {i < queries.length - 1 && <hr className="my-2 border-slate-700" />}
