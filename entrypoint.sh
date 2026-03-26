@@ -14,4 +14,5 @@ fi
 
 python -m seeders.bootstrap_connection --path "$SAMPLE_DB"
 
+echo "[stratifio] Open http://localhost:9999 in your browser"
 exec uvicorn backend.main:app --host 0.0.0.0 --port 8000
