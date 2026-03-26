@@ -103,7 +103,7 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
       {/* LEFT: Hero card */}
-      <DevCard sql={trends[heroMetric]?.sql}>
+      <DevCard sql={trends[heroMetric]?.sql} className="h-full">
         <HeroMetricCard
           label={heroConfig.label}
           metricKey={heroMetric}

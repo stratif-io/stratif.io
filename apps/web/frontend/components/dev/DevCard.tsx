@@ -86,10 +86,11 @@ export function DevCard({ sql, children, className }: DevCardProps) {
           transition: 'transform 0.4s ease',
           transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
           position: 'relative',
+          height: '100%',
         }}
       >
         {/* Front face */}
-        <div style={{ backfaceVisibility: 'hidden' }}>
+        <div style={{ backfaceVisibility: 'hidden', height: '100%' }}>
           {children}
           <button
             onClick={() => setFlipped(true)}
