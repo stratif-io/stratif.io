@@ -39,16 +39,17 @@ export function QueryStatusIndicator() {
     }
   }, [isDone, fading, dismissed])
 
-  if (!queryEverActive || dismissed) return null
+  const hidden = !queryEverActive || dismissed
 
   return (
     <div
       role="status"
       aria-live="polite"
+      aria-hidden={hidden}
       onTransitionEnd={() => { if (fading) setDismissed(true) }}
       className={cn(
         'flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-xs transition-opacity duration-300',
-        fading && 'opacity-0'
+        (hidden || fading) ? 'invisible opacity-0' : 'opacity-100',
       )}
     >
       {isActive ? (
