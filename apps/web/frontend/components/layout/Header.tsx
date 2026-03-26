@@ -48,7 +48,7 @@ export function Header() {
               devMode ? 'opacity-100' : 'invisible opacity-0',
             )}
           >
-            <span className="font-mono text-[10px]">⌗</span>
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
             Development Mode
           </span>
           <DropdownMenu>
