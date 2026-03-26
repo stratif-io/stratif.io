@@ -76,59 +76,45 @@ async def list_tables(conn_id: str):
 
     credentials = backend.parse_credentials(creds)
 
+    def _browse(conn, catalog, schema):
+        return backend.browse(conn, catalog=catalog, schema=schema)
+
+    def _collect(conn) -> list[dict]:
+        tables = []
+        top = _browse(conn, None, None)
+        for item in top:
+            kind = item.get("kind")
+            name = item.get("name", "")
+            full_name = item.get("full_name") or name
+            if kind == "table":
+                tables.append({"catalog": None, "table_schema": None, "name": name, "full_name": full_name})
+            elif kind == "schema":
+                for child in _browse(conn, None, name):
+                    if child.get("kind") == "table":
+                        tables.append({"catalog": None, "table_schema": name, "name": child["name"], "full_name": child.get("full_name") or child["name"]})
+            elif kind == "catalog":
+                for schema_item in _browse(conn, name, None):
+                    if schema_item.get("kind") == "schema":
+                        schema_name = schema_item["name"]
+                        for child in _browse(conn, name, schema_name):
+                            if child.get("kind") == "table":
+                                tables.append({"catalog": name, "table_schema": schema_name, "name": child["name"], "full_name": child.get("full_name") or child["name"]})
+        return tables
+
     try:
         if backend.use_pool:
             pool_key = backend.pool_key(conn_id, credentials)
             conn = _pool_get(pool_key, lambda: backend.open(credentials, read_only=False))
-            top_items = backend.browse(conn, catalog=None, schema=None)
+            tables = _collect(conn)
         else:
             conn = backend.open(credentials, read_only=True)
             try:
-                top_items = backend.browse(conn, catalog=None, schema=None)
+                tables = _collect(conn)
             finally:
                 conn.close()
     except HTTPException:
         raise
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Browse failed: {exc}") from exc
-
-    tables = []
-    for item in top_items:
-        if item.get("type") == "table":
-            tables.append({
-                "catalog": item.get("catalog"),
-                "table_schema": item.get("schema"),
-                "name": item.get("name", ""),
-                "full_name": item.get("full_name") or item.get("name", ""),
-            })
-        elif item.get("type") in ("catalog", "schema"):
-            # Drill one level deeper
-            try:
-                if backend.use_pool:
-                    children = backend.browse(
-                        conn,
-                        catalog=item.get("catalog"),
-                        schema=item.get("name") if item.get("type") == "schema" else None,
-                    )
-                else:
-                    conn2 = backend.open(credentials, read_only=True)
-                    try:
-                        children = backend.browse(
-                            conn2,
-                            catalog=item.get("catalog"),
-                            schema=item.get("name") if item.get("type") == "schema" else None,
-                        )
-                    finally:
-                        conn2.close()
-                for child in children:
-                    if child.get("type") == "table":
-                        tables.append({
-                            "catalog": child.get("catalog"),
-                            "table_schema": child.get("schema"),
-                            "name": child.get("name", ""),
-                            "full_name": child.get("full_name") or child.get("name", ""),
-                        })
-            except Exception:
-                pass
 
     return {"tables": tables}
