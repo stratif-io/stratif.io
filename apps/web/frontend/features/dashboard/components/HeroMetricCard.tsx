@@ -94,7 +94,7 @@ export function HeroMetricCard({
   const gradientId = `hero-gradient-${metricKey}`
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-sm p-0 flex flex-col">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-sm p-0 flex flex-col h-full">
 
       {/* Chart fills the card — no padding, chart is the primary visual */}
       <div
