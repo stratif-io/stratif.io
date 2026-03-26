@@ -1,0 +1,45 @@
+import { useState, useCallback } from 'react'
+import { executeQueryStudio } from '@/lib/api'
+import { useAppStore } from '@/stores'
+import type { QueryStudioResponse } from '@/types'
+
+const MAX_HISTORY = 20
+
+export interface UseQueryStudioReturn {
+  sql: string
+  setSql: (sql: string) => void
+  result: QueryStudioResponse | null
+  isRunning: boolean
+  history: string[]
+  execute: () => Promise<void>
+  restoreFromHistory: (sql: string) => void
+}
+
+export function useQueryStudio(): UseQueryStudioReturn {
+  const activeConnectionId = useAppStore((s) => s.activeConnectionId)
+  const [sql, setSql] = useState('')
+  const [result, setResult] = useState<QueryStudioResponse | null>(null)
+  const [isRunning, setIsRunning] = useState(false)
+  const [history, setHistory] = useState<string[]>([])
+
+  const execute = useCallback(async () => {
+    if (!sql.trim()) return
+    setIsRunning(true)
+    try {
+      const response = await executeQueryStudio({
+        sql: sql.trim(),
+        connection_id: activeConnectionId ?? undefined,
+      })
+      setResult(response)
+      setHistory((prev) => [sql.trim(), ...prev].slice(0, MAX_HISTORY))
+    } finally {
+      setIsRunning(false)
+    }
+  }, [sql, activeConnectionId])
+
+  const restoreFromHistory = useCallback((historySql: string) => {
+    setSql(historySql)
+  }, [])
+
+  return { sql, setSql, result, isRunning, history, execute, restoreFromHistory }
+}
