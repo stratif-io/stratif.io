@@ -46,8 +46,8 @@ export function QueryStatusIndicator() {
       aria-hidden={hidden}
       onTransitionEnd={() => { if (fading) setDismissed(true) }}
       className={cn(
-        'relative rounded-full border border-border bg-muted px-3 py-1 text-xs transition-opacity duration-300',
-        (hidden || fading) ? 'invisible opacity-0' : 'opacity-100',
+        'relative rounded-full border border-border bg-muted px-3 py-1 text-xs transition-opacity duration-700',
+        hidden ? 'invisible opacity-0' : fading ? 'opacity-0' : 'opacity-100',
       )}
     >
       {/* Ghost: fixed max-width content — drives the container width */}
