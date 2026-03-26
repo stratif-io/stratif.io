@@ -105,6 +105,11 @@ async def health():
     return {"status": "ok"}
 
 
+# Docs (production) — served at /docs/
+docs_dist_path = Path(__file__).parent.parent / "docs-dist"
+if docs_dist_path.exists():
+    app.mount("/docs", StaticFiles(directory=docs_dist_path, html=True), name="docs")
+
 # SPA fallback (production)
 dist_path = Path(__file__).parent.parent / "dist"
 if dist_path.exists():
@@ -124,7 +129,7 @@ if dist_path.exists():
 
     @app.get("/{full_path:path}")
     async def spa_fallback(full_path: str):
-        if full_path.startswith("api/"):
+        if full_path.startswith("api/") or full_path.startswith("docs/"):
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Not found")
         return FileResponse(dist_path / "index.html")

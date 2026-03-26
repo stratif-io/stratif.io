@@ -3,7 +3,9 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'stratif.io',
   description: 'Self-hosted product analytics. Your database, your infrastructure, your rules.',
-  base: '/stratifio-oss/', // for GitHub Pages under repo name
+  // Default: /stratifio-oss/ for GitHub Pages. Override with VITEPRESS_BASE for other deployments
+  // (e.g. VITEPRESS_BASE=/docs/ when serving from a running instance at /docs/).
+  base: process.env.VITEPRESS_BASE ?? '/stratifio-oss/',
 
   ignoreDeadLinks: [
     // Allow localhost URLs (runtime links, not available during static build)

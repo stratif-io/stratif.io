@@ -22,14 +22,24 @@ COPY apps/web/public ./apps/web/public
 COPY apps/web/frontend ./apps/web/frontend
 RUN npm run build
 
-# ── Stage 2: Install Python dependencies ──────────────────────────────────────
+# ── Stage 2: Build docs ────────────────────────────────────────────────────────
+FROM node:20-slim AS docs
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/docs/package.json ./apps/docs/package.json
+RUN npm ci
+COPY apps/docs ./apps/docs
+# Build with /docs/ base so assets resolve correctly when served at /docs/
+RUN VITEPRESS_BASE=/docs/ npm run docs:build
+
+# ── Stage 3: Install Python dependencies ──────────────────────────────────────
 FROM python:3.12-slim AS python-deps
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
 COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-dev
 
-# ── Stage 3: Final image ──────────────────────────────────────────────────────
+# ── Stage 4: Final image ──────────────────────────────────────────────────────
 FROM python:3.12-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
@@ -39,6 +49,9 @@ COPY --from=python-deps /app/.venv ./.venv
 
 # Copy built frontend
 COPY --from=frontend /app/apps/web/dist ./dist
+
+# Copy built docs
+COPY --from=docs /app/apps/docs/.vitepress/dist ./docs-dist
 
 # Copy application code
 COPY backend ./backend
@@ -50,5 +63,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-EXPOSE 5173
+EXPOSE 8000
 ENTRYPOINT ["./entrypoint.sh"]
