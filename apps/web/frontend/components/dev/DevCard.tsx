@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { EditorView } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { sql } from '@codemirror/lang-sql'
+import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { format as formatSql } from 'sql-formatter'
 import { useAppStore } from '@/stores'
@@ -44,7 +45,7 @@ function SqlViewer({ query, dark }: { query: string; dark: boolean }) {
         doc: prettySql(query),
         extensions: [
           sql(),
-          ...(dark ? [oneDark] : []),
+          ...(dark ? [oneDark] : [syntaxHighlighting(defaultHighlightStyle)]),
           EditorState.readOnly.of(true),
           EditorView.theme({
             '&': { fontSize: '11px', background: 'transparent' },
