@@ -5,7 +5,7 @@ import { sql } from '@codemirror/lang-sql'
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { format as formatSql } from 'sql-formatter'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, LayoutGroup } from 'framer-motion'
 import { Minimize2 } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
@@ -74,18 +74,18 @@ interface DevCardProps {
 export function DevCard({ sql, children, className }: DevCardProps) {
   const devMode = useAppStore((s) => s.devMode)
   const dark = useIsDark()
-  const [flipped, setFlipped] = useState(false)
+  const [showSql, setShowSql] = useState(false)
   const [expanded, setExpanded] = useState(false)
 
-  // Stable ID for layoutId — use a ref so it's consistent across renders
-  const idRef = useRef(`devcard-${Math.random().toString(36).slice(2)}`)
-  const layoutId = idRef.current
+  const layoutId = useRef(`devcard-${Math.random().toString(36).slice(2)}`).current
 
   if (!devMode) return <>{children}</>
 
   const queries = sql ? (Array.isArray(sql) ? sql : [sql]) : []
 
-  const backFaceContent = (fontSize: string) => (
+  const sqlBg = dark ? 'bg-[#282c34] border-slate-700' : 'bg-slate-50 border-slate-200'
+
+  const sqlContent = (fontSize: string) => (
     <>
       {queries.length === 0 ? (
         <p className={cn('text-[10px] italic', dark ? 'text-slate-500' : 'text-slate-400')}>
@@ -110,46 +110,37 @@ export function DevCard({ sql, children, className }: DevCardProps) {
   )
 
   return (
-    <>
-      <div className={cn('relative', className)} style={{ perspective: '1000px' }}>
-        <div
-          style={{
-            transformStyle: 'preserve-3d',
-            transition: 'transform 0.4s ease',
-            transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-            position: 'relative',
-            height: '100%',
-          }}
-        >
-          {/* Front face */}
-          <div style={{ backfaceVisibility: 'hidden', height: '100%' }}>
-            {children}
-            <button
-              onClick={() => setFlipped(true)}
-              aria-label="Show SQL"
-              className="absolute top-2 right-2 z-10 rounded px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200 transition-colors"
-            >
-              SQL
-            </button>
-          </div>
+    <LayoutGroup>
+      <div className={cn('relative', className)}>
+        {/* Card content */}
+        <div style={{ height: '100%' }}>
+          {children}
+        </div>
 
-          {/* Back face */}
-          <motion.div
-            layoutId={layoutId}
-            style={{
-              backfaceVisibility: 'hidden',
-              transform: 'rotateY(180deg)',
-              position: 'absolute',
-              inset: 0,
-              borderRadius: 'inherit',
-            }}
-            className={cn(
-              'overflow-auto p-3',
-              dark ? 'bg-[#282c34]' : 'bg-slate-50 border border-slate-200',
-            )}
+        {/* SQL badge */}
+        {!showSql && (
+          <button
+            onClick={() => setShowSql(true)}
+            aria-label="Show SQL"
+            className="absolute top-2 right-2 z-10 rounded px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200 transition-colors"
           >
-            {flipped && (
-              <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+            SQL
+          </button>
+        )}
+
+        {/* Inline SQL overlay — source of the expand animation */}
+        <AnimatePresence>
+          {showSql && !expanded && (
+            <motion.div
+              layoutId={layoutId}
+              className={cn('absolute inset-0 border rounded-[inherit] overflow-auto p-3', sqlBg)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ zIndex: 10 }}
+            >
+              <div className="absolute top-2 right-2 flex items-center gap-1.5">
                 <button
                   onClick={() => setExpanded(true)}
                   aria-label="Expand SQL"
@@ -163,7 +154,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                   </svg>
                 </button>
                 <button
-                  onClick={() => setFlipped(false)}
+                  onClick={() => setShowSql(false)}
                   aria-label="Close SQL"
                   className={cn(
                     'text-[10px] transition-colors',
@@ -173,17 +164,16 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                   ✕
                 </button>
               </div>
-            )}
-            {backFaceContent('11px')}
-          </motion.div>
-        </div>
+              {sqlContent('11px')}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Expanded overlay */}
       <AnimatePresence>
         {expanded && (
           <>
-            {/* Backdrop */}
             <motion.div
               key="backdrop"
               className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
@@ -192,27 +182,15 @@ export function DevCard({ sql, children, className }: DevCardProps) {
               exit={{ opacity: 0 }}
               onClick={() => setExpanded(false)}
             />
-
-            {/* Expanded card — morphs from the back face via layoutId */}
             <motion.div
-              key="expanded"
               layoutId={layoutId}
               className={cn(
-                'fixed z-50 flex flex-col overflow-hidden',
-                dark ? 'bg-[#282c34] border border-slate-700' : 'bg-white border border-slate-200',
+                'fixed z-50 flex flex-col overflow-hidden border',
+                sqlBg,
               )}
-              style={{ borderRadius: 12 }}
-              initial={false}
-              animate={{
-                top: '10vh',
-                left: '10vw',
-                width: '80vw',
-                height: '75vh',
-              }}
-              exit={{ opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              style={{ borderRadius: 12, top: '10vh', left: '10vw', width: '80vw', height: '75vh' }}
+              transition={{ type: 'spring', stiffness: 280, damping: 28 }}
             >
-              {/* Header */}
               <div className={cn(
                 'flex items-center justify-between px-4 py-2.5 border-b shrink-0',
                 dark ? 'border-slate-700' : 'border-slate-200',
@@ -236,15 +214,13 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                   <Minimize2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-
-              {/* Content */}
               <div className="flex-1 overflow-auto p-4">
-                {backFaceContent('13px')}
+                {sqlContent('13px')}
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
-    </>
+    </LayoutGroup>
   )
 }
