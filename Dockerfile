@@ -40,7 +40,7 @@ COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-dev
 
 # ── Stage 4: Final image ──────────────────────────────────────────────────────
-FROM python:3.12-slim
+FROM python:3.12-slim AS app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
 
@@ -49,9 +49,6 @@ COPY --from=python-deps /app/.venv ./.venv
 
 # Copy built frontend
 COPY --from=frontend /app/apps/web/dist ./dist
-
-# Copy built docs
-COPY --from=docs /app/apps/docs/.vitepress/dist ./docs-dist
 
 # Copy application code
 COPY backend ./backend
@@ -65,3 +62,8 @@ ENV PYTHONPATH=/app
 
 EXPOSE 8000
 ENTRYPOINT ["./entrypoint.sh"]
+
+# ── Stage 5: Caddy (serves docs directly, proxies everything else) ────────────
+FROM caddy:2-alpine AS caddy-server
+COPY --from=docs /app/apps/docs/.vitepress/dist /srv/docs
+COPY Caddyfile /etc/caddy/Caddyfile

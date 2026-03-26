@@ -105,12 +105,7 @@ async def health():
     return {"status": "ok"}
 
 
-# Docs (production) — served at /docs/
-docs_dist_path = Path(__file__).parent.parent / "docs-dist"
-if docs_dist_path.exists():
-    app.mount("/docs", StaticFiles(directory=docs_dist_path, html=True), name="docs")
-
-# SPA fallback (production)
+# SPA fallback (production) — /docs/* is handled upstream by Caddy
 dist_path = Path(__file__).parent.parent / "dist"
 if dist_path.exists():
     app.mount("/assets", StaticFiles(directory=dist_path / "assets"), name="assets")
@@ -132,10 +127,6 @@ if dist_path.exists():
         if full_path.startswith("api/"):
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Not found")
-        # Docs fallback: serve docs index for /docs and /docs/* when mount
-        # doesn't intercept (e.g. Starlette strips trailing slash before mount)
-        if (full_path == "docs" or full_path.startswith("docs/")) and docs_dist_path.exists():
-            return FileResponse(docs_dist_path / "index.html")
         return FileResponse(dist_path / "index.html")
 
 
