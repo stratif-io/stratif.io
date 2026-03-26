@@ -9,30 +9,38 @@ import { cn } from '@/lib/utils'
 
 interface CatalogBrowserProps {
   onTableClick: (tableName: string) => void
+  onColumnClick: (columnName: string) => void
 }
 
 interface ColumnRowProps {
   connId: string
   table: TableEntry
-  onTableClick: (name: string) => void
+  onColumnClick: (name: string) => void
+  indent: string
 }
 
-function ColumnRows({ connId, table, onTableClick }: ColumnRowProps) {
+function ColumnRows({ connId, table, onColumnClick, indent }: ColumnRowProps) {
   const { data, isLoading } = useQuery({
     queryKey: ['columns', connId, table.full_name],
     queryFn: () => fetchConnectionColumns(connId, table.full_name),
     staleTime: QUERY_STALE_TIME.never,
   })
 
-  if (isLoading) return <div className="pl-10 py-1 text-[10px] text-muted-foreground">Loading…</div>
+  if (isLoading) return <div className={cn(indent, 'py-1 text-[10px] text-muted-foreground')}>Loading…</div>
 
   return (
     <>
       {(data?.columns ?? []).map((col) => (
-        <div key={col} className="flex items-center gap-1.5 pl-10 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/30 transition-colors">
+        <button
+          key={col}
+          onClick={() => onColumnClick(col)}
+          title="Insert column name"
+          className={cn('flex w-full items-center gap-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors group', indent)}
+        >
+          <ChevronRight className="h-2.5 w-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
           <Columns className="h-2.5 w-2.5 shrink-0 opacity-50" />
           <span>{col}</span>
-        </div>
+        </button>
       ))}
     </>
   )
@@ -54,7 +62,7 @@ function buildTree(tables: TableEntry[]): TreeNode[] {
   return Array.from(map.values())
 }
 
-export function CatalogBrowser({ onTableClick }: CatalogBrowserProps) {
+export function CatalogBrowser({ onTableClick, onColumnClick }: CatalogBrowserProps) {
   const activeConnectionId = useAppStore((s) => s.activeConnectionId)
   const [search, setSearch] = useState('')
   const [expandedCatalogs, setExpandedCatalogs] = useState<Set<string>>(new Set())
@@ -148,7 +156,12 @@ export function CatalogBrowser({ onTableClick }: CatalogBrowserProps) {
                       </button>
                     </div>
                     {tableOpen && activeConnectionId && (
-                      <ColumnRows connId={activeConnectionId} table={table} onTableClick={onTableClick} />
+                      <ColumnRows
+                        connId={activeConnectionId}
+                        table={table}
+                        onColumnClick={onColumnClick}
+                        indent={hasCatalogs && hasSchemas ? 'pl-12' : hasSchemas || hasCatalogs ? 'pl-9' : 'pl-6'}
+                      />
                     )}
                   </div>
                 )

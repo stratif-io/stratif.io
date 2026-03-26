@@ -21,6 +21,10 @@ export function QueryStudioPage() {
     setSql(insertion)
   }
 
+  const handleColumnClick = (columnName: string) => {
+    setSql(sql.trimEnd() ? `${sql.trimEnd()}, ${columnName}` : columnName)
+  }
+
   const onDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     dragging.current = true
@@ -49,7 +53,7 @@ export function QueryStudioPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Catalog — fixed width */}
         <div className="w-52 shrink-0 h-full">
-          <CatalogBrowser onTableClick={handleTableClick} />
+          <CatalogBrowser onTableClick={handleTableClick} onColumnClick={handleColumnClick} />
         </div>
 
         {/* Editor + Results — flex column */}
