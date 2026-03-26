@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { EditorView, keymap, lineNumbers, highlightActiveLine } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { sql } from '@codemirror/lang-sql'
@@ -115,11 +115,13 @@ export function QueryEditor({ value, onChange, onExecute, limitEnabled, onLimitT
     }
   }
 
+  const [runMenuOpen, setRunMenuOpen] = useState(false)
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b bg-background px-3 py-1.5">
         {/* Split run button */}
-        <div className="flex items-stretch">
+        <div className="relative flex items-stretch">
           <button
             onClick={() => onExecute(limitEnabled ? LIMIT_VALUE : null)}
             className="flex items-center gap-1.5 rounded-l-md bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -127,15 +129,33 @@ export function QueryEditor({ value, onChange, onExecute, limitEnabled, onLimitT
             ▶ Run {limitEnabled ? `(${LIMIT_VALUE.toLocaleString()})` : ''}
           </button>
           <button
-            onClick={() => onLimitToggle(!limitEnabled)}
-            aria-label="Toggle row limit"
-            title={limitEnabled ? 'Remove LIMIT 1000' : 'Apply LIMIT 1000'}
-            className="flex items-center gap-1 rounded-r-md border-l border-primary-foreground/20 bg-primary px-2 py-1 text-[10px] font-medium text-primary-foreground/80 hover:bg-primary/90 hover:text-primary-foreground transition-colors"
+            onClick={() => setRunMenuOpen((o) => !o)}
+            aria-label="Run options"
+            className="flex items-center rounded-r-md border-l border-primary-foreground/20 bg-primary px-2 py-1 text-primary-foreground/80 hover:bg-primary/90 hover:text-primary-foreground transition-colors"
           >
             <svg width="10" height="10" viewBox="0 0 10 10">
               <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
+          {runMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setRunMenuOpen(false)} />
+              <div className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-md border bg-popover shadow-md overflow-hidden py-1">
+                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  Run options
+                </p>
+                <label className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-[11px] hover:bg-accent transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={limitEnabled}
+                    onChange={(e) => onLimitToggle(e.target.checked)}
+                    className="h-3.5 w-3.5 accent-primary"
+                  />
+                  <span>Limit {LIMIT_VALUE.toLocaleString()} rows</span>
+                </label>
+              </div>
+            </>
+          )}
         </div>
         <span className="text-[10px] text-muted-foreground">Cmd+Enter</span>
         <div className="mx-1 h-4 w-px bg-border" />
