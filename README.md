@@ -8,7 +8,7 @@
 
 **🔍 Self-hosted product analytics. Your database, your infrastructure, your rules. 📊**
 
-[Quick Start](#-quick-start) · [Features](#-features) · [Databases](#-supported-databases) · [Embed](#-embedding) · [Local Dev](#-local-development)
+[Quick Start](#-quick-start) · [Features](#-features) · [Databases](#-supported-databases) · [Local Dev](#-local-development)
 
 </div>
 
@@ -152,36 +152,6 @@ uv run pytest backend/       # backend tests
 npm run lint                 # ESLint (zero warnings)
 npm run build                # TypeScript + production build
 npm run test:e2e             # end-to-end tests (Playwright)
-```
-
----
-
-## 📦 Embedding
-
-stratif.io is designed to be embedded into a larger product. Both the frontend and backend are independently mountable.
-
-### Frontend (`@stratifio/core`)
-
-```bash
-npm install @stratifio/core
-```
-
-```tsx
-import { StratifioDashboard } from '@stratifio/core'
-
-export function AnalyticsPage() {
-  return <StratifioDashboard />
-}
-```
-
-### Backend (`stratifio-core`)
-
-```python
-from backend.main import create_app
-
-# Mount the analytics router inside your existing FastAPI app
-analytics = create_app()
-app.mount("/analytics", analytics)
 ```
 
 ---
