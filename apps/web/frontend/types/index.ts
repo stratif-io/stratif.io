@@ -404,3 +404,10 @@ export interface MissionControlTrendResponse {
   metric: string
   data: MissionControlTrendPoint[]
 }
+
+export interface QueryStudioResponse {
+  columns: string[]
+  rows: unknown[][]
+  execution_time_ms: number
+  error?: string | null
+}

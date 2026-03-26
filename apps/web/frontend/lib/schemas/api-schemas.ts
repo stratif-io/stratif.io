@@ -289,4 +289,13 @@ export const MissionControlTrendResponseSchema = z.object({
 
 export type MissionControlMetricsType = z.infer<typeof MissionControlMetricsSchema>
 export type MissionControlResponseType = z.infer<typeof MissionControlResponseSchema>
+
+export const QueryStudioResponseSchema = z.object({
+  columns: z.array(z.string()),
+  rows: z.array(z.array(z.unknown())),
+  execution_time_ms: z.number().int().nonnegative(),
+  error: z.string().nullable().optional(),
+})
+
+export type QueryStudioResponseType = z.infer<typeof QueryStudioResponseSchema>
 export type MissionControlTrendResponseType = z.infer<typeof MissionControlTrendResponseSchema>
