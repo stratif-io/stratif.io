@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Switch } from '@/components/ui/switch'
 import {
   ChevronLeft,
   ChevronRight,
@@ -208,23 +209,22 @@ export function Sidebar() {
           ))}
         </nav>
 
+        {/* Dev mode toggle — above the border */}
+        <div className={cn('shrink-0 px-2 py-2', sidebarOpen ? 'flex items-center justify-between' : 'flex justify-center')}>
+          {sidebarOpen && (
+            <span className="text-[11px] font-semibold text-muted-foreground">Dev Mode</span>
+          )}
+          <Switch
+            checked={devMode}
+            onCheckedChange={setDevMode}
+            aria-label="Toggle Dev Mode"
+            className={cn(devMode && 'data-[state=checked]:bg-amber-500')}
+          />
+        </div>
+
         {/* Bottom section */}
         <div className="shrink-0 border-t px-2 py-2 space-y-0.5">
           <div className="flex flex-col gap-0.5">
-            <button
-              onClick={() => setDevMode(!devMode)}
-              title={devMode ? 'Exit Dev Mode' : 'Enter Dev Mode'}
-              className={cn(
-                'flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold transition-colors',
-                devMode
-                  ? 'bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                !sidebarOpen && 'justify-center'
-              )}
-            >
-              <span className="font-mono text-[10px]">⌗</span>
-              {sidebarOpen && <span>Dev</span>}
-            </button>
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
