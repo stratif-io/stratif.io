@@ -75,7 +75,8 @@ class SQLiteBackend:
 
     def get_columns_for_browse(self, conn: Any, table: str) -> list[str]:
         try:
-            cursor = conn.execute(f'SELECT * FROM "{table}" LIMIT 0')
+            quoted = '.'.join(f'"{p}"' for p in table.split('.'))
+            cursor = conn.execute(f'SELECT * FROM {quoted} LIMIT 0')
             return [d[0] for d in cursor.description or []]
         except Exception:
             return []

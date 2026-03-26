@@ -69,8 +69,8 @@ class DuckDBBackend:
 
     def get_columns_for_browse(self, conn: Any, table: str) -> list[str]:
         try:
-            rel = conn.execute(f'SELECT * FROM "{table}" LIMIT 0')
-            return [d[0] for d in rel.description]
+            rows = conn.execute(f"DESCRIBE {table}").fetchall()
+            return [r[0] for r in rows]
         except Exception:
             return []
 

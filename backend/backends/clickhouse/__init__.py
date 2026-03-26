@@ -89,7 +89,8 @@ class ClickHouseBackend:
 
     def get_columns_for_browse(self, conn: Any, table: str) -> list[str]:
         try:
-            result = conn.query(f"SELECT * FROM `{table}` LIMIT 0")
+            quoted = '.'.join(f'`{p}`' for p in table.split('.'))
+            result = conn.query(f"SELECT * FROM {quoted} LIMIT 0")
             return list(result.column_names) if result.column_names else []
         except Exception:
             return []
