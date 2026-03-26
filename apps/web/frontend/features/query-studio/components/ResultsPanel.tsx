@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { QueryStudioResponse } from '@/types'
 
@@ -11,13 +11,18 @@ interface ResultsPanelProps {
 
 type Tab = 'results' | 'history'
 
-const MAX_DISPLAY_ROWS = 1000
+const PAGE_SIZE = 50
 
 export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: ResultsPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('results')
+  const [page, setPage] = useState(0)
 
-  const rows = result?.rows.slice(0, MAX_DISPLAY_ROWS) ?? []
-  const truncated = (result?.rows.length ?? 0) > MAX_DISPLAY_ROWS
+  useEffect(() => { setPage(0) }, [result])
+
+  const allRows = result?.rows ?? []
+  const totalPages = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages - 1)
+  const rows = allRows.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE)
 
   return (
     <div className="flex h-full flex-col border-t">
@@ -38,10 +43,42 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
           </button>
         ))}
         {result && !result.error && activeTab === 'results' && (
-          <span className="ml-auto px-3 text-[10px] text-muted-foreground">
-            {result.rows.length} row{result.rows.length !== 1 ? 's' : ''} · {result.execution_time_ms}ms
-            {truncated && ` · showing first ${MAX_DISPLAY_ROWS}`}
-          </span>
+          <div className="ml-auto flex items-center gap-2 px-3">
+            <span className="text-[10px] text-muted-foreground">
+              {allRows.length} row{allRows.length !== 1 ? 's' : ''} · {result.execution_time_ms}ms
+            </span>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage(0)}
+                  disabled={safePage === 0}
+                  className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"
+                  aria-label="First page"
+                >«</button>
+                <button
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={safePage === 0}
+                  className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"
+                  aria-label="Previous page"
+                >‹</button>
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {safePage + 1} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={safePage === totalPages - 1}
+                  className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"
+                  aria-label="Next page"
+                >›</button>
+                <button
+                  onClick={() => setPage(totalPages - 1)}
+                  disabled={safePage === totalPages - 1}
+                  className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"
+                  aria-label="Last page"
+                >»</button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
