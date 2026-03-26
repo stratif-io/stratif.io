@@ -122,9 +122,9 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
                       {row.map((cell, j) => (
                         <td key={j} className="border-b px-3 py-1 whitespace-nowrap">
                           {cell === null || cell === undefined ? (
-                            <span className="font-mono text-[10px] italic text-muted-foreground">
-                              null
-                            </span>
+                            <span className="font-mono text-[10px] italic text-muted-foreground">null</span>
+                          ) : typeof cell === 'object' ? (
+                            <span className="font-mono text-[10px]">{JSON.stringify(cell)}</span>
                           ) : (
                             String(cell)
                           )}
