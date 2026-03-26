@@ -10,7 +10,7 @@ const MIN_RESULTS_HEIGHT = 60
 
 export function QueryStudioPage() {
   const { sql, setSql, result, isRunning, history, execute, restoreFromHistory } = useQueryStudio()
-  const [editorHeight, setEditorHeight] = useState(280)
+  const [editorHeight, setEditorHeight] = useState(380)
   const containerRef = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
 
