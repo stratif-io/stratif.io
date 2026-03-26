@@ -70,6 +70,10 @@
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 240 39% 14%;
