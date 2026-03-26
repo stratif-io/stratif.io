@@ -24,8 +24,9 @@ def get_events(
     db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
 ) -> dict:
     """Get distinct event names for filtering."""
-    result = db.execute("SELECT DISTINCT event_name FROM events ORDER BY event_name")
-    return {"events": [row[0] for row in result]}
+    query = "SELECT DISTINCT event_name FROM events ORDER BY event_name"
+    result = db.execute(query)
+    return {"sql": query.strip(), "events": [row[0] for row in result]}
 
 
 @router.get("/events/top")
@@ -58,18 +59,16 @@ def get_top_events(
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
     params.append(limit)
 
-    result = db.execute(
-        f"""
+    query = f"""
         SELECT event_name, COUNT(*) AS count
         FROM events
         {where_clause}
         GROUP BY event_name
         ORDER BY count DESC
         LIMIT ?
-        """,
-        params,
-    )
-    return {"data": [{"name": row[0], "count": row[1]} for row in result]}
+        """
+    result = db.execute(query, params)
+    return {"sql": query.strip(), "data": [{"name": row[0], "count": row[1]} for row in result]}
 
 
 @router.get("/raw/events")
@@ -129,22 +128,21 @@ def get_raw_events(
     allowed_sort_fields = {"timestamp", "user_id", "event_name"}
     order_field = sort_field if sort_field in allowed_sort_fields else "timestamp"
 
-    total = db.execute(f"SELECT COUNT(*) FROM events {where_clause}", params)[0][0]
+    count_query = f"SELECT COUNT(*) FROM events {where_clause}"
+    total = db.execute(count_query, params)[0][0]
 
     props_col = "properties" if db.has_column("properties") else "NULL"
     custom_exprs = db.get_custom_prop_exprs()
     custom_names = list(custom_exprs.keys())
     extra_cols = (", " + ", ".join(custom_exprs.values())) if custom_exprs else ""
-    result = db.execute(
-        f"""
+    data_query = f"""
         SELECT user_id, event_name, timestamp, {props_col}{extra_cols}
         FROM events
         {where_clause}
         ORDER BY {order_field} {order_dir}
         LIMIT ? OFFSET ?
-        """,
-        params + [limit, offset],
-    )
+        """
+    result = db.execute(data_query, params + [limit, offset])
 
     def _build_props(row: tuple) -> dict:
         base = json.loads(row[3]) if isinstance(row[3], str) else (row[3] or {})
@@ -155,6 +153,7 @@ def get_raw_events(
         return base
 
     return {
+        "sql": [count_query.strip(), data_query.strip()],
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -183,16 +182,14 @@ def get_user_events(
     custom_exprs = db.get_custom_prop_exprs()
     custom_names = list(custom_exprs.keys())
     extra_cols = (", " + ", ".join(custom_exprs.values())) if custom_exprs else ""
-    result = db.execute(
-        f"""
+    user_events_query = f"""
         SELECT user_id, event_name, timestamp, {props_col}{extra_cols}
         FROM events
         WHERE user_id = ?
         ORDER BY timestamp DESC
         LIMIT ?
-        """,
-        [user_id, limit],
-    )
+        """
+    result = db.execute(user_events_query, [user_id, limit])
 
     def _build_props(row: tuple) -> dict:
         base = json.loads(row[3]) if isinstance(row[3], str) else (row[3] or {})
@@ -203,6 +200,7 @@ def get_user_events(
         return base
 
     return {
+        "sql": user_events_query.strip(),
         "user_id": user_id,
         "data": [
             {

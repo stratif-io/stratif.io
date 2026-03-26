@@ -38,14 +38,11 @@ def get_raw_sessions(
     where_sql = ("WHERE " + " AND ".join(where)) if where else ""
 
     ctes = session_ctes(timeout, dialect)
-    total_row = db.execute(
-        f"WITH {ctes} SELECT COUNT(*) FROM derived_sessions ds {where_sql}",
-        params or None,
-    )
+    count_query = f"WITH {ctes} SELECT COUNT(*) FROM derived_sessions ds {where_sql}"
+    total_row = db.execute(count_query, params or None)
     total = total_row[0][0] if total_row else 0
 
-    rows = db.execute(
-        f"""
+    data_query = f"""
         WITH {ctes}
         SELECT
             ds.session_id,
@@ -57,11 +54,11 @@ def get_raw_sessions(
         {where_sql}
         ORDER BY ds.start_time DESC
         LIMIT ? OFFSET ?
-        """,
-        (params or []) + [limit, offset],
-    )
+        """
+    rows = db.execute(data_query, (params or []) + [limit, offset])
 
     return {
+        "sql": [count_query.strip(), data_query.strip()],
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -130,8 +127,7 @@ def get_sessions_summary(
     timeout = db.get_session_timeout_minutes()
     dialect = db.get_dialect()
 
-    rows = db.execute(
-        f"""
+    summary_query = f"""
         WITH {session_ctes(timeout, dialect)}
         SELECT
             COUNT(*) AS total_sessions,
@@ -139,12 +135,12 @@ def get_sessions_summary(
             AVG(ds.event_count) AS avg_events_per_session
         FROM derived_sessions ds
         {session_where_sql}
-        """,
-        all_params or None,
-    )
+        """
+    rows = db.execute(summary_query, all_params or None)
 
     row = rows[0] if rows else (0, 0.0, 0.0)
     return {
+        "sql": summary_query.strip(),
         "data": [
             {
                 "total_sessions": row[0] or 0,

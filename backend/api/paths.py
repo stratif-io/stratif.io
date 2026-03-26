@@ -87,6 +87,7 @@ def get_paths(
     total = db.execute(total_query, params)[0][0]
 
     return {
+        "sql": [query.strip(), total_query.strip()],
         "target_event": target_event,
         "device_type": device_type,
         "total_occurrences": total,
@@ -208,6 +209,7 @@ def get_path_analysis(
     ]
 
     return {
+        "sql": query_str.strip(),
         "start_event": start_event,
         "end_event": end_event,
         "min_path_length": min_path_length,
@@ -314,13 +316,11 @@ def get_path_funnel(
     funnel_query = f"WITH {', '.join(cte_parts)} SELECT {', '.join(count_selects)}"
     result = db.execute(funnel_query, all_params)[0]
 
+    occ_query = f"SELECT COUNT(*) FROM events WHERE event_name = ?{extra_sql}"
     occurrences_results = []
     for event_name in event_list:
         occ_params: list = [event_name] + filter_params
-        occ_result = db.execute(
-            f"SELECT COUNT(*) FROM events WHERE event_name = ?{extra_sql}",
-            occ_params,
-        )
+        occ_result = db.execute(occ_query, occ_params)
         occurrences_results.append(occ_result[0][0] if occ_result else 0)
 
     steps_data: list[dict] = []
@@ -357,6 +357,7 @@ def get_path_funnel(
         )
 
     return {
+        "sql": [funnel_query.strip(), occ_query.strip()],
         "events": event_list,
         "total_steps": len(event_list),
         "data": steps_data,

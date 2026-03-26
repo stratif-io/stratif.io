@@ -75,6 +75,7 @@ def get_conversion(
     conversion_rate = (converted_users / total_users * 100) if total_users > 0 else 0
 
     return {
+        "sql": query.strip(),
         "entry_event": entry_event,
         "goal_event": goal_event,
         "data": [
