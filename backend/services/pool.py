@@ -23,3 +23,13 @@ def _pool_get(key: tuple, factory: Callable[[], Any]) -> Any:
         conn = factory()
         _pool[key] = (conn, time.monotonic())
         return conn
+
+
+def _pool_evict(key: tuple) -> None:
+    """Remove a stale entry from the pool so the next _pool_get opens a fresh connection."""
+    with _pool_lock:
+        entry = _pool.pop(key, None)
+    if entry:
+        conn, _ = entry
+        with contextlib.suppress(Exception):
+            conn.close()

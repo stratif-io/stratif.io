@@ -249,3 +249,40 @@ def test_execute_raises_503_on_stale_postgres_connection():
     with pytest.raises(HTTPException) as exc_info:
         db.execute("SELECT 1")
     assert exc_info.value.status_code == 503
+
+
+def test_execute_reconnects_and_retries_on_stale_postgres_connection():
+    """execute() should evict the stale pool entry, open a fresh connection, and retry."""
+    from unittest.mock import MagicMock, patch
+
+    try:
+        import psycopg2
+    except ImportError:
+        pytest.skip("psycopg2 not installed")
+
+    # First connection: stale — cursor.execute raises OperationalError
+    dead_conn = MagicMock()
+    dead_cursor = MagicMock()
+    dead_cursor.execute.side_effect = psycopg2.OperationalError("server closed connection")
+    dead_conn.cursor.return_value = dead_cursor
+
+    # Fresh connection returned by the factory — succeeds
+    fresh_conn = MagicMock()
+    fresh_cursor = MagicMock()
+    fresh_cursor.fetchall.return_value = [(1,)]
+    fresh_conn.cursor.return_value = fresh_cursor
+
+    factory = MagicMock(return_value=fresh_conn)
+
+    from backend.backends.postgresql import PostgreSQLBackend
+    db = AnalyticsDatabase(conn=dead_conn, backend=PostgreSQLBackend(), events_cte=None)
+    db._pooled = True
+    db._pool_key = ("conn-3", "user-3", "postgres")
+    db._pool_factory = factory
+
+    with patch("backend.services.analytics_db._pool_evict") as mock_evict, \
+         patch("backend.services.analytics_db._pool_get", return_value=fresh_conn):
+        result = db.execute("SELECT 1")
+
+    mock_evict.assert_called_once_with(("conn-3", "user-3", "postgres"))
+    assert result == [(1,)]
