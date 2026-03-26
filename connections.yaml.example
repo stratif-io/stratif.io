@@ -1,0 +1,71 @@
+# E2E test backend configuration — copy to connections.yaml and fill in your credentials.
+# connections.yaml is gitignored; this file is the committed template.
+#
+# file_path values may be relative to the repo root or absolute.
+
+backends:
+  sqlite:
+    enabled: false
+    credentials:
+      file_path: db/my_user_seeded_event_dbs/stratifio_analytics.sqlite
+    expected_columns:
+      - city
+      - country
+
+  duckdb:
+    enabled: false
+    credentials:
+      file_path: db/my_user_seeded_event_dbs/stratifio_analytics.duckdb
+    expected_columns:
+      - city
+      - country
+
+  postgresql:
+    enabled: false
+    credentials:
+      host: localhost
+      port: 5432
+      database: ""
+      user: ""
+      password: ""
+    expected_columns:
+      - city
+      - country
+
+  clickhouse:
+    enabled: false
+    credentials:
+      host: localhost
+      port: 8123
+      database: ""
+      user: ""
+      password: ""
+      secure: false
+    expected_columns:
+      - city
+      - country
+
+  snowflake:
+    enabled: false
+    credentials:
+      account: ""
+      user: ""
+      password: ""
+      database: ""
+      schema: ""
+      warehouse: ""
+    expected_columns:
+      - city
+      - country
+
+  databricks:
+    enabled: false
+    credentials:
+      host: ""
+      http_path: ""
+      token: ""
+      catalog: ""
+      schema: ""
+    expected_columns:
+      - city
+      - country

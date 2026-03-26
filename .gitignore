@@ -39,6 +39,7 @@ seeders/.env
 
 # Local secrets — never commit
 .env.secrets
+connections.yaml
 
 # Local dev DB
 stratifio_product.sqlite
