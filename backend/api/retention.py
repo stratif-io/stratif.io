@@ -190,6 +190,7 @@ def get_retention(
         )
 
     return {
+        "sql": query.strip(),
         "granularity": gran,
         "milestones": milestones,
         "total_available_cohorts": len(data),

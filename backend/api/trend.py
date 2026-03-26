@@ -72,6 +72,7 @@ def get_trend(
     total_unique = db.execute(total_unique_query, params)[0][0]
 
     return {
+        "sql": [query.strip(), total_unique_query.strip()],
         "total_unique_users": total_unique,
         "data": [
             {
