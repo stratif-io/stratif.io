@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout'
 import { LoadingState } from '@/components/ui/loading-state'
 import { SPACING } from '@/lib/constants'
+import { useAppStore } from '@/stores'
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard').then((m) => ({ default: m.DashboardPage }))
@@ -30,6 +31,12 @@ const ConnectionDetailPage = lazy(() =>
   import('@/features/connections').then((m) => ({ default: m.ConnectionDetailPage }))
 )
 
+const QueryStudioPage = lazy(() =>
+  import('@/features/query-studio/QueryStudioPage').then((m) => ({
+    default: m.QueryStudioPage,
+  }))
+)
+
 const DesignSystemPage = import.meta.env.DEV
   ? lazy(() =>
       import('@/features/design-system/DesignSystemPage').then((m) => ({
@@ -47,6 +54,8 @@ function PageLoader() {
 }
 
 function App() {
+  const devMode = useAppStore((s) => s.devMode)
+
   return (
     <Suspense fallback={<PageLoader />}>
       <a
@@ -67,6 +76,7 @@ function App() {
           <Route path="/events" element={<EventsPage />} />
           <Route path="/connections" element={<ConnectionsPage />} />
           <Route path="/connections/:id" element={<ConnectionDetailPage />} />
+          {devMode && <Route path="/query-studio" element={<QueryStudioPage />} />}
           {import.meta.env.DEV && DesignSystemPage && (
             <Route path="/design-system" element={<DesignSystemPage />} />
           )}
