@@ -129,9 +129,13 @@ if dist_path.exists():
 
     @app.get("/{full_path:path}")
     async def spa_fallback(full_path: str):
-        if full_path.startswith("api/") or full_path.startswith("docs/"):
+        if full_path.startswith("api/"):
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Not found")
+        # Docs fallback: serve docs index for /docs and /docs/* when mount
+        # doesn't intercept (e.g. Starlette strips trailing slash before mount)
+        if (full_path == "docs" or full_path.startswith("docs/")) and docs_dist_path.exists():
+            return FileResponse(docs_dist_path / "index.html")
         return FileResponse(dist_path / "index.html")
 
 
