@@ -11,6 +11,7 @@ import { Moon, Sun, Menu, Monitor } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
 import { QueryStatusIndicator } from './QueryStatusIndicator'
+import { cn } from '@/lib/utils'
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
@@ -41,12 +42,16 @@ export function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-2 shrink-0">
-          {devMode && (
-            <span className="flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
-              <span className="font-mono text-[10px]">⌗</span>
-              Development Mode
-            </span>
-          )}
+          <span
+            aria-hidden={!devMode}
+            className={cn(
+              'flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 transition-opacity duration-200',
+              devMode ? 'opacity-100' : 'invisible opacity-0',
+            )}
+          >
+            <span className="font-mono text-[10px]">⌗</span>
+            Development Mode
+          </span>
           <QueryStatusIndicator />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
