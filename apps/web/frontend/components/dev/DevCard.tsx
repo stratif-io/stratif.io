@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { EditorView } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { sql } from '@codemirror/lang-sql'
@@ -6,7 +7,7 @@ import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { format as formatSql } from 'sql-formatter'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Minimize2 } from 'lucide-react'
+import { Minimize2, Terminal } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
 
@@ -75,6 +76,8 @@ interface DevCardProps {
 
 export function DevCard({ sql, children, className }: DevCardProps) {
   const devMode = useAppStore((s) => s.devMode)
+  const setPendingQueryStudioSql = useAppStore((s) => s.setPendingQueryStudioSql)
+  const navigate = useNavigate()
   const dark = useIsDark()
   const [flipped, setFlipped] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -82,6 +85,8 @@ export function DevCard({ sql, children, className }: DevCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
 
   if (!devMode) return <>{children}</>
+
+  const firstQuery = Array.isArray(sql) ? sql[0] : sql
 
   const queries = sql ? (Array.isArray(sql) ? sql : [sql]) : []
 
@@ -166,6 +171,16 @@ export function DevCard({ sql, children, className }: DevCardProps) {
           >
             {flipped && (
               <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+                {firstQuery && (
+                  <button
+                    onClick={() => { setPendingQueryStudioSql(firstQuery); navigate('/query-studio') }}
+                    aria-label="Open in Query Studio"
+                    title="Open in Query Studio"
+                    className={cn('transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
+                  >
+                    <Terminal className="h-3.5 w-3.5" />
+                  </button>
+                )}
                 <button
                   onClick={expand}
                   aria-label="Expand SQL"
@@ -218,13 +233,26 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                     </span>
                   )}
                 </span>
-                <button
-                  onClick={collapse}
-                  aria-label="Collapse"
-                  className={cn('transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
-                >
-                  <Minimize2 className="h-3.5 w-3.5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {firstQuery && (
+                    <button
+                      onClick={() => { collapse(); setPendingQueryStudioSql(firstQuery); navigate('/query-studio') }}
+                      aria-label="Open in Query Studio"
+                      title="Open in Query Studio"
+                      className={cn('flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium transition-colors', dark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200')}
+                    >
+                      <Terminal className="h-3 w-3" />
+                      Query Studio
+                    </button>
+                  )}
+                  <button
+                    onClick={collapse}
+                    aria-label="Collapse"
+                    className={cn('transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
+                  >
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
               <div className="flex-1 overflow-auto p-4">
                 {sqlContent('13px')}

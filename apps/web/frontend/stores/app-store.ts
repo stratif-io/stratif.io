@@ -40,6 +40,10 @@ interface AppState {
   queuedQueries: number
   queryEverActive: boolean
   setQueryCounts: (running: number, queued: number) => void
+
+  /** SQL to pre-populate Query Studio with — ephemeral, cleared after consumption. */
+  pendingQueryStudioSql: string | null
+  setPendingQueryStudioSql: (sql: string | null) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -88,6 +92,9 @@ export const useAppStore = create<AppState>()(
           queuedQueries: queued,
           queryEverActive: state.queryEverActive || running > 0 || queued > 0,
         })),
+
+      pendingQueryStudioSql: null,
+      setPendingQueryStudioSql: (sql) => set({ pendingQueryStudioSql: sql }),
     }),
     {
       name: 'stratifio-storage',

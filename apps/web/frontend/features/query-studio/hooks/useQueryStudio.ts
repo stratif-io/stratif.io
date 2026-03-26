@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { executeQueryStudio } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import type { QueryStudioResponse } from '@/types'
@@ -17,7 +17,16 @@ export interface UseQueryStudioReturn {
 
 export function useQueryStudio(): UseQueryStudioReturn {
   const activeConnectionId = useAppStore((s) => s.activeConnectionId)
-  const [sql, setSql] = useState('')
+  const pendingQueryStudioSql = useAppStore((s) => s.pendingQueryStudioSql)
+  const setPendingQueryStudioSql = useAppStore((s) => s.setPendingQueryStudioSql)
+  const [sql, setSql] = useState(() => useAppStore.getState().pendingQueryStudioSql ?? '')
+
+  useEffect(() => {
+    if (pendingQueryStudioSql) {
+      setSql(pendingQueryStudioSql)
+      setPendingQueryStudioSql(null)
+    }
+  }, [pendingQueryStudioSql, setPendingQueryStudioSql])
   const [result, setResult] = useState<QueryStudioResponse | null>(null)
   const [isRunning, setIsRunning] = useState(false)
   const [history, setHistory] = useState<string[]>([])
