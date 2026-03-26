@@ -1,0 +1,2 @@
+npx lint-staged
+cd apps/web && npx tsc --noEmit
