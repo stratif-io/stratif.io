@@ -139,7 +139,7 @@ export function QueryEditor({ value, onChange, onExecute, tableNames = [] }: Que
       </div>
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto [&_.cm-editor]:h-full [&_.cm-scroller]:h-full"
+        className="flex-1 overflow-hidden [&_.cm-editor]:h-full [&_.cm-scroller]:overflow-auto"
       />
     </div>
   )
