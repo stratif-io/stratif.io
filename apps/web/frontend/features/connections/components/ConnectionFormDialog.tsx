@@ -215,6 +215,8 @@ function buildCredentials(dbType: DbType, form: HTMLFormElement): Record<string,
         secure: secureEl?.checked ?? true,
       }
     }
+    default:
+      return {}
   }
 }
 

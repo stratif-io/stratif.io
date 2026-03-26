@@ -267,8 +267,7 @@ function CredentialFields({ dbType, fields, onCheckboxChange }: CredentialFields
       )
 
     case 'clickhouse': {
-      // f.secure is a boolean from JSON — must compare to boolean false, not string 'false'
-      const isSecure = f.secure !== false && f.secure !== 'false'
+      const isSecure = f.secure !== 'false'
       return (
         <>
           <div className="grid grid-cols-3 gap-2">
@@ -439,6 +438,8 @@ export function ConnectionConfigTab({ connection }: Props) {
           secure: secureEl?.checked ?? true,
         }
       }
+      default:
+        return {}
     }
   }
 
