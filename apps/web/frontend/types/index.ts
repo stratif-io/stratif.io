@@ -20,6 +20,7 @@ export interface TrendData {
 }
 
 export interface TrendResponse {
+  sql?: string | string[]
   total_unique_users: number
   data: TrendData[]
 }
@@ -42,6 +43,7 @@ export interface TopEventsResponse {
 }
 
 export interface RawEventsResponse {
+  sql?: string | string[]
   total: number
   limit: number
   offset: number
@@ -63,6 +65,7 @@ export interface Session {
 }
 
 export interface SessionsResponse {
+  sql?: string | string[]
   total: number
   limit: number
   offset: number
@@ -76,6 +79,7 @@ export interface SessionsSummary {
 }
 
 export interface SessionsSummaryResponse {
+  sql?: string | string[]
   data: SessionsSummary[]
 }
 
@@ -87,6 +91,7 @@ export interface RetentionCohort {
 }
 
 export interface RetentionResponse {
+  sql?: string | string[]
   granularity: string
   milestones: number[]
   total_available_cohorts: number
@@ -105,6 +110,7 @@ export interface PathData {
 }
 
 export interface PathsResponse {
+  sql?: string | string[]
   target_event: string
   device_type: string | null
   total_occurrences: number
@@ -123,6 +129,7 @@ export interface PathAnalysisData {
 }
 
 export interface PathAnalysisResponse {
+  sql?: string | string[]
   start_event: string | null
   end_event: string | null
   min_path_length: number
@@ -148,6 +155,7 @@ export interface FunnelStepData {
 }
 
 export interface PathFunnelResponse {
+  sql?: string | string[]
   events: string[]
   total_steps: number
   data: FunnelStepData[]
@@ -160,6 +168,7 @@ export interface ConversionData {
 }
 
 export interface ConversionResponse {
+  sql?: string | string[]
   data: ConversionData[]
 }
 
@@ -369,6 +378,7 @@ export interface MissionControlPeriod {
 export type MissionControlMetricsNullable = { [K in keyof MissionControlMetrics]: number | null }
 
 export interface MissionControlResponse {
+  sql?: string | string[]
   period: MissionControlPeriod
   previous_period: MissionControlPeriod
   current: MissionControlMetrics
@@ -376,6 +386,7 @@ export interface MissionControlResponse {
 }
 
 export interface MissionControlMetricResponse {
+  sql?: string | string[]
   metric: string
   current: number
   previous: number | null
@@ -387,6 +398,7 @@ export interface MissionControlTrendPoint {
 }
 
 export interface MissionControlTrendResponse {
+  sql?: string | string[]
   metric: string
   data: MissionControlTrendPoint[]
 }
