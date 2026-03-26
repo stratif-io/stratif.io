@@ -118,3 +118,40 @@ async def list_tables(conn_id: str):
         raise HTTPException(status_code=400, detail=f"Browse failed: {exc}") from exc
 
     return {"tables": tables}
+
+
+@router.get("/{conn_id}/columns")
+async def list_columns(conn_id: str, table: str):
+    """Return column names for a given table (full_name), for the Query Studio catalog."""
+    row = _get_connection_or_404(conn_id)
+    db_type: str = row["db_type"]
+
+    try:
+        backend = get_backend(db_type)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}")
+
+    try:
+        creds = decrypt_credentials(row["credentials_encrypted"])
+    except ValueError as exc:
+        raise HTTPException(status_code=500, detail="Failed to decrypt credentials") from exc
+
+    credentials = backend.parse_credentials(creds)
+
+    try:
+        if backend.use_pool:
+            pool_key = backend.pool_key(conn_id, credentials)
+            conn = _pool_get(pool_key, lambda: backend.open(credentials, read_only=False))
+            columns = backend.get_columns_for_browse(conn, table)
+        else:
+            conn = backend.open(credentials, read_only=True)
+            try:
+                columns = backend.get_columns_for_browse(conn, table)
+            finally:
+                conn.close()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Column fetch failed: {exc}") from exc
+
+    return {"columns": columns}

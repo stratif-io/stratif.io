@@ -429,6 +429,9 @@ export const fetchSchemaDetect = (connId: string, eventsTable?: string) => {
 export const fetchConnectionTables = (connId: string) =>
   fetchApi<TablesResponse>(`/api/connections/${connId}/tables`)
 
+export const fetchConnectionColumns = (connId: string, table: string) =>
+  fetchApi<{ columns: string[] }>(`/api/connections/${connId}/columns?table=${encodeURIComponent(table)}`)
+
 export const fetchBrowse = (connId: string, catalog?: string, schema?: string) => {
   const params = new URLSearchParams()
   if (catalog) params.set('catalog', catalog)
