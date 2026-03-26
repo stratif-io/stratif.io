@@ -11,7 +11,7 @@ export interface UseQueryStudioReturn {
   result: QueryStudioResponse | null
   isRunning: boolean
   history: string[]
-  execute: (limit?: number) => Promise<void>
+  execute: (limit: number | null) => Promise<void>
   restoreFromHistory: (sql: string) => void
 }
 
@@ -31,11 +31,11 @@ export function useQueryStudio(): UseQueryStudioReturn {
   const [isRunning, setIsRunning] = useState(false)
   const [history, setHistory] = useState<string[]>([])
 
-  const execute = useCallback(async (limit?: number) => {
+  const execute = useCallback(async (limit: number | null) => {
     if (!sql.trim()) return
     const trimmed = sql.trim()
     const hasLimit = /\blimit\b/i.test(trimmed)
-    const finalSql = limit && !hasLimit ? `${trimmed}\nLIMIT ${limit}` : trimmed
+    const finalSql = limit !== null && !hasLimit ? `${trimmed}\nLIMIT ${limit}` : trimmed
     setIsRunning(true)
     try {
       const response = await executeQueryStudio({

@@ -3,7 +3,6 @@ import { useQueryStudio } from './hooks/useQueryStudio'
 import { CatalogBrowser } from './components/CatalogBrowser'
 import { QueryEditor } from './components/QueryEditor'
 import { ResultsPanel } from './components/ResultsPanel'
-import { SPACING } from '@/lib/constants'
 
 const MIN_EDITOR_HEIGHT = 80
 const MIN_RESULTS_HEIGHT = 60
@@ -11,7 +10,7 @@ const MIN_RESULTS_HEIGHT = 60
 export function QueryStudioPage() {
   const { sql, setSql, result, isRunning, history, execute, restoreFromHistory } = useQueryStudio()
   const [editorHeight, setEditorHeight] = useState(380)
-  const [limit, setLimit] = useState(1000)
+  const [limitEnabled, setLimitEnabled] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
 
@@ -47,23 +46,16 @@ export function QueryStudioPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className={`${SPACING.page} border-b pb-3`}>
-        <h1 className="text-xl font-bold">Query Studio</h1>
-        <p className="text-sm text-muted-foreground">
-          Execute SQL directly against your analytics connection
-        </p>
-      </div>
-
       <div className="flex flex-1 overflow-hidden">
         {/* Catalog — fixed width */}
-        <div className="w-52 shrink-0 overflow-hidden">
+        <div className="w-52 shrink-0 h-full">
           <CatalogBrowser onTableClick={handleTableClick} />
         </div>
 
         {/* Editor + Results — flex column */}
         <div ref={containerRef} className="flex flex-1 flex-col overflow-hidden border-l">
           <div style={{ height: editorHeight }} className="shrink-0 overflow-hidden">
-            <QueryEditor value={sql} onChange={setSql} onExecute={execute} limit={limit} onLimitChange={setLimit} />
+            <QueryEditor value={sql} onChange={setSql} onExecute={execute} limitEnabled={limitEnabled} onLimitToggle={setLimitEnabled} />
           </div>
 
           {/* Drag handle */}
