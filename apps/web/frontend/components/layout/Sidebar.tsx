@@ -14,6 +14,7 @@ import {
   Table,
   Database,
   Palette,
+  Terminal,
 } from 'lucide-react'
 
 interface NavItem {
@@ -124,6 +125,8 @@ function NavLink({
 export function Sidebar() {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
+  const devMode = useAppStore((s) => s.devMode)
+  const setDevMode = useAppStore((s) => s.setDevMode)
   const location = useLocation()
 
   const handleMobileNavClick = () => {
@@ -186,6 +189,13 @@ export function Sidebar() {
                   {group.title}
                 </p>
               </div>
+              {group.title === 'Configuration' && devMode && (
+                <NavLink
+                  item={{ title: 'Query Studio', href: '/query-studio', icon: Terminal }}
+                  collapsed={!sidebarOpen}
+                  onClick={handleMobileNavClick}
+                />
+              )}
               {group.items.map((item) => (
                 <NavLink
                   key={item.href}
@@ -200,8 +210,22 @@ export function Sidebar() {
 
         {/* Bottom section */}
         <div className="shrink-0 border-t px-2 py-2 space-y-0.5">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+          <div className="flex items-center gap-1 mt-1">
+            <button
+              onClick={() => setDevMode(!devMode)}
+              title={devMode ? 'Exit Dev Mode' : 'Enter Dev Mode'}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold transition-colors',
+                devMode
+                  ? 'bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              )}
+            >
+              <span className="font-mono text-[10px]">⌗</span>
+              {sidebarOpen && <span>Dev</span>}
+            </button>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             aria-expanded={sidebarOpen}
             className={cn(
@@ -232,6 +256,7 @@ export function Sidebar() {
               Collapse
             </span>
           </button>
+          </div>
         </div>
       </aside>
     </>
