@@ -72,11 +72,16 @@ describe('useMissionControlTrends', () => {
     })
   })
 
-  it('does not fire queries when dateRange dates are missing', () => {
-    renderHook(
-      () => useMissionControlTrends({ dateRange: { from: undefined, to: undefined } }),
+  it('fires queries without date params for all-time (from/to both null)', async () => {
+    const { result } = renderHook(
+      () => useMissionControlTrends({ dateRange: { from: null, to: null } }),
       { wrapper: makeWrapper() }
     )
-    expect(fetchMissionControlTrend).not.toHaveBeenCalled()
+    // Trend queries must fire even with no date range (all-time)
+    await waitFor(() => {
+      expect(result.current.trends['total_events'].loading).toBe(false)
+    })
+    expect(fetchMissionControlTrend).toHaveBeenCalled()
+    expect(result.current.trends['total_events'].values).toEqual([1000, 1200])
   })
 })
