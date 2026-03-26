@@ -12,16 +12,16 @@ export function DashboardLayout() {
 
   return (
     <TooltipProvider delayDuration={300}>
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <div
         className={cn(
-          'flex-1 transition-[margin] duration-300 ease-in-out',
+          'flex flex-col flex-1 min-w-0 transition-[margin] duration-300 ease-in-out',
           sidebarOpen ? 'lg:ml-[var(--sidebar-expanded)]' : 'lg:ml-[var(--sidebar-collapsed)]'
         )}
       >
         <Header />
-        <main id="main-content" className="p-4 sm:p-6 lg:p-8">
+        <main id="main-content" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="mx-auto w-full max-w-[var(--content-max-width)]">
             <Outlet />
           </div>
