@@ -1,6 +1,15 @@
 import { useState } from 'react'
+import { format as formatSql } from 'sql-formatter'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
+
+function prettySql(q: string): string {
+  try {
+    return formatSql(q, { language: 'sql', tabWidth: 2, keywordCase: 'upper' })
+  } catch {
+    return q
+  }
+}
 
 interface DevCardProps {
   sql?: string | string[] | null
@@ -66,7 +75,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                   <p className="text-[9px] text-slate-500 mb-1 font-mono">-- Query {i + 1}</p>
                 )}
                 <pre className="text-[10px] leading-relaxed text-green-300 font-mono whitespace-pre-wrap break-all">
-                  {q}
+                  {prettySql(q)}
                 </pre>
                 {i < queries.length - 1 && <hr className="my-2 border-slate-700" />}
               </div>
