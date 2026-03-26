@@ -25,6 +25,7 @@ export interface MetricTrend {
   previousValues: number[]
   previousDates: string[]
   loading: boolean
+  sql?: string | string[]
 }
 
 export interface UseMissionControlTrendsReturn {
@@ -113,6 +114,7 @@ export function useMissionControlTrends({
         previousValues: results[n + i].data?.data.map((d) => d.value) ?? [],
         previousDates: results[n + i].data?.data.map((d) => d.date) ?? [],
         loading: results[i].isLoading,
+        sql: results[i].data?.sql,
       },
     ])
   ) as Record<TrendMetric, MetricTrend>

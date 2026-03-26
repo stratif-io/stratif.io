@@ -4,6 +4,7 @@ import { MiniMetricCard } from './MiniMetricCard'
 import { formatMetricValue, computePctChange } from '@/lib/format-metric'
 import type { MissionControlResponse } from '@/types'
 import type { TrendMetric, MetricTrend } from '../hooks/useMissionControlTrends'
+import { DevCard } from '@/components/dev'
 
 export interface MissionControlGridProps {
   data: MissionControlResponse | undefined
@@ -102,22 +103,24 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
       {/* LEFT: Hero card */}
-      <HeroMetricCard
-        label={heroConfig.label}
-        metricKey={heroMetric}
-        value={formatMetricValue(heroMetric, heroCurrentValue)}
-        rawValue={heroCurrentValue}
-        pctChange={computePctChange(heroCurrentValue, heroPreviousValue)}
-        previousValue={heroPreviousValue !== null ? formatMetricValue(heroMetric, heroPreviousValue) : '—'}
-        sparklineValues={trends[heroMetric]?.values ?? []}
-        sparklineDates={trends[heroMetric]?.dates}
-        sparklinePreviousValues={trends[heroMetric]?.previousValues}
-        sparklinePreviousDates={trends[heroMetric]?.previousDates}
-        color={heroConfig.color}
-        loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
-        description={heroConfig.description}
-        changeLabel={heroConfig.changeLabel}
-      />
+      <DevCard sql={trends[heroMetric]?.sql}>
+        <HeroMetricCard
+          label={heroConfig.label}
+          metricKey={heroMetric}
+          value={formatMetricValue(heroMetric, heroCurrentValue)}
+          rawValue={heroCurrentValue}
+          pctChange={computePctChange(heroCurrentValue, heroPreviousValue)}
+          previousValue={heroPreviousValue !== null ? formatMetricValue(heroMetric, heroPreviousValue) : '—'}
+          sparklineValues={trends[heroMetric]?.values ?? []}
+          sparklineDates={trends[heroMetric]?.dates}
+          sparklinePreviousValues={trends[heroMetric]?.previousValues}
+          sparklinePreviousDates={trends[heroMetric]?.previousDates}
+          color={heroConfig.color}
+          loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
+          description={heroConfig.description}
+          changeLabel={heroConfig.changeLabel}
+        />
+      </DevCard>
 
       {/* RIGHT: Categorized mini-grid */}
       <div className="flex flex-col gap-4">
@@ -138,23 +141,24 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
                 const decimalsOverride =
                   metricKey === 'dau_mau_ratio' || metricKey === 'avg_events_per_session' ? 2 : 0
                 return (
-                  <MiniMetricCard
-                    key={metricKey}
-                    label={cfg.label}
-                    value={formatMetricValue(metricKey, current)}
-                    rawValue={current}
-                    pctChange={computePctChange(current, previous)}
-                    sparklineValues={trends[metricKey]?.values ?? []}
-                    color={cfg.color}
-                    isHero={heroMetric === metricKey}
-                    onClick={() => setHeroMetric(metricKey)}
-                    loading={cardLoading}
-                    fullWidth={isFullWidth}
-                    description={cfg.description}
-                    changeLabel={cfg.changeLabel}
-                    sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
-                    decimalsOverride={decimalsOverride}
-                  />
+                  <DevCard key={metricKey} sql={trends[metricKey]?.sql} className={isFullWidth ? 'col-span-2' : undefined}>
+                    <MiniMetricCard
+                      label={cfg.label}
+                      value={formatMetricValue(metricKey, current)}
+                      rawValue={current}
+                      pctChange={computePctChange(current, previous)}
+                      sparklineValues={trends[metricKey]?.values ?? []}
+                      color={cfg.color}
+                      isHero={heroMetric === metricKey}
+                      onClick={() => setHeroMetric(metricKey)}
+                      loading={cardLoading}
+                      fullWidth={isFullWidth}
+                      description={cfg.description}
+                      changeLabel={cfg.changeLabel}
+                      sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
+                      decimalsOverride={decimalsOverride}
+                    />
+                  </DevCard>
                 )
               })}
             </div>
