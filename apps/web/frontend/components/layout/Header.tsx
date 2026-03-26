@@ -44,7 +44,8 @@ export function Header() {
           <span
             aria-hidden={!devMode}
             className={cn(
-              'flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 transition-opacity duration-200',
+              'flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-opacity duration-200',
+              'border-amber-400/60 bg-amber-500/10 text-amber-600 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-400',
               devMode ? 'opacity-100' : 'invisible opacity-0',
             )}
           >
