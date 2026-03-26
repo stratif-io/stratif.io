@@ -210,15 +210,16 @@ export function Sidebar() {
 
         {/* Bottom section */}
         <div className="shrink-0 border-t px-2 py-2 space-y-0.5">
-          <div className="flex items-center gap-1 mt-1">
+          <div className="flex flex-col gap-0.5">
             <button
               onClick={() => setDevMode(!devMode)}
               title={devMode ? 'Exit Dev Mode' : 'Enter Dev Mode'}
               className={cn(
-                'flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold transition-colors',
+                'flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold transition-colors',
                 devMode
                   ? 'bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                !sidebarOpen && 'justify-center'
               )}
             >
               <span className="font-mono text-[10px]">⌗</span>
