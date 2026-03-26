@@ -51,7 +51,10 @@ export function useMissionControlTrends({
       ? formatDateParam(subDays(dateRange.from, periodDays))
       : undefined
 
-  const enabled = !!activeConnectionId && !!startDate && !!endDate
+  // Queries are enabled whenever a connection is selected, with or without dates.
+  // When no date range is set (all-time), start_date/end_date are omitted and
+  // the backend returns data over all time.
+  const enabled = !!activeConnectionId
 
   // Current period queries (indices 0..N-1)
   // Previous period queries (indices N..2N-1)

@@ -115,7 +115,25 @@ describe('useMissionControl', () => {
     expect(fetchMissionControlMetric).not.toHaveBeenCalled()
   })
 
-  it('does not fire queries when dates are missing', () => {
+  it('fires queries without date params for all-time (from/to both null)', async () => {
+    const { result } = renderHook(
+      () => useMissionControl({ dateRange: { from: null, to: null } }),
+      { wrapper: makeWrapper() }
+    )
+    // Queries must fire even when no date range is selected (all-time)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(fetchMissionControlMetric).toHaveBeenCalledTimes(8)
+    // Data must be populated, not undefined
+    expect(result.current.data).toBeDefined()
+    expect(result.current.data!.current.total_events).toBe(42)
+  })
+
+  it('does not fire queries when activeConnectionId is missing and dates are also null', () => {
+    vi.mocked(useAppStore).mockReturnValue({
+      activeFilters: {},
+      activeConnectionId: null,
+    } as ReturnType<typeof useAppStore>)
+
     renderHook(
       () => useMissionControl({ dateRange: { from: null, to: null } }),
       { wrapper: makeWrapper() }
