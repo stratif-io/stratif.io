@@ -37,9 +37,9 @@ function ColumnRows({ connId, table, onColumnClick, indent }: ColumnRowProps) {
           title="Insert column name"
           className={cn('flex w-full items-center gap-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors group', indent)}
         >
-          <ChevronRight className="h-2.5 w-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
           <Columns className="h-2.5 w-2.5 shrink-0 opacity-50" />
-          <span>{col}</span>
+          <span className="flex-1 text-left">{col}</span>
+          <ChevronRight className="h-2.5 w-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-primary mr-2" />
         </button>
       ))}
     </>
