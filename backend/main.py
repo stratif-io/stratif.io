@@ -112,7 +112,11 @@ if dist_path.exists():
 
     @app.get("/")
     async def root_redirect():
-        return RedirectResponse(url="/dashboard", status_code=302)
+        return RedirectResponse(
+            url="/dashboard",
+            status_code=302,
+            headers={"Cache-Control": "no-cache, must-revalidate"},
+        )
 
     @app.get("/{filename}.svg")
     async def serve_svg(filename: str):
@@ -127,7 +131,10 @@ if dist_path.exists():
         if full_path.startswith("api/"):
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Not found")
-        return FileResponse(dist_path / "index.html")
+        return FileResponse(
+            dist_path / "index.html",
+            headers={"Cache-Control": "no-cache, must-revalidate"},
+        )
 
 
 def main():
