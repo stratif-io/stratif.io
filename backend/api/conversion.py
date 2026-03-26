@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from backend.core.auth import get_current_user
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
-from backend.services.validators import parse_date, to_sql_datetime
+from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["conversion"], dependencies=[Depends(get_current_user)])
 
@@ -75,7 +75,7 @@ def get_conversion(
     conversion_rate = (converted_users / total_users * 100) if total_users > 0 else 0
 
     return {
-        "sql": query.strip(),
+        "sql": interpolate_sql(query, all_params),
         "entry_event": entry_event,
         "goal_event": goal_event,
         "data": [

@@ -9,7 +9,7 @@ from backend.core.auth import get_current_user
 from backend.services.views import session_ctes
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
-from backend.services.validators import parse_date, to_sql_datetime
+from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["sessions"], dependencies=[Depends(get_current_user)])
 
@@ -58,7 +58,7 @@ def get_raw_sessions(
     rows = db.execute(data_query, (params or []) + [limit, offset])
 
     return {
-        "sql": [count_query.strip(), data_query.strip()],
+        "sql": [interpolate_sql(count_query, params or []), interpolate_sql(data_query, (params or []) + [limit, offset])],
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -140,7 +140,7 @@ def get_sessions_summary(
 
     row = rows[0] if rows else (0, 0.0, 0.0)
     return {
-        "sql": summary_query.strip(),
+        "sql": interpolate_sql(summary_query, all_params or []),
         "data": [
             {
                 "total_sessions": row[0] or 0,

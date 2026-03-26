@@ -11,7 +11,7 @@ from structlog.stdlib import BoundLogger
 from backend.core.auth import get_current_user
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
-from backend.services.validators import parse_date, to_sql_datetime
+from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
 
 log: BoundLogger = structlog.get_logger(__name__)
 
@@ -68,7 +68,7 @@ def get_top_events(
         LIMIT ?
         """
     result = db.execute(query, params)
-    return {"sql": query.strip(), "data": [{"name": row[0], "count": row[1]} for row in result]}
+    return {"sql": interpolate_sql(query, params), "data": [{"name": row[0], "count": row[1]} for row in result]}
 
 
 @router.get("/raw/events")
@@ -153,7 +153,7 @@ def get_raw_events(
         return base
 
     return {
-        "sql": [count_query.strip(), data_query.strip()],
+        "sql": [interpolate_sql(count_query, params), interpolate_sql(data_query, params + [limit, offset])],
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -200,7 +200,7 @@ def get_user_events(
         return base
 
     return {
-        "sql": user_events_query.strip(),
+        "sql": interpolate_sql(user_events_query, [user_id, limit]),
         "user_id": user_id,
         "data": [
             {
