@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { EditorView, keymap, lineNumbers, highlightActiveLine } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { sql } from '@codemirror/lang-sql'
@@ -7,7 +7,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { autocompletion, closeBrackets } from '@codemirror/autocomplete'
 import { format } from 'sql-formatter'
 
-const LIMIT_OPTIONS = [100, 500, 1000, 5000, 10000]
+const LIMIT_OPTIONS = [100, 500, 1000, 5000, 10000] as const
 
 interface QueryEditorProps {
   value: string
@@ -115,25 +115,46 @@ export function QueryEditor({ value, onChange, onExecute, limit, onLimitChange, 
     }
   }
 
+  const [limitOpen, setLimitOpen] = useState(false)
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b bg-background px-3 py-1.5">
-        <select
-          value={limit}
-          onChange={(e) => onLimitChange(Number(e.target.value))}
-          className="rounded-md border bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground focus:outline-none cursor-pointer"
-          aria-label="Row limit"
-        >
-          {LIMIT_OPTIONS.map((n) => (
-            <option key={n} value={n}>{n.toLocaleString()} rows</option>
-          ))}
-        </select>
-        <button
-          onClick={() => onExecute(limit)}
-          className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          ▶ Run
-        </button>
+        {/* Split run button */}
+        <div className="relative flex items-stretch">
+          <button
+            onClick={() => onExecute(limit)}
+            className="flex items-center gap-1.5 rounded-l-md bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            ▶ Run ({limit.toLocaleString()})
+          </button>
+          <button
+            onClick={() => setLimitOpen((o) => !o)}
+            aria-label="Change row limit"
+            className="flex items-center rounded-r-md border-l border-primary-foreground/20 bg-primary px-1.5 py-1 text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+              <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          {limitOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setLimitOpen(false)} />
+              <div className="absolute left-0 top-full z-20 mt-1 min-w-[120px] rounded-md border bg-popover shadow-md overflow-hidden">
+                {LIMIT_OPTIONS.map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => { onLimitChange(n); setLimitOpen(false) }}
+                    className={`flex w-full items-center justify-between px-3 py-1.5 text-[11px] hover:bg-accent transition-colors ${n === limit ? 'font-semibold text-primary' : 'text-foreground'}`}
+                  >
+                    {n.toLocaleString()} rows
+                    {n === limit && <span className="ml-3 text-primary">✓</span>}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
         <span className="text-[10px] text-muted-foreground">Cmd+Enter</span>
         <div className="mx-1 h-4 w-px bg-border" />
         <button
