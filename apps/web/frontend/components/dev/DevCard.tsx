@@ -171,14 +171,14 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                   aria-label="Expand SQL"
                   className={cn('transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
                 >
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <svg width="15" height="15" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M1 8v3h3M11 4V1H8M1 4V1h3M11 8v3H8" />
                   </svg>
                 </button>
                 <button
                   onClick={() => setFlipped(false)}
                   aria-label="Close SQL"
-                  className={cn('text-[10px] transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
+                  className={cn('text-sm leading-none transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
                 >
                   ✕
                 </button>
