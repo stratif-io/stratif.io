@@ -84,6 +84,13 @@ export function DevCard({ sql, children, className }: DevCardProps) {
   const [cardRect, setCardRect] = useState<Rect | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    if (!expanded) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setExpanded(false) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [expanded])
+
   if (!devMode) return <>{children}</>
 
   const firstQuery = Array.isArray(sql) ? sql[0] : sql
@@ -125,13 +132,6 @@ export function DevCard({ sql, children, className }: DevCardProps) {
   function collapse() {
     setExpanded(false)
   }
-
-  useEffect(() => {
-    if (!expanded) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') collapse() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [expanded])
 
   const collapsed: Rect = cardRect ?? { top: 0, left: 0, width: 200, height: 100 }
   const expandedRect: Rect = {
