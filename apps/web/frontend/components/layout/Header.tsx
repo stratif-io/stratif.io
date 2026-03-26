@@ -19,7 +19,7 @@ export function Header() {
   const devMode = useAppStore((s) => s.devMode)
   const { theme, setTheme } = useTheme()
   return (
-    <header className="sticky top-0 z-[var(--z-header)] w-full border-b bg-background">
+    <header className="sticky top-0 z-[var(--z-header)] w-full border-b bg-background relative">
       <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
         {/* Mobile hamburger */}
         <Button
@@ -52,7 +52,6 @@ export function Header() {
             <span className="font-mono text-[10px]">⌗</span>
             Development Mode
           </span>
-          <QueryStatusIndicator />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Change theme">
@@ -78,6 +77,10 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
+      {/* Floating query status — anchored to bottom-right of header, overlaps content below */}
+      <div className="absolute bottom-0 right-4 lg:right-6 translate-y-1/2 z-10">
+        <QueryStatusIndicator />
       </div>
     </header>
   )
