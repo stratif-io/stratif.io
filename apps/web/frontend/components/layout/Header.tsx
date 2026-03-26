@@ -10,7 +10,6 @@ import {
 import { Moon, Sun, Menu, Monitor } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
-import { QueryStatusIndicator } from './QueryStatusIndicator'
 import { cn } from '@/lib/utils'
 
 export function Header() {
@@ -19,7 +18,7 @@ export function Header() {
   const devMode = useAppStore((s) => s.devMode)
   const { theme, setTheme } = useTheme()
   return (
-    <header className="sticky top-0 z-[var(--z-header)] w-full border-b bg-background relative">
+    <header className="sticky top-0 z-[var(--z-header)] w-full border-b bg-background">
       <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
         {/* Mobile hamburger */}
         <Button
@@ -77,10 +76,6 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
-      {/* Floating query status — anchored to bottom-right of header, overlaps content below */}
-      <div className="absolute bottom-0 right-4 lg:right-6 translate-y-1/2 z-10">
-        <QueryStatusIndicator />
       </div>
     </header>
   )
