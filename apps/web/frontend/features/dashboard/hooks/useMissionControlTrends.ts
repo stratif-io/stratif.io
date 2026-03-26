@@ -114,7 +114,9 @@ export function useMissionControlTrends({
         previousValues: results[n + i].data?.data.map((d) => d.value) ?? [],
         previousDates: results[n + i].data?.data.map((d) => d.date) ?? [],
         loading: results[i].isLoading,
-        sql: results[i].data?.sql,
+        sql: [results[i].data?.sql, results[n + i].data?.sql]
+          .flatMap((s) => (Array.isArray(s) ? s : s ? [s] : []))
+          .filter(Boolean) as string[],
       },
     ])
   ) as Record<TrendMetric, MetricTrend>
