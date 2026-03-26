@@ -173,7 +173,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
               <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
                 {firstQuery && (
                   <button
-                    onClick={() => { setPendingQueryStudioSql(firstQuery); navigate('/query-studio') }}
+                    onClick={() => { setPendingQueryStudioSql(prettySql(firstQuery)); navigate('/query-studio') }}
                     aria-label="Open in Query Studio"
                     title="Open in Query Studio"
                     className={cn('transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
@@ -236,7 +236,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                 <div className="flex items-center gap-2">
                   {firstQuery && (
                     <button
-                      onClick={() => { collapse(); setPendingQueryStudioSql(firstQuery); navigate('/query-studio') }}
+                      onClick={() => { collapse(); setPendingQueryStudioSql(prettySql(firstQuery)); navigate('/query-studio') }}
                       aria-label="Open in Query Studio"
                       title="Open in Query Studio"
                       className={cn('flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium transition-colors', dark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200')}
