@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
+from scalar_fastapi import get_scalar_api_reference
 
 from backend.core.middleware import RequestIdMiddleware
 
@@ -52,7 +53,7 @@ app = FastAPI(
     title="stratif.io Analytics",
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
-    openapi_url="/openapi.json" if settings.debug else None,
+    openapi_url="/openapi.json",  # always available — OSS product, spec is public
     lifespan=lifespan,
 )
 
@@ -91,10 +92,23 @@ app.include_router(connections_router)
 app.include_router(mission_control_router)
 
 
+@app.get("/api/reference", include_in_schema=False)
+async def scalar_html():
+    return get_scalar_api_reference(
+        openapi_url="/openapi.json",
+        title="stratif.io API Reference",
+    )
+
+
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
 
+
+# Docs (production) — served at /docs/
+docs_dist_path = Path(__file__).parent.parent / "docs-dist"
+if docs_dist_path.exists():
+    app.mount("/docs", StaticFiles(directory=docs_dist_path, html=True), name="docs")
 
 # SPA fallback (production)
 dist_path = Path(__file__).parent.parent / "dist"
@@ -115,7 +129,7 @@ if dist_path.exists():
 
     @app.get("/{full_path:path}")
     async def spa_fallback(full_path: str):
-        if full_path.startswith("api/"):
+        if full_path.startswith("api/") or full_path.startswith("docs/"):
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Not found")
         return FileResponse(dist_path / "index.html")
