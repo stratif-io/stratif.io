@@ -482,6 +482,7 @@ def get_pivot(
 
     if not col_dims:
         return {
+            "sql": query.strip(),
             "dimensions": row_dims,
             "column_dimensions": [],
             "measures": measure_list,
@@ -532,6 +533,7 @@ def get_pivot(
     ]
 
     return {
+        "sql": query.strip(),
         "dimensions": row_dims,
         "column_dimensions": col_dims,
         "column_headers": column_headers,
