@@ -82,7 +82,7 @@ stratif.io stores encrypted credentials for client analytics databases. Security
 - Rate limiting on login (10/min) and register (3/min) via slowapi
 
 ### Config flags for production
-- `STRATIFIO_DEBUG=false` (default) — hides `/docs`, `/redoc`, `/openapi.json`
+- `STRATIFIO_DEBUG=false` (default) — hides `/docs` and `/redoc` (note: `/openapi.json` and `/api/reference` are always available — stratif.io is OSS and the spec is public)
 - `STRATIFIO_ALLOW_REGISTRATION=false` (default) — disables open registration
 - `STRATIFIO_CORS_ORIGINS` — set to your exact frontend domain (not `*`)
 - `STRATIFIO_ENCRYPTION_KEY` — must be 32+ chars; generate with `openssl rand -base64 32`

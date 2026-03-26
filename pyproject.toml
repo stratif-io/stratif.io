@@ -23,6 +23,7 @@ dependencies = [
     "databricks-sql-connector>=4.2.5",
     "psycopg2-binary>=2.9.11",
     "clickhouse-connect>=0.14.1",
+    "scalar-fastapi>=1.8.1",
 ]
 
 [project.optional-dependencies]
