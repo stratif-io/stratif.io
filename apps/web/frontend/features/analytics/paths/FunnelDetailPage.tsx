@@ -29,6 +29,7 @@ import { FunnelSteps } from './components/FunnelSteps'
 import { fetchPathFunnel, fetchEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import { SPACING, TYPOGRAPHY, FILTER_TRIGGER_CLASS } from '@/lib/constants'
+import { DevCard } from '@/components/dev'
 import { cn, formatDateParam } from '@/lib/utils'
 
 const MAX_STEPS = 10
@@ -314,6 +315,7 @@ export function FunnelDetailPage() {
                 )}
 
                 {/* Funnel visualization */}
+                <DevCard sql={funnelData?.sql}>
                 <Card>
                   <CardHeader>
                     <div className="flex items-center gap-2">
@@ -382,6 +384,7 @@ export function FunnelDetailPage() {
                     </Collapsible>
                   </CardContent>
                 </Card>
+                </DevCard>
               </>
             )}
           </div>

@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { QueryError } from '@/components/ui/query-error'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { SPACING, QUERY_STALE_TIME } from '@/lib/constants'
+import { DevCard } from '@/components/dev'
 import { EventsTable, buildDimCols, defaultVisibility } from '@/components/events-table/EventsTable'
 import { FilterSelect } from '@/components/FilterSelect'
 import { UserTimelineModal } from './components/UserTimelineModal'
@@ -272,6 +273,7 @@ export function EventsPage() {
             </Button>
           </div>
         </div>
+        <DevCard sql={rawEventsData?.sql}>
         <Card className="relative overflow-hidden">
           <CardLoadingBar loading={isFetching} />
           <CardContent className="p-0">
@@ -304,6 +306,7 @@ export function EventsPage() {
               />}
           </CardContent>
         </Card>
+        </DevCard>
       </div>
 
       <UserTimelineModal

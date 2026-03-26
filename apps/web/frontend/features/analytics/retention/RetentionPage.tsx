@@ -13,6 +13,7 @@ import { useAppStore } from '@/stores'
 import { useRetentionData, type RetentionGranularity } from './hooks/useRetentionData'
 import { RetentionTable } from './components/RetentionTable'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
+import { DevCard } from '@/components/dev'
 import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 
@@ -88,7 +89,7 @@ export function RetentionPage() {
   const [granularity, setGranularity] = useState<RetentionGranularity>('day')
   const [cohortLimit, setCohortLimit] = useState(10)
 
-  const { retentionData, milestones, isLoading, isError, error, avgMilestones: _avgMilestones, totalAvailable } = useRetentionData({
+  const { retentionData, milestones, isLoading, isError, error, avgMilestones: _avgMilestones, totalAvailable, sql } = useRetentionData({
     dateRange,
     granularity,
   })
@@ -170,6 +171,7 @@ export function RetentionPage() {
           )}
 
           {/* Cohort heatmap with sparklines */}
+          <DevCard sql={sql}>
           <Card className="relative overflow-hidden">
             <CardLoadingBar loading={isLoading} />
             <CardContent className="p-0 pb-0">
@@ -198,6 +200,7 @@ export function RetentionPage() {
               )}
             </CardContent>
           </Card>
+          </DevCard>
         </div>
       </div>
     </PageTransition>

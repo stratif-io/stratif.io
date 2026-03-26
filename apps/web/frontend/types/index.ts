@@ -39,6 +39,7 @@ export interface EventsResponse {
 }
 
 export interface TopEventsResponse {
+  sql?: string | string[]
   data: Array<{ name: string; count: number }>
 }
 
@@ -211,6 +212,7 @@ export interface PivotOptionsResponse {
 }
 
 export interface PivotResponse {
+  sql?: string | string[]
   dimensions: string[]
   column_dimensions?: string[]
   column_headers?: Array<Record<string, unknown>>

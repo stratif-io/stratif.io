@@ -24,6 +24,7 @@ export interface UsePathExplorerReturn {
   isLoading: boolean
   eventsLoading: boolean
   totalPaths: number
+  sql: string | string[] | undefined
 }
 
 export function usePathExplorer({
@@ -90,5 +91,6 @@ export function usePathExplorer({
     isLoading,
     eventsLoading,
     totalPaths: pathResponse?.total_paths || 0,
+    sql: pathResponse?.sql,
   }
 }

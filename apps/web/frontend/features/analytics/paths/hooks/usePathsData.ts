@@ -20,6 +20,7 @@ export interface UsePathsDataReturn {
   error: Error | null
   eventsLoading: boolean
   totalOccurrences: number
+  sql: string | string[] | undefined
 }
 
 export function usePathsData({
@@ -62,5 +63,6 @@ export function usePathsData({
     error: error as Error | null,
     eventsLoading,
     totalOccurrences: pathsResponse?.total_occurrences || 0,
+    sql: pathsResponse?.sql,
   }
 }

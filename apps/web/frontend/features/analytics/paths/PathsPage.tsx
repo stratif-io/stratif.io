@@ -17,6 +17,7 @@ import { LoadingState } from '@/components/ui/loading-state'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
+import { DevCard } from '@/components/dev'
 
 export function PathsPage() {
   useEffect(() => {
@@ -27,7 +28,7 @@ export function PathsPage() {
   const [deviceType, setDeviceType] = useState<string>('')
   const [targetEvent, setTargetEvent] = useState<string>(selectedEvent || 'Purchase')
 
-  const { pathData, events, isLoading, isError, error, eventsLoading, totalOccurrences } = usePathsData({
+  const { pathData, events, isLoading, isError, error, eventsLoading, totalOccurrences, sql } = usePathsData({
     dateRange,
     targetEvent,
     deviceType,
@@ -44,6 +45,7 @@ export function PathsPage() {
         <div className={SPACING.section}>
           <span className={TYPOGRAPHY.pageLabel}>Path Analysis</span>
 
+          <DevCard sql={sql}>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-3">
@@ -105,6 +107,7 @@ export function PathsPage() {
               )}
             </CardContent>
           </Card>
+          </DevCard>
         </div>
       </div>
     </PageTransition>
