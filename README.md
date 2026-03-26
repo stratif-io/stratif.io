@@ -8,7 +8,7 @@
 
 **🔍 Self-hosted product analytics. Your database, your infrastructure, your rules. 📊**
 
-[Quick Start](#-quick-start) · [Features](#-features) · [Databases](#-supported-databases) · [Embed](#-embedding) · [Docs](#-local-development)
+[Quick Start](#-quick-start) · [Features](#-features) · [Databases](#-supported-databases) · [Embed](#-embedding) · [Local Dev](#-local-development)
 
 </div>
 
@@ -32,7 +32,7 @@ Most analytics platforms force a choice: pay for a SaaS that owns your data, or 
 curl -fsSL https://stratif.io/install.sh | bash
 ```
 
-The script checks your dependencies, clones the repo, generates an encryption key, and starts the app. Open **http://localhost:8000** when it's done.
+The script checks your dependencies, clones the repo, generates an encryption key, and starts the app. Open **http://localhost:9999** when it's done.
 
 > **Manual (Docker Compose):**
 >
@@ -43,38 +43,41 @@ The script checks your dependencies, clones the repo, generates an encryption ke
 > docker compose up
 > ```
 
-**First run:** Sample analytics data (~5 000 events) is seeded automatically into `/data/sample.duckdb`. Go to **Connections → Add → DuckDB → `/data/sample.duckdb`** to explore it.
+**First run:** Sample analytics data (~5,000 events) is seeded automatically into `/data/sample.duckdb`. Go to **Connections → Add → DuckDB → `/data/sample.duckdb`** to explore it.
 
 > To reseed from scratch: `docker compose down -v && docker compose up`
+> **Warning:** `-v` removes the `analytics_data` volume — this deletes all stored connections and credentials, not just the sample data.
 
 ---
 
 ## ✨ Features
 
-| Feature                        | Description                                                |
-| ------------------------------ | ---------------------------------------------------------- |
-| 📈 **Trends**                  | Event counts over time with customizable granularity       |
-| 🔁 **Retention**               | Cohort-based retention tables                              |
-| 🚦 **Funnels**                 | Step-by-step conversion analysis                           |
-| 🗺️ **Paths**                   | User journey flows with Sankey diagrams                    |
-| 🔀 **Pivot Tables**            | Drag-and-drop data exploration (Graphic Walker)            |
-| 💻 **Sessions**                | Raw session browser with full event timelines              |
-| 🔌 **Multi-database**          | One UI, many backends — DuckDB, Postgres, Snowflake & more |
-| 🔐 **Encrypted credentials**   | AES-128-CBC + HMAC-SHA256 via Fernet                       |
-| 🐳 **Single-container deploy** | One `docker compose up` from dev to production             |
+| Feature                      | Description                                                |
+| ---------------------------- | ---------------------------------------------------------- |
+| 📈 **Trends**                | Event counts over time with customizable granularity       |
+| 🔁 **Retention**             | Cohort-based retention tables                              |
+| 🚦 **Funnels**               | Step-by-step conversion analysis                           |
+| 🗺️ **Paths**                 | User journey flows with Sankey diagrams                    |
+| 🔀 **Pivot Tables**          | Drag-and-drop data exploration (Graphic Walker)            |
+| 💻 **Sessions**              | Raw session browser with full event timelines              |
+| 🔌 **Multi-database**        | One UI, many backends — DuckDB, Postgres, Snowflake & more |
+| 🔐 **Encrypted credentials** | AES-128-CBC + HMAC-SHA256 via Fernet                       |
+| 🐳 **Docker deploy**         | One `docker compose up` from dev to production             |
 
 ---
 
 ## 🗄️ Supported Databases
 
-| Database       | Notes                          |
-| -------------- | ------------------------------ |
-| **DuckDB**     | Local file or S3-backed        |
-| **SQLite**     | Local file                     |
-| **PostgreSQL** | Connection string              |
-| **Databricks** | SQL warehouse via HTTP path    |
-| **Snowflake**  | Account identifier + warehouse |
-| **ClickHouse** | Host/port, optional TLS        |
+| Database       | Notes                                 |
+| -------------- | ------------------------------------- |
+| **DuckDB**     | Local file or S3-backed               |
+| **SQLite**     | Local file                            |
+| **PostgreSQL** | Connection string                     |
+| **BigQuery**   | Coming soon                           |
+| **Redshift**   | Coming soon                           |
+| **Databricks** | SQL warehouse via HTTP path (Beta)    |
+| **Snowflake**  | Account identifier + warehouse (Beta) |
+| **ClickHouse** | Host/port, optional TLS               |
 
 ---
 
@@ -82,17 +85,17 @@ The script checks your dependencies, clones the repo, generates an encryption ke
 
 ```
 stratifio-oss/
-├── frontend/          # React 18, Vite 6, Tailwind CSS v4, shadcn/ui
-│   ├── features/      # Analytics pages (trends, retention, funnels…)
-│   ├── components/    # Shared UI (charts, tables, layout)
-│   └── stores/        # Zustand client state
-├── backend/           # FastAPI, DuckDB, SQLGlot
-│   ├── api/           # Route handlers
-│   ├── backends/      # Database adapters (DuckDB, PG, Snowflake…)
-│   ├── services/      # Business logic & SQL transpilation
-│   └── product_db/    # SQLite for connection configs
-├── seeders/           # Sample data generators
-├── Dockerfile         # Multi-stage build (Node → Python → final)
+├── apps/web/frontend/     # React 18, Vite 6, Tailwind CSS v4, shadcn/ui
+│   ├── features/          # Analytics pages (trends, retention, funnels…)
+│   ├── components/        # Shared UI (charts, tables, layout)
+│   └── stores/            # Zustand client state
+├── backend/               # FastAPI, SQLGlot
+│   ├── api/               # Route handlers
+│   ├── backends/          # Database adapters (DuckDB, PG, Snowflake…)
+│   ├── services/          # Business logic & SQL transpilation
+│   └── product_db/        # SQLite for connection configs
+├── seeders/               # Sample data generators
+├── Dockerfile             # Multi-stage build (Node → Python → Caddy → final)
 └── docker-compose.yml
 ```
 
@@ -108,7 +111,7 @@ stratifio-oss/
 | `STRATIFIO_ENCRYPTION_KEY`     | _(required)_                 | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
 | `STRATIFIO_PRODUCT_DB_PATH`    | `./stratifio_product.sqlite` | SQLite file storing connection configs                           |
 | `STRATIFIO_API_KEY`            | _(empty)_                    | Optional API key for the dashboard                               |
-| `STRATIFIO_CORS_ORIGINS`       | `http://localhost:8000`      | Allowed CORS origins                                             |
+| `STRATIFIO_CORS_ORIGINS`       | `http://localhost:9999`      | Allowed CORS origins                                             |
 | `STRATIFIO_DEBUG`              | `false`                      | Enable `/docs` and `/redoc` endpoints                            |
 | `STRATIFIO_ALLOW_REGISTRATION` | `false`                      | Allow open user registration                                     |
 | `STRATIFIO_LOG_LEVEL`          | `INFO`                       | `DEBUG` / `INFO` / `WARNING` / `ERROR`                           |
