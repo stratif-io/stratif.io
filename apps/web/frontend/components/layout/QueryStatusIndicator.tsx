@@ -50,12 +50,12 @@ export function QueryStatusIndicator() {
         (hidden || fading) ? 'invisible opacity-0' : 'opacity-100',
       )}
     >
-      {/* Ghost: widest possible content — drives the container width */}
+      {/* Ghost: fixed max-width content — drives the container width */}
       <span className="invisible flex items-center gap-1.5 whitespace-nowrap" aria-hidden>
         <span className="inline-block h-1.5 w-1.5 rounded-full" />
-        <span className="font-semibold">{runningQueries} running</span>
+        <span className="font-semibold">99 running</span>
         <span>·</span>
-        <span>{queuedQueries} queued</span>
+        <span>99 queued</span>
       </span>
 
       {/* Real content — overlaid absolutely */}
