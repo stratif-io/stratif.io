@@ -9,10 +9,11 @@ import { useUrlSync } from '@/hooks'
 export function DashboardLayout() {
   useUrlSync()
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
+  const devMode = useAppStore((s) => s.devMode)
 
   return (
     <TooltipProvider delayDuration={300}>
-    <div className="flex min-h-screen bg-background">
+    <div className={cn('flex min-h-screen bg-background', devMode && 'dev-mode-active')}>
       <Sidebar />
       <div
         className={cn(
