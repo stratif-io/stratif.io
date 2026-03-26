@@ -249,6 +249,21 @@ class BaseE2ETest:
         conn_id = type(self).connection_id
         params = self._all_time_params(conn_id)
         self._assert_all_analytics(client, params)
+        # All-time must return actual data — measures must not be null/zero.
+        # This guards against regressions where the all-time path disables queries
+        # because no date range is present.
+        r = client.get("/api/trend", params=params)
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body.get("total_unique_users") is not None, (
+            "total_unique_users is None in all-time trend — backend returned null"
+        )
+        assert body["total_unique_users"] > 0, (
+            f"total_unique_users is 0 in all-time trend — got: {body}"
+        )
+        assert len(body.get("data", [])) > 0, (
+            "all-time trend returned empty data array"
+        )
 
     # ------------------------------------------------------------------
     # Step 11 — Cleanup: delete the connection

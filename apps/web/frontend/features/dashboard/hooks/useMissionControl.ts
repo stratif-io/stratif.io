@@ -40,7 +40,10 @@ export function useMissionControl({
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
   const { activeFilters, activeConnectionId } = useAppStore()
 
-  const enabled = !!activeConnectionId && !!startDate && !!endDate
+  // Queries are enabled whenever a connection is selected, with or without dates.
+  // When no date range is set (all-time), start_date/end_date are omitted from
+  // the request and the backend returns aggregate data over all time.
+  const enabled = !!activeConnectionId
 
   // Previous period calculation (same as useMissionControlTrends)
   const periodDays =
@@ -101,7 +104,7 @@ export function useMissionControl({
   ) as Record<MetricKey, boolean>
 
   // Build data progressively: populate resolved metrics immediately, use 0 for still-loading ones.
-  // data is undefined only when queries are disabled (no connection / no dates).
+  // data is undefined only when queries are disabled (no connection).
   const data: MissionControlResponse | undefined = enabled
     ? {
         period: { start_date: startDate, end_date: endDate },
