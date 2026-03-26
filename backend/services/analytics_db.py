@@ -7,10 +7,12 @@ from fastapi import HTTPException
 
 from backend.backends.base import DatabaseBackend
 from backend.config import settings
-from backend.services.pool import _pool_get
+from backend.services.pool import _pool_evict, _pool_get
 from backend.services.sql_builder import json_extract_string
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from backend.product_db import ProductDB
 
 log = structlog.get_logger(__name__)
@@ -77,6 +79,7 @@ class AnalyticsDatabase:
         self._available_columns: frozenset[str] | None = available_columns
         self._pooled: bool = False
         self._pool_key: tuple | None = None
+        self._pool_factory: "Callable[[], Any] | None" = None
 
     def execute(self, query: str, params: list | None = None) -> list[tuple]:
         if self._events_cte:
@@ -87,6 +90,17 @@ class AnalyticsDatabase:
             return self._backend.execute(self._conn, query, params)
         except Exception as exc:
             if self._pooled and self._backend.is_connection_error(exc):
+                log.warning("stale_pooled_connection", pool_key=self._pool_key, error=str(exc))
+                if self._pool_factory:
+                    # Evict the dead connection and retry once with a fresh one.
+                    _pool_evict(self._pool_key)
+                    self._conn = _pool_get(self._pool_key, self._pool_factory)
+                    try:
+                        return self._backend.execute(self._conn, query, params)
+                    except Exception as retry_exc:
+                        raise HTTPException(
+                            status_code=503, detail="Connection lost — please retry."
+                        ) from retry_exc
                 raise HTTPException(status_code=503, detail="Connection lost — please retry.") from exc
             raise
 
@@ -268,13 +282,15 @@ def open_analytics_db(
 
     if backend.use_pool:
         pool_key = backend.pool_key(connection_id, credentials)
-        conn = _pool_get(pool_key, lambda: backend.open(credentials, read_only=False))
+        factory = lambda: backend.open(credentials, read_only=False)  # noqa: E731
+        conn = _pool_get(pool_key, factory)
         cols = backend.get_table_columns(conn, f'{_iq}{events_table}{_iq}')
         db = AnalyticsDatabase(
             conn, backend, events_cte=events_cte, available_columns=cols or None, **shared_kwargs
         )
         db._pooled = True
         db._pool_key = pool_key
+        db._pool_factory = factory
         return db
 
     conn = backend.open(credentials, read_only=True)
