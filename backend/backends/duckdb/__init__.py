@@ -77,7 +77,7 @@ class DuckDBBackend:
     def browse(self, conn: Any, catalog: str | None, schema: str | None) -> list[dict]:
         if schema is None:
             rows = conn.execute(
-                "SELECT schema_name FROM information_schema.schemata "
+                "SELECT DISTINCT schema_name FROM information_schema.schemata "
                 "WHERE schema_name NOT IN ('information_schema', 'pg_catalog') ORDER BY 1"
             ).fetchall()
             return [{"name": r[0], "full_name": r[0], "kind": "schema"} for r in rows]
