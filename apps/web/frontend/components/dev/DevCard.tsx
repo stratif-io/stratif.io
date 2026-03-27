@@ -86,7 +86,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
 
   useEffect(() => {
     if (!expanded) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setExpanded(false) }
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') { setExpanded(false); setFlipped(false) } }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [expanded])
@@ -131,6 +131,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
 
   function collapse() {
     setExpanded(false)
+    setFlipped(false)
   }
 
   const collapsed: Rect = cardRect ?? { top: 0, left: 0, width: 200, height: 100 }
