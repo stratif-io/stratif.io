@@ -1,8 +1,13 @@
+import React from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MissionControlGrid } from '../MissionControlGrid'
 import type { MissionControlResponse } from '@/types'
 import type { TrendMetric, MetricTrend } from '../../hooks/useMissionControlTrends'
+
+vi.mock('@/components/dev', () => ({
+  DevCard: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}))
 
 vi.mock('../MiniMetricCard', () => ({
   MiniMetricCard: ({

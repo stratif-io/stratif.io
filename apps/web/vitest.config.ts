@@ -12,10 +12,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'frontend/test/',
-      ],
+      exclude: ['node_modules/', 'frontend/test/'],
     },
   },
   resolve: {
@@ -23,8 +20,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './frontend'),
       // Deduplicate React — ensures CodeMirror (inlined) and react-dom use the
       // same React instance even when the worktree has its own node_modules.
-      react: path.resolve(__dirname, '../../../../node_modules/react'),
-      'react-dom': path.resolve(__dirname, '../../../../node_modules/react-dom'),
+      react: path.resolve(__dirname, '../../node_modules/react'),
+      'react-dom': path.resolve(__dirname, '../../node_modules/react-dom'),
     },
   },
 })
