@@ -1,5 +1,7 @@
 # stratif.io OSS
 
+> **NEVER commit directly to `main`.** All changes go through a branch and PR. No exceptions.
+
 stratif.io is a full-stack product analytics dashboard with a React/TypeScript frontend and Python/FastAPI backend. It connects to any SQL analytics warehouse (DuckDB, BigQuery, Snowflake, Redshift, etc.) via SQLGlot for dialect transpilation.
 
 ## Commands
