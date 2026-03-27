@@ -3,6 +3,7 @@ FROM oven/bun:1-slim AS frontend
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/package.json
+COPY apps/docs/package.json ./apps/docs/package.json
 RUN bun install --frozen-lockfile && \
     ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then \
@@ -26,6 +27,7 @@ RUN bun run build
 FROM oven/bun:1-slim AS docs
 WORKDIR /app
 COPY package.json bun.lock ./
+COPY apps/web/package.json ./apps/web/package.json
 COPY apps/docs/package.json ./apps/docs/package.json
 RUN bun install --frozen-lockfile
 COPY apps/docs ./apps/docs
