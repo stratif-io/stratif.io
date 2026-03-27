@@ -9,7 +9,12 @@ import { useAppStore } from '@/stores'
 vi.mock('../hooks/useConnectionsData', () => ({
   useConnection: vi.fn(),
   useTestConnection: vi.fn(),
-  useUpdateConnection: vi.fn(() => ({ mutate: vi.fn(), isPending: false, isSuccess: false, error: null })),
+  useUpdateConnection: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+    isSuccess: false,
+    error: null,
+  })),
   useConnectionCredentials: vi.fn(() => ({ data: { fields: {} } })),
   useConnectionString: vi.fn(() => ({ data: null })),
   useSchemaConfig: vi.fn(() => ({ data: null, isLoading: false })),
@@ -23,10 +28,7 @@ vi.mock('../hooks/useConnectionsData', () => ({
   useDeleteConnection: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }))
 
-import {
-  useConnection,
-  useTestConnection,
-} from '../hooks/useConnectionsData'
+import { useConnection, useTestConnection } from '../hooks/useConnectionsData'
 
 const mockConnection = Object.freeze({
   id: 'conn-1',
@@ -83,7 +85,9 @@ describe('ConnectionDetailPage — connection testing and activation', () => {
   it('sets active connection when test passes', async () => {
     let capturedCallbacks: { onSuccess?: (data: unknown) => void } = {}
     vi.mocked(useTestConnection).mockReturnValue({
-      mutate: vi.fn((_id, callbacks) => { capturedCallbacks = callbacks ?? {} }),
+      mutate: vi.fn((_id, callbacks) => {
+        capturedCallbacks = callbacks ?? {}
+      }),
       isPending: false,
       data: { ok: true },
       error: null,
@@ -121,7 +125,9 @@ describe('ConnectionDetailPage — connection testing and activation', () => {
     useAppStore.setState({ activeConnectionId: 'other-conn' })
     let capturedCallbacks: { onError?: (err: unknown) => void } = {}
     vi.mocked(useTestConnection).mockReturnValue({
-      mutate: vi.fn((_id, callbacks) => { capturedCallbacks = callbacks ?? {} }),
+      mutate: vi.fn((_id, callbacks) => {
+        capturedCallbacks = callbacks ?? {}
+      }),
       isPending: false,
       data: undefined,
       error: new Error('connection refused'),

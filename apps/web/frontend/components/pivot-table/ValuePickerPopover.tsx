@@ -11,7 +11,12 @@ const CATEGORIES = categoriesConfig as DimensionCategoryConfig[]
 
 const DEFAULT_AGG_CYCLE = ['sum', 'count', 'avg', 'min', 'max', 'countDistinct']
 const AGG_LABELS: Record<string, string> = {
-  sum: 'Σ Sum', count: 'n Count', avg: 'avg Avg', min: 'min Min', max: 'max Max', countDistinct: '# Distinct',
+  sum: 'Σ Sum',
+  count: 'n Count',
+  avg: 'avg Avg',
+  min: 'min Min',
+  max: 'max Max',
+  countDistinct: '# Distinct',
 }
 
 interface ValuePickerPopoverProps {
@@ -27,7 +32,7 @@ export function ValuePickerPopover({ leafCols, onSelect }: ValuePickerPopoverPro
 
   const groups = groupDimensionsByCategory(
     eligible.map((c) => ({ value: c.colId, label: c.label })),
-    CATEGORIES,
+    CATEGORIES
   )
 
   function handleDimSelect(col: LeafMeta) {

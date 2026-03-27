@@ -44,10 +44,12 @@ export function QueryStatusIndicator() {
       role="status"
       aria-live="polite"
       aria-hidden={hidden}
-      onTransitionEnd={() => { if (fading) setDismissed(true) }}
+      onTransitionEnd={() => {
+        if (fading) setDismissed(true)
+      }}
       className={cn(
         'relative rounded-full border border-border bg-muted px-3 py-1 text-xs transition-opacity duration-700',
-        hidden ? 'invisible opacity-0' : fading ? 'opacity-0' : 'opacity-100',
+        hidden ? 'invisible opacity-0' : fading ? 'opacity-0' : 'opacity-100'
       )}
     >
       {/* Ghost: fixed max-width content — drives the container width */}
@@ -63,11 +65,15 @@ export function QueryStatusIndicator() {
         {isActive ? (
           <>
             <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500 shrink-0" />
-            <span className="text-indigo-400 font-semibold whitespace-nowrap">{runningQueries} running</span>
+            <span className="text-indigo-400 font-semibold whitespace-nowrap">
+              {runningQueries} running
+            </span>
             {queuedQueries > 0 && (
               <>
                 <span className="text-muted-foreground">·</span>
-                <span className="text-muted-foreground whitespace-nowrap">{queuedQueries} queued</span>
+                <span className="text-muted-foreground whitespace-nowrap">
+                  {queuedQueries} queued
+                </span>
               </>
             )}
           </>

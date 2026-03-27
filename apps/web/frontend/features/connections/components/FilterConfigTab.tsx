@@ -88,7 +88,7 @@ export function FilterConfigTab({ connId }: Props) {
       upsert.mutate({ filter_fields })
     }, 600)
     return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabledFields])
 
   function toggleField(field: string) {
@@ -135,9 +135,7 @@ export function FilterConfigTab({ connId }: Props) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Global Filter Dimensions</h3>
-          {upsert.isPending && (
-            <span className="text-xs text-muted-foreground">Saving…</span>
-          )}
+          {upsert.isPending && <span className="text-xs text-muted-foreground">Saving…</span>}
           {upsert.isSuccess && !upsert.isPending && (
             <span className="text-xs text-emerald-600 dark:text-emerald-400">Saved</span>
           )}
@@ -163,15 +161,17 @@ export function FilterConfigTab({ connId }: Props) {
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-accent/30 transition-colors"
                   onClick={() => toggleCategory(group.category.id)}
                 >
-                  {isExpanded
-                    ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                    : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                  }
+                  {isExpanded ? (
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {group.category.label}
                   </span>
                   <span className="text-xs text-muted-foreground ml-auto">
-                    {group.dimensions.filter((d) => d.value in enabledFields).length}/{group.dimensions.length}
+                    {group.dimensions.filter((d) => d.value in enabledFields).length}/
+                    {group.dimensions.length}
                   </span>
                 </button>
                 {isExpanded && (

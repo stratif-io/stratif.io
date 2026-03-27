@@ -46,7 +46,7 @@ export function NewPivotPage() {
   // Strip URL params that aren't valid filter fields for this connection
   const validFilterIds = useMemo(
     () => new Set((filterConfig?.filter_fields ?? []).map((f: { field: string }) => f.field)),
-    [filterConfig],
+    [filterConfig]
   )
 
   useEffect(() => {
@@ -54,15 +54,13 @@ export function NewPivotPage() {
     Object.keys(activeFilters).forEach((key) => {
       if (!validFilterIds.has(key)) setActiveFilter(key, null)
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterConfig])
 
   const validActiveFilters = useMemo(
     () =>
-      Object.fromEntries(
-        Object.entries(activeFilters).filter(([key]) => validFilterIds.has(key)),
-      ),
-    [activeFilters, validFilterIds],
+      Object.fromEntries(Object.entries(activeFilters).filter(([key]) => validFilterIds.has(key))),
+    [activeFilters, validFilterIds]
   )
 
   const fetchRows = useCallback(
@@ -85,9 +83,13 @@ export function NewPivotPage() {
         },
         connection_id: params.activeConnectionId ?? undefined,
       })
-      return { rows: res.rows, columnDefs: res.secondaryColDefs as Record<string, unknown>[] | undefined, sql: res.sql }
+      return {
+        rows: res.rows,
+        columnDefs: res.secondaryColDefs as Record<string, unknown>[] | undefined,
+        sql: res.sql,
+      }
     },
-    [validActiveFilters],
+    [validActiveFilters]
   )
 
   const fetchFilterValues = useCallback(
@@ -100,7 +102,7 @@ export function NewPivotPage() {
       })
       return res.values.map(String)
     },
-    [startDate, endDate, activeConnectionId],
+    [startDate, endDate, activeConnectionId]
   )
 
   return (

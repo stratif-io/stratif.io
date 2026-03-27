@@ -18,7 +18,7 @@ const METRIC_CONFIG: Array<{
   label: string
   color: string
   description: string
-  changeLabel: string  // explains exactly what the % change is comparing
+  changeLabel: string // explains exactly what the % change is comparing
 }> = [
   {
     key: 'total_events',
@@ -110,7 +110,9 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
           value={formatMetricValue(heroMetric, heroCurrentValue)}
           rawValue={heroCurrentValue}
           pctChange={computePctChange(heroCurrentValue, heroPreviousValue)}
-          previousValue={heroPreviousValue !== null ? formatMetricValue(heroMetric, heroPreviousValue) : '—'}
+          previousValue={
+            heroPreviousValue !== null ? formatMetricValue(heroMetric, heroPreviousValue) : '—'
+          }
           sparklineValues={trends[heroMetric]?.values ?? []}
           sparklineDates={trends[heroMetric]?.dates}
           sparklinePreviousValues={trends[heroMetric]?.previousValues}
@@ -136,12 +138,17 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
                 const previous = data?.previous[metricKey as keyof typeof data.previous] ?? null
                 // total_events spans full width in the Volume row
                 const isFullWidth = metricKey === 'dau_mau_ratio' || metricKey === 'total_events'
-                const cardLoading = (metricLoading[metricKey] ?? true) || (trends[metricKey]?.loading ?? true)
+                const cardLoading =
+                  (metricLoading[metricKey] ?? true) || (trends[metricKey]?.loading ?? true)
                 // Float metrics need 2 decimal places during count-up animation
                 const decimalsOverride =
                   metricKey === 'dau_mau_ratio' || metricKey === 'avg_events_per_session' ? 2 : 0
                 return (
-                  <DevCard key={metricKey} sql={trends[metricKey]?.sql} className={isFullWidth ? 'col-span-2' : undefined}>
+                  <DevCard
+                    key={metricKey}
+                    sql={trends[metricKey]?.sql}
+                    className={isFullWidth ? 'col-span-2' : undefined}
+                  >
                     <MiniMetricCard
                       label={cfg.label}
                       value={formatMetricValue(metricKey, current)}

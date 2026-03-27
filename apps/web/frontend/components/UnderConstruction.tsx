@@ -10,7 +10,7 @@ interface UnderConstructionProps {
 }
 
 export function UnderConstruction({
-  title = "Not available yet",
+  title = 'Not available yet',
   description = "This feature isn't ready yet.",
   pageName = '',
   eta,
@@ -27,9 +27,7 @@ export function UnderConstruction({
         )}
         <h2 className="text-xl font-bold tracking-tight">{title}</h2>
         <p className="text-sm text-muted-foreground">{description}</p>
-        {eta && (
-          <p className="text-xs text-muted-foreground/60">Expected {eta}</p>
-        )}
+        {eta && <p className="text-xs text-muted-foreground/60">Expected {eta}</p>}
         <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4" />
           Go back

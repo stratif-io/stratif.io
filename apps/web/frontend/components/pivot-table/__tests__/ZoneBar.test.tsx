@@ -4,8 +4,21 @@ import { ZoneBar } from '../ZoneBar'
 import type { LeafMeta, ZoneCol } from '../types'
 
 const leafCols: LeafMeta[] = [
-  { colId: 'country', label: 'Country', enableRowGroup: true, enablePivot: true, enableValue: false },
-  { colId: 'count', label: 'Count', enableRowGroup: false, enablePivot: false, enableValue: true, allowedAggFuncs: ['sum'] },
+  {
+    colId: 'country',
+    label: 'Country',
+    enableRowGroup: true,
+    enablePivot: true,
+    enableValue: false,
+  },
+  {
+    colId: 'count',
+    label: 'Count',
+    enableRowGroup: false,
+    enablePivot: false,
+    enableValue: true,
+    allowedAggFuncs: ['sum'],
+  },
 ]
 
 function makeProps(overrides = {}) {
@@ -31,9 +44,11 @@ describe('ZoneBar', () => {
 
   it('renders existing chips', () => {
     render(
-      <ZoneBar {...makeProps({
-        rowGroups: [{ colId: 'country', label: 'Country' }],
-      })} />
+      <ZoneBar
+        {...makeProps({
+          rowGroups: [{ colId: 'country', label: 'Country' }],
+        })}
+      />
     )
     expect(screen.getByText('Country')).toBeInTheDocument()
   })
@@ -41,10 +56,12 @@ describe('ZoneBar', () => {
   it('remove chip calls onRowGroupsChange without that col', async () => {
     const onRowGroupsChange = vi.fn()
     render(
-      <ZoneBar {...makeProps({
-        rowGroups: [{ colId: 'country', label: 'Country' }],
-        onRowGroupsChange,
-      })} />
+      <ZoneBar
+        {...makeProps({
+          rowGroups: [{ colId: 'country', label: 'Country' }],
+          onRowGroupsChange,
+        })}
+      />
     )
     fireEvent.click(screen.getByRole('button', { name: /remove country/i }))
     expect(onRowGroupsChange).toHaveBeenCalledWith([])

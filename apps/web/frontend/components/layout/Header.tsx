@@ -46,7 +46,7 @@ export function Header() {
             className={cn(
               'flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-opacity duration-200',
               'border-amber-400/60 bg-amber-500/10 text-amber-600 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-400',
-              devMode ? 'opacity-100' : 'invisible opacity-0',
+              devMode ? 'opacity-100' : 'invisible opacity-0'
             )}
           >
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
@@ -59,20 +59,38 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem role="menuitemradio" aria-checked={theme === 'light'} onClick={() => setTheme('light')}>
+              <DropdownMenuItem
+                role="menuitemradio"
+                aria-checked={theme === 'light'}
+                onClick={() => setTheme('light')}
+              >
                 <Sun className="mr-2 h-4 w-4" />
                 Light
-                {theme === 'light' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
+                {theme === 'light' && (
+                  <span className="ml-auto text-xs text-muted-foreground">✓</span>
+                )}
               </DropdownMenuItem>
-              <DropdownMenuItem role="menuitemradio" aria-checked={theme === 'dark'} onClick={() => setTheme('dark')}>
+              <DropdownMenuItem
+                role="menuitemradio"
+                aria-checked={theme === 'dark'}
+                onClick={() => setTheme('dark')}
+              >
                 <Moon className="mr-2 h-4 w-4" />
                 Dark
-                {theme === 'dark' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
+                {theme === 'dark' && (
+                  <span className="ml-auto text-xs text-muted-foreground">✓</span>
+                )}
               </DropdownMenuItem>
-              <DropdownMenuItem role="menuitemradio" aria-checked={theme === 'system'} onClick={() => setTheme('system')}>
+              <DropdownMenuItem
+                role="menuitemradio"
+                aria-checked={theme === 'system'}
+                onClick={() => setTheme('system')}
+              >
                 <Monitor className="mr-2 h-4 w-4" />
                 System
-                {theme === 'system' && <span className="ml-auto text-xs text-muted-foreground">✓</span>}
+                {theme === 'system' && (
+                  <span className="ml-auto text-xs text-muted-foreground">✓</span>
+                )}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

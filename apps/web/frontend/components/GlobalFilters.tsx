@@ -138,7 +138,9 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
               allItems.map((opt, i) => (
                 <button
                   key={opt ?? '__all__'}
-                  ref={(el) => { optionRefs.current[i] = el }}
+                  ref={(el) => {
+                    optionRefs.current[i] = el
+                  }}
                   className={cn(
                     'w-full text-left px-2 py-1.5 rounded text-sm truncate',
                     'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
@@ -180,7 +182,9 @@ export function GlobalFilters() {
   const { dateRange, setDateRange, activeConnectionId } = useAppStore()
 
   const { data: filterConfig, isLoading: configLoading } = useFilterConfig(activeConnectionId ?? '')
-  const { data: filterOptions, isLoading: optionsLoading } = useFilterOptions(activeConnectionId ?? '')
+  const { data: filterOptions, isLoading: optionsLoading } = useFilterOptions(
+    activeConnectionId ?? ''
+  )
 
   const filterFields = filterConfig?.filter_fields ?? []
   const isLoading = configLoading || optionsLoading

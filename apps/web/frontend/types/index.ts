@@ -193,8 +193,8 @@ export interface DimensionOption {
 
 export interface DimensionCategoryConfig {
   id: string
-  label: string       // includes emoji, e.g. "🕐 Time"
-  patterns: string[]  // raw regex strings
+  label: string // includes emoji, e.g. "🕐 Time"
+  patterns: string[] // raw regex strings
 }
 
 export interface DimensionGroup {
@@ -265,7 +265,16 @@ export interface SandboxDataResponse {
 
 // Connections
 
-export type DbType = 'duckdb' | 'databricks' | 'postgresql' | 'sqlite' | 'snowflake' | 'clickhouse' | 'bigquery' | 'redshift' | 'mysql'
+export type DbType =
+  | 'duckdb'
+  | 'databricks'
+  | 'postgresql'
+  | 'sqlite'
+  | 'snowflake'
+  | 'clickhouse'
+  | 'bigquery'
+  | 'redshift'
+  | 'mysql'
 export type PropertyType = 'string' | 'number' | 'boolean' | 'timestamp'
 
 export interface CustomProperty {
@@ -289,7 +298,12 @@ export interface SchemaDetectResponse {
     timestamp_field?: string
     event_name_field?: string
   }
-  proposed_custom_properties: Array<{ name: string; path: string; type: PropertyType; category?: string }>
+  proposed_custom_properties: Array<{
+    name: string
+    path: string
+    type: PropertyType
+    category?: string
+  }>
 }
 
 export interface Connection {

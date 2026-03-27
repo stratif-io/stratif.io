@@ -31,7 +31,10 @@ function FilterRowValueSelect({
     staleTime: QUERY_STALE_TIME.default,
   })
 
-  const options = (data?.values ?? []).map(String).filter(Boolean).map((v) => ({ value: v, label: v }))
+  const options = (data?.values ?? [])
+    .map(String)
+    .filter(Boolean)
+    .map((v) => ({ value: v, label: v }))
 
   return (
     <FilterSelect
@@ -103,11 +106,17 @@ export function TrendFilters({ dimensions, filters, connectionId, onChange }: Tr
     <Collapsible open={open} onOpenChange={handleOpenChange}>
       <CollapsibleTrigger asChild>
         <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          {open ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
           <Filter className="h-3.5 w-3.5" />
           <span>Filters</span>
           {activeCount > 0 && (
-            <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">{activeCount}</Badge>
+            <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+              {activeCount}
+            </Badge>
           )}
         </button>
       </CollapsibleTrigger>

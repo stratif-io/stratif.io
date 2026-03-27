@@ -1,7 +1,15 @@
 import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronRight, Database, FolderOpen, Table2, Check, Loader2, ChevronLeft } from 'lucide-react'
+import {
+  ChevronRight,
+  Database,
+  FolderOpen,
+  Table2,
+  Check,
+  Loader2,
+  ChevronLeft,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { fetchBrowse } from '@/lib/api/queries'
 
@@ -117,13 +125,13 @@ export function TableBrowserPicker({ connId, value, onChange, loading: externalL
                 onClick={() => enter(item)}
                 className={cn(
                   'w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 transition-colors text-left',
-                  selected && 'bg-primary/5',
+                  selected && 'bg-primary/5'
                 )}
               >
                 <Icon
                   className={cn(
                     'h-3.5 w-3.5 flex-shrink-0',
-                    selected ? 'text-primary' : 'text-muted-foreground',
+                    selected ? 'text-primary' : 'text-muted-foreground'
                   )}
                 />
                 <span className={cn('flex-1', selected && 'font-medium text-primary')}>

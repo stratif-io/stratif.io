@@ -134,10 +134,9 @@ describe('useMissionControl', () => {
       activeConnectionId: null,
     } as ReturnType<typeof useAppStore>)
 
-    renderHook(
-      () => useMissionControl({ dateRange: { from: null, to: null } }),
-      { wrapper: makeWrapper() }
-    )
+    renderHook(() => useMissionControl({ dateRange: { from: null, to: null } }), {
+      wrapper: makeWrapper(),
+    })
     expect(fetchMissionControlMetric).not.toHaveBeenCalled()
   })
 

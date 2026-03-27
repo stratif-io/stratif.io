@@ -31,23 +31,26 @@ export function useQueryStudio(): UseQueryStudioReturn {
   const [isRunning, setIsRunning] = useState(false)
   const [history, setHistory] = useState<string[]>([])
 
-  const execute = useCallback(async (limit: number | null) => {
-    if (!sql.trim()) return
-    const trimmed = sql.trim()
-    const hasLimit = /\blimit\b/i.test(trimmed)
-    const finalSql = limit !== null && !hasLimit ? `${trimmed}\nLIMIT ${limit}` : trimmed
-    setIsRunning(true)
-    try {
-      const response = await executeQueryStudio({
-        sql: finalSql,
-        connection_id: activeConnectionId ?? undefined,
-      })
-      setResult(response)
-      setHistory((prev) => [trimmed, ...prev].slice(0, MAX_HISTORY))
-    } finally {
-      setIsRunning(false)
-    }
-  }, [sql, activeConnectionId])
+  const execute = useCallback(
+    async (limit: number | null) => {
+      if (!sql.trim()) return
+      const trimmed = sql.trim()
+      const hasLimit = /\blimit\b/i.test(trimmed)
+      const finalSql = limit !== null && !hasLimit ? `${trimmed}\nLIMIT ${limit}` : trimmed
+      setIsRunning(true)
+      try {
+        const response = await executeQueryStudio({
+          sql: finalSql,
+          connection_id: activeConnectionId ?? undefined,
+        })
+        setResult(response)
+        setHistory((prev) => [trimmed, ...prev].slice(0, MAX_HISTORY))
+      } finally {
+        setIsRunning(false)
+      }
+    },
+    [sql, activeConnectionId]
+  )
 
   const restoreFromHistory = useCallback((historySql: string) => {
     setSql(historySql)

@@ -148,7 +148,10 @@ body {
     color: hsl(var(--foreground));
     font-family: var(--font-sans);
   }
-  code, pre, kbd, samp {
+  code,
+  pre,
+  kbd,
+  samp {
     font-family: var(--font-mono);
   }
 }
@@ -220,14 +223,20 @@ html:not(.dark) {
 /* ===== Custom Animations & Polish ===== */
 
 /* Smooth transitions — scoped to interactive elements only */
-a, button, [role='button'],
-input, select, textarea {
+a,
+button,
+[role='button'],
+input,
+select,
+textarea {
   @apply transition-colors duration-200;
 }
 
 /* Prevent iOS Safari auto-zoom on input focus (requires font-size >= 16px) */
 @media screen and (max-width: 767px) {
-  input, select, textarea {
+  input,
+  select,
+  textarea {
     font-size: max(16px, 1em);
   }
 }
@@ -344,7 +353,6 @@ input, select, textarea {
 .page-enter {
   animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {

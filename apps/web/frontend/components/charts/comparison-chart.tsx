@@ -44,7 +44,6 @@ interface ComparisonTooltipProps {
 }
 
 function ComparisonTooltip({ active, payload, label, series }: ComparisonTooltipProps) {
-
   if (active && payload && payload.length) {
     const currentData = payload.find((p) => {
       const s = series.find((s) => s.dataKey === p.dataKey)

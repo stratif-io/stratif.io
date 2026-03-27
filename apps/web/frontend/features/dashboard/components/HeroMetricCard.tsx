@@ -1,10 +1,4 @@
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
+import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
@@ -95,7 +89,6 @@ export function HeroMetricCard({
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-sm p-0 flex flex-col h-full">
-
       {/* Chart fills the card — no padding, chart is the primary visual */}
       <div
         className={cn(
@@ -134,7 +127,9 @@ export function HeroMetricCard({
                     {cur && (
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                        <span className="text-muted-foreground">{formatAxisDate(label as string)}:</span>
+                        <span className="text-muted-foreground">
+                          {formatAxisDate(label as string)}:
+                        </span>
                         <span className="font-semibold">
                           {formatMetricValue(metricKey, cur.value as number)}
                         </span>

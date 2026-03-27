@@ -38,7 +38,12 @@ export function usePathsData({
     staleTime: QUERY_STALE_TIME.default,
   })
 
-  const { data: pathsResponse, isLoading, isError, error } = useQuery({
+  const {
+    data: pathsResponse,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ['paths', targetEvent, deviceType, startDate, endDate, activeConnectionId],
     queryFn: () =>
       fetchPaths({

@@ -35,7 +35,13 @@ const DB_ICONS: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>
 
 function GenericDbLogo({ size }: { size: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <ellipse cx="16" cy="9" rx="11" ry="4" fill="currentColor" opacity=".5" />
       <path
         d="M5 9v5c0 2.2 4.9 4 11 4s11-1.8 11-4V9c0 2.2-4.9 4-11 4S5 11.2 5 9z"

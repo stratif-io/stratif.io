@@ -36,7 +36,12 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="file_path">File Path / S3 Path</Label>
-            <Input id="file_path" name="file_path" placeholder="/path/to/db.duckdb or s3://..." required />
+            <Input
+              id="file_path"
+              name="file_path"
+              placeholder="/path/to/db.duckdb or s3://..."
+              required
+            />
           </div>
         </div>
       )
@@ -59,7 +64,15 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="port">Port</Label>
-              <Input id="port" name="port" placeholder="5432" type="number" min={1} max={65535} required />
+              <Input
+                id="port"
+                name="port"
+                placeholder="5432"
+                type="number"
+                min={1}
+                max={65535}
+                required
+              />
             </div>
           </div>
           <div className="space-y-1.5">
@@ -73,7 +86,13 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" placeholder="••••••••" required />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                required
+              />
             </div>
           </div>
         </div>
@@ -109,7 +128,13 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" placeholder="••••••••" required />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                required
+              />
             </div>
           </div>
           <div className="space-y-1.5">
@@ -127,7 +152,9 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="role">Role <span className="text-muted-foreground">(optional)</span></Label>
+            <Label htmlFor="role">
+              Role <span className="text-muted-foreground">(optional)</span>
+            </Label>
             <Input id="role" name="role" placeholder="ACCOUNTADMIN" />
           </div>
         </div>
@@ -142,7 +169,15 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="port">Port</Label>
-              <Input id="port" name="port" placeholder="8443" type="number" min={1} max={65535} required />
+              <Input
+                id="port"
+                name="port"
+                placeholder="8443"
+                type="number"
+                min={1}
+                max={65535}
+                required
+              />
             </div>
           </div>
           <div className="space-y-1.5">
@@ -156,7 +191,13 @@ function CredentialFields({ dbType }: { dbType: DbType }) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" placeholder="••••••••" required />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                required
+              />
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -253,7 +294,10 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
       )
       const credentialsUpdate =
         Object.keys(changedCredentials).length > 0 ? changedCredentials : undefined
-      update.mutate({ name, credentials: credentialsUpdate }, { onSuccess: () => onOpenChange(false) })
+      update.mutate(
+        { name, credentials: credentialsUpdate },
+        { onSuccess: () => onOpenChange(false) }
+      )
     } else {
       create.mutate(
         { name, db_type: dbType, credentials },
@@ -286,11 +330,7 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
 
           <div className="space-y-1.5">
             <Label>Database Type</Label>
-            <Select
-              value={dbType}
-              onValueChange={(v) => setDbType(v as DbType)}
-              disabled={isEdit}
-            >
+            <Select value={dbType} onValueChange={(v) => setDbType(v as DbType)} disabled={isEdit}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
