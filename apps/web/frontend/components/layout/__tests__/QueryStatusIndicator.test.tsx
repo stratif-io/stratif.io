@@ -19,8 +19,8 @@ afterEach(() => {
 
 describe('QueryStatusIndicator', () => {
   it('renders nothing when never active', () => {
-    const { container } = render(<QueryStatusIndicator />)
-    expect(container.firstChild).toBeNull()
+    render(<QueryStatusIndicator />)
+    expect(screen.getByRole('status', { hidden: true })).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('shows running and queued counts when active', () => {
