@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, Globe, Chrome, Monitor, Building, Tag, Layers } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  Globe,
+  Chrome,
+  Monitor,
+  Building,
+  Tag,
+  Layers,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LoadingState } from '@/components/ui/loading-state'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import {
   useFilterConfig,
   useSchemaConfig,
