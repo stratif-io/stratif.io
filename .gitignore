@@ -64,3 +64,4 @@ skills-lock.json
 apps/docs/.vitepress/dist
 apps/docs/.vitepress/cache
 apps/docs/node_modules
+tests/.auth
