@@ -1,5 +1,8 @@
 # ── Stage 1: Build frontend ───────────────────────────────────────────────────
-FROM ghcr.io/oven-rs/bun:1-slim AS frontend
+FROM debian:bookworm-slim AS frontend
+RUN apt-get update && apt-get install -y curl unzip ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/package.json
@@ -24,7 +27,10 @@ COPY apps/web/frontend ./apps/web/frontend
 RUN bun run build
 
 # ── Stage 2: Build docs ────────────────────────────────────────────────────────
-FROM ghcr.io/oven-rs/bun:1-slim AS docs
+FROM debian:bookworm-slim AS docs
+RUN apt-get update && apt-get install -y curl unzip ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/package.json
