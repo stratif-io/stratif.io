@@ -1,31 +1,24 @@
 """Integration test: PostgreSQL backend against a real database.
 
-Required env var:
-    TEST_POSTGRES_URL  e.g. postgresql://user:pass@localhost:5432/analytics
+Credentials are read from connections.yaml (``backends.postgresql``).
+Set ``enabled: true`` and fill in host/port/database/user/password to run.
 """
-import os
 import pytest
 
-POSTGRES_URL = os.environ.get("TEST_POSTGRES_URL", "")
+from backend.tests.integration.conftest import get_backend_config
+
+_CREDS = get_backend_config("postgresql")
 
 
 @pytest.mark.integration
-@pytest.mark.skipif(not POSTGRES_URL, reason="TEST_POSTGRES_URL not set")
+@pytest.mark.skipif(_CREDS is None, reason="postgresql not enabled in connections.yaml")
 class TestPostgreSQLIntegration:
     @pytest.fixture
     def backend_and_conn(self):
         from backend.backends.postgresql import PostgreSQLBackend
         from backend.backends.postgresql.credentials import PostgreSQLCredentials
-        import urllib.parse
 
-        parsed = urllib.parse.urlparse(POSTGRES_URL)
-        creds = PostgreSQLCredentials(
-            host=parsed.hostname,
-            port=parsed.port or 5432,
-            database=parsed.path.lstrip("/"),
-            user=parsed.username,
-            password=parsed.password,
-        )
+        creds = PostgreSQLCredentials(**_CREDS)
         backend = PostgreSQLBackend()
         conn = backend.open(creds, read_only=True)
         yield backend, conn
