@@ -1,2 +1,2 @@
-npx lint-staged
-cd apps/web && npx tsc --noEmit
+bunx lint-staged
+cd apps/web && bunx tsc --noEmit
