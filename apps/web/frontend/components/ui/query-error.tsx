@@ -9,16 +9,13 @@ interface QueryErrorProps {
 
 export function QueryError({ error, className, onRetry }: QueryErrorProps) {
   if (!error) return null
-  const message =
-    error instanceof Error
-      ? error.message
-      : 'Failed to load data. Please try again.'
+  const message = error instanceof Error ? error.message : 'Failed to load data. Please try again.'
   return (
     <div
       role="alert"
       className={cn(
         'flex flex-col items-center justify-center py-12 px-4 text-center gap-3',
-        className,
+        className
       )}
     >
       <AlertCircle className="h-8 w-8 text-destructive" />

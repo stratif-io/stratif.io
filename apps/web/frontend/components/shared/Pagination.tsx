@@ -19,19 +19,47 @@ export function Pagination({ page, totalPages, from, to, total, onPageChange }: 
           : `${from.toLocaleString()}–${to.toLocaleString()} of ${total.toLocaleString()} events`}
       </span>
       <div className="flex items-center gap-1">
-        <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => onPageChange(1)} disabled={page === 1} aria-label="First page">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 w-7 p-0"
+          onClick={() => onPageChange(1)}
+          disabled={page === 1}
+          aria-label="First page"
+        >
           <ChevronsLeft className="h-3.5 w-3.5" aria-hidden="true" />
         </Button>
-        <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => onPageChange(page - 1)} disabled={page === 1} aria-label="Previous page">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 w-7 p-0"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page === 1}
+          aria-label="Previous page"
+        >
           <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
         </Button>
         <span className="text-xs px-2.5 py-1 rounded border border-border/50 bg-muted/30 tabular-nums min-w-[60px] text-center">
           {page} / {totalPages}
         </span>
-        <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} aria-label="Next page">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 w-7 p-0"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= totalPages}
+          aria-label="Next page"
+        >
           <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Button>
-        <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => onPageChange(totalPages)} disabled={page >= totalPages} aria-label="Last page">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 w-7 p-0"
+          onClick={() => onPageChange(totalPages)}
+          disabled={page >= totalPages}
+          aria-label="Last page"
+        >
           <ChevronsRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Button>
       </div>

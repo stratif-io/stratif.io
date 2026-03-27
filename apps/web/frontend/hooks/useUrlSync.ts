@@ -3,7 +3,15 @@ import { useSearchParams, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 
 /** Pages where conn + date range + filters should be reflected in the URL. */
-const DATA_PATH_PREFIXES = ['/dashboard', '/trends', '/retention', '/paths', '/funnel', '/pivot', '/events']
+const DATA_PATH_PREFIXES = [
+  '/dashboard',
+  '/trends',
+  '/retention',
+  '/paths',
+  '/funnel',
+  '/pivot',
+  '/events',
+]
 
 function isDataPage(pathname: string) {
   return DATA_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))
@@ -55,7 +63,7 @@ export function useUrlSync() {
     })
 
     didReadUrl.current = true
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
   // Store → URL: whenever store values change, push to URL (replace)
@@ -78,6 +86,6 @@ export function useUrlSync() {
     })
 
     setSearchParams(params, { replace: true })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isData, activeConnectionId, dateRange, activeFilters])
 }

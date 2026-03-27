@@ -59,7 +59,13 @@ export function QueryStudioPage() {
         {/* Editor + Results — flex column */}
         <div ref={containerRef} className="flex flex-1 flex-col overflow-hidden border-l">
           <div style={{ height: editorHeight }} className="shrink-0 overflow-hidden">
-            <QueryEditor value={sql} onChange={setSql} onExecute={execute} limitEnabled={limitEnabled} onLimitToggle={setLimitEnabled} />
+            <QueryEditor
+              value={sql}
+              onChange={setSql}
+              onExecute={execute}
+              limitEnabled={limitEnabled}
+              onLimitToggle={setLimitEnabled}
+            />
           </div>
 
           {/* Drag handle */}

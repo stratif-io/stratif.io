@@ -165,7 +165,12 @@ function CredentialFields({ dbType, fields, onCheckboxChange }: CredentialFields
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2 space-y-1.5">
               <Label htmlFor="host">Host</Label>
-              <PlainInput id="host" name="host" placeholder="localhost" initialValue={f.host ?? null} />
+              <PlainInput
+                id="host"
+                name="host"
+                placeholder="localhost"
+                initialValue={f.host ?? null}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="port">Port</Label>
@@ -180,16 +185,31 @@ function CredentialFields({ dbType, fields, onCheckboxChange }: CredentialFields
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="database">Database</Label>
-            <PlainInput id="database" name="database" placeholder="mydb" initialValue={f.database ?? null} />
+            <PlainInput
+              id="database"
+              name="database"
+              placeholder="mydb"
+              initialValue={f.database ?? null}
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label htmlFor="user">User</Label>
-              <PlainInput id="user" name="user" placeholder="postgres" initialValue={f.user ?? null} />
+              <PlainInput
+                id="user"
+                name="user"
+                placeholder="postgres"
+                initialValue={f.user ?? null}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <MaskedInput id="password" name="password" placeholder="••••••••" initialValue={f.password ?? null} />
+              <MaskedInput
+                id="password"
+                name="password"
+                placeholder="••••••••"
+                initialValue={f.password ?? null}
+              />
             </div>
           </div>
         </>
@@ -233,7 +253,12 @@ function CredentialFields({ dbType, fields, onCheckboxChange }: CredentialFields
         <>
           <div className="space-y-1.5">
             <Label htmlFor="account">Account</Label>
-            <PlainInput id="account" name="account" placeholder="xy12345.us-east-1" initialValue={f.account ?? null} />
+            <PlainInput
+              id="account"
+              name="account"
+              placeholder="xy12345.us-east-1"
+              initialValue={f.account ?? null}
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
@@ -242,26 +267,53 @@ function CredentialFields({ dbType, fields, onCheckboxChange }: CredentialFields
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <MaskedInput id="password" name="password" placeholder="••••••••" initialValue={f.password ?? null} />
+              <MaskedInput
+                id="password"
+                name="password"
+                placeholder="••••••••"
+                initialValue={f.password ?? null}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="warehouse">Warehouse</Label>
-            <PlainInput id="warehouse" name="warehouse" placeholder="COMPUTE_WH" initialValue={f.warehouse ?? null} />
+            <PlainInput
+              id="warehouse"
+              name="warehouse"
+              placeholder="COMPUTE_WH"
+              initialValue={f.warehouse ?? null}
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label htmlFor="database">Database</Label>
-              <PlainInput id="database" name="database" placeholder="" initialValue={f.database ?? null} />
+              <PlainInput
+                id="database"
+                name="database"
+                placeholder=""
+                initialValue={f.database ?? null}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="schema">Schema</Label>
-              <PlainInput id="schema" name="schema" placeholder="" initialValue={f.schema ?? null} />
+              <PlainInput
+                id="schema"
+                name="schema"
+                placeholder=""
+                initialValue={f.schema ?? null}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="role">Role <span className="text-muted-foreground">(optional)</span></Label>
-            <PlainInput id="role" name="role" placeholder="ACCOUNTADMIN" initialValue={f.role ?? null} />
+            <Label htmlFor="role">
+              Role <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <PlainInput
+              id="role"
+              name="role"
+              placeholder="ACCOUNTADMIN"
+              initialValue={f.role ?? null}
+            />
           </div>
         </>
       )
@@ -277,12 +329,23 @@ function CredentialFields({ dbType, fields, onCheckboxChange }: CredentialFields
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="port">Port</Label>
-              <PlainInput id="port" name="port" placeholder="8443" type="number" initialValue={f.port ?? null} />
+              <PlainInput
+                id="port"
+                name="port"
+                placeholder="8443"
+                type="number"
+                initialValue={f.port ?? null}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="database">Database</Label>
-            <PlainInput id="database" name="database" placeholder="" initialValue={f.database ?? null} />
+            <PlainInput
+              id="database"
+              name="database"
+              placeholder=""
+              initialValue={f.database ?? null}
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
@@ -291,7 +354,12 @@ function CredentialFields({ dbType, fields, onCheckboxChange }: CredentialFields
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <MaskedInput id="password" name="password" placeholder="••••••••" initialValue={f.password ?? null} />
+              <MaskedInput
+                id="password"
+                name="password"
+                placeholder="••••••••"
+                initialValue={f.password ?? null}
+              />
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -381,7 +449,7 @@ export function ConnectionConfigTab({ connection }: Props) {
       update.mutate({ name: trimmed })
     }, 700)
     return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name])
 
   function buildCredentials(dbType: DbType, form: HTMLFormElement): Record<string, unknown> {
@@ -475,9 +543,7 @@ export function ConnectionConfigTab({ connection }: Props) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Connection Name</h3>
-          {update.isPending && (
-            <span className="text-xs text-muted-foreground">Saving…</span>
-          )}
+          {update.isPending && <span className="text-xs text-muted-foreground">Saving…</span>}
           {update.isSuccess && !update.isPending && (
             <span className="text-xs text-success">Saved</span>
           )}
@@ -503,7 +569,11 @@ export function ConnectionConfigTab({ connection }: Props) {
           </p>
         </div>
         <div className="rounded-md border p-4 space-y-3">
-          <CredentialFields dbType={connection.db_type} fields={fields} onCheckboxChange={saveCredentials} />
+          <CredentialFields
+            dbType={connection.db_type}
+            fields={fields}
+            onCheckboxChange={saveCredentials}
+          />
         </div>
       </div>
 

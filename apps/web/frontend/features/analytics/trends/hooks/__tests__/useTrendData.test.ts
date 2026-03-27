@@ -33,7 +33,13 @@ describe('useTrendData — no breakdown', () => {
     vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
 
     renderHook(
-      () => useTrendData({ dateRange, selectedEvent: '', granularity: 'day', breakdownDimension: null }),
+      () =>
+        useTrendData({
+          dateRange,
+          selectedEvent: '',
+          granularity: 'day',
+          breakdownDimension: null,
+        }),
       { wrapper: createWrapper() }
     )
 
@@ -49,7 +55,13 @@ describe('useTrendData — no breakdown', () => {
     vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
 
     const { result } = renderHook(
-      () => useTrendData({ dateRange, selectedEvent: '', granularity: 'day', breakdownDimension: null }),
+      () =>
+        useTrendData({
+          dateRange,
+          selectedEvent: '',
+          granularity: 'day',
+          breakdownDimension: null,
+        }),
       { wrapper: createWrapper() }
     )
 
@@ -73,7 +85,12 @@ describe('useTrendData — with breakdown', () => {
 
     renderHook(
       () =>
-        useTrendData({ dateRange, selectedEvent: '', granularity: 'day', breakdownDimension: 'device_type' }),
+        useTrendData({
+          dateRange,
+          selectedEvent: '',
+          granularity: 'day',
+          breakdownDimension: 'device_type',
+        }),
       { wrapper: createWrapper() }
     )
 
@@ -102,7 +119,12 @@ describe('useTrendData — with breakdown', () => {
 
     const { result } = renderHook(
       () =>
-        useTrendData({ dateRange, selectedEvent: '', granularity: 'day', breakdownDimension: 'device_type' }),
+        useTrendData({
+          dateRange,
+          selectedEvent: '',
+          granularity: 'day',
+          breakdownDimension: 'device_type',
+        }),
       { wrapper: createWrapper() }
     )
 
@@ -127,7 +149,12 @@ describe('useTrendData — with breakdown', () => {
 
     const { result } = renderHook(
       () =>
-        useTrendData({ dateRange, selectedEvent: '', granularity: 'day', breakdownDimension: 'device_type' }),
+        useTrendData({
+          dateRange,
+          selectedEvent: '',
+          granularity: 'day',
+          breakdownDimension: 'device_type',
+        }),
       { wrapper: createWrapper() }
     )
 
@@ -151,7 +178,12 @@ describe('useTrendData — with breakdown', () => {
 
     const { result } = renderHook(
       () =>
-        useTrendData({ dateRange, selectedEvent: '', granularity: 'day', breakdownDimension: 'device_type' }),
+        useTrendData({
+          dateRange,
+          selectedEvent: '',
+          granularity: 'day',
+          breakdownDimension: 'device_type',
+        }),
       { wrapper: createWrapper() }
     )
 
@@ -176,7 +208,12 @@ describe('useTrendData — with breakdown', () => {
 
     const { result } = renderHook(
       () =>
-        useTrendData({ dateRange, selectedEvent: '', granularity: 'day', breakdownDimension: 'device_type' }),
+        useTrendData({
+          dateRange,
+          selectedEvent: '',
+          granularity: 'day',
+          breakdownDimension: 'device_type',
+        }),
       { wrapper: createWrapper() }
     )
 
@@ -186,7 +223,9 @@ describe('useTrendData — with breakdown', () => {
 })
 
 describe('useTrendData — measure selection', () => {
-  beforeEach(() => { vi.clearAllMocks() })
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
   it('uses fetchTrend for unique_users and normalises to count key', async () => {
     vi.mocked(fetchTrend).mockResolvedValue({
@@ -196,7 +235,8 @@ describe('useTrendData — measure selection', () => {
     vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
 
     const { result } = renderHook(
-      () => useTrendData({ dateRange, selectedEvent: '', granularity: 'day', measure: 'unique_users' }),
+      () =>
+        useTrendData({ dateRange, selectedEvent: '', granularity: 'day', measure: 'unique_users' }),
       { wrapper: createWrapper() }
     )
 
@@ -235,7 +275,11 @@ describe('useTrendData — measure selection', () => {
   })
 
   it('includes measure in the pivot query key', async () => {
-    vi.mocked(fetchPivot).mockResolvedValue({ dimensions: ['date'], measures: ['sum:quantity'], data: [] })
+    vi.mocked(fetchPivot).mockResolvedValue({
+      dimensions: ['date'],
+      measures: ['sum:quantity'],
+      data: [],
+    })
     vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
 
     renderHook(

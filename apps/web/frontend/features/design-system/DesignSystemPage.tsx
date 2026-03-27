@@ -43,7 +43,9 @@ export function DesignSystemPage() {
         <div className="flex-1 min-w-0 space-y-12 pb-16">
           <div>
             <h1 className="text-2xl font-bold">Design System</h1>
-            <p className="text-muted-foreground mt-1">All UI components rendered in the app theme.</p>
+            <p className="text-muted-foreground mt-1">
+              All UI components rendered in the app theme.
+            </p>
           </div>
 
           <PrimitivesSection />

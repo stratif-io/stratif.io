@@ -14,7 +14,7 @@ interface SparklineChartProps {
   trendPosition?: 'start' | 'end'
   strokeWidth?: number
   formatter?: (value: number) => string
-  animated?: boolean  // reveal path left-to-right on mount
+  animated?: boolean // reveal path left-to-right on mount
 }
 
 export function SparklineChart({
@@ -248,10 +248,7 @@ export function SparklineCard({
   subtitle,
   color = DEFAULT_CHART_COLORS[0],
 }: SparklineCardProps) {
-  const trendColor =
-    trend !== undefined && trend >= 0
-      ? 'text-success'
-      : 'text-destructive'
+  const trendColor = trend !== undefined && trend >= 0 ? 'text-success' : 'text-destructive'
 
   return (
     <div className="rounded-lg border bg-card p-4 shadow-sm">

@@ -479,53 +479,52 @@ export function PathsExplorerPage() {
 
           {/* Results */}
           <DevCard sql={sql}>
-          {isLoading || eventsLoading ? (
-            <LoadingState message="Analyzing paths…" />
-          ) : pathData.length === 0 ? (
-            <EmptyState
-              icon={GitFork}
-              title="No paths found"
-              description="Try broadening your filters — relax path length, remove start/end events, or expand the date range."
-            />
-          ) : (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <p className="text-sm text-muted-foreground">
-                  Showing <span className="font-semibold text-foreground">{pathData.length}</span>{' '}
-                  of <span className="font-semibold text-foreground">{totalPaths}</span> paths —
-                  click a path to view its conversion funnel
-                </p>
-                <div className="flex gap-1.5">
-                  {startEvent && (
-                    <Badge variant="secondary" className="text-xs">
-                      From: {startEvent}
-                    </Badge>
-                  )}
-                  {endEvent && (
-                    <Badge variant="secondary" className="text-xs">
-                      To: {endEvent}
-                    </Badge>
-                  )}
+            {isLoading || eventsLoading ? (
+              <LoadingState message="Analyzing paths…" />
+            ) : pathData.length === 0 ? (
+              <EmptyState
+                icon={GitFork}
+                title="No paths found"
+                description="Try broadening your filters — relax path length, remove start/end events, or expand the date range."
+              />
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-sm text-muted-foreground">
+                    Showing <span className="font-semibold text-foreground">{pathData.length}</span>{' '}
+                    of <span className="font-semibold text-foreground">{totalPaths}</span> paths —
+                    click a path to view its conversion funnel
+                  </p>
+                  <div className="flex gap-1.5">
+                    {startEvent && (
+                      <Badge variant="secondary" className="text-xs">
+                        From: {startEvent}
+                      </Badge>
+                    )}
+                    {endEvent && (
+                      <Badge variant="secondary" className="text-xs">
+                        To: {endEvent}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {pathData.map((path, idx) => (
+                    <PathCard
+                      key={idx}
+                      path={path}
+                      rank={idx + 1}
+                      maxCount={maxCount}
+                      onClick={() => {
+                        setSelectedPath(path)
+                        setDialogOpen(true)
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
-
-              <div className="space-y-2">
-                {pathData.map((path, idx) => (
-                  <PathCard
-                    key={idx}
-                    path={path}
-                    rank={idx + 1}
-                    maxCount={maxCount}
-                    onClick={() => {
-                      setSelectedPath(path)
-                      setDialogOpen(true)
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
+            )}
           </DevCard>
 
           <PathFunnelDialog

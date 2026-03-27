@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { PivotToolbar } from './PivotToolbar'
@@ -14,7 +20,6 @@ import { DevCard } from '@/components/dev'
 const DEFAULT_ROW_GROUPS: ZoneCol[] = []
 const DEFAULT_PIVOT_COLS: ZoneCol[] = []
 const DEFAULT_VALUE_COLS: ZoneCol[] = []
-
 
 export function PivotTable({
   colDefsData,
@@ -40,7 +45,9 @@ export function PivotTable({
   const fetchIdRef = useRef(0)
   const parentRef = useRef<HTMLDivElement>(null)
 
-  const leafCols = colDefsData ? buildLeafMeta(colDefsData.columnDefs as Parameters<typeof buildLeafMeta>[0]) : []
+  const leafCols = colDefsData
+    ? buildLeafMeta(colDefsData.columnDefs as Parameters<typeof buildLeafMeta>[0])
+    : []
 
   const runQuery = useCallback(async () => {
     if (rowGroups.length === 0 && valueCols.length === 0) {
@@ -51,12 +58,22 @@ export function PivotTable({
     const id = ++fetchIdRef.current
     setIsQuerying(true)
     try {
-      const res = await fetchRows({ startDate, endDate, activeFilters, activeConnectionId, pivotFilters, rowGroups, pivotCols, valueCols })
+      const res = await fetchRows({
+        startDate,
+        endDate,
+        activeFilters,
+        activeConnectionId,
+        pivotFilters,
+        rowGroups,
+        pivotCols,
+        valueCols,
+      })
       if (id !== fetchIdRef.current) return
       function flattenFields(defs: { field?: string; children?: unknown[] }[]): string[] {
         const out: string[] = []
         for (const c of defs) {
-          if (c.children) out.push(...flattenFields(c.children as { field?: string; children?: unknown[] }[]))
+          if (c.children)
+            out.push(...flattenFields(c.children as { field?: string; children?: unknown[] }[]))
           else if (c.field) out.push(c.field)
         }
         return out
@@ -73,9 +90,21 @@ export function PivotTable({
     } finally {
       if (id === fetchIdRef.current) setIsQuerying(false)
     }
-  }, [fetchRows, startDate, endDate, activeFilters, activeConnectionId, pivotFilters, rowGroups, pivotCols, valueCols])
+  }, [
+    fetchRows,
+    startDate,
+    endDate,
+    activeFilters,
+    activeConnectionId,
+    pivotFilters,
+    rowGroups,
+    pivotCols,
+    valueCols,
+  ])
 
-  useEffect(() => { runQuery() }, [runQuery])
+  useEffect(() => {
+    runQuery()
+  }, [runQuery])
 
   function handleReset() {
     setRowGroups(DEFAULT_ROW_GROUPS)
@@ -167,67 +196,93 @@ export function PivotTable({
             </SelectTrigger>
             <SelectContent>
               {leafCols.map((c) => (
-                <SelectItem key={c.colId} value={c.colId}>{c.label}</SelectItem>
+                <SelectItem key={c.colId} value={c.colId}>
+                  {c.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select onValueChange={(v) => { if (v) handleFilterApply(filterField, v) }}>
+          <Select
+            onValueChange={(v) => {
+              if (v) handleFilterApply(filterField, v)
+            }}
+          >
             <SelectTrigger className="h-7 text-xs w-36">
               <SelectValue placeholder="Select value…" />
             </SelectTrigger>
             <SelectContent>
               {filterOptions.map((v) => (
-                <SelectItem key={v} value={v}>{v}</SelectItem>
+                <SelectItem key={v} value={v}>
+                  {v}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Button variant="ghost" size="sm" onClick={() => setFilterField(null)}>Cancel</Button>
+          <Button variant="ghost" size="sm" onClick={() => setFilterField(null)}>
+            Cancel
+          </Button>
         </div>
       )}
 
       <DevCard sql={lastSql} className="flex-1 min-h-0">
-      <div ref={parentRef} className="h-full overflow-auto">
-        {rows.length === 0 && !isQuerying ? (
-          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-            {rowGroups.length === 0 && valueCols.length === 0
-              ? 'Use + Add in the Rows and Values zones to build a pivot table.'
-              : 'No data for current selection.'}
-          </div>
-        ) : (
-          <table className="w-full text-sm border-collapse table-fixed">
-            <colgroup>
-              {headers.map((h) => <col key={h} style={{ width: `${100 / headers.length}%` }} />)}
-            </colgroup>
-            <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
-              <tr>
+        <div ref={parentRef} className="h-full overflow-auto">
+          {rows.length === 0 && !isQuerying ? (
+            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+              {rowGroups.length === 0 && valueCols.length === 0
+                ? 'Use + Add in the Rows and Values zones to build a pivot table.'
+                : 'No data for current selection.'}
+            </div>
+          ) : (
+            <table className="w-full text-sm border-collapse table-fixed">
+              <colgroup>
                 {headers.map((h) => (
-                  <th key={h} className="px-3 py-2 text-left font-medium text-xs text-muted-foreground border-b border-border whitespace-nowrap overflow-hidden text-ellipsis">
-                    {h}
-                  </th>
+                  <col key={h} style={{ width: `${100 / headers.length}%` }} />
                 ))}
-              </tr>
-            </thead>
-            <tbody style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
-              {virtualItems.map((vi) => {
-                const row = rows[vi.index]
-                return (
-                  <tr
-                    key={vi.index}
-                    style={{ position: 'absolute', top: vi.start, left: 0, width: '100%', height: `${vi.size}px`, display: 'flex' }}
-                    className="hover:bg-muted/40 border-b border-border/50"
-                  >
-                    {headers.map((h) => (
-                      <td key={h} className="px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis" style={{ width: `${100 / headers.length}%`, flexShrink: 0 }}>
-                        {row[h] == null ? '' : String(row[h])}
-                      </td>
-                    ))}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </colgroup>
+              <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
+                <tr>
+                  {headers.map((h) => (
+                    <th
+                      key={h}
+                      className="px-3 py-2 text-left font-medium text-xs text-muted-foreground border-b border-border whitespace-nowrap overflow-hidden text-ellipsis"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+                {virtualItems.map((vi) => {
+                  const row = rows[vi.index]
+                  return (
+                    <tr
+                      key={vi.index}
+                      style={{
+                        position: 'absolute',
+                        top: vi.start,
+                        left: 0,
+                        width: '100%',
+                        height: `${vi.size}px`,
+                        display: 'flex',
+                      }}
+                      className="hover:bg-muted/40 border-b border-border/50"
+                    >
+                      {headers.map((h) => (
+                        <td
+                          key={h}
+                          className="px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis"
+                          style={{ width: `${100 / headers.length}%`, flexShrink: 0 }}
+                        >
+                          {row[h] == null ? '' : String(row[h])}
+                        </td>
+                      ))}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
       </DevCard>
     </div>
   )

@@ -1,5 +1,4 @@
 import {
-
   TrendResponse,
   EventsResponse,
   TopEventsResponse,
@@ -419,7 +418,9 @@ export const fetchFilterOptions = (connId: string) =>
   fetchApi<FilterOptionsResponse>(`/api/connections/${connId}/filter-options`)
 
 export const fetchFieldOptions = (connId: string, field: string) =>
-  fetchApi<{ field: string; values: string[] }>(`/api/connections/${connId}/field-options?field=${encodeURIComponent(field)}`)
+  fetchApi<{ field: string; values: string[] }>(
+    `/api/connections/${connId}/field-options?field=${encodeURIComponent(field)}`
+  )
 
 export const fetchSchemaDetect = (connId: string, eventsTable?: string) => {
   const qs = eventsTable ? `?events_table=${encodeURIComponent(eventsTable)}` : ''
@@ -430,7 +431,9 @@ export const fetchConnectionTables = (connId: string) =>
   fetchApi<TablesResponse>(`/api/connections/${connId}/tables`)
 
 export const fetchConnectionColumns = (connId: string, table: string) =>
-  fetchApi<{ columns: string[] }>(`/api/connections/${connId}/columns?table=${encodeURIComponent(table)}`)
+  fetchApi<{ columns: string[] }>(
+    `/api/connections/${connId}/columns?table=${encodeURIComponent(table)}`
+  )
 
 export const fetchBrowse = (connId: string, catalog?: string, schema?: string) => {
   const params = new URLSearchParams()
@@ -438,7 +441,7 @@ export const fetchBrowse = (connId: string, catalog?: string, schema?: string) =
   if (schema) params.set('schema', schema)
   const qs = params.size ? `?${params}` : ''
   return fetchApi<{ items: Array<{ name: string; full_name: string; kind: string }> }>(
-    `/api/connections/${connId}/browse${qs}`,
+    `/api/connections/${connId}/browse${qs}`
   )
 }
 
@@ -506,4 +509,3 @@ export const executeQueryStudio = (params: { sql: string; connection_id?: string
     body: JSON.stringify({ sql: params.sql }),
   })
 }
-

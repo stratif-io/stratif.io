@@ -17,7 +17,6 @@ interface RetentionTableProps {
   milestones: number[]
 }
 
-
 function getCellStyle(percent: number): React.CSSProperties {
   const opacity = 0.06 + (percent / 100) * 0.44
   return { backgroundColor: `hsl(var(--chart-2) / ${opacity})` }
@@ -129,11 +128,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                   <div
                     className={cn(
                       'rounded-md px-2 py-1 text-sm tabular-nums font-semibold mx-auto w-fit',
-                      pct >= 50
-                        ? 'text-success'
-                        : pct >= 20
-                          ? 'text-success'
-                          : 'text-foreground'
+                      pct >= 50 ? 'text-success' : pct >= 20 ? 'text-success' : 'text-foreground'
                     )}
                     style={getCellStyle(pct)}
                   >

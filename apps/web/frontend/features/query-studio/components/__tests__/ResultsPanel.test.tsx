@@ -25,7 +25,7 @@ function renderPanel(props: Partial<React.ComponentProps<typeof ResultsPanel>> =
       isRunning={props.isRunning ?? false}
       history={props.history ?? []}
       onRestoreHistory={props.onRestoreHistory ?? vi.fn()}
-    />,
+    />
   )
 }
 

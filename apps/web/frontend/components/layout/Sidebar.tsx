@@ -53,9 +53,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'Configuration',
     icon: Settings,
-    items: [
-      { title: 'Connections', href: '/connections', icon: Database },
-    ],
+    items: [{ title: 'Connections', href: '/connections', icon: Database }],
   },
   ...(import.meta.env.DEV
     ? [
@@ -210,7 +208,12 @@ export function Sidebar() {
         </nav>
 
         {/* Dev mode toggle — above the border */}
-        <div className={cn('shrink-0 px-2 py-2', sidebarOpen ? 'flex items-center justify-between' : 'flex justify-center')}>
+        <div
+          className={cn(
+            'shrink-0 px-2 py-2',
+            sidebarOpen ? 'flex items-center justify-between' : 'flex justify-center'
+          )}
+        >
           {sidebarOpen && (
             <span className="text-[11px] font-semibold text-muted-foreground">Dev Mode</span>
           )}
@@ -218,7 +221,9 @@ export function Sidebar() {
             checked={devMode}
             onCheckedChange={setDevMode}
             aria-label="Toggle Dev Mode"
-            className={cn(devMode && 'data-[state=checked]:bg-amber-500 dark:data-[state=checked]:bg-amber-500')}
+            className={cn(
+              devMode && 'data-[state=checked]:bg-amber-500 dark:data-[state=checked]:bg-amber-500'
+            )}
           />
         </div>
 
@@ -227,36 +232,36 @@ export function Sidebar() {
           <div className="flex flex-col gap-0.5">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            aria-expanded={sidebarOpen}
-            className={cn(
-              'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors mt-1',
-              !sidebarOpen && 'justify-center px-2'
-            )}
-          >
-            <span className="shrink-0">
-              {sidebarOpen ? (
-                <ChevronLeft className="h-4 w-4" />
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <ChevronRight className="h-4 w-4" />
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="text-xs">
-                    Expand sidebar
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </span>
-            <span
+              aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+              aria-expanded={sidebarOpen}
               className={cn(
-                'truncate text-sm transition-[opacity,max-width] duration-200',
-                sidebarOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0 overflow-hidden'
+                'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors mt-1',
+                !sidebarOpen && 'justify-center px-2'
               )}
             >
-              Collapse
-            </span>
-          </button>
+              <span className="shrink-0">
+                {sidebarOpen ? (
+                  <ChevronLeft className="h-4 w-4" />
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <ChevronRight className="h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="text-xs">
+                      Expand sidebar
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </span>
+              <span
+                className={cn(
+                  'truncate text-sm transition-[opacity,max-width] duration-200',
+                  sidebarOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0 overflow-hidden'
+                )}
+              >
+                Collapse
+              </span>
+            </button>
           </div>
         </div>
       </aside>
