@@ -27,7 +27,6 @@ class SeedConfig(BaseSettings):
 
     seed_users: int | None = None
     seed_days: int | None = None
-    db_path_prefix: str | None = None
 
     class Config:
         env_prefix = ""

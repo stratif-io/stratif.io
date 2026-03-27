@@ -6,35 +6,21 @@ Usage:
 Install the optional clickhouse dep if needed:
     uv pip install ".[clickhouse]"
 
-Required env vars (or set in seeders/.env):
-    CLICKHOUSE_HOST, CLICKHOUSE_PORT, CLICKHOUSE_USER, CLICKHOUSE_PASSWORD, CLICKHOUSE_DATABASE
+Connection config is read from connections.yaml at the project root.
+Seeding parameters (users, days) are read from seeders/.env or environment variables.
 """
 
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
 import structlog
-from pydantic_settings import BaseSettings
 
+from seeders.connections_config import get_clickhouse_credentials, load_connections_yaml
 from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
 
 log = structlog.get_logger(__name__)
-
-
-class ClickHouseConfig(BaseSettings):
-    clickhouse_host: str = "localhost"
-    clickhouse_port: int = 8123
-    clickhouse_user: str = "default"
-    clickhouse_password: str = ""
-    clickhouse_database: str = "default"
-
-    class Config:
-        env_file = str(Path(__file__).parent / ".env")
-        env_file_encoding = "utf-8"
-        extra = "ignore"
 
 
 class ClickHouseSeeder(BaseSeeder):
@@ -43,7 +29,7 @@ class ClickHouseSeeder(BaseSeeder):
     def __init__(self) -> None:
         config = SeedConfig()
         super().__init__(config=config)
-        self._ch_config = ClickHouseConfig()
+        self._ch_creds = get_clickhouse_credentials(load_connections_yaml())
         self._client: Any = None
 
     # ------------------------------------------------------------------
@@ -81,13 +67,13 @@ class ClickHouseSeeder(BaseSeeder):
     def seed(self) -> dict[str, int]:
         import clickhouse_connect
 
-        cfg = self._ch_config
+        creds = self._ch_creds
         log.info(
             "seeding_start",
             users=self.config.seed_users,
             days=self.config.seed_days,
-            host=cfg.clickhouse_host,
-            database=cfg.clickhouse_database,
+            host=creds.get("host"),
+            database=creds.get("database"),
         )
 
         self._generate_products()
@@ -95,11 +81,11 @@ class ClickHouseSeeder(BaseSeeder):
 
         total_events = 0
         self._client = clickhouse_connect.get_client(
-            host=cfg.clickhouse_host,
-            port=cfg.clickhouse_port,
-            username=cfg.clickhouse_user,
-            password=cfg.clickhouse_password,
-            database=cfg.clickhouse_database,
+            host=creds["host"],
+            port=creds.get("port", 8123),
+            username=creds["user"],
+            password=creds["password"],
+            database=creds["database"],
         )
         try:
             self._create_events_table()
