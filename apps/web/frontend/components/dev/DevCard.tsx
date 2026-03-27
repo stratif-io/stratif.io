@@ -179,10 +179,10 @@ export function DevCard({ sql, children, className }: DevCardProps) {
               position: 'absolute',
               inset: 0,
             }}
-            className={cn('rounded-[inherit] overflow-auto p-3 border', sqlBg)}
+            className={cn('rounded-[inherit] border flex flex-col', sqlBg)}
           >
             {flipped && (
-              <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+              <div className={cn('flex items-center justify-end gap-1.5 px-2 py-1.5 shrink-0 border-b', dark ? 'border-slate-700' : 'border-slate-200')}>
                 {firstQuery && (
                   <button
                     onClick={() => { setPendingQueryStudioSql(prettySql(firstQuery)); navigate('/query-studio') }}
@@ -211,7 +211,9 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                 </button>
               </div>
             )}
-            {sqlContent('11px')}
+            <div className="flex-1 overflow-auto p-3">
+              {sqlContent('11px')}
+            </div>
           </div>
         </div>
       </div>
