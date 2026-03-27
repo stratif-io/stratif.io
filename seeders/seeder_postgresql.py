@@ -57,7 +57,8 @@ class PostgreSQLSeeder(BaseSeeder):
                     user_id     TEXT        NOT NULL,
                     event_name  TEXT        NOT NULL,
                     timestamp   TIMESTAMPTZ NOT NULL,
-                    properties  JSONB       NOT NULL
+                    properties  JSONB       NOT NULL,
+                    server      TEXT        NOT NULL
                 )
             """)
             cur.execute(
@@ -72,13 +73,13 @@ class PostgreSQLSeeder(BaseSeeder):
         assert self._conn is not None, "_conn not initialized — call seed() first"
         if not events:
             return
-        rows = [(e[0], e[1], e[2], json.dumps(e[3])) for e in events]
+        rows = [(e[0], e[1], e[2], json.dumps(e[3]), e[4]) for e in events]
         cur = self._conn.cursor()
         try:
             psycopg2.extras.execute_batch(
                 cur,
-                "INSERT INTO events (user_id, event_name, timestamp, properties) "
-                "VALUES (%s, %s, %s, %s)",
+                "INSERT INTO events (user_id, event_name, timestamp, properties, server) "
+                "VALUES (%s, %s, %s, %s::jsonb, %s)",
                 rows,
                 page_size=1000,
             )
