@@ -1,5 +1,5 @@
 # ── Stage 1: Build frontend ───────────────────────────────────────────────────
-FROM oven/bun:1-slim AS frontend
+FROM ghcr.io/oven-rs/bun:1-slim AS frontend
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/package.json
@@ -24,7 +24,7 @@ COPY apps/web/frontend ./apps/web/frontend
 RUN bun run build
 
 # ── Stage 2: Build docs ────────────────────────────────────────────────────────
-FROM oven/bun:1-slim AS docs
+FROM ghcr.io/oven-rs/bun:1-slim AS docs
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/package.json
