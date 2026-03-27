@@ -43,7 +43,11 @@ function getEventColor(eventName: string | null | undefined) {
   return EVENT_PALETTE[hash % EVENT_PALETTE.length]
 }
 
-function PropertiesExpander({ properties }: { properties: Record<string, unknown> | null | undefined }) {
+function PropertiesExpander({
+  properties,
+}: {
+  properties: Record<string, unknown> | null | undefined
+}) {
   const [open, setOpen] = useState(false)
   const entries = Object.entries(properties ?? {})
   if (entries.length === 0) return null
@@ -166,7 +170,8 @@ export function UserTimelineModal({ userId, connectionId, open, onClose }: UserT
 
   const { data, isLoading } = useQuery({
     queryKey: ['userEvents', userId, connectionId, limit],
-    queryFn: () => fetchUserEvents({ user_id: userId!, connection_id: connectionId ?? undefined, limit }),
+    queryFn: () =>
+      fetchUserEvents({ user_id: userId!, connection_id: connectionId ?? undefined, limit }),
     enabled: open && !!userId,
     staleTime: QUERY_STALE_TIME.short,
   })
@@ -187,9 +192,7 @@ export function UserTimelineModal({ userId, connectionId, open, onClose }: UserT
                 User Timeline
               </DialogTitle>
               {userId && (
-                <p className="text-xs font-mono text-muted-foreground truncate mt-0.5">
-                  {userId}
-                </p>
+                <p className="text-xs font-mono text-muted-foreground truncate mt-0.5">{userId}</p>
               )}
             </div>
           </div>
@@ -204,7 +207,9 @@ export function UserTimelineModal({ userId, connectionId, open, onClose }: UserT
                 className="text-xs bg-transparent border border-border rounded px-1.5 py-0.5 text-muted-foreground cursor-pointer"
               >
                 {LIMIT_OPTIONS.map((n) => (
-                  <option key={n} value={n}>last {n}</option>
+                  <option key={n} value={n}>
+                    last {n}
+                  </option>
                 ))}
               </select>
             </div>

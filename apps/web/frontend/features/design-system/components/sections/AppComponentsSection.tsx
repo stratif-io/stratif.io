@@ -158,7 +158,11 @@ export function AppComponentsSection() {
           value={null}
           onChange={() => {}}
           triggerContent={
-            <Button variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 gap-1 px-2 text-xs text-muted-foreground"
+            >
               <Plus className="h-3 w-3" />
               Add
             </Button>
@@ -182,13 +186,20 @@ export function AppComponentsSection() {
 
       <ComponentRow label="DbLogo (brand colors)">
         <div className="flex items-center gap-4">
-          {(['duckdb','postgresql','bigquery','snowflake','databricks','clickhouse','redshift','mysql','sqlite'] as const).map((db) => (
-            <DbLogo
-              key={db}
-              dbType={db}
-              size={28}
-              style={{ color: DB_BRAND_COLORS[db] }}
-            />
+          {(
+            [
+              'duckdb',
+              'postgresql',
+              'bigquery',
+              'snowflake',
+              'databricks',
+              'clickhouse',
+              'redshift',
+              'mysql',
+              'sqlite',
+            ] as const
+          ).map((db) => (
+            <DbLogo key={db} dbType={db} size={28} style={{ color: DB_BRAND_COLORS[db] }} />
           ))}
         </div>
       </ComponentRow>
@@ -214,7 +225,6 @@ export function AppComponentsSection() {
       <ComponentRow label="QueryStatusIndicator">
         <QueryStatusIndicatorDemo />
       </ComponentRow>
-
     </ComponentSection>
   )
 }

@@ -26,7 +26,8 @@ function ColumnRows({ connId, table, onColumnClick, indent }: ColumnRowProps) {
     staleTime: QUERY_STALE_TIME.never,
   })
 
-  if (isLoading) return <div className={cn(indent, 'py-1 text-[10px] text-muted-foreground')}>Loading…</div>
+  if (isLoading)
+    return <div className={cn(indent, 'py-1 text-[10px] text-muted-foreground')}>Loading…</div>
 
   return (
     <>
@@ -35,7 +36,10 @@ function ColumnRows({ connId, table, onColumnClick, indent }: ColumnRowProps) {
           key={col}
           onClick={() => onColumnClick(col)}
           title="Insert column name"
-          className={cn('flex w-full items-center gap-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors group', indent)}
+          className={cn(
+            'flex w-full items-center gap-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors group',
+            indent
+          )}
         >
           <Columns className="h-2.5 w-2.5 shrink-0 opacity-50" />
           <span className="flex-1 text-left">{col}</span>
@@ -93,8 +97,11 @@ export function CatalogBrowser({ onTableClick, onColumnClick }: CatalogBrowserPr
   }
 
   const chevron = (open: boolean) =>
-    open ? <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
-         : <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+    open ? (
+      <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+    ) : (
+      <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+    )
 
   return (
     <div className="flex h-full flex-col border-r bg-background">
@@ -116,7 +123,9 @@ export function CatalogBrowser({ onTableClick, onColumnClick }: CatalogBrowserPr
 
       <div className="flex-1 overflow-auto">
         {isLoading && <p className="px-3 py-2 text-xs text-muted-foreground">Loading…</p>}
-        {!activeConnectionId && <p className="px-3 py-2 text-xs text-muted-foreground">No connection active.</p>}
+        {!activeConnectionId && (
+          <p className="px-3 py-2 text-xs text-muted-foreground">No connection active.</p>
+        )}
 
         {tree.map((node) => {
           const catalogKey = node.catalog ?? '__none__'
@@ -129,45 +138,66 @@ export function CatalogBrowser({ onTableClick, onColumnClick }: CatalogBrowserPr
               {hasSchemas && (
                 <button
                   onClick={() => toggle(expandedSchemas, schemaKey, setExpandedSchemas)}
-                  className={cn('flex w-full items-center gap-1.5 py-1 text-left text-xs hover:bg-muted transition-colors', hasCatalogs ? 'pl-5' : 'pl-2')}
+                  className={cn(
+                    'flex w-full items-center gap-1.5 py-1 text-left text-xs hover:bg-muted transition-colors',
+                    hasCatalogs ? 'pl-5' : 'pl-2'
+                  )}
                 >
                   {chevron(schemaOpen)}
                   <Layers className="h-3 w-3 shrink-0 text-muted-foreground" />
                   <span className="font-medium text-muted-foreground">{node.schema}</span>
                 </button>
               )}
-              {schemaOpen && node.tables.map((table) => {
-                const tableOpen = expandedTables.has(table.full_name)
-                return (
-                  <div key={table.full_name}>
-                    <div className={cn('flex w-full items-center py-1 text-left text-xs hover:bg-muted transition-colors group', hasCatalogs && hasSchemas ? 'pl-8' : hasSchemas || hasCatalogs ? 'pl-5' : 'pl-2')}>
-                      <button
-                        onClick={() => toggle(expandedTables, table.full_name, setExpandedTables)}
-                        className="flex items-center px-1 shrink-0"
-                        title="Expand columns"
+              {schemaOpen &&
+                node.tables.map((table) => {
+                  const tableOpen = expandedTables.has(table.full_name)
+                  return (
+                    <div key={table.full_name}>
+                      <div
+                        className={cn(
+                          'flex w-full items-center py-1 text-left text-xs hover:bg-muted transition-colors group',
+                          hasCatalogs && hasSchemas
+                            ? 'pl-8'
+                            : hasSchemas || hasCatalogs
+                              ? 'pl-5'
+                              : 'pl-2'
+                        )}
                       >
-                        {chevron(tableOpen)}
-                      </button>
-                      <button
-                        onClick={() => onTableClick(table.full_name)}
-                        className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
-                        title="Insert SELECT"
-                      >
-                        <Table2 className="h-3 w-3 shrink-0 text-muted-foreground" />
-                        <span className="truncate font-medium hover:text-primary">{table.name}</span>
-                      </button>
+                        <button
+                          onClick={() => toggle(expandedTables, table.full_name, setExpandedTables)}
+                          className="flex items-center px-1 shrink-0"
+                          title="Expand columns"
+                        >
+                          {chevron(tableOpen)}
+                        </button>
+                        <button
+                          onClick={() => onTableClick(table.full_name)}
+                          className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
+                          title="Insert SELECT"
+                        >
+                          <Table2 className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <span className="truncate font-medium hover:text-primary">
+                            {table.name}
+                          </span>
+                        </button>
+                      </div>
+                      {tableOpen && activeConnectionId && (
+                        <ColumnRows
+                          connId={activeConnectionId}
+                          table={table}
+                          onColumnClick={onColumnClick}
+                          indent={
+                            hasCatalogs && hasSchemas
+                              ? 'pl-12'
+                              : hasSchemas || hasCatalogs
+                                ? 'pl-9'
+                                : 'pl-6'
+                          }
+                        />
+                      )}
                     </div>
-                    {tableOpen && activeConnectionId && (
-                      <ColumnRows
-                        connId={activeConnectionId}
-                        table={table}
-                        onColumnClick={onColumnClick}
-                        indent={hasCatalogs && hasSchemas ? 'pl-12' : hasSchemas || hasCatalogs ? 'pl-9' : 'pl-6'}
-                      />
-                    )}
-                  </div>
-                )
-              })}
+                  )
+                })}
             </div>
           )
 

@@ -36,14 +36,13 @@ function makeWrapper() {
 }
 
 function renderBrowser(
-  overrides: { onTableClick?: (name: string) => void; onColumnClick?: (name: string) => void } = {},
+  overrides: { onTableClick?: (name: string) => void; onColumnClick?: (name: string) => void } = {}
 ) {
   const onTableClick = overrides.onTableClick ?? vi.fn()
   const onColumnClick = overrides.onColumnClick ?? vi.fn()
-  const result = render(
-    createElement(CatalogBrowser, { onTableClick, onColumnClick }),
-    { wrapper: makeWrapper() },
-  )
+  const result = render(createElement(CatalogBrowser, { onTableClick, onColumnClick }), {
+    wrapper: makeWrapper(),
+  })
   return { ...result, onTableClick, onColumnClick }
 }
 

@@ -69,18 +69,42 @@ export function DataSection() {
       <ComponentRow label="PivotTable">
         <div className="w-full border rounded-md overflow-hidden" style={{ height: 400 }}>
           <PivotTable
-            colDefsData={{ columnDefs: [
-              { field: 'event_name', headerName: 'Event', enableRowGroup: true },
-              { field: 'country', headerName: 'Country', enableRowGroup: true, enablePivot: true },
-              { field: 'count', headerName: 'Count', enableValue: true, allowedAggFuncs: ['sum'] },
-            ] }}
+            colDefsData={{
+              columnDefs: [
+                { field: 'event_name', headerName: 'Event', enableRowGroup: true },
+                {
+                  field: 'country',
+                  headerName: 'Country',
+                  enableRowGroup: true,
+                  enablePivot: true,
+                },
+                {
+                  field: 'count',
+                  headerName: 'Count',
+                  enableValue: true,
+                  allowedAggFuncs: ['sum'],
+                },
+              ],
+            }}
             colDefsLoading={false}
             activeFilters={{}}
             fetchRows={async ({ rowGroups, valueCols, pivotCols }) => {
               if (rowGroups.length === 0 && valueCols.length === 0) return { rows: [] }
               const fakeRows = [
-                { event_name: 'page_view', country: 'US', browser: 'Chrome', count: 1240, users: 890 },
-                { event_name: 'page_view', country: 'GB', browser: 'Safari', count: 540, users: 410 },
+                {
+                  event_name: 'page_view',
+                  country: 'US',
+                  browser: 'Chrome',
+                  count: 1240,
+                  users: 890,
+                },
+                {
+                  event_name: 'page_view',
+                  country: 'GB',
+                  browser: 'Safari',
+                  count: 540,
+                  users: 410,
+                },
                 { event_name: 'click', country: 'US', browser: 'Chrome', count: 830, users: 620 },
                 { event_name: 'click', country: 'DE', browser: 'Firefox', count: 310, users: 280 },
                 { event_name: 'signup', country: 'US', browser: 'Chrome', count: 142, users: 142 },
@@ -91,7 +115,9 @@ export function DataSection() {
               if (pivotCols.length > 0) {
                 const pivotField = pivotCols[0].colId
                 const valueField = valueCols[0]?.colId ?? 'count'
-                const pivotValues = [...new Set(fakeRows.map((r) => r[pivotField as keyof typeof r] as string))]
+                const pivotValues = [
+                  ...new Set(fakeRows.map((r) => r[pivotField as keyof typeof r] as string)),
+                ]
                 const grouped: Record<string, Record<string, unknown>> = {}
                 const rowField = rowGroups[0]?.colId ?? 'event_name'
                 for (const row of fakeRows) {
@@ -112,7 +138,9 @@ export function DataSection() {
                 const key = row[rowField as keyof typeof row] as string
                 if (!grouped[key]) grouped[key] = { [rowField]: key }
                 for (const vc of valueCols) {
-                  grouped[key][vc.colId] = ((grouped[key][vc.colId] as number) ?? 0) + (row[vc.colId as keyof typeof row] as number ?? 0)
+                  grouped[key][vc.colId] =
+                    ((grouped[key][vc.colId] as number) ?? 0) +
+                    ((row[vc.colId as keyof typeof row] as number) ?? 0)
                 }
               }
               return { rows: Object.values(grouped) }

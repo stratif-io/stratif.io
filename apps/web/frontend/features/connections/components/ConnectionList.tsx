@@ -57,63 +57,63 @@ function ConnectionRow({ connection }: { connection: Connection }) {
   }
 
   return (
-      <div
-        className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-accent/40 cursor-pointer transition-colors"
-        onClick={() => navigate(`/connections/${connection.id}`)}
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-accent/40 cursor-pointer transition-colors"
+      onClick={() => navigate(`/connections/${connection.id}`)}
+    >
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-background">
+        <DbLogo dbType={connection.db_type} size={20} />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{connection.name}</p>
+        <p className="text-xs text-muted-foreground">
+          Created {new Date(connection.created_at).toLocaleDateString()}
+        </p>
+      </div>
+
+      <span
+        className={cn(
+          'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
+          DB_TYPE_COLORS[connection.db_type]
+        )}
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-background">
-          <DbLogo dbType={connection.db_type} size={20} />
-        </div>
+        {DB_TYPE_LABELS[connection.db_type] ?? connection.db_type}
+      </span>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{connection.name}</p>
-          <p className="text-xs text-muted-foreground">
-            Created {new Date(connection.created_at).toLocaleDateString()}
-          </p>
-        </div>
-
+      {testResult && (
         <span
           className={cn(
-            'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
-            DB_TYPE_COLORS[connection.db_type]
+            'shrink-0 text-xs font-medium',
+            testResult.ok ? 'text-success' : 'text-destructive'
           )}
         >
-          {DB_TYPE_LABELS[connection.db_type] ?? connection.db_type}
+          {testResult.ok ? '✓ Connected' : '✗ Failed'}
         </span>
+      )}
 
-        {testResult && (
-          <span
-            className={cn(
-              'shrink-0 text-xs font-medium',
-              testResult.ok ? 'text-success' : 'text-destructive'
-            )}
-          >
-            {testResult.ok ? '✓ Connected' : '✗ Failed'}
-          </span>
-        )}
-
-        <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 text-xs"
-            disabled={testMutation.isPending}
-            onClick={handleTest}
-          >
-            {testMutation.isPending ? 'Testing…' : 'Test connection'}
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 text-destructive hover:text-destructive"
-            aria-label="Delete connection"
-            disabled={deleteMutation.isPending}
-            onClick={handleDelete}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+      <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs"
+          disabled={testMutation.isPending}
+          onClick={handleTest}
+        >
+          {testMutation.isPending ? 'Testing…' : 'Test connection'}
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 text-destructive hover:text-destructive"
+          aria-label="Delete connection"
+          disabled={deleteMutation.isPending}
+          onClick={handleDelete}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
+    </div>
   )
 }
 

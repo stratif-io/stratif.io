@@ -4,9 +4,29 @@ import { ValuePickerPopover } from '../ValuePickerPopover'
 import type { LeafMeta } from '../types'
 
 const leafCols: LeafMeta[] = [
-  { colId: 'count', label: 'Count', enableRowGroup: false, enablePivot: false, enableValue: true, allowedAggFuncs: ['sum', 'avg'] },
-  { colId: 'revenue', label: 'Revenue', enableRowGroup: false, enablePivot: false, enableValue: true, allowedAggFuncs: ['sum', 'avg', 'max'] },
-  { colId: 'country', label: 'Country', enableRowGroup: true, enablePivot: false, enableValue: false },
+  {
+    colId: 'count',
+    label: 'Count',
+    enableRowGroup: false,
+    enablePivot: false,
+    enableValue: true,
+    allowedAggFuncs: ['sum', 'avg'],
+  },
+  {
+    colId: 'revenue',
+    label: 'Revenue',
+    enableRowGroup: false,
+    enablePivot: false,
+    enableValue: true,
+    allowedAggFuncs: ['sum', 'avg', 'max'],
+  },
+  {
+    colId: 'country',
+    label: 'Country',
+    enableRowGroup: true,
+    enablePivot: false,
+    enableValue: false,
+  },
 ]
 
 describe('ValuePickerPopover', () => {

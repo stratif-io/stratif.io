@@ -41,13 +41,7 @@ describe('FilterSelect', () => {
 
   it('tree mode opens to the group containing the active value', async () => {
     render(
-      <FilterSelect
-        mode="single"
-        tree
-        options={baseOptions}
-        value="browser"
-        onChange={vi.fn()}
-      />
+      <FilterSelect mode="single" tree options={baseOptions} value="browser" onChange={vi.fn()} />
     )
     await userEvent.click(screen.getByRole('button', { name: 'Browser' }))
     // Implementation uses conditional rendering — collapsed items are not in the DOM at all.
@@ -76,15 +70,7 @@ describe('FilterSelect', () => {
   })
 
   it('isLoading={true} renders loading state instead of option list', async () => {
-    render(
-      <FilterSelect
-        mode="single"
-        options={[]}
-        isLoading
-        value={null}
-        onChange={vi.fn()}
-      />
-    )
+    render(<FilterSelect mode="single" options={[]} isLoading value={null} onChange={vi.fn()} />)
     await userEvent.click(screen.getByRole('button'))
     expect(screen.getByRole('status')).toBeInTheDocument()
     expect(screen.queryByText(/no options/i)).not.toBeInTheDocument()
@@ -92,13 +78,7 @@ describe('FilterSelect', () => {
 
   it('disabled={true} prevents opening the popover', async () => {
     render(
-      <FilterSelect
-        mode="single"
-        options={baseOptions}
-        value={null}
-        onChange={vi.fn()}
-        disabled
-      />
+      <FilterSelect mode="single" options={baseOptions} value={null} onChange={vi.fn()} disabled />
     )
     const trigger = screen.getByRole('button')
     expect(trigger).toBeDisabled()

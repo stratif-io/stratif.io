@@ -39,7 +39,9 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
   const [activeTab, setActiveTab] = useState<Tab>('results')
   const [page, setPage] = useState(0)
 
-  useEffect(() => { setPage(0) }, [result])
+  useEffect(() => {
+    setPage(0)
+  }, [result])
 
   const allRows = result?.rows ?? []
   const totalPages = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE))
@@ -58,7 +60,7 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
               'border-b-2 px-4 py-1.5 text-[11px] font-medium capitalize transition-colors',
               activeTab === tab
                 ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
             {tab}
@@ -76,13 +78,17 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
                   disabled={safePage === 0}
                   className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"
                   aria-label="First page"
-                >«</button>
+                >
+                  «
+                </button>
                 <button
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={safePage === 0}
                   className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"
                   aria-label="Previous page"
-                >‹</button>
+                >
+                  ‹
+                </button>
                 <span className="text-[10px] text-muted-foreground tabular-nums">
                   {safePage + 1} / {totalPages}
                 </span>
@@ -91,13 +97,17 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
                   disabled={safePage === totalPages - 1}
                   className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"
                   aria-label="Next page"
-                >›</button>
+                >
+                  ›
+                </button>
                 <button
                   onClick={() => setPage(totalPages - 1)}
                   disabled={safePage === totalPages - 1}
                   className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"
                   aria-label="Last page"
-                >»</button>
+                >
+                  »
+                </button>
               </div>
             )}
           </div>
@@ -108,9 +118,7 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
       <div className="flex-1 overflow-auto">
         {activeTab === 'results' && (
           <>
-            {isRunning && (
-              <p className="px-4 py-3 text-xs text-muted-foreground">Running...</p>
-            )}
+            {isRunning && <p className="px-4 py-3 text-xs text-muted-foreground">Running...</p>}
             {!isRunning && result?.error && (
               <div className="px-4 py-3">
                 <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive font-mono">
@@ -144,7 +152,9 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
                       {row.map((cell, j) => (
                         <td key={j} className="border-b px-3 py-1 whitespace-nowrap">
                           {cell === null || cell === undefined ? (
-                            <span className="font-mono text-[10px] italic text-muted-foreground">null</span>
+                            <span className="font-mono text-[10px] italic text-muted-foreground">
+                              null
+                            </span>
                           ) : typeof cell === 'object' ? (
                             <JsonCell value={cell} />
                           ) : (
@@ -158,9 +168,7 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
               </table>
             )}
             {!isRunning && !result && (
-              <p className="px-4 py-3 text-xs text-muted-foreground">
-                Run a query to see results.
-              </p>
+              <p className="px-4 py-3 text-xs text-muted-foreground">Run a query to see results.</p>
             )}
           </>
         )}

@@ -64,7 +64,8 @@ export function HeatmapChart({
     }
     return map
   }, [colors])
-  const getCellTextColor = (bgColor: string): string => textColorMap.get(bgColor) ?? 'hsl(0, 0%, 100%)'
+  const getCellTextColor = (bgColor: string): string =>
+    textColorMap.get(bgColor) ?? 'hsl(0, 0%, 100%)'
 
   const getCellValue = (dayData: HeatmapRow, hour: number): number => {
     const cell = dayData.data.find((c) => c.hour === hour)

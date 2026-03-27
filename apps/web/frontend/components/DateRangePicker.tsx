@@ -3,11 +3,18 @@ import { DayPicker } from 'react-day-picker'
 import type { DateRange as DayPickerRange } from 'react-day-picker'
 import {
   format,
-  subDays, subWeeks, subMonths, subQuarters,
-  startOfDay, endOfDay,
-  startOfWeek, endOfWeek,
-  startOfMonth, endOfMonth,
-  startOfQuarter, endOfQuarter,
+  subDays,
+  subWeeks,
+  subMonths,
+  subQuarters,
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  startOfQuarter,
+  endOfQuarter,
   startOfYear,
 } from 'date-fns'
 import { CalendarIcon, ChevronDown } from 'lucide-react'
@@ -27,27 +34,116 @@ interface Preset {
   group: 'rolling' | 'calendar'
 }
 
-const WS = { weekStartsOn: 1 } as const  // Monday
+const WS = { weekStartsOn: 1 } as const // Monday
 
 function buildPresets(): Preset[] {
   const now = new Date()
   return [
-    { id: 'today',        label: 'Today',          group: 'rolling',  getValue: () => ({ from: startOfDay(now), to: endOfDay(now) }) },
-    { id: 'yesterday',    label: 'Yesterday',      group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,1)), to: endOfDay(subDays(now,1)) }) },
-    { id: '7d',           label: 'Last 7 days',    group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,7)),  to: endOfDay(now) }) },
-    { id: '14d',          label: 'Last 14 days',   group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,14)), to: endOfDay(now) }) },
-    { id: '30d',          label: 'Last 30 days',   group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,30)), to: endOfDay(now) }) },
-    { id: '90d',          label: 'Last 90 days',   group: 'rolling',  getValue: () => ({ from: startOfDay(subDays(now,90)), to: endOfDay(now) }) },
-    { id: '6m',           label: 'Last 6 months',  group: 'rolling',  getValue: () => ({ from: startOfDay(subMonths(now,6)),  to: endOfDay(now) }) },
-    { id: '12m',          label: 'Last 12 months', group: 'rolling',  getValue: () => ({ from: startOfDay(subMonths(now,12)), to: endOfDay(now) }) },
-    { id: 'this_week',    label: 'This week',      group: 'calendar', getValue: () => ({ from: startOfWeek(now,WS), to: endOfDay(now) }) },
-    { id: 'last_week',    label: 'Last week',      group: 'calendar', getValue: () => ({ from: startOfWeek(subWeeks(now,1),WS), to: endOfWeek(subWeeks(now,1),WS) }) },
-    { id: 'this_month',   label: 'This month',     group: 'calendar', getValue: () => ({ from: startOfMonth(now), to: endOfDay(now) }) },
-    { id: 'last_month',   label: 'Last month',     group: 'calendar', getValue: () => ({ from: startOfMonth(subMonths(now,1)), to: endOfMonth(subMonths(now,1)) }) },
-    { id: 'this_quarter', label: 'This quarter',   group: 'calendar', getValue: () => ({ from: startOfQuarter(now), to: endOfDay(now) }) },
-    { id: 'last_quarter', label: 'Last quarter',   group: 'calendar', getValue: () => ({ from: startOfQuarter(subQuarters(now,1)), to: endOfQuarter(subQuarters(now,1)) }) },
-    { id: 'ytd',          label: 'Year to date',   group: 'calendar', getValue: () => ({ from: startOfYear(now), to: endOfDay(now) }) },
-    { id: 'all_time',     label: 'All time',       group: 'calendar', getValue: () => ({ from: null, to: null }) },
+    {
+      id: 'today',
+      label: 'Today',
+      group: 'rolling',
+      getValue: () => ({ from: startOfDay(now), to: endOfDay(now) }),
+    },
+    {
+      id: 'yesterday',
+      label: 'Yesterday',
+      group: 'rolling',
+      getValue: () => ({ from: startOfDay(subDays(now, 1)), to: endOfDay(subDays(now, 1)) }),
+    },
+    {
+      id: '7d',
+      label: 'Last 7 days',
+      group: 'rolling',
+      getValue: () => ({ from: startOfDay(subDays(now, 7)), to: endOfDay(now) }),
+    },
+    {
+      id: '14d',
+      label: 'Last 14 days',
+      group: 'rolling',
+      getValue: () => ({ from: startOfDay(subDays(now, 14)), to: endOfDay(now) }),
+    },
+    {
+      id: '30d',
+      label: 'Last 30 days',
+      group: 'rolling',
+      getValue: () => ({ from: startOfDay(subDays(now, 30)), to: endOfDay(now) }),
+    },
+    {
+      id: '90d',
+      label: 'Last 90 days',
+      group: 'rolling',
+      getValue: () => ({ from: startOfDay(subDays(now, 90)), to: endOfDay(now) }),
+    },
+    {
+      id: '6m',
+      label: 'Last 6 months',
+      group: 'rolling',
+      getValue: () => ({ from: startOfDay(subMonths(now, 6)), to: endOfDay(now) }),
+    },
+    {
+      id: '12m',
+      label: 'Last 12 months',
+      group: 'rolling',
+      getValue: () => ({ from: startOfDay(subMonths(now, 12)), to: endOfDay(now) }),
+    },
+    {
+      id: 'this_week',
+      label: 'This week',
+      group: 'calendar',
+      getValue: () => ({ from: startOfWeek(now, WS), to: endOfDay(now) }),
+    },
+    {
+      id: 'last_week',
+      label: 'Last week',
+      group: 'calendar',
+      getValue: () => ({
+        from: startOfWeek(subWeeks(now, 1), WS),
+        to: endOfWeek(subWeeks(now, 1), WS),
+      }),
+    },
+    {
+      id: 'this_month',
+      label: 'This month',
+      group: 'calendar',
+      getValue: () => ({ from: startOfMonth(now), to: endOfDay(now) }),
+    },
+    {
+      id: 'last_month',
+      label: 'Last month',
+      group: 'calendar',
+      getValue: () => ({
+        from: startOfMonth(subMonths(now, 1)),
+        to: endOfMonth(subMonths(now, 1)),
+      }),
+    },
+    {
+      id: 'this_quarter',
+      label: 'This quarter',
+      group: 'calendar',
+      getValue: () => ({ from: startOfQuarter(now), to: endOfDay(now) }),
+    },
+    {
+      id: 'last_quarter',
+      label: 'Last quarter',
+      group: 'calendar',
+      getValue: () => ({
+        from: startOfQuarter(subQuarters(now, 1)),
+        to: endOfQuarter(subQuarters(now, 1)),
+      }),
+    },
+    {
+      id: 'ytd',
+      label: 'Year to date',
+      group: 'calendar',
+      getValue: () => ({ from: startOfYear(now), to: endOfDay(now) }),
+    },
+    {
+      id: 'all_time',
+      label: 'All time',
+      group: 'calendar',
+      getValue: () => ({ from: null, to: null }),
+    },
   ]
 }
 
@@ -61,9 +157,10 @@ function hasNonMidnightTime(d: Date | null): boolean {
 function getDisplayText(value: DateRange, presetId: string | null): string {
   if (value.from === null && value.to === null) return 'All time'
   if (!value.from || !value.to) return 'Select range'
-  const showTime = presetId === null && (hasNonMidnightTime(value.from) || hasNonMidnightTime(value.to))
+  const showTime =
+    presetId === null && (hasNonMidnightTime(value.from) || hasNonMidnightTime(value.to))
   if (showTime) {
-    return `${format(value.from, 'MMM d')} – ${format(value.to, "MMM d, yyyy HH:mm:ss")}`
+    return `${format(value.from, 'MMM d')} – ${format(value.to, 'MMM d, yyyy HH:mm:ss')}`
   }
   return `${format(value.from, 'MMM d')} – ${format(value.to, 'MMM d, yyyy')}`
 }
@@ -89,7 +186,7 @@ function applyTimeToDate(dateStr: string, timeStr: string): Date {
 // ─── Segmented time input (HH : MM : SS) ──────────────────────────────────
 
 interface TimeSegmentInputProps {
-  value: string        // "HH:MM:SS"
+  value: string // "HH:MM:SS"
   onChange: (v: string) => void
 }
 
@@ -110,7 +207,7 @@ function TimeSegmentInput({ value, onChange }: TimeSegmentInputProps) {
   function makeHandlers(
     field: 'h' | 'm' | 's',
     max: number,
-    nextRef?: React.RefObject<HTMLInputElement | null>,
+    nextRef?: React.RefObject<HTMLInputElement | null>
   ) {
     const current = field === 'h' ? h : field === 'm' ? m : s
 
@@ -179,39 +276,40 @@ function TimeSegmentInput({ value, onChange }: TimeSegmentInputProps) {
 // ─── DayPicker classNames — use design-system tokens instead of default CSS ──
 
 const DAY_PICKER_CLASSES = {
-  root:           'text-sm',
-  months:         'flex gap-6',
-  month:          'space-y-3',
-  month_caption:  'flex items-center justify-center px-1 h-7 relative',
-  caption_label:  'text-xs font-medium text-foreground',
-  nav:            'flex items-center gap-1',
+  root: 'text-sm',
+  months: 'flex gap-6',
+  month: 'space-y-3',
+  month_caption: 'flex items-center justify-center px-1 h-7 relative',
+  caption_label: 'text-xs font-medium text-foreground',
+  nav: 'flex items-center gap-1',
   button_previous: cn(
     'absolute left-0 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground',
-    'hover:bg-accent hover:text-foreground transition-colors',
+    'hover:bg-accent hover:text-foreground transition-colors'
   ),
   button_next: cn(
     'absolute right-0 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground',
-    'hover:bg-accent hover:text-foreground transition-colors',
+    'hover:bg-accent hover:text-foreground transition-colors'
   ),
-  month_grid:     'w-full border-collapse',
-  weekdays:       '',
-  weekday:        'text-[10px] font-medium text-muted-foreground/60 text-center w-8 h-7 uppercase',
-  week:           '',
-  day:            'p-0 text-center',
+  month_grid: 'w-full border-collapse',
+  weekdays: '',
+  weekday: 'text-[10px] font-medium text-muted-foreground/60 text-center w-8 h-7 uppercase',
+  week: '',
+  day: 'p-0 text-center',
   day_button: cn(
     'h-8 w-8 rounded-md text-xs font-normal text-foreground transition-colors',
     'hover:bg-accent hover:text-accent-foreground',
     'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-    'disabled:opacity-30 disabled:pointer-events-none',
+    'disabled:opacity-30 disabled:pointer-events-none'
   ),
-  selected:       '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary [&>button]:hover:text-primary-foreground [&>button]:rounded-md',
-  range_start:    '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:rounded-md',
-  range_end:      '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:rounded-md',
-  range_middle:   '[&>button]:bg-accent [&>button]:text-accent-foreground [&>button]:rounded-none',
-  today:          '[&>button]:font-semibold [&>button]:text-primary',
-  outside:        '[&>button]:text-muted-foreground/30 [&>button]:pointer-events-none',
-  hidden:         'invisible',
-  chevron:        'h-3.5 w-3.5',
+  selected:
+    '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary [&>button]:hover:text-primary-foreground [&>button]:rounded-md',
+  range_start: '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:rounded-md',
+  range_end: '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:rounded-md',
+  range_middle: '[&>button]:bg-accent [&>button]:text-accent-foreground [&>button]:rounded-none',
+  today: '[&>button]:font-semibold [&>button]:text-primary',
+  outside: '[&>button]:text-muted-foreground/30 [&>button]:pointer-events-none',
+  hidden: 'invisible',
+  chevron: 'h-3.5 w-3.5',
 }
 
 // ─── Component ────────────────────────────────────────────────────────────
@@ -325,7 +423,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
     <button
       className={cn(
         'flex items-center gap-1.5 h-9 px-3 text-sm font-medium text-muted-foreground',
-        'hover:bg-accent/60 hover:text-foreground transition-colors focus:outline-none whitespace-nowrap',
+        'hover:bg-accent/60 hover:text-foreground transition-colors focus:outline-none whitespace-nowrap'
       )}
     >
       <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
@@ -348,100 +446,100 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{triggerEl}</PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <div className="p-3 space-y-3 min-w-[520px]">
-            {/* Rolling presets */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Rolling
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {rollingPresets.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => handlePreset(p)}
-                    className={cn(
-                      'text-xs font-medium px-2.5 py-1 rounded-md border transition-colors',
-                      presetId === p.id
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-transparent text-muted-foreground border-border hover:bg-accent hover:text-foreground',
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
+      <PopoverContent className="w-auto p-0" align="start">
+        <div className="p-3 space-y-3 min-w-[520px]">
+          {/* Rolling presets */}
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Rolling
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {rollingPresets.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => handlePreset(p)}
+                  className={cn(
+                    'text-xs font-medium px-2.5 py-1 rounded-md border transition-colors',
+                    presetId === p.id
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-transparent text-muted-foreground border-border hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
-
-            {/* Calendar-aligned presets */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Calendar
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {calendarPresets.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => handlePreset(p)}
-                    className={cn(
-                      'text-xs font-medium px-2.5 py-1 rounded-md border transition-colors',
-                      presetId === p.id
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-transparent text-muted-foreground border-border hover:bg-accent hover:text-foreground',
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="h-px bg-border" />
-
-            {/* Dual-month calendar */}
-            <DayPicker
-              mode="range"
-              numberOfMonths={2}
-              selected={pending}
-              onSelect={handleDayPickerSelect}
-              month={calendarMonth}
-              onMonthChange={setCalendarMonth}
-              classNames={DAY_PICKER_CLASSES}
-            />
-
-            {/* Date + time inputs */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">From</label>
-                <div className="flex gap-1.5">
-                  <input
-                    type="date"
-                    value={fromDateStr}
-                    onChange={handleFromDateInput}
-                    className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  />
-                  <TimeSegmentInput value={fromTime} onChange={setFromTime} />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">To</label>
-                <div className="flex gap-1.5">
-                  <input
-                    type="date"
-                    value={toDateStr}
-                    onChange={handleToDateInput}
-                    className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  />
-                  <TimeSegmentInput value={toTime} onChange={setToTime} />
-                </div>
-              </div>
-            </div>
-
-            <Button size="sm" className="w-full" onClick={handleApply}>
-              Apply
-            </Button>
           </div>
-        </PopoverContent>
+
+          {/* Calendar-aligned presets */}
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Calendar
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {calendarPresets.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => handlePreset(p)}
+                  className={cn(
+                    'text-xs font-medium px-2.5 py-1 rounded-md border transition-colors',
+                    presetId === p.id
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-transparent text-muted-foreground border-border hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* Dual-month calendar */}
+          <DayPicker
+            mode="range"
+            numberOfMonths={2}
+            selected={pending}
+            onSelect={handleDayPickerSelect}
+            month={calendarMonth}
+            onMonthChange={setCalendarMonth}
+            classNames={DAY_PICKER_CLASSES}
+          />
+
+          {/* Date + time inputs */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">From</label>
+              <div className="flex gap-1.5">
+                <input
+                  type="date"
+                  value={fromDateStr}
+                  onChange={handleFromDateInput}
+                  className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+                <TimeSegmentInput value={fromTime} onChange={setFromTime} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">To</label>
+              <div className="flex gap-1.5">
+                <input
+                  type="date"
+                  value={toDateStr}
+                  onChange={handleToDateInput}
+                  className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+                <TimeSegmentInput value={toTime} onChange={setToTime} />
+              </div>
+            </div>
+          </div>
+
+          <Button size="sm" className="w-full" onClick={handleApply}>
+            Apply
+          </Button>
+        </div>
+      </PopoverContent>
     </Popover>
   )
 }

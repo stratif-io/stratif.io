@@ -66,7 +66,8 @@ export function useTrendData({
   }
   const mergedFilters = localFilters ? { ...activeFilters, ...serializedLocal } : activeFilters
 
-  const usePivot = !!breakdownDimension || (measure !== 'count_events' && measure !== 'unique_users')
+  const usePivot =
+    !!breakdownDimension || (measure !== 'count_events' && measure !== 'unique_users')
 
   // ── Events list (always needed for the event selector) ───────────────────
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({

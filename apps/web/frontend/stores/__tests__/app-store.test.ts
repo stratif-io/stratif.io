@@ -247,7 +247,9 @@ describe('useAppStore', () => {
     })
 
     it('applyPreset with null id marks custom range', () => {
-      useAppStore.getState().applyPreset({ from: new Date('2025-03-01'), to: new Date('2025-03-10') }, null)
+      useAppStore
+        .getState()
+        .applyPreset({ from: new Date('2025-03-01'), to: new Date('2025-03-10') }, null)
       expect(useAppStore.getState().presetId).toBeNull()
     })
 

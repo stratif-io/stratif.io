@@ -9,22 +9,23 @@ from unittest.mock import patch
 @contextmanager
 def _patch_settings(db_path, enc_key):
     """Patch settings in all modules that reference it directly."""
+    from backend.product_db.deps import get_product_db
+    get_product_db.cache_clear()
     with (
-        patch("backend.product_db.database.settings") as db_s,
+        patch("backend.product_db.deps.settings") as db_s,
         patch("backend.services.crypto.settings") as crypto_s,
     ):
         db_s.product_db_path = db_path
+        db_s.product_db_url = ""
         crypto_s.encryption_key = enc_key
         yield db_s, crypto_s
+    get_product_db.cache_clear()
 
 
 def _setup_db(tmp_path, enc_key="test-encryption-key-for-testing-only"):
     """Initialise a temp product DB and return its path."""
-    import backend.product_db.database as db_module
-
     db_path = str(tmp_path / "test_product.sqlite")
     with _patch_settings(db_path, enc_key):
-        db_module._product_db = None
         from backend.product_db.migrations import init_product_db
         init_product_db()
     return db_path
@@ -32,13 +33,10 @@ def _setup_db(tmp_path, enc_key="test-encryption-key-for-testing-only"):
 
 def test_bootstrap_inserts_all_rows(tmp_path):
     """First call inserts connection, schema config, and filter config."""
-    import backend.product_db.database as db_module
-
     enc_key = "test-encryption-key-for-testing-only"
     db_path = _setup_db(tmp_path, enc_key)
 
     with _patch_settings(db_path, enc_key):
-        db_module._product_db = None
         from seeders.bootstrap_connection import bootstrap
         bootstrap("/data/sample.duckdb")
 
@@ -71,13 +69,10 @@ def test_bootstrap_inserts_all_rows(tmp_path):
 
 def test_bootstrap_credentials_decrypt_correctly(tmp_path):
     """Stored credentials decrypt to the correct path."""
-    import backend.product_db.database as db_module
-
     enc_key = "test-encryption-key-for-testing-only"
     db_path = _setup_db(tmp_path, enc_key)
 
     with _patch_settings(db_path, enc_key):
-        db_module._product_db = None
         from seeders.bootstrap_connection import bootstrap
         bootstrap("/data/sample.duckdb")
 
@@ -95,13 +90,10 @@ def test_bootstrap_credentials_decrypt_correctly(tmp_path):
 
 def test_bootstrap_is_idempotent(tmp_path):
     """Calling bootstrap twice does not create duplicate connections."""
-    import backend.product_db.database as db_module
-
     enc_key = "test-encryption-key-for-testing-only"
     db_path = _setup_db(tmp_path, enc_key)
 
     with _patch_settings(db_path, enc_key):
-        db_module._product_db = None
         from seeders.bootstrap_connection import bootstrap
         bootstrap("/data/sample.duckdb")
         bootstrap("/data/sample.duckdb")  # second call
@@ -114,14 +106,11 @@ def test_bootstrap_is_idempotent(tmp_path):
 
 def test_bootstrap_custom_path(tmp_path):
     """Custom path is stored in encrypted credentials."""
-    import backend.product_db.database as db_module
-
     enc_key = "test-encryption-key-for-testing-only"
     db_path = _setup_db(tmp_path, enc_key)
     custom_path = "/custom/analytics.duckdb"
 
     with _patch_settings(db_path, enc_key):
-        db_module._product_db = None
         from seeders.bootstrap_connection import bootstrap
         bootstrap(custom_path)
 
@@ -139,16 +128,13 @@ def test_bootstrap_custom_path(tmp_path):
 
 def test_bootstrap_fixes_stale_credentials(tmp_path):
     """If an existing connection has wrong credential key, bootstrap updates it."""
-    import backend.product_db.database as db_module
-
     enc_key = "test-encryption-key-for-testing-only"
     db_path = _setup_db(tmp_path, enc_key)
 
     # Insert a connection with the old wrong key {"path": ...}
     with _patch_settings(db_path, enc_key):
-        db_module._product_db = None
         from backend.services.crypto import encrypt_credentials
-        from backend.product_db.database import get_product_db
+        from backend.product_db.deps import get_product_db
         db = get_product_db()
         import uuid
         from datetime import UTC, datetime
@@ -161,7 +147,6 @@ def test_bootstrap_fixes_stale_credentials(tmp_path):
 
     # Now run bootstrap — it should detect stale creds and fix them
     with _patch_settings(db_path, enc_key):
-        db_module._product_db = None
         from seeders.bootstrap_connection import bootstrap
         bootstrap("/data/sample.duckdb")
 

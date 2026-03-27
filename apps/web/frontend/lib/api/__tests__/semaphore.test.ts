@@ -24,12 +24,26 @@ describe('QuerySemaphore', () => {
     const order: number[] = []
     let resolveA!: () => void
     let resolveB!: () => void
-    const longA = () => new Promise<void>((res) => { resolveA = res })
-    const longB = () => new Promise<void>((res) => { resolveB = res })
+    const longA = () =>
+      new Promise<void>((res) => {
+        resolveA = res
+      })
+    const longB = () =>
+      new Promise<void>((res) => {
+        resolveB = res
+      })
 
-    const p1 = semaphore.run(async () => { await longA(); order.push(1) })
-    const p2 = semaphore.run(async () => { await longB(); order.push(2) })
-    const p3 = semaphore.run(async () => { order.push(3) })
+    const p1 = semaphore.run(async () => {
+      await longA()
+      order.push(1)
+    })
+    const p2 = semaphore.run(async () => {
+      await longB()
+      order.push(2)
+    })
+    const p3 = semaphore.run(async () => {
+      order.push(3)
+    })
 
     expect(order).toEqual([])
 
@@ -44,13 +58,23 @@ describe('QuerySemaphore', () => {
   it('calls onCountChange with running and queued counts', async () => {
     let resolveA!: () => void
     let resolveB!: () => void
-    const longA = () => new Promise<void>((res) => { resolveA = res })
-    const longB = () => new Promise<void>((res) => { resolveB = res })
+    const longA = () =>
+      new Promise<void>((res) => {
+        resolveA = res
+      })
+    const longB = () =>
+      new Promise<void>((res) => {
+        resolveB = res
+      })
 
-    const p1 = semaphore.run(async () => { await longA() })
+    const p1 = semaphore.run(async () => {
+      await longA()
+    })
     expect(onCountChange).toHaveBeenCalledWith(1, 0)
 
-    const p2 = semaphore.run(async () => { await longB() })
+    const p2 = semaphore.run(async () => {
+      await longB()
+    })
     expect(onCountChange).toHaveBeenCalledWith(2, 0)
 
     const p3 = semaphore.run(async () => {})
@@ -64,7 +88,9 @@ describe('QuerySemaphore', () => {
   })
 
   it('releases slot even when the task throws', async () => {
-    const thrower = semaphore.run(async () => { throw new Error('boom') })
+    const thrower = semaphore.run(async () => {
+      throw new Error('boom')
+    })
     await expect(thrower).rejects.toThrow('boom')
     const last = onCountChange.mock.calls.at(-1)
     expect(last![0]).toBe(0)

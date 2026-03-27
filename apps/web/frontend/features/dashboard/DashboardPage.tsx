@@ -73,13 +73,16 @@ export function DashboardPage() {
   }, [])
 
   const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()
-  const { data, metricLoading, isError, error, topEvents, eventsLoading, topEventsSql } = useMissionControl({
-    dateRange,
-  })
+  const { data, metricLoading, isError, error, topEvents, eventsLoading, topEventsSql } =
+    useMissionControl({
+      dateRange,
+    })
   const { trends } = useMissionControlTrends({ dateRange })
 
   const isConnectionNotFound =
-    isError && error instanceof Error && error.message.toLowerCase().includes('connection not found')
+    isError &&
+    error instanceof Error &&
+    error.message.toLowerCase().includes('connection not found')
 
   useEffect(() => {
     if (isConnectionNotFound && activeConnectionId) {

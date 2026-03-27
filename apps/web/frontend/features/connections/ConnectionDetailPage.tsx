@@ -42,8 +42,8 @@ export function ConnectionDetailPage() {
         if (data.ok) setActiveConnectionId(connection.id)
       },
     })
-  // Run once when connection data first becomes available
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Run once when connection data first becomes available
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connection?.id])
 
   if (isLoading) {

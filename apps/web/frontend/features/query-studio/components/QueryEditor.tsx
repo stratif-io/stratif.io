@@ -18,13 +18,24 @@ interface QueryEditorProps {
   tableNames?: string[]
 }
 
-export function QueryEditor({ value, onChange, onExecute, limitEnabled, onLimitToggle, tableNames = [] }: QueryEditorProps) {
+export function QueryEditor({
+  value,
+  onChange,
+  onExecute,
+  limitEnabled,
+  onLimitToggle,
+  tableNames = [],
+}: QueryEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const limitEnabledRef = useRef(limitEnabled)
   const onExecuteRef = useRef(onExecute)
-  useEffect(() => { limitEnabledRef.current = limitEnabled }, [limitEnabled])
-  useEffect(() => { onExecuteRef.current = onExecute }, [onExecute])
+  useEffect(() => {
+    limitEnabledRef.current = limitEnabled
+  }, [limitEnabled])
+  useEffect(() => {
+    onExecuteRef.current = onExecute
+  }, [onExecute])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -134,7 +145,14 @@ export function QueryEditor({ value, onChange, onExecute, limitEnabled, onLimitT
             className="flex items-center rounded-r-md border-l border-primary-foreground/20 bg-primary px-2 py-1 text-primary-foreground/80 hover:bg-primary/90 hover:text-primary-foreground transition-colors"
           >
             <svg width="10" height="10" viewBox="0 0 10 10">
-              <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+              <path
+                d="M2 3.5L5 6.5L8 3.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
           {runMenuOpen && (

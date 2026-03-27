@@ -21,11 +21,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Dialog,
   DialogContent,
@@ -159,7 +155,9 @@ export function PrimitivesSection() {
       <ComponentRow label="Tooltip">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="sm">Hover me</Button>
+            <Button variant="outline" size="sm">
+              Hover me
+            </Button>
           </TooltipTrigger>
           <TooltipContent>Tooltip content</TooltipContent>
         </Tooltip>
@@ -168,7 +166,9 @@ export function PrimitivesSection() {
       <ComponentRow label="Popover">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm">Open popover</Button>
+            <Button variant="outline" size="sm">
+              Open popover
+            </Button>
           </PopoverTrigger>
           <PopoverContent className="w-48">
             <p className="text-sm">Popover content here.</p>
@@ -179,7 +179,9 @@ export function PrimitivesSection() {
       <ComponentRow label="Dialog">
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">Open dialog</Button>
+            <Button variant="outline" size="sm">
+              Open dialog
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -193,7 +195,9 @@ export function PrimitivesSection() {
       <ComponentRow label="DropdownMenu">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">Open menu</Button>
+            <Button variant="outline" size="sm">
+              Open menu
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem>Action one</DropdownMenuItem>
@@ -208,7 +212,9 @@ export function PrimitivesSection() {
           {(['none', 'subtle', 'medium', 'prominent'] as const).map((e) => (
             <Card key={e} elevation={e} className="w-36">
               <CardHeader className="pb-2">
-                <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">{e}</CardTitle>
+                <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">
+                  {e}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs text-muted-foreground">shadow variant</p>
@@ -223,7 +229,9 @@ export function PrimitivesSection() {
           {(['none', 'lift', 'glow'] as const).map((h) => (
             <Card key={h} hover={h} className="w-36">
               <CardHeader className="pb-2">
-                <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">{h}</CardTitle>
+                <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">
+                  {h}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs text-muted-foreground">hover over me</p>
@@ -232,7 +240,9 @@ export function PrimitivesSection() {
           ))}
           <Card clickable className="w-36">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">clickable</CardTitle>
+              <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">
+                clickable
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">cursor + lift</p>
@@ -244,18 +254,27 @@ export function PrimitivesSection() {
       <ComponentRow label="Card — compact (metric)">
         <div className="flex items-start gap-3">
           <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 w-36">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Metric label</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              Metric label
+            </p>
             <p className="text-lg font-bold tracking-tight">48.2K</p>
-            <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40 mt-1">↑ 3.2%</span>
+            <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40 mt-1">
+              ↑ 3.2%
+            </span>
           </div>
-          <p className="text-xs text-muted-foreground max-w-[160px] pt-1">Used for mission control metric cards. Same border-radius and bg as <code className="font-mono">Card</code>, but compact padding and button semantics.</p>
+          <p className="text-xs text-muted-foreground max-w-[160px] pt-1">
+            Used for mission control metric cards. Same border-radius and bg as{' '}
+            <code className="font-mono">Card</code>, but compact padding and button semantics.
+          </p>
         </div>
       </ComponentRow>
 
       <ComponentRow label="ScrollArea">
         <ScrollArea className="h-24 w-48 border rounded-md p-2">
           {Array.from({ length: 10 }, (_, i) => (
-            <p key={i} className="text-sm py-1">Item {i + 1}</p>
+            <p key={i} className="text-sm py-1">
+              Item {i + 1}
+            </p>
           ))}
         </ScrollArea>
       </ComponentRow>
