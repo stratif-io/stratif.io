@@ -1,26 +1,24 @@
 """Integration test: DuckDB backend against a real file-based database.
 
-Required env var:
-    TEST_DUCKDB_PATH   absolute path to a real DuckDB file
-
-Note: In-memory DuckDB (:memory:) is covered by unit tests.
-This test verifies file I/O and the full open() path.
+Credentials are read from connections.yaml (``backends.duckdb``).
+Set ``enabled: true`` and provide a ``file_path`` to run this test.
 """
-import os
 import pytest
 
-DUCKDB_PATH = os.environ.get("TEST_DUCKDB_PATH", "")
+from backend.tests.integration.conftest import get_backend_config
+
+_CREDS = get_backend_config("duckdb")
 
 
 @pytest.mark.integration
-@pytest.mark.skipif(not DUCKDB_PATH, reason="TEST_DUCKDB_PATH not set")
+@pytest.mark.skipif(_CREDS is None, reason="duckdb not enabled in connections.yaml")
 class TestDuckDBIntegration:
     @pytest.fixture
     def backend_and_conn(self):
         from backend.backends.duckdb import DuckDBBackend
         from backend.backends.duckdb.credentials import DuckDBCredentials
 
-        creds = DuckDBCredentials(file_path=DUCKDB_PATH)
+        creds = DuckDBCredentials(**_CREDS)
         backend = DuckDBBackend()
         conn = backend.open(creds, read_only=True)
         yield backend, conn

@@ -1,33 +1,24 @@
 """Integration test: ClickHouse backend against a real database.
 
-Required env var:
-    TEST_CLICKHOUSE_URL  e.g. clickhouse://user:pass@localhost:8123/analytics
+Credentials are read from connections.yaml (``backends.clickhouse``).
+Set ``enabled: true`` and fill in host/port/database/user/password/secure.
 """
-import os
 import pytest
 
-CLICKHOUSE_URL = os.environ.get("TEST_CLICKHOUSE_URL", "")
+from backend.tests.integration.conftest import get_backend_config
+
+_CREDS = get_backend_config("clickhouse")
 
 
 @pytest.mark.integration
-@pytest.mark.skipif(not CLICKHOUSE_URL, reason="TEST_CLICKHOUSE_URL not set")
+@pytest.mark.skipif(_CREDS is None, reason="clickhouse not enabled in connections.yaml")
 class TestClickHouseIntegration:
     @pytest.fixture
     def backend_and_conn(self):
         from backend.backends.clickhouse import ClickHouseBackend
         from backend.backends.clickhouse.credentials import ClickHouseCredentials
-        import urllib.parse
 
-        parsed = urllib.parse.urlparse(CLICKHOUSE_URL)
-        secure = parsed.scheme == "clickhouses"
-        creds = ClickHouseCredentials(
-            host=parsed.hostname,
-            port=parsed.port or (8443 if secure else 8123),
-            database=parsed.path.lstrip("/") or "default",
-            user=parsed.username or "default",
-            password=parsed.password or "",
-            secure=secure,
-        )
+        creds = ClickHouseCredentials(**_CREDS)
         backend = ClickHouseBackend()
         conn = backend.open(creds, read_only=True)
         yield backend, conn

@@ -1,30 +1,24 @@
 """Integration test: Databricks backend against a real cluster/SQL warehouse.
 
-Required env vars:
-    TEST_DATABRICKS_HOST        e.g. adb-1234.azuredatabricks.net
-    TEST_DATABRICKS_TOKEN       personal access token
-    TEST_DATABRICKS_HTTP_PATH   e.g. /sql/1.0/warehouses/abc123
+Credentials are read from connections.yaml (``backends.databricks``).
+Set ``enabled: true`` and fill in host/token/http_path.
 """
-import os
 import pytest
 
-_REQUIRED = ["TEST_DATABRICKS_HOST", "TEST_DATABRICKS_TOKEN", "TEST_DATABRICKS_HTTP_PATH"]
-_MISSING = [k for k in _REQUIRED if not os.environ.get(k)]
+from backend.tests.integration.conftest import get_backend_config
+
+_CREDS = get_backend_config("databricks")
 
 
 @pytest.mark.integration
-@pytest.mark.skipif(bool(_MISSING), reason=f"Missing env vars: {_MISSING}")
+@pytest.mark.skipif(_CREDS is None, reason="databricks not enabled in connections.yaml")
 class TestDatabricksIntegration:
     @pytest.fixture
     def backend_and_conn(self):
         from backend.backends.databricks import DatabricksBackend
         from backend.backends.databricks.credentials import DatabricksCredentials
 
-        creds = DatabricksCredentials(
-            host=os.environ["TEST_DATABRICKS_HOST"],
-            token=os.environ["TEST_DATABRICKS_TOKEN"],
-            http_path=os.environ["TEST_DATABRICKS_HTTP_PATH"],
-        )
+        creds = DatabricksCredentials(**_CREDS)
         backend = DatabricksBackend()
         conn = backend.open(creds, read_only=True)
         yield backend, conn

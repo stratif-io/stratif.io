@@ -1,26 +1,24 @@
 """Integration test: SQLite backend against a real file-based database.
 
-Required env var:
-    TEST_SQLITE_PATH   absolute path to a real SQLite file (NOT :memory:)
-
-Note: :memory: is excluded — in-memory SQLite is covered by unit tests.
-This test verifies file I/O, permissions, and the full open() path.
+Credentials are read from connections.yaml (``backends.sqlite``).
+Set ``enabled: true`` and provide a ``file_path`` to run this test.
 """
-import os
 import pytest
 
-SQLITE_PATH = os.environ.get("TEST_SQLITE_PATH", "")
+from backend.tests.integration.conftest import get_backend_config
+
+_CREDS = get_backend_config("sqlite")
 
 
 @pytest.mark.integration
-@pytest.mark.skipif(not SQLITE_PATH or SQLITE_PATH == ":memory:", reason="TEST_SQLITE_PATH not set to a file path")
+@pytest.mark.skipif(_CREDS is None, reason="sqlite not enabled in connections.yaml")
 class TestSQLiteIntegration:
     @pytest.fixture
     def backend_and_conn(self):
         from backend.backends.sqlite import SQLiteBackend
         from backend.backends.sqlite.credentials import SQLiteCredentials
 
-        creds = SQLiteCredentials(file_path=SQLITE_PATH)
+        creds = SQLiteCredentials(**_CREDS)
         backend = SQLiteBackend()
         conn = backend.open(creds, read_only=True)
         yield backend, conn
