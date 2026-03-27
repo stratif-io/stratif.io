@@ -1,32 +1,24 @@
 """Integration test: Snowflake backend against a real account.
 
-Required env vars:
-    TEST_SNOWFLAKE_ACCOUNT    e.g. xy12345.us-east-1
-    TEST_SNOWFLAKE_USER       e.g. MYUSER
-    TEST_SNOWFLAKE_PASSWORD
-    TEST_SNOWFLAKE_DATABASE   e.g. ANALYTICS
+Credentials are read from connections.yaml (``backends.snowflake``).
+Set ``enabled: true`` and fill in account/user/password/database.
 """
-import os
 import pytest
 
-_REQUIRED = ["TEST_SNOWFLAKE_ACCOUNT", "TEST_SNOWFLAKE_USER", "TEST_SNOWFLAKE_PASSWORD", "TEST_SNOWFLAKE_DATABASE"]
-_MISSING = [k for k in _REQUIRED if not os.environ.get(k)]
+from backend.tests.integration.conftest import get_backend_config
+
+_CREDS = get_backend_config("snowflake")
 
 
 @pytest.mark.integration
-@pytest.mark.skipif(bool(_MISSING), reason=f"Missing env vars: {_MISSING}")
+@pytest.mark.skipif(_CREDS is None, reason="snowflake not enabled in connections.yaml")
 class TestSnowflakeIntegration:
     @pytest.fixture
     def backend_and_conn(self):
         from backend.backends.snowflake import SnowflakeBackend
         from backend.backends.snowflake.credentials import SnowflakeCredentials
 
-        creds = SnowflakeCredentials(
-            account=os.environ["TEST_SNOWFLAKE_ACCOUNT"],
-            user=os.environ["TEST_SNOWFLAKE_USER"],
-            password=os.environ["TEST_SNOWFLAKE_PASSWORD"],
-            database=os.environ["TEST_SNOWFLAKE_DATABASE"],
-        )
+        creds = SnowflakeCredentials(**_CREDS)
         backend = SnowflakeBackend()
         conn = backend.open(creds, read_only=True)
         yield backend, conn
