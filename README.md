@@ -126,13 +126,13 @@ cp .env.example .env
 
 ## 🔧 Local Development
 
-**Prerequisites:** Node 20+, Python 3.12+, [uv](https://docs.astral.sh/uv/)
+**Prerequisites:** [Bun](https://bun.sh), Python 3.12+, [uv](https://docs.astral.sh/uv/)
 
 ```bash
 git clone https://github.com/stratifio/stratifio-oss.git
 cd stratifio-oss
 
-npm install
+bun install
 uv sync
 
 cp .env.example .env
@@ -141,17 +141,17 @@ cp .env.example .env
 uv run seed-duckdb          # seed sample data (optional)
 
 uv run serve                # backend  → http://localhost:8000
-npm run dev                 # frontend → http://localhost:5173
+bun run dev                 # frontend → http://localhost:5173
 ```
 
 **Quality checks:**
 
 ```bash
-npm run test:run             # frontend unit tests (Vitest)
+bun run test:run             # frontend unit tests (Vitest)
 uv run pytest backend/       # backend tests
-npm run lint                 # ESLint (zero warnings)
-npm run build                # TypeScript + production build
-npm run test:e2e             # end-to-end tests (Playwright)
+bun run lint                 # ESLint (zero warnings)
+bun run build                # TypeScript + production build
+bun run test:e2e             # end-to-end tests (Playwright)
 ```
 
 ---
@@ -174,7 +174,7 @@ Pull requests are welcome. For major changes, open an issue first to discuss wha
 
 ```bash
 # Run the full quality suite before submitting
-npm run lint && npm run build && npm run test:run
+bun run lint && bun run build && bun run test:run
 ```
 
 ---
