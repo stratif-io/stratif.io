@@ -2,7 +2,8 @@ import { test, expect, devices } from '@playwright/test'
 import { waitForLoadingToFinish } from '../helpers/test-utils'
 
 test.describe('Responsive Design - Mobile', () => {
-  test.use({ ...devices['iPhone 12'] })
+  const { defaultBrowserType: _dt, ...iphone12 } = devices['iPhone 12']
+  test.use(iphone12)
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/dashboard')
