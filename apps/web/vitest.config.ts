@@ -21,6 +21,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './frontend'),
+      // Deduplicate React — ensures CodeMirror (inlined) and react-dom use the
+      // same React instance even when the worktree has its own node_modules.
+      react: path.resolve(__dirname, '../../../../node_modules/react'),
+      'react-dom': path.resolve(__dirname, '../../../../node_modules/react-dom'),
     },
   },
 })

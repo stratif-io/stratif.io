@@ -10,7 +10,7 @@ from backend.core.auth import get_current_user
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.sql_builder import date_trunc
-from backend.services.validators import parse_date, to_sql_datetime
+from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["trends"], dependencies=[Depends(get_current_user)])
 
@@ -72,6 +72,7 @@ def get_trend(
     total_unique = db.execute(total_unique_query, params)[0][0]
 
     return {
+        "sql": [interpolate_sql(query, params), interpolate_sql(total_unique_query, params)],
         "total_unique_users": total_unique,
         "data": [
             {

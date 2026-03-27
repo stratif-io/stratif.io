@@ -104,6 +104,14 @@ class AnalyticsDatabase:
                 raise HTTPException(status_code=503, detail="Connection lost — please retry.") from exc
             raise
 
+    def execute_with_columns(
+        self, query: str, params: list | None = None
+    ) -> tuple[list[str], list[tuple]]:
+        """Execute query and return (column_names, rows). Used by Query Studio."""
+        if self._events_cte:
+            query = self._backend.prepend_events_cte(self._events_cte, query)
+        return self._backend.execute_with_columns(self._conn, query, params)
+
     def get_dialect(self) -> str:
         """Backward-compatible: returns dialect string for sql_builder callers."""
         return self._backend.dialect_name

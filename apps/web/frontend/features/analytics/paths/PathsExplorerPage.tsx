@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import type { PathAnalysisData } from '@/types'
 import { cn } from '@/lib/utils'
 import { SPACING, TYPOGRAPHY, FILTER_TRIGGER_CLASS } from '@/lib/constants'
+import { DevCard } from '@/components/dev'
 
 const TIME_UNITS = [
   { value: 'seconds', label: 'Seconds' },
@@ -217,7 +218,7 @@ export function PathsExplorerPage() {
     )
   }
 
-  const { pathData, events, isLoading, eventsLoading, totalPaths } = usePathExplorer({
+  const { pathData, events, isLoading, eventsLoading, totalPaths, sql } = usePathExplorer({
     dateRange,
     startEvent: startEvent || null,
     endEvent: endEvent || null,
@@ -477,6 +478,7 @@ export function PathsExplorerPage() {
           </div>
 
           {/* Results */}
+          <DevCard sql={sql}>
           {isLoading || eventsLoading ? (
             <LoadingState message="Analyzing paths…" />
           ) : pathData.length === 0 ? (
@@ -523,6 +525,8 @@ export function PathsExplorerPage() {
               </div>
             </div>
           )}
+
+          </DevCard>
 
           <PathFunnelDialog
             path={selectedPath}

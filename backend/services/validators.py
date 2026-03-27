@@ -1,8 +1,33 @@
 """Shared input validators for API endpoints."""
 
 from datetime import datetime
+from typing import Any
 
 from fastapi import HTTPException
+
+
+def interpolate_sql(query: str, params: list[Any]) -> str:
+    """Replace ? placeholders with their actual values for display purposes."""
+    result = []
+    param_iter = iter(params)
+    for char in query:
+        if char == "?":
+            try:
+                val = next(param_iter)
+                if val is None:
+                    result.append("NULL")
+                elif isinstance(val, bool):
+                    result.append("TRUE" if val else "FALSE")
+                elif isinstance(val, (int, float)):
+                    result.append(str(val))
+                else:
+                    escaped = str(val).replace("'", "''")
+                    result.append(f"'{escaped}'")
+            except StopIteration:
+                result.append("?")
+        else:
+            result.append(char)
+    return "".join(result)
 
 
 def to_sql_datetime(date_str: str, default_time: str) -> str:

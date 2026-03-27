@@ -97,7 +97,8 @@ class PostgreSQLBackend:
         try:
             cursor = conn.cursor()
             try:
-                cursor.execute(f'SELECT * FROM "{table}" LIMIT 0')
+                quoted = '.'.join(f'"{p}"' for p in table.split('.'))
+                cursor.execute(f'SELECT * FROM {quoted} LIMIT 0')
                 return [d[0] for d in cursor.description or []]
             finally:
                 with contextlib.suppress(Exception):
@@ -215,6 +216,21 @@ class PostgreSQLBackend:
         try:
             cursor.execute(query, params or None)
             return cursor.fetchall()
+        finally:
+            with contextlib.suppress(Exception):
+                cursor.close()
+
+    def execute_with_columns(
+        self, conn: Any, query: str, params: list | None
+    ) -> tuple[list[str], list[tuple]]:
+        if params:
+            query = query.replace("?", "%s")
+        cursor = conn.cursor()
+        try:
+            cursor.execute(query, params or None)
+            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            rows = cursor.fetchall()
+            return columns, rows
         finally:
             with contextlib.suppress(Exception):
                 cursor.close()

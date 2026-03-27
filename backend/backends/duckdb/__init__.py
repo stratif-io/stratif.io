@@ -69,15 +69,16 @@ class DuckDBBackend:
 
     def get_columns_for_browse(self, conn: Any, table: str) -> list[str]:
         try:
-            rel = conn.execute(f'SELECT * FROM "{table}" LIMIT 0')
-            return [d[0] for d in rel.description]
+            rows = conn.execute(f"DESCRIBE {table}").fetchall()
+            return [r[0] for r in rows]
         except Exception:
             return []
 
     def browse(self, conn: Any, catalog: str | None, schema: str | None) -> list[dict]:
         if schema is None:
             rows = conn.execute(
-                "SELECT schema_name FROM information_schema.schemata ORDER BY 1"
+                "SELECT DISTINCT schema_name FROM information_schema.schemata "
+                "WHERE schema_name NOT IN ('information_schema', 'pg_catalog') ORDER BY 1"
             ).fetchall()
             return [{"name": r[0], "full_name": r[0], "kind": "schema"} for r in rows]
         rows = conn.execute(
@@ -147,6 +148,14 @@ class DuckDBBackend:
         if params:
             return conn.execute(query, params).fetchall()
         return conn.execute(query).fetchall()
+
+    def execute_with_columns(
+        self, conn: Any, query: str, params: list | None
+    ) -> tuple[list[str], list[tuple]]:
+        rel = conn.execute(query, params) if params else conn.execute(query)
+        columns = [desc[0] for desc in rel.description] if rel.description else []
+        rows = rel.fetchall()
+        return columns, rows
 
     def build_events_cte(
         self, source_table: str, uid_field: str, ts_field: str,

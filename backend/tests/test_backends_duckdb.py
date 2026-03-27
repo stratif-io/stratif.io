@@ -116,6 +116,30 @@ class TestDuckDBBrowse:
         assert "events" in names
         assert all(i["kind"] == "table" for i in items)
 
+    def test_browse_excludes_information_schema(self, backend, mem_conn):
+        """browse(None, None) must not return system schemas."""
+        items = backend.browse(mem_conn, catalog=None, schema=None)
+        names = [i["name"] for i in items]
+        assert "information_schema" not in names
+
+    def test_browse_excludes_pg_catalog(self, backend, mem_conn):
+        """browse(None, None) must not return pg_catalog."""
+        items = backend.browse(mem_conn, catalog=None, schema=None)
+        names = [i["name"] for i in items]
+        assert "pg_catalog" not in names
+
+    def test_browse_deduplicates_schemas(self, backend, mem_conn):
+        """DuckDB can return 'main' multiple times — browse uses DISTINCT."""
+        items = backend.browse(mem_conn, catalog=None, schema=None)
+        names = [i["name"] for i in items]
+        assert len(names) == len(set(names)), "Schema names should be deduplicated"
+
+    def test_browse_schema_returns_full_name(self, backend, mem_conn):
+        """Tables returned by browse(None, 'main') have full_name = 'main.table'."""
+        items = backend.browse(mem_conn, catalog=None, schema="main")
+        events = next(i for i in items if i["name"] == "events")
+        assert events["full_name"] == "main.events"
+
 
 class TestDuckDBDetectSchema:
     def test_detect_schema_finds_events_table(self, backend, mem_conn):

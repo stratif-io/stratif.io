@@ -35,6 +35,7 @@ export interface UseTrendDataReturn {
   maxValue: number
   seriesKeys: string[] | null
   measureKey: string
+  sql: string | string[] | undefined
 }
 
 /** Top-N cap for stacked series. Values beyond this are merged into "(other)". */
@@ -250,5 +251,6 @@ export function useTrendData({
     maxValue,
     seriesKeys: breakdownDimension ? seriesKeys : null,
     measureKey: 'count',
+    sql: usePivot ? pivotResponse?.sql : trendResponse?.sql,
   }
 }

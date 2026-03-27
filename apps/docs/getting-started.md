@@ -15,7 +15,7 @@ echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
 docker compose up
 ```
 
-Open **http://localhost:8000** when the container is ready.
+Open **http://localhost:9999** when the container is ready.
 
 ## First Connection
 
@@ -33,6 +33,8 @@ You're ready to explore. Head to **Trends** to start.
 ```bash
 docker compose down -v && docker compose up
 ```
+
+> **Warning:** `-v` removes the `analytics_data` volume — this deletes all stored connections and credentials, not just the sample data.
 
 ## Local Development
 

@@ -8,6 +8,7 @@ import { useMissionControl } from './hooks/useMissionControl'
 import { useMissionControlTrends } from './hooks/useMissionControlTrends'
 import { QueryError } from '@/components/ui/query-error'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
+import { DevCard } from '@/components/dev'
 import { Button } from '@/components/ui/button'
 import { Database } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -72,7 +73,7 @@ export function DashboardPage() {
   }, [])
 
   const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()
-  const { data, metricLoading, isError, error, topEvents, eventsLoading } = useMissionControl({
+  const { data, metricLoading, isError, error, topEvents, eventsLoading, topEventsSql } = useMissionControl({
     dateRange,
   })
   const { trends } = useMissionControlTrends({ dateRange })
@@ -107,7 +108,9 @@ export function DashboardPage() {
           ) : (
             <>
               <MissionControlGrid data={data} trends={trends} metricLoading={metricLoading} />
-              <TopEvents events={topEvents} loading={eventsLoading} />
+              <DevCard sql={topEventsSql}>
+                <TopEvents events={topEvents} loading={eventsLoading} />
+              </DevCard>
             </>
           )}
         </div>

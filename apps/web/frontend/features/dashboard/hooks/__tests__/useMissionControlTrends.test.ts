@@ -3,6 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createElement } from 'react'
 import { useMissionControlTrends } from '../useMissionControlTrends'
+import { formatDateParam } from '@/lib/utils'
 
 // Mock the API module
 vi.mock('@/lib/api', () => ({
@@ -83,5 +84,51 @@ describe('useMissionControlTrends', () => {
     })
     expect(fetchMissionControlTrend).toHaveBeenCalled()
     expect(result.current.trends['total_events'].values).toEqual([1000, 1200])
+  })
+
+  it('sql field combines current + previous period SQL into a flat array', async () => {
+    // Current period returns sql: 'SELECT current'
+    // Previous period returns sql: 'SELECT prev'
+    vi.mocked(fetchMissionControlTrend).mockImplementation(({ start_date }) => {
+      if (start_date === undefined || start_date === formatDateParam(dateRange.from)) {
+        return Promise.resolve({
+          metric: 'total_events',
+          data: [],
+          sql: 'SELECT current',
+        })
+      }
+      return Promise.resolve({
+        metric: 'total_events',
+        data: [],
+        sql: 'SELECT prev',
+      })
+    })
+
+    const { result } = renderHook(() => useMissionControlTrends({ dateRange }), {
+      wrapper: makeWrapper(),
+    })
+
+    await waitFor(() => {
+      const sql = result.current.trends['total_events'].sql
+      expect(Array.isArray(sql)).toBe(true)
+      expect(sql).toContain('SELECT current')
+    })
+  })
+
+  it('sql field is empty array when neither period has SQL', async () => {
+    // Mock returns no sql field
+    vi.mocked(fetchMissionControlTrend).mockResolvedValue({
+      metric: 'total_events',
+      data: [],
+    })
+
+    const { result } = renderHook(() => useMissionControlTrends({ dateRange }), {
+      wrapper: makeWrapper(),
+    })
+
+    await waitFor(() => {
+      expect(result.current.trends['total_events'].loading).toBe(false)
+    })
+    expect(result.current.trends['total_events'].sql).toEqual([])
   })
 })
