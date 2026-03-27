@@ -45,7 +45,8 @@ class DuckDBSeeder(BaseSeeder):
                 user_id     VARCHAR,
                 event_name  VARCHAR,
                 timestamp   TIMESTAMP,
-                properties  JSON
+                properties  JSON,
+                server      VARCHAR
             )
         """)
 
@@ -59,12 +60,13 @@ class DuckDBSeeder(BaseSeeder):
                 "event_name": [e[1] for e in events],
                 "timestamp": [e[2] for e in events],
                 "properties": [json.dumps(e[3]) for e in events],
+                "server": [e[4] for e in events],
             }
         )
 
         self._conn.execute(
             "INSERT INTO events "
-            "SELECT user_id, event_name, timestamp, properties::JSON FROM df"
+            "SELECT user_id, event_name, timestamp, properties::JSON, server FROM df"
         )
 
     def seed(self) -> dict[str, int]:
