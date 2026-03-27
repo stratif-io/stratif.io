@@ -27,7 +27,6 @@ class SeedConfig(BaseSettings):
 
     seed_users: int | None = None
     seed_days: int | None = None
-    db_path_prefix: str | None = None
 
     class Config:
         env_prefix = ""
@@ -248,6 +247,17 @@ REFERRERS = [
     ("bing", 0.02),
     ("duckduckgo", 0.01),
 ]
+
+COUNTRY_TO_SERVER_REGION: dict[str, str] = {
+    "US": "us",
+    "BR": "us",
+    "UK": "eu",
+    "DE": "eu",
+    "FR": "eu",
+    "JP": "asia",
+    "IN": "asia",
+    "AU": "asia",
+}
 
 PRODUCT_CATEGORIES: dict[str, Any] = {
     "Electronics": {
@@ -648,7 +658,8 @@ class BaseSeeder(ABC):
                         }
                     )
                     events.append(
-                        (user["id"], "ProductView", current_time, additional_props)
+                        (user["id"], "ProductView", current_time, additional_props,
+                         self._get_server(user["country"]))
                     )
                     visited_products.append(product)
 
@@ -685,7 +696,8 @@ class BaseSeeder(ABC):
                     )
                     user["completed_purchase"] = True
 
-            events.append((user["id"], event_name, current_time, properties))
+            events.append((user["id"], event_name, current_time, properties,
+                           self._get_server(user["country"])))
             progress_prob = FUNNEL_DROP_OFF[event_name]
 
         return events
@@ -702,6 +714,7 @@ class BaseSeeder(ABC):
                 "Home",
                 current_time,
                 self._build_event_properties(user, session_id, referrer, "Home", []),
+                self._get_server(user["country"]),
             )
         )
 
@@ -712,6 +725,7 @@ class BaseSeeder(ABC):
                 "Search",
                 current_time,
                 self._build_event_properties(user, session_id, referrer, "Search", []),
+                self._get_server(user["country"]),
             )
         )
 
@@ -730,7 +744,8 @@ class BaseSeeder(ABC):
                     "product_price": product["product_price"],
                 }
             )
-            events.append((user["id"], "ProductView", current_time, props))
+            events.append((user["id"], "ProductView", current_time, props,
+                           self._get_server(user["country"])))
 
         return events
 
@@ -780,3 +795,8 @@ class BaseSeeder(ABC):
         items = [c[0] for c in choices]
         weights = [c[1] for c in choices]
         return random.choices(items, weights=weights, k=1)[0]
+
+    def _get_server(self, country_code: str) -> str:
+        region = COUNTRY_TO_SERVER_REGION.get(country_code, "us")
+        number = random.choice(("1", "2"))
+        return f"server.{region}.{number}"

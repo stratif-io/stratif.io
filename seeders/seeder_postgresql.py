@@ -3,36 +3,22 @@
 Usage:
     uv run seed-postgres
 
-Required env vars (or set in seeders/.env):
-    POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DATABASE
+Connection config is read from connections.yaml at the project root.
+Seeding parameters (users, days) are read from seeders/.env or environment variables.
 """
 
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import psycopg2
 import psycopg2.extras
 import structlog
-from pydantic_settings import BaseSettings
 
+from seeders.connections_config import get_postgresql_credentials, load_connections_yaml
 from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
 
 log = structlog.get_logger(__name__)
-
-
-class PostgresConfig(BaseSettings):
-    postgres_host: str = "localhost"
-    postgres_port: int = 5432
-    postgres_user: str = "postgres"
-    postgres_password: str = ""
-    postgres_database: str = "postgres"
-
-    class Config:
-        env_file = str(Path(__file__).parent / ".env")
-        env_file_encoding = "utf-8"
-        extra = "ignore"
 
 
 class PostgreSQLSeeder(BaseSeeder):
@@ -41,7 +27,7 @@ class PostgreSQLSeeder(BaseSeeder):
     def __init__(self) -> None:
         config = SeedConfig()
         super().__init__(config=config)
-        self._pg_config = PostgresConfig()
+        self._pg_creds = get_postgresql_credentials(load_connections_yaml())
         self._conn: psycopg2.extensions.connection | None = None
 
     # ------------------------------------------------------------------
@@ -57,7 +43,8 @@ class PostgreSQLSeeder(BaseSeeder):
                     user_id     TEXT        NOT NULL,
                     event_name  TEXT        NOT NULL,
                     timestamp   TIMESTAMPTZ NOT NULL,
-                    properties  JSONB       NOT NULL
+                    properties  JSONB       NOT NULL,
+                    server      TEXT        NOT NULL
                 )
             """)
             cur.execute(
@@ -72,13 +59,13 @@ class PostgreSQLSeeder(BaseSeeder):
         assert self._conn is not None, "_conn not initialized — call seed() first"
         if not events:
             return
-        rows = [(e[0], e[1], e[2], json.dumps(e[3])) for e in events]
+        rows = [(e[0], e[1], e[2], json.dumps(e[3]), e[4]) for e in events]
         cur = self._conn.cursor()
         try:
             psycopg2.extras.execute_batch(
                 cur,
-                "INSERT INTO events (user_id, event_name, timestamp, properties) "
-                "VALUES (%s, %s, %s, %s)",
+                "INSERT INTO events (user_id, event_name, timestamp, properties, server) "
+                "VALUES (%s, %s, %s, %s::jsonb, %s)",
                 rows,
                 page_size=1000,
             )
@@ -87,13 +74,13 @@ class PostgreSQLSeeder(BaseSeeder):
         self._conn.commit()
 
     def seed(self) -> dict[str, int]:
-        cfg = self._pg_config
+        creds = self._pg_creds
         log.info(
             "seeding_start",
             users=self.config.seed_users,
             days=self.config.seed_days,
-            host=cfg.postgres_host,
-            database=cfg.postgres_database,
+            host=creds.get("host"),
+            database=creds.get("database"),
         )
 
         self._generate_products()
@@ -101,11 +88,11 @@ class PostgreSQLSeeder(BaseSeeder):
 
         total_events = 0
         self._conn = psycopg2.connect(
-            host=cfg.postgres_host,
-            port=cfg.postgres_port,
-            dbname=cfg.postgres_database,
-            user=cfg.postgres_user,
-            password=cfg.postgres_password,
+            host=creds["host"],
+            port=creds.get("port", 5432),
+            dbname=creds["database"],
+            user=creds["user"],
+            password=creds["password"],
         )
         try:
             self._create_events_table()
