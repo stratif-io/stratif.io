@@ -5,6 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](package.json)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
+[![ghcr.io](https://img.shields.io/badge/ghcr.io-latest-24292e?logo=github)](https://github.com/cabichahine/stratif.io/pkgs/container/stratif.io)
 
 **🔍 Self-hosted product analytics. Your database, your infrastructure, your rules. 📊**
 
