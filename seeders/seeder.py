@@ -659,7 +659,8 @@ class BaseSeeder(ABC):
                         }
                     )
                     events.append(
-                        (user["id"], "ProductView", current_time, additional_props)
+                        (user["id"], "ProductView", current_time, additional_props,
+                         self._get_server(user["country"]))
                     )
                     visited_products.append(product)
 
@@ -696,7 +697,8 @@ class BaseSeeder(ABC):
                     )
                     user["completed_purchase"] = True
 
-            events.append((user["id"], event_name, current_time, properties))
+            events.append((user["id"], event_name, current_time, properties,
+                           self._get_server(user["country"])))
             progress_prob = FUNNEL_DROP_OFF[event_name]
 
         return events
@@ -713,6 +715,7 @@ class BaseSeeder(ABC):
                 "Home",
                 current_time,
                 self._build_event_properties(user, session_id, referrer, "Home", []),
+                self._get_server(user["country"]),
             )
         )
 
@@ -723,6 +726,7 @@ class BaseSeeder(ABC):
                 "Search",
                 current_time,
                 self._build_event_properties(user, session_id, referrer, "Search", []),
+                self._get_server(user["country"]),
             )
         )
 
@@ -741,7 +745,8 @@ class BaseSeeder(ABC):
                     "product_price": product["product_price"],
                 }
             )
-            events.append((user["id"], "ProductView", current_time, props))
+            events.append((user["id"], "ProductView", current_time, props,
+                           self._get_server(user["country"])))
 
         return events
 
