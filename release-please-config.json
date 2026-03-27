@@ -1,11 +1,17 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "release-type": "simple",
-  "extra-files": [
-    {
-      "type": "toml",
-      "path": "pyproject.toml",
-      "jsonpath": "$.project.version"
+  "bootstrap-sha": "a14907ad422d1627b5f3a1733d4e6fb734dba4a0",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "extra-files": [
+        {
+          "type": "toml",
+          "path": "pyproject.toml",
+          "jsonpath": "$.project.version"
+        }
+      ]
     }
-  ]
+  }
 }
