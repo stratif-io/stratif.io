@@ -30,6 +30,12 @@
     "bundle:analyze": "vite-bundle-visualizer"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.1",
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/lang-sql": "^6.10.0",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/theme-one-dark": "^6.1.3",
+    "@codemirror/view": "^6.40.0",
     "@fontsource-variable/geist": "^5.2.8",
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
@@ -51,6 +57,7 @@
     "@tanstack/react-query": "^5.60.0",
     "@tanstack/react-table": "^8.20.5",
     "@tanstack/react-virtual": "^3.13.18",
+    "@tanstack/table-core": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
@@ -63,6 +70,7 @@
     "react-router-dom": "^6.28.0",
     "recharts": "^2.15.0",
     "sonner": "^2.0.7",
+    "sql-formatter": "^15.7.2",
     "styled-components": "^5.3.11",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
