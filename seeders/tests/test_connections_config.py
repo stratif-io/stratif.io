@@ -1,7 +1,5 @@
 """Unit tests for connections_config.py."""
 import pytest
-import yaml
-from pathlib import Path
 
 from seeders.connections_config import (
     load_connections_yaml,
