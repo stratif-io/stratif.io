@@ -1,7 +1,7 @@
 # ── Stage 1: Build frontend ───────────────────────────────────────────────────
 FROM debian:bookworm-slim AS frontend
 RUN apt-get update && apt-get install -y curl unzip ca-certificates && rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL https://bun.sh/install | bash
+RUN curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.11"
 ENV PATH="/root/.bun/bin:$PATH"
 WORKDIR /app
 COPY package.json bun.lock ./
@@ -29,7 +29,7 @@ RUN bun run build
 # ── Stage 2: Build docs ────────────────────────────────────────────────────────
 FROM debian:bookworm-slim AS docs
 RUN apt-get update && apt-get install -y curl unzip ca-certificates && rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL https://bun.sh/install | bash
+RUN curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.11"
 ENV PATH="/root/.bun/bin:$PATH"
 WORKDIR /app
 COPY package.json bun.lock ./
