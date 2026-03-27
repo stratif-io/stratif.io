@@ -7,6 +7,7 @@ jobs:
   frontend-checks:
     name: Frontend checks
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +31,7 @@ jobs:
   backend-unit:
     name: Backend unit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -49,6 +51,7 @@ jobs:
   backend-integration:
     name: Backend integration tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -62,15 +65,14 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      # DB credential secrets will be added here as env vars when credentials are defined
       - name: Run integration tests
         run: uv run pytest --ignore=backend/tests/e2e -m integration -v
-        env:
-          # Add DB credential secrets here as they are defined
-          # e.g. STRATIFIO_PG_HOST: ${{ secrets.PG_HOST }}
 
   backend-e2e:
     name: Backend E2E tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -95,6 +97,7 @@ jobs:
   playwright-e2e:
     name: Playwright E2E tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -120,14 +123,16 @@ jobs:
       - name: Start backend
         run: uv run serve &
         env:
-          STRATIFIO_ENCRYPTION_KEY: ci-test-encryption-key-32-chars!!
+          STRATIFIO_ENCRYPTION_KEY: ${{ secrets.CI_ENCRYPTION_KEY }}
 
       - name: Wait for backend to be ready
         run: |
           for i in $(seq 1 30); do
-            curl -sf http://localhost:8000/api/health && break
+            curl -sf http://localhost:8000/api/health && exit 0
             sleep 1
           done
+          echo "Backend did not become ready in time" >&2
+          exit 1
 
       - name: Run Playwright tests
         run: bun run test:e2e
