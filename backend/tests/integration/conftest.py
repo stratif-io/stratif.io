@@ -16,7 +16,7 @@ import pathlib
 
 import yaml
 
-_REPO_ROOT = pathlib.Path(__file__).resolve().parents[4]
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 
 _env_override = os.environ.get("STRATIFIO_CONNECTIONS_FILE")
 if _env_override:
