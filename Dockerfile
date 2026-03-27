@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/package.json
 COPY apps/docs/package.json ./apps/docs/package.json
-RUN bun install --frozen-lockfile && \
+RUN bun install && \
     ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then \
       bun add --no-save \
@@ -35,7 +35,7 @@ WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/package.json
 COPY apps/docs/package.json ./apps/docs/package.json
-RUN bun install --frozen-lockfile
+RUN bun install
 COPY apps/docs ./apps/docs
 # Build with /docs/ base so assets resolve correctly when served at /docs/
 RUN VITEPRESS_BASE=/docs/ bun run docs:build
