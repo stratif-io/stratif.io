@@ -49,9 +49,7 @@ export function useMissionControl({
   // Previous period calculation (same as useMissionControlTrends)
   const periodDays =
     dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) + 1 : 0
-  const prevEndDate = dateRange.from
-    ? formatDateParam(subDays(dateRange.from, 1))
-    : undefined
+  const prevEndDate = dateRange.from ? formatDateParam(subDays(dateRange.from, 1)) : undefined
   const prevStartDate =
     dateRange.from && periodDays > 0
       ? formatDateParam(subDays(dateRange.from, periodDays))

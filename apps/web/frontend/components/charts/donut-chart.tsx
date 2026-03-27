@@ -119,7 +119,11 @@ export function DonutChart({
   const total = data.reduce((sum, item) => sum + item.value, 0)
 
   return (
-    <div role="img" aria-label="Donut chart" className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500">
+    <div
+      role="img"
+      aria-label="Donut chart"
+      className="motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-500"
+    >
       <ResponsiveContainer width="100%" height={height}>
         <PieChart>
           <Pie

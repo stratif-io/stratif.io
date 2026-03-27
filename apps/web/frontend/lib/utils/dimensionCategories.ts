@@ -7,7 +7,10 @@ function getCompiled(categories: DimensionCategoryConfig[]): CompiledCategory[] 
   if (!compiledCache.has(categories)) {
     compiledCache.set(
       categories,
-      categories.map((cat) => ({ category: cat, regexes: cat.patterns.map((p) => new RegExp(p, 'i')) })),
+      categories.map((cat) => ({
+        category: cat,
+        regexes: cat.patterns.map((p) => new RegExp(p, 'i')),
+      }))
     )
   }
   return compiledCache.get(categories)!
@@ -15,7 +18,7 @@ function getCompiled(categories: DimensionCategoryConfig[]): CompiledCategory[] 
 
 export function groupDimensionsByCategory(
   dimensions: DimensionOption[],
-  categories: DimensionCategoryConfig[],
+  categories: DimensionCategoryConfig[]
 ): DimensionGroup[] {
   const compiled = getCompiled(categories)
 
@@ -43,6 +46,9 @@ export function groupDimensionsByCategory(
     .filter((cat) => grouped.has(cat.id))
     .map((cat) => ({
       category: cat,
-      dimensions: grouped.get(cat.id)!.slice().sort((a, b) => a.label.localeCompare(b.label)),
+      dimensions: grouped
+        .get(cat.id)!
+        .slice()
+        .sort((a, b) => a.label.localeCompare(b.label)),
     }))
 }

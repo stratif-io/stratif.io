@@ -54,7 +54,7 @@ describe('useQueryStudio', () => {
       await result.current.execute(1000)
     })
     expect(mockExecute).toHaveBeenCalledWith(
-      expect.objectContaining({ sql: 'SELECT * FROM events\nLIMIT 1000' }),
+      expect.objectContaining({ sql: 'SELECT * FROM events\nLIMIT 1000' })
     )
   })
 
@@ -66,7 +66,7 @@ describe('useQueryStudio', () => {
       await result.current.execute(1000)
     })
     expect(mockExecute).toHaveBeenCalledWith(
-      expect.objectContaining({ sql: 'SELECT * FROM events LIMIT 50' }),
+      expect.objectContaining({ sql: 'SELECT * FROM events LIMIT 50' })
     )
   })
 
@@ -78,7 +78,7 @@ describe('useQueryStudio', () => {
       await result.current.execute(null)
     })
     expect(mockExecute).toHaveBeenCalledWith(
-      expect.objectContaining({ sql: 'SELECT COUNT(*) FROM events' }),
+      expect.objectContaining({ sql: 'SELECT COUNT(*) FROM events' })
     )
   })
 
@@ -125,7 +125,12 @@ describe('useQueryStudio', () => {
   it('limits history to 20 entries', async () => {
     const { result } = renderHook(() => useQueryStudio())
     for (let i = 0; i < 22; i++) {
-      mockExecute.mockResolvedValueOnce({ columns: [], rows: [], execution_time_ms: 1, error: null })
+      mockExecute.mockResolvedValueOnce({
+        columns: [],
+        rows: [],
+        execution_time_ms: 1,
+        error: null,
+      })
       act(() => result.current.setSql(`SELECT ${i}`))
       await act(async () => {
         await result.current.execute(1000)

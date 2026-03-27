@@ -58,7 +58,6 @@ function milestoneTitle(granularity: RetentionGranularity, unit: number): string
   return `Day ${unit} Retention`
 }
 
-
 interface MetricCardProps {
   title: string
   value: number
@@ -71,7 +70,9 @@ function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
   const animatedValue = useCountUp(value, { decimals: 1 })
   return (
     <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 transition-colors hover:border-primary/50">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{title}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+        {title}
+      </p>
       <div className="flex items-end gap-2">
         <p className="text-lg font-bold tracking-tight leading-none">{animatedValue.toFixed(1)}%</p>
         <span className={cn('text-xs font-medium pb-0.5', color)}>{label}</span>
@@ -89,7 +90,16 @@ export function RetentionPage() {
   const [granularity, setGranularity] = useState<RetentionGranularity>('day')
   const [cohortLimit, setCohortLimit] = useState(10)
 
-  const { retentionData, milestones, isLoading, isError, error, avgMilestones: _avgMilestones, totalAvailable, sql } = useRetentionData({
+  const {
+    retentionData,
+    milestones,
+    isLoading,
+    isError,
+    error,
+    avgMilestones: _avgMilestones,
+    totalAvailable,
+    sql,
+  } = useRetentionData({
     dateRange,
     granularity,
   })
@@ -111,7 +121,6 @@ export function RetentionPage() {
   }, [visibleData, milestones])
 
   const isEmpty = !isLoading && retentionData.length === 0
-
 
   return (
     <PageTransition>
@@ -172,34 +181,34 @@ export function RetentionPage() {
 
           {/* Cohort heatmap with sparklines */}
           <DevCard sql={sql}>
-          <Card className="relative overflow-hidden">
-            <CardLoadingBar loading={isLoading} />
-            <CardContent className="p-0 pb-0">
-              {isError ? (
-                <div className="p-6">
-                  <QueryError error={error} />
-                </div>
-              ) : isLoading ? (
-                <div className="p-6">
-                  <TableSkeleton />
-                </div>
-              ) : isEmpty ? (
-                <div className="p-6">
-                  <EmptyState
-                    icon={Users}
-                    title="No cohorts to show"
-                    description="No new users were found in this date range. Try widening it to see retention cohorts."
+            <Card className="relative overflow-hidden">
+              <CardLoadingBar loading={isLoading} />
+              <CardContent className="p-0 pb-0">
+                {isError ? (
+                  <div className="p-6">
+                    <QueryError error={error} />
+                  </div>
+                ) : isLoading ? (
+                  <div className="p-6">
+                    <TableSkeleton />
+                  </div>
+                ) : isEmpty ? (
+                  <div className="p-6">
+                    <EmptyState
+                      icon={Users}
+                      title="No cohorts to show"
+                      description="No new users were found in this date range. Try widening it to see retention cohorts."
+                    />
+                  </div>
+                ) : (
+                  <RetentionTable
+                    data={visibleData}
+                    granularity={granularity}
+                    milestones={milestones}
                   />
-                </div>
-              ) : (
-                <RetentionTable
-                  data={visibleData}
-                  granularity={granularity}
-                  milestones={milestones}
-                />
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
           </DevCard>
         </div>
       </div>

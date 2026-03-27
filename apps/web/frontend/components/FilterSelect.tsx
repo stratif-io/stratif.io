@@ -54,8 +54,7 @@ export function FilterSelect({
   const [search, setSearch] = useState('')
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
 
-  const selectedValues: string[] =
-    value === null ? [] : Array.isArray(value) ? value : [value]
+  const selectedValues: string[] = value === null ? [] : Array.isArray(value) ? value : [value]
 
   const triggerLabel = (() => {
     if (selectedValues.length === 0) return null
@@ -70,7 +69,7 @@ export function FilterSelect({
   const groups = tree
     ? groupDimensionsByCategory(
         options.map((o) => ({ value: o.value, label: o.label, category: o.category })),
-        CATEGORIES,
+        CATEGORIES
       )
     : []
 
@@ -133,7 +132,7 @@ export function FilterSelect({
               'disabled:opacity-50 disabled:cursor-not-allowed',
               triggerHeight,
               hasValue && 'border-primary text-primary',
-              className,
+              className
             )}
           >
             <span aria-hidden="true" className="truncate">
@@ -201,7 +200,7 @@ export function FilterSelect({
                               'w-full text-left px-3 py-1.5 pl-8 text-sm truncate flex items-center gap-2',
                               'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
                               isSelected && 'bg-accent font-medium text-accent-foreground',
-                              isDisabled && 'opacity-40 cursor-not-allowed hover:bg-transparent',
+                              isDisabled && 'opacity-40 cursor-not-allowed hover:bg-transparent'
                             )}
                             onClick={() => opt && handleSelect(opt)}
                           >
@@ -209,7 +208,9 @@ export function FilterSelect({
                               <span
                                 className={cn(
                                   'h-3.5 w-3.5 shrink-0 rounded-sm border',
-                                  isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40',
+                                  isSelected
+                                    ? 'bg-primary border-primary'
+                                    : 'border-muted-foreground/40'
                                 )}
                               />
                             )}
@@ -224,9 +225,7 @@ export function FilterSelect({
                 )
               })}
               {groups.length === 0 && (
-                <p className="px-3 py-4 text-xs text-muted-foreground text-center">
-                  No options
-                </p>
+                <p className="px-3 py-4 text-xs text-muted-foreground text-center">No options</p>
               )}
             </div>
           ) : (
@@ -245,7 +244,7 @@ export function FilterSelect({
                         'w-full text-left px-2 py-1.5 rounded text-sm truncate flex items-center gap-2',
                         'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
                         isSelected && 'font-medium',
-                        opt.disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent',
+                        opt.disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent'
                       )}
                       onClick={() => handleSelect(opt)}
                     >
@@ -253,7 +252,7 @@ export function FilterSelect({
                         <span
                           className={cn(
                             'h-3.5 w-3.5 shrink-0 rounded-sm border',
-                            isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40',
+                            isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40'
                           )}
                         />
                       )}

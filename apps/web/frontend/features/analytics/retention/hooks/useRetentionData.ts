@@ -32,7 +32,12 @@ export function useRetentionData({
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : ''
   const { activeFilters, activeConnectionId } = useAppStore()
 
-  const { data: retentionResponse, isLoading, isError, error } = useQuery({
+  const {
+    data: retentionResponse,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ['retention', startDate, endDate, granularity, activeFilters, activeConnectionId],
     queryFn: () =>
       fetchRetention({

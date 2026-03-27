@@ -67,7 +67,10 @@ export function buildLeafMeta(colDefs: ColDefInput[]): LeafMeta[] {
   const result: LeafMeta[] = []
   const walk = (cols: ColDefInput[]) => {
     for (const c of cols) {
-      if (c.children) { walk(c.children); continue }
+      if (c.children) {
+        walk(c.children)
+        continue
+      }
       if (!c.field) continue
       result.push({
         colId: c.field,

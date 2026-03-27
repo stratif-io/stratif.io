@@ -54,7 +54,10 @@ export function EventsPage() {
   const { data: filterConfig } = useFilterConfig(activeConnectionId ?? '')
   const { data: filterOptions } = useFilterOptions(activeConnectionId ?? '')
   const { data: schemaConfig } = useSchemaConfig(activeConnectionId ?? '')
-  const filterFields = useMemo(() => filterConfig?.filter_fields ?? [], [filterConfig?.filter_fields])
+  const filterFields = useMemo(
+    () => filterConfig?.filter_fields ?? [],
+    [filterConfig?.filter_fields]
+  )
   const customProperties = useMemo(
     () => schemaConfig?.custom_properties ?? [],
     [schemaConfig?.custom_properties]
@@ -171,18 +174,24 @@ export function EventsPage() {
   }, [])
 
   // Column definitions for visibility picker
-  const dimCols = useMemo(() => buildDimCols(filterFields, customProperties), [filterFields, customProperties])
-  const allColOptions = useMemo(() => [
-    { value: 'user_id', label: 'User ID' },
-    { value: 'event_name', label: 'Event Name' },
-    ...dimCols.map((c) => ({ value: c.id, label: c.label })),
-    { value: 'timestamp', label: 'Timestamp' },
-  ], [dimCols])
+  const dimCols = useMemo(
+    () => buildDimCols(filterFields, customProperties),
+    [filterFields, customProperties]
+  )
+  const allColOptions = useMemo(
+    () => [
+      { value: 'user_id', label: 'User ID' },
+      { value: 'event_name', label: 'Event Name' },
+      ...dimCols.map((c) => ({ value: c.id, label: c.label })),
+      { value: 'timestamp', label: 'Timestamp' },
+    ],
+    [dimCols]
+  )
 
   // Visible column IDs for the FilterSelect
   const visibleColIds = useMemo(
     () => allColOptions.map((o) => o.value).filter((id) => colVisibility[id] !== false),
-    [allColOptions, colVisibility],
+    [allColOptions, colVisibility]
   )
 
   // Sync initial colVisibility once dimCols are loaded
@@ -196,33 +205,43 @@ export function EventsPage() {
       const COL_VISIBILITY_VERSION = 'v3'
       if (localStorage.getItem(versionKey) === COL_VISIBILITY_VERSION) {
         const saved = localStorage.getItem(storageKey)
-        if (saved) { setColVisibility(JSON.parse(saved)); return }
+        if (saved) {
+          setColVisibility(JSON.parse(saved))
+          return
+        }
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setColVisibility(defaultVisibility(dimCols, filterFields))
   }, [dimCols, filterFields, activeConnectionId])
 
-  const handleColVisibilityFromSelect = useCallback((ids: string | string[]) => {
-    const selected = new Set(Array.isArray(ids) ? ids : [ids])
-    const next: VisibilityState = {}
-    for (const opt of allColOptions) {
-      next[opt.value] = selected.has(opt.value)
-    }
-    setColVisibility(next)
-  }, [allColOptions])
+  const handleColVisibilityFromSelect = useCallback(
+    (ids: string | string[]) => {
+      const selected = new Set(Array.isArray(ids) ? ids : [ids])
+      const next: VisibilityState = {}
+      for (const opt of allColOptions) {
+        next[opt.value] = selected.has(opt.value)
+      }
+      setColVisibility(next)
+    },
+    [allColOptions]
+  )
 
   // Export helpers
   const getExportRows = useCallback(() => {
     const visibleCols = allColOptions.filter((o) => colVisibility[o.value] !== false)
     const headers = visibleCols.map((o) => o.label)
-    const rows = events.map((e) => visibleCols.map((o) => {
-      if (o.value === 'user_id') return e.user_id
-      if (o.value === 'event_name') return e.event_name
-      if (o.value === 'timestamp') return e.timestamp
-      const props = e.properties ?? {}
-      const v = (props as Record<string, unknown>)[o.value]
-      return v == null ? '' : String(v)
-    }))
+    const rows = events.map((e) =>
+      visibleCols.map((o) => {
+        if (o.value === 'user_id') return e.user_id
+        if (o.value === 'event_name') return e.event_name
+        if (o.value === 'timestamp') return e.timestamp
+        const props = e.properties ?? {}
+        const v = (props as Record<string, unknown>)[o.value]
+        return v == null ? '' : String(v)
+      })
+    )
     return { headers, rows }
   }, [allColOptions, colVisibility, events])
 
@@ -232,7 +251,9 @@ export function EventsPage() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = 'events.csv'; a.click()
+    a.href = url
+    a.download = 'events.csv'
+    a.click()
     URL.revokeObjectURL(url)
   }, [getExportRows])
 
@@ -274,38 +295,42 @@ export function EventsPage() {
           </div>
         </div>
         <DevCard sql={rawEventsData?.sql}>
-        <Card className="relative overflow-hidden">
-          <CardLoadingBar loading={isFetching} />
-          <CardContent className="p-0">
-            {isError ? <QueryError error={error} className="py-16" /> : <EventsTable
-                data={events}
-                total={rawEventsData?.total ?? 0}
-                page={page}
-                pageSize={limit}
-                loading={isLoading}
-                isFetching={isFetching}
-                sortField={sortField}
-                sortOrder={sortOrder}
-                onSortChange={handleSortChange}
-                eventNameFilter={eventNameFilter}
-                onEventNameFilterChange={handleEventNameFilterChange}
-                userIdFilter={userIdFilter}
-                onUserIdFilterChange={handleUserIdFilterChange}
-                columnFilters={columnFilters}
-                onColumnFilterChange={handleColumnFilterChange}
-                onColumnFilterClear={handleColumnFilterClear}
-                filterFields={filterFields}
-                customProperties={customProperties}
-                filterOptions={mergedFilterOptions}
-                allEventNames={allEventNames}
-                onPageChange={setPage}
-                onUserClick={setTimelineUserId}
-                connectionId={activeConnectionId}
-                colVisibility={colVisibility}
-                onColumnVisibilityChange={setColVisibility}
-              />}
-          </CardContent>
-        </Card>
+          <Card className="relative overflow-hidden">
+            <CardLoadingBar loading={isFetching} />
+            <CardContent className="p-0">
+              {isError ? (
+                <QueryError error={error} className="py-16" />
+              ) : (
+                <EventsTable
+                  data={events}
+                  total={rawEventsData?.total ?? 0}
+                  page={page}
+                  pageSize={limit}
+                  loading={isLoading}
+                  isFetching={isFetching}
+                  sortField={sortField}
+                  sortOrder={sortOrder}
+                  onSortChange={handleSortChange}
+                  eventNameFilter={eventNameFilter}
+                  onEventNameFilterChange={handleEventNameFilterChange}
+                  userIdFilter={userIdFilter}
+                  onUserIdFilterChange={handleUserIdFilterChange}
+                  columnFilters={columnFilters}
+                  onColumnFilterChange={handleColumnFilterChange}
+                  onColumnFilterClear={handleColumnFilterClear}
+                  filterFields={filterFields}
+                  customProperties={customProperties}
+                  filterOptions={mergedFilterOptions}
+                  allEventNames={allEventNames}
+                  onPageChange={setPage}
+                  onUserClick={setTimelineUserId}
+                  connectionId={activeConnectionId}
+                  colVisibility={colVisibility}
+                  onColumnVisibilityChange={setColVisibility}
+                />
+              )}
+            </CardContent>
+          </Card>
         </DevCard>
       </div>
 

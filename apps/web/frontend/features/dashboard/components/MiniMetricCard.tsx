@@ -7,15 +7,15 @@ import { useCountUp, useFormattedCountUp } from '@/hooks/useCountUp'
 
 export interface MiniMetricCardProps {
   label: string
-  value: string           // pre-formatted fallback
-  rawValue?: number       // raw number for count-up animation
-  pctChange: number | null  // null → show "—"
+  value: string // pre-formatted fallback
+  rawValue?: number // raw number for count-up animation
+  pctChange: number | null // null → show "—"
   sparklineValues: number[]
-  color: string           // CSS color string for sparkline stroke
-  isHero?: boolean        // highlight border when this metric is the hero
+  color: string // CSS color string for sparkline stroke
+  isHero?: boolean // highlight border when this metric is the hero
   onClick?: () => void
   loading?: boolean
-  fullWidth?: boolean     // true for DAU/MAU which spans 2 cols
+  fullWidth?: boolean // true for DAU/MAU which spans 2 cols
   description?: string
   changeLabel?: string
   sparklineFormatter?: (value: number) => string
@@ -87,10 +87,7 @@ export function MiniMetricCard({
 
       <div className="flex items-end justify-between gap-2">
         <div
-          className={cn(
-            'transition-opacity duration-500',
-            loading ? 'opacity-0' : 'opacity-100'
-          )}
+          className={cn('transition-opacity duration-500', loading ? 'opacity-0' : 'opacity-100')}
         >
           <div className="text-lg font-bold tracking-tight leading-none">{displayValue}</div>
           <div className="mt-1.5">
@@ -106,7 +103,8 @@ export function MiniMetricCard({
                   <span
                     className={cn(
                       'inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded cursor-default',
-                      isPositive && 'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40',
+                      isPositive &&
+                        'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40',
                       isNegative && 'text-destructive bg-destructive/10'
                     )}
                   >

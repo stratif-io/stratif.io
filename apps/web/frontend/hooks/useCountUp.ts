@@ -50,7 +50,8 @@ export function useCountUp(
       // Easing function (ease-out cubic)
       const easedProgress = useEasing ? 1 - Math.pow(1 - progress, 3) : progress
 
-      const currentCount = animationStartValueRef.current + (end - animationStartValueRef.current) * easedProgress
+      const currentCount =
+        animationStartValueRef.current + (end - animationStartValueRef.current) * easedProgress
 
       setCount(currentCount)
       currentCountRef.current = currentCount

@@ -46,7 +46,8 @@ vi.mock('framer-motion', () => ({
       transition?: unknown
     }) => React.createElement('div', props, children),
   },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+  AnimatePresence: ({ children }: { children: React.ReactNode }) =>
+    React.createElement(React.Fragment, null, children),
 }))
 
 // ── Mock useNavigate ─────────────────────────────────────────────────────────
@@ -69,7 +70,7 @@ function renderCard(props: { sql?: string | string[] | null; children?: React.Re
       <DevCard sql={props.sql !== undefined ? props.sql : 'SELECT 1'}>
         {props.children ?? <div>content</div>}
       </DevCard>
-    </MemoryRouter>,
+    </MemoryRouter>
   )
 }
 
@@ -150,7 +151,7 @@ describe('DevCard', () => {
         <DevCard sql="SELECT 1">
           <div>content</div>
         </DevCard>
-      </MemoryRouter>,
+      </MemoryRouter>
     )
     // Flip devMode on — if hooks were conditionally called this would throw
     setDevMode(true)
@@ -160,8 +161,8 @@ describe('DevCard', () => {
           <DevCard sql="SELECT 1">
             <div>content</div>
           </DevCard>
-        </MemoryRouter>,
-      ),
+        </MemoryRouter>
+      )
     ).not.toThrow()
     expect(screen.getByLabelText('Show SQL')).toBeInTheDocument()
   })

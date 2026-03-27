@@ -1,2 +1,4 @@
 bunx lint-staged
 cd apps/web && bunx tsc --noEmit
+bun run lint
+bun run format:check

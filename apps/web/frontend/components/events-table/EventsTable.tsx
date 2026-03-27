@@ -22,7 +22,9 @@ function ColumnTextFilter({
   const [local, setLocal] = useState(value)
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => { setLocal(value) }, [value])
+  useEffect(() => {
+    setLocal(value)
+  }, [value])
 
   return (
     <div className="relative flex items-center w-full" onClick={(e) => e.stopPropagation()}>
@@ -41,7 +43,11 @@ function ColumnTextFilter({
       {local && (
         <button
           className="absolute right-0 text-muted-foreground hover:text-foreground"
-          onClick={(e) => { e.stopPropagation(); setLocal(''); onChange('') }}
+          onClick={(e) => {
+            e.stopPropagation()
+            setLocal('')
+            onChange('')
+          }}
         >
           <X size={9} />
         </button>
@@ -173,10 +179,10 @@ export function EventsTable({
   const storageKey = `of_events_colstate_v2_${connectionId ?? 'default'}`
   const dimCols = useMemo(
     () => buildDimCols(filterFields, customProperties),
-    [filterFields, customProperties],
+    [filterFields, customProperties]
   )
   const [colVisibilityInternal, setColVisibilityInternal] = useState<VisibilityState>(
-    () => loadColVisibility(storageKey) ?? defaultVisibility(dimCols, filterFields),
+    () => loadColVisibility(storageKey) ?? defaultVisibility(dimCols, filterFields)
   )
   const colVisibility = colVisibilityProp ?? colVisibilityInternal
 
@@ -191,7 +197,6 @@ export function EventsTable({
     setColVisibilityInternal(saved ?? defaultVisibility(dimCols, filterFields))
   }, [storageKey, dimCols, filterFields, colVisibilityProp])
 
-
   const rowData = useMemo(
     () =>
       data.map((event) => {
@@ -205,23 +210,23 @@ export function EventsTable({
         for (const col of dimCols) row[col.id] = col.getValue(props)
         return row
       }),
-    [data, dimCols],
+    [data, dimCols]
   )
 
   const handleUserClick = useCallback(
     (uid: string) => {
       if (uid) onUserClick(uid)
     },
-    [onUserClick],
+    [onUserClick]
   )
   const handleEventNameFilter = useCallback(
     (name: string) =>
       onEventNameFilterChange(
         eventNameFilter.includes(name)
           ? eventNameFilter.filter((n) => n !== name)
-          : [...eventNameFilter, name],
+          : [...eventNameFilter, name]
       ),
-    [onEventNameFilterChange, eventNameFilter],
+    [onEventNameFilterChange, eventNameFilter]
   )
   const handleDimFilter = useCallback(
     (field: string, val: string) => {
@@ -230,7 +235,7 @@ export function EventsTable({
       if (next.length === 0) onColumnFilterClear(field)
       else onColumnFilterChange(field, next)
     },
-    [columnFilters, onColumnFilterChange, onColumnFilterClear],
+    [columnFilters, onColumnFilterChange, onColumnFilterClear]
   )
 
   const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(
@@ -297,30 +302,35 @@ export function EventsTable({
         return {
           id: col.id,
           accessorKey: col.id,
-          header: () => isLowCardinality ? (
-            <div onClick={(e) => e.stopPropagation()}>
-              <FilterSelect
-                mode="multi"
-                searchable={suggestions.length > 8}
-                size="sm"
-                value={columnFilters[col.id] ?? []}
-                onChange={(v) => {
-                  const vals = v as string[]
-                  if (vals.length === 0) onColumnFilterClear(col.id)
-                  else onColumnFilterChange(col.id, vals)
-                }}
-                options={[...suggestions].sort((a, b) => a.localeCompare(b)).map((v) => ({ value: v, label: v }))}
+          header: () =>
+            isLowCardinality ? (
+              <div onClick={(e) => e.stopPropagation()}>
+                <FilterSelect
+                  mode="multi"
+                  searchable={suggestions.length > 8}
+                  size="sm"
+                  value={columnFilters[col.id] ?? []}
+                  onChange={(v) => {
+                    const vals = v as string[]
+                    if (vals.length === 0) onColumnFilterClear(col.id)
+                    else onColumnFilterChange(col.id, vals)
+                  }}
+                  options={[...suggestions]
+                    .sort((a, b) => a.localeCompare(b))
+                    .map((v) => ({ value: v, label: v }))}
+                  placeholder={col.label}
+                  className="h-6 text-xs border-0 bg-transparent hover:bg-accent/60 -mx-2 font-medium"
+                />
+              </div>
+            ) : (
+              <ColumnTextFilter
                 placeholder={col.label}
-                className="h-6 text-xs border-0 bg-transparent hover:bg-accent/60 -mx-2 font-medium"
+                value={columnFilters[col.id]?.[0] ?? ''}
+                onChange={(v) =>
+                  v ? onColumnFilterChange(col.id, [v]) : onColumnFilterClear(col.id)
+                }
               />
-            </div>
-          ) : (
-            <ColumnTextFilter
-              placeholder={col.label}
-              value={columnFilters[col.id]?.[0] ?? ''}
-              onChange={(v) => v ? onColumnFilterChange(col.id, [v]) : onColumnFilterClear(col.id)}
-            />
-          ),
+            ),
           size: 150,
           enableSorting: false,
           cell: ({ getValue }: { getValue: () => unknown }) => {
@@ -354,17 +364,33 @@ export function EventsTable({
         },
       },
     ],
-    [dimCols, handleUserClick, handleEventNameFilter, handleDimFilter, allEventNames, eventNameFilter, onEventNameFilterChange, userIdFilter, onUserIdFilterChange, columnFilters, onColumnFilterChange, onColumnFilterClear, filterOptions],
+    [
+      dimCols,
+      handleUserClick,
+      handleEventNameFilter,
+      handleDimFilter,
+      allEventNames,
+      eventNameFilter,
+      onEventNameFilterChange,
+      userIdFilter,
+      onUserIdFilterChange,
+      columnFilters,
+      onColumnFilterChange,
+      onColumnFilterClear,
+      filterOptions,
+    ]
   )
 
-  const [sorting, setSorting] = useState<SortingState>([{ id: sortField, desc: sortOrder === 'desc' }])
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: sortField, desc: sortOrder === 'desc' },
+  ])
 
   const handleSortingChange = useCallback(
     (next: SortingState) => {
       setSorting(next)
       if (next.length > 0) onSortChange(next[0].id, next[0].desc ? 'desc' : 'asc')
     },
-    [onSortChange],
+    [onSortChange]
   )
 
   const handleColumnVisibilityChange = useCallback(
@@ -373,7 +399,7 @@ export function EventsTable({
       saveColVisibility(storageKey, next)
       onColumnVisibilityChangeProp?.(next)
     },
-    [storageKey, onColumnVisibilityChangeProp],
+    [storageKey, onColumnVisibilityChangeProp]
   )
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))

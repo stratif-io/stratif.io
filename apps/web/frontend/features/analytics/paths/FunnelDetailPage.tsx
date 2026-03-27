@@ -80,7 +80,7 @@ export function FunnelDetailPage() {
         end_date: formatDateParam(dateRange.to),
       })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange])
 
   // Sync step and device state back to URL
@@ -90,7 +90,7 @@ export function FunnelDetailPage() {
     if (events.length >= 2) next['events'] = events.join(',')
     delete next['device_type']
     setSearchParams(next)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnelSteps])
 
   const addStep = () => {
@@ -129,7 +129,14 @@ export function FunnelDetailPage() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['path-funnel', events.join(','), startDate, endDate, activeFilters, activeConnectionId],
+    queryKey: [
+      'path-funnel',
+      events.join(','),
+      startDate,
+      endDate,
+      activeFilters,
+      activeConnectionId,
+    ],
     queryFn: () =>
       fetchPathFunnel({
         events,
@@ -160,162 +167,172 @@ export function FunnelDetailPage() {
 
   return (
     <PageTransition>
-        <div className={SPACING.page}>
-          <div className={SPACING.section}>
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" aria-label="Go back" onClick={() => navigate('/paths')}>
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div>
-                  <span className={TYPOGRAPHY.pageLabel}>Conversion Funnel</span>
-                  <p className="text-muted-foreground mt-1 text-sm font-mono">
-                    {events.length >= 2 ? events.join(' → ') : 'Configure steps below'}
-                  </p>
-                </div>
+      <div className={SPACING.page}>
+        <div className={SPACING.section}>
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Go back"
+                onClick={() => navigate('/paths')}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <span className={TYPOGRAPHY.pageLabel}>Conversion Funnel</span>
+                <p className="text-muted-foreground mt-1 text-sm font-mono">
+                  {events.length >= 2 ? events.join(' → ') : 'Configure steps below'}
+                </p>
               </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" aria-label="Copy permalink" onClick={copyPermalink}>
-                    {copied ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{copied ? 'Copied!' : 'Copy permalink'}</p>
-                </TooltipContent>
-              </Tooltip>
             </div>
-
-            {/* Filter bar */}
-            <div className="flex items-center rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border">
-              {/* Dynamic funnel steps */}
-              {funnelSteps.map((step, index) => (
-                <div key={index} className="flex items-center shrink-0">
-                  {/* Remove button — only when more than 2 steps */}
-                  {funnelSteps.length > 2 && (
-                    <button
-                      onClick={() => removeStep(index)}
-                      className="h-9 w-5 flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-accent/60 transition-colors ml-1"
-                      aria-label={`Remove step ${index + 1}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
-
-                  <Select
-                    value={step || '__any__'}
-                    onValueChange={(v) => updateStep(index, v === '__any__' ? '' : v)}
-                  >
-                    <SelectTrigger
-                      className={cn(segTrigger, step && 'text-foreground')}
-                      style={{ width: 'auto', minWidth: 0 }}
-                    >
-                      <span className="text-xs text-muted-foreground/50 mr-1 font-normal">
-                        {stepLabel(index)}
-                      </span>
-                      <SelectValue placeholder={stepPlaceholder(index)} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__any__">{stepPlaceholder(index)}</SelectItem>
-                      {availableEvents.map((e) => (
-                        <SelectItem key={e} value={e}>
-                          {e}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* Arrow connector between steps */}
-                  {index < funnelSteps.length - 1 && (
-                    <div className="flex items-center justify-center w-5 shrink-0 text-muted-foreground/30 pointer-events-none select-none">
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* Add step button */}
-              {funnelSteps.length < MAX_STEPS && (
-                <button
-                  onClick={addStep}
-                  className={cn(segTrigger, 'flex items-center gap-1 h-9 px-3 cursor-pointer')}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Copy permalink"
+                  onClick={copyPermalink}
                 >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Add step</span>
-                </button>
-              )}
-            </div>
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{copied ? 'Copied!' : 'Copy permalink'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
 
-            {events.length < 2 ? (
-              <EmptyState
-                icon={TrendingDown}
-                title="Configure your funnel"
-                description="Select at least 2 events above to analyze your conversion funnel."
-              />
-            ) : (
-              <>
-                {/* Summary cards */}
-                {!isLoading && steps.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                          Started
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {firstStep?.users.toLocaleString() ?? '—'}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          people did &quot;{events[0]}&quot;
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                          Completed all steps
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {lastStep?.users.toLocaleString() ?? '—'}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {lastStep?.overall_conversion_rate}% of people who started
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                          Biggest drop
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">
-                          {worstStep ? worstStep.dropoff_users.toLocaleString() : '—'}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {worstStep
-                            ? `people left at "${worstStep.event}" (${worstStep.dropoff_rate}%)`
-                            : 'No drop-offs'}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
+          {/* Filter bar */}
+          <div className="flex items-center rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border">
+            {/* Dynamic funnel steps */}
+            {funnelSteps.map((step, index) => (
+              <div key={index} className="flex items-center shrink-0">
+                {/* Remove button — only when more than 2 steps */}
+                {funnelSteps.length > 2 && (
+                  <button
+                    onClick={() => removeStep(index)}
+                    className="h-9 w-5 flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-accent/60 transition-colors ml-1"
+                    aria-label={`Remove step ${index + 1}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 )}
 
-                {/* Funnel visualization */}
-                <DevCard sql={funnelData?.sql}>
+                <Select
+                  value={step || '__any__'}
+                  onValueChange={(v) => updateStep(index, v === '__any__' ? '' : v)}
+                >
+                  <SelectTrigger
+                    className={cn(segTrigger, step && 'text-foreground')}
+                    style={{ width: 'auto', minWidth: 0 }}
+                  >
+                    <span className="text-xs text-muted-foreground/50 mr-1 font-normal">
+                      {stepLabel(index)}
+                    </span>
+                    <SelectValue placeholder={stepPlaceholder(index)} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__any__">{stepPlaceholder(index)}</SelectItem>
+                    {availableEvents.map((e) => (
+                      <SelectItem key={e} value={e}>
+                        {e}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Arrow connector between steps */}
+                {index < funnelSteps.length - 1 && (
+                  <div className="flex items-center justify-center w-5 shrink-0 text-muted-foreground/30 pointer-events-none select-none">
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Add step button */}
+            {funnelSteps.length < MAX_STEPS && (
+              <button
+                onClick={addStep}
+                className={cn(segTrigger, 'flex items-center gap-1 h-9 px-3 cursor-pointer')}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Add step</span>
+              </button>
+            )}
+          </div>
+
+          {events.length < 2 ? (
+            <EmptyState
+              icon={TrendingDown}
+              title="Configure your funnel"
+              description="Select at least 2 events above to analyze your conversion funnel."
+            />
+          ) : (
+            <>
+              {/* Summary cards */}
+              {!isLoading && steps.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Started
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {firstStep?.users.toLocaleString() ?? '—'}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        people did &quot;{events[0]}&quot;
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Completed all steps
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {lastStep?.users.toLocaleString() ?? '—'}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {lastStep?.overall_conversion_rate}% of people who started
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Biggest drop
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {worstStep ? worstStep.dropoff_users.toLocaleString() : '—'}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {worstStep
+                          ? `people left at "${worstStep.event}" (${worstStep.dropoff_rate}%)`
+                          : 'No drop-offs'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Funnel visualization */}
+              <DevCard sql={funnelData?.sql}>
                 <Card>
                   <CardHeader>
                     <div className="flex items-center gap-2">
@@ -384,11 +401,11 @@ export function FunnelDetailPage() {
                     </Collapsible>
                   </CardContent>
                 </Card>
-                </DevCard>
-              </>
-            )}
-          </div>
+              </DevCard>
+            </>
+          )}
         </div>
+      </div>
     </PageTransition>
   )
 }

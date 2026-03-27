@@ -19,8 +19,8 @@ afterEach(() => {
 
 describe('QueryStatusIndicator', () => {
   it('renders nothing when never active', () => {
-    const { container } = render(<QueryStatusIndicator />)
-    expect(container.firstChild).toBeNull()
+    render(<QueryStatusIndicator />)
+    expect(screen.getByRole('status', { hidden: true })).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('shows running and queued counts when active', () => {
@@ -43,7 +43,9 @@ describe('QueryStatusIndicator', () => {
     useAppStore.setState({ runningQueries: 0, queuedQueries: 0, queryEverActive: true })
     render(<QueryStatusIndicator />)
     expect(screen.getByText(/all done/i)).toBeInTheDocument()
-    act(() => { vi.advanceTimersByTime(IDLE_DISMISS_DELAY_MS + 10) })
+    act(() => {
+      vi.advanceTimersByTime(IDLE_DISMISS_DELAY_MS + 10)
+    })
     const pill = screen.getByRole('status')
     expect(pill.className).toContain('opacity-0')
   })
@@ -51,7 +53,9 @@ describe('QueryStatusIndicator', () => {
   it('reappears when queries become active again after dismissal', () => {
     useAppStore.setState({ runningQueries: 0, queuedQueries: 0, queryEverActive: true })
     const { rerender } = render(<QueryStatusIndicator />)
-    act(() => { vi.advanceTimersByTime(IDLE_DISMISS_DELAY_MS + 400) })
+    act(() => {
+      vi.advanceTimersByTime(IDLE_DISMISS_DELAY_MS + 400)
+    })
     act(() => {
       useAppStore.setState({ runningQueries: 1, queuedQueries: 0 })
     })

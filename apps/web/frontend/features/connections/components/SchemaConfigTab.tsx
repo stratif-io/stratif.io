@@ -24,7 +24,13 @@ import type { CustomProperty, PropertyType, DimensionCategoryConfig } from '@/ty
 
 const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
 
-function CategoryPicker({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+function CategoryPicker({
+  value,
+  onChange,
+}: {
+  value: string | null
+  onChange: (v: string | null) => void
+}) {
   const [open, setOpen] = useState(false)
   const selected = (dimensionCategories as DimensionCategoryConfig[]).find((c) => c.id === value)
   return (
@@ -41,7 +47,10 @@ function CategoryPicker({ value, onChange }: { value: string | null; onChange: (
         <button
           type="button"
           className="w-full rounded px-2 py-1 text-left text-xs text-muted-foreground hover:bg-accent"
-          onClick={() => { onChange(null); setOpen(false) }}
+          onClick={() => {
+            onChange(null)
+            setOpen(false)
+          }}
         >
           — none —
         </button>
@@ -50,7 +59,10 @@ function CategoryPicker({ value, onChange }: { value: string | null; onChange: (
             key={cat.id}
             type="button"
             className="w-full rounded px-2 py-1 text-left text-xs hover:bg-accent"
-            onClick={() => { onChange(cat.id); setOpen(false) }}
+            onClick={() => {
+              onChange(cat.id)
+              setOpen(false)
+            }}
           >
             {cat.label}
           </button>
@@ -107,7 +119,7 @@ export function SchemaConfigTab({ connId }: Props) {
       })
     }, 800)
     return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userIdField, timestampField, eventNameField, eventsTable, sessionTimeoutMinutes, customProps])
 
   function addProp() {
@@ -139,7 +151,7 @@ export function SchemaConfigTab({ connId }: Props) {
           const allCategories = dimensionCategories as DimensionCategoryConfig[]
           const groups = groupDimensionsByCategory(
             newProps.map((p) => ({ value: p.name, label: p.name })),
-            allCategories,
+            allCategories
           )
           const categoryMap = new Map<string, string>()
           for (const group of groups) {
@@ -187,7 +199,10 @@ export function SchemaConfigTab({ connId }: Props) {
             <TableBrowserPicker
               connId={connId}
               value={eventsTable}
-              onChange={(v) => { setEventsTable(v); setBrowseOpen(false) }}
+              onChange={(v) => {
+                setEventsTable(v)
+                setBrowseOpen(false)
+              }}
             />
           </div>
         )}
@@ -198,9 +213,7 @@ export function SchemaConfigTab({ connId }: Props) {
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Core Field Mappings</h3>
           <div className="flex items-center gap-3">
-            {upsert.isPending && (
-              <span className="text-xs text-muted-foreground">Saving…</span>
-            )}
+            {upsert.isPending && <span className="text-xs text-muted-foreground">Saving…</span>}
             {upsert.isSuccess && !upsert.isPending && (
               <span className="text-xs text-emerald-600 dark:text-emerald-400">Saved</span>
             )}
@@ -284,51 +297,54 @@ export function SchemaConfigTab({ connId }: Props) {
               ))}
             </div>
 
-            {[...customProps.map((prop, idx) => ({ prop, idx }))].sort((a, b) =>
-              a.prop.name.localeCompare(b.prop.name)
-            ).map(({ prop, idx }) => (
-              <div key={idx} className="grid grid-cols-[1fr_1.5fr_100px_110px_32px] gap-2 items-center">
-                <Input
-                  value={prop.name}
-                  onChange={(e) => updateProp(idx, { name: e.target.value })}
-                  placeholder="campaign_source"
-                  className="h-8 text-sm"
-                />
-                <Input
-                  value={prop.path}
-                  onChange={(e) => updateProp(idx, { path: e.target.value })}
-                  placeholder="properties.campaign.source"
-                  className="h-8 text-sm font-mono"
-                />
-                <Select
-                  value={prop.type}
-                  onValueChange={(v) => updateProp(idx, { type: v as PropertyType })}
+            {[...customProps.map((prop, idx) => ({ prop, idx }))]
+              .sort((a, b) => a.prop.name.localeCompare(b.prop.name))
+              .map(({ prop, idx }) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-[1fr_1.5fr_100px_110px_32px] gap-2 items-center"
                 >
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROPERTY_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <CategoryPicker
-                  value={prop.category ?? null}
-                  onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
-                />
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  onClick={() => removeProp(idx)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ))}
+                  <Input
+                    value={prop.name}
+                    onChange={(e) => updateProp(idx, { name: e.target.value })}
+                    placeholder="campaign_source"
+                    className="h-8 text-sm"
+                  />
+                  <Input
+                    value={prop.path}
+                    onChange={(e) => updateProp(idx, { path: e.target.value })}
+                    placeholder="properties.campaign.source"
+                    className="h-8 text-sm font-mono"
+                  />
+                  <Select
+                    value={prop.type}
+                    onValueChange={(v) => updateProp(idx, { type: v as PropertyType })}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROPERTY_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <CategoryPicker
+                    value={prop.category ?? null}
+                    onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeProp(idx)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
           </div>
         )}
       </div>
