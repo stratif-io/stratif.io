@@ -133,6 +133,43 @@ After any frontend UI change, update the design system to reflect new components
 
 When adding a SQL capability (a new method, query pattern, or dialect-specific behavior), implement it directly in each backend under `backend/backends/<dialect>/`. Never use `if dialect == 'xxx'` branching in shared/service code — dialect differences belong in the backend class, not in callers.
 
+## Test-Driven Development (MANDATORY)
+
+**All code changes — features, bug fixes, and refactors — must follow TDD. No exceptions.**
+
+### The workflow
+
+1. **Write a failing test first** that describes the expected behavior
+2. **Run the test** to confirm it fails for the right reason
+3. **Write the minimum code** to make it pass
+4. **Run the test again** to confirm it passes
+5. **Commit** only when tests pass
+
+Never write implementation code before writing the test that covers it.
+
+### Frontend tests
+
+- Use `@testing-library/react` + Vitest
+- Co-locate tests in `__tests__/` next to the file under test, named `*.test.ts(x)`
+- Test components by behavior (user interactions, rendered output), not implementation details
+- For hooks: use `renderHook` from `@testing-library/react`
+- Run with `npm run test:run` before committing
+
+### Backend tests
+
+- Use `pytest` (run with `uv run pytest`)
+- Co-locate tests in `tests/` or alongside the module as `test_*.py`
+- For API endpoints: use FastAPI `TestClient`
+- For backend dialect methods (e.g. `browse`, `get_columns_for_browse`): test with an in-memory connection where possible
+
+### What to test
+
+- **Bug fixes**: write a test that reproduces the bug first — the test must fail before your fix and pass after
+- **New components**: render, assert visible output, simulate interactions
+- **New hooks**: assert return values and state transitions
+- **New API endpoints**: assert status codes and response shapes
+- **Backend logic** (SQL builders, dialect methods): assert correct SQL output or return values
+
 ## Adding a Chart
 
 - Feature-specific: create in `apps/web/frontend/features/<feature>/components/`
