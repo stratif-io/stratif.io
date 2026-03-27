@@ -8,6 +8,7 @@ import { FilterBar } from '../shared/FilterBar'
 import { rowsToCsv, downloadCsv } from './csvExport'
 import type { ZoneCol, FilterEntry, PivotTableProps } from './types'
 import { buildLeafMeta } from './types'
+import { DevCard } from '@/components/dev'
 // FilterEntry used for pivotFilters state
 
 const DEFAULT_ROW_GROUPS: ZoneCol[] = []
@@ -32,6 +33,7 @@ export function PivotTable({
   const [rows, setRows] = useState<Record<string, unknown>[]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [isQuerying, setIsQuerying] = useState(false)
+  const [lastSql, setLastSql] = useState<string | string[] | undefined>()
   const [filterField, setFilterField] = useState<string | null>(null)
   const [filterOptions, setFilterOptions] = useState<string[]>([])
 
@@ -67,6 +69,7 @@ export function PivotTable({
         : rowGroups.map((c) => c.colId).concat(valueCols.map((c) => c.colId))
       setHeaders(cols)
       setRows(res.rows)
+      setLastSql(res.sql)
     } finally {
       if (id === fetchIdRef.current) setIsQuerying(false)
     }
@@ -182,7 +185,8 @@ export function PivotTable({
         </div>
       )}
 
-      <div ref={parentRef} className="flex-1 overflow-auto">
+      <DevCard sql={lastSql} className="flex-1 min-h-0">
+      <div ref={parentRef} className="h-full overflow-auto">
         {rows.length === 0 && !isQuerying ? (
           <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
             {rowGroups.length === 0 && valueCols.length === 0
@@ -224,6 +228,7 @@ export function PivotTable({
           </table>
         )}
       </div>
+      </DevCard>
     </div>
   )
 }

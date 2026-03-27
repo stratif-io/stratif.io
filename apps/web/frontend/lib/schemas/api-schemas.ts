@@ -15,6 +15,7 @@ export const TrendDataSchema = z.object({
 })
 
 export const TrendResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   total_unique_users: z.number().int().nonnegative(),
   data: z.array(TrendDataSchema),
 })
@@ -31,6 +32,7 @@ export const EventsResponseSchema = z.object({
 })
 
 export const RawEventsResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   total: z.number().int().nonnegative(),
   limit: z.number().int().positive(),
   offset: z.number().int().nonnegative(),
@@ -46,6 +48,7 @@ export const SessionSchema = z.object({
 })
 
 export const SessionsResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   total: z.number().int().nonnegative(),
   limit: z.number().int().positive(),
   offset: z.number().int().nonnegative(),
@@ -59,6 +62,7 @@ export const SessionsSummarySchema = z.object({
 })
 
 export const SessionsSummaryResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   data: z.array(SessionsSummarySchema),
 })
 
@@ -73,6 +77,7 @@ export const RetentionCohortSchema = z.object({
 })
 
 export const RetentionResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   granularity: z.string(),
   milestones: z.array(z.number().int()),
   total_available_cohorts: z.number().int().nonnegative(),
@@ -91,6 +96,7 @@ export const PathDataSchema = z.object({
 })
 
 export const PathsResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   target_event: z.string(),
   device_type: z.string().nullable(),
   total_occurrences: z.number().int().nonnegative(),
@@ -109,6 +115,7 @@ export const PathAnalysisDataSchema = z.object({
 })
 
 export const PathAnalysisResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   start_event: z.string().nullable(),
   end_event: z.string().nullable(),
   min_path_length: z.number().int().min(2),
@@ -134,6 +141,7 @@ export const FunnelStepDataSchema = z.object({
 })
 
 export const PathFunnelResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   events: z.array(z.string()),
   total_steps: z.number().int().positive(),
   data: z.array(FunnelStepDataSchema),
@@ -146,6 +154,7 @@ export const ConversionDataSchema = z.object({
 })
 
 export const ConversionResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   data: z.array(ConversionDataSchema),
 })
 
@@ -251,6 +260,7 @@ export const MissionControlPeriodSchema = z.object({
 })
 
 export const MissionControlResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   period: MissionControlPeriodSchema,
   previous_period: MissionControlPeriodSchema,
   current: MissionControlMetricsSchema,
@@ -258,6 +268,7 @@ export const MissionControlResponseSchema = z.object({
 })
 
 export const MissionControlMetricResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   metric: z.string(),
   current: z.number(),
   previous: z.number(),
@@ -271,10 +282,20 @@ export const MissionControlTrendPointSchema = z.object({
 })
 
 export const MissionControlTrendResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
   metric: z.string(),
   data: z.array(MissionControlTrendPointSchema),
 })
 
 export type MissionControlMetricsType = z.infer<typeof MissionControlMetricsSchema>
 export type MissionControlResponseType = z.infer<typeof MissionControlResponseSchema>
+
+export const QueryStudioResponseSchema = z.object({
+  columns: z.array(z.string()),
+  rows: z.array(z.array(z.unknown())),
+  execution_time_ms: z.number().int().nonnegative(),
+  error: z.string().nullable().optional(),
+})
+
+export type QueryStudioResponseType = z.infer<typeof QueryStudioResponseSchema>
 export type MissionControlTrendResponseType = z.infer<typeof MissionControlTrendResponseSchema>

@@ -75,7 +75,8 @@ class SQLiteBackend:
 
     def get_columns_for_browse(self, conn: Any, table: str) -> list[str]:
         try:
-            cursor = conn.execute(f'SELECT * FROM "{table}" LIMIT 0')
+            quoted = '.'.join(f'"{p}"' for p in table.split('.'))
+            cursor = conn.execute(f'SELECT * FROM {quoted} LIMIT 0')
             return [d[0] for d in cursor.description or []]
         except Exception:
             return []
@@ -151,6 +152,14 @@ class SQLiteBackend:
 
     def execute(self, conn: Any, query: str, params: list | None) -> list[tuple]:
         return list(conn.execute(query, params or []).fetchall())
+
+    def execute_with_columns(
+        self, conn: Any, query: str, params: list | None
+    ) -> tuple[list[str], list[tuple]]:
+        cursor = conn.execute(query, params or [])
+        columns = [desc[0] for desc in cursor.description] if cursor.description else []
+        rows = cursor.fetchall()
+        return columns, rows
 
     def build_events_cte(
         self, source_table: str, uid_field: str, ts_field: str,

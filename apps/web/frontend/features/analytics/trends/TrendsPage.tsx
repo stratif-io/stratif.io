@@ -24,6 +24,7 @@ import { TrendChart } from './components/TrendChart'
 import { TrendFilters } from './components/TrendFilters'
 import { FilterSelect } from '@/components/FilterSelect'
 import { SPACING, TYPOGRAPHY, QUERY_STALE_TIME } from '@/lib/constants'
+import { DevCard } from '@/components/dev'
 
 export function TrendsPage() {
   useEffect(() => {
@@ -79,6 +80,7 @@ export function TrendsPage() {
     maxValue,
     seriesKeys,
     measureKey,
+    sql,
   } = useTrendData({
     dateRange,
     selectedEvent,
@@ -113,6 +115,7 @@ export function TrendsPage() {
             ))}
           </div>
 
+          <DevCard sql={sql}>
           <Card className="relative overflow-hidden">
             <CardLoadingBar loading={isLoading} />
             <CardHeader className="pb-3">
@@ -300,6 +303,7 @@ export function TrendsPage() {
               )}
             </CardContent>
           </Card>
+          </DevCard>
         </div>
       </div>
     </PageTransition>

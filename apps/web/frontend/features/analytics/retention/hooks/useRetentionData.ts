@@ -21,6 +21,7 @@ export interface UseRetentionDataReturn {
   error: Error | null
   avgMilestones: number[]
   totalAvailable: number
+  sql: string | string[] | undefined
 }
 
 export function useRetentionData({
@@ -66,5 +67,6 @@ export function useRetentionData({
     error: error as Error | null,
     avgMilestones,
     totalAvailable,
+    sql: retentionResponse?.sql,
   }
 }

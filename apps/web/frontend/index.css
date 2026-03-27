@@ -70,6 +70,12 @@
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
 }
 
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 240 39% 14%;
@@ -338,6 +344,7 @@ input, select, textarea {
 .page-enter {
   animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {

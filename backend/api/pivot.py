@@ -20,7 +20,7 @@ from backend.services.sql_builder import (
     extract_quarter,
     extract_year,
 )
-from backend.services.validators import parse_date, to_sql_datetime
+from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["pivot"], dependencies=[Depends(get_current_user)])
 
@@ -482,6 +482,7 @@ def get_pivot(
 
     if not col_dims:
         return {
+            "sql": interpolate_sql(query, params),
             "dimensions": row_dims,
             "column_dimensions": [],
             "measures": measure_list,
@@ -532,6 +533,7 @@ def get_pivot(
     ]
 
     return {
+        "sql": interpolate_sql(query, params),
         "dimensions": row_dims,
         "column_dimensions": col_dims,
         "column_headers": column_headers,
@@ -967,7 +969,7 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
                 record[f] = val.isoformat() if isinstance(val, datetime) else val
             rows.append(record)
 
-        return {"rows": rows, "rowCount": len(rows)}
+        return {"rows": rows, "rowCount": len(rows), "sql": interpolate_sql(query, where_params + having_params)}
 
     # ================================================================== #
     # PIVOT MODE — server-side cross-tabulation                           #
@@ -1094,4 +1096,5 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
         "rows": rows,
         "rowCount": len(rows),
         "secondaryColDefs": secondary_col_defs,
+        "sql": interpolate_sql(query, full_params),
     }

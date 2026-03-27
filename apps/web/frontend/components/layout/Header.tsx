@@ -10,11 +10,12 @@ import {
 import { Moon, Sun, Menu, Monitor } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
-import { QueryStatusIndicator } from './QueryStatusIndicator'
+import { cn } from '@/lib/utils'
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
+  const devMode = useAppStore((s) => s.devMode)
   const { theme, setTheme } = useTheme()
   return (
     <header className="sticky top-0 z-[var(--z-header)] w-full border-b bg-background">
@@ -40,7 +41,17 @@ export function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-2 shrink-0">
-          <QueryStatusIndicator />
+          <span
+            aria-hidden={!devMode}
+            className={cn(
+              'flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-opacity duration-200',
+              'border-amber-400/60 bg-amber-500/10 text-amber-600 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-400',
+              devMode ? 'opacity-100' : 'invisible opacity-0',
+            )}
+          >
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+            Development Mode
+          </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Change theme">

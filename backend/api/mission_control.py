@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.views import session_ctes
-from backend.services.validators import parse_date
+from backend.services.validators import interpolate_sql, parse_date
 
 router = APIRouter(prefix="/api", tags=["mission-control"])
 
@@ -417,19 +417,19 @@ def get_mission_control_trend(
     timeout = db.get_session_timeout_minutes()
     dialect = db.get_dialect()
 
+    trend_sql: str | list[str] = ""
+
     if metric == "total_events":
-        rows = db.execute(
-            f"SELECT DATE(timestamp), COUNT(*) FROM events {ev_where_sql} GROUP BY DATE(timestamp) ORDER BY 1",
-            ev_params,
-        )
+        trend_sql = f"SELECT DATE(timestamp), COUNT(*) FROM events {ev_where_sql} GROUP BY DATE(timestamp) ORDER BY 1"
+        rows = db.execute(trend_sql, ev_params)
         data = [{"date": str(r[0]), "value": r[1] or 0} for r in rows]
+        sql_val = interpolate_sql(trend_sql, ev_params)
 
     elif metric == "unique_users":
-        rows = db.execute(
-            f"SELECT DATE(timestamp), COUNT(DISTINCT user_id) FROM events {ev_where_sql} GROUP BY DATE(timestamp) ORDER BY 1",
-            ev_params,
-        )
+        trend_sql = f"SELECT DATE(timestamp), COUNT(DISTINCT user_id) FROM events {ev_where_sql} GROUP BY DATE(timestamp) ORDER BY 1"
+        rows = db.execute(trend_sql, ev_params)
         data = [{"date": str(r[0]), "value": r[1] or 0} for r in rows]
+        sql_val = interpolate_sql(trend_sql, ev_params)
 
     elif metric in ("total_sessions", "avg_session_duration_sec", "avg_events_per_session"):
         sess_where: list[str] = ["ds.start_time >= ?", "ds.start_time <= ?"]
@@ -448,22 +448,20 @@ def get_mission_control_trend(
         else:
             agg = "AVG(ds.event_count)"
 
-        rows = db.execute(
-            f"""
+        trend_sql = f"""
             WITH {session_ctes(timeout, dialect)}
             SELECT DATE(ds.start_time), {agg}
             FROM derived_sessions ds
             {sess_where_sql}
             GROUP BY DATE(ds.start_time)
             ORDER BY 1
-            """,
-            sess_params,
-        )
+            """
+        rows = db.execute(trend_sql, sess_params)
         data = [{"date": str(r[0]), "value": round(r[1] or 0.0, 2)} for r in rows]
+        sql_val = interpolate_sql(trend_sql, sess_params)
 
     elif metric == "new_users":
-        rows = db.execute(
-            f"""
+        trend_sql = f"""
             SELECT first_day, COUNT(*) AS cnt
             FROM (
                 SELECT user_id, DATE(MIN(timestamp)) AS first_day
@@ -474,25 +472,23 @@ def get_mission_control_trend(
             WHERE first_day >= ? AND first_day <= ?
             GROUP BY first_day
             ORDER BY first_day
-            """,
-            ev_params + [str(start), str(end)],
-        )
+            """
+        new_params = ev_params + [str(start), str(end)]
+        rows = db.execute(trend_sql, new_params)
         by_day: dict[str, int] = {str(r[0]): r[1] or 0 for r in rows}
         current_day = start
         data = []
         while current_day <= end:
             data.append({"date": str(current_day), "value": by_day.get(str(current_day), 0)})
             current_day += timedelta(days=1)
+        sql_val = interpolate_sql(trend_sql, new_params)
 
     elif metric == "returning_users":
-        uniq_rows = db.execute(
-            f"SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) FROM events {ev_where_sql} GROUP BY d ORDER BY d",
-            ev_params,
-        )
+        uniq_sql = f"SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) FROM events {ev_where_sql} GROUP BY d ORDER BY d"
+        uniq_rows = db.execute(uniq_sql, ev_params)
         daily_uniq: dict[str, int] = {str(r[0]): r[1] or 0 for r in uniq_rows}
 
-        new_rows = db.execute(
-            f"""
+        new_sql = f"""
             SELECT first_day, COUNT(*) AS cnt
             FROM (
                 SELECT user_id, DATE(MIN(timestamp)) AS first_day
@@ -503,9 +499,9 @@ def get_mission_control_trend(
             WHERE first_day >= ? AND first_day <= ?
             GROUP BY first_day
             ORDER BY first_day
-            """,
-            ev_params + [str(start), str(end)],
-        )
+            """
+        new_ret_params = ev_params + [str(start), str(end)]
+        new_rows = db.execute(new_sql, new_ret_params)
         new_by_day: dict[str, int] = {str(r[0]): r[1] or 0 for r in new_rows}
 
         current_day = start
@@ -515,10 +511,27 @@ def get_mission_control_trend(
             returning = max(0, daily_uniq.get(d, 0) - new_by_day.get(d, 0))
             data.append({"date": d, "value": returning})
             current_day += timedelta(days=1)
+        sql_val = [interpolate_sql(uniq_sql, ev_params), interpolate_sql(new_sql, new_ret_params)]
 
     else:  # dau_mau_ratio
         current_day = start
         data = []
+        # Build representative SQL using the first day's params for display
+        day_ps_ex = f"{start} 00:00:00"
+        day_pe_ex = f"{start} 23:59:59"
+        dau_where_ex: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+        dau_params_ex: list = [day_ps_ex, day_pe_ex]
+        dau_where_ex.extend(filter_clauses)
+        dau_params_ex.extend(filter_params)
+        mau_start_ex = start - timedelta(days=27)
+        mau_where_ex: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+        mau_params_ex: list = [f"{mau_start_ex} 00:00:00", day_pe_ex]
+        mau_where_ex.extend(filter_clauses)
+        mau_params_ex.extend(filter_params)
+        dau_sql_ex = f"SELECT COUNT(DISTINCT user_id) FROM events WHERE {' AND '.join(dau_where_ex)}"
+        mau_sql_ex = f"SELECT COUNT(DISTINCT user_id) FROM events WHERE {' AND '.join(mau_where_ex)}"
+        sql_val = [interpolate_sql(dau_sql_ex, dau_params_ex), interpolate_sql(mau_sql_ex, mau_params_ex)]
+
         while current_day <= end:
             day_ps = f"{current_day} 00:00:00"
             day_pe = f"{current_day} 23:59:59"
@@ -543,7 +556,7 @@ def get_mission_control_trend(
             data.append({"date": str(current_day), "value": ratio})
             current_day += timedelta(days=1)
 
-    return {"metric": metric, "data": [{"date": d["date"], "value": float(d["value"])} for d in data]}
+    return {"sql": sql_val, "metric": metric, "data": [{"date": d["date"], "value": float(d["value"])} for d in data]}
 
 
 @router.get("/mission-control")

@@ -2,8 +2,8 @@
 layout: home
 
 hero:
-  name: "stratif.io"
-  text: "Self-hosted product analytics"
+  name: 'stratif.io'
+  text: 'Self-hosted product analytics'
   tagline: Your database, your infrastructure, your rules. No vendor lock-in. No surprise invoices.
   image:
     src: /logo.svg
@@ -34,5 +34,5 @@ features:
     details: Drag-and-drop data exploration.
   - icon: 🔌
     title: Multi-database
-    details: DuckDB, PostgreSQL, Snowflake, ClickHouse, BigQuery, Redshift, and more.
+    details: DuckDB, PostgreSQL, Snowflake (Beta), Databricks (Beta), ClickHouse, BigQuery (coming soon), Redshift (coming soon), and more.
 ---

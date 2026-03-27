@@ -31,6 +31,7 @@ import {
   MissionControlResponse,
   MissionControlMetricResponse,
   MissionControlTrendResponse,
+  QueryStudioResponse,
 } from '@/types'
 import { fetchWithSemaphore } from './semaphore'
 
@@ -428,6 +429,9 @@ export const fetchSchemaDetect = (connId: string, eventsTable?: string) => {
 export const fetchConnectionTables = (connId: string) =>
   fetchApi<TablesResponse>(`/api/connections/${connId}/tables`)
 
+export const fetchConnectionColumns = (connId: string, table: string) =>
+  fetchApi<{ columns: string[] }>(`/api/connections/${connId}/columns?table=${encodeURIComponent(table)}`)
+
 export const fetchBrowse = (connId: string, catalog?: string, schema?: string) => {
   const params = new URLSearchParams()
   if (catalog) params.set('catalog', catalog)
@@ -491,5 +495,15 @@ export const fetchMissionControlMetric = (params: {
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
 
   return fetchApi<MissionControlMetricResponse>(`/api/mission-control/metric?${searchParams}`)
+}
+
+export const executeQueryStudio = (params: { sql: string; connection_id?: string }) => {
+  const searchParams = new URLSearchParams()
+  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
+  return fetchApi<QueryStudioResponse>(`/api/query-studio/execute?${searchParams}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sql: params.sql }),
+  })
 }
 

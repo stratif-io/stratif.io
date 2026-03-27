@@ -31,6 +31,7 @@ export interface UseMissionControlReturn {
   error: Error | null
   topEvents: Array<{ name: string; count: number }>
   eventsLoading: boolean
+  topEventsSql: string | string[] | undefined
 }
 
 export function useMissionControl({
@@ -129,5 +130,6 @@ export function useMissionControl({
     error,
     topEvents: topEventsData?.data ?? [],
     eventsLoading,
+    topEventsSql: topEventsData?.sql,
   }
 }

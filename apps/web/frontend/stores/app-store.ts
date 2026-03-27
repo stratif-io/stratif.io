@@ -32,11 +32,18 @@ interface AppState {
   activeConnectionId: string | null
   setActiveConnectionId: (id: string | null) => void
 
+  devMode: boolean
+  setDevMode: (enabled: boolean) => void
+
   // Query concurrency tracking — ephemeral, not persisted
   runningQueries: number
   queuedQueries: number
   queryEverActive: boolean
   setQueryCounts: (running: number, queued: number) => void
+
+  /** SQL to pre-populate Query Studio with — ephemeral, cleared after consumption. */
+  pendingQueryStudioSql: string | null
+  setPendingQueryStudioSql: (sql: string | null) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -73,6 +80,9 @@ export const useAppStore = create<AppState>()(
       activeConnectionId: null,
       setActiveConnectionId: (activeConnectionId) => set({ activeConnectionId, activeFilters: {} }),
 
+      devMode: false,
+      setDevMode: (devMode) => set({ devMode }),
+
       runningQueries: 0,
       queuedQueries: 0,
       queryEverActive: false,
@@ -82,6 +92,9 @@ export const useAppStore = create<AppState>()(
           queuedQueries: queued,
           queryEverActive: state.queryEverActive || running > 0 || queued > 0,
         })),
+
+      pendingQueryStudioSql: null,
+      setPendingQueryStudioSql: (sql) => set({ pendingQueryStudioSql: sql }),
     }),
     {
       name: 'stratifio-storage',
@@ -92,6 +105,7 @@ export const useAppStore = create<AppState>()(
         sidebarOpen: state.sidebarOpen,
         activeConnectionId: state.activeConnectionId,
         activeFilters: state.activeFilters,
+        devMode: state.devMode,
       }),
       // JSON serialization turns Date objects into strings — revive them on load.
       onRehydrateStorage: () => (state) => {

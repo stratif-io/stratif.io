@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Switch } from '@/components/ui/switch'
 import {
   ChevronLeft,
   ChevronRight,
@@ -14,6 +15,7 @@ import {
   Table,
   Database,
   Palette,
+  Terminal,
 } from 'lucide-react'
 
 interface NavItem {
@@ -124,6 +126,8 @@ function NavLink({
 export function Sidebar() {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
+  const devMode = useAppStore((s) => s.devMode)
+  const setDevMode = useAppStore((s) => s.setDevMode)
   const location = useLocation()
 
   const handleMobileNavClick = () => {
@@ -186,6 +190,13 @@ export function Sidebar() {
                   {group.title}
                 </p>
               </div>
+              {group.title === 'Configuration' && devMode && (
+                <NavLink
+                  item={{ title: 'Query Studio', href: '/query-studio', icon: Terminal }}
+                  collapsed={!sidebarOpen}
+                  onClick={handleMobileNavClick}
+                />
+              )}
               {group.items.map((item) => (
                 <NavLink
                   key={item.href}
@@ -198,10 +209,24 @@ export function Sidebar() {
           ))}
         </nav>
 
+        {/* Dev mode toggle — above the border */}
+        <div className={cn('shrink-0 px-2 py-2', sidebarOpen ? 'flex items-center justify-between' : 'flex justify-center')}>
+          {sidebarOpen && (
+            <span className="text-[11px] font-semibold text-muted-foreground">Dev Mode</span>
+          )}
+          <Switch
+            checked={devMode}
+            onCheckedChange={setDevMode}
+            aria-label="Toggle Dev Mode"
+            className={cn(devMode && 'data-[state=checked]:bg-amber-500 dark:data-[state=checked]:bg-amber-500')}
+          />
+        </div>
+
         {/* Bottom section */}
         <div className="shrink-0 border-t px-2 py-2 space-y-0.5">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+          <div className="flex flex-col gap-0.5">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             aria-expanded={sidebarOpen}
             className={cn(
@@ -232,6 +257,7 @@ export function Sidebar() {
               Collapse
             </span>
           </button>
+          </div>
         </div>
       </aside>
     </>
