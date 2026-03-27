@@ -1,4 +1,7 @@
 """Integration tests for PostgreSQLSeeder using testcontainers."""
+import os
+
+import psycopg2
 import pytest
 from testcontainers.postgres import PostgresContainer
 
@@ -32,6 +35,29 @@ def test_seed_inserts_events(pg_env):
 
     assert stats["total_events"] > 0
     assert stats["total_users"] == 10
+
+    # Verify server column is present and contains only valid values
+    conn = psycopg2.connect(
+        host=os.environ["POSTGRES_HOST"],
+        port=int(os.environ["POSTGRES_PORT"]),
+        user=os.environ["POSTGRES_USER"],
+        password=os.environ["POSTGRES_PASSWORD"],
+        dbname=os.environ["POSTGRES_DATABASE"],
+    )
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT DISTINCT server FROM events")
+        servers = {row[0] for row in cur.fetchall()}
+    finally:
+        conn.close()
+
+    valid_servers = {
+        "server.us.1", "server.us.2",
+        "server.eu.1", "server.eu.2",
+        "server.asia.1", "server.asia.2",
+    }
+    assert servers <= valid_servers
+    assert len(servers) > 0
 
 
 def test_seed_is_idempotent(pg_env):
