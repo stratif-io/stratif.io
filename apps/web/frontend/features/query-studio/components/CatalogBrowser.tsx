@@ -140,19 +140,21 @@ export function CatalogBrowser({ onTableClick, onColumnClick }: CatalogBrowserPr
                 const tableOpen = expandedTables.has(table.full_name)
                 return (
                   <div key={table.full_name}>
-                    <div className={cn('flex w-full items-center gap-1.5 py-1 text-left text-xs hover:bg-muted transition-colors group', hasCatalogs && hasSchemas ? 'pl-8' : hasSchemas || hasCatalogs ? 'pl-5' : 'pl-2')}>
+                    <div className={cn('flex w-full items-center py-1 text-left text-xs hover:bg-muted transition-colors group', hasCatalogs && hasSchemas ? 'pl-8' : hasSchemas || hasCatalogs ? 'pl-5' : 'pl-2')}>
                       <button
                         onClick={() => toggle(expandedTables, table.full_name, setExpandedTables)}
-                        className="flex items-center gap-1.5 flex-1 min-w-0"
+                        className="flex items-center px-1 shrink-0"
+                        title="Expand columns"
                       >
                         {chevron(tableOpen)}
+                      </button>
+                      <button
+                        onClick={() => onTableClick(table.full_name)}
+                        className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
+                        title="Insert SELECT"
+                      >
                         <Table2 className="h-3 w-3 shrink-0 text-muted-foreground" />
-                        <span
-                          className="truncate font-medium hover:text-primary"
-                          onClick={(e) => { e.stopPropagation(); onTableClick(table.full_name) }}
-                        >
-                          {table.name}
-                        </span>
+                        <span className="truncate font-medium hover:text-primary">{table.name}</span>
                       </button>
                     </div>
                     {tableOpen && activeConnectionId && (
