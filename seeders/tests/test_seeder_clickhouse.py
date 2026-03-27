@@ -1,4 +1,6 @@
 """Integration tests for ClickHouseSeeder using testcontainers."""
+import os
+
 import pytest
 from testcontainers.clickhouse import ClickHouseContainer
 
@@ -32,6 +34,27 @@ def test_seed_inserts_events(ch_env):
 
     assert stats["total_events"] > 0
     assert stats["total_users"] == 10
+
+    # Verify server column is present and contains only valid values
+    from clickhouse_connect import get_client
+
+    client = get_client(
+        host=os.environ["CLICKHOUSE_HOST"],
+        port=int(os.environ["CLICKHOUSE_PORT"]),
+        username=os.environ["CLICKHOUSE_USER"],
+        password=os.environ["CLICKHOUSE_PASSWORD"],
+        database=os.environ["CLICKHOUSE_DATABASE"],
+    )
+    result = client.query("SELECT DISTINCT server FROM events")
+    servers = {row[0] for row in result.result_rows}
+
+    valid_servers = {
+        "server.us.1", "server.us.2",
+        "server.eu.1", "server.eu.2",
+        "server.asia.1", "server.asia.2",
+    }
+    assert servers <= valid_servers
+    assert len(servers) > 0
 
 
 def test_seed_is_idempotent(ch_env):
