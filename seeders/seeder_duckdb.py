@@ -1,10 +1,10 @@
 """DuckDB seeder — writes analytics events to a DuckDB file.
 
 Usage:
-    uv run seed-duckdb                        # uses seeders/.env defaults
-    uv run seed-duckdb --out db/custom.duckdb # custom path
-    uv run seed-duckdb --users 5000           # fewer users
-    uv run seed-duckdb --seed 42              # reproducible output
+    uv run seed-duckdb
+
+Connection config is read from connections.yaml at the project root.
+Seeding parameters (users, days) are read from seeders/.env or environment variables.
 """
 
 import json
@@ -14,6 +14,7 @@ import duckdb
 import pandas as pd
 import structlog
 
+from seeders.connections_config import get_duckdb_credentials, load_connections_yaml
 from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
 
 log = structlog.get_logger(__name__)
@@ -22,17 +23,14 @@ log = structlog.get_logger(__name__)
 class DuckDBSeeder(BaseSeeder):
     """Writes seeded events to a DuckDB database file."""
 
-    _db_path: str | None
+    _db_path: str
 
     def __init__(self):
         config = SeedConfig()
         super().__init__(config=config)
 
-        self._db_path = (
-            f"{config.db_path_prefix}.duckdb"
-            if config and config.db_path_prefix
-            else None
-        )
+        creds = get_duckdb_credentials(load_connections_yaml())
+        self._db_path: str = creds["file_path"]
         self._conn: duckdb.DuckDBPyConnection
 
     # ------------------------------------------------------------------
@@ -70,43 +68,38 @@ class DuckDBSeeder(BaseSeeder):
         )
 
     def seed(self) -> dict[str, int]:
-        if self._db_path:
-            out = Path(self._db_path)
-            out.parent.mkdir(parents=True, exist_ok=True)
+        out = Path(self._db_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
 
-            n = self.config.seed_users
-            log.info("seeding_start", users=n, days=self.config.seed_days, db=str(out))
+        n = self.config.seed_users
+        log.info("seeding_start", users=n, days=self.config.seed_days, db=str(out))
 
-            self._conn = duckdb.connect(str(out))
-            try:
-                self._generate_products()
-                self._create_events_table()
-                users = self._generate_users()
+        self._conn = duckdb.connect(str(out))
+        try:
+            self._generate_products()
+            self._create_events_table()
+            users = self._generate_users()
 
-                total_events = 0
-                for batch in self._generate_events_batched(users):
-                    self._insert_events(batch)
-                    total_events += len(batch)
-                    if total_events % PROGRESS_INTERVAL < len(batch):
-                        log.info("seeding_progress", total_events=total_events)
-            finally:
-                self._conn.close()
+            total_events = 0
+            for batch in self._generate_events_batched(users):
+                self._insert_events(batch)
+                total_events += len(batch)
+                if total_events % PROGRESS_INTERVAL < len(batch):
+                    log.info("seeding_progress", total_events=total_events)
+        finally:
+            self._conn.close()
 
-            stats = {
-                "total_events": total_events,
-                "total_users": len(users),
-                "new_users": sum(1 for u in users if not u["is_returning"]),
-                "returning_users": sum(1 for u in users if u["is_returning"]),
-                "power_users": sum(1 for u in users if u["is_power_user"]),
-                "browser_only": sum(1 for u in users if u["browser_only"]),
-                "completed_purchases": sum(1 for u in users if u["completed_purchase"]),
-            }
-            log.info("seeding_complete", **stats)
-            return stats
-        else:
-            raise ValueError(
-                "db_path must be provided or set via STRATIFIO_DB_PATH environment variable"
-            )
+        stats = {
+            "total_events": total_events,
+            "total_users": len(users),
+            "new_users": sum(1 for u in users if not u["is_returning"]),
+            "returning_users": sum(1 for u in users if u["is_returning"]),
+            "power_users": sum(1 for u in users if u["is_power_user"]),
+            "browser_only": sum(1 for u in users if u["browser_only"]),
+            "completed_purchases": sum(1 for u in users if u["completed_purchase"]),
+        }
+        log.info("seeding_complete", **stats)
+        return stats
 
 
 def main() -> None:
