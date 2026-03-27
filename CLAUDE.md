@@ -8,20 +8,20 @@ stratif.io is a full-stack product analytics dashboard with a React/TypeScript f
 
 ```bash
 # Development
-npm run dev              # Frontend dev server (port 5173)
+bun run dev              # Frontend dev server (port 5173)
 uv run serve             # Backend server (port 8000)
 
 # Testing
-npm run test:run         # Unit tests once (Vitest)
-npm run test             # Unit tests in watch mode
-npm run test:coverage    # Unit tests with coverage
-npm run test:e2e         # E2E tests (Playwright, multi-browser)
-npm run test:e2e:ui      # E2E tests with interactive UI
+bun run test:run         # Unit tests once (Vitest)
+bun run test             # Unit tests in watch mode
+bun run test:coverage    # Unit tests with coverage
+bun run test:e2e         # E2E tests (Playwright, multi-browser)
+bun run test:e2e:ui      # E2E tests with interactive UI
 
 # Quality checks (run before committing)
-npm run lint             # ESLint (zero warnings allowed)
-npm run format:check     # Prettier check
-npm run build            # TypeScript type-check + production build
+bun run lint             # ESLint (zero warnings allowed)
+bun run format:check     # Prettier check
+bun run build            # TypeScript type-check + production build
 ```
 
 ## Architecture

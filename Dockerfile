@@ -1,17 +1,17 @@
 # ── Stage 1: Build frontend ───────────────────────────────────────────────────
-FROM node:20-slim AS frontend
+FROM oven/bun:1-slim AS frontend
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json bun.lockb ./
 COPY apps/web/package.json ./apps/web/package.json
-RUN npm ci && \
+RUN bun install --frozen-lockfile && \
     ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then \
-      npm install --no-save \
+      bun add --no-save \
         @rollup/rollup-linux-arm64-gnu \
         lightningcss-linux-arm64-gnu \
         "@tailwindcss/oxide-linux-arm64-gnu"; \
     else \
-      npm install --no-save \
+      bun add --no-save \
         @rollup/rollup-linux-x64-gnu \
         lightningcss-linux-x64-gnu \
         "@tailwindcss/oxide-linux-x64-gnu"; \
@@ -20,17 +20,17 @@ COPY apps/web/index.html apps/web/tsconfig.json apps/web/tsconfig.node.json \
      apps/web/vite.config.ts apps/web/postcss.config.js ./apps/web/
 COPY apps/web/public ./apps/web/public
 COPY apps/web/frontend ./apps/web/frontend
-RUN npm run build
+RUN bun run build
 
 # ── Stage 2: Build docs ────────────────────────────────────────────────────────
-FROM node:20-slim AS docs
+FROM oven/bun:1-slim AS docs
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json bun.lockb ./
 COPY apps/docs/package.json ./apps/docs/package.json
-RUN npm ci
+RUN bun install --frozen-lockfile
 COPY apps/docs ./apps/docs
 # Build with /docs/ base so assets resolve correctly when served at /docs/
-RUN VITEPRESS_BASE=/docs/ npm run docs:build
+RUN VITEPRESS_BASE=/docs/ bun run docs:build
 
 # ── Stage 3: Install Python dependencies ──────────────────────────────────────
 FROM python:3.12-slim AS python-deps
