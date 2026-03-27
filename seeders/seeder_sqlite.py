@@ -1,16 +1,17 @@
 """SQLite seeder — writes analytics events to a SQLite file.
 
 Usage:
-    uv run seed-sqlite                         # db/events.sqlite
-    uv run seed-sqlite --out /tmp/demo.sqlite  # custom path
-    uv run seed-sqlite --users 5000            # fewer users
-    uv run seed-sqlite --seed 42               # reproducible output
+    uv run seed-sqlite
+
+Connection config is read from connections.yaml at the project root.
+Seeding parameters (users, days) are read from seeders/.env or environment variables.
 """
 
 import json
 import sqlite3
 from pathlib import Path
 
+from seeders.connections_config import get_sqlite_credentials, load_connections_yaml
 from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
 
 
@@ -19,17 +20,11 @@ class SQLiteSeeder(BaseSeeder):
 
     _db_path: str | None
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         config = SeedConfig()
         super().__init__(config=config)
-        self._db_path = (
-            f"{config.db_path_prefix}.sqlite"
-            if config and config.db_path_prefix
-            else None
-        )
-
+        creds = get_sqlite_credentials(load_connections_yaml())
+        self._db_path: str = creds["file_path"]
         self._conn: sqlite3.Connection
 
     # ------------------------------------------------------------------
@@ -42,7 +37,8 @@ class SQLiteSeeder(BaseSeeder):
                 user_id     TEXT     NOT NULL,
                 event_name  TEXT     NOT NULL,
                 timestamp   DATETIME NOT NULL,
-                properties  TEXT     NOT NULL
+                properties  TEXT     NOT NULL,
+                server      TEXT     NOT NULL
             )
         """)
         self._conn.execute(
@@ -57,11 +53,11 @@ class SQLiteSeeder(BaseSeeder):
         if not events:
             return
         rows = [
-            (e[0], e[1], e[2].strftime("%Y-%m-%d %H:%M:%S"), json.dumps(e[3]))
+            (e[0], e[1], e[2].strftime("%Y-%m-%d %H:%M:%S"), json.dumps(e[3]), e[4])
             for e in events
         ]
         self._conn.executemany(
-            "INSERT INTO events (user_id, event_name, timestamp, properties) VALUES (?,?,?,?)",
+            "INSERT INTO events (user_id, event_name, timestamp, properties, server) VALUES (?,?,?,?,?)",
             rows,
         )
         self._conn.commit()
