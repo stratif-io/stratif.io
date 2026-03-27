@@ -1,7 +1,7 @@
 # ── Stage 1: Build frontend ───────────────────────────────────────────────────
 FROM oven/bun:1-slim AS frontend
 WORKDIR /app
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/package.json
 RUN bun install --frozen-lockfile && \
     ARCH=$(uname -m) && \
@@ -25,7 +25,7 @@ RUN bun run build
 # ── Stage 2: Build docs ────────────────────────────────────────────────────────
 FROM oven/bun:1-slim AS docs
 WORKDIR /app
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 COPY apps/docs/package.json ./apps/docs/package.json
 RUN bun install --frozen-lockfile
 COPY apps/docs ./apps/docs
