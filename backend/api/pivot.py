@@ -969,7 +969,7 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
                 record[f] = val.isoformat() if isinstance(val, datetime) else val
             rows.append(record)
 
-        return {"rows": rows, "rowCount": len(rows)}
+        return {"rows": rows, "rowCount": len(rows), "sql": interpolate_sql(query, where_params + having_params)}
 
     # ================================================================== #
     # PIVOT MODE — server-side cross-tabulation                           #
@@ -1096,4 +1096,5 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
         "rows": rows,
         "rowCount": len(rows),
         "secondaryColDefs": secondary_col_defs,
+        "sql": interpolate_sql(query, full_params),
     }

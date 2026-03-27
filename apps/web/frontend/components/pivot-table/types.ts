@@ -39,6 +39,7 @@ export interface PivotRowsRequest {
 export interface PivotRowsResponse {
   rows: Record<string, unknown>[]
   columnDefs?: Record<string, unknown>[]
+  sql?: string | string[]
 }
 
 export interface PivotTableProps {

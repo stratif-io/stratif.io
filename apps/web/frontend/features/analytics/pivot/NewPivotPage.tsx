@@ -85,7 +85,7 @@ export function NewPivotPage() {
         },
         connection_id: params.activeConnectionId ?? undefined,
       })
-      return { rows: res.rows, columnDefs: res.secondaryColDefs as Record<string, unknown>[] | undefined }
+      return { rows: res.rows, columnDefs: res.secondaryColDefs as Record<string, unknown>[] | undefined, sql: res.sql }
     },
     [validActiveFilters],
   )

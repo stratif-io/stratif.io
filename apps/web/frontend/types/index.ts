@@ -248,6 +248,7 @@ export interface PivotGridRowsResponse {
   rowCount: number
   secondaryColDefs?: unknown[]
   error?: string
+  sql?: string | string[]
 }
 
 export interface SandboxField {
