@@ -127,7 +127,6 @@ describe('useQueryStudio', () => {
     for (let i = 0; i < 22; i++) {
       mockExecute.mockResolvedValueOnce({ columns: [], rows: [], execution_time_ms: 1, error: null })
       act(() => result.current.setSql(`SELECT ${i}`))
-      // eslint-disable-next-line no-await-in-loop
       await act(async () => {
         await result.current.execute(1000)
       })
