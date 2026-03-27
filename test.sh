@@ -68,7 +68,7 @@ run_e2e() {
 run_frontend() {
   echo ""
   echo "━━━ Frontend tests (TypeScript/Vitest) ━━━━━━━━━━━"
-  npm run test:run --workspace=apps/web || FAILED+=("frontend")
+  bun run --filter @stratifio/web test:run || FAILED+=("frontend")
 }
 
 if $E2E_ONLY; then
