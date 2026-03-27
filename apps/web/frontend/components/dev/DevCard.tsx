@@ -145,17 +145,19 @@ export function DevCard({ sql, children, className }: DevCardProps) {
   return (
     <>
       {/* Card with 3D flip */}
-      <div ref={cardRef} className={cn('relative', className)} style={{ perspective: '1000px' }}>
+      <div ref={cardRef} className={cn('relative flex flex-col', className)} style={{ perspective: '1000px' }}>
         <div
           style={{
             transformStyle: 'preserve-3d',
             transition: 'transform 0.45s ease',
             transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
             position: 'relative',
+            flex: 1,
+            minHeight: 0,
           }}
         >
           {/* Front face */}
-          <div style={{ backfaceVisibility: 'hidden' }}>
+          <div style={{ backfaceVisibility: 'hidden', height: '100%' }}>
             {children}
             <button
               onClick={() => setFlipped(true)}
