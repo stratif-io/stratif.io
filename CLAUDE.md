@@ -39,13 +39,18 @@ npm run build            # TypeScript type-check + production build
   // CORRECT
   const { data, isLoading } = useTrendData({ dateRange, selectedEvent, granularity })
   // WRONG — never do this
-  useEffect(() => { fetch('/api/trend').then(r => r.json()).then(setData) }, [])
+  useEffect(() => {
+    fetch('/api/trend')
+      .then((r) => r.json())
+      .then(setData)
+  }, [])
   ```
 - **Client state**: Zustand store (`apps/web/frontend/stores/app-store.ts`) — theme, dateRange, sidebarOpen, selectedEvent, selectedDevice. Persisted to localStorage.
 
 ### Feature-based structure
 
 Each feature under `apps/web/frontend/features/` is self-contained:
+
 ```
 apps/web/frontend/features/<feature>/
 ├── components/       # Feature-specific UI
@@ -71,23 +76,27 @@ All prefixed with `/api/`: `trend`, `retention`, `events`, `events/top`, `raw/ev
 stratif.io stores encrypted credentials for client analytics databases. Security is non-negotiable.
 
 ### Credential storage
+
 - Credentials encrypted with Fernet (AES-128-CBC + HMAC-SHA256) via `stratifio/services/crypto.py`
 - Encryption key: 32+ char string → SHA-256 → Fernet key
 - Key stored in `STRATIFIO_ENCRYPTION_KEY` env var (never in code or git)
 - Product DB: SQLite at `STRATIFIO_PRODUCT_DB_PATH` (never expose this file)
 
 ### Auth
+
 - Passwords: bcrypt + SHA-256 pre-hash (`stratifio/core/password.py`)
 - Sessions: JWT in HTTP-only, Secure, SameSite=Lax cookie (`sio_session`)
 - Rate limiting on login (10/min) and register (3/min) via slowapi
 
 ### Config flags for production
+
 - `STRATIFIO_DEBUG=false` (default) — hides `/docs` and `/redoc` (note: `/openapi.json` and `/api/reference` are always available — stratif.io is OSS and the spec is public)
 - `STRATIFIO_ALLOW_REGISTRATION=false` (default) — disables open registration
 - `STRATIFIO_CORS_ORIGINS` — set to your exact frontend domain (not `*`)
 - `STRATIFIO_ENCRYPTION_KEY` — must be 32+ chars; generate with `openssl rand -base64 32`
 
 ### Never do
+
 - Never log credentials, tokens, or the encryption key
 - Never commit `.env` files or the SQLite product DB
 - Never use `STRATIFIO_DEBUG=true` in production
@@ -111,6 +120,7 @@ stratif.io stores encrypted credentials for client analytics databases. Security
 Feature work should be done in an isolated worktree, not directly on `main`. Use the `superpowers:using-git-worktrees` skill to set one up — it handles directory selection, `.gitignore` verification, dependency install, and baseline test check automatically. The `.worktrees/` directory is already in `.gitignore`.
 
 After creating a worktree, symlink `.env`:
+
 ```bash
 ln -s "$(git rev-parse --show-toplevel)/.env" "$WORKTREE_PATH/.env"
 ```
