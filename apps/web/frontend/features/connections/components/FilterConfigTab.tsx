@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  Globe,
+  Chrome,
+  Monitor,
+  Building,
+  Tag,
+  Layers,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LoadingState } from '@/components/ui/loading-state'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import {
   useFilterConfig,
   useSchemaConfig,
@@ -23,6 +27,8 @@ import categoriesConfig from '@/config/dimension-categories.json'
 const CATEGORIES = categoriesConfig as DimensionCategoryConfig[]
 
 const ICON_OPTIONS = ['Globe', 'Chrome', 'Monitor', 'Building', 'Tag', 'Layers'] as const
+
+const ICON_MAP: Record<string, LucideIcon> = { Globe, Chrome, Monitor, Building, Tag, Layers }
 
 interface Props {
   connId: string
@@ -206,15 +212,24 @@ export function FilterConfigTab({ connId }: Props) {
                                 value={enabledFields[field].icon}
                                 onValueChange={(v) => setIcon(field, v)}
                               >
-                                <SelectTrigger className="h-8 text-sm w-32">
-                                  <SelectValue />
+                                <SelectTrigger className="h-8 text-sm w-12">
+                                  {(() => {
+                                    const Icon = ICON_MAP[enabledFields[field].icon] ?? Tag
+                                    return <Icon className="h-3.5 w-3.5" />
+                                  })()}
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {ICON_OPTIONS.map((icon) => (
-                                    <SelectItem key={icon} value={icon}>
-                                      {icon}
-                                    </SelectItem>
-                                  ))}
+                                  {ICON_OPTIONS.map((icon) => {
+                                    const Icon = ICON_MAP[icon]
+                                    return (
+                                      <SelectItem key={icon} value={icon}>
+                                        <div className="flex items-center gap-2">
+                                          <Icon className="h-3.5 w-3.5" />
+                                          {icon}
+                                        </div>
+                                      </SelectItem>
+                                    )
+                                  })}
                                 </SelectContent>
                               </Select>
                             </div>
