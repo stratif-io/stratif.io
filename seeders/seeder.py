@@ -249,6 +249,17 @@ REFERRERS = [
     ("duckduckgo", 0.01),
 ]
 
+COUNTRY_TO_SERVER_REGION: dict[str, str] = {
+    "US": "us",
+    "BR": "us",
+    "UK": "eu",
+    "DE": "eu",
+    "FR": "eu",
+    "JP": "asia",
+    "IN": "asia",
+    "AU": "asia",
+}
+
 PRODUCT_CATEGORIES: dict[str, Any] = {
     "Electronics": {
         "products": [
@@ -780,3 +791,8 @@ class BaseSeeder(ABC):
         items = [c[0] for c in choices]
         weights = [c[1] for c in choices]
         return random.choices(items, weights=weights, k=1)[0]
+
+    def _get_server(self, country_code: str) -> str:
+        region = COUNTRY_TO_SERVER_REGION.get(country_code, "us")
+        number = random.choice(("1", "2"))
+        return f"server.{region}.{number}"
