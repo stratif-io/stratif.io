@@ -79,14 +79,17 @@ export function DevCard({ sql, children, className }: DevCardProps) {
   const setPendingQueryStudioSql = useAppStore((s) => s.setPendingQueryStudioSql)
   const navigate = useNavigate()
   const dark = useIsDark()
-  const [flipped, setFlipped] = useState(false)
+  const [rotation, setRotation] = useState(0)
+  const flipped = (rotation / 180) % 2 === 1
   const [expanded, setExpanded] = useState(false)
   const [cardRect, setCardRect] = useState<Rect | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!expanded) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') { setExpanded(false); setFlipped(false) } }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setExpanded(false); setRotation((r) => Math.round(r / 360) * 360) }
+    }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [expanded])
@@ -131,7 +134,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
 
   function collapse() {
     setExpanded(false)
-    setFlipped(false)
+    setRotation((r) => Math.round(r / 360) * 360)
   }
 
   const collapsed: Rect = cardRect ?? { top: 0, left: 0, width: 200, height: 100 }
@@ -150,7 +153,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
           style={{
             transformStyle: 'preserve-3d',
             transition: 'transform 0.45s ease',
-            transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            transform: `rotateY(${rotation}deg)`,
             position: 'relative',
             flex: 1,
             minHeight: 0,
@@ -160,7 +163,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
           <div style={{ backfaceVisibility: 'hidden', height: '100%' }}>
             {children}
             <button
-              onClick={() => setFlipped(true)}
+              onClick={() => setRotation((r) => r + 180)}
               aria-label="Show SQL"
               className="absolute top-2 right-2 z-10 rounded px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200 transition-colors"
             >
@@ -200,7 +203,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                   </svg>
                 </button>
                 <button
-                  onClick={() => setFlipped(false)}
+                  onClick={() => setRotation((r) => Math.round(r / 360) * 360)}
                   aria-label="Close SQL"
                   className={cn('text-sm leading-none transition-colors', dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')}
                 >
