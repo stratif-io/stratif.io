@@ -13,8 +13,6 @@ export interface TopEventsProps {
 }
 
 export function TopEvents({ events, loading }: TopEventsProps) {
-  const max = events[0]?.count ?? 1
-
   return (
     <Card className="relative overflow-hidden">
       <CardLoadingBar loading={loading} />
@@ -36,24 +34,16 @@ export function TopEvents({ events, loading }: TopEventsProps) {
         ) : (
           <div className="space-y-3">
             {events.map((event, idx) => (
-              <div key={idx} className="space-y-1">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs tabular-nums text-muted-foreground w-4 shrink-0">
-                      {idx + 1}
-                    </span>
-                    <p className="font-medium text-sm truncate">{event.name}</p>
-                  </div>
-                  <p className="text-xs tabular-nums text-muted-foreground shrink-0">
-                    {event.count.toLocaleString()}
-                  </p>
+              <div key={idx} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs tabular-nums text-muted-foreground w-4 shrink-0">
+                    {idx + 1}
+                  </span>
+                  <p className="font-medium text-sm truncate">{event.name}</p>
                 </div>
-                <div className="h-1 bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-primary/50 transition-[width] duration-500"
-                    style={{ width: `${(event.count / max) * 100}%` }}
-                  />
-                </div>
+                <p className="text-xs tabular-nums text-muted-foreground shrink-0">
+                  {event.count.toLocaleString()}
+                </p>
               </div>
             ))}
           </div>

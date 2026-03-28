@@ -3,11 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { MiniMetricCard } from '../MiniMetricCard'
 
-// SparklineChart renders SVG — mock it to keep tests simple
-vi.mock('@/components/charts/sparkline-chart', () => ({
-  SparklineChart: () => <svg data-testid="sparkline" />,
-}))
-
 const renderWithTooltip = (ui: React.ReactElement) =>
   render(<TooltipProvider>{ui}</TooltipProvider>)
 
@@ -52,11 +47,6 @@ describe('MiniMetricCard', () => {
   it('renders "—" when pctChange is null', () => {
     renderWithTooltip(<MiniMetricCard {...baseProps} pctChange={null} />)
     expect(screen.getByText('—')).toBeInTheDocument()
-  })
-
-  it('renders a sparkline', () => {
-    renderWithTooltip(<MiniMetricCard {...baseProps} />)
-    expect(screen.getByTestId('sparkline')).toBeInTheDocument()
   })
 
   it('calls onClick when clicked', () => {
