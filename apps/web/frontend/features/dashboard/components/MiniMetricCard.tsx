@@ -12,7 +12,7 @@ export interface MiniMetricCardProps {
   rawValue?: number // raw number for count-up animation
   pctChange: number | null // null → show "—"
   sparklineValues?: number[]
-  color?: string // kept for API compatibility, unused
+  color?: string
   isHero?: boolean // highlight when this metric is the hero
   onClick?: () => void
   loading?: boolean
@@ -30,6 +30,7 @@ export const MiniMetricCard = memo(function MiniMetricCard({
   rawValue,
   pctChange,
   sparklineValues,
+  color,
   isHero,
   onClick,
   loading,
@@ -86,8 +87,8 @@ export const MiniMetricCard = memo(function MiniMetricCard({
               <Area
                 type="monotone"
                 dataKey="v"
-                stroke="hsl(var(--primary))"
-                fill="hsl(var(--primary))"
+                stroke={color ?? 'hsl(var(--primary))'}
+                fill={color ?? 'hsl(var(--primary))'}
                 strokeWidth={1.5}
                 dot={false}
                 isAnimationActive={false}
