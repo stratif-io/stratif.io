@@ -258,7 +258,7 @@ export function PrimitivesSection() {
               Metric label
             </p>
             <p className="text-lg font-bold tracking-tight">48.2K</p>
-            <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40 mt-1">
+            <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded text-success bg-success/10 mt-1">
               ↑ 3.2%
             </span>
           </div>

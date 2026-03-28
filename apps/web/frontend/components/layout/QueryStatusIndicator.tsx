@@ -64,8 +64,8 @@ export function QueryStatusIndicator() {
       <span className="absolute inset-0 flex items-center justify-center gap-1.5 px-3">
         {isActive ? (
           <>
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500 shrink-0" />
-            <span className="text-indigo-400 font-semibold whitespace-nowrap">
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary shrink-0" />
+            <span className="text-primary/70 font-semibold whitespace-nowrap">
               {runningQueries} running
             </span>
             {queuedQueries > 0 && (
@@ -79,7 +79,7 @@ export function QueryStatusIndicator() {
           </>
         ) : (
           <>
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-success shrink-0" />
             <span className="text-muted-foreground whitespace-nowrap">all done</span>
           </>
         )}

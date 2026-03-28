@@ -45,11 +45,11 @@ export function Header() {
             aria-hidden={!devMode}
             className={cn(
               'flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-opacity duration-200',
-              'border-amber-400/60 bg-amber-500/10 text-amber-600 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-400',
+              'border-warning/60 bg-warning/10 text-warning dark:border-warning/40 dark:bg-warning/15',
               devMode ? 'opacity-100' : 'invisible opacity-0'
             )}
           >
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-warning" />
             Development Mode
           </span>
           <DropdownMenu>

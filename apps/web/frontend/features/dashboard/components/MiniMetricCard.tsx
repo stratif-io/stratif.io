@@ -1,4 +1,4 @@
-import { SparklineChart } from '@/components/charts/sparkline-chart'
+import { memo } from 'react'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
@@ -10,9 +10,9 @@ export interface MiniMetricCardProps {
   value: string // pre-formatted fallback
   rawValue?: number // raw number for count-up animation
   pctChange: number | null // null → show "—"
-  sparklineValues: number[]
-  color: string // CSS color string for sparkline stroke
-  isHero?: boolean // highlight border when this metric is the hero
+  sparklineValues?: number[] // kept for API compatibility, unused
+  color?: string // kept for API compatibility, unused
+  isHero?: boolean // highlight when this metric is the hero
   onClick?: () => void
   loading?: boolean
   fullWidth?: boolean // true for DAU/MAU which spans 2 cols
@@ -20,15 +20,14 @@ export interface MiniMetricCardProps {
   changeLabel?: string
   sparklineFormatter?: (value: number) => string
   decimalsOverride?: number
+  staggerIndex?: number
 }
 
-export function MiniMetricCard({
+export const MiniMetricCard = memo(function MiniMetricCard({
   label,
   value,
   rawValue,
   pctChange,
-  sparklineValues,
-  color,
   isHero,
   onClick,
   loading,
@@ -37,6 +36,7 @@ export function MiniMetricCard({
   changeLabel,
   sparklineFormatter,
   decimalsOverride = 0,
+  staggerIndex = 0,
 }: MiniMetricCardProps) {
   const animatedTarget = loading ? 0 : (rawValue ?? 0)
   const animatedValue = useFormattedCountUp(animatedTarget, {
@@ -62,9 +62,11 @@ export function MiniMetricCard({
       aria-label={`View ${label} trend`}
       aria-pressed={isHero}
       className={cn(
-        'relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 text-left w-full transition-colors',
+        'relative overflow-hidden rounded-xl border p-3 text-left w-full transition-colors',
         'hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        isHero ? 'border-2 border-primary' : 'border-border',
+        isHero
+          ? 'border-2 border-primary bg-primary/5 dark:bg-primary/10'
+          : 'border-border bg-card shadow-sm',
         fullWidth && 'col-span-2'
       )}
     >
@@ -85,54 +87,40 @@ export function MiniMetricCard({
         )}
       </div>
 
-      <div className="flex items-end justify-between gap-2">
-        <div
-          className={cn('transition-opacity duration-500', loading ? 'opacity-0' : 'opacity-100')}
-        >
-          <div className="text-lg font-bold tracking-tight leading-none">{displayValue}</div>
-          <div className="mt-1.5">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                {displayPct === null ? (
-                  <span className="text-xs text-muted-foreground cursor-default">—</span>
-                ) : isNeutral ? (
-                  <span className="inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded text-muted-foreground bg-muted cursor-default">
-                    0.0%
-                  </span>
-                ) : (
-                  <span
-                    className={cn(
-                      'inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded cursor-default',
-                      isPositive &&
-                        'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40',
-                      isNegative && 'text-destructive bg-destructive/10'
-                    )}
-                  >
-                    <span aria-hidden="true">{isPositive ? '↑' : '↓'}</span>
-                    <span className="sr-only">{isPositive ? 'increased by' : 'decreased by'}</span>
-                    {Math.abs(displayPct).toFixed(1)}%
-                  </span>
-                )}
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs max-w-[180px]">
-                {changeLabel ?? 'Change vs. previous period'}
-              </TooltipContent>
-            </Tooltip>
-          </div>
+      <div
+        className={cn('transition-opacity duration-500', loading ? 'opacity-0' : 'opacity-100')}
+        style={{ transitionDelay: loading ? '0ms' : `${staggerIndex * 60}ms` }}
+      >
+        <div className="text-lg font-bold tracking-tight leading-none">{displayValue}</div>
+        <div className="mt-1.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {displayPct === null ? (
+                <span className="text-xs text-muted-foreground cursor-default">—</span>
+              ) : isNeutral ? (
+                <span className="inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded text-muted-foreground bg-muted cursor-default">
+                  0.0%
+                </span>
+              ) : (
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded cursor-default',
+                    isPositive && 'text-success bg-success/10',
+                    isNegative && 'text-destructive bg-destructive/10'
+                  )}
+                >
+                  <span aria-hidden="true">{isPositive ? '↑' : '↓'}</span>
+                  <span className="sr-only">{isPositive ? 'increased by' : 'decreased by'}</span>
+                  {Math.abs(displayPct).toFixed(1)}%
+                </span>
+              )}
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs max-w-[180px]">
+              {changeLabel ?? 'Change vs. previous period'}
+            </TooltipContent>
+          </Tooltip>
         </div>
-
-        <SparklineChart
-          key={loading ? 'loading' : 'loaded'}
-          data={sparklineValues}
-          width={fullWidth ? 120 : 80}
-          height={32}
-          color={color}
-          showArea={false}
-          strokeWidth={1.5}
-          formatter={sparklineFormatter}
-          animated={!loading}
-        />
       </div>
     </button>
   )
-}
+})

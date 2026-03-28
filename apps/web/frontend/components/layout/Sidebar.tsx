@@ -215,9 +215,7 @@ export function Sidebar() {
             checked={devMode}
             onCheckedChange={setDevMode}
             aria-label="Toggle Dev Mode"
-            className={cn(
-              devMode && 'data-[state=checked]:bg-amber-500 dark:data-[state=checked]:bg-amber-500'
-            )}
+            className={cn(devMode && 'data-[state=checked]:bg-warning')}
           />
         </div>
 

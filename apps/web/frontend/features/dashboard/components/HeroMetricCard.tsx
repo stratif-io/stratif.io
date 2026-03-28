@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react'
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -33,7 +34,44 @@ function formatAxisDate(dateStr: string): string {
   }
 }
 
-export function HeroMetricCard({
+interface ChartTooltipProps {
+  active?: boolean
+  payload?: Array<{ dataKey: string; value: number; payload: { previousDate?: string } }>
+  label?: string
+  color: string
+  metricKey: string
+}
+
+function ChartTooltipContent({ active, payload, label, color, metricKey }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null
+  const cur = payload.find((p) => p.dataKey === 'value')
+  const prev = payload.find((p) => p.dataKey === 'previous')
+  const entry = payload[0]?.payload
+  return (
+    <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg text-xs space-y-1.5">
+      {cur && (
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+          <span className="text-muted-foreground">{formatAxisDate(label ?? '')}:</span>
+          <span className="font-semibold">{formatMetricValue(metricKey, cur.value)}</span>
+        </div>
+      )}
+      {prev && prev.value != null && (
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+          <span className="text-muted-foreground">
+            {entry?.previousDate ? formatAxisDate(entry.previousDate) : 'Prev'}:
+          </span>
+          <span className="font-semibold text-muted-foreground">
+            {formatMetricValue(metricKey, prev.value)}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export const HeroMetricCard = memo(function HeroMetricCard({
   label,
   metricKey,
   value,
@@ -50,6 +88,10 @@ export function HeroMetricCard({
   changeLabel,
 }: HeroMetricCardProps) {
   const reducedMotion = useReducedMotion()
+  const tooltipContent = useMemo(
+    () => <ChartTooltipContent color={color} metricKey={metricKey} />,
+    [color, metricKey]
+  )
 
   const animatedTarget = loading ? 0 : (rawValue ?? 0)
   const animatedValue = useFormattedCountUp(animatedTarget, {
@@ -116,41 +158,7 @@ export function HeroMetricCard({
               ticks={chartData.filter((d) => tickDates.has(d.date)).map((d) => d.date)}
             />
 
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (!active || !payload?.length) return null
-                const cur = payload.find((p) => p.dataKey === 'value')
-                const prev = payload.find((p) => p.dataKey === 'previous')
-                const entry = payload[0]?.payload as { previousDate?: string } | undefined
-                return (
-                  <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg text-xs space-y-1.5">
-                    {cur && (
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                        <span className="text-muted-foreground">
-                          {formatAxisDate(label as string)}:
-                        </span>
-                        <span className="font-semibold">
-                          {formatMetricValue(metricKey, cur.value as number)}
-                        </span>
-                      </div>
-                    )}
-                    {prev && prev.value != null && (
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
-                        <span className="text-muted-foreground">
-                          {entry?.previousDate ? formatAxisDate(entry.previousDate) : 'Prev'}:
-                        </span>
-                        <span className="font-semibold text-muted-foreground">
-                          {formatMetricValue(metricKey, prev.value as number)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )
-              }}
-              cursor={{ strokeDasharray: '3 3', opacity: 0.5 }}
-            />
+            <Tooltip content={tooltipContent} cursor={{ strokeDasharray: '3 3', opacity: 0.5 }} />
 
             {/* Ghost line — previous period */}
             <Area
@@ -210,10 +218,10 @@ export function HeroMetricCard({
         </div>
 
         {/* Value */}
-        <div className="text-3xl font-bold tracking-tight leading-none">{displayValue}</div>
+        <div className="text-4xl font-bold tracking-tight leading-none">{displayValue}</div>
 
         {/* Pct badge + prev period */}
-        <div className="flex items-center gap-2 mt-1.5">
+        <div className="flex items-center gap-2 mt-2">
           <UITooltip>
             <TooltipTrigger asChild className="pointer-events-auto">
               {displayPct === null ? (
@@ -226,8 +234,7 @@ export function HeroMetricCard({
                 <span
                   className={cn(
                     'inline-flex items-center gap-1 text-sm font-bold px-2 py-0.5 rounded-md cursor-default',
-                    isPositive &&
-                      'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40',
+                    isPositive && 'text-success bg-success/10',
                     isNegative && 'text-destructive bg-destructive/10'
                   )}
                 >
@@ -249,4 +256,4 @@ export function HeroMetricCard({
       <CardLoadingBar loading={loading} />
     </div>
   )
-}
+})

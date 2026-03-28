@@ -54,7 +54,7 @@ export function ConnectionSelector() {
 
   if (!connections || connections.length === 0) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 px-2">
+      <div className="flex items-center gap-1.5 text-xs text-warning px-2">
         <AlertCircle className="h-3.5 w-3.5" />
         <span>No connection</span>
       </div>
@@ -67,7 +67,7 @@ export function ConnectionSelector() {
         <Button
           variant="outline"
           size="sm"
-          className="h-7 gap-1.5 text-xs font-medium max-w-[180px]"
+          className="h-8 gap-1.5 text-xs font-medium max-w-[180px]"
         >
           <DbLogo dbType={activeConnection?.db_type ?? ''} size={14} className="shrink-0" />
           <span className="truncate" title={activeConnection?.name}>
