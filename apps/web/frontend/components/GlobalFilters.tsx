@@ -4,33 +4,27 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DateRangePicker } from '@/components/DateRangePicker'
-import {
-  Globe,
-  Chrome,
-  Monitor,
-  Building,
-  Tag,
-  Layers,
-  ChevronDown,
-  X,
-  LucideIcon,
-} from 'lucide-react'
+import { ChevronDown, X } from 'lucide-react'
 import { useFilterConfig, useFilterOptions } from '@/features/connections/hooks/useConnectionsData'
 import { cn } from '@/lib/utils'
-import type { FilterField } from '@/types'
+import type { DimensionCategoryConfig, FilterField } from '@/types'
+import dimensionCategories from '@/config/dimension-categories.json'
 
 function pluralize(word: string): string {
   if (word.endsWith('y')) return word.slice(0, -1) + 'ies'
   return word + 's'
 }
 
-const ICON_MAP: Record<string, LucideIcon> = {
-  Globe,
-  Chrome,
-  Monitor,
-  Building,
-  Tag,
-  Layers,
+const compiledCategories = (dimensionCategories as DimensionCategoryConfig[]).map((cat) => ({
+  emoji: cat.emoji,
+  regexes: cat.patterns.map((p) => new RegExp(p, 'i')),
+}))
+
+function resolveEmoji(fieldName: string): string {
+  for (const { emoji, regexes } of compiledCategories) {
+    if (regexes.some((r) => r.test(fieldName))) return emoji
+  }
+  return '🏷️'
 }
 
 function DimensionFilter({ field, options }: { field: FilterField; options: string[] }) {
@@ -42,7 +36,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   const value = activeFilters[field.field] ?? null
-  const Icon = ICON_MAP[field.icon] ?? Tag
+  const emoji = resolveEmoji(field.field)
 
   const filtered = search
     ? options.filter((o) => o.toLowerCase().includes(search.toLowerCase()))
@@ -95,7 +89,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
             value ? 'text-foreground' : 'text-muted-foreground'
           )}
         >
-          <Icon className={cn('h-3.5 w-3.5 shrink-0', value && 'text-primary')} />
+          <span className="shrink-0 text-sm leading-none">{emoji}</span>
           <span className="max-w-[100px] truncate">
             {value ?? `All ${pluralize(field.label.toLowerCase())}`}
           </span>

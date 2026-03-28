@@ -43,7 +43,7 @@ function renderPage() {
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={['/connections/conn-1']}>
         <Routes>
-          <Route path="/connections/:id" element={<ConnectionDetailPage />} />
+          <Route path="/connections/:id/:tab?" element={<ConnectionDetailPage />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -72,7 +72,7 @@ describe('ConnectionDetailPage — wizard mode', () => {
     renderPage()
     expect(screen.getByTestId('step-connection')).toBeInTheDocument()
     expect(screen.getByTestId('step-schema')).toBeInTheDocument()
-    expect(screen.getByTestId('step-filters')).toBeInTheDocument()
+    expect(screen.queryByTestId('step-filters')).not.toBeInTheDocument()
   })
 
   it('does not show wizard progress when schema_config is set (returning user)', () => {
@@ -101,12 +101,12 @@ describe('ConnectionDetailPage — wizard mode', () => {
 
     renderPage()
     expect(screen.getByText('Schema Mapping')).toBeInTheDocument()
-    expect(screen.getByText('Global Filters')).toBeInTheDocument()
+    expect(screen.queryByText('Global Filters')).not.toBeInTheDocument()
   })
 
-  it('shows Next: Configure Schema button on connection step in wizard mode', () => {
+  it('does not show a Next button — wizard steps are navigated by clicking the pills', () => {
     renderPage()
-    expect(screen.getByText(/next: configure schema/i)).toBeInTheDocument()
+    expect(screen.queryByText(/next/i)).not.toBeInTheDocument()
   })
 })
 
