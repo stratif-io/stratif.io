@@ -100,15 +100,17 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
             {value ?? `All ${pluralize(field.label.toLowerCase())}`}
           </span>
           {value ? (
-            <X
+            <span
               role="button"
               aria-label={`Clear ${field.label} filter`}
-              className="h-3 w-3 shrink-0 text-muted-foreground hover:text-foreground"
+              className="flex items-center justify-center -mr-1 p-1 min-w-[24px] min-h-[24px] text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation()
                 select(null)
               }}
-            />
+            >
+              <X className="h-3 w-3 shrink-0" />
+            </span>
           ) : (
             <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
           )}
@@ -194,7 +196,7 @@ export function GlobalFilters() {
       role="group"
       aria-label="Global filters"
       aria-live="polite"
-      className="flex items-center h-10 w-full rounded-lg border bg-background shadow-sm divide-x divide-border overflow-x-auto scrollbar-none"
+      className="flex flex-col sm:flex-row sm:items-center sm:h-10 w-full rounded-lg border bg-background shadow-sm sm:divide-x divide-y sm:divide-y-0 divide-border overflow-x-auto scrollbar-none"
     >
       <div className="shrink-0">
         <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />

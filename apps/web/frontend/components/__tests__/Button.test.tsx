@@ -65,21 +65,21 @@ describe('Button', () => {
     it('applies default size', () => {
       render(<Button size="default">Default Size</Button>)
       const button = screen.getByRole('button')
-      expect(button).toHaveClass('h-10')
+      expect(button).toHaveClass('h-11')
       expect(button).toHaveClass('px-4')
     })
 
     it('applies small size', () => {
       render(<Button size="sm">Small</Button>)
       const button = screen.getByRole('button')
-      expect(button).toHaveClass('h-9')
+      expect(button).toHaveClass('h-10')
       expect(button).toHaveClass('px-3')
     })
 
     it('applies large size', () => {
       render(<Button size="lg">Large</Button>)
       const button = screen.getByRole('button')
-      expect(button).toHaveClass('h-11')
+      expect(button).toHaveClass('h-12')
       expect(button).toHaveClass('px-8')
     })
 

@@ -133,6 +133,17 @@ export function FunnelChart({
             <g
               key={stage.name}
               onClick={() => onStageClick?.(stage, index)}
+              onKeyDown={(e) => {
+                if (onStageClick && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault()
+                  onStageClick(stage, index)
+                }
+              }}
+              tabIndex={onStageClick ? 0 : undefined}
+              role={onStageClick ? 'button' : undefined}
+              aria-label={
+                onStageClick ? `${stage.name}: ${stage.value.toLocaleString()} users` : undefined
+              }
               style={{ cursor: onStageClick ? 'pointer' : 'default' }}
               className="group"
             >
@@ -151,7 +162,7 @@ export function FunnelChart({
                 x={centerX}
                 y={y + stageHeight / 2 - 8}
                 textAnchor="middle"
-                fill="white"
+                fill="hsl(var(--primary-foreground))"
                 style={{ fontWeight: 600, fontSize: '0.875rem', pointerEvents: 'none' }}
               >
                 {stage.name}
@@ -161,7 +172,7 @@ export function FunnelChart({
                 x={centerX}
                 y={y + stageHeight / 2 + 10}
                 textAnchor="middle"
-                fill="rgba(255,255,255,0.8)"
+                fill="hsl(var(--primary-foreground) / 0.8)"
                 style={{ fontSize: '0.75rem', pointerEvents: 'none' }}
               >
                 {showValue && stage.value.toLocaleString()}

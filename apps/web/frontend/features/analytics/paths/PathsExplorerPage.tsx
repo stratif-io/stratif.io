@@ -243,7 +243,9 @@ export function PathsExplorerPage() {
         <div className={SPACING.section}>
           {/* Header */}
           <div className="flex items-center justify-between gap-4">
-            <span className={TYPOGRAPHY.pageLabel}>Path Explorer</span>
+            <div>
+              <h1 className={TYPOGRAPHY.pageLabel}>Path Explorer</h1>
+            </div>
             {totalPaths > 0 && (
               <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
                 <GitFork className="h-4 w-4 text-primary" />
@@ -324,8 +326,11 @@ export function PathsExplorerPage() {
                   </p>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 space-y-1">
-                      <label className="text-xs text-muted-foreground">Min</label>
+                      <label htmlFor="path-length-min" className="text-xs text-muted-foreground">
+                        Min
+                      </label>
                       <Input
+                        id="path-length-min"
                         type="number"
                         min={2}
                         max={10}
@@ -340,8 +345,11 @@ export function PathsExplorerPage() {
                     </div>
                     <span className="text-muted-foreground text-sm mt-5">–</span>
                     <div className="flex-1 space-y-1">
-                      <label className="text-xs text-muted-foreground">Max</label>
+                      <label htmlFor="path-length-max" className="text-xs text-muted-foreground">
+                        Max
+                      </label>
                       <Input
+                        id="path-length-max"
                         type="number"
                         min={effectiveMin}
                         max={10}
@@ -391,6 +399,8 @@ export function PathsExplorerPage() {
                     Show top N paths
                   </p>
                   <Input
+                    id="top-n-paths"
+                    aria-label="Show top N paths"
                     type="number"
                     min={1}
                     max={100}

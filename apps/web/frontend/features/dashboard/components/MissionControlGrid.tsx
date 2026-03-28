@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
 import { formatMetricValue, computePctChange } from '@/lib/format-metric'
@@ -93,12 +93,18 @@ function getConfig(key: TrendMetric) {
   return METRIC_CONFIG.find((m) => m.key === key)!
 }
 
-export function MissionControlGrid({ data, trends, metricLoading }: MissionControlGridProps) {
+export const MissionControlGrid = memo(function MissionControlGrid({
+  data,
+  trends,
+  metricLoading,
+}: MissionControlGridProps) {
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
 
   const heroConfig = getConfig(heroMetric)
   const heroCurrentValue = data?.current[heroMetric as keyof typeof data.current] ?? 0
   const heroPreviousValue = data?.previous[heroMetric as keyof typeof data.previous] ?? null
+
+  const flatMetrics = CATEGORIES.flatMap((c) => c.metrics)
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
@@ -125,10 +131,10 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
       </DevCard>
 
       {/* RIGHT: Categorized mini-grid */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         {CATEGORIES.map(({ label, metrics }) => (
           <div key={label}>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
               {label}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -143,6 +149,7 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
                 // Float metrics need 2 decimal places during count-up animation
                 const decimalsOverride =
                   metricKey === 'dau_mau_ratio' || metricKey === 'avg_events_per_session' ? 2 : 0
+                const staggerIndex = flatMetrics.indexOf(metricKey)
                 return (
                   <DevCard
                     key={metricKey}
@@ -150,6 +157,7 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
                     className={isFullWidth ? 'col-span-2' : undefined}
                   >
                     <MiniMetricCard
+                      staggerIndex={staggerIndex}
                       label={cfg.label}
                       value={formatMetricValue(metricKey, current)}
                       rawValue={current}
@@ -174,4 +182,4 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
       </div>
     </div>
   )
-}
+})

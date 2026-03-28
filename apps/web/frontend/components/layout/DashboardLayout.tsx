@@ -21,8 +21,8 @@ export function DashboardLayout() {
         <Sidebar />
         <div
           className={cn(
-            'flex flex-col flex-1 min-w-0 transition-[margin] duration-300 ease-in-out',
-            sidebarOpen ? 'lg:ml-[var(--sidebar-expanded)]' : 'lg:ml-[var(--sidebar-collapsed)]'
+            'flex flex-col flex-1 min-w-0 transition-[padding-left] duration-300 ease-in-out',
+            sidebarOpen ? 'lg:pl-[var(--sidebar-expanded)]' : 'lg:pl-[var(--sidebar-collapsed)]'
           )}
         >
           <Header />

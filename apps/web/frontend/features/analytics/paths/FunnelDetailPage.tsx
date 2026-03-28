@@ -181,7 +181,7 @@ export function FunnelDetailPage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <span className={TYPOGRAPHY.pageLabel}>Conversion Funnel</span>
+                <h1 className={TYPOGRAPHY.pageLabel}>Conversion Funnel</h1>
                 <p className="text-muted-foreground mt-1 text-sm font-mono">
                   {events.length >= 2 ? events.join(' → ') : 'Configure steps below'}
                 </p>
@@ -196,7 +196,7 @@ export function FunnelDetailPage() {
                   onClick={copyPermalink}
                 >
                   {copied ? (
-                    <Check className="h-4 w-4 text-green-500" />
+                    <Check className="h-4 w-4 text-success" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
@@ -217,7 +217,7 @@ export function FunnelDetailPage() {
                 {funnelSteps.length > 2 && (
                   <button
                     onClick={() => removeStep(index)}
-                    className="h-9 w-5 flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-accent/60 transition-colors ml-1"
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-accent/60 transition-colors ml-1 rounded"
                     aria-label={`Remove step ${index + 1}`}
                   >
                     <X className="h-3 w-3" />
@@ -279,55 +279,43 @@ export function FunnelDetailPage() {
               {/* Summary cards */}
               {!isLoading && steps.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Started
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {firstStep?.users.toLocaleString() ?? '—'}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        people did &quot;{events[0]}&quot;
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      Started
+                    </div>
+                    <div className="text-2xl font-bold">
+                      {firstStep?.users.toLocaleString() ?? '—'}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      people did &quot;{events[0]}&quot;
+                    </p>
+                  </div>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Completed all steps
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {lastStep?.users.toLocaleString() ?? '—'}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {lastStep?.overall_conversion_rate}% of people who started
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      Completed all steps
+                    </div>
+                    <div className="text-2xl font-bold">
+                      {lastStep?.users.toLocaleString() ?? '—'}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {lastStep?.overall_conversion_rate}% of people who started
+                    </p>
+                  </div>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Biggest drop
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {worstStep ? worstStep.dropoff_users.toLocaleString() : '—'}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {worstStep
-                          ? `people left at "${worstStep.event}" (${worstStep.dropoff_rate}%)`
-                          : 'No drop-offs'}
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      Biggest drop
+                    </div>
+                    <div className="text-2xl font-bold">
+                      {worstStep ? worstStep.dropoff_users.toLocaleString() : '—'}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {worstStep
+                        ? `people left at "${worstStep.event}" (${worstStep.dropoff_rate}%)`
+                        : 'No drop-offs'}
+                    </p>
+                  </div>
                 </div>
               )}
 

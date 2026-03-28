@@ -6,6 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { SparklineChart } from '@/components/charts/sparkline-chart'
 import type { RetentionCohort } from '@/types'
@@ -40,8 +41,14 @@ function milestoneLabel(unit: number, granularity: RetentionGranularity): string
 }
 
 export function RetentionTable({ data, granularity, milestones }: RetentionTableProps) {
-  const avgMilestoneValues = milestones.map((_, i) =>
-    data.length > 0 ? data.reduce((s, r) => s + (r.milestone_values[i] ?? 0), 0) / data.length : 0
+  const avgMilestoneValues = useMemo(
+    () =>
+      milestones.map((_, i) =>
+        data.length > 0
+          ? data.reduce((s, r) => s + (r.milestone_values[i] ?? 0), 0) / data.length
+          : 0
+      ),
+    [data, milestones]
   )
 
   return (
@@ -49,16 +56,22 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead className="font-semibold text-foreground whitespace-nowrap">
+            <TableHead scope="col" className="font-semibold text-foreground whitespace-nowrap">
               Cohort
             </TableHead>
-            <TableHead className="font-semibold text-foreground text-right whitespace-nowrap">
+            <TableHead
+              scope="col"
+              className="font-semibold text-foreground text-right whitespace-nowrap"
+            >
               Users
             </TableHead>
-            <TableHead className="font-semibold text-foreground whitespace-nowrap">Trend</TableHead>
+            <TableHead scope="col" className="font-semibold text-foreground whitespace-nowrap">
+              Trend
+            </TableHead>
             {milestones.map((unit) => (
               <TableHead
                 key={unit}
+                scope="col"
                 className="font-semibold text-foreground text-center whitespace-nowrap"
               >
                 {milestoneLabel(unit, granularity)}
@@ -72,9 +85,9 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
             const sparkData = row.retention_series.slice(1)
             return (
               <TableRow key={idx} className="hover:bg-muted/20 transition-colors">
-                <TableCell className="font-medium whitespace-nowrap">
+                <TableHead scope="row" className="font-medium whitespace-nowrap">
                   {formatDate(row.cohort_date, granularity)}
-                </TableCell>
+                </TableHead>
                 <TableCell className="text-right tabular-nums text-muted-foreground whitespace-nowrap">
                   {row.cohort_size.toLocaleString()}
                 </TableCell>
@@ -84,6 +97,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                     width={80}
                     height={28}
                     color={`hsl(var(--chart-2))`}
+                    animationDelay={idx * 40}
                     showArea={false}
                     strokeWidth={1.5}
                     formatter={(v) => `${v.toFixed(1)}%`}
@@ -96,11 +110,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                       <div
                         className={cn(
                           'rounded-md px-2 py-1 text-sm tabular-nums font-medium transition-colors mx-auto w-fit',
-                          pct >= 50
-                            ? 'text-success'
-                            : pct >= 20
-                              ? 'text-success'
-                              : 'text-foreground'
+                          pct >= 20 ? 'text-success' : 'text-foreground'
                         )}
                         style={getCellStyle(pct)}
                       >
@@ -128,7 +138,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                   <div
                     className={cn(
                       'rounded-md px-2 py-1 text-sm tabular-nums font-semibold mx-auto w-fit',
-                      pct >= 50 ? 'text-success' : pct >= 20 ? 'text-success' : 'text-foreground'
+                      pct >= 20 ? 'text-success' : 'text-foreground'
                     )}
                     style={getCellStyle(pct)}
                   >
