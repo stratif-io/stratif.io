@@ -104,9 +104,9 @@ describe('ConnectionDetailPage — wizard mode', () => {
     expect(screen.queryByText('Global Filters')).not.toBeInTheDocument()
   })
 
-  it('shows Next: Configure Schema button on connection step in wizard mode', () => {
+  it('does not show a Next button — wizard steps are navigated by clicking the pills', () => {
     renderPage()
-    expect(screen.getByText(/next: configure schema/i)).toBeInTheDocument()
+    expect(screen.queryByText(/next/i)).not.toBeInTheDocument()
   })
 })
 
