@@ -94,6 +94,8 @@ class DemoSeeder:
     def seed(self) -> dict[str, int]:
         out = Path(self.output)
         out.parent.mkdir(parents=True, exist_ok=True)
+        if out.exists():
+            out.unlink()  # Remove existing DB to avoid appending
 
         log.info("demo_seed_start", users=self.num_users, days=self.num_days, output=str(out))
 
@@ -176,6 +178,11 @@ class DemoSeeder:
         # Always open
         events.append(evt("app_open"))
 
+        # Push notification open (returning users — this triggered the app open)
+        if user["is_returning"] and random.random() < PUSH_TRIGGERED_RATE:
+            t += timedelta(seconds=random.randint(2, 10))
+            events.append(evt("push_notification_opened", {"campaign": random.choice(["reengagement", "promo", "update", "social"])}))
+
         is_first_session = session_idx == 0 and not user["is_returning"]
 
         if is_first_session:
@@ -211,8 +218,10 @@ class DemoSeeder:
             elif action == "upgrade_clicked":
                 events.append(evt("upgrade_clicked", {"source": random.choice(["banner", "paywall", "settings"])}))
 
-        # Purchase (only if flagged and not yet purchased)
+        # Purchase funnel: upgrade_clicked → purchase (for users flagged will_purchase)
         if user["will_purchase"] and not user["has_purchased"] and random.random() < 0.4:
+            t += timedelta(seconds=random.randint(5, 20))
+            events.append(evt("upgrade_clicked", {"source": random.choice(["banner", "paywall", "settings"])}))
             t += timedelta(seconds=random.randint(5, 30))
             events.append(evt("purchase", {
                 "amount": round(random.choice([4.99, 9.99, 14.99, 29.99]), 2),
@@ -220,11 +229,6 @@ class DemoSeeder:
                 "plan": random.choice(["monthly", "annual"]),
             }))
             user["has_purchased"] = True
-
-        # Push notification open (returning users, random sessions)
-        if user["is_returning"] and random.random() < PUSH_TRIGGERED_RATE:
-            t += timedelta(seconds=random.randint(2, 10))
-            events.append(evt("push_notification_opened", {"campaign": random.choice(["reengagement", "promo", "update", "social"])}))
 
         # Always close
         t += timedelta(seconds=random.randint(5, 30))
@@ -245,7 +249,23 @@ class DemoSeeder:
             num_sessions = random.randint(3, 15) if user["is_returning"] else random.randint(1, 4)
 
             for session_idx in range(num_sessions):
-                day_offset = random.randint(user["signup_day"], self.num_days - 1)
+                if not user["is_returning"]:
+                    # Non-returning: sessions cluster around signup
+                    day_offset = user["signup_day"] + random.randint(0, 2)
+                elif session_idx == 0:
+                    # First session always on or just after signup (cohort anchor)
+                    day_offset = user["signup_day"]
+                else:
+                    # Subsequent sessions: spread across remaining days with decay
+                    # Earlier sessions more likely to be closer to signup
+                    max_days = self.num_days - 1 - user["signup_day"]
+                    if max_days <= 0:
+                        day_offset = user["signup_day"]
+                    else:
+                        # Exponential-ish spread: bias toward earlier days
+                        spread = random.randint(1, max(1, max_days))
+                        day_offset = user["signup_day"] + spread
+                day_offset = min(day_offset, self.num_days - 1)
                 session_start = base + timedelta(
                     days=day_offset,
                     hours=random.randint(7, 23),
