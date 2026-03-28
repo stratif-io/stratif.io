@@ -243,7 +243,12 @@ export function PathsExplorerPage() {
         <div className={SPACING.section}>
           {/* Header */}
           <div className="flex items-center justify-between gap-4">
-            <span className={TYPOGRAPHY.pageLabel}>Path Explorer</span>
+            <div>
+              <h1 className="sr-only">Path Explorer</h1>
+              <span className={TYPOGRAPHY.pageLabel} aria-hidden="true">
+                Path Explorer
+              </span>
+            </div>
             {totalPaths > 0 && (
               <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
                 <GitFork className="h-4 w-4 text-primary" />

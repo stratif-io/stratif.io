@@ -44,7 +44,10 @@ export function PathsPage() {
     <PageTransition>
       <div className={SPACING.page}>
         <div className={SPACING.section}>
-          <span className={TYPOGRAPHY.pageLabel}>Path Analysis</span>
+          <h1 className="sr-only">Path Analysis</h1>
+          <span className={TYPOGRAPHY.pageLabel} aria-hidden="true">
+            Path Analysis
+          </span>
 
           <DevCard sql={sql}>
             <Card>
