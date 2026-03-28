@@ -15,6 +15,7 @@ interface SparklineChartProps {
   strokeWidth?: number
   formatter?: (value: number) => string
   animated?: boolean // reveal path left-to-right on mount
+  animationDelay?: number // ms delay before reveal starts
 }
 
 export function SparklineChart({
@@ -30,6 +31,7 @@ export function SparklineChart({
   strokeWidth = 1.5,
   formatter = (v: number) => v.toLocaleString(),
   animated = false,
+  animationDelay = 0,
 }: SparklineChartProps) {
   const uid = useId()
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
@@ -147,7 +149,11 @@ export function SparklineChart({
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
                   style={{ transformOrigin: 'left center' }}
-                  transition={{ duration: 0.55, ease: 'easeOut', delay: 0.05 }}
+                  transition={{
+                    duration: 0.55,
+                    ease: 'easeOut',
+                    delay: 0.05 + animationDelay / 1000,
+                  }}
                 />
               </clipPath>
             )}

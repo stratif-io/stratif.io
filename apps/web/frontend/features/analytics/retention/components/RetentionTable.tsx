@@ -90,6 +90,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                     width={80}
                     height={28}
                     color={`hsl(var(--chart-2))`}
+                    animationDelay={idx * 40}
                     showArea={false}
                     strokeWidth={1.5}
                     formatter={(v) => `${v.toFixed(1)}%`}
