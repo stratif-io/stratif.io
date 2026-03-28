@@ -61,9 +61,10 @@ The script checks your dependencies, clones the repo, generates an encryption ke
 | 📈 **Trends**                | Event counts over time with customizable granularity       |
 | 🔁 **Retention**             | Cohort-based retention tables                              |
 | 🚦 **Funnels**               | Step-by-step conversion analysis                           |
-| 🗺️ **Paths**                 | User journey flows with Sankey diagrams                    |
-| 🔀 **Pivot Tables**          | Drag-and-drop data exploration (Graphic Walker)            |
-| 💻 **Sessions**              | Raw session browser with full event timelines              |
+| 🗺️ **Journey**               | User journey flows with Sankey diagrams                    |
+| 🔀 **Pivot**                 | Drag-and-drop data exploration (Graphic Walker)            |
+| 💻 **SQL Studio**            | Write and run SQL directly against your database           |
+| 🔍 **Sessions**              | Raw session browser with full event timelines              |
 | 🔌 **Multi-database**        | One UI, many backends — DuckDB, Postgres, Snowflake & more |
 | 🔐 **Encrypted credentials** | AES-128-CBC + HMAC-SHA256 via Fernet                       |
 | 🐳 **Docker deploy**         | One `docker compose up` from dev to production             |
