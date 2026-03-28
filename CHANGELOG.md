@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/cabichahine/stratif.io/compare/v0.4.0...v0.4.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* bug bash 2 — error states, retry, and export feedback ([#102](https://github.com/cabichahine/stratif.io/issues/102)) ([205157a](https://github.com/cabichahine/stratif.io/commit/205157a836789223a4020083300e571057a519de))
+
 ## [0.4.0](https://github.com/cabichahine/stratif.io/compare/v0.3.2...v0.4.0) (2026-03-28)
 
 
