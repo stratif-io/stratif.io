@@ -109,7 +109,7 @@ export function NewPivotPage() {
   return (
     <PageTransition>
       <NoConnectionGuard>
-        <div style={{ height: 'calc(100vh - 52px)' }} className="flex flex-col">
+        <div className="flex h-full flex-col">
           <PivotTable
             colDefsData={colDefsData}
             colDefsLoading={colDefsLoading}
