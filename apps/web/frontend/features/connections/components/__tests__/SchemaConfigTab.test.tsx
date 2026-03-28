@@ -59,18 +59,56 @@ function renderTab() {
   )
 }
 
-describe('SchemaConfigTab filter columns', () => {
-  it('renders filter checkboxes for required fields', () => {
+describe('SchemaConfigTab — Setup section', () => {
+  it('shows the events table input with current value', () => {
     renderTab()
-    // At least 3 filter checkboxes for required fields + 1 for custom prop
+    expect(screen.getByDisplayValue('events')).toBeInTheDocument()
+  })
+
+  it('shows core field inputs with loaded values', () => {
+    renderTab()
+    expect(screen.getByDisplayValue('user_id')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('created_at')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('event_name')).toBeInTheDocument()
+  })
+
+  it('shows session timeout input with loaded value', () => {
+    renderTab()
+    expect(screen.getByDisplayValue('30')).toBeInTheDocument()
+  })
+
+  it('shows Detect from Schema button', () => {
+    renderTab()
+    expect(screen.getByRole('button', { name: /detect from schema/i })).toBeInTheDocument()
+  })
+})
+
+describe('SchemaConfigTab — Properties table', () => {
+  it('shows required field column names as read-only rows', () => {
+    renderTab()
+    expect(screen.getByText('user_id')).toBeInTheDocument()
+    expect(screen.getByText('created_at')).toBeInTheDocument()
+    expect(screen.getByText('event_name')).toBeInTheDocument()
+  })
+
+  it('shows custom property name in an editable input', () => {
+    renderTab()
+    expect(screen.getByDisplayValue('country')).toBeInTheDocument()
+  })
+
+  it('renders "Add to Global Filters" column header', () => {
+    renderTab()
+    expect(screen.getByText(/add to global filters/i)).toBeInTheDocument()
+  })
+
+  it('has a checkbox for each required field and custom prop (4 total)', () => {
+    renderTab()
     const checkboxes = screen.getAllByRole('checkbox')
     expect(checkboxes.length).toBeGreaterThanOrEqual(4)
   })
 
-  it('shows event_name as filter-enabled based on loaded filter config', () => {
+  it('shows event_name filter checkbox as checked based on filter config', () => {
     renderTab()
-    // event_name is in mockFilters — it should be checked
-    // Radix Checkbox renders a button with aria-checked
     const checked = screen
       .getAllByRole('checkbox')
       .filter(
@@ -79,12 +117,14 @@ describe('SchemaConfigTab filter columns', () => {
     expect(checked.length).toBeGreaterThan(0)
   })
 
-  it('renders lock icons for required fields', () => {
+  it('does not render any icon select dropdowns', () => {
     renderTab()
-    // Lock icons indicate required fields can't be deleted
-    // Check that user_id, created_at, event_name column names are displayed
-    expect(screen.getByText('user_id')).toBeInTheDocument()
-    expect(screen.getByText('created_at')).toBeInTheDocument()
-    expect(screen.getByText('event_name')).toBeInTheDocument()
+    expect(screen.queryByText('Globe')).not.toBeInTheDocument()
+    expect(screen.queryByText('Chrome')).not.toBeInTheDocument()
+  })
+
+  it('shows Add property button', () => {
+    renderTab()
+    expect(screen.getByRole('button', { name: /add property/i })).toBeInTheDocument()
   })
 })
