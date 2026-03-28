@@ -32,6 +32,37 @@ function defaultLabel(field: string) {
   return field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ')
 }
 
+function ColumnSelect({
+  value,
+  detectedColumns,
+  onChange,
+}: {
+  value: string
+  detectedColumns: string[]
+  onChange: (v: string) => void
+}) {
+  const options = Array.from(new Set([value, ...detectedColumns].filter(Boolean)))
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="h-8 text-sm font-mono">
+        <SelectValue placeholder="Select column…" />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((col) => (
+          <SelectItem key={col} value={col} className="font-mono text-xs">
+            {col}
+          </SelectItem>
+        ))}
+        {options.length === 0 && (
+          <div className="px-2 py-1.5 text-xs text-muted-foreground">
+            Run "Detect from Schema" to see columns
+          </div>
+        )}
+      </SelectContent>
+    </Select>
+  )
+}
+
 function CategoryPicker({
   value,
   onChange,
@@ -98,6 +129,7 @@ export function SchemaConfigTab({ connId }: Props) {
   const [eventsTable, setEventsTable] = useState('events')
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30)
   const [customProps, setCustomProps] = useState<CustomProperty[]>([])
+  const [detectedColumns, setDetectedColumns] = useState<string[]>([])
 
   const [enabledFields, setEnabledFields] = useState<
     Record<string, { label: string; icon: string }>
@@ -190,11 +222,12 @@ export function SchemaConfigTab({ connId }: Props) {
     detect.mutate(eventsTable || undefined, {
       onSuccess(result) {
         initialized.current = true
-        const { suggestions, proposed_custom_properties, events_table } = result
+        const { suggestions, proposed_custom_properties, events_table, columns } = result
         if (suggestions.user_id_field) setUserIdField(suggestions.user_id_field)
         if (suggestions.timestamp_field) setTimestampField(suggestions.timestamp_field)
         if (suggestions.event_name_field) setEventNameField(suggestions.event_name_field)
         if (events_table) setEventsTable(events_table)
+        setDetectedColumns(columns.map((c) => c.name))
 
         const existingPaths = new Set(customProps.map((p) => p.path))
         const newProps = proposed_custom_properties.filter((p) => !existingPaths.has(p.path))
@@ -223,14 +256,16 @@ export function SchemaConfigTab({ connId }: Props) {
   if (isLoading || filterLoading) return <LoadingState message="Loading schema config…" />
 
   const requiredRows = [
-    { field: userIdField, label: 'User ID' },
-    { field: timestampField, label: 'Timestamp' },
-    { field: eventNameField, label: 'Event' },
+    { field: userIdField, setField: setUserIdField, label: 'User ID' },
+    { field: timestampField, setField: setTimestampField, label: 'Timestamp' },
+    { field: eventNameField, setField: setEventNameField, label: 'Event Name' },
   ]
 
   const sortedCustomProps = [...customProps.map((prop, idx) => ({ prop, idx }))].sort((a, b) =>
     a.prop.name.localeCompare(b.prop.name)
   )
+
+  const TABLE_GRID = 'grid-cols-[120px_1fr_90px_110px_120px_28px]'
 
   return (
     <div className="space-y-8">
@@ -300,37 +335,6 @@ export function SchemaConfigTab({ connId }: Props) {
 
         {detect.isError && <p className="text-sm text-destructive">{detect.error?.message}</p>}
 
-        {/* Core fields */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="user_id_field">User ID Column</Label>
-            <Input
-              id="user_id_field"
-              value={userIdField}
-              onChange={(e) => setUserIdField(e.target.value)}
-              placeholder="user_id"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="timestamp_field">Timestamp Column</Label>
-            <Input
-              id="timestamp_field"
-              value={timestampField}
-              onChange={(e) => setTimestampField(e.target.value)}
-              placeholder="timestamp"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="event_name_field">Event Name Column</Label>
-            <Input
-              id="event_name_field"
-              value={eventNameField}
-              onChange={(e) => setEventNameField(e.target.value)}
-              placeholder="event_name"
-            />
-          </div>
-        </div>
-
         {/* Session timeout */}
         <div className="flex items-center gap-3">
           <Label
@@ -363,11 +367,10 @@ export function SchemaConfigTab({ connId }: Props) {
           </Button>
         </div>
 
-        {/* Table */}
         <div className="rounded-md border">
           {/* Column headers */}
-          <div className="grid grid-cols-[1fr_1.2fr_90px_110px_130px_32px] gap-3 px-3 py-2 border-b bg-muted/30">
-            {['Name', 'Path', 'Type', 'Category', 'Add to Global Filters', ''].map((h) => (
+          <div className={`grid ${TABLE_GRID} gap-3 px-3 py-2 border-b bg-muted/30`}>
+            {['Field', 'Column', 'Type', 'Category', 'Add to Global Filters', ''].map((h) => (
               <span key={h} className="text-xs font-medium text-muted-foreground">
                 {h}
               </span>
@@ -375,15 +378,15 @@ export function SchemaConfigTab({ connId }: Props) {
           </div>
 
           {/* Required field rows */}
-          {requiredRows.map(({ field, label }) => {
+          {requiredRows.map(({ field, setField, label }) => {
             const isEnabled = field in enabledFields
             return (
               <div
-                key={field}
-                className="grid grid-cols-[1fr_1.2fr_90px_110px_130px_32px] gap-3 px-3 py-2.5 border-b last:border-b-0 items-center opacity-70"
+                key={label}
+                className={`grid ${TABLE_GRID} gap-3 px-3 py-2.5 border-b last:border-b-0 items-center opacity-70`}
               >
-                <span className="font-mono text-xs text-muted-foreground">{field}</span>
-                <span className="text-xs text-muted-foreground/50">—</span>
+                <span className="text-xs text-muted-foreground">{label}</span>
+                <ColumnSelect value={field} detectedColumns={detectedColumns} onChange={setField} />
                 <span className="text-xs text-muted-foreground/50">—</span>
                 <span className="text-xs text-muted-foreground/50">—</span>
                 <div className="flex items-center">
@@ -397,7 +400,7 @@ export function SchemaConfigTab({ connId }: Props) {
             )
           })}
 
-          {/* Divider between required and custom */}
+          {/* Dashed divider */}
           {sortedCustomProps.length > 0 && <div className="border-t border-dashed" />}
 
           {/* Custom property rows */}
@@ -406,7 +409,7 @@ export function SchemaConfigTab({ connId }: Props) {
             return (
               <div
                 key={idx}
-                className="grid grid-cols-[1fr_1.2fr_90px_110px_130px_32px] gap-3 px-3 py-2 border-b last:border-b-0 items-center"
+                className={`grid ${TABLE_GRID} gap-3 px-3 py-2 border-b last:border-b-0 items-center`}
               >
                 <Input
                   value={prop.name}
