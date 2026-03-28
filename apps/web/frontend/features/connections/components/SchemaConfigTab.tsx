@@ -44,7 +44,10 @@ function ColumnSelect({
   onChange: (v: string) => void
   disabled?: boolean
 }) {
-  const options = Array.from(new Set([value, ...detectedColumns].filter(Boolean)))
+  const others = Array.from(
+    new Set(detectedColumns.filter(Boolean).filter((c) => c !== value))
+  ).sort()
+  const options = value ? [value, ...others] : others
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger
