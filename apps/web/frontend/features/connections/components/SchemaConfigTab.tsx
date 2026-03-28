@@ -53,11 +53,6 @@ function ColumnSelect({
             {col}
           </SelectItem>
         ))}
-        {options.length === 0 && (
-          <div className="px-2 py-1.5 text-xs text-muted-foreground">
-            Run "Detect from Schema" to see columns
-          </div>
-        )}
       </SelectContent>
     </Select>
   )
@@ -195,7 +190,10 @@ export function SchemaConfigTab({ connId }: Props) {
   }, [enabledFields])
 
   function addProp() {
-    setCustomProps((prev) => [...prev, { name: '', path: '', type: 'string', category: undefined }])
+    setCustomProps((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), name: '', path: '', type: 'string', category: undefined },
+    ])
   }
 
   function removeProp(idx: number) {
@@ -408,7 +406,7 @@ export function SchemaConfigTab({ connId }: Props) {
             const isEnabled = prop.name in enabledFields
             return (
               <div
-                key={idx}
+                key={prop.id ?? String(idx)}
                 className={`grid ${TABLE_GRID} gap-3 px-3 py-2 border-b last:border-b-0 items-center`}
               >
                 <Input

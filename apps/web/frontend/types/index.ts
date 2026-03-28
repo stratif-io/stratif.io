@@ -278,6 +278,7 @@ export type DbType =
 export type PropertyType = 'string' | 'number' | 'boolean' | 'timestamp'
 
 export interface CustomProperty {
+  id?: string
   name: string
   path: string
   type: PropertyType
