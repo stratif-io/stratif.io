@@ -43,7 +43,7 @@ function renderPage() {
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={['/connections/conn-1']}>
         <Routes>
-          <Route path="/connections/:id" element={<ConnectionDetailPage />} />
+          <Route path="/connections/:id/:tab?" element={<ConnectionDetailPage />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>

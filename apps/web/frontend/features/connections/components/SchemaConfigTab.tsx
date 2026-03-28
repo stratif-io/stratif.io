@@ -24,6 +24,7 @@ import {
 import { TableBrowserPicker } from './TableBrowserPicker'
 import dimensionCategories from '@/config/dimension-categories.json'
 import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
+import { cn } from '@/lib/utils'
 import type { CustomProperty, PropertyType, DimensionCategoryConfig, FilterField } from '@/types'
 
 const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
@@ -36,15 +37,19 @@ function ColumnSelect({
   value,
   detectedColumns,
   onChange,
+  disabled,
 }: {
   value: string
   detectedColumns: string[]
   onChange: (v: string) => void
+  disabled?: boolean
 }) {
   const options = Array.from(new Set([value, ...detectedColumns].filter(Boolean)))
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-8 text-sm font-mono">
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger
+        className={cn('h-8 text-sm font-mono', disabled && 'opacity-50 cursor-not-allowed')}
+      >
         <SelectValue placeholder="Select column…" />
       </SelectTrigger>
       <SelectContent>
@@ -228,7 +233,9 @@ export function SchemaConfigTab({ connId }: Props) {
         if (suggestions.timestamp_field) setTimestampField(suggestions.timestamp_field)
         if (suggestions.event_name_field) setEventNameField(suggestions.event_name_field)
         if (events_table) setEventsTable(events_table)
-        setDetectedColumns(columns.map((c) => c.name))
+        const columnNames = columns.map((c) => c.name)
+        const nestedPaths = proposed_custom_properties.map((p) => p.path)
+        setDetectedColumns(Array.from(new Set([...columnNames, ...nestedPaths])))
 
         const existingPaths = new Set(customProps.map((p) => p.path))
         const newProps = proposed_custom_properties.filter((p) => !existingPaths.has(p.path))
@@ -388,7 +395,12 @@ export function SchemaConfigTab({ connId }: Props) {
                 className={`grid ${TABLE_GRID} gap-3 px-3 py-2.5 border-b last:border-b-0 items-center opacity-70`}
               >
                 <span className="text-xs text-muted-foreground">{label}</span>
-                <ColumnSelect value={field} detectedColumns={detectedColumns} onChange={setField} />
+                <ColumnSelect
+                  value={field}
+                  detectedColumns={detectedColumns}
+                  onChange={setField}
+                  disabled={detectedColumns.length === 0}
+                />
                 <span className="text-xs text-muted-foreground/50">—</span>
                 <span className="text-xs text-muted-foreground/50">—</span>
                 <div className="flex items-center">
@@ -423,6 +435,7 @@ export function SchemaConfigTab({ connId }: Props) {
                   value={prop.path}
                   detectedColumns={detectedColumns}
                   onChange={(v) => updateProp(idx, { path: v })}
+                  disabled={detectedColumns.length === 0}
                 />
                 <Select
                   value={prop.type}

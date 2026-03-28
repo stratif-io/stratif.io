@@ -72,7 +72,7 @@ function App() {
           <Route path="/pivot" element={<PivotPage />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/connections" element={<ConnectionsPage />} />
-          <Route path="/connections/:id" element={<ConnectionDetailPage />} />
+          <Route path="/connections/:id/:tab?" element={<ConnectionDetailPage />} />
           <Route path="/query-studio" element={<QueryStudioPage />} />
           {import.meta.env.DEV && DesignSystemPage && (
             <Route path="/design-system" element={<DesignSystemPage />} />
