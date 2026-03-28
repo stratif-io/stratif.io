@@ -11,6 +11,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { PivotToolbar } from './PivotToolbar'
 import { ZoneBar } from './ZoneBar'
 import { FilterBar } from '../shared/FilterBar'
+import * as XLSX from 'xlsx'
 import { rowsToCsv, downloadCsv } from './csvExport'
 import type { ZoneCol, FilterEntry, PivotTableProps } from './types'
 import { buildLeafMeta } from './types'
@@ -126,6 +127,14 @@ export function PivotTable({
     downloadCsv('pivot-export.csv', csv)
   }
 
+  function handleExportXlsx() {
+    const data = [headers, ...rows.map((r) => headers.map((h) => r[h] ?? ''))]
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Pivot')
+    XLSX.writeFile(wb, 'pivot-export.xlsx')
+  }
+
   async function handleAddFilter() {
     if (leafCols.length === 0) return
     const field = leafCols[0].colId
@@ -175,6 +184,7 @@ export function PivotTable({
         isQuerying={isQuerying}
         onReset={handleReset}
         onExportCsv={handleExportCsv}
+        onExportXlsx={handleExportXlsx}
         onAddFilter={handleAddFilter}
       />
       <ZoneBar
