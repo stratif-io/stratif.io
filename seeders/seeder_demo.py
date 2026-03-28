@@ -249,12 +249,12 @@ class DemoSeeder:
             num_sessions = random.randint(3, 15) if user["is_returning"] else random.randint(1, 4)
 
             for session_idx in range(num_sessions):
-                if not user["is_returning"]:
-                    # Non-returning: sessions cluster around signup
-                    day_offset = user["signup_day"] + random.randint(0, 2)
-                elif session_idx == 0:
-                    # First session always on or just after signup (cohort anchor)
+                if session_idx == 0:
+                    # First session always on signup day (cohort anchor for retention)
                     day_offset = user["signup_day"]
+                elif not user["is_returning"]:
+                    # Non-returning: remaining sessions cluster near signup
+                    day_offset = user["signup_day"] + random.randint(0, 2)
                 else:
                     # Subsequent sessions: spread across remaining days with decay
                     # Earlier sessions more likely to be closer to signup
@@ -286,6 +286,7 @@ class DemoSeeder:
         return total
 
     def _insert_batch(self, conn: duckdb.DuckDBPyConnection, events: list[tuple]) -> None:
+        # df must remain in local scope — DuckDB's `FROM df` resolves it via Python frame inspection
         df = pd.DataFrame(  # noqa: F841
             {
                 "user_id":    [e[0] for e in events],
