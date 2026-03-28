@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react'
-import { ChevronDown, ChevronRight, Check, Loader2 } from 'lucide-react'
+import { ChevronDown, Check, Loader2, X } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -30,7 +30,7 @@ export interface FilterSelectProps {
    *  Note: FilterSelect size="sm" is h-7, distinct from Button size="sm" which is h-9. */
   size?: 'default' | 'sm'
   searchable?: boolean
-  /** Enables category accordion grouping using dimension-categories.json config. */
+  /** Enables category two-panel grouping using dimension-categories.json config. */
   tree?: boolean
   /** Override the entire trigger button content (e.g. an "+ Add" button for the pivot zone bar). */
   triggerContent?: ReactNode
@@ -52,7 +52,7 @@ export function FilterSelect({
 }: FilterSelectProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
   const selectedValues: string[] = value === null ? [] : Array.isArray(value) ? value : [value]
 
@@ -67,33 +67,30 @@ export function FilterSelect({
   })()
 
   const groups = tree
-    ? groupDimensionsByCategory(
-        options.map((o) => ({ value: o.value, label: o.label, category: o.category })),
-        CATEGORIES
-      )
+    ? (() => {
+        const raw = groupDimensionsByCategory(
+          options.map((o) => ({ value: o.value, label: o.label, category: o.category })),
+          CATEGORIES
+        )
+        // Sort groups by first appearance of any of their dimensions in the options array
+        const firstIndex = (g: (typeof raw)[0]) =>
+          Math.min(...g.dimensions.map((d) => options.findIndex((o) => o.value === d.value)))
+        return [...raw].sort((a, b) => firstIndex(a) - firstIndex(b))
+      })()
     : []
 
   function handleOpenChange(next: boolean) {
     if (next && tree) {
       const activeValue = selectedValues[0] ?? null
-      const activeGroupId =
+      const initialCategory =
         activeValue != null
           ? (groups.find((g) => g.dimensions.some((d) => d.value === activeValue))?.category.id ??
             groups[0]?.category.id)
           : groups[0]?.category.id
-      setExpandedIds(new Set(activeGroupId ? [activeGroupId] : []))
+      setActiveCategory(initialCategory ?? null)
     }
     if (!next) setSearch('')
     setOpen(next)
-  }
-
-  function toggleGroup(id: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
   }
 
   function handleSelect(opt: FilterSelectOption) {
@@ -109,12 +106,30 @@ export function FilterSelect({
     }
   }
 
+  function handleClear() {
+    onChange([])
+  }
+
   const filteredFlat = search
     ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
     : options
 
   const triggerHeight = size === 'sm' ? 'h-7 text-xs px-2' : 'h-10 text-sm px-3'
   const hasValue = selectedValues.length > 0
+
+  // For tree search mode: group the filtered results by category
+  const searchGrouped = search
+    ? groups
+        .map((g) => ({
+          ...g,
+          dimensions: g.dimensions.filter((d) =>
+            d.label.toLowerCase().includes(search.toLowerCase())
+          ),
+        }))
+        .filter((g) => g.dimensions.length > 0)
+    : []
+
+  const activeGroup = groups.find((g) => g.category.id === activeCategory)
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -147,47 +162,48 @@ export function FilterSelect({
         )}
       </PopoverTrigger>
 
-      <PopoverContent className="w-56 p-0" align="start">
-        {searchable && (
-          <div className="p-2 border-b">
-            <Input
-              placeholder="Search…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-7 text-sm"
-              autoFocus
-            />
+      <PopoverContent className={cn('p-0', tree ? 'w-72' : 'w-56')} align="start">
+        {isLoading ? (
+          <div role="status" className="flex items-center justify-center py-6 max-h-60">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
-        )}
-
-        <div className="max-h-60 overflow-y-auto">
-          {isLoading ? (
-            <div role="status" className="flex items-center justify-center py-6">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        ) : tree ? (
+          <>
+            {/* Search bar — always shown in tree mode */}
+            <div className="p-2 border-b flex items-center gap-1">
+              <Input
+                placeholder="Search columns…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-7 text-sm flex-1"
+                autoFocus
+              />
+              {search && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  className="p-1 text-muted-foreground hover:text-foreground"
+                  onClick={() => setSearch('')}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
-          ) : tree ? (
-            <div className="p-1">
-              {groups.map((group) => {
-                const isExpanded = expandedIds.has(group.category.id)
-                return (
-                  <div key={group.category.id}>
-                    <button
-                      type="button"
-                      aria-expanded={isExpanded}
-                      className="w-full flex items-center gap-1.5 px-3 py-2 text-left hover:bg-accent/50 transition-colors"
-                      onClick={() => toggleGroup(group.category.id)}
-                    >
-                      {isExpanded ? (
-                        <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-                      )}
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+
+            {search ? (
+              /* Search mode: full-width grouped list */
+              <div className="max-h-52 overflow-y-auto">
+                {searchGrouped.length === 0 ? (
+                  <p className="px-3 py-4 text-xs text-muted-foreground text-center">
+                    No columns match
+                  </p>
+                ) : (
+                  searchGrouped.map((group) => (
+                    <div key={group.category.id}>
+                      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-3 py-1 sticky top-0 bg-popover">
                         {group.category.label}
-                      </span>
-                    </button>
-                    {isExpanded &&
-                      group.dimensions.map((dim) => {
+                      </div>
+                      {group.dimensions.map((dim) => {
                         const opt = options.find((o) => o.value === dim.value)
                         const isDisabled = opt?.disabled ?? false
                         const isSelected = selectedValues.includes(dim.value)
@@ -197,10 +213,10 @@ export function FilterSelect({
                             type="button"
                             disabled={isDisabled}
                             className={cn(
-                              'w-full text-left px-3 py-1.5 pl-8 text-sm truncate flex items-center gap-2',
+                              'w-full text-left px-3 py-1.5 text-sm truncate flex items-center gap-2',
                               'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
-                              isSelected && 'bg-accent font-medium text-accent-foreground',
-                              isDisabled && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+                              isSelected && 'bg-primary/10 text-primary font-medium',
+                              isDisabled && 'opacity-40 cursor-not-allowed pointer-events-none'
                             )}
                             onClick={() => opt && handleSelect(opt)}
                           >
@@ -221,63 +237,178 @@ export function FilterSelect({
                           </button>
                         )
                       })}
-                  </div>
-                )
-              })}
-              {groups.length === 0 && (
-                <p className="px-3 py-4 text-xs text-muted-foreground text-center">No options</p>
-              )}
-            </div>
-          ) : (
-            <div className="p-1">
-              {filteredFlat.length === 0 ? (
-                <p className="px-2 py-3 text-xs text-muted-foreground text-center">No options</p>
-              ) : (
-                filteredFlat.map((opt) => {
-                  const isSelected = selectedValues.includes(opt.value)
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      disabled={opt.disabled}
-                      className={cn(
-                        'w-full text-left px-2 py-1.5 rounded text-sm truncate flex items-center gap-2',
-                        'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
-                        isSelected && 'font-medium',
-                        opt.disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent'
-                      )}
-                      onClick={() => handleSelect(opt)}
-                    >
-                      {mode === 'multi' && (
+                    </div>
+                  ))
+                )}
+              </div>
+            ) : (
+              /* Two-panel mode */
+              <div className="flex max-h-52">
+                {/* Left panel: categories */}
+                <div className="w-28 flex-shrink-0 bg-muted/40 overflow-y-auto border-r">
+                  {groups.map((group) => {
+                    const isActive = group.category.id === activeCategory
+                    const categorySelectedCount = group.dimensions.filter((d) =>
+                      selectedValues.includes(d.value)
+                    ).length
+                    const hasSelections = categorySelectedCount > 0
+                    return (
+                      <button
+                        key={group.category.id}
+                        type="button"
+                        className={cn(
+                          'w-full flex items-center justify-between gap-1 px-2 py-2 text-left text-xs',
+                          isActive
+                            ? 'bg-primary/10 text-primary font-semibold'
+                            : 'text-muted-foreground hover:bg-muted/60'
+                        )}
+                        onClick={() => setActiveCategory(group.category.id)}
+                      >
+                        <span className="truncate">{group.category.label}</span>
                         <span
                           className={cn(
-                            'h-3.5 w-3.5 shrink-0 rounded-sm border',
-                            isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                            'shrink-0 text-[10px]',
+                            hasSelections
+                              ? 'bg-primary text-primary-foreground rounded-full px-1'
+                              : 'text-muted-foreground'
                           )}
-                        />
-                      )}
-                      {mode === 'single' && isSelected && (
-                        <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                      )}
-                      {opt.label}
-                    </button>
-                  )
-                })
-              )}
-            </div>
-          )}
-        </div>
+                        >
+                          {group.dimensions.length}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
 
-        {mode === 'multi' && selectedValues.length > 0 && (
-          <div className="p-2 border-t">
-            <button
-              type="button"
-              className="text-xs text-muted-foreground hover:text-foreground w-full text-left"
-              onClick={() => onChange([])}
-            >
-              Clear selection
-            </button>
-          </div>
+                {/* Right panel: columns */}
+                <div className="flex-1 overflow-y-auto">
+                  {activeGroup ? (
+                    activeGroup.dimensions.map((dim) => {
+                      const opt = options.find((o) => o.value === dim.value)
+                      const isDisabled = opt?.disabled ?? false
+                      const isSelected = selectedValues.includes(dim.value)
+                      return (
+                        <button
+                          key={dim.value}
+                          type="button"
+                          disabled={isDisabled}
+                          className={cn(
+                            'w-full text-left px-3 py-1.5 text-sm truncate flex items-center gap-2',
+                            'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
+                            isSelected && 'bg-primary/10 text-primary font-medium',
+                            isDisabled && 'opacity-40 cursor-not-allowed pointer-events-none'
+                          )}
+                          onClick={() => opt && handleSelect(opt)}
+                        >
+                          {mode === 'multi' && (
+                            <span
+                              className={cn(
+                                'h-3.5 w-3.5 shrink-0 rounded-sm border',
+                                isSelected
+                                  ? 'bg-primary border-primary'
+                                  : 'border-muted-foreground/40'
+                              )}
+                            />
+                          )}
+                          {mode === 'single' && isSelected && (
+                            <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                          )}
+                          {dim.label}
+                        </button>
+                      )
+                    })
+                  ) : (
+                    <p className="px-3 py-4 text-xs text-muted-foreground text-center">
+                      No options
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Footer: multi mode only */}
+            {mode === 'multi' && selectedValues.length > 0 && (
+              <div className="p-2 border-t flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {selectedValues.length} selected
+                </span>
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                  onClick={handleClear}
+                >
+                  Clear all
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {searchable && (
+              <div className="p-2 border-b">
+                <Input
+                  placeholder="Search…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-7 text-sm"
+                  autoFocus
+                />
+              </div>
+            )}
+
+            <div className="max-h-60 overflow-y-auto">
+              <div className="p-1">
+                {filteredFlat.length === 0 ? (
+                  <p className="px-2 py-3 text-xs text-muted-foreground text-center">No options</p>
+                ) : (
+                  filteredFlat.map((opt) => {
+                    const isSelected = selectedValues.includes(opt.value)
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        disabled={opt.disabled}
+                        className={cn(
+                          'w-full text-left px-2 py-1.5 rounded text-sm truncate flex items-center gap-2',
+                          'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
+                          isSelected && 'font-medium',
+                          opt.disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+                        )}
+                        onClick={() => handleSelect(opt)}
+                      >
+                        {mode === 'multi' && (
+                          <span
+                            className={cn(
+                              'h-3.5 w-3.5 shrink-0 rounded-sm border',
+                              isSelected
+                                ? 'bg-primary border-primary'
+                                : 'border-muted-foreground/40'
+                            )}
+                          />
+                        )}
+                        {mode === 'single' && isSelected && (
+                          <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                        )}
+                        {opt.label}
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+
+            {mode === 'multi' && selectedValues.length > 0 && (
+              <div className="p-2 border-t">
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-foreground w-full text-left"
+                  onClick={() => onChange([])}
+                >
+                  Clear selection
+                </button>
+              </div>
+            )}
+          </>
         )}
       </PopoverContent>
     </Popover>
