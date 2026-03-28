@@ -81,6 +81,7 @@ export function QueryStudioPage() {
             <ResultsPanel
               result={result}
               isRunning={isRunning}
+              hasRun={result !== null || history.length > 0}
               history={history}
               onRestoreHistory={restoreFromHistory}
             />

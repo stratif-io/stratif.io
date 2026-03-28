@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import * as XLSX from 'xlsx'
-import { Download, Columns3 } from 'lucide-react'
+import { Download, Columns3, Activity } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { formatDateParam } from '@/lib/utils'
 import { fetchRawEvents, fetchEvents, fetchFieldOptions } from '@/lib/api'
@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Button } from '@/components/ui/button'
 import { QueryError } from '@/components/ui/query-error'
+import { EmptyState } from '@/components/ui/empty-state'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { SPACING, QUERY_STALE_TIME } from '@/lib/constants'
 import { DevCard } from '@/components/dev'
@@ -300,6 +301,13 @@ export function EventsPage() {
             <CardContent className="p-0">
               {isError ? (
                 <QueryError error={error} className="py-16" />
+              ) : !isLoading && events.length === 0 ? (
+                <EmptyState
+                  icon={Activity}
+                  title="No events found"
+                  description="Try expanding the date range or selecting a different event."
+                  className="py-16"
+                />
               ) : (
                 <EventsTable
                   data={events}

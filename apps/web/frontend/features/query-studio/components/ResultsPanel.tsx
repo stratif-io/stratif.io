@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { QueryStudioResponse } from '@/types'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Terminal, Search } from 'lucide-react'
 
 function JsonCell({ value }: { value: object }) {
   const [expanded, setExpanded] = useState(false)
@@ -27,6 +29,7 @@ function JsonCell({ value }: { value: object }) {
 interface ResultsPanelProps {
   result: QueryStudioResponse | null
   isRunning: boolean
+  hasRun: boolean
   history: string[]
   onRestoreHistory: (sql: string) => void
 }
@@ -35,7 +38,13 @@ type Tab = 'results' | 'history'
 
 const PAGE_SIZE = 50
 
-export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: ResultsPanelProps) {
+export function ResultsPanel({
+  result,
+  isRunning,
+  hasRun,
+  history,
+  onRestoreHistory,
+}: ResultsPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('results')
   const [page, setPage] = useState(0)
 
@@ -167,8 +176,19 @@ export function ResultsPanel({ result, isRunning, history, onRestoreHistory }: R
                 </tbody>
               </table>
             )}
-            {!isRunning && !result && (
-              <p className="px-4 py-3 text-xs text-muted-foreground">Run a query to see results.</p>
+            {!isRunning && !hasRun && (
+              <EmptyState
+                icon={Terminal}
+                title="Run a query to see results"
+                description="Select a table from the catalog or write your own SQL."
+              />
+            )}
+            {!isRunning && hasRun && result && !result.error && rows.length === 0 && (
+              <EmptyState
+                icon={Search}
+                title="No results"
+                description="Your query returned no rows. Try adjusting your filters."
+              />
             )}
           </>
         )}
