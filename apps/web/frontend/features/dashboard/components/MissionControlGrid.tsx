@@ -1,7 +1,7 @@
 import { memo, useState } from 'react'
 import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
-import { MetricCardSkeleton } from './MetricCardSkeleton'
+import { MetricCardSkeleton } from '@/components/ui/loading-state'
 import { formatMetricValue, computePctChange } from '@/lib/format-metric'
 import type { MissionControlResponse } from '@/types'
 import type { TrendMetric, MetricTrend } from '../hooks/useMissionControlTrends'

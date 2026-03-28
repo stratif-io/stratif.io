@@ -129,13 +129,14 @@ export function TableSkeleton({ rows = 5, className }: { rows?: number; classNam
 
 export function MetricCardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('p-6 space-y-3 animate-pulse', className)}>
-      <div className="flex items-center justify-between">
-        <div className="h-4 bg-muted rounded w-1/3" />
-        <div className="h-5 w-5 bg-muted rounded" />
-      </div>
-      <div className="h-8 bg-muted rounded w-2/3" />
-      <div className="h-3 bg-muted rounded w-1/2" />
+    <div
+      role="status"
+      aria-label="Loading metric"
+      className={cn('rounded-lg border bg-card p-4 space-y-3 animate-pulse', className)}
+    >
+      <div className="h-3 w-2/5 rounded bg-muted" />
+      <div className="h-7 w-1/3 rounded bg-muted" />
+      <div className="h-3 w-3/5 rounded bg-muted" />
     </div>
   )
 }
