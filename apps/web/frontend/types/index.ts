@@ -312,6 +312,7 @@ export interface Connection {
   db_type: DbType
   created_at: string
   updated_at: string
+  schema_config: SchemaConfig | null
 }
 
 export interface SchemaConfig {

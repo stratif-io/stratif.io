@@ -15,6 +15,8 @@ import { rowsToCsv, downloadCsv } from './csvExport'
 import type { ZoneCol, FilterEntry, PivotTableProps } from './types'
 import { buildLeafMeta } from './types'
 import { DevCard } from '@/components/dev'
+import { EmptyState } from '@/components/ui/empty-state'
+import { BarChart2 } from 'lucide-react'
 // FilterEntry used for pivotFilters state
 
 const DEFAULT_ROW_GROUPS: ZoneCol[] = []
@@ -227,10 +229,20 @@ export function PivotTable({
       <DevCard sql={lastSql} className="flex-1 min-h-0">
         <div ref={parentRef} className="h-full overflow-auto">
           {rows.length === 0 && !isQuerying ? (
-            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-              {rowGroups.length === 0 && valueCols.length === 0
-                ? 'Use + Add in the Rows and Values zones to build a pivot table.'
-                : 'No data for current selection.'}
+            <div className="flex items-center justify-center h-full">
+              {rowGroups.length === 0 && valueCols.length === 0 ? (
+                <EmptyState
+                  icon={BarChart2}
+                  title="No data to display"
+                  description="Use + Add in the Rows and Values zones to build a pivot table."
+                />
+              ) : (
+                <EmptyState
+                  icon={BarChart2}
+                  title="No data to display"
+                  description="Try adjusting your filters or selecting a different event."
+                />
+              )}
             </div>
           ) : (
             <table className="w-full text-sm border-collapse table-fixed">

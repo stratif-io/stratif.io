@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { useQueryStudio } from './hooks/useQueryStudio'
 import { CatalogBrowser } from './components/CatalogBrowser'
 import { QueryEditor } from './components/QueryEditor'
@@ -49,44 +50,47 @@ export function QueryStudioPage() {
   }, [])
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex flex-1 overflow-hidden">
-        {/* Catalog — fixed width */}
-        <div className="w-52 shrink-0 h-full">
-          <CatalogBrowser onTableClick={handleTableClick} onColumnClick={handleColumnClick} />
-        </div>
-
-        {/* Editor + Results — flex column */}
-        <div ref={containerRef} className="flex flex-1 flex-col overflow-hidden border-l">
-          <div style={{ height: editorHeight }} className="shrink-0 overflow-hidden">
-            <QueryEditor
-              value={sql}
-              onChange={setSql}
-              onExecute={execute}
-              limitEnabled={limitEnabled}
-              onLimitToggle={setLimitEnabled}
-            />
+    <NoConnectionGuard>
+      <div className="flex h-full flex-col">
+        <div className="flex flex-1 overflow-hidden">
+          {/* Catalog — fixed width */}
+          <div className="w-52 shrink-0 h-full">
+            <CatalogBrowser onTableClick={handleTableClick} onColumnClick={handleColumnClick} />
           </div>
 
-          {/* Drag handle */}
-          <div
-            onMouseDown={onDragStart}
-            className="h-1.5 shrink-0 cursor-row-resize bg-border/40 hover:bg-primary/40 transition-colors"
-            role="separator"
-            aria-orientation="horizontal"
-          />
+          {/* Editor + Results — flex column */}
+          <div ref={containerRef} className="flex flex-1 flex-col overflow-hidden border-l">
+            <div style={{ height: editorHeight }} className="shrink-0 overflow-hidden">
+              <QueryEditor
+                value={sql}
+                onChange={setSql}
+                onExecute={execute}
+                limitEnabled={limitEnabled}
+                onLimitToggle={setLimitEnabled}
+              />
+            </div>
 
-          {/* Results panel — takes remaining space */}
-          <div className="flex-1 overflow-hidden">
-            <ResultsPanel
-              result={result}
-              isRunning={isRunning}
-              history={history}
-              onRestoreHistory={restoreFromHistory}
+            {/* Drag handle */}
+            <div
+              onMouseDown={onDragStart}
+              className="h-1.5 shrink-0 cursor-row-resize bg-border/40 hover:bg-primary/40 transition-colors"
+              role="separator"
+              aria-orientation="horizontal"
             />
+
+            {/* Results panel — takes remaining space */}
+            <div className="flex-1 overflow-hidden">
+              <ResultsPanel
+                result={result}
+                isRunning={isRunning}
+                hasRun={result !== null || history.length > 0}
+                history={history}
+                onRestoreHistory={restoreFromHistory}
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </NoConnectionGuard>
   )
 }

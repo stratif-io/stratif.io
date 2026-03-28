@@ -67,6 +67,49 @@ beforeEach(() => {
   useAppStore.setState({ activeConnectionId: null })
 })
 
+describe('ConnectionDetailPage — wizard mode', () => {
+  it('shows wizard progress when schema_config is null (new connection)', () => {
+    renderPage()
+    expect(screen.getByTestId('step-connection')).toBeInTheDocument()
+    expect(screen.getByTestId('step-schema')).toBeInTheDocument()
+    expect(screen.getByTestId('step-filters')).toBeInTheDocument()
+  })
+
+  it('does not show wizard progress when schema_config is set (returning user)', () => {
+    vi.mocked(useConnection).mockReturnValue({
+      data: { ...mockConnection, schema_config: { tables: [] } },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useConnection>)
+
+    renderPage()
+    expect(screen.queryByTestId('step-connection')).not.toBeInTheDocument()
+  })
+
+  it('hides tab buttons in wizard mode', () => {
+    renderPage()
+    expect(screen.queryByText('Schema Mapping')).not.toBeInTheDocument()
+    expect(screen.queryByText('Global Filters')).not.toBeInTheDocument()
+  })
+
+  it('shows tab buttons when not in wizard mode', () => {
+    vi.mocked(useConnection).mockReturnValue({
+      data: { ...mockConnection, schema_config: { tables: [] } },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useConnection>)
+
+    renderPage()
+    expect(screen.getByText('Schema Mapping')).toBeInTheDocument()
+    expect(screen.getByText('Global Filters')).toBeInTheDocument()
+  })
+
+  it('shows Next: Configure Schema button on connection step in wizard mode', () => {
+    renderPage()
+    expect(screen.getByText(/next: configure schema/i)).toBeInTheDocument()
+  })
+})
+
 describe('ConnectionDetailPage — connection testing and activation', () => {
   it('shows verifying indicator while test is pending', () => {
     vi.mocked(useTestConnection).mockReturnValue({

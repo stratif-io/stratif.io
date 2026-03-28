@@ -23,6 +23,7 @@ function renderPanel(props: Partial<React.ComponentProps<typeof ResultsPanel>> =
     <ResultsPanel
       result={props.result ?? null}
       isRunning={props.isRunning ?? false}
+      hasRun={props.hasRun ?? false}
       history={props.history ?? []}
       onRestoreHistory={props.onRestoreHistory ?? vi.fn()}
     />
@@ -30,9 +31,17 @@ function renderPanel(props: Partial<React.ComponentProps<typeof ResultsPanel>> =
 }
 
 describe('ResultsPanel', () => {
-  it('shows placeholder when no result', () => {
-    renderPanel()
-    expect(screen.getByText('Run a query to see results.')).toBeInTheDocument()
+  it('shows placeholder when no result and query not yet run', () => {
+    renderPanel({ hasRun: false })
+    expect(screen.getByText('Run a query to see results')).toBeInTheDocument()
+  })
+
+  it('shows no results empty state when query ran but returned 0 rows', () => {
+    renderPanel({
+      hasRun: true,
+      result: { columns: [], rows: [], execution_time_ms: 5, error: null },
+    })
+    expect(screen.getByText('No results')).toBeInTheDocument()
   })
 
   it('shows Running message when isRunning is true', () => {

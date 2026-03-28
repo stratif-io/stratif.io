@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import * as XLSX from 'xlsx'
-import { Download, Columns3 } from 'lucide-react'
+import { Download, Columns3, Activity } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { formatDateParam } from '@/lib/utils'
 import { fetchRawEvents, fetchEvents, fetchFieldOptions } from '@/lib/api'
@@ -14,7 +14,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Button } from '@/components/ui/button'
 import { QueryError } from '@/components/ui/query-error'
+import { EmptyState } from '@/components/ui/empty-state'
 import { PageTransition } from '@/components/layout/PageTransition'
+import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { SPACING, QUERY_STALE_TIME } from '@/lib/constants'
 import { DevCard } from '@/components/dev'
 import { EventsTable, buildDimCols, defaultVisibility } from '@/components/events-table/EventsTable'
@@ -267,79 +269,88 @@ export function EventsPage() {
 
   return (
     <PageTransition>
-      <div className={SPACING.page}>
-        {/* Page-level toolbar */}
-        <div className="flex items-center gap-2 mb-3">
-          <div className="flex items-center gap-1.5">
-            <Columns3 className="h-4 w-4 text-muted-foreground" />
-            <FilterSelect
-              mode="multi"
-              searchable
-              tree={true}
-              options={allColOptions}
-              value={visibleColIds}
-              onChange={handleColVisibilityFromSelect}
-              placeholder="Columns"
-              className="h-8 text-xs"
-            />
+      <NoConnectionGuard>
+        <div className={SPACING.page}>
+          {/* Page-level toolbar */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-1.5">
+              <Columns3 className="h-4 w-4 text-muted-foreground" />
+              <FilterSelect
+                mode="multi"
+                searchable
+                tree={true}
+                options={allColOptions}
+                value={visibleColIds}
+                onChange={handleColVisibilityFromSelect}
+                placeholder="Columns"
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+                CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportXLSX}>
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+                XLSX
+              </Button>
+            </div>
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleExportCSV}>
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              CSV
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExportXLSX}>
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              XLSX
-            </Button>
-          </div>
+          <DevCard sql={rawEventsData?.sql}>
+            <Card className="relative overflow-hidden">
+              <CardLoadingBar loading={isFetching} />
+              <CardContent className="p-0">
+                {isError ? (
+                  <QueryError error={error} className="py-16" />
+                ) : !isLoading && events.length === 0 ? (
+                  <EmptyState
+                    icon={Activity}
+                    title="No events found"
+                    description="Try expanding the date range or selecting a different event."
+                    className="py-16"
+                  />
+                ) : (
+                  <EventsTable
+                    data={events}
+                    total={rawEventsData?.total ?? 0}
+                    page={page}
+                    pageSize={limit}
+                    loading={isLoading}
+                    isFetching={isFetching}
+                    sortField={sortField}
+                    sortOrder={sortOrder}
+                    onSortChange={handleSortChange}
+                    eventNameFilter={eventNameFilter}
+                    onEventNameFilterChange={handleEventNameFilterChange}
+                    userIdFilter={userIdFilter}
+                    onUserIdFilterChange={handleUserIdFilterChange}
+                    columnFilters={columnFilters}
+                    onColumnFilterChange={handleColumnFilterChange}
+                    onColumnFilterClear={handleColumnFilterClear}
+                    filterFields={filterFields}
+                    customProperties={customProperties}
+                    filterOptions={mergedFilterOptions}
+                    allEventNames={allEventNames}
+                    onPageChange={setPage}
+                    onUserClick={setTimelineUserId}
+                    connectionId={activeConnectionId}
+                    colVisibility={colVisibility}
+                    onColumnVisibilityChange={setColVisibility}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </DevCard>
         </div>
-        <DevCard sql={rawEventsData?.sql}>
-          <Card className="relative overflow-hidden">
-            <CardLoadingBar loading={isFetching} />
-            <CardContent className="p-0">
-              {isError ? (
-                <QueryError error={error} className="py-16" />
-              ) : (
-                <EventsTable
-                  data={events}
-                  total={rawEventsData?.total ?? 0}
-                  page={page}
-                  pageSize={limit}
-                  loading={isLoading}
-                  isFetching={isFetching}
-                  sortField={sortField}
-                  sortOrder={sortOrder}
-                  onSortChange={handleSortChange}
-                  eventNameFilter={eventNameFilter}
-                  onEventNameFilterChange={handleEventNameFilterChange}
-                  userIdFilter={userIdFilter}
-                  onUserIdFilterChange={handleUserIdFilterChange}
-                  columnFilters={columnFilters}
-                  onColumnFilterChange={handleColumnFilterChange}
-                  onColumnFilterClear={handleColumnFilterClear}
-                  filterFields={filterFields}
-                  customProperties={customProperties}
-                  filterOptions={mergedFilterOptions}
-                  allEventNames={allEventNames}
-                  onPageChange={setPage}
-                  onUserClick={setTimelineUserId}
-                  connectionId={activeConnectionId}
-                  colVisibility={colVisibility}
-                  onColumnVisibilityChange={setColVisibility}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </DevCard>
-      </div>
 
-      <UserTimelineModal
-        userId={timelineUserId}
-        connectionId={activeConnectionId}
-        open={timelineUserId !== null}
-        onClose={() => setTimelineUserId(null)}
-      />
+        <UserTimelineModal
+          userId={timelineUserId}
+          connectionId={activeConnectionId}
+          open={timelineUserId !== null}
+          onClose={() => setTimelineUserId(null)}
+        />
+      </NoConnectionGuard>
     </PageTransition>
   )
 }

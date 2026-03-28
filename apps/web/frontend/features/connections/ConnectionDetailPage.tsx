@@ -11,6 +11,7 @@ import { useAppStore } from '@/stores'
 import { ConnectionConfigTab } from './components/ConnectionConfigTab'
 import { SchemaConfigTab } from './components/SchemaConfigTab'
 import { FilterConfigTab } from './components/FilterConfigTab'
+import { ConnectionWizardProgress } from './components/ConnectionWizardProgress'
 
 type Tab = 'connection' | 'schema' | 'filters'
 
@@ -34,6 +35,7 @@ export function ConnectionDetailPage() {
   const [tab, setTab] = useState<Tab>('connection')
   const setActiveConnectionId = useAppStore((s) => s.setActiveConnectionId)
   const autoTest = useTestConnection()
+  const isWizardMode = !connection?.schema_config
 
   useEffect(() => {
     if (!connection) return
@@ -114,28 +116,52 @@ export function ConnectionDetailPage() {
 
       <Separator className="my-4" />
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b mb-6">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={cn(
-              'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-              tab === t.id
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {isWizardMode ? (
+        <>
+          <ConnectionWizardProgress currentStep={tab} />
 
-      {/* Tab content */}
-      {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
-      {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
-      {tab === 'filters' && <FilterConfigTab connId={connection.id} />}
+          {/* Tab content */}
+          {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
+          {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
+          {tab === 'filters' && <FilterConfigTab connId={connection.id} />}
+
+          {/* Wizard navigation */}
+          <div className="mt-6 flex justify-end">
+            {tab === 'connection' && (
+              <Button onClick={() => setTab('schema')}>Next: Configure Schema →</Button>
+            )}
+            {tab === 'schema' && (
+              <Button onClick={() => setTab('filters')}>Next: Configure Filters →</Button>
+            )}
+            {tab === 'filters' && <Button onClick={() => navigate('/connections')}>Done →</Button>}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Tabs */}
+          <div className="flex gap-1 border-b mb-6">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={cn(
+                  'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+                  tab === t.id
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
+          {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
+          {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
+          {tab === 'filters' && <FilterConfigTab connId={connection.id} />}
+        </>
+      )}
     </div>
   )
 }
