@@ -1,11 +1,11 @@
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import { ChevronDown, Check, Loader2, X } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
 import categoriesConfig from '@/config/dimension-categories.json'
-import type { DimensionCategoryConfig } from '@/types'
+import type { DimensionCategoryConfig, DimensionOption } from '@/types'
 
 const CATEGORIES = categoriesConfig as DimensionCategoryConfig[]
 
@@ -66,18 +66,13 @@ export function FilterSelect({
     return options.find((o) => o.value === selectedValues[0])?.label ?? selectedValues[0]
   })()
 
-  const groups = tree
-    ? (() => {
-        const raw = groupDimensionsByCategory(
-          options.map((o) => ({ value: o.value, label: o.label, category: o.category })),
-          CATEGORIES
-        )
-        // Sort groups by first appearance of any of their dimensions in the options array
-        const firstIndex = (g: (typeof raw)[0]) =>
-          Math.min(...g.dimensions.map((d) => options.findIndex((o) => o.value === d.value)))
-        return [...raw].sort((a, b) => firstIndex(a) - firstIndex(b))
-      })()
-    : []
+  const groups = useMemo(() => {
+    if (!tree) return []
+    const raw = groupDimensionsByCategory(options as DimensionOption[], CATEGORIES)
+    const firstIndex = (g: (typeof raw)[0]) =>
+      Math.min(...g.dimensions.map((d) => options.findIndex((o) => o.value === d.value)))
+    return [...raw].sort((a, b) => firstIndex(a) - firstIndex(b))
+  }, [tree, options])
 
   function handleOpenChange(next: boolean) {
     if (next && tree) {
@@ -118,18 +113,56 @@ export function FilterSelect({
   const hasValue = selectedValues.length > 0
 
   // For tree search mode: group the filtered results by category
-  const searchGrouped = search
-    ? groups
-        .map((g) => ({
-          ...g,
-          dimensions: g.dimensions.filter((d) =>
-            d.label.toLowerCase().includes(search.toLowerCase())
-          ),
-        }))
-        .filter((g) => g.dimensions.length > 0)
-    : []
+  const searchGrouped = useMemo(
+    () =>
+      search
+        ? groups
+            .map((g) => ({
+              ...g,
+              dimensions: g.dimensions.filter((d) =>
+                d.label.toLowerCase().includes(search.toLowerCase())
+              ),
+            }))
+            .filter((g) => g.dimensions.length > 0)
+        : [],
+    [groups, search]
+  )
 
-  const activeGroup = groups.find((g) => g.category.id === activeCategory)
+  const activeGroup = useMemo(
+    () => groups.find((g) => g.category.id === activeCategory),
+    [groups, activeCategory]
+  )
+
+  function renderColumnButton(dim: DimensionOption) {
+    const opt = options.find((o) => o.value === dim.value)!
+    const isDisabled = opt.disabled ?? false
+    const isSelected = selectedValues.includes(dim.value)
+    return (
+      <button
+        key={dim.value}
+        type="button"
+        disabled={isDisabled}
+        className={cn(
+          'w-full text-left px-3 py-1.5 text-sm truncate flex items-center gap-2',
+          'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
+          isSelected && 'bg-primary/10 text-primary font-medium',
+          isDisabled && 'opacity-40 cursor-not-allowed pointer-events-none'
+        )}
+        onClick={() => handleSelect(opt)}
+      >
+        {mode === 'multi' && (
+          <span
+            className={cn(
+              'h-3.5 w-3.5 shrink-0 rounded-sm border',
+              isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+            )}
+          />
+        )}
+        {mode === 'single' && isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+        {dim.label}
+      </button>
+    )
+  }
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -203,40 +236,7 @@ export function FilterSelect({
                       <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-3 py-1 sticky top-0 bg-popover">
                         {group.category.label}
                       </div>
-                      {group.dimensions.map((dim) => {
-                        const opt = options.find((o) => o.value === dim.value)
-                        const isDisabled = opt?.disabled ?? false
-                        const isSelected = selectedValues.includes(dim.value)
-                        return (
-                          <button
-                            key={dim.value}
-                            type="button"
-                            disabled={isDisabled}
-                            className={cn(
-                              'w-full text-left px-3 py-1.5 text-sm truncate flex items-center gap-2',
-                              'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
-                              isSelected && 'bg-primary/10 text-primary font-medium',
-                              isDisabled && 'opacity-40 cursor-not-allowed pointer-events-none'
-                            )}
-                            onClick={() => opt && handleSelect(opt)}
-                          >
-                            {mode === 'multi' && (
-                              <span
-                                className={cn(
-                                  'h-3.5 w-3.5 shrink-0 rounded-sm border',
-                                  isSelected
-                                    ? 'bg-primary border-primary'
-                                    : 'border-muted-foreground/40'
-                                )}
-                              />
-                            )}
-                            {mode === 'single' && isSelected && (
-                              <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                            )}
-                            {dim.label}
-                          </button>
-                        )
-                      })}
+                      {group.dimensions.map((dim) => renderColumnButton(dim))}
                     </div>
                   ))
                 )}
@@ -245,7 +245,7 @@ export function FilterSelect({
               /* Two-panel mode */
               <div className="flex max-h-52">
                 {/* Left panel: categories */}
-                <div className="w-28 flex-shrink-0 bg-muted/40 overflow-y-auto border-r">
+                <div className="w-28 shrink-0 bg-muted/40 overflow-y-auto border-r">
                   {groups.map((group) => {
                     const isActive = group.category.id === activeCategory
                     const categorySelectedCount = group.dimensions.filter((d) =>
@@ -283,40 +283,7 @@ export function FilterSelect({
                 {/* Right panel: columns */}
                 <div className="flex-1 overflow-y-auto">
                   {activeGroup ? (
-                    activeGroup.dimensions.map((dim) => {
-                      const opt = options.find((o) => o.value === dim.value)
-                      const isDisabled = opt?.disabled ?? false
-                      const isSelected = selectedValues.includes(dim.value)
-                      return (
-                        <button
-                          key={dim.value}
-                          type="button"
-                          disabled={isDisabled}
-                          className={cn(
-                            'w-full text-left px-3 py-1.5 text-sm truncate flex items-center gap-2',
-                            'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
-                            isSelected && 'bg-primary/10 text-primary font-medium',
-                            isDisabled && 'opacity-40 cursor-not-allowed pointer-events-none'
-                          )}
-                          onClick={() => opt && handleSelect(opt)}
-                        >
-                          {mode === 'multi' && (
-                            <span
-                              className={cn(
-                                'h-3.5 w-3.5 shrink-0 rounded-sm border',
-                                isSelected
-                                  ? 'bg-primary border-primary'
-                                  : 'border-muted-foreground/40'
-                              )}
-                            />
-                          )}
-                          {mode === 'single' && isSelected && (
-                            <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                          )}
-                          {dim.label}
-                        </button>
-                      )
-                    })
+                    activeGroup.dimensions.map((dim) => renderColumnButton(dim))
                   ) : (
                     <p className="px-3 py-4 text-xs text-muted-foreground text-center">
                       No options
