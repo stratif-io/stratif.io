@@ -10,14 +10,13 @@ import {
   useFilterOptions,
   useSchemaConfig,
 } from '@/features/connections/hooks/useConnectionsData'
-import { Card, CardContent } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Button } from '@/components/ui/button'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
-import { SPACING, QUERY_STALE_TIME } from '@/lib/constants'
+import { QUERY_STALE_TIME } from '@/lib/constants'
 import { DevCard } from '@/components/dev'
 import { EventsTable, buildDimCols, defaultVisibility } from '@/components/events-table/EventsTable'
 import { FilterSelect } from '@/components/FilterSelect'
@@ -270,9 +269,9 @@ export function EventsPage() {
   return (
     <PageTransition>
       <NoConnectionGuard>
-        <div className={SPACING.page}>
-          {/* Page-level toolbar */}
-          <div className="flex items-center gap-2 mb-3">
+        <div className="flex h-full flex-col">
+          {/* Toolbar */}
+          <div className="flex items-center gap-2 px-3 py-2 border-b shrink-0">
             <div className="flex items-center gap-1.5">
               <Columns3 className="h-4 w-4 text-muted-foreground" />
               <FilterSelect
@@ -297,51 +296,51 @@ export function EventsPage() {
               </Button>
             </div>
           </div>
-          <DevCard sql={rawEventsData?.sql}>
-            <Card className="relative overflow-hidden">
-              <CardLoadingBar loading={isFetching} />
-              <CardContent className="p-0">
-                {isError ? (
-                  <QueryError error={error} className="py-16" />
-                ) : !isLoading && events.length === 0 ? (
-                  <EmptyState
-                    icon={Activity}
-                    title="No events found"
-                    description="Try expanding the date range or selecting a different event."
-                    className="py-16"
-                  />
-                ) : (
-                  <EventsTable
-                    data={events}
-                    total={rawEventsData?.total ?? 0}
-                    page={page}
-                    pageSize={limit}
-                    loading={isLoading}
-                    isFetching={isFetching}
-                    sortField={sortField}
-                    sortOrder={sortOrder}
-                    onSortChange={handleSortChange}
-                    eventNameFilter={eventNameFilter}
-                    onEventNameFilterChange={handleEventNameFilterChange}
-                    userIdFilter={userIdFilter}
-                    onUserIdFilterChange={handleUserIdFilterChange}
-                    columnFilters={columnFilters}
-                    onColumnFilterChange={handleColumnFilterChange}
-                    onColumnFilterClear={handleColumnFilterClear}
-                    filterFields={filterFields}
-                    customProperties={customProperties}
-                    filterOptions={mergedFilterOptions}
-                    allEventNames={allEventNames}
-                    onPageChange={setPage}
-                    onUserClick={setTimelineUserId}
-                    connectionId={activeConnectionId}
-                    colVisibility={colVisibility}
-                    onColumnVisibilityChange={setColVisibility}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </DevCard>
+
+          {/* Content */}
+          <div className="flex-1 overflow-hidden relative">
+            <CardLoadingBar loading={isFetching} />
+            <DevCard sql={rawEventsData?.sql}>
+              {isError ? (
+                <QueryError error={error} className="py-16" />
+              ) : !isLoading && events.length === 0 ? (
+                <EmptyState
+                  icon={Activity}
+                  title="No events found"
+                  description="Try expanding the date range or selecting a different event."
+                  className="py-16"
+                />
+              ) : (
+                <EventsTable
+                  data={events}
+                  total={rawEventsData?.total ?? 0}
+                  page={page}
+                  pageSize={limit}
+                  loading={isLoading}
+                  isFetching={isFetching}
+                  sortField={sortField}
+                  sortOrder={sortOrder}
+                  onSortChange={handleSortChange}
+                  eventNameFilter={eventNameFilter}
+                  onEventNameFilterChange={handleEventNameFilterChange}
+                  userIdFilter={userIdFilter}
+                  onUserIdFilterChange={handleUserIdFilterChange}
+                  columnFilters={columnFilters}
+                  onColumnFilterChange={handleColumnFilterChange}
+                  onColumnFilterClear={handleColumnFilterClear}
+                  filterFields={filterFields}
+                  customProperties={customProperties}
+                  filterOptions={mergedFilterOptions}
+                  allEventNames={allEventNames}
+                  onPageChange={setPage}
+                  onUserClick={setTimelineUserId}
+                  connectionId={activeConnectionId}
+                  colVisibility={colVisibility}
+                  onColumnVisibilityChange={setColVisibility}
+                />
+              )}
+            </DevCard>
+          </div>
         </div>
 
         <UserTimelineModal
