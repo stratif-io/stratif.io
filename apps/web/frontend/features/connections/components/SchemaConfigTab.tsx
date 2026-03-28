@@ -1,9 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
-import { Plus, Trash2, ScanSearch, FolderSearch } from 'lucide-react'
+import {
+  Plus,
+  Trash2,
+  ScanSearch,
+  FolderSearch,
+  Lock,
+  Globe,
+  Chrome,
+  Monitor,
+  Building,
+  Tag,
+  Layers,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { SaveStatus } from '@/components/ui/save-status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -17,13 +31,22 @@ import {
   useSchemaConfig,
   useUpsertSchemaConfig,
   useDetectSchema,
+  useFilterConfig,
+  useUpsertFilterConfig,
 } from '../hooks/useConnectionsData'
 import { TableBrowserPicker } from './TableBrowserPicker'
 import dimensionCategories from '@/config/dimension-categories.json'
 import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
-import type { CustomProperty, PropertyType, DimensionCategoryConfig } from '@/types'
+import type { CustomProperty, PropertyType, DimensionCategoryConfig, FilterField } from '@/types'
 
 const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
+
+const ICON_OPTIONS = ['Globe', 'Chrome', 'Monitor', 'Building', 'Tag', 'Layers'] as const
+const ICON_MAP: Record<string, LucideIcon> = { Globe, Chrome, Monitor, Building, Tag, Layers }
+
+function defaultLabel(field: string) {
+  return field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ')
+}
 
 function CategoryPicker({
   value,
@@ -81,6 +104,8 @@ export function SchemaConfigTab({ connId }: Props) {
   const { data, isLoading, isError } = useSchemaConfig(connId)
   const upsert = useUpsertSchemaConfig(connId)
   const detect = useDetectSchema(connId)
+  const { data: filterData, isLoading: filterLoading } = useFilterConfig(connId)
+  const upsertFilter = useUpsertFilterConfig(connId)
   const [browseOpen, setBrowseOpen] = useState(false)
 
   const [userIdField, setUserIdField] = useState('user_id')
@@ -90,7 +115,12 @@ export function SchemaConfigTab({ connId }: Props) {
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30)
   const [customProps, setCustomProps] = useState<CustomProperty[]>([])
 
+  const [enabledFields, setEnabledFields] = useState<
+    Record<string, { label: string; icon: string }>
+  >({})
+
   const initialized = useRef(false)
+  const filterInitialized = useRef(false)
 
   useEffect(() => {
     if (initialized.current) return
@@ -106,7 +136,19 @@ export function SchemaConfigTab({ connId }: Props) {
     initialized.current = true
   }, [data, isLoading, isError])
 
-  // Auto-save on any field change (debounced)
+  useEffect(() => {
+    if (filterInitialized.current || filterLoading) return
+    if (filterData) {
+      const map: Record<string, { label: string; icon: string }> = {}
+      for (const ff of filterData.filter_fields) {
+        map[ff.field] = { label: ff.label, icon: ff.icon }
+      }
+      setEnabledFields(map)
+    }
+    filterInitialized.current = true
+  }, [filterData, filterLoading])
+
+  // Auto-save schema on any field change (debounced)
   useEffect(() => {
     if (!initialized.current) return
     const timer = setTimeout(() => {
@@ -123,6 +165,19 @@ export function SchemaConfigTab({ connId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userIdField, timestampField, eventNameField, eventsTable, sessionTimeoutMinutes, customProps])
 
+  // Auto-save filter (debounced 600ms)
+  useEffect(() => {
+    if (!filterInitialized.current) return
+    const timer = setTimeout(() => {
+      const filter_fields: FilterField[] = Object.entries(enabledFields).map(
+        ([field, { label, icon }]) => ({ field, label, icon })
+      )
+      upsertFilter.mutate({ filter_fields })
+    }, 600)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabledFields])
+
   function addProp() {
     setCustomProps((prev) => [...prev, { name: '', path: '', type: 'string', category: undefined }])
   }
@@ -133,6 +188,22 @@ export function SchemaConfigTab({ connId }: Props) {
 
   function updateProp(idx: number, patch: Partial<CustomProperty>) {
     setCustomProps((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
+  }
+
+  function toggleFilter(field: string) {
+    setEnabledFields((prev) => {
+      const next = { ...prev }
+      if (next[field]) {
+        delete next[field]
+      } else {
+        next[field] = { label: defaultLabel(field), icon: 'Tag' }
+      }
+      return next
+    })
+  }
+
+  function setFilterIcon(field: string, icon: string) {
+    setEnabledFields((prev) => ({ ...prev, [field]: { ...prev[field], icon } }))
   }
 
   function handleDetect() {
@@ -170,7 +241,7 @@ export function SchemaConfigTab({ connId }: Props) {
     })
   }
 
-  if (isLoading) return <LoadingState message="Loading schema config…" />
+  if (isLoading || filterLoading) return <LoadingState message="Loading schema config…" />
 
   return (
     <div className="space-y-6">
@@ -274,6 +345,53 @@ export function SchemaConfigTab({ connId }: Props) {
           </div>
         </div>
 
+        {/* Filter toggles for required fields */}
+        <div className="space-y-1 mt-3 border rounded-md divide-y">
+          {[
+            { field: userIdField, label: 'User ID' },
+            { field: timestampField, label: 'Timestamp' },
+            { field: eventNameField, label: 'Event' },
+          ].map(({ field, label }) => {
+            const isEnabled = field in enabledFields
+            const IconComponent = isEnabled ? (ICON_MAP[enabledFields[field]?.icon] ?? Tag) : null
+            return (
+              <div key={label} className="flex items-center gap-3 px-3 py-2">
+                <span className="font-mono text-xs text-muted-foreground flex-1">{field}</span>
+                <Checkbox checked={isEnabled} onCheckedChange={() => toggleFilter(field)} />
+                {isEnabled && IconComponent ? (
+                  <Select
+                    value={enabledFields[field].icon}
+                    onValueChange={(v) => setFilterIcon(field, v)}
+                  >
+                    <SelectTrigger className="h-7 w-24 text-xs">
+                      <div className="flex items-center gap-1">
+                        <IconComponent className="h-3 w-3" />
+                        <span className="text-xs">{enabledFields[field].icon}</span>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ICON_OPTIONS.map((icon) => {
+                        const Icon = ICON_MAP[icon]
+                        return (
+                          <SelectItem key={icon} value={icon}>
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-3.5 w-3.5" />
+                              {icon}
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className="text-xs text-muted-foreground w-24 text-center">—</span>
+                )}
+                <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+            )
+          })}
+        </div>
+
         <div className="space-y-1.5 max-w-xs">
           <Label htmlFor="session_timeout_minutes">Session Timeout (minutes)</Label>
           <Input
@@ -307,8 +425,8 @@ export function SchemaConfigTab({ connId }: Props) {
           </p>
         ) : (
           <div className="space-y-2">
-            <div className="hidden sm:grid grid-cols-[1fr_1.5fr_100px_110px_32px] gap-2 px-1">
-              {['Name', 'Path', 'Type', 'Category', ''].map((h) => (
+            <div className="hidden sm:grid grid-cols-[1fr_1.5fr_100px_110px_36px_auto_32px] gap-2 px-1">
+              {['Name', 'Path', 'Type', 'Category', 'Filter', 'Icon', ''].map((h) => (
                 <span key={h} className="text-xs font-medium text-muted-foreground">
                   {h}
                 </span>
@@ -317,57 +435,101 @@ export function SchemaConfigTab({ connId }: Props) {
 
             {[...customProps.map((prop, idx) => ({ prop, idx }))]
               .sort((a, b) => a.prop.name.localeCompare(b.prop.name))
-              .map(({ prop, idx }) => (
-                <div
-                  key={idx}
-                  className="grid grid-cols-[1fr_1.5fr_100px_110px_32px] gap-2 items-center"
-                >
-                  <Input
-                    value={prop.name}
-                    onChange={(e) => updateProp(idx, { name: e.target.value })}
-                    placeholder="campaign_source"
-                    className="h-8 text-sm"
-                  />
-                  <Input
-                    value={prop.path}
-                    onChange={(e) => updateProp(idx, { path: e.target.value })}
-                    placeholder="properties.campaign.source"
-                    className="h-8 text-sm font-mono"
-                  />
-                  <Select
-                    value={prop.type}
-                    onValueChange={(v) => updateProp(idx, { type: v as PropertyType })}
+              .map(({ prop, idx }) => {
+                const isEnabled = prop.name in enabledFields
+                const IconComponent = isEnabled
+                  ? (ICON_MAP[enabledFields[prop.name]?.icon] ?? Tag)
+                  : null
+                return (
+                  <div
+                    key={idx}
+                    className="grid grid-cols-[1fr_1.5fr_100px_110px_36px_auto_32px] gap-2 items-center"
                   >
-                    <SelectTrigger className="h-8 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PROPERTY_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <CategoryPicker
-                    value={prop.category ?? null}
-                    onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => removeProp(idx)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
+                    <Input
+                      value={prop.name}
+                      onChange={(e) => updateProp(idx, { name: e.target.value })}
+                      placeholder="campaign_source"
+                      className="h-8 text-sm"
+                    />
+                    <Input
+                      value={prop.path}
+                      onChange={(e) => updateProp(idx, { path: e.target.value })}
+                      placeholder="properties.campaign.source"
+                      className="h-8 text-sm font-mono"
+                    />
+                    <Select
+                      value={prop.type}
+                      onValueChange={(v) => updateProp(idx, { type: v as PropertyType })}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROPERTY_TYPES.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <CategoryPicker
+                      value={prop.category ?? null}
+                      onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
+                    />
+                    <div className="flex items-center justify-center">
+                      <Checkbox
+                        checked={isEnabled}
+                        onCheckedChange={() => toggleFilter(prop.name)}
+                      />
+                    </div>
+                    {isEnabled && IconComponent ? (
+                      <Select
+                        value={enabledFields[prop.name].icon}
+                        onValueChange={(v) => setFilterIcon(prop.name, v)}
+                      >
+                        <SelectTrigger className="h-7 w-20 text-xs">
+                          <div className="flex items-center gap-1">
+                            <IconComponent className="h-3 w-3" />
+                            <span className="text-xs">{enabledFields[prop.name].icon}</span>
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ICON_OPTIONS.map((icon) => {
+                            const Icon = ICON_MAP[icon]
+                            return (
+                              <SelectItem key={icon} value={icon}>
+                                <div className="flex items-center gap-2">
+                                  <Icon className="h-3.5 w-3.5" />
+                                  {icon}
+                                </div>
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className="text-xs text-muted-foreground text-center">—</span>
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeProp(idx)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )
+              })}
           </div>
         )}
       </div>
 
-      {upsert.isError && <p className="text-sm text-destructive">{upsert.error?.message}</p>}
+      {(upsert.isError || upsertFilter.isError) && (
+        <p className="text-sm text-destructive">
+          {upsert.error?.message ?? upsertFilter.error?.message}
+        </p>
+      )}
     </div>
   )
 }
