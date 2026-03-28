@@ -10,15 +10,13 @@ import { useConnection, useTestConnection } from './hooks/useConnectionsData'
 import { useAppStore } from '@/stores'
 import { ConnectionConfigTab } from './components/ConnectionConfigTab'
 import { SchemaConfigTab } from './components/SchemaConfigTab'
-import { FilterConfigTab } from './components/FilterConfigTab'
 import { ConnectionWizardProgress } from './components/ConnectionWizardProgress'
 
-type Tab = 'connection' | 'schema' | 'filters'
+type Tab = 'connection' | 'schema'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'connection', label: 'Connection' },
   { id: 'schema', label: 'Schema Mapping' },
-  { id: 'filters', label: 'Global Filters' },
 ]
 
 const DB_TYPE_LABELS: Record<string, string> = {
@@ -123,17 +121,13 @@ export function ConnectionDetailPage() {
           {/* Tab content */}
           {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
           {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
-          {tab === 'filters' && <FilterConfigTab connId={connection.id} />}
 
           {/* Wizard navigation */}
           <div className="mt-6 flex justify-end">
             {tab === 'connection' && (
               <Button onClick={() => setTab('schema')}>Next: Configure Schema →</Button>
             )}
-            {tab === 'schema' && (
-              <Button onClick={() => setTab('filters')}>Next: Configure Filters →</Button>
-            )}
-            {tab === 'filters' && <Button onClick={() => navigate('/connections')}>Done →</Button>}
+            {tab === 'schema' && <Button onClick={() => navigate('/connections')}>Done →</Button>}
           </div>
         </>
       ) : (
@@ -159,7 +153,6 @@ export function ConnectionDetailPage() {
           {/* Tab content */}
           {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
           {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
-          {tab === 'filters' && <FilterConfigTab connId={connection.id} />}
         </>
       )}
     </div>

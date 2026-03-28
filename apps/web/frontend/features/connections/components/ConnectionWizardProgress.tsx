@@ -1,12 +1,11 @@
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
 
-type WizardStep = 'connection' | 'schema' | 'filters'
+type WizardStep = 'connection' | 'schema'
 
 const STEPS: { id: WizardStep; label: string }[] = [
   { id: 'connection', label: 'Connect' },
   { id: 'schema', label: 'Schema' },
-  { id: 'filters', label: 'Filters' },
 ]
 
 interface Props {

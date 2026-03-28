@@ -72,7 +72,7 @@ describe('ConnectionDetailPage — wizard mode', () => {
     renderPage()
     expect(screen.getByTestId('step-connection')).toBeInTheDocument()
     expect(screen.getByTestId('step-schema')).toBeInTheDocument()
-    expect(screen.getByTestId('step-filters')).toBeInTheDocument()
+    expect(screen.queryByTestId('step-filters')).not.toBeInTheDocument()
   })
 
   it('does not show wizard progress when schema_config is set (returning user)', () => {
@@ -101,7 +101,7 @@ describe('ConnectionDetailPage — wizard mode', () => {
 
     renderPage()
     expect(screen.getByText('Schema Mapping')).toBeInTheDocument()
-    expect(screen.getByText('Global Filters')).toBeInTheDocument()
+    expect(screen.queryByText('Global Filters')).not.toBeInTheDocument()
   })
 
   it('shows Next: Configure Schema button on connection step in wizard mode', () => {
