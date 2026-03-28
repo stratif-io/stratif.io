@@ -10,6 +10,7 @@ import {
 } from '../hooks/useConnectionsData'
 import type { Connection, DbType } from '@/types'
 import { CheckCircle, XCircle, Loader2, Copy, Check, Eye, EyeOff } from 'lucide-react'
+import { SaveStatus } from '@/components/ui/save-status'
 
 interface Props {
   connection: Connection
@@ -524,10 +525,18 @@ export function ConnectionConfigTab({ connection }: Props) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Connection Name</h3>
-          {update.isPending && <span className="text-xs text-muted-foreground">Saving…</span>}
-          {update.isSuccess && !update.isPending && (
-            <span className="text-xs text-success">Saved</span>
-          )}
+          <SaveStatus
+            status={
+              update.isPending
+                ? 'saving'
+                : update.isSuccess
+                  ? 'saved'
+                  : update.isError
+                    ? 'error'
+                    : 'idle'
+            }
+            onRetry={() => update.mutate({ name: name.trim() })}
+          />
         </div>
         <Input
           value={name}
