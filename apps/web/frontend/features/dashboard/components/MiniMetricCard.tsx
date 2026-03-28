@@ -1,4 +1,5 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
+import { AreaChart, Area, ResponsiveContainer } from 'recharts'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
@@ -10,8 +11,8 @@ export interface MiniMetricCardProps {
   value: string // pre-formatted fallback
   rawValue?: number // raw number for count-up animation
   pctChange: number | null // null → show "—"
-  sparklineValues?: number[] // kept for API compatibility, unused
-  color?: string // kept for API compatibility, unused
+  sparklineValues?: number[]
+  color?: string
   isHero?: boolean // highlight when this metric is the hero
   onClick?: () => void
   loading?: boolean
@@ -28,6 +29,8 @@ export const MiniMetricCard = memo(function MiniMetricCard({
   value,
   rawValue,
   pctChange,
+  sparklineValues,
+  color,
   isHero,
   onClick,
   loading,
@@ -38,6 +41,10 @@ export const MiniMetricCard = memo(function MiniMetricCard({
   decimalsOverride = 0,
   staggerIndex = 0,
 }: MiniMetricCardProps) {
+  const sparklineData = useMemo(
+    () => (sparklineValues ?? []).map((v) => ({ v })),
+    [sparklineValues]
+  )
   const animatedTarget = loading ? 0 : (rawValue ?? 0)
   const animatedValue = useFormattedCountUp(animatedTarget, {
     duration: 700,
@@ -71,6 +78,26 @@ export const MiniMetricCard = memo(function MiniMetricCard({
       )}
     >
       <CardLoadingBar loading={loading} />
+
+      {/* Sparkline — subtle background */}
+      {sparklineData.length > 1 && !loading && (
+        <div className="absolute bottom-0 left-0 right-0 h-10 opacity-20 pointer-events-none">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={sparklineData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+              <Area
+                type="monotone"
+                dataKey="v"
+                stroke={color ?? 'hsl(var(--primary))'}
+                fill={color ?? 'hsl(var(--primary))'}
+                strokeWidth={1.5}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       <div className="flex items-center gap-1 mb-1">
         <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {label}
