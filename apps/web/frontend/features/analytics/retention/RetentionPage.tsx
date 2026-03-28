@@ -128,8 +128,7 @@ export function RetentionPage() {
         <div className={SPACING.section}>
           {/* Header */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <h1 className="sr-only">Retention</h1>
-            <span className={TYPOGRAPHY.pageLabel}>Retention</span>
+            <h1 className={TYPOGRAPHY.pageLabel}>Retention</h1>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {/* Granularity toggle */}
               <div className="flex items-center border rounded-md p-1">

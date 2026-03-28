@@ -181,10 +181,7 @@ export function FunnelDetailPage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="sr-only">Conversion Funnel</h1>
-                <span className={TYPOGRAPHY.pageLabel} aria-hidden="true">
-                  Conversion Funnel
-                </span>
+                <h1 className={TYPOGRAPHY.pageLabel}>Conversion Funnel</h1>
                 <p className="text-muted-foreground mt-1 text-sm font-mono">
                   {events.length >= 2 ? events.join(' → ') : 'Configure steps below'}
                 </p>

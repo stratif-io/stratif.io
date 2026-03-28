@@ -98,8 +98,7 @@ export function TrendsPage() {
     <PageTransition>
       <div className={SPACING.page}>
         <div className={SPACING.section}>
-          <h1 className="sr-only">Trends</h1>
-          <span className={TYPOGRAPHY.pageLabel}>Trend Analysis</span>
+          <h1 className={TYPOGRAPHY.pageLabel}>Trend Analysis</h1>
 
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             {[

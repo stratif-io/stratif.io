@@ -49,16 +49,22 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead className="font-semibold text-foreground whitespace-nowrap">
+            <TableHead scope="col" className="font-semibold text-foreground whitespace-nowrap">
               Cohort
             </TableHead>
-            <TableHead className="font-semibold text-foreground text-right whitespace-nowrap">
+            <TableHead
+              scope="col"
+              className="font-semibold text-foreground text-right whitespace-nowrap"
+            >
               Users
             </TableHead>
-            <TableHead className="font-semibold text-foreground whitespace-nowrap">Trend</TableHead>
+            <TableHead scope="col" className="font-semibold text-foreground whitespace-nowrap">
+              Trend
+            </TableHead>
             {milestones.map((unit) => (
               <TableHead
                 key={unit}
+                scope="col"
                 className="font-semibold text-foreground text-center whitespace-nowrap"
               >
                 {milestoneLabel(unit, granularity)}
@@ -72,9 +78,9 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
             const sparkData = row.retention_series.slice(1)
             return (
               <TableRow key={idx} className="hover:bg-muted/20 transition-colors">
-                <TableCell className="font-medium whitespace-nowrap">
+                <TableHead scope="row" className="font-medium whitespace-nowrap">
                   {formatDate(row.cohort_date, granularity)}
-                </TableCell>
+                </TableHead>
                 <TableCell className="text-right tabular-nums text-muted-foreground whitespace-nowrap">
                   {row.cohort_size.toLocaleString()}
                 </TableCell>

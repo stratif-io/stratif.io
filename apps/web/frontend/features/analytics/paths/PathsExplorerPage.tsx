@@ -244,10 +244,7 @@ export function PathsExplorerPage() {
           {/* Header */}
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="sr-only">Path Explorer</h1>
-              <span className={TYPOGRAPHY.pageLabel} aria-hidden="true">
-                Path Explorer
-              </span>
+              <h1 className={TYPOGRAPHY.pageLabel}>Path Explorer</h1>
             </div>
             {totalPaths > 0 && (
               <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
