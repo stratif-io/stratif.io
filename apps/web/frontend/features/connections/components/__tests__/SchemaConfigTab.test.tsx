@@ -21,6 +21,7 @@ const mockFilters = {
 }
 
 function renderTab() {
+  const detectMutate = vi.fn()
   vi.mocked(hooks.useSchemaConfig).mockReturnValue({
     data: mockSchema,
     isLoading: false,
@@ -45,18 +46,19 @@ function renderTab() {
     error: null,
   } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
   vi.mocked(hooks.useDetectSchema).mockReturnValue({
-    mutate: vi.fn(),
+    mutate: detectMutate,
     isPending: false,
     isError: false,
     error: null,
   } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
 
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(
+  render(
     <QueryClientProvider client={qc}>
       <SchemaConfigTab connId="conn-1" />
     </QueryClientProvider>
   )
+  return { detectMutate }
 }
 
 describe('SchemaConfigTab — Setup section', () => {
@@ -65,14 +67,7 @@ describe('SchemaConfigTab — Setup section', () => {
     expect(screen.getByDisplayValue('events')).toBeInTheDocument()
   })
 
-  it('shows core field inputs with loaded values', () => {
-    renderTab()
-    expect(screen.getByDisplayValue('user_id')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('created_at')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('event_name')).toBeInTheDocument()
-  })
-
-  it('shows session timeout input with loaded value', () => {
+  it('shows session timeout input', () => {
     renderTab()
     expect(screen.getByDisplayValue('30')).toBeInTheDocument()
   })
@@ -81,16 +76,40 @@ describe('SchemaConfigTab — Setup section', () => {
     renderTab()
     expect(screen.getByRole('button', { name: /detect from schema/i })).toBeInTheDocument()
   })
+
+  it('does NOT show standalone text inputs for User ID, Timestamp, Event Name in Setup', () => {
+    renderTab()
+    // These used to be inputs in Setup — now they are Select dropdowns in the Properties table
+    expect(screen.queryByLabelText(/user id column/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/timestamp column/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/event name column/i)).not.toBeInTheDocument()
+  })
 })
 
-describe('SchemaConfigTab — Properties table', () => {
-  it('shows required field column names as read-only rows', () => {
+describe('SchemaConfigTab — Properties table required rows', () => {
+  it('shows "Field" and "Column" column headers', () => {
     renderTab()
+    expect(screen.getByText('Field')).toBeInTheDocument()
+    expect(screen.getByText('Column')).toBeInTheDocument()
+  })
+
+  it('shows semantic labels for required rows', () => {
+    renderTab()
+    expect(screen.getByText('User ID')).toBeInTheDocument()
+    expect(screen.getByText('Timestamp')).toBeInTheDocument()
+    expect(screen.getByText('Event Name')).toBeInTheDocument()
+  })
+
+  it('shows current column values as selected option text in required rows', () => {
+    renderTab()
+    // Radix Select renders the selected value as visible text
     expect(screen.getByText('user_id')).toBeInTheDocument()
     expect(screen.getByText('created_at')).toBeInTheDocument()
     expect(screen.getByText('event_name')).toBeInTheDocument()
   })
+})
 
+describe('SchemaConfigTab — Properties table', () => {
   it('shows custom property name in an editable input', () => {
     renderTab()
     expect(screen.getByDisplayValue('country')).toBeInTheDocument()
