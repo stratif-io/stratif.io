@@ -1,6 +1,7 @@
 import { memo, useState } from 'react'
 import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
+import { MetricCardSkeleton } from './MetricCardSkeleton'
 import { formatMetricValue, computePctChange } from '@/lib/format-metric'
 import type { MissionControlResponse } from '@/types'
 import type { TrendMetric, MetricTrend } from '../hooks/useMissionControlTrends'
@@ -99,6 +100,41 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   metricLoading,
 }: MissionControlGridProps) {
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
+
+  const allMetricKeys = METRIC_CONFIG.map((m) => m.key)
+  const isInitialLoading = allMetricKeys.every((key) => metricLoading[key] ?? true)
+
+  if (isInitialLoading) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
+        {/* LEFT: Hero skeleton */}
+        <MetricCardSkeleton />
+
+        {/* RIGHT: Mini skeletons in category layout */}
+        <div className="flex flex-col gap-5">
+          {CATEGORIES.map(({ label, metrics }) => (
+            <div key={label}>
+              <div className="h-3 w-16 rounded bg-muted animate-pulse mb-2" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {metrics.map((metricKey) => (
+                  <div
+                    key={metricKey}
+                    className={
+                      metricKey === 'dau_mau_ratio' || metricKey === 'total_events'
+                        ? 'col-span-2'
+                        : undefined
+                    }
+                  >
+                    <MetricCardSkeleton />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   const heroConfig = getConfig(heroMetric)
   const heroCurrentValue = data?.current[heroMetric as keyof typeof data.current] ?? 0
