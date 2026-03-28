@@ -39,15 +39,16 @@ const navGroups: NavGroup[] = [
       { title: 'Mission Control', href: '/dashboard', icon: LayoutDashboard },
       { title: 'Trends', href: '/trends', icon: TrendingUp },
       { title: 'Retention', href: '/retention', icon: Users },
-      { title: 'Paths', href: '/paths', icon: Route },
+      { title: 'Journey', href: '/paths', icon: Route },
     ],
   },
   {
-    title: 'Data',
+    title: 'Explore',
     icon: Database,
     items: [
       { title: 'Events', href: '/events', icon: Activity },
-      { title: 'Pivot Explorer', href: '/pivot', icon: Table },
+      { title: 'Pivot', href: '/pivot', icon: Table },
+      { title: 'SQL Studio', href: '/query-studio', icon: Terminal },
     ],
   },
   {
@@ -188,13 +189,6 @@ export function Sidebar() {
                   {group.title}
                 </p>
               </div>
-              {group.title === 'Configuration' && devMode && (
-                <NavLink
-                  item={{ title: 'Query Studio', href: '/query-studio', icon: Terminal }}
-                  collapsed={!sidebarOpen}
-                  onClick={handleMobileNavClick}
-                />
-              )}
               {group.items.map((item) => (
                 <NavLink
                   key={item.href}
