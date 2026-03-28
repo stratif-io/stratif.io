@@ -279,55 +279,43 @@ export function FunnelDetailPage() {
               {/* Summary cards */}
               {!isLoading && steps.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Started
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {firstStep?.users.toLocaleString() ?? '—'}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        people did &quot;{events[0]}&quot;
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      Started
+                    </div>
+                    <div className="text-2xl font-bold">
+                      {firstStep?.users.toLocaleString() ?? '—'}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      people did &quot;{events[0]}&quot;
+                    </p>
+                  </div>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Completed all steps
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {lastStep?.users.toLocaleString() ?? '—'}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {lastStep?.overall_conversion_rate}% of people who started
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      Completed all steps
+                    </div>
+                    <div className="text-2xl font-bold">
+                      {lastStep?.users.toLocaleString() ?? '—'}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {lastStep?.overall_conversion_rate}% of people who started
+                    </p>
+                  </div>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Biggest drop
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {worstStep ? worstStep.dropoff_users.toLocaleString() : '—'}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {worstStep
-                          ? `people left at "${worstStep.event}" (${worstStep.dropoff_rate}%)`
-                          : 'No drop-offs'}
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      Biggest drop
+                    </div>
+                    <div className="text-2xl font-bold">
+                      {worstStep ? worstStep.dropoff_users.toLocaleString() : '—'}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {worstStep
+                        ? `people left at "${worstStep.event}" (${worstStep.dropoff_rate}%)`
+                        : 'No drop-offs'}
+                    </p>
+                  </div>
                 </div>
               )}
 
