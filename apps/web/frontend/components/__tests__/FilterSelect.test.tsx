@@ -96,6 +96,20 @@ describe('FilterSelect', () => {
     expect(dialog).toHaveTextContent('Device')
   })
 
+  it('tree mode opens to the first category when no value is selected', async () => {
+    render(
+      <FilterSelect mode="single" tree options={treeOptions} value={null} onChange={vi.fn()} />
+    )
+    await userEvent.click(screen.getByRole('button'))
+    const dialog = screen.getByRole('dialog')
+    // 'user' is the first category — its columns should be visible in the right panel
+    expect(within(dialog).getByRole('button', { name: /user_id/i })).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: /user_country/i })).toBeInTheDocument()
+    // columns from other categories should NOT be visible
+    expect(within(dialog).queryByRole('button', { name: /ts_event/i })).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: /device_type/i })).not.toBeInTheDocument()
+  })
+
   it('tree mode opens to the category of the first selected value', async () => {
     render(
       <FilterSelect mode="single" tree options={treeOptions} value="ts_event" onChange={vi.fn()} />
