@@ -1,4 +1,6 @@
 """Unit tests for DemoSeeder generation helpers."""
+from datetime import datetime
+
 import pytest
 
 from seeders.seeder_demo import DemoSeeder, EVENTS, PLATFORMS
@@ -35,17 +37,16 @@ def test_user_has_required_fields(seeder):
 
 
 def test_generate_session_produces_events(seeder):
-    from datetime import datetime
     users = seeder._generate_users()
     events = seeder._generate_session(users[0], session_idx=0, session_start=datetime.now())
     assert len(events) > 0
 
 
 def test_session_events_have_required_columns(seeder):
-    from datetime import datetime
     users = seeder._generate_users()
     events = seeder._generate_session(users[0], session_idx=0, session_start=datetime.now())
     for row in events:
+        # Expected return contract: (user_id, session_id, event_name, timestamp, platform, properties)
         user_id, session_id, event_name, timestamp, platform, properties = row
         assert isinstance(user_id, str)
         assert isinstance(session_id, str)
@@ -55,14 +56,12 @@ def test_session_events_have_required_columns(seeder):
 
 
 def test_app_open_is_first_event_in_session(seeder):
-    from datetime import datetime
     users = seeder._generate_users()
     events = seeder._generate_session(users[0], session_idx=0, session_start=datetime.now())
     assert events[0][2] == "app_open"
 
 
 def test_app_close_is_last_event_in_session(seeder):
-    from datetime import datetime
     users = seeder._generate_users()
     events = seeder._generate_session(users[0], session_idx=0, session_start=datetime.now())
     assert events[-1][2] == "app_close"
@@ -70,7 +69,6 @@ def test_app_close_is_last_event_in_session(seeder):
 
 def test_new_user_session_includes_signup_and_onboarding(seeder):
     """First session for a new user should always include signup + onboarding events."""
-    from datetime import datetime
     # Force a new (non-returning) user
     users = [u for u in seeder._generate_users() if not u["is_returning"]]
     if not users:
