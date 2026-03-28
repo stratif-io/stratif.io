@@ -218,10 +218,10 @@ export function HeroMetricCard({
         </div>
 
         {/* Value */}
-        <div className="text-3xl font-bold tracking-tight leading-none">{displayValue}</div>
+        <div className="text-4xl font-bold tracking-tight leading-none">{displayValue}</div>
 
         {/* Pct badge + prev period */}
-        <div className="flex items-center gap-2 mt-1.5">
+        <div className="flex items-center gap-2 mt-2">
           <UITooltip>
             <TooltipTrigger asChild className="pointer-events-auto">
               {displayPct === null ? (
