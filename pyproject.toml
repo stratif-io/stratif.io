@@ -36,6 +36,7 @@ seed-duckdb = "seeders.seeder_duckdb:main"
 seed-sqlite = "seeders.seeder_sqlite:main"
 seed-postgres = "seeders.seeder_postgresql:main"
 seed-clickhouse = "seeders.seeder_clickhouse:main"
+seed-demo = "seeders.seeder_demo:main"
 
 [build-system]
 requires = ["hatchling"]
