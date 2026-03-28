@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/cabichahine/stratif.io/compare/v0.1.7...v0.1.8) (2026-03-28)
+
+
+### Bug Fixes
+
+* add apps/web/package.json to release-please extra-files and sync to v0.1.7 ([#90](https://github.com/cabichahine/stratif.io/issues/90)) ([cc0d168](https://github.com/cabichahine/stratif.io/commit/cc0d16899cbe0e2891463844cd7c32fc9edde698))
+
 ## [0.1.7](https://github.com/cabichahine/stratif.io/compare/v0.1.6...v0.1.7) (2026-03-28)
 
 
