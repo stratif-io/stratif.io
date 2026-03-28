@@ -217,7 +217,7 @@ export function FunnelDetailPage() {
                 {funnelSteps.length > 2 && (
                   <button
                     onClick={() => removeStep(index)}
-                    className="h-9 w-5 flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-accent/60 transition-colors ml-1"
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-accent/60 transition-colors ml-1 rounded"
                     aria-label={`Remove step ${index + 1}`}
                   >
                     <X className="h-3 w-3" />
