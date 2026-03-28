@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { DataTable } from '@/components/data-table'
 import { EventsTable } from '@/components/events-table/EventsTable'
 import { PivotTable } from '@/components/pivot-table/PivotTable'
+import { VirtualList } from '@/components/virtual-list/VirtualList'
+import { Pagination } from '@/components/shared/Pagination'
 import type { ColumnDef } from '@tanstack/react-table'
 
 interface SampleRow {
@@ -52,9 +55,55 @@ const eventsTableProps = {
   onUserClick: () => {},
 }
 
+const virtualItems = Array.from({ length: 50 }, (_, i) => ({
+  id: i,
+  label: `Item ${i + 1}`,
+  value: Math.floor(Math.random() * 1000),
+}))
+
+function PaginationDemo() {
+  const [page, setPage] = useState(1)
+  const pageSize = 10
+  const total = 142
+  const totalPages = Math.ceil(total / pageSize)
+  const from = (page - 1) * pageSize + 1
+  const to = Math.min(page * pageSize, total)
+  return (
+    <Pagination
+      page={page}
+      totalPages={totalPages}
+      from={from}
+      to={to}
+      total={total}
+      onPageChange={setPage}
+    />
+  )
+}
+
 export function DataSection() {
   return (
     <ComponentSection id="data" title="Data Display">
+      <ComponentRow label="VirtualList">
+        <div className="w-full border rounded-md overflow-hidden" style={{ height: 200 }}>
+          <VirtualList
+            items={virtualItems}
+            estimateSize={() => 36}
+            renderItem={(item) => (
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border text-sm">
+                <span>{item.label}</span>
+                <span className="text-muted-foreground tabular-nums">{item.value}</span>
+              </div>
+            )}
+          />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="Pagination">
+        <div className="w-full border rounded-md overflow-hidden">
+          <PaginationDemo />
+        </div>
+      </ComponentRow>
+
       <ComponentRow label="DataTable">
         <div className="w-full border rounded-md overflow-hidden">
           <DataTable columns={sampleColumns} data={sampleRows} />
