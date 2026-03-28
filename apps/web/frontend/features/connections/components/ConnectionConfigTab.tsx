@@ -54,13 +54,14 @@ export function MaskedInput({ id, name, placeholder, initialValue }: MaskedInput
         type="button"
         tabIndex={-1}
         onClick={() => setShow((s) => !s)}
+        aria-label={show ? 'Hide password' : 'Show password'}
         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
       >
         {show ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
       </button>
       {hasServerValue && (
         <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500" />
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-success" />
           Currently set — leave blank to keep
         </p>
       )}
