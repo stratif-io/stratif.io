@@ -11,8 +11,6 @@ import {
 import type { Connection, DbType } from '@/types'
 import { CheckCircle, XCircle, Loader2, Copy, Check, Eye, EyeOff } from 'lucide-react'
 
-const MASKED = '••••••••'
-
 interface Props {
   connection: Connection
 }
@@ -28,61 +26,43 @@ interface MaskedInputProps {
   initialValue: string | null // null = not set, MASKED = set but hidden
 }
 
-function MaskedInput({ id, name, placeholder, initialValue }: MaskedInputProps) {
-  // A field is "masked" if it has any value from the server (the backend returns
-  // a placeholder — currently "********" — for sensitive fields). We don't compare
-  // against a magic string; instead we use `edited` to track whether the user has
-  // actually typed a new value. Until they do, data-masked='true' tells buildCredentials
-  // to skip this field so the stored secret is never overwritten.
+export function MaskedInput({ id, name, placeholder, initialValue }: MaskedInputProps) {
   const hasServerValue = initialValue !== null && initialValue !== undefined && initialValue !== ''
-  const [value, setValue] = useState(hasServerValue ? MASKED : '')
+  const [value, setValue] = useState('')
   const [show, setShow] = useState(false)
-  const [edited, setEdited] = useState(false)
 
   useEffect(() => {
-    if (!edited) {
-      setValue(hasServerValue ? MASKED : '')
-    }
-  }, [initialValue, hasServerValue, edited])
-
-  function handleFocus() {
-    if (!edited) {
-      setValue('')
-      setEdited(true)
-    }
-  }
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setValue(e.target.value)
-    setEdited(true)
-  }
+    setValue('')
+  }, [initialValue])
 
   const displayType = show ? 'text' : 'password'
-  const isPlaceholderMask = !edited
 
   return (
     <div className="relative">
       <Input
         id={id}
         name={name}
-        type={isPlaceholderMask ? 'text' : displayType}
-        placeholder={placeholder}
+        type={displayType}
+        placeholder={hasServerValue ? 'Leave blank to keep current' : placeholder}
         value={value}
-        onFocus={handleFocus}
-        onChange={handleChange}
+        onChange={(e) => setValue(e.target.value)}
         className="pr-9 font-mono"
-        // data-masked signals buildCredentials to skip this field (user hasn't changed it)
-        data-masked={isPlaceholderMask ? 'true' : undefined}
+        // data-masked signals buildCredentials to skip this field when blank
+        data-masked={value === '' ? 'true' : undefined}
       />
+      <button
+        type="button"
+        tabIndex={-1}
+        onClick={() => setShow((s) => !s)}
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {show ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+      </button>
       {hasServerValue && (
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={() => setShow((s) => !s)}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {show ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-        </button>
+        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500" />
+          Currently set — leave blank to keep
+        </p>
       )}
     </div>
   )
