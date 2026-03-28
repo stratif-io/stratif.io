@@ -11,6 +11,7 @@ import {
   useSchemaConfig,
 } from '@/features/connections/hooks/useConnectionsData'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
+import { toast } from '@/components/ui/toast-provider'
 import { Button } from '@/components/ui/button'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -247,23 +248,31 @@ export function EventsPage() {
   }, [allColOptions, colVisibility, events])
 
   const handleExportCSV = useCallback(() => {
-    const { headers, rows } = getExportRows()
-    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'events.csv'
-    a.click()
-    URL.revokeObjectURL(url)
+    try {
+      const { headers, rows } = getExportRows()
+      const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'events.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error('Failed to export CSV')
+    }
   }, [getExportRows])
 
   const handleExportXLSX = useCallback(() => {
-    const { headers, rows } = getExportRows()
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Events')
-    XLSX.writeFile(wb, 'events.xlsx')
+    try {
+      const { headers, rows } = getExportRows()
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Events')
+      XLSX.writeFile(wb, 'events.xlsx')
+    } catch {
+      toast.error('Failed to export XLSX')
+    }
   }, [getExportRows])
 
   return (

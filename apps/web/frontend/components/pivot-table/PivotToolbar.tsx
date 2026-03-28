@@ -6,10 +6,17 @@ interface PivotToolbarProps {
   isQuerying: boolean
   onReset: () => void
   onExportCsv: () => void
+  onExportXlsx: () => void
   onAddFilter: () => void
 }
 
-export function PivotToolbar({ isQuerying, onReset, onExportCsv, onAddFilter }: PivotToolbarProps) {
+export function PivotToolbar({
+  isQuerying,
+  onReset,
+  onExportCsv,
+  onExportXlsx,
+  onAddFilter,
+}: PivotToolbarProps) {
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-background">
       <span className="text-sm font-medium mr-auto">Pivot</span>
@@ -21,6 +28,10 @@ export function PivotToolbar({ isQuerying, onReset, onExportCsv, onAddFilter }: 
       <Button variant="ghost" size="sm" onClick={onExportCsv} className="gap-1.5">
         <Download className="h-3.5 w-3.5" />
         CSV
+      </Button>
+      <Button variant="ghost" size="sm" onClick={onExportXlsx} className="gap-1.5">
+        <Download className="h-3.5 w-3.5" />
+        XLSX
       </Button>
       <Button variant="ghost" size="sm" onClick={onReset} className="gap-1.5">
         <RotateCcw className="h-3.5 w-3.5" />
