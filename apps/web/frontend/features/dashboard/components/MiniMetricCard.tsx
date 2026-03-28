@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Info } from 'lucide-react'
@@ -19,9 +20,10 @@ export interface MiniMetricCardProps {
   changeLabel?: string
   sparklineFormatter?: (value: number) => string
   decimalsOverride?: number
+  staggerIndex?: number
 }
 
-export function MiniMetricCard({
+export const MiniMetricCard = memo(function MiniMetricCard({
   label,
   value,
   rawValue,
@@ -34,6 +36,7 @@ export function MiniMetricCard({
   changeLabel,
   sparklineFormatter,
   decimalsOverride = 0,
+  staggerIndex = 0,
 }: MiniMetricCardProps) {
   const animatedTarget = loading ? 0 : (rawValue ?? 0)
   const animatedValue = useFormattedCountUp(animatedTarget, {
@@ -84,7 +87,10 @@ export function MiniMetricCard({
         )}
       </div>
 
-      <div className={cn('transition-opacity duration-500', loading ? 'opacity-0' : 'opacity-100')}>
+      <div
+        className={cn('transition-opacity duration-500', loading ? 'opacity-0' : 'opacity-100')}
+        style={{ transitionDelay: loading ? '0ms' : `${staggerIndex * 60}ms` }}
+      >
         <div className="text-lg font-bold tracking-tight leading-none">{displayValue}</div>
         <div className="mt-1.5">
           <Tooltip>
@@ -117,4 +123,4 @@ export function MiniMetricCard({
       </div>
     </button>
   )
-}
+})
