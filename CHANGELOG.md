@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/cabichahine/stratif.io/compare/v0.1.8...v0.2.0) (2026-03-28)
+
+
+### Features
+
+* bug bash — UX polish (5 fixes) ([#92](https://github.com/cabichahine/stratif.io/issues/92)) ([7e7c2a5](https://github.com/cabichahine/stratif.io/commit/7e7c2a5ae818d42726c11ba6896e8fa3f2cabae2))
+
 ## [0.1.8](https://github.com/cabichahine/stratif.io/compare/v0.1.7...v0.1.8) (2026-03-28)
 
 
