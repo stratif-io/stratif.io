@@ -243,6 +243,7 @@ export function SchemaConfigTab({ connId }: Props) {
           }
           const propsWithCategory = newProps.map((p) => ({
             ...p,
+            id: crypto.randomUUID(),
             category: categoryMap.get(p.name),
           }))
           setCustomProps((prev) => [...prev, ...propsWithCategory])
