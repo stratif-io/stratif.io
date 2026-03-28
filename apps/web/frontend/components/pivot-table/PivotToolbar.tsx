@@ -12,7 +12,7 @@ interface PivotToolbarProps {
 export function PivotToolbar({ isQuerying, onReset, onExportCsv, onAddFilter }: PivotToolbarProps) {
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-background">
-      <span className="text-sm font-medium mr-auto">Pivot Explorer</span>
+      <span className="text-sm font-medium mr-auto">Pivot</span>
       {isQuerying && <Spinner className="h-4 w-4 text-muted-foreground" />}
       <Button variant="ghost" size="sm" onClick={onAddFilter} className="gap-1.5">
         <Plus className="h-3.5 w-3.5" />

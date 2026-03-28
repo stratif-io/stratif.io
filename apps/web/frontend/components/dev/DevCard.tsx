@@ -220,8 +220,8 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                       setPendingQueryStudioSql(prettySql(firstQuery))
                       navigate('/query-studio')
                     }}
-                    aria-label="Open in Query Studio"
-                    title="Open in Query Studio"
+                    aria-label="Open in SQL Studio"
+                    title="Open in SQL Studio"
                     className={cn(
                       'transition-colors',
                       dark
@@ -321,8 +321,8 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                         setPendingQueryStudioSql(prettySql(firstQuery))
                         navigate('/query-studio')
                       }}
-                      aria-label="Open in Query Studio"
-                      title="Open in Query Studio"
+                      aria-label="Open in SQL Studio"
+                      title="Open in SQL Studio"
                       className={cn(
                         'flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium transition-colors',
                         dark
@@ -331,7 +331,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
                       )}
                     >
                       <Terminal className="h-3 w-3" />
-                      Query Studio
+                      SQL Studio
                     </button>
                   )}
                   <button

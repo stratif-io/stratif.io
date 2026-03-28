@@ -125,7 +125,7 @@ describe('DevCard', () => {
     setDevMode(true)
     renderCard({ sql: 'SELECT 1' })
     fireEvent.click(screen.getByLabelText('Show SQL'))
-    fireEvent.click(screen.getByLabelText('Open in Query Studio'))
+    fireEvent.click(screen.getByLabelText('Open in SQL Studio'))
     expect(mockNavigate).toHaveBeenCalledWith('/query-studio')
     expect(useAppStore.getState().pendingQueryStudioSql).not.toBeNull()
   })

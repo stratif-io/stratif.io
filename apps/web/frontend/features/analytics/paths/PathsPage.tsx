@@ -21,7 +21,7 @@ import { DevCard } from '@/components/dev'
 
 export function PathsPage() {
   useEffect(() => {
-    document.title = 'Paths — stratif.io'
+    document.title = 'Journey — stratif.io'
   }, [])
 
   const { dateRange, selectedEvent, setSelectedEvent } = useAppStore()
