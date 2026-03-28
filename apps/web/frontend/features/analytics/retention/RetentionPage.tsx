@@ -112,6 +112,7 @@ export function RetentionPage() {
     isLoading,
     isError,
     error,
+    refetch,
     avgMilestones: _avgMilestones,
     totalAvailable,
     sql,
@@ -202,7 +203,7 @@ export function RetentionPage() {
                 <CardContent className="p-0 pb-0">
                   {isError ? (
                     <div className="p-6">
-                      <QueryError error={error} />
+                      <QueryError error={error} onRetry={refetch} />
                     </div>
                   ) : isLoading ? (
                     <div className="p-6">

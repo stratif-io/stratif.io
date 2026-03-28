@@ -22,6 +22,8 @@ export interface UsePathExplorerReturn {
   pathData: PathAnalysisData[]
   events: string[]
   isLoading: boolean
+  isError: boolean
+  error: Error | null
   eventsLoading: boolean
   totalPaths: number
   sql: string | string[] | undefined
@@ -48,7 +50,12 @@ export function usePathExplorer({
     staleTime: QUERY_STALE_TIME.default,
   })
 
-  const { data: pathResponse, isLoading } = useQuery({
+  const {
+    data: pathResponse,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: [
       'path-analysis',
       startEvent,
@@ -89,6 +96,8 @@ export function usePathExplorer({
     pathData,
     events: eventsResponse?.events || [],
     isLoading,
+    isError,
+    error: error as Error | null,
     eventsLoading,
     totalPaths: pathResponse?.total_paths || 0,
     sql: pathResponse?.sql,

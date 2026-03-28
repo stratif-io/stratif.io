@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { DbLogo } from '@/components/DbLogo'
 import { useCreateConnection, useUpdateConnection } from '../hooks/useConnectionsData'
+import { toast } from '@/components/ui/toast-provider'
 import type { Connection, DbType } from '@/types'
 
 interface Props {
@@ -296,12 +297,22 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
         Object.keys(changedCredentials).length > 0 ? changedCredentials : undefined
       update.mutate(
         { name, credentials: credentialsUpdate },
-        { onSuccess: () => onOpenChange(false) }
+        {
+          onSuccess: () => {
+            toast.success('Connection updated')
+            onOpenChange(false)
+          },
+        }
       )
     } else {
       create.mutate(
         { name, db_type: dbType, credentials },
-        { onSuccess: () => onOpenChange(false) }
+        {
+          onSuccess: () => {
+            toast.success('Connection created')
+            onOpenChange(false)
+          },
+        }
       )
     }
   }

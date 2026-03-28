@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
+import { QueryError } from '@/components/ui/query-error'
 import type { PathAnalysisData } from '@/types'
 import { cn } from '@/lib/utils'
 import { FILTER_TRIGGER_CLASS } from '@/lib/constants'
@@ -218,17 +219,18 @@ export function PathsExplorerPage() {
     )
   }
 
-  const { pathData, events, isLoading, eventsLoading, totalPaths, sql } = usePathExplorer({
-    dateRange,
-    startEvent: startEvent || null,
-    endEvent: endEvent || null,
-    minPathLength: effectiveMin,
-    maxPathLength: effectiveMax,
-    maxTimeBetweenEvents,
-    timeUnit,
-    groupBy,
-    topN,
-  })
+  const { pathData, events, isLoading, isError, error, eventsLoading, totalPaths, sql } =
+    usePathExplorer({
+      dateRange,
+      startEvent: startEvent || null,
+      endEvent: endEvent || null,
+      minPathLength: effectiveMin,
+      maxPathLength: effectiveMax,
+      maxTimeBetweenEvents,
+      timeUnit,
+      groupBy,
+      topN,
+    })
 
   const handleReset = () => setSearchParams({}, { replace: true })
 
@@ -484,6 +486,8 @@ export function PathsExplorerPage() {
           <DevCard sql={sql}>
             {isLoading || eventsLoading ? (
               <LoadingState message="Analyzing paths…" />
+            ) : isError ? (
+              <QueryError error={error} />
             ) : pathData.length === 0 ? (
               <EmptyState
                 icon={GitFork}

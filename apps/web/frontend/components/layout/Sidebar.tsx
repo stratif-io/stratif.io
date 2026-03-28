@@ -129,6 +129,11 @@ export function Sidebar() {
   const setDevMode = useAppStore((s) => s.setDevMode)
   const location = useLocation()
 
+  const visibleNavGroups = navGroups.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => item.href !== '/query-studio' || devMode),
+  }))
+
   const handleMobileNavClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false)
   }
@@ -174,7 +179,7 @@ export function Sidebar() {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
-          {navGroups.map((group, gi) => (
+          {visibleNavGroups.map((group, gi) => (
             <div
               key={group.title}
               className={cn('space-y-0.5', gi > 0 && 'pt-3 mt-3 border-t border-border/40')}
