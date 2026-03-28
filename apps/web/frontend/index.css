@@ -79,11 +79,11 @@ body {
 }
 
 :root {
-  --background: 0 0% 100%;
+  --background: 174 20% 99%;
   --foreground: 240 39% 14%;
-  --card: 0 0% 100%;
+  --card: 174 15% 100%;
   --card-foreground: 240 39% 14%;
-  --popover: 0 0% 100%;
+  --popover: 174 15% 100%;
   --popover-foreground: 240 39% 14%;
   --primary: 174 82% 31%;
   --primary-foreground: 0 0% 100%;
@@ -164,40 +164,20 @@ body {
 }
 
 .dark body {
-  background:
-    radial-gradient(ellipse at top, hsl(var(--card) / 0.6) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom right, hsl(var(--primary) / 0.05) 0%, transparent 40%),
-    hsl(var(--background));
+  background-color: hsl(var(--background));
 }
 
-/* Card subtle glow in dark mode */
+/* Card subtle depth in dark mode */
 .dark .card,
 .dark [class*='card'] {
-  background: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%);
   border-color: hsl(var(--border));
-  box-shadow:
-    0 0 0 1px hsl(var(--border) / 0.5),
-    0 4px 24px -4px hsl(0 0% 0% / 0.3);
-}
-
-/* Better sidebar in dark mode */
-.dark .sidebar,
-.dark [class*='sidebar'] {
-  background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%);
+  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.2);
 }
 
 /* Subtle hover effects */
 .dark [class*='card']:hover {
-  border-color: hsl(var(--primary) / 0.3);
-  box-shadow:
-    0 0 0 1px hsl(var(--primary) / 0.1),
-    0 4px 24px -4px hsl(0 0% 0% / 0.4);
-}
-
-/* Primary button glow */
-.dark .btn-primary,
-.dark [class*='primary']:not([class*='foreground']) {
-  box-shadow: 0 0 20px hsl(var(--primary) / 0.25);
+  border-color: hsl(var(--border));
+  box-shadow: 0 2px 6px hsl(0 0% 0% / 0.25);
 }
 
 /* Better input styling */
@@ -329,6 +309,12 @@ textarea {
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-muted-foreground/50;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
 }
 
 /* Smooth page transitions */
