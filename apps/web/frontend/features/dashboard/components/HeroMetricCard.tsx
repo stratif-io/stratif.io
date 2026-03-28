@@ -226,8 +226,7 @@ export function HeroMetricCard({
                 <span
                   className={cn(
                     'inline-flex items-center gap-1 text-sm font-bold px-2 py-0.5 rounded-md cursor-default',
-                    isPositive &&
-                      'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40',
+                    isPositive && 'text-success bg-success/10',
                     isNegative && 'text-destructive bg-destructive/10'
                   )}
                 >

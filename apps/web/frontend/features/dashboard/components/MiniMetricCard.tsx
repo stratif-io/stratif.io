@@ -99,8 +99,7 @@ export function MiniMetricCard({
                 <span
                   className={cn(
                     'inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded cursor-default',
-                    isPositive &&
-                      'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40',
+                    isPositive && 'text-success bg-success/10',
                     isNegative && 'text-destructive bg-destructive/10'
                   )}
                 >
