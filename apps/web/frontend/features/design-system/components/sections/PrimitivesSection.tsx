@@ -37,6 +37,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Calendar } from '@/components/ui/calendar'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { SaveStatus } from '@/components/ui/save-status'
+import { ChevronDown } from 'lucide-react'
 
 export function PrimitivesSection() {
   const [sliderValue, setSliderValue] = useState([40])
@@ -277,6 +281,30 @@ export function PrimitivesSection() {
             </p>
           ))}
         </ScrollArea>
+      </ComponentRow>
+
+      <ComponentRow label="Calendar">
+        <Calendar mode="single" className="border rounded-md" />
+      </ComponentRow>
+
+      <ComponentRow label="Collapsible">
+        <Collapsible className="w-56 border rounded-md">
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between px-3">
+              Toggle section
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-3 pb-3 text-sm text-muted-foreground">
+            Hidden content revealed on expand.
+          </CollapsibleContent>
+        </Collapsible>
+      </ComponentRow>
+
+      <ComponentRow label="SaveStatus">
+        <SaveStatus status="saving" />
+        <SaveStatus status="saved" />
+        <SaveStatus status="error" onRetry={() => {}} />
       </ComponentRow>
     </ComponentSection>
   )

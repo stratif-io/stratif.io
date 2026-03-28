@@ -4,6 +4,9 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { QueryError } from '@/components/ui/query-error'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { UnderConstruction } from '@/components/UnderConstruction'
+import { NoConnectionScreen } from '@/components/ui/no-connection-guard'
+import { Button } from '@/components/ui/button'
+import { toast } from '@/components/ui/toast-provider'
 
 const stubError = new Error('Failed to load data.')
 
@@ -38,6 +41,33 @@ export function FeedbackSection() {
       <ComponentRow label="UnderConstruction">
         <div className="border rounded-md w-64 overflow-hidden">
           <UnderConstruction title="Coming soon" description="This feature isn't ready yet." />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="NoConnectionScreen">
+        <div className="border rounded-md w-full overflow-hidden max-w-xl max-h-72 overflow-y-auto">
+          <NoConnectionScreen />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="Toast">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => toast('Event saved')}>
+            Default
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => toast.success('Connection added')}>
+            Success
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => toast.error('Failed to run query')}>
+            Error
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => toast.warning('Query took longer than expected')}
+          >
+            Warning
+          </Button>
         </div>
       </ComponentRow>
     </ComponentSection>

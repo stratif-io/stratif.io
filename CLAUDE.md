@@ -121,6 +121,20 @@ stratif.io stores encrypted credentials for client analytics databases. Security
 6. Add nav item in `apps/web/frontend/components/layout/Sidebar.tsx`
 7. Add types in `apps/web/frontend/types/index.ts` and Zod schema in `apps/web/frontend/lib/schemas/`
 
+## Design system
+
+After creating or modifying any component, update the design system page to reflect the change. This keeps the design system in sync with the actual implementation.
+
+The design system lives at `apps/web/frontend/features/design-system/` and is split into sections:
+
+- `components/sections/PrimitivesSection.tsx` — buttons, badges, inputs, selects, checkboxes, switches, sliders, progress, skeleton, spinner, avatar, separator, tooltip, popover, dialog, dropdown, card, scroll area, calendar, collapsible, save status
+- `components/sections/FeedbackSection.tsx` — LoadingState, EmptyState, QueryError, CardLoadingBar, UnderConstruction, NoConnectionScreen, Toast
+- `components/sections/ChartsSection.tsx` — area, bar, line, donut, funnel, heatmap, sparkline, comparison charts
+- `components/sections/DataSection.tsx` — VirtualList, Pagination, DataTable, EventsTable, PivotTable
+- `components/sections/AppComponentsSection.tsx` — DateRangePicker, FilterSelect, DbLogo, FilterBar, GlobalFilters, QueryStatusIndicator
+
+Add new components to the appropriate section, or create a new section if none fits.
+
 ## Adding a chart
 
 - Feature-specific: create in `apps/web/frontend/features/<feature>/components/`
