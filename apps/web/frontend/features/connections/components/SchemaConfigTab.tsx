@@ -419,11 +419,10 @@ export function SchemaConfigTab({ connId }: Props) {
                   placeholder="campaign_source"
                   className="h-8 text-sm"
                 />
-                <Input
+                <ColumnSelect
                   value={prop.path}
-                  onChange={(e) => updateProp(idx, { path: e.target.value })}
-                  placeholder="properties.campaign.source"
-                  className="h-8 text-sm font-mono"
+                  detectedColumns={detectedColumns}
+                  onChange={(v) => updateProp(idx, { path: v })}
                 />
                 <Select
                   value={prop.type}
