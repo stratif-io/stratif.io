@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type WizardStep = 'connection' | 'schema'
@@ -18,6 +19,7 @@ export function ConnectionWizardProgress({ currentStep, onStepClick }: Props) {
   return (
     <div className="flex items-center gap-2 mb-6">
       {STEPS.map((step, i) => {
+        const isCompleted = i < currentIndex
         const isActive = i === currentIndex
 
         return (
@@ -25,26 +27,20 @@ export function ConnectionWizardProgress({ currentStep, onStepClick }: Props) {
             key={step.id}
             data-testid={`step-${step.id}`}
             data-active={String(isActive)}
+            data-completed={String(isCompleted)}
             onClick={() => onStepClick?.(step.id)}
             className={cn(
-              'flex flex-col items-center gap-1',
+              'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors',
+              isCompleted && 'bg-success/10 border border-success/30 text-success',
+              isActive && 'bg-primary/10 border border-primary/30 text-primary',
+              !isCompleted &&
+                !isActive &&
+                'bg-muted/50 border border-transparent text-muted-foreground',
               onStepClick ? 'cursor-pointer' : 'cursor-default'
             )}
           >
-            <div
-              className={cn(
-                'h-0.5 w-20 rounded-full transition-colors',
-                isActive ? 'bg-primary' : 'bg-muted'
-              )}
-            />
-            <span
-              className={cn(
-                'text-xs font-medium transition-colors',
-                isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
-              )}
-            >
-              {step.label}
-            </span>
+            {isCompleted && <Check className="h-3 w-3" />}
+            {step.label}
           </button>
         )
       })}
