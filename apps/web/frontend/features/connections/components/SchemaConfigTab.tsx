@@ -279,7 +279,7 @@ export function SchemaConfigTab({ connId }: Props) {
             <FolderSearch className="h-3.5 w-3.5 mr-1.5" />
             Browse
           </Button>
-          <Button size="sm" onClick={handleDetect} disabled={detect.isPending}>
+          <Button size="sm" variant="outline" onClick={handleDetect} disabled={detect.isPending}>
             <ScanSearch className="h-3.5 w-3.5 mr-1.5" />
             {detect.isPending ? 'Detecting…' : 'Detect from Schema'}
           </Button>
