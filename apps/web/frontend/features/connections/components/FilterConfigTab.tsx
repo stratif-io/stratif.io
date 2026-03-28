@@ -143,7 +143,7 @@ export function FilterConfigTab({ connId }: Props) {
           <h3 className="text-sm font-semibold">Global Filter Dimensions</h3>
           {upsert.isPending && <span className="text-xs text-muted-foreground">Saving…</span>}
           {upsert.isSuccess && !upsert.isPending && (
-            <span className="text-xs text-emerald-600 dark:text-emerald-400">Saved</span>
+            <span className="text-xs text-success">Saved</span>
           )}
         </div>
         <p className="text-sm text-muted-foreground">

@@ -21,7 +21,7 @@ const EVENT_PALETTE = [
   { dot: 'bg-cyan-500', ring: 'ring-cyan-500/25', text: 'text-cyan-600 dark:text-cyan-400' },
   {
     dot: 'bg-success',
-    ring: 'ring-emerald-500/25',
+    ring: 'ring-success/25',
     text: 'text-success',
   },
   { dot: 'bg-amber-500', ring: 'ring-amber-500/25', text: 'text-amber-600 dark:text-amber-400' },

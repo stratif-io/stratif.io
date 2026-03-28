@@ -215,7 +215,7 @@ export function SchemaConfigTab({ connId }: Props) {
           <div className="flex items-center gap-3">
             {upsert.isPending && <span className="text-xs text-muted-foreground">Saving…</span>}
             {upsert.isSuccess && !upsert.isPending && (
-              <span className="text-xs text-emerald-600 dark:text-emerald-400">Saved</span>
+              <span className="text-xs text-success">Saved</span>
             )}
             <Button size="sm" variant="outline" onClick={handleDetect} disabled={detect.isPending}>
               <ScanSearch className="h-3.5 w-3.5 mr-1.5" />

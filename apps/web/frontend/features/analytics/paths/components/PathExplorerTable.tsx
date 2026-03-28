@@ -17,7 +17,7 @@ interface PathExplorerTableProps {
 
 function getRankColor(idx: number): string {
   if (idx === 0) return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
-  if (idx === 1) return 'bg-gray-400/10 text-gray-600 border-gray-400/20'
+  if (idx === 1) return 'bg-muted text-muted-foreground border-border'
   if (idx === 2) return 'bg-orange-700/10 text-orange-700 border-orange-700/20'
   return 'bg-muted text-muted-foreground'
 }
