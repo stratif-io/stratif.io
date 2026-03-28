@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Database, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -10,15 +10,13 @@ import { useConnection, useTestConnection } from './hooks/useConnectionsData'
 import { useAppStore } from '@/stores'
 import { ConnectionConfigTab } from './components/ConnectionConfigTab'
 import { SchemaConfigTab } from './components/SchemaConfigTab'
-import { FilterConfigTab } from './components/FilterConfigTab'
 import { ConnectionWizardProgress } from './components/ConnectionWizardProgress'
 
-type Tab = 'connection' | 'schema' | 'filters'
+type Tab = 'connection' | 'schema'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'connection', label: 'Connection' },
   { id: 'schema', label: 'Schema Mapping' },
-  { id: 'filters', label: 'Global Filters' },
 ]
 
 const DB_TYPE_LABELS: Record<string, string> = {
@@ -29,10 +27,10 @@ const DB_TYPE_LABELS: Record<string, string> = {
 }
 
 export function ConnectionDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { id, tab: tabParam } = useParams<{ id: string; tab?: string }>()
+  const tab: Tab = (tabParam === 'schema' ? 'schema' : 'connection') as Tab
   const navigate = useNavigate()
   const { data: connection, isLoading, error } = useConnection(id ?? '')
-  const [tab, setTab] = useState<Tab>('connection')
   const setActiveConnectionId = useAppStore((s) => s.setActiveConnectionId)
   const autoTest = useTestConnection()
   const isWizardMode = !connection?.schema_config
@@ -118,23 +116,14 @@ export function ConnectionDetailPage() {
 
       {isWizardMode ? (
         <>
-          <ConnectionWizardProgress currentStep={tab} />
+          <ConnectionWizardProgress
+            currentStep={tab}
+            onStepClick={(value) => navigate(`/connections/${id}/${value}`)}
+          />
 
           {/* Tab content */}
           {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
           {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
-          {tab === 'filters' && <FilterConfigTab connId={connection.id} />}
-
-          {/* Wizard navigation */}
-          <div className="mt-6 flex justify-end">
-            {tab === 'connection' && (
-              <Button onClick={() => setTab('schema')}>Next: Configure Schema →</Button>
-            )}
-            {tab === 'schema' && (
-              <Button onClick={() => setTab('filters')}>Next: Configure Filters →</Button>
-            )}
-            {tab === 'filters' && <Button onClick={() => navigate('/connections')}>Done →</Button>}
-          </div>
         </>
       ) : (
         <>
@@ -143,7 +132,7 @@ export function ConnectionDetailPage() {
             {TABS.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setTab(t.id)}
+                onClick={() => navigate(`/connections/${id}/${t.id}`)}
                 className={cn(
                   'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
                   tab === t.id
@@ -159,7 +148,6 @@ export function ConnectionDetailPage() {
           {/* Tab content */}
           {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
           {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
-          {tab === 'filters' && <FilterConfigTab connId={connection.id} />}
         </>
       )}
     </div>
