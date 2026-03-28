@@ -112,7 +112,7 @@ export function TrendsPage() {
             ].map(({ label, value, span }) => (
               <div
                 key={label}
-                className={`relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 transition-colors hover:border-primary/50 ${span}`}
+                className={`relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 ${span}`}
               >
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
                   {label}
@@ -126,33 +126,9 @@ export function TrendsPage() {
             <Card className="relative overflow-hidden">
               <CardLoadingBar loading={isLoading} />
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-end">
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    {/* Chart type toggle */}
-                    <div className="flex items-center border rounded-md p-1">
-                      <Button
-                        variant={chartType === 'area' ? 'secondary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setChartType('area')}
-                      >
-                        Area
-                      </Button>
-                      <Button
-                        variant={chartType === 'line' ? 'secondary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setChartType('line')}
-                      >
-                        Line
-                      </Button>
-                      <Button
-                        variant={chartType === 'bar' ? 'secondary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setChartType('bar')}
-                      >
-                        Bar
-                      </Button>
-                    </div>
-
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  {/* Left group: what you're measuring */}
+                  <div className="flex flex-wrap gap-2 items-center">
                     {/* Event selector */}
                     <Select
                       value={selectedEvent || 'all'}
@@ -168,20 +144,6 @@ export function TrendsPage() {
                             {event}
                           </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-
-                    {/* Granularity selector */}
-                    <Select
-                      value={granularity}
-                      onValueChange={(val) => setGranularity(val as 'day' | 'week')}
-                    >
-                      <SelectTrigger className="w-[min(120px,35vw)]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="day">Daily</SelectItem>
-                        <SelectItem value="week">Weekly</SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -224,7 +186,7 @@ export function TrendsPage() {
                       </SelectContent>
                     </Select>
 
-                    {/* Aggregation selector — shown for any custom field */}
+                    {/* Aggregation selector — shown for custom fields only */}
                     {isCustomField && (
                       <Select
                         value={aggregation}
@@ -247,6 +209,48 @@ export function TrendsPage() {
                         </SelectContent>
                       </Select>
                     )}
+                  </div>
+
+                  {/* Right group: how it's displayed */}
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {/* Chart type toggle */}
+                    <div className="flex items-center border rounded-md p-1">
+                      <Button
+                        variant={chartType === 'area' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setChartType('area')}
+                      >
+                        Area
+                      </Button>
+                      <Button
+                        variant={chartType === 'line' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setChartType('line')}
+                      >
+                        Line
+                      </Button>
+                      <Button
+                        variant={chartType === 'bar' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setChartType('bar')}
+                      >
+                        Bar
+                      </Button>
+                    </div>
+
+                    {/* Granularity selector */}
+                    <Select
+                      value={granularity}
+                      onValueChange={(val) => setGranularity(val as 'day' | 'week')}
+                    >
+                      <SelectTrigger className="w-[min(120px,35vw)]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="day">Daily</SelectItem>
+                        <SelectItem value="week">Weekly</SelectItem>
+                      </SelectContent>
+                    </Select>
 
                     {/* Breakdown selector */}
                     {dimensions.length > 0 && (

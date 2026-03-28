@@ -104,7 +104,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   const heroCurrentValue = data?.current[heroMetric as keyof typeof data.current] ?? 0
   const heroPreviousValue = data?.previous[heroMetric as keyof typeof data.previous] ?? null
 
-  let cardIndex = 0
+  const flatMetrics = CATEGORIES.flatMap((c) => c.metrics)
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
@@ -149,7 +149,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                 // Float metrics need 2 decimal places during count-up animation
                 const decimalsOverride =
                   metricKey === 'dau_mau_ratio' || metricKey === 'avg_events_per_session' ? 2 : 0
-                const staggerIndex = cardIndex++
+                const staggerIndex = flatMetrics.indexOf(metricKey)
                 return (
                   <DevCard
                     key={metricKey}

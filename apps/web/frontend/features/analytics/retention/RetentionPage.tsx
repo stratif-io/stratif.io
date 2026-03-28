@@ -8,7 +8,8 @@ import { PageTransition } from '@/components/layout/PageTransition'
 import { TableSkeleton } from '@/components/ui/loading-state'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
-import { Users } from 'lucide-react'
+import { Info, Users } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAppStore } from '@/stores'
 import { useRetentionData, type RetentionGranularity } from './hooks/useRetentionData'
 import { RetentionTable } from './components/RetentionTable'
@@ -47,7 +48,7 @@ const BENCHMARKS: Record<string, { good: number; ok: number }> = {
 function getRetentionLabel(value: number, granularity: RetentionGranularity, milestone: number) {
   const key = `${granularity}_${milestone}`
   const b = BENCHMARKS[key] ?? { good: 20, ok: 5 }
-  if (value >= b.good) return { label: 'Good', color: 'text-chart-2' }
+  if (value >= b.good) return { label: 'Good', color: 'text-success' }
   if (value >= b.ok) return { label: 'Average', color: 'text-[hsl(var(--warning))]' }
   return { label: 'Low', color: 'text-destructive' }
 }
@@ -68,11 +69,25 @@ interface MetricCardProps {
 function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
   const { label, color } = getRetentionLabel(value, granularity, milestone)
   const animatedValue = useCountUp(value, { decimals: 1 })
+  const key = `${granularity}_${milestone}`
+  const b = BENCHMARKS[key] ?? { good: 20, ok: 5 }
+  const unit = granularity === 'week' ? 'week' : granularity === 'month' ? 'month' : 'day'
+  const tooltipText = `Good ≥ ${b.good}% · Average ≥ ${b.ok}% · based on industry benchmarks for ${unit} ${milestone} retention`
   return (
     <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 transition-colors hover:border-primary/50">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-        {title}
-      </p>
+      <div className="flex items-center gap-1 mb-1">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </p>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-2.5 w-2.5 text-muted-foreground/50 cursor-help shrink-0" />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[200px] text-xs">
+            {tooltipText}
+          </TooltipContent>
+        </Tooltip>
+      </div>
       <div className="flex items-end gap-2">
         <p className="text-lg font-bold tracking-tight leading-none">{animatedValue.toFixed(1)}%</p>
         <span className={cn('text-xs font-medium pb-0.5', color)}>{label}</span>

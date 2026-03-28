@@ -39,7 +39,7 @@ export const TYPOGRAPHY = {
   pageTitle: 'text-3xl font-bold tracking-tight',
   pageTitleSm: 'text-2xl font-bold tracking-tight',
   // Subtle page label — replaces heavy h1, sits inline without dominating
-  pageLabel: 'text-xs font-medium text-muted-foreground tracking-widest uppercase select-none',
+  pageLabel: 'text-sm font-medium text-foreground/60 tracking-widest uppercase select-none',
 
   // Section headings
   sectionTitle: 'text-xl font-semibold',
