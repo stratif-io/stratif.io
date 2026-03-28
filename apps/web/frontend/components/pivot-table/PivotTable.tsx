@@ -16,6 +16,7 @@ import type { ZoneCol, FilterEntry, PivotTableProps } from './types'
 import { buildLeafMeta } from './types'
 import { DevCard } from '@/components/dev'
 import { EmptyState } from '@/components/ui/empty-state'
+import { QueryError } from '@/components/ui/query-error'
 import { BarChart2 } from 'lucide-react'
 // FilterEntry used for pivotFilters state
 
@@ -40,6 +41,7 @@ export function PivotTable({
   const [rows, setRows] = useState<Record<string, unknown>[]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [isQuerying, setIsQuerying] = useState(false)
+  const [queryError, setQueryError] = useState<Error | null>(null)
   const [lastSql, setLastSql] = useState<string | string[] | undefined>()
   const [filterField, setFilterField] = useState<string | null>(null)
   const [filterOptions, setFilterOptions] = useState<string[]>([])
@@ -59,6 +61,7 @@ export function PivotTable({
     }
     const id = ++fetchIdRef.current
     setIsQuerying(true)
+    setQueryError(null)
     try {
       const res = await fetchRows({
         startDate,
@@ -89,6 +92,9 @@ export function PivotTable({
       setHeaders(cols)
       setRows(res.rows)
       setLastSql(res.sql)
+    } catch (err) {
+      if (id === fetchIdRef.current)
+        setQueryError(err instanceof Error ? err : new Error('Query failed'))
     } finally {
       if (id === fetchIdRef.current) setIsQuerying(false)
     }
@@ -228,7 +234,11 @@ export function PivotTable({
 
       <DevCard sql={lastSql} className="flex-1 min-h-0">
         <div ref={parentRef} className="h-full overflow-auto">
-          {rows.length === 0 && !isQuerying ? (
+          {queryError ? (
+            <div className="flex items-center justify-center h-full">
+              <QueryError error={queryError} onRetry={runQuery} />
+            </div>
+          ) : rows.length === 0 && !isQuerying ? (
             <div className="flex items-center justify-center h-full">
               {rowGroups.length === 0 && valueCols.length === 0 ? (
                 <EmptyState

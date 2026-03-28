@@ -19,6 +19,7 @@ export interface UseRetentionDataReturn {
   isLoading: boolean
   isError: boolean
   error: Error | null
+  refetch: () => void
   avgMilestones: number[]
   totalAvailable: number
   sql: string | string[] | undefined
@@ -37,6 +38,7 @@ export function useRetentionData({
     isLoading,
     isError,
     error,
+    refetch,
   } = useQuery({
     queryKey: ['retention', startDate, endDate, granularity, activeFilters, activeConnectionId],
     queryFn: () =>
@@ -70,6 +72,7 @@ export function useRetentionData({
     isLoading,
     isError,
     error: error as Error | null,
+    refetch,
     avgMilestones,
     totalAvailable,
     sql: retentionResponse?.sql,
