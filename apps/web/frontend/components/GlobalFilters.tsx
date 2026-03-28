@@ -17,7 +17,8 @@ import {
 } from 'lucide-react'
 import { useFilterConfig, useFilterOptions } from '@/features/connections/hooks/useConnectionsData'
 import { cn } from '@/lib/utils'
-import type { FilterField } from '@/types'
+import type { DimensionCategoryConfig, FilterField } from '@/types'
+import dimensionCategories from '@/config/dimension-categories.json'
 
 function pluralize(word: string): string {
   if (word.endsWith('y')) return word.slice(0, -1) + 'ies'
@@ -33,6 +34,18 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Layers,
 }
 
+const compiledCategories = (dimensionCategories as DimensionCategoryConfig[]).map((cat) => ({
+  icon: cat.icon,
+  regexes: cat.patterns.map((p) => new RegExp(p, 'i')),
+}))
+
+function resolveIcon(fieldName: string): LucideIcon {
+  for (const { icon, regexes } of compiledCategories) {
+    if (regexes.some((r) => r.test(fieldName))) return ICON_MAP[icon] ?? Tag
+  }
+  return Tag
+}
+
 function DimensionFilter({ field, options }: { field: FilterField; options: string[] }) {
   const activeFilters = useAppStore((s) => s.activeFilters)
   const setActiveFilter = useAppStore((s) => s.setActiveFilter)
@@ -42,7 +55,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   const value = activeFilters[field.field] ?? null
-  const Icon = ICON_MAP[field.icon] ?? Tag
+  const Icon = resolveIcon(field.field)
 
   const filtered = search
     ? options.filter((o) => o.toLowerCase().includes(search.toLowerCase()))
