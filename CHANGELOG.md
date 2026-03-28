@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/cabichahine/stratif.io/compare/v0.3.0...v0.3.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* **layout:** make Explore pages full-height like SQL Studio ([#97](https://github.com/cabichahine/stratif.io/issues/97)) ([ef9594e](https://github.com/cabichahine/stratif.io/commit/ef9594e2ff4b8d1830555b762ced1b56afcd799d))
+
 ## [0.3.0](https://github.com/cabichahine/stratif.io/compare/v0.2.0...v0.3.0) (2026-03-28)
 
 
