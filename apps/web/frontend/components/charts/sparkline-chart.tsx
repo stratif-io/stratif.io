@@ -88,6 +88,19 @@ export function SparklineChart({
     setHoveredIdx(Math.round(ratio * (points.length - 1)))
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (points.length < 2) return
+    if (e.key === 'ArrowRight') {
+      e.preventDefault()
+      setHoveredIdx((i) => Math.min((i ?? -1) + 1, points.length - 1))
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      setHoveredIdx((i) => Math.max((i ?? points.length) - 1, 0))
+    } else if (e.key === 'Escape') {
+      setHoveredIdx(null)
+    }
+  }
+
   const hoveredPoint = hoveredIdx !== null ? points[hoveredIdx] : null
   const hasLabels = labels && labels.length > 0
 
@@ -128,11 +141,13 @@ export function SparklineChart({
         <svg
           role="img"
           aria-label="Sparkline trend chart"
+          tabIndex={0}
           width={width}
           height={height}
-          className="overflow-visible cursor-crosshair"
+          className="overflow-visible cursor-crosshair focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setHoveredIdx(null)}
+          onKeyDown={handleKeyDown}
         >
           <defs>
             <linearGradient id={`sg-${uid}`} x1="0" y1="0" x2="0" y2="1">

@@ -133,6 +133,17 @@ export function FunnelChart({
             <g
               key={stage.name}
               onClick={() => onStageClick?.(stage, index)}
+              onKeyDown={(e) => {
+                if (onStageClick && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault()
+                  onStageClick(stage, index)
+                }
+              }}
+              tabIndex={onStageClick ? 0 : undefined}
+              role={onStageClick ? 'button' : undefined}
+              aria-label={
+                onStageClick ? `${stage.name}: ${stage.value.toLocaleString()} users` : undefined
+              }
               style={{ cursor: onStageClick ? 'pointer' : 'default' }}
               className="group"
             >

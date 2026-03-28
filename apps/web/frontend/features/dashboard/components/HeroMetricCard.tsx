@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -71,7 +71,7 @@ function ChartTooltipContent({ active, payload, label, color, metricKey }: Chart
   )
 }
 
-export function HeroMetricCard({
+export const HeroMetricCard = memo(function HeroMetricCard({
   label,
   metricKey,
   value,
@@ -256,4 +256,4 @@ export function HeroMetricCard({
       <CardLoadingBar loading={loading} />
     </div>
   )
-}
+})

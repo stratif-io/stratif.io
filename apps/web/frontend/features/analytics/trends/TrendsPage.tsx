@@ -265,7 +265,8 @@ export function TrendsPage() {
                           <button
                             type="button"
                             onClick={() => setBreakdownDimension(null)}
-                            className="h-9 px-2 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
+                            className="h-9 min-w-[44px] px-2 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
+                            aria-label="Clear breakdown"
                             title="Clear breakdown"
                           >
                             ✕

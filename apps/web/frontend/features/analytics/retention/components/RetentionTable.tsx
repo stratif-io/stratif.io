@@ -6,6 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { SparklineChart } from '@/components/charts/sparkline-chart'
 import type { RetentionCohort } from '@/types'
@@ -40,8 +41,14 @@ function milestoneLabel(unit: number, granularity: RetentionGranularity): string
 }
 
 export function RetentionTable({ data, granularity, milestones }: RetentionTableProps) {
-  const avgMilestoneValues = milestones.map((_, i) =>
-    data.length > 0 ? data.reduce((s, r) => s + (r.milestone_values[i] ?? 0), 0) / data.length : 0
+  const avgMilestoneValues = useMemo(
+    () =>
+      milestones.map((_, i) =>
+        data.length > 0
+          ? data.reduce((s, r) => s + (r.milestone_values[i] ?? 0), 0) / data.length
+          : 0
+      ),
+    [data, milestones]
   )
 
   return (
@@ -103,11 +110,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                       <div
                         className={cn(
                           'rounded-md px-2 py-1 text-sm tabular-nums font-medium transition-colors mx-auto w-fit',
-                          pct >= 50
-                            ? 'text-success'
-                            : pct >= 20
-                              ? 'text-success'
-                              : 'text-foreground'
+                          pct >= 20 ? 'text-success' : 'text-foreground'
                         )}
                         style={getCellStyle(pct)}
                       >
@@ -135,7 +138,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                   <div
                     className={cn(
                       'rounded-md px-2 py-1 text-sm tabular-nums font-semibold mx-auto w-fit',
-                      pct >= 50 ? 'text-success' : pct >= 20 ? 'text-success' : 'text-foreground'
+                      pct >= 20 ? 'text-success' : 'text-foreground'
                     )}
                     style={getCellStyle(pct)}
                   >

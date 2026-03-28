@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
 import { formatMetricValue, computePctChange } from '@/lib/format-metric'
@@ -93,7 +93,11 @@ function getConfig(key: TrendMetric) {
   return METRIC_CONFIG.find((m) => m.key === key)!
 }
 
-export function MissionControlGrid({ data, trends, metricLoading }: MissionControlGridProps) {
+export const MissionControlGrid = memo(function MissionControlGrid({
+  data,
+  trends,
+  metricLoading,
+}: MissionControlGridProps) {
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
 
   const heroConfig = getConfig(heroMetric)
@@ -178,4 +182,4 @@ export function MissionControlGrid({ data, trends, metricLoading }: MissionContr
       </div>
     </div>
   )
-}
+})
