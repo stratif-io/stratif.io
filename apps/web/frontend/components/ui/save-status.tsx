@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Loader2, Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -10,7 +11,18 @@ interface Props {
 }
 
 export function SaveStatus({ status, onRetry, className }: Props) {
-  if (status === 'idle') return null
+  const [hidden, setHidden] = useState(false)
+
+  useEffect(() => {
+    if (status === 'saved') {
+      setHidden(false)
+      const timer = setTimeout(() => setHidden(true), 2000)
+      return () => clearTimeout(timer)
+    }
+    setHidden(false)
+  }, [status])
+
+  if (status === 'idle' || hidden) return null
 
   return (
     <span className={cn('flex items-center gap-1 text-xs', className)}>
