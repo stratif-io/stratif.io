@@ -104,7 +104,7 @@ export function DashboardPage() {
     <PageTransition>
       <div className={SPACING.page}>
         <div className={SPACING.section}>
-          <h1 className={TYPOGRAPHY.pageLabel}>Mission Control</h1>
+          <h1 className={TYPOGRAPHY.pageLabel}>Overview</h1>
 
           {isError ? (
             <QueryError error={error} />
