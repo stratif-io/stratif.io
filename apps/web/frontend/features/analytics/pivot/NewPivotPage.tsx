@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { PageTransition } from '@/components/layout/PageTransition'
+import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { useAppStore } from '@/stores'
 import { formatDateParam } from '@/lib/utils'
 import {
@@ -107,18 +108,20 @@ export function NewPivotPage() {
 
   return (
     <PageTransition>
-      <div style={{ height: 'calc(100vh - 52px)' }} className="flex flex-col">
-        <PivotTable
-          colDefsData={colDefsData}
-          colDefsLoading={colDefsLoading}
-          startDate={startDate}
-          endDate={endDate}
-          activeFilters={validActiveFilters as Record<string, string>}
-          activeConnectionId={activeConnectionId}
-          fetchRows={fetchRows}
-          fetchFilterValues={fetchFilterValues}
-        />
-      </div>
+      <NoConnectionGuard>
+        <div style={{ height: 'calc(100vh - 52px)' }} className="flex flex-col">
+          <PivotTable
+            colDefsData={colDefsData}
+            colDefsLoading={colDefsLoading}
+            startDate={startDate}
+            endDate={endDate}
+            activeFilters={validActiveFilters as Record<string, string>}
+            activeConnectionId={activeConnectionId}
+            fetchRows={fetchRows}
+            fetchFilterValues={fetchFilterValues}
+          />
+        </div>
+      </NoConnectionGuard>
     </PageTransition>
   )
 }

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
+import { SaveStatus } from '@/components/ui/save-status'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LoadingState } from '@/components/ui/loading-state'
@@ -141,10 +142,23 @@ export function FilterConfigTab({ connId }: Props) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Global Filter Dimensions</h3>
-          {upsert.isPending && <span className="text-xs text-muted-foreground">Saving…</span>}
-          {upsert.isSuccess && !upsert.isPending && (
-            <span className="text-xs text-success">Saved</span>
-          )}
+          <SaveStatus
+            status={
+              upsert.isPending
+                ? 'saving'
+                : upsert.isSuccess
+                  ? 'saved'
+                  : upsert.isError
+                    ? 'error'
+                    : 'idle'
+            }
+            onRetry={() => {
+              const filter_fields: FilterField[] = Object.entries(enabledFields).map(
+                ([field, { label, icon }]) => ({ field, label, icon })
+              )
+              upsert.mutate({ filter_fields })
+            }}
+          />
         </div>
         <p className="text-sm text-muted-foreground">
           Select which fields appear as filter dropdowns in the analytics header. Set a label and

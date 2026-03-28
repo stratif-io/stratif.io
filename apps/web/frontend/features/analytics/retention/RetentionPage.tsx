@@ -15,6 +15,7 @@ import { useRetentionData, type RetentionGranularity } from './hooks/useRetentio
 import { RetentionTable } from './components/RetentionTable'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { DevCard } from '@/components/dev'
+import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 
@@ -139,93 +140,95 @@ export function RetentionPage() {
 
   return (
     <PageTransition>
-      <div className={SPACING.page}>
-        <div className={SPACING.section}>
-          {/* Header */}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <h1 className={TYPOGRAPHY.pageLabel}>Retention</h1>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              {/* Granularity toggle */}
-              <div className="flex items-center border rounded-md p-1">
-                {GRANULARITIES.map(({ value, label }) => (
-                  <Button
-                    key={value}
-                    variant={granularity === value ? 'secondary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setGranularity(value)}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-
-              {/* Cohort count slider */}
-              {totalAvailable > 1 && (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">
-                    {effectiveLimit} / {totalAvailable} cohorts
-                  </span>
-                  <Slider
-                    min={1}
-                    max={totalAvailable}
-                    step={1}
-                    value={[effectiveLimit]}
-                    onValueChange={([v]) => setCohortLimit(v)}
-                    className="w-24 sm:w-32"
-                  />
+      <NoConnectionGuard>
+        <div className={SPACING.page}>
+          <div className={SPACING.section}>
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <h1 className={TYPOGRAPHY.pageLabel}>Retention</h1>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {/* Granularity toggle */}
+                <div className="flex items-center border rounded-md p-1">
+                  {GRANULARITIES.map(({ value, label }) => (
+                    <Button
+                      key={value}
+                      variant={granularity === value ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setGranularity(value)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Milestone metric cards */}
-          {milestones.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {milestones.map((unit, i) => (
-                <MetricCard
-                  key={unit}
-                  title={milestoneTitle(granularity, unit)}
-                  value={visibleAvgMilestones[i] ?? 0}
-                  granularity={granularity}
-                  milestone={unit}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Cohort heatmap with sparklines */}
-          <DevCard sql={sql}>
-            <Card className="relative overflow-hidden">
-              <CardLoadingBar loading={isLoading} />
-              <CardContent className="p-0 pb-0">
-                {isError ? (
-                  <div className="p-6">
-                    <QueryError error={error} />
-                  </div>
-                ) : isLoading ? (
-                  <div className="p-6">
-                    <TableSkeleton />
-                  </div>
-                ) : isEmpty ? (
-                  <div className="p-6">
-                    <EmptyState
-                      icon={Users}
-                      title="No cohorts to show"
-                      description="No new users were found in this date range. Try widening it to see retention cohorts."
+                {/* Cohort count slider */}
+                {totalAvailable > 1 && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                      {effectiveLimit} / {totalAvailable} cohorts
+                    </span>
+                    <Slider
+                      min={1}
+                      max={totalAvailable}
+                      step={1}
+                      value={[effectiveLimit]}
+                      onValueChange={([v]) => setCohortLimit(v)}
+                      className="w-24 sm:w-32"
                     />
                   </div>
-                ) : (
-                  <RetentionTable
-                    data={visibleData}
-                    granularity={granularity}
-                    milestones={milestones}
-                  />
                 )}
-              </CardContent>
-            </Card>
-          </DevCard>
+              </div>
+            </div>
+
+            {/* Milestone metric cards */}
+            {milestones.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                {milestones.map((unit, i) => (
+                  <MetricCard
+                    key={unit}
+                    title={milestoneTitle(granularity, unit)}
+                    value={visibleAvgMilestones[i] ?? 0}
+                    granularity={granularity}
+                    milestone={unit}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Cohort heatmap with sparklines */}
+            <DevCard sql={sql}>
+              <Card className="relative overflow-hidden">
+                <CardLoadingBar loading={isLoading} />
+                <CardContent className="p-0 pb-0">
+                  {isError ? (
+                    <div className="p-6">
+                      <QueryError error={error} />
+                    </div>
+                  ) : isLoading ? (
+                    <div className="p-6">
+                      <TableSkeleton />
+                    </div>
+                  ) : isEmpty ? (
+                    <div className="p-6">
+                      <EmptyState
+                        icon={Users}
+                        title="No cohorts to show"
+                        description="No new users were found in this date range. Try widening it to see retention cohorts."
+                      />
+                    </div>
+                  ) : (
+                    <RetentionTable
+                      data={visibleData}
+                      granularity={granularity}
+                      milestones={milestones}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </DevCard>
+          </div>
         </div>
-      </div>
+      </NoConnectionGuard>
     </PageTransition>
   )
 }

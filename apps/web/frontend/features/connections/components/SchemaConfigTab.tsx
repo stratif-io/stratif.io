@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Plus, Trash2, ScanSearch, FolderSearch } from 'lucide-react'
+import { SaveStatus } from '@/components/ui/save-status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -213,10 +214,27 @@ export function SchemaConfigTab({ connId }: Props) {
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Core Field Mappings</h3>
           <div className="flex items-center gap-3">
-            {upsert.isPending && <span className="text-xs text-muted-foreground">Saving…</span>}
-            {upsert.isSuccess && !upsert.isPending && (
-              <span className="text-xs text-success">Saved</span>
-            )}
+            <SaveStatus
+              status={
+                upsert.isPending
+                  ? 'saving'
+                  : upsert.isSuccess
+                    ? 'saved'
+                    : upsert.isError
+                      ? 'error'
+                      : 'idle'
+              }
+              onRetry={() =>
+                upsert.mutate({
+                  user_id_field: userIdField,
+                  timestamp_field: timestampField,
+                  event_name_field: eventNameField,
+                  events_table: eventsTable,
+                  custom_properties: customProps,
+                  session_timeout_minutes: sessionTimeoutMinutes,
+                })
+              }
+            />
             <Button size="sm" variant="outline" onClick={handleDetect} disabled={detect.isPending}>
               <ScanSearch className="h-3.5 w-3.5 mr-1.5" />
               {detect.isPending ? 'Detecting…' : 'Detect from Schema'}
