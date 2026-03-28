@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/cabichahine/stratif.io/compare/v0.3.1...v0.3.2) (2026-03-28)
+
+
+### Bug Fixes
+
+* **dashboard:** restore sparklines and TopEvents bars ([#99](https://github.com/cabichahine/stratif.io/issues/99)) ([2f4c33d](https://github.com/cabichahine/stratif.io/commit/2f4c33df3aa9a24cafc745e9d55c611676687a54))
+
 ## [0.3.1](https://github.com/cabichahine/stratif.io/compare/v0.3.0...v0.3.1) (2026-03-28)
 
 
