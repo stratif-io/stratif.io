@@ -194,6 +194,7 @@ export interface DimensionOption {
 export interface DimensionCategoryConfig {
   id: string
   label: string // includes emoji, e.g. "🕐 Time"
+  icon: string // Lucide icon name key for ICON_MAP, e.g. "Globe"
   patterns: string[] // raw regex strings
 }
 

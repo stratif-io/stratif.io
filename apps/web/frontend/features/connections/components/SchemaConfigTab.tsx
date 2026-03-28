@@ -204,13 +204,16 @@ export function SchemaConfigTab({ connId }: Props) {
     setCustomProps((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
   }
 
-  function toggleFilter(field: string, label: string) {
+  function toggleFilter(field: string, label: string, categoryId?: string) {
     setEnabledFields((prev) => {
       const next = { ...prev }
       if (next[field]) {
         delete next[field]
       } else {
-        next[field] = { label, icon: 'Tag' }
+        const cat = categoryId
+          ? (dimensionCategories as DimensionCategoryConfig[]).find((c) => c.id === categoryId)
+          : undefined
+        next[field] = { label, icon: cat?.icon ?? 'Tag' }
       }
       return next
     })
@@ -444,7 +447,9 @@ export function SchemaConfigTab({ connId }: Props) {
                 <div className="flex items-center">
                   <Checkbox
                     checked={isEnabled}
-                    onCheckedChange={() => toggleFilter(prop.name, defaultLabel(prop.name))}
+                    onCheckedChange={() =>
+                      toggleFilter(prop.name, defaultLabel(prop.name), prop.category)
+                    }
                   />
                 </div>
                 <Button

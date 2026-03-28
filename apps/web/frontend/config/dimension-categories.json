@@ -2,36 +2,43 @@
   {
     "id": "time",
     "label": "🕐 Time",
+    "icon": "Tag",
     "patterns": ["^ts_", "^(date|week|hour|month|quarter|year)$", "_(at|date|time|ts)$"]
   },
   {
     "id": "event",
     "label": "📣 Event",
+    "icon": "Layers",
     "patterns": ["^event_", "^day_of_week$"]
   },
   {
     "id": "user",
     "label": "👤 User",
+    "icon": "Building",
     "patterns": ["^user_", "_(user|account|customer|tenant)$"]
   },
   {
     "id": "geography",
     "label": "🌍 Geography",
+    "icon": "Globe",
     "patterns": ["(country|city|region|state|geo|locale|timezone)"]
   },
   {
     "id": "device",
     "label": "💻 Device & Platform",
+    "icon": "Monitor",
     "patterns": ["(device|browser|os|platform|screen|viewport)"]
   },
   {
     "id": "marketing",
     "label": "📢 Marketing",
+    "icon": "Chrome",
     "patterns": ["^utm_", "(referrer|campaign|channel|source|medium)"]
   },
   {
     "id": "other",
     "label": "⚙️ Other",
+    "icon": "Tag",
     "patterns": [".*"]
   }
 ]
