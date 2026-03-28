@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/cabichahine/stratif.io/compare/v0.1.5...v0.1.6) (2026-03-28)
+
+
+### Bug Fixes
+
+* update feature table to reflect renamed nav labels (Journey, Pivot, SQL Studio) ([#87](https://github.com/cabichahine/stratif.io/issues/87)) ([4b1c9ed](https://github.com/cabichahine/stratif.io/commit/4b1c9edef749a66e9bcfcba62095bb4e753dc452))
+
 ## [0.1.5](https://github.com/cabichahine/stratif.io/compare/v0.1.4...v0.1.5) (2026-03-27)
 
 
