@@ -116,7 +116,7 @@ export function ConnectionDetailPage() {
 
       {isWizardMode ? (
         <>
-          <ConnectionWizardProgress currentStep={tab} />
+          <ConnectionWizardProgress currentStep={tab} onStepClick={setTab} />
 
           {/* Tab content */}
           {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
@@ -124,9 +124,6 @@ export function ConnectionDetailPage() {
 
           {/* Wizard navigation */}
           <div className="mt-6 flex justify-end">
-            {tab === 'connection' && (
-              <Button onClick={() => setTab('schema')}>Next: Configure Schema →</Button>
-            )}
             {tab === 'schema' && <Button onClick={() => navigate('/connections')}>Done →</Button>}
           </div>
         </>

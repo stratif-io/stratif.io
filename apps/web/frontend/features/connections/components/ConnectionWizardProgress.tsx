@@ -9,9 +9,10 @@ const STEPS: { id: WizardStep; label: string }[] = [
 
 interface Props {
   currentStep: WizardStep
+  onStepClick?: (step: WizardStep) => void
 }
 
-export function ConnectionWizardProgress({ currentStep }: Props) {
+export function ConnectionWizardProgress({ currentStep, onStepClick }: Props) {
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep)
 
   return (
@@ -20,11 +21,15 @@ export function ConnectionWizardProgress({ currentStep }: Props) {
         const isActive = i === currentIndex
 
         return (
-          <div
+          <button
             key={step.id}
             data-testid={`step-${step.id}`}
             data-active={String(isActive)}
-            className="flex flex-col items-center gap-1"
+            onClick={() => onStepClick?.(step.id)}
+            className={cn(
+              'flex flex-col items-center gap-1',
+              onStepClick ? 'cursor-pointer' : 'cursor-default'
+            )}
           >
             <div
               className={cn(
@@ -40,7 +45,7 @@ export function ConnectionWizardProgress({ currentStep }: Props) {
             >
               {step.label}
             </span>
-          </div>
+          </button>
         )
       })}
     </div>
