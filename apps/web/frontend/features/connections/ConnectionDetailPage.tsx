@@ -124,11 +124,6 @@ export function ConnectionDetailPage() {
           {/* Tab content */}
           {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
           {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
-
-          {/* Wizard navigation */}
-          <div className="mt-6 flex justify-end">
-            {tab === 'schema' && <Button onClick={() => navigate('/connections')}>Done →</Button>}
-          </div>
         </>
       ) : (
         <>
