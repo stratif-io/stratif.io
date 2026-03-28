@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/cabichahine/stratif.io/compare/v0.3.2...v0.4.0) (2026-03-28)
+
+
+### Features
+
+* merge schema and filters into one wizard step ([#96](https://github.com/cabichahine/stratif.io/issues/96)) ([f443e9a](https://github.com/cabichahine/stratif.io/commit/f443e9a5027ae0c8d9c0c39b007d35b07e428d97))
+
 ## [0.3.2](https://github.com/cabichahine/stratif.io/compare/v0.3.1...v0.3.2) (2026-03-28)
 
 
