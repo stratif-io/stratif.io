@@ -29,7 +29,7 @@
   },
   {
     "id": "device",
-    "label": "💻 Device & Platform",
+    "label": "💻 Device",
     "icon": "Monitor",
     "emoji": "💻",
     "patterns": ["(device|browser|os|platform|screen|viewport)"]
