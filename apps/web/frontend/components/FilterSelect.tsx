@@ -144,7 +144,7 @@ export function FilterSelect({
         type="button"
         disabled={isDisabled}
         className={cn(
-          'w-full text-left px-3 py-1.5 text-sm truncate flex items-center gap-2',
+          'w-full text-left px-2.5 py-1.5 text-xs truncate flex items-center gap-2',
           'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
           isSelected && 'bg-primary/10 text-primary font-medium',
           isDisabled && 'opacity-40 cursor-not-allowed pointer-events-none'
@@ -154,8 +154,8 @@ export function FilterSelect({
         {mode === 'multi' && (
           <span
             className={cn(
-              'h-3.5 w-3.5 shrink-0 rounded-sm border',
-              isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/30'
+              'h-3 w-3 shrink-0 rounded-sm border',
+              isSelected ? 'bg-primary/80 border-primary/80' : 'border-muted-foreground/30'
             )}
           />
         )}
