@@ -74,24 +74,26 @@ export function FunnelDetailPage() {
 
   useEffect(() => {
     if (dateRange.from && dateRange.to) {
-      setSearchParams({
-        ...Object.fromEntries(searchParams),
-        start_date: formatDateParam(dateRange.from),
-        end_date: formatDateParam(dateRange.to),
-      })
+      const from = formatDateParam(dateRange.from)
+      const to = formatDateParam(dateRange.to)
+      setSearchParams((prev) => ({
+        ...Object.fromEntries(prev),
+        start_date: from,
+        end_date: to,
+      }))
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange])
+  }, [dateRange, setSearchParams])
 
   // Sync step and device state back to URL
   useEffect(() => {
-    const current = Object.fromEntries(searchParams)
-    const next: Record<string, string> = { ...current }
-    if (events.length >= 2) next['events'] = events.join(',')
-    delete next['device_type']
-    setSearchParams(next)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [funnelSteps])
+    const eventsValue = events.length >= 2 ? events.join(',') : null
+    setSearchParams((prev) => {
+      const next: Record<string, string> = { ...Object.fromEntries(prev) }
+      if (eventsValue) next['events'] = eventsValue
+      delete next['device_type']
+      return next
+    })
+  }, [funnelSteps, events, setSearchParams])
 
   const addStep = () => {
     if (funnelSteps.length < MAX_STEPS) {

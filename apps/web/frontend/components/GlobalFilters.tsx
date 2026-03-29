@@ -94,8 +94,8 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
             {value ?? `All ${pluralize(field.label.toLowerCase())}`}
           </span>
           {value ? (
-            <span
-              role="button"
+            <button
+              type="button"
               aria-label={`Clear ${field.label} filter`}
               className="flex items-center justify-center -mr-1 p-1 min-w-[24px] min-h-[24px] text-muted-foreground hover:text-foreground"
               onClick={(e) => {
@@ -104,7 +104,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
               }}
             >
               <X className="h-3 w-3 shrink-0" />
-            </span>
+            </button>
           ) : (
             <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
           )}
