@@ -124,7 +124,7 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
   const queries = sql ? (Array.isArray(sql) ? sql : [sql]) : []
   const multiQuery = queries.length > 1
 
-  const sqlBg = dark ? 'bg-[#282c34] border-border' : 'bg-muted/40 border-border'
+  const sqlBg = dark ? 'bg-[#282c34] border-border' : 'bg-muted border-border'
 
   function openInStudio(query: string, collapseFirst?: () => void) {
     collapseFirst?.()
