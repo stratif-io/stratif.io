@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/cabichahine/stratif.io/compare/v0.5.1...v0.6.0) (2026-03-29)
+
+
+### Features
+
+* per-query SQL Studio buttons in DevCard SQL viewer ([#113](https://github.com/cabichahine/stratif.io/issues/113)) ([4c82b0e](https://github.com/cabichahine/stratif.io/commit/4c82b0e9c1f0bfbf41d269b4638da3afa0a1fcd6))
+
 ## [0.5.1](https://github.com/cabichahine/stratif.io/compare/v0.5.0...v0.5.1) (2026-03-29)
 
 
