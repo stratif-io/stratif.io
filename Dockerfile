@@ -1,14 +1,14 @@
-# ── Stage 1: Build frontend ───────────────────────────────────────────────────
-FROM debian:bookworm-slim AS frontend
-RUN apt-get update && apt-get install -y curl unzip ca-certificates && rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.11"
-ENV PATH="/root/.bun/bin:$PATH"
+# ── Stage 1: Install JS dependencies (shared) ─────────────────────────────────
+FROM oven/bun:1 AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/package.json
 COPY apps/docs/package.json ./apps/docs/package.json
-RUN bun install && \
-    ARCH=$(uname -m) && \
+RUN bun install
+
+# ── Stage 2: Build frontend ───────────────────────────────────────────────────
+FROM deps AS frontend
+RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then \
       bun add --no-save \
         @rollup/rollup-linux-arm64-gnu \
@@ -26,28 +26,20 @@ COPY apps/web/public ./apps/web/public
 COPY apps/web/frontend ./apps/web/frontend
 RUN bun run build
 
-# ── Stage 2: Build docs ────────────────────────────────────────────────────────
-FROM debian:bookworm-slim AS docs
-RUN apt-get update && apt-get install -y curl unzip ca-certificates && rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.11"
-ENV PATH="/root/.bun/bin:$PATH"
-WORKDIR /app
-COPY package.json bun.lock ./
-COPY apps/web/package.json ./apps/web/package.json
-COPY apps/docs/package.json ./apps/docs/package.json
-RUN bun install
+# ── Stage 3: Build docs ────────────────────────────────────────────────────────
+FROM deps AS docs
 COPY apps/docs ./apps/docs
 # Build with /docs/ base so assets resolve correctly when served at /docs/
 RUN VITEPRESS_BASE=/docs/ bun run docs:build
 
-# ── Stage 3: Install Python dependencies ──────────────────────────────────────
+# ── Stage 4: Install Python dependencies ──────────────────────────────────────
 FROM python:3.12-slim AS python-deps
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
 COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-dev
 
-# ── Stage 4: Final image ──────────────────────────────────────────────────────
+# ── Stage 5: Final image ──────────────────────────────────────────────────────
 FROM python:3.12-slim AS app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
@@ -71,7 +63,7 @@ ENV PYTHONPATH=/app
 EXPOSE 8000
 ENTRYPOINT ["./entrypoint.sh"]
 
-# ── Stage 5: Caddy (serves docs directly, proxies everything else) ────────────
+# ── Stage 6: Caddy (serves docs directly, proxies everything else) ────────────
 FROM caddy:2-alpine AS caddy-server
 COPY --from=docs /app/apps/docs/.vitepress/dist /srv/docs
 COPY Caddyfile /etc/caddy/Caddyfile

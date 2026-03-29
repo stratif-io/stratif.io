@@ -144,6 +144,33 @@ describe('DevCard', () => {
     expect(screen.getByLabelText('Show SQL')).toBeInTheDocument()
   })
 
+  it('renders one "Open in SQL Studio" button per query block for multiple queries', () => {
+    setDevMode(true)
+    renderCard({ sql: ['SELECT 1', 'SELECT 2', 'SELECT 3'] })
+    fireEvent.click(screen.getByLabelText('Show SQL'))
+    const buttons = screen.getAllByLabelText('Open in SQL Studio')
+    expect(buttons).toHaveLength(3)
+  })
+
+  it('sends the correct query when a per-query SQL Studio button is clicked', () => {
+    setDevMode(true)
+    renderCard({ sql: ['SELECT 1', 'SELECT 2'] })
+    fireEvent.click(screen.getByLabelText('Show SQL'))
+    const buttons = screen.getAllByLabelText('Open in SQL Studio')
+    fireEvent.click(buttons[1])
+    expect(mockNavigate).toHaveBeenCalledWith('/query-studio')
+    expect(useAppStore.getState().pendingQueryStudioSql).toContain('SELECT 2')
+  })
+
+  it('does NOT render a header-level Terminal button for multiple queries', () => {
+    setDevMode(true)
+    renderCard({ sql: ['SELECT 1', 'SELECT 2'] })
+    fireEvent.click(screen.getByLabelText('Show SQL'))
+    // Should be exactly 2 — one per query, no extra header button
+    const buttons = screen.getAllByLabelText('Open in SQL Studio')
+    expect(buttons).toHaveLength(2)
+  })
+
   it('hooks are always called — toggling devMode on/off must not throw', () => {
     // Render with devMode off
     const { rerender } = render(
