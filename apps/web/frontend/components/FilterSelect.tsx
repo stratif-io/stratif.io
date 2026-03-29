@@ -69,9 +69,10 @@ export function FilterSelect({
   const groups = useMemo(() => {
     if (!tree) return []
     const raw = groupDimensionsByCategory(options as DimensionOption[], CATEGORIES)
-    const firstIndex = (g: (typeof raw)[0]) =>
-      Math.min(...g.dimensions.map((d) => options.findIndex((o) => o.value === d.value)))
-    return [...raw].sort((a, b) => firstIndex(a) - firstIndex(b))
+    const labelText = (label: string) => label.slice(label.indexOf(' ') + 1)
+    return [...raw].sort((a, b) =>
+      labelText(a.category.label).localeCompare(labelText(b.category.label))
+    )
   }, [tree, options])
 
   function handleOpenChange(next: boolean) {

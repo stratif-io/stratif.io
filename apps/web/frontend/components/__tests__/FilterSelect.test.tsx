@@ -102,12 +102,11 @@ describe('FilterSelect', () => {
     )
     await userEvent.click(screen.getByRole('button'))
     const dialog = screen.getByRole('dialog')
-    // 'user' is the first category — its columns should be visible in the right panel
-    expect(within(dialog).getByRole('button', { name: /user_id/i })).toBeInTheDocument()
-    expect(within(dialog).getByRole('button', { name: /user_country/i })).toBeInTheDocument()
+    // 'device' is the first category alphabetically — its columns should be visible in the right panel
+    expect(within(dialog).getByRole('button', { name: /device_type/i })).toBeInTheDocument()
     // columns from other categories should NOT be visible
+    expect(within(dialog).queryByRole('button', { name: /user_id/i })).not.toBeInTheDocument()
     expect(within(dialog).queryByRole('button', { name: /ts_event/i })).not.toBeInTheDocument()
-    expect(within(dialog).queryByRole('button', { name: /device_type/i })).not.toBeInTheDocument()
   })
 
   it('tree mode opens to the category of the first selected value', async () => {
@@ -128,12 +127,12 @@ describe('FilterSelect', () => {
     )
     await userEvent.click(screen.getByRole('button'))
     const dialog = screen.getByRole('dialog')
-    // Initially shows first category (user)
-    expect(within(dialog).getByRole('button', { name: /user_id/i })).toBeInTheDocument()
-    // Click Device category
-    await userEvent.click(within(dialog).getByRole('button', { name: /device/i }))
+    // Initially shows first category alphabetically (device)
     expect(within(dialog).getByRole('button', { name: /device_type/i })).toBeInTheDocument()
-    expect(within(dialog).queryByRole('button', { name: /user_id/i })).not.toBeInTheDocument()
+    // Click User category
+    await userEvent.click(within(dialog).getByRole('button', { name: /👤/i }))
+    expect(within(dialog).getByRole('button', { name: /user_id/i })).toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: /device_type/i })).not.toBeInTheDocument()
   })
 
   it('tree mode search filters across all categories and shows grouped results', async () => {
@@ -157,12 +156,12 @@ describe('FilterSelect', () => {
     await userEvent.click(screen.getByRole('button'))
     const searchInput = screen.getByPlaceholderText(/search/i)
     await userEvent.type(searchInput, 'user')
-    // Category panel is hidden during search
-    expect(screen.queryByRole('button', { name: /device/i })).not.toBeInTheDocument()
+    // Category panel is hidden during search (use emoji to target category button specifically)
+    expect(screen.queryByRole('button', { name: /💻/i })).not.toBeInTheDocument()
     // Clear search
     await userEvent.clear(searchInput)
     // Category panel is restored
-    expect(screen.getByRole('button', { name: /device/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /💻/i })).toBeInTheDocument()
   })
 
   it('tree mode shows no-results message when search matches nothing', async () => {
