@@ -77,9 +77,7 @@ function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
   return (
     <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 transition-colors hover:border-primary/50">
       <div className="flex items-center gap-1 mb-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {title}
-        </p>
+        <p className="text-[10px] font-semibold tracking-wider text-muted-foreground">{title}</p>
         <Tooltip>
           <TooltipTrigger asChild>
             <Info className="h-2.5 w-2.5 text-muted-foreground/50 cursor-help shrink-0" />

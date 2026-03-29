@@ -66,7 +66,7 @@ export function ValuePickerPopover({ leafCols, onSelect }: ValuePickerPopoverPro
           <>
             {groups.map((group) => (
               <div key={group.category.id} className="mb-2 last:mb-0">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 px-1 mb-1">
+                <div className="text-[10px] font-semibold tracking-wide text-muted-foreground/60 px-1 mb-1">
                   {group.category.label}
                 </div>
                 {group.dimensions.map((dim) => {
@@ -103,7 +103,7 @@ export function ValuePickerPopover({ leafCols, onSelect }: ValuePickerPopoverPro
               </Button>
               <span className="text-xs font-medium">{selectedCol.label}</span>
             </div>
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 px-1 mb-1">
+            <div className="text-[10px] font-semibold tracking-wide text-muted-foreground/60 px-1 mb-1">
               Aggregation
             </div>
             {aggCycle.map((agg) => (

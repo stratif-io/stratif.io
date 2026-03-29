@@ -450,7 +450,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
         <div className="p-3 space-y-3 min-w-[520px]">
           {/* Rolling presets */}
           <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <p className="text-[10px] font-semibold tracking-wider text-muted-foreground">
               Rolling
             </p>
             <div className="flex flex-wrap gap-1">
@@ -473,7 +473,7 @@ export function DateRangePicker({ value, onChange, className, inlineMode }: Date
 
           {/* Calendar-aligned presets */}
           <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <p className="text-[10px] font-semibold tracking-wider text-muted-foreground">
               Calendar
             </p>
             <div className="flex flex-wrap gap-1">

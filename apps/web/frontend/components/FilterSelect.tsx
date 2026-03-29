@@ -241,7 +241,7 @@ export function FilterSelect({
                 ) : (
                   searchGrouped.map((group) => (
                     <div key={group.category.id}>
-                      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-3 py-1 sticky top-0 bg-popover">
+                      <div className="text-[10px] font-semibold tracking-wide text-muted-foreground px-3 py-1 sticky top-0 bg-popover">
                         {group.category.label}
                       </div>
                       {group.dimensions.map((dim) => renderColumnButton(dim))}

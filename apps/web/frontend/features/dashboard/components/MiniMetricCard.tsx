@@ -99,7 +99,7 @@ export const MiniMetricCard = memo(function MiniMetricCard({
       )}
 
       <div className="flex items-center gap-1 mb-1">
-        <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <div className="text-[10px] font-semibold tracking-widest text-muted-foreground">
           {label}
         </div>
         {description && (

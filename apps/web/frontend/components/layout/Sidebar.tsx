@@ -190,7 +190,7 @@ export function Sidebar() {
                   sidebarOpen ? 'opacity-100 max-h-8' : 'opacity-0 max-h-0'
                 )}
               >
-                <p className="px-2.5 pb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground/50">
+                <p className="px-2.5 pb-1 text-xs font-semibold tracking-widest text-muted-foreground/50">
                   {group.title}
                 </p>
               </div>
