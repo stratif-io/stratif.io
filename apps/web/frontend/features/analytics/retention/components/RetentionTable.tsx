@@ -8,9 +8,23 @@ import {
 } from '@/components/ui/table'
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { SparklineChart } from '@/components/charts/sparkline-chart'
 import type { RetentionCohort } from '@/types'
 import type { RetentionGranularity } from '../hooks/useRetentionData'
+
+function RetentionMiniBar({ values }: { values: number[] }) {
+  const max = Math.max(...values, 1)
+  return (
+    <div className="flex items-end gap-0.5 h-6 w-18">
+      {values.map((v, i) => (
+        <div
+          key={i}
+          className={cn('flex-1 rounded-sm', v > 0 ? 'bg-primary/60' : 'bg-muted/40')}
+          style={{ height: `${Math.max((v / max) * 100, v > 0 ? 15 : 8)}%` }}
+        />
+      ))}
+    </div>
+  )
+}
 
 interface RetentionTableProps {
   data: RetentionCohort[]
@@ -81,8 +95,6 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
         </TableHeader>
         <TableBody>
           {data.map((row, idx) => {
-            // Skip unit 0 (signup day — always ~100%, not meaningful in the trend)
-            const sparkData = row.retention_series.slice(1)
             return (
               <TableRow key={idx} className="hover:bg-muted/20 transition-colors">
                 <TableHead scope="row" className="font-medium whitespace-nowrap">
@@ -92,16 +104,7 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                   {row.cohort_size.toLocaleString()}
                 </TableCell>
                 <TableCell className="py-1.5 pr-4">
-                  <SparklineChart
-                    data={sparkData}
-                    width={80}
-                    height={28}
-                    color={`hsl(var(--chart-2))`}
-                    animationDelay={idx * 40}
-                    showArea={false}
-                    strokeWidth={1.5}
-                    formatter={(v) => `${v.toFixed(1)}%`}
-                  />
+                  <RetentionMiniBar values={row.milestone_values} />
                 </TableCell>
                 {milestones.map((unit, i) => {
                   const pct = row.milestone_values[i] ?? 0
