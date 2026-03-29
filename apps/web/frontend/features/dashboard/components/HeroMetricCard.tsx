@@ -48,7 +48,7 @@ function ChartTooltipContent({ active, payload, label, color, metricKey }: Chart
   const prev = payload.find((p) => p.dataKey === 'previous')
   const entry = payload[0]?.payload
   return (
-    <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg text-xs space-y-1.5">
+    <div className="rounded-lg border bg-background/95 p-3 shadow-lg text-xs space-y-1.5">
       {cur && (
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />

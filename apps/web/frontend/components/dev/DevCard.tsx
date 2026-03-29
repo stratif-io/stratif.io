@@ -172,7 +172,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
       {/* Card with 3D flip */}
       <div
         ref={cardRef}
-        className={cn('relative flex flex-col', className)}
+        className={cn('group relative flex flex-col', className)}
         style={{ perspective: '1000px' }}
       >
         <div
@@ -191,7 +191,7 @@ export function DevCard({ sql, children, className }: DevCardProps) {
             <button
               onClick={() => setRotation((r) => r + 180)}
               aria-label="Show SQL"
-              className="absolute top-2 right-2 z-10 rounded px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200 transition-colors"
+              className="absolute top-2 right-2 z-10 rounded px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 border border-amber-300 text-amber-800 hover:bg-amber-200 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
             >
               SQL
             </button>
