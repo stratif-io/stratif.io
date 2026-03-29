@@ -146,9 +146,13 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
                   onClick={() => openInStudio(q, collapseFirst)}
                   aria-label="Open in SQL Studio"
                   title="Open in SQL Studio"
-                  className="transition-colors text-muted-foreground hover:text-foreground"
+                  className={cn(
+                    'flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
+                    'bg-muted text-muted-foreground hover:bg-muted/70'
+                  )}
                 >
                   <Terminal className="h-3 w-3" />
+                  SQL Editor
                 </button>
               </div>
             )}
@@ -229,9 +233,13 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
                     onClick={() => openInStudio(firstQuery)}
                     aria-label="Open in SQL Studio"
                     title="Open in SQL Studio"
-                    className="transition-colors text-muted-foreground hover:text-foreground"
+                    className={cn(
+                      'flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
+                      'bg-muted text-muted-foreground hover:bg-muted/70'
+                    )}
                   >
-                    <Terminal className="h-3.5 w-3.5" />
+                    <Terminal className="h-3 w-3" />
+                    SQL Editor
                   </button>
                 )}
                 <button
@@ -305,7 +313,7 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
                       )}
                     >
                       <Terminal className="h-3 w-3" />
-                      SQL Studio
+                      SQL Editor
                     </button>
                   )}
                   <button
