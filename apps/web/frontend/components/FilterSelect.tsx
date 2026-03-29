@@ -275,7 +275,7 @@ export function FilterSelect({
                         key={group.category.id}
                         type="button"
                         className={cn(
-                          'w-full flex items-center gap-1.5 px-2 py-1.5 text-left text-xs',
+                          'w-full flex items-center gap-1.5 px-2 py-1.5 text-left text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-none',
                           isActive
                             ? 'bg-primary/10 text-primary font-medium'
                             : 'text-muted-foreground hover:bg-muted/60'

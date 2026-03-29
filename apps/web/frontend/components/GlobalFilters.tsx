@@ -97,7 +97,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
             <button
               type="button"
               aria-label={`Clear ${field.label} filter`}
-              className="flex items-center justify-center -mr-1 p-1 min-w-[24px] min-h-[24px] text-muted-foreground hover:text-foreground"
+              className="flex items-center justify-center -mr-1 -mx-1 px-1 -my-2 py-2 text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation()
                 select(null)

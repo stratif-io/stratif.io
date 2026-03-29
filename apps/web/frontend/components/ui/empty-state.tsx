@@ -25,8 +25,8 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      role="status"
-      aria-label={title}
+      role="region"
+      aria-label={title || 'Empty state'}
       className={cn('flex flex-col items-center justify-center py-12 px-4 text-center', className)}
     >
       {/* Icon */}
