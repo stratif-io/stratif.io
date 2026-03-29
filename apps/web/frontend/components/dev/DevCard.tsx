@@ -88,6 +88,15 @@ interface DevCardProps {
 }
 
 export function DevCard({ sql, children, className }: DevCardProps) {
+  if (import.meta.env.PROD) return <>{children}</>
+  return (
+    <DevCardInner sql={sql} className={className}>
+      {children}
+    </DevCardInner>
+  )
+}
+
+function DevCardInner({ sql, children, className }: DevCardProps) {
   const devMode = useAppStore((s) => s.devMode)
   const setPendingQueryStudioSql = useAppStore((s) => s.setPendingQueryStudioSql)
   const navigate = useNavigate()
