@@ -27,7 +27,7 @@ export function CustomTooltip({
   return (
     <div
       className={cn(
-        'rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg',
+        'rounded-lg border bg-background/95 p-3 shadow-lg',
         'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-150',
         className
       )}
@@ -72,7 +72,7 @@ export function SimpleTooltip({
   return (
     <div
       className={cn(
-        'rounded-lg border bg-background/95 backdrop-blur-sm p-2.5 shadow-lg',
+        'rounded-lg border bg-background/95 p-2.5 shadow-lg',
         'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-150'
       )}
     >

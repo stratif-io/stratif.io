@@ -359,9 +359,7 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
           </div>
 
           <div className="rounded-md border p-3 space-y-3">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Credentials
-            </p>
+            <p className="text-xs font-medium text-muted-foreground tracking-wide">Credentials</p>
             <CredentialFields dbType={dbType} />
           </div>
 

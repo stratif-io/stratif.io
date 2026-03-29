@@ -306,7 +306,7 @@ export function PathsExplorerPage() {
                 </span>
               </PopoverTrigger>
               <PopoverContent className="w-52 p-3 space-y-3" align="start">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Path length
                 </p>
                 <div className="flex items-center gap-2">
@@ -380,7 +380,7 @@ export function PathsExplorerPage() {
                 </span>
               </PopoverTrigger>
               <PopoverContent className="w-44 p-3 space-y-2" align="start">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Show top N paths
                 </p>
                 <Input
@@ -420,7 +420,7 @@ export function PathsExplorerPage() {
                 )}
               </PopoverTrigger>
               <PopoverContent className="w-56 p-3 space-y-3" align="start">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Max time between steps
                 </p>
                 <div className="flex items-center gap-2">

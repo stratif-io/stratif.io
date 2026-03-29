@@ -94,17 +94,17 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
             {value ?? `All ${pluralize(field.label.toLowerCase())}`}
           </span>
           {value ? (
-            <span
-              role="button"
+            <button
+              type="button"
               aria-label={`Clear ${field.label} filter`}
-              className="flex items-center justify-center -mr-1 p-1 min-w-[24px] min-h-[24px] text-muted-foreground hover:text-foreground"
+              className="flex items-center justify-center -mr-1 -mx-1 px-1 -my-2 py-2 text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation()
                 select(null)
               }}
             >
               <X className="h-3 w-3 shrink-0" />
-            </span>
+            </button>
           ) : (
             <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
           )}
@@ -186,28 +186,30 @@ export function GlobalFilters() {
   const isLoading = configLoading || optionsLoading
 
   return (
-    <div
-      role="group"
-      aria-label="Global filters"
-      aria-live="polite"
-      className="flex flex-col sm:flex-row sm:items-center sm:h-10 w-full rounded-lg border bg-background shadow-sm sm:divide-x divide-y sm:divide-y-0 divide-border overflow-x-auto scrollbar-none"
-    >
-      <div className="shrink-0">
-        <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
+    <div className="relative w-full after:absolute after:right-0 after:top-0 after:bottom-0 after:w-8 after:bg-gradient-to-l after:from-background after:to-transparent after:pointer-events-none after:rounded-r-lg sm:after:hidden">
+      <div
+        role="group"
+        aria-label="Global filters"
+        aria-live="polite"
+        className="flex flex-col sm:flex-row sm:items-center sm:h-10 w-full rounded-lg border bg-background shadow-sm sm:divide-x divide-y sm:divide-y-0 divide-border overflow-x-auto scrollbar-none"
+      >
+        <div className="shrink-0">
+          <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
+        </div>
+        {isLoading
+          ? Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="px-3 h-full flex items-center shrink-0">
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ))
+          : filterFields.map((field) => (
+              <DimensionFilter
+                key={field.field}
+                field={field}
+                options={filterOptions?.[field.field] ?? []}
+              />
+            ))}
       </div>
-      {isLoading
-        ? Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="px-3 h-full flex items-center shrink-0">
-              <Skeleton className="h-4 w-16" />
-            </div>
-          ))
-        : filterFields.map((field) => (
-            <DimensionFilter
-              key={field.field}
-              field={field}
-              options={filterOptions?.[field.field] ?? []}
-            />
-          ))}
     </div>
   )
 }

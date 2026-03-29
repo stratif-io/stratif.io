@@ -10,6 +10,7 @@ import {
 import { Moon, Sun, Menu, Monitor } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
+import { QueryStatusIndicator } from './QueryStatusIndicator'
 import { cn } from '@/lib/utils'
 
 export function Header() {
@@ -41,16 +42,16 @@ export function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-2 shrink-0">
+          <QueryStatusIndicator />
           <span
             aria-hidden={!devMode}
             className={cn(
-              'flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-opacity duration-200',
-              'border-warning/60 bg-warning/10 text-warning dark:border-warning/40 dark:bg-warning/15',
+              'flex items-center gap-1.5 text-xs text-muted-foreground/60 transition-opacity duration-200',
               devMode ? 'opacity-100' : 'invisible opacity-0'
             )}
           >
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-warning" />
-            Development Mode
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400/60" />
+            Dev
           </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

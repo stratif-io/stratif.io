@@ -111,7 +111,9 @@ export function DonutChart({
             opacity={0.2}
           />
         </svg>
-        <p className="mt-4 text-sm">No data available</p>
+        <p className="mt-4 text-sm text-muted-foreground text-center">
+          No breakdown data available
+        </p>
       </div>
     )
   }

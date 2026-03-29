@@ -75,6 +75,7 @@ export function SparklineChart({
     }
   }, [data, width, height, showArea, showDots])
 
+  const trendDirection = trend > 0 ? 'upward' : trend < 0 ? 'downward' : 'flat'
   const trendColor = trend >= 0 ? 'text-success' : 'text-destructive'
   const trendBgColor = trend >= 0 ? 'bg-success/10' : 'bg-destructive/10'
 
@@ -140,7 +141,7 @@ export function SparklineChart({
 
         <svg
           role="img"
-          aria-label="Sparkline trend chart"
+          aria-label={`Sparkline chart, ${trendDirection} trend`}
           tabIndex={0}
           width={width}
           height={height}

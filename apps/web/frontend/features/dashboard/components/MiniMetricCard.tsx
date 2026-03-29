@@ -72,8 +72,8 @@ export const MiniMetricCard = memo(function MiniMetricCard({
         'relative overflow-hidden rounded-xl border p-3 text-left w-full transition-colors',
         'hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         isHero
-          ? 'border-2 border-primary bg-primary/5 dark:bg-primary/10'
-          : 'border-border bg-card shadow-sm',
+          ? 'border-2 border-primary bg-card shadow-md ring-2 ring-primary/40'
+          : 'border-border bg-card shadow-sm opacity-80 hover:opacity-100 transition-opacity',
         fullWidth && 'col-span-2'
       )}
     >
@@ -99,7 +99,7 @@ export const MiniMetricCard = memo(function MiniMetricCard({
       )}
 
       <div className="flex items-center gap-1 mb-1">
-        <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <div className="text-[10px] font-semibold tracking-widest text-muted-foreground">
           {label}
         </div>
         {description && (
@@ -125,7 +125,12 @@ export const MiniMetricCard = memo(function MiniMetricCard({
               {displayPct === null ? (
                 <span className="text-xs text-muted-foreground cursor-default">—</span>
               ) : isNeutral ? (
-                <span className="inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded text-muted-foreground bg-muted cursor-default">
+                <span
+                  className={cn(
+                    'inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded text-muted-foreground bg-muted cursor-default',
+                    !isHero && 'opacity-70'
+                  )}
+                >
                   0.0%
                 </span>
               ) : (
@@ -133,7 +138,8 @@ export const MiniMetricCard = memo(function MiniMetricCard({
                   className={cn(
                     'inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded cursor-default',
                     isPositive && 'text-success bg-success/10',
-                    isNegative && 'text-destructive bg-destructive/10'
+                    isNegative && 'text-destructive bg-destructive/10',
+                    !isHero && 'opacity-70'
                   )}
                 >
                   <span aria-hidden="true">{isPositive ? '↑' : '↓'}</span>
@@ -148,6 +154,13 @@ export const MiniMetricCard = memo(function MiniMetricCard({
           </Tooltip>
         </div>
       </div>
+
+      {isHero && color && (
+        <div
+          className="absolute bottom-0 left-0 right-0 h-0.5 rounded-b-lg"
+          style={{ backgroundColor: color }}
+        />
+      )}
     </button>
   )
 })
