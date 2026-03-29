@@ -1,4 +1,5 @@
-import { type ReactNode, useMemo, useState } from 'react'
+import { type ReactNode, useMemo, useRef, useState } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { ChevronDown, Check, Loader2, Search, X } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
@@ -109,6 +110,15 @@ export function FilterSelect({
   const filteredFlat = search
     ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
     : options
+
+  const flatListParentRef = useRef<HTMLDivElement>(null)
+  const flatVirtualizer = useVirtualizer({
+    count: filteredFlat.length,
+    getScrollElement: () => flatListParentRef.current,
+    estimateSize: () => 32,
+    overscan: 8,
+    initialRect: { width: 224, height: 240 },
+  })
 
   const triggerHeight = size === 'sm' ? 'h-7 text-xs px-2' : 'h-10 text-sm px-3'
   const hasValue = selectedValues.length > 0
@@ -335,45 +345,100 @@ export function FilterSelect({
               </div>
             )}
 
-            <div className="max-h-60 overflow-y-auto">
-              <div className="p-1">
-                {filteredFlat.length === 0 ? (
-                  <p className="px-2 py-3 text-xs text-muted-foreground text-center">No options</p>
-                ) : (
-                  filteredFlat.map((opt) => {
-                    const isSelected = selectedValues.includes(opt.value)
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        disabled={opt.disabled}
-                        className={cn(
-                          'w-full text-left px-2 py-1.5 rounded text-sm truncate flex items-center gap-2',
-                          'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
-                          isSelected && 'font-medium',
-                          opt.disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent'
-                        )}
-                        onClick={() => handleSelect(opt)}
-                      >
-                        {mode === 'multi' && (
-                          <span
+            <div ref={flatListParentRef} className="max-h-60 overflow-y-auto">
+              {filteredFlat.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground text-center">No options</p>
+              ) : (
+                (() => {
+                  const virtualItems = flatVirtualizer.getVirtualItems()
+                  // Fall back to direct render when virtualizer has no items (e.g. jsdom / zero-height container)
+                  const itemsToRender = virtualItems.length > 0 ? virtualItems : null
+                  return itemsToRender ? (
+                    <div
+                      className="p-1"
+                      style={{ height: flatVirtualizer.getTotalSize(), position: 'relative' }}
+                    >
+                      {itemsToRender.map((virtualItem) => {
+                        const opt = filteredFlat[virtualItem.index]
+                        const isSelected = selectedValues.includes(opt.value)
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            disabled={opt.disabled}
+                            data-index={virtualItem.index}
+                            ref={flatVirtualizer.measureElement}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              transform: `translateY(${virtualItem.start}px)`,
+                            }}
                             className={cn(
-                              'h-3.5 w-3.5 shrink-0 rounded-sm border',
-                              isSelected
-                                ? 'bg-primary border-primary'
-                                : 'border-muted-foreground/40'
+                              'text-left px-2 py-1.5 rounded text-sm truncate flex items-center gap-2',
+                              'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
+                              isSelected && 'font-medium',
+                              opt.disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent'
                             )}
-                          />
-                        )}
-                        {mode === 'single' && isSelected && (
-                          <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                        )}
-                        {opt.label}
-                      </button>
-                    )
-                  })
-                )}
-              </div>
+                            onClick={() => handleSelect(opt)}
+                          >
+                            {mode === 'multi' && (
+                              <span
+                                className={cn(
+                                  'h-3.5 w-3.5 shrink-0 rounded-sm border',
+                                  isSelected
+                                    ? 'bg-primary border-primary'
+                                    : 'border-muted-foreground/40'
+                                )}
+                              />
+                            )}
+                            {mode === 'single' && isSelected && (
+                              <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                            )}
+                            {opt.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-1">
+                      {filteredFlat.map((opt) => {
+                        const isSelected = selectedValues.includes(opt.value)
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            disabled={opt.disabled}
+                            className={cn(
+                              'w-full text-left px-2 py-1.5 rounded text-sm truncate flex items-center gap-2',
+                              'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
+                              isSelected && 'font-medium',
+                              opt.disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+                            )}
+                            onClick={() => handleSelect(opt)}
+                          >
+                            {mode === 'multi' && (
+                              <span
+                                className={cn(
+                                  'h-3.5 w-3.5 shrink-0 rounded-sm border',
+                                  isSelected
+                                    ? 'bg-primary border-primary'
+                                    : 'border-muted-foreground/40'
+                                )}
+                              />
+                            )}
+                            {mode === 'single' && isSelected && (
+                              <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                            )}
+                            {opt.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )
+                })()
+              )}
             </div>
 
             {mode === 'multi' && selectedValues.length > 0 && (
