@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/cabichahine/stratif.io/compare/v0.5.0...v0.5.1) (2026-03-29)
+
+
+### Bug Fixes
+
+* impeccable audit — UX polish, a11y, performance, and theming fixes ([#108](https://github.com/cabichahine/stratif.io/issues/108)) ([1af11d5](https://github.com/cabichahine/stratif.io/commit/1af11d5283456056b00830800aefc9b6570f51be))
+
 ## [0.5.0](https://github.com/cabichahine/stratif.io/compare/v0.4.1...v0.5.0) (2026-03-29)
 
 
