@@ -186,28 +186,30 @@ export function GlobalFilters() {
   const isLoading = configLoading || optionsLoading
 
   return (
-    <div
-      role="group"
-      aria-label="Global filters"
-      aria-live="polite"
-      className="flex flex-col sm:flex-row sm:items-center sm:h-10 w-full rounded-lg border bg-background shadow-sm sm:divide-x divide-y sm:divide-y-0 divide-border overflow-x-auto scrollbar-none"
-    >
-      <div className="shrink-0">
-        <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
+    <div className="relative w-full after:absolute after:right-0 after:top-0 after:bottom-0 after:w-8 after:bg-gradient-to-l after:from-background after:to-transparent after:pointer-events-none after:rounded-r-lg sm:after:hidden">
+      <div
+        role="group"
+        aria-label="Global filters"
+        aria-live="polite"
+        className="flex flex-col sm:flex-row sm:items-center sm:h-10 w-full rounded-lg border bg-background shadow-sm sm:divide-x divide-y sm:divide-y-0 divide-border overflow-x-auto scrollbar-none"
+      >
+        <div className="shrink-0">
+          <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
+        </div>
+        {isLoading
+          ? Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="px-3 h-full flex items-center shrink-0">
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ))
+          : filterFields.map((field) => (
+              <DimensionFilter
+                key={field.field}
+                field={field}
+                options={filterOptions?.[field.field] ?? []}
+              />
+            ))}
       </div>
-      {isLoading
-        ? Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="px-3 h-full flex items-center shrink-0">
-              <Skeleton className="h-4 w-16" />
-            </div>
-          ))
-        : filterFields.map((field) => (
-            <DimensionFilter
-              key={field.field}
-              field={field}
-              options={filterOptions?.[field.field] ?? []}
-            />
-          ))}
     </div>
   )
 }
