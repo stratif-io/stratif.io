@@ -38,8 +38,10 @@ export function FunnelChart({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center text-muted-foreground" style={{ height }}>
-        No data available
+      <div className="flex items-center justify-center" style={{ height }}>
+        <p className="text-sm text-muted-foreground text-center">
+          Select at least 2 events to build a funnel
+        </p>
       </div>
     )
   }

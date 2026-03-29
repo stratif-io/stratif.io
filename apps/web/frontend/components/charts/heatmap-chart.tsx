@@ -80,8 +80,10 @@ export function HeatmapChart({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center text-muted-foreground" style={{ height }}>
-        No data available
+      <div className="flex items-center justify-center" style={{ height }}>
+        <p className="text-sm text-muted-foreground text-center">
+          No session activity for this period
+        </p>
       </div>
     )
   }

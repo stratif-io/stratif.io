@@ -21,7 +21,7 @@ export function UnderConstruction({
     <div className="flex items-center justify-center min-h-[60vh] p-8">
       <div className="max-w-sm w-full space-y-6 text-center">
         {pageName && (
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50">
+          <p className="text-xs font-semibold tracking-widest text-muted-foreground/50">
             {pageName}
           </p>
         )}

@@ -17,9 +17,7 @@ export function ColumnPanel({ columns, onToggle, onClose }: ColumnPanelProps) {
   return (
     <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-border bg-background shadow-lg">
       <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Columns
-        </span>
+        <span className="text-xs font-semibold text-muted-foreground tracking-wide">Columns</span>
         <button
           onClick={onClose}
           className="text-muted-foreground hover:text-foreground"

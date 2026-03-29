@@ -31,6 +31,7 @@ function ColumnTextFilter({
       <input
         type="text"
         placeholder={placeholder}
+        aria-label={placeholder}
         value={local}
         onChange={(e) => {
           const v = e.target.value

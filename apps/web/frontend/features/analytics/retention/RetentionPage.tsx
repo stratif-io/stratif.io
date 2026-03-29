@@ -77,9 +77,7 @@ function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
   return (
     <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 transition-colors hover:border-primary/50">
       <div className="flex items-center gap-1 mb-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {title}
-        </p>
+        <p className="text-[10px] font-semibold tracking-wider text-muted-foreground">{title}</p>
         <Tooltip>
           <TooltipTrigger asChild>
             <Info className="h-2.5 w-2.5 text-muted-foreground/50 cursor-help shrink-0" />
@@ -183,17 +181,25 @@ export function RetentionPage() {
 
             {/* Milestone metric cards */}
             {milestones.length > 0 && (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                {milestones.map((unit, i) => (
-                  <MetricCard
-                    key={unit}
-                    title={milestoneTitle(granularity, unit)}
-                    value={visibleAvgMilestones[i] ?? 0}
-                    granularity={granularity}
-                    milestone={unit}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                  {milestones.map((unit, i) => (
+                    <MetricCard
+                      key={unit}
+                      title={milestoneTitle(granularity, unit)}
+                      value={visibleAvgMilestones[i] ?? 0}
+                      granularity={granularity}
+                      milestone={unit}
+                    />
+                  ))}
+                </div>
+                {visibleAvgMilestones.length > 0 && visibleAvgMilestones.every((v) => v === 0) && (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    Not enough return visits in this date range — try widening the date range or
+                    removing filters.
+                  </p>
+                )}
+              </>
             )}
 
             {/* Cohort heatmap with sparklines */}

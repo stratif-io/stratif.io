@@ -159,7 +159,7 @@ export function QueryEditor({
             <>
               <div className="fixed inset-0 z-10" onClick={() => setRunMenuOpen(false)} />
               <div className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-md border bg-popover shadow-md overflow-hidden py-1">
-                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                <p className="px-3 py-1 text-[10px] font-semibold tracking-widest text-muted-foreground">
                   Run options
                 </p>
                 <label className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-[11px] hover:bg-accent transition-colors">

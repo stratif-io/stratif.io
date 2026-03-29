@@ -48,7 +48,7 @@ function ChartTooltipContent({ active, payload, label, color, metricKey }: Chart
   const prev = payload.find((p) => p.dataKey === 'previous')
   const entry = payload[0]?.payload
   return (
-    <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg text-xs space-y-1.5">
+    <div className="rounded-lg border bg-background/95 p-3 shadow-lg text-xs space-y-1.5">
       {cur && (
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
@@ -130,7 +130,7 @@ export const HeroMetricCard = memo(function HeroMetricCard({
   const gradientId = `hero-gradient-${metricKey}`
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-sm p-0 flex flex-col h-full">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-md p-0 flex flex-col h-full transition-colors hover:bg-accent/20">
       {/* Chart fills the card — no padding, chart is the primary visual */}
       <div
         className={cn(
@@ -202,7 +202,7 @@ export const HeroMetricCard = memo(function HeroMetricCard({
       >
         {/* Label row */}
         <div className="flex items-center gap-1.5 mb-1">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          <div className="text-[10px] font-semibold tracking-widest text-muted-foreground">
             {label}
           </div>
           {description && (
