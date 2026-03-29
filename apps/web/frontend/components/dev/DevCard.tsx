@@ -121,21 +121,40 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
 
   if (!devMode) return <>{children}</>
 
-  const firstQuery = Array.isArray(sql) ? sql[0] : sql
-
   const queries = sql ? (Array.isArray(sql) ? sql : [sql]) : []
+  const multiQuery = queries.length > 1
 
-  const sqlBg = dark ? 'bg-[#282c34] border-border' : 'bg-muted/40 border-border'
+  const sqlBg = dark ? 'bg-[#282c34] border-border' : 'bg-muted border-border'
 
-  const sqlContent = (fontSize: string) => (
+  function openInStudio(query: string, collapseFirst?: () => void) {
+    collapseFirst?.()
+    setPendingQueryStudioSql(prettySql(query))
+    navigate('/query-studio')
+  }
+
+  const sqlContent = (fontSize: string, collapseFirst?: () => void) => (
     <>
       {queries.length === 0 ? (
         <p className="text-[10px] italic text-muted-foreground">No SQL available</p>
       ) : (
         queries.map((q, i) => (
           <div key={i}>
-            {queries.length > 1 && (
-              <p className="text-[9px] mb-1 font-mono text-muted-foreground">-- Query {i + 1}</p>
+            {multiQuery && (
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[9px] font-mono text-muted-foreground">-- Query {i + 1}</p>
+                <button
+                  onClick={() => openInStudio(q, collapseFirst)}
+                  aria-label="Open in SQL Studio"
+                  title="Open in SQL Studio"
+                  className={cn(
+                    'flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
+                    'bg-muted text-muted-foreground hover:bg-muted/70'
+                  )}
+                >
+                  <Terminal className="h-3 w-3" />
+                  SQL Editor
+                </button>
+              </div>
             )}
             <SqlViewer query={q} dark={dark} fontSize={fontSize} />
             {i < queries.length - 1 && <hr className="my-2 border-border" />}
@@ -164,6 +183,8 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
     width: window.innerWidth * 0.8,
     height: window.innerHeight * 0.75,
   }
+
+  const firstQuery = queries[0]
 
   return (
     <>
@@ -207,17 +228,18 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
           >
             {flipped && (
               <div className="flex items-center justify-end gap-1.5 px-2 py-1.5 shrink-0 border-b border-border">
-                {firstQuery && (
+                {!multiQuery && firstQuery && (
                   <button
-                    onClick={() => {
-                      setPendingQueryStudioSql(prettySql(firstQuery))
-                      navigate('/query-studio')
-                    }}
+                    onClick={() => openInStudio(firstQuery)}
                     aria-label="Open in SQL Studio"
                     title="Open in SQL Studio"
-                    className="transition-colors text-muted-foreground hover:text-foreground"
+                    className={cn(
+                      'flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
+                      'bg-muted text-muted-foreground hover:bg-muted/70'
+                    )}
                   >
-                    <Terminal className="h-3.5 w-3.5" />
+                    <Terminal className="h-3 w-3" />
+                    SQL Editor
                   </button>
                 )}
                 <button
@@ -273,20 +295,16 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0">
                 <span className="text-xs font-mono font-semibold text-foreground">
                   SQL
-                  {queries.length > 1 && (
+                  {multiQuery && (
                     <span className="ml-2 font-normal text-muted-foreground">
                       {queries.length} queries
                     </span>
                   )}
                 </span>
                 <div className="flex items-center gap-2">
-                  {firstQuery && (
+                  {!multiQuery && firstQuery && (
                     <button
-                      onClick={() => {
-                        collapse()
-                        setPendingQueryStudioSql(prettySql(firstQuery))
-                        navigate('/query-studio')
-                      }}
+                      onClick={() => openInStudio(firstQuery, collapse)}
                       aria-label="Open in SQL Studio"
                       title="Open in SQL Studio"
                       className={cn(
@@ -295,7 +313,7 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
                       )}
                     >
                       <Terminal className="h-3 w-3" />
-                      SQL Studio
+                      SQL Editor
                     </button>
                   )}
                   <button
@@ -307,7 +325,7 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-auto p-4">{sqlContent('13px')}</div>
+              <div className="flex-1 overflow-auto p-4">{sqlContent('13px', collapse)}</div>
             </motion.div>
           </>
         )}
