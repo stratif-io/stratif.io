@@ -170,7 +170,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
       <div className="flex flex-col gap-5">
         {CATEGORIES.map(({ label, metrics }) => (
           <div key={label}>
-            <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+            <div className="text-[11px] font-semibold tracking-widest text-muted-foreground mb-2">
               {label}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

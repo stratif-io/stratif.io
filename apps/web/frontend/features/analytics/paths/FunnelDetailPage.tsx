@@ -282,7 +282,7 @@ export function FunnelDetailPage() {
               {!isLoading && steps.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="rounded-xl border border-border bg-card p-4">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                    <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
                       Started
                     </div>
                     <div className="text-2xl font-bold">
@@ -294,7 +294,7 @@ export function FunnelDetailPage() {
                   </div>
 
                   <div className="rounded-xl border border-border bg-card p-4">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                    <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
                       Completed all steps
                     </div>
                     <div className="text-2xl font-bold">
@@ -306,7 +306,7 @@ export function FunnelDetailPage() {
                   </div>
 
                   <div className="rounded-xl border border-border bg-card p-4">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                    <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
                       Biggest drop
                     </div>
                     <div className="text-2xl font-bold">

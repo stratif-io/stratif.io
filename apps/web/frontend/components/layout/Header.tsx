@@ -10,6 +10,7 @@ import {
 import { Moon, Sun, Menu, Monitor } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
+import { QueryStatusIndicator } from './QueryStatusIndicator'
 import { cn } from '@/lib/utils'
 
 export function Header() {
@@ -41,6 +42,7 @@ export function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-2 shrink-0">
+          <QueryStatusIndicator />
           <span
             aria-hidden={!devMode}
             className={cn(

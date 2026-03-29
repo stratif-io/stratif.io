@@ -120,7 +120,7 @@ export function TrendsPage() {
                   key={label}
                   className={`relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 ${span}`}
                 >
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                  <p className="text-[10px] font-semibold tracking-wider text-muted-foreground mb-1">
                     {label}
                   </p>
                   <p className="text-lg font-bold tracking-tight leading-none">{value}</p>
