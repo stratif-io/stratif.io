@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/cabichahine/stratif.io/compare/v0.4.1...v0.5.0) (2026-03-29)
+
+
+### Features
+
+* replace accordion tree with two-panel column picker ([#104](https://github.com/cabichahine/stratif.io/issues/104)) ([fec1993](https://github.com/cabichahine/stratif.io/commit/fec1993a7d8058377e2be936f5fe308f26cdb626))
+
 ## [0.4.1](https://github.com/cabichahine/stratif.io/compare/v0.4.0...v0.4.1) (2026-03-28)
 
 
