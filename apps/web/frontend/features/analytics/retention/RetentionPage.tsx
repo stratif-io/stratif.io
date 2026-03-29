@@ -182,17 +182,25 @@ export function RetentionPage() {
 
             {/* Milestone metric cards */}
             {milestones.length > 0 && (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                {milestones.map((unit, i) => (
-                  <MetricCard
-                    key={unit}
-                    title={milestoneTitle(granularity, unit)}
-                    value={visibleAvgMilestones[i] ?? 0}
-                    granularity={granularity}
-                    milestone={unit}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                  {milestones.map((unit, i) => (
+                    <MetricCard
+                      key={unit}
+                      title={milestoneTitle(granularity, unit)}
+                      value={visibleAvgMilestones[i] ?? 0}
+                      granularity={granularity}
+                      milestone={unit}
+                    />
+                  ))}
+                </div>
+                {visibleAvgMilestones.length > 0 && visibleAvgMilestones.every((v) => v === 0) && (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    Not enough return visits in this date range — try widening the date range or
+                    removing filters.
+                  </p>
+                )}
+              </>
             )}
 
             {/* Cohort heatmap with sparklines */}
