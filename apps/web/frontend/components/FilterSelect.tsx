@@ -1,5 +1,5 @@
 import { type ReactNode, useMemo, useState } from 'react'
-import { ChevronDown, Check, Loader2, X } from 'lucide-react'
+import { ChevronDown, Check, Loader2, Search, X } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -155,11 +155,16 @@ export function FilterSelect({
           <span
             className={cn(
               'h-3.5 w-3.5 shrink-0 rounded-sm border',
-              isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+              isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/30'
             )}
           />
         )}
-        {mode === 'single' && isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+        {mode === 'single' &&
+          (isSelected ? (
+            <Check className="h-3 w-3 shrink-0 text-primary" />
+          ) : (
+            <span className="h-3 w-3 shrink-0" />
+          ))}
         {dim.label}
       </button>
     )
@@ -204,19 +209,21 @@ export function FilterSelect({
         ) : tree ? (
           <>
             {/* Search bar — always shown in tree mode */}
-            <div className="p-2 border-b flex items-center gap-1">
-              <Input
+            <div className="flex items-center gap-2 px-3 py-2 border-b">
+              <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <input
                 placeholder="Search columns…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-7 text-sm flex-1"
+                className="flex-1 text-sm bg-transparent outline-none focus:shadow-none focus-visible:shadow-none placeholder:text-muted-foreground"
+                style={{ boxShadow: 'none' }}
                 autoFocus
               />
               {search && (
                 <button
                   type="button"
                   aria-label="Clear search"
-                  className="p-1 text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground"
                   onClick={() => setSearch('')}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -246,7 +253,7 @@ export function FilterSelect({
               /* Two-panel mode */
               <div className="flex max-h-52">
                 {/* Left panel: categories */}
-                <div className="w-28 shrink-0 bg-muted/40 overflow-y-auto border-r">
+                <div className="w-32 shrink-0 bg-muted/40 overflow-y-auto border-r">
                   {groups.map((group) => {
                     const isActive = group.category.id === activeCategory
                     const categorySelectedCount = group.dimensions.filter((d) =>
@@ -258,24 +265,28 @@ export function FilterSelect({
                         key={group.category.id}
                         type="button"
                         className={cn(
-                          'w-full flex items-center justify-between gap-1 px-2 py-2 text-left text-xs',
+                          'w-full flex items-center gap-1.5 px-2 py-1.5 text-left text-xs',
                           isActive
-                            ? 'bg-primary/10 text-primary font-semibold'
+                            ? 'bg-primary/10 text-primary font-medium'
                             : 'text-muted-foreground hover:bg-muted/60'
                         )}
                         onClick={() => setActiveCategory(group.category.id)}
                       >
-                        <span className="truncate">{group.category.label}</span>
-                        <span
-                          className={cn(
-                            'shrink-0 text-[10px]',
-                            hasSelections
-                              ? 'bg-primary text-primary-foreground rounded-full px-1'
-                              : 'text-muted-foreground'
-                          )}
-                        >
-                          {group.dimensions.length}
+                        <span className="shrink-0 leading-none">
+                          {group.category.label.split(' ')[0]}
                         </span>
+                        <span className="truncate flex-1 min-w-0">
+                          {group.category.label.slice(group.category.label.indexOf(' ') + 1)}
+                        </span>
+                        {hasSelections ? (
+                          <span className="shrink-0 text-[10px] leading-none bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 font-medium">
+                            {categorySelectedCount}
+                          </span>
+                        ) : (
+                          <span className="shrink-0 text-[10px] leading-none text-muted-foreground/50">
+                            {group.dimensions.length}
+                          </span>
+                        )}
                       </button>
                     )
                   })}

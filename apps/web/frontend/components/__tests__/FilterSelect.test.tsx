@@ -228,9 +228,9 @@ describe('FilterSelect', () => {
     )
     await userEvent.click(screen.getByRole('button'))
     const dialog = screen.getByRole('dialog')
-    // 'user' category has 1 selected value — badge should have primary styling
+    // 'user' category has 1 selected value — badge shows selected count with primary styling
     const userRow = within(dialog).getByRole('button', { name: /👤/ })
-    const userBadge = within(userRow).getByText('2')
+    const userBadge = within(userRow).getByText('1')
     expect(userBadge).toHaveClass('bg-primary')
     // 'device' category has no selected values — badge should NOT have primary styling
     const deviceRow = within(dialog).getByRole('button', { name: /💻/ })
