@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading-state'
+import { EmptyState } from '@/components/ui/empty-state'
 import { useConnections, useDeleteConnection, useTestConnection } from '../hooks/useConnectionsData'
 import { ConnectionFormDialog } from './ConnectionFormDialog'
 import { DbLogo } from '@/components/DbLogo'
@@ -128,10 +129,12 @@ export function ConnectionList() {
           <h1 className={TYPOGRAPHY.sectionTitle}>Connections</h1>
           <p className={`${TYPOGRAPHY.muted} mt-0.5`}>Manage your event database connections</p>
         </div>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-1.5" />
-          Add Connection
-        </Button>
+        {data && data.length > 0 && (
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add Connection
+          </Button>
+        )}
       </div>
 
       {isLoading && <LoadingState message="Loading connections…" />}
@@ -139,28 +142,16 @@ export function ConnectionList() {
       {error && <p className="text-sm text-destructive">{error.message}</p>}
 
       {!isLoading && !error && data?.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border p-8 space-y-6">
-          <div className="space-y-1.5">
-            <p className="text-sm font-medium">No connections yet</p>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              stratif.io queries your warehouse directly — no ETL pipelines required. Connect once
-              and your event data is available immediately.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2 text-xs font-mono text-muted-foreground">
-            {['--snowflake', '--databricks', '--postgresql', '--duckdb'].map((flag) => (
-              <span key={flag} className="border border-border px-2 py-0.5">
-                {flag}
-              </span>
-            ))}
-          </div>
-
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" />
-            Add your first connection
-          </Button>
-        </div>
+        <EmptyState
+          icon={Database}
+          title="No connections yet"
+          description="Connect your event database to start exploring your analytics. Supports DuckDB, PostgreSQL, Snowflake, Databricks and more."
+          action={{
+            label: 'Add your first connection',
+            onClick: () => setCreateOpen(true),
+            variant: 'default',
+          }}
+        />
       )}
 
       {data && data.length > 0 && (
