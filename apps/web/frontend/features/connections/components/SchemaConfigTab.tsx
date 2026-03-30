@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Plus, Trash2, ScanSearch, FolderSearch, Lock } from 'lucide-react'
+import { Plus, Trash2, ScanSearch, FolderSearch, Lock, ChevronsUpDown, Check } from 'lucide-react'
 import { SaveStatus } from '@/components/ui/save-status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,14 @@ import {
 } from '@/components/ui/select'
 import { LoadingState } from '@/components/ui/loading-state'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from '@/components/ui/command'
 import {
   useSchemaConfig,
   useUpsertSchemaConfig,
@@ -33,7 +41,7 @@ function defaultLabel(field: string) {
   return field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ')
 }
 
-function ColumnSelect({
+function ColumnCombobox({
   value,
   detectedColumns,
   onChange,
@@ -44,25 +52,57 @@ function ColumnSelect({
   onChange: (v: string) => void
   disabled?: boolean
 }) {
-  const others = Array.from(
-    new Set(detectedColumns.filter(Boolean).filter((c) => c !== value))
-  ).sort()
-  const options = value ? [value, ...others] : others
+  const [open, setOpen] = useState(false)
+  const options = Array.from(
+    new Set([...(value ? [value] : []), ...detectedColumns.filter(Boolean)])
+  ).sort((a, b) => (a === value ? -1 : b === value ? 1 : a.localeCompare(b)))
+
   return (
-    <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger
-        className={cn('h-8 text-sm font-mono', disabled && 'opacity-50 cursor-not-allowed')}
-      >
-        <SelectValue placeholder="Select column…" />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((col) => (
-          <SelectItem key={col} value={col} className="font-mono text-xs">
-            {col}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          className={cn(
+            'h-8 w-full flex items-center justify-between rounded-md border border-input bg-background px-3 text-sm font-mono text-left',
+            'hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-1 focus:ring-ring',
+            disabled && 'opacity-50 cursor-not-allowed',
+            !value && 'text-muted-foreground'
+          )}
+        >
+          <span className="truncate">{value || 'Select column…'}</span>
+          <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search columns…" />
+          <CommandList>
+            <CommandEmpty>No column found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((col) => (
+                <CommandItem
+                  key={col}
+                  value={col}
+                  onSelect={(v) => {
+                    onChange(v)
+                    setOpen(false)
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      'mr-2 h-3.5 w-3.5 shrink-0',
+                      col === value ? 'opacity-100' : 'opacity-0'
+                    )}
+                  />
+                  {col}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   )
 }
 
@@ -505,7 +545,7 @@ export function SchemaConfigTab({ connId }: Props) {
                 required
               </span>
             </div>
-            <ColumnSelect
+            <ColumnCombobox
               value={userIdField}
               detectedColumns={detectedColumns}
               onChange={setUserIdField}
@@ -526,31 +566,11 @@ export function SchemaConfigTab({ connId }: Props) {
                 className="grid grid-cols-[140px_1fr_110px_28px] gap-3 px-3 py-2.5 border-b last:border-b-0 items-center"
               >
                 <span className={cn('text-xs', !isMapped && 'text-muted-foreground')}>{label}</span>
-                <Select
+                <ColumnCombobox
                   value={mapped ?? ''}
-                  onValueChange={(v) => setUserIdentityField(key, v || null)}
-                >
-                  <SelectTrigger
-                    className={cn(
-                      'h-8 text-sm font-mono',
-                      !isMapped && 'border-dashed text-muted-foreground'
-                    )}
-                  >
-                    <SelectValue placeholder="Select column…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mapped && !detectedColumns.includes(mapped) && (
-                      <SelectItem key={mapped} value={mapped} className="font-mono text-xs">
-                        {mapped}
-                      </SelectItem>
-                    )}
-                    {detectedColumns.map((col) => (
-                      <SelectItem key={col} value={col} className="font-mono text-xs">
-                        {col}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  detectedColumns={detectedColumns}
+                  onChange={(v) => setUserIdentityField(key, v || null)}
+                />
                 <div className="flex items-center">
                   {isMapped && (
                     <Checkbox
@@ -608,7 +628,7 @@ export function SchemaConfigTab({ connId }: Props) {
                 className={`grid ${EVENT_GRID} gap-3 px-3 py-2.5 border-b items-center opacity-70`}
               >
                 <span className="text-xs text-muted-foreground">{label}</span>
-                <ColumnSelect
+                <ColumnCombobox
                   value={field}
                   detectedColumns={detectedColumns}
                   onChange={setField}
@@ -644,7 +664,7 @@ export function SchemaConfigTab({ connId }: Props) {
                   placeholder="campaign_source"
                   className="h-8 text-sm"
                 />
-                <ColumnSelect
+                <ColumnCombobox
                   value={prop.path}
                   detectedColumns={detectedColumns}
                   onChange={(v) => updateProp(idx, { path: v })}
