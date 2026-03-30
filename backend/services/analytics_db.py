@@ -262,12 +262,12 @@ def open_analytics_db(
     )
     resurrection_window_days: int = (
         schema_row["resurrection_window_days"]
-        if schema_row and schema_row.get("resurrection_window_days") is not None
+        if schema_row and schema_row["resurrection_window_days"] is not None
         else 30
     )
     power_user_threshold_days: int = (
         schema_row["power_user_threshold_days"]
-        if schema_row and schema_row.get("power_user_threshold_days") is not None
+        if schema_row and schema_row["power_user_threshold_days"] is not None
         else 4
     )
 
