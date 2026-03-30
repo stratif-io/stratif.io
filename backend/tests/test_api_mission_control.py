@@ -286,11 +286,11 @@ class TestMissionControlMetricEndpoint:
         body = response.json()
         assert 0.0 <= body["current"] <= 1.0
 
-    def test_all_8_metrics_return_200(self, client):
+    def test_all_9_metrics_return_200(self, client):
         metrics = [
             "total_events", "unique_users", "total_sessions",
             "avg_session_duration_sec", "avg_events_per_session",
-            "new_users", "returning_users", "dau_mau_ratio",
+            "new_users", "returning_users", "resurrected_users", "dau_mau_ratio",
         ]
         for m in metrics:
             r = client.get(

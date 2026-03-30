@@ -533,6 +533,38 @@ def get_mission_control_trend(
             current_day += timedelta(days=1)
         sql_val = [interpolate_sql(uniq_sql, ev_params), interpolate_sql(new_sql, new_ret_params)]
 
+    elif metric == "resurrected_users":
+        resurrection_cutoff_days = db.get_resurrection_window_days()
+        current_day = start
+        data = []
+        while current_day <= end:
+            day_ps = f"{current_day} 00:00:00"
+            day_pe = f"{current_day} 23:59:59"
+            day_cutoff = current_day - timedelta(days=resurrection_cutoff_days)
+            day_ev_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+            day_ev_params: list = [day_ps, day_pe]
+            day_ev_where.extend(filter_clauses)
+            day_ev_params.extend(filter_params)
+            day_ev_where_sql = "WHERE " + " AND ".join(day_ev_where)
+            rows = db.execute(
+                f"""
+                SELECT COUNT(DISTINCT e.user_id)
+                FROM events e
+                {day_ev_where_sql}
+                AND e.user_id IN (
+                    SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id
+                )
+                AND e.user_id IN (
+                    SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id
+                    HAVING MAX(DATE(timestamp)) < ?
+                )
+                """,
+                day_ev_params + [day_ps, day_ps, str(day_cutoff)],
+            )
+            data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
+            current_day += timedelta(days=1)
+        sql_val = "resurrected_users daily trend"
+
     else:  # dau_mau_ratio
         current_day = start
         data = []
