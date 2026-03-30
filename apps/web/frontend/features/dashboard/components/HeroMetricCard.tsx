@@ -8,6 +8,8 @@ import { format, parseISO } from 'date-fns'
 import { useReducedMotion } from '@/hooks'
 import { formatMetricValue } from '@/lib/format-metric'
 import { useCountUp, useFormattedCountUp } from '@/hooks/useCountUp'
+import { MetricPopover } from './MetricPopover'
+import type { MissionControlMetrics, MetricBreakdown } from '@/types'
 
 export interface HeroMetricCardProps {
   label: string
@@ -24,6 +26,9 @@ export interface HeroMetricCardProps {
   loading?: boolean
   description?: string
   changeLabel?: string
+  currentMetrics?: MissionControlMetrics
+  previousMetrics?: Partial<MissionControlMetrics> | null
+  breakdown?: MetricBreakdown
 }
 
 function formatAxisDate(dateStr: string): string {
@@ -86,6 +91,9 @@ export const HeroMetricCard = memo(function HeroMetricCard({
   loading,
   description,
   changeLabel,
+  currentMetrics,
+  previousMetrics,
+  breakdown,
 }: HeroMetricCardProps) {
   const reducedMotion = useReducedMotion()
   const tooltipContent = useMemo(
@@ -205,7 +213,14 @@ export const HeroMetricCard = memo(function HeroMetricCard({
           <div className="text-[10px] font-semibold tracking-widest text-muted-foreground">
             {label}
           </div>
-          {description && (
+          {currentMetrics ? (
+            <MetricPopover
+              metricKey={metricKey as keyof MissionControlMetrics}
+              currentMetrics={currentMetrics}
+              previousMetrics={previousMetrics ?? null}
+              breakdown={breakdown}
+            />
+          ) : description ? (
             <UITooltip>
               <TooltipTrigger asChild className="pointer-events-auto">
                 <Info className="h-3 w-3 text-muted-foreground/60 cursor-help flex-shrink-0" />
@@ -214,7 +229,7 @@ export const HeroMetricCard = memo(function HeroMetricCard({
                 {description}
               </TooltipContent>
             </UITooltip>
-          )}
+          ) : null}
         </div>
 
         {/* Value */}

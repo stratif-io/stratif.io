@@ -5,9 +5,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCountUp, useFormattedCountUp } from '@/hooks/useCountUp'
+import { MetricPopover } from './MetricPopover'
+import type { MissionControlMetrics, MetricBreakdown } from '@/types'
 
 export interface MiniMetricCardProps {
   label: string
+  metricKey?: string
   value: string // pre-formatted fallback
   rawValue?: number // raw number for count-up animation
   pctChange: number | null // null → show "—"
@@ -22,10 +25,14 @@ export interface MiniMetricCardProps {
   sparklineFormatter?: (value: number) => string
   decimalsOverride?: number
   staggerIndex?: number
+  currentMetrics?: MissionControlMetrics
+  previousMetrics?: Partial<MissionControlMetrics> | null
+  breakdown?: MetricBreakdown
 }
 
 export const MiniMetricCard = memo(function MiniMetricCard({
   label,
+  metricKey,
   value,
   rawValue,
   pctChange,
@@ -40,6 +47,9 @@ export const MiniMetricCard = memo(function MiniMetricCard({
   sparklineFormatter,
   decimalsOverride = 0,
   staggerIndex = 0,
+  currentMetrics,
+  previousMetrics,
+  breakdown,
 }: MiniMetricCardProps) {
   const sparklineData = useMemo(
     () => (sparklineValues ?? []).map((v) => ({ v })),
@@ -102,7 +112,14 @@ export const MiniMetricCard = memo(function MiniMetricCard({
         <div className="text-[10px] font-semibold tracking-widest text-muted-foreground">
           {label}
         </div>
-        {description && (
+        {currentMetrics && metricKey ? (
+          <MetricPopover
+            metricKey={metricKey as keyof MissionControlMetrics}
+            currentMetrics={currentMetrics}
+            previousMetrics={previousMetrics ?? null}
+            breakdown={breakdown}
+          />
+        ) : description ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Info className="h-2.5 w-2.5 text-muted-foreground/50 cursor-help flex-shrink-0" />
@@ -111,7 +128,7 @@ export const MiniMetricCard = memo(function MiniMetricCard({
               {description}
             </TooltipContent>
           </Tooltip>
-        )}
+        ) : null}
       </div>
 
       <div

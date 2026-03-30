@@ -3,7 +3,7 @@ import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
 import { MetricCardSkeleton } from '@/components/ui/loading-state'
 import { formatMetricValue, computePctChange } from '@/lib/format-metric'
-import type { MissionControlResponse } from '@/types'
+import type { MissionControlResponse, MissionControlMetrics } from '@/types'
 import type { TrendMetric, MetricTrend } from '../hooks/useMissionControlTrends'
 import { DevCard } from '@/components/dev'
 
@@ -18,76 +18,43 @@ const METRIC_CONFIG: Array<{
   key: TrendMetric
   label: string
   color: string
-  description: string
-  changeLabel: string // explains exactly what the % change is comparing
 }> = [
-  {
-    key: 'total_events',
-    label: 'Total Events',
-    color: 'hsl(var(--chart-1))',
-    description: 'Total number of events tracked in the selected period.',
-    changeLabel: '% change in total event count vs. previous period',
-  },
-  {
-    key: 'unique_users',
-    label: 'Unique Users',
-    color: 'hsl(var(--chart-2))',
-    description: 'Number of distinct users who triggered at least one event.',
-    changeLabel: '% change in distinct user count vs. previous period',
-  },
-  {
-    key: 'total_sessions',
-    label: 'Sessions',
-    color: 'hsl(var(--chart-3))',
-    description: 'Total number of user sessions started in the period.',
-    changeLabel: '% change in total session count vs. previous period',
-  },
-  {
-    key: 'avg_session_duration_sec',
-    label: 'Avg Session',
-    color: 'hsl(var(--chart-4))',
-    description: 'Average duration of a session from first to last event.',
-    changeLabel: '% change in average session duration vs. previous period',
-  },
-  {
-    key: 'avg_events_per_session',
-    label: 'Events / Session',
-    color: 'hsl(var(--chart-5))',
-    description: 'Average number of events fired within a single session.',
-    changeLabel: '% change in average events per session vs. previous period',
-  },
-  {
-    key: 'new_users',
-    label: 'New Users',
-    color: 'hsl(var(--chart-3))',
-    description: 'Users who appeared for the first time in the selected period.',
-    changeLabel: '% change in new user count vs. previous period',
-  },
-  {
-    key: 'returning_users',
-    label: 'Returning Users',
-    color: 'hsl(var(--chart-4))',
-    description: 'Users who had activity before the selected period.',
-    changeLabel: '% change in returning user count vs. previous period',
-  },
-  {
-    key: 'dau_mau_ratio',
-    label: 'DAU / MAU',
-    color: 'hsl(var(--chart-5))',
-    description:
-      'Daily Active Users divided by Monthly Active Users. A higher ratio means stronger day-to-day engagement.',
-    changeLabel: '% change in average DAU/MAU ratio vs. previous period',
-  },
+  { key: 'total_events', label: 'Total Events', color: 'hsl(var(--chart-1))' },
+  { key: 'unique_users', label: 'Unique Users', color: 'hsl(var(--chart-2))' },
+  { key: 'wau', label: 'WAU', color: 'hsl(var(--chart-3))' },
+  { key: 'total_sessions', label: 'Sessions', color: 'hsl(var(--chart-3))' },
+  { key: 'avg_session_duration_sec', label: 'Avg Session', color: 'hsl(var(--chart-4))' },
+  { key: 'avg_events_per_session', label: 'Events / Session', color: 'hsl(var(--chart-5))' },
+  { key: 'avg_active_days', label: 'Active Days', color: 'hsl(var(--chart-1))' },
+  { key: 'power_users', label: 'Power Users', color: 'hsl(var(--chart-2))' },
+  { key: 'new_users', label: 'New Users', color: 'hsl(var(--chart-3))' },
+  { key: 'returning_users', label: 'Returning Users', color: 'hsl(var(--chart-4))' },
+  { key: 'resurrected_users', label: 'Resurrected', color: 'hsl(var(--chart-5))' },
+  { key: 'churned_users', label: 'Churned', color: 'hsl(var(--chart-1))' },
+  { key: 'retention_rate', label: 'Retention Rate', color: 'hsl(var(--chart-2))' },
+  { key: 'dau_mau_ratio', label: 'DAU / MAU', color: 'hsl(var(--chart-5))' },
 ]
 
 const CATEGORIES: Array<{
   label: string
   metrics: TrendMetric[]
 }> = [
-  { label: 'Volume', metrics: ['total_events', 'unique_users', 'total_sessions'] },
-  { label: 'Engagement', metrics: ['avg_session_duration_sec', 'avg_events_per_session'] },
-  { label: 'Acquisition', metrics: ['new_users', 'returning_users'] },
-  { label: 'Stickiness', metrics: ['dau_mau_ratio'] },
+  { label: 'Volume', metrics: ['total_events', 'unique_users', 'wau'] },
+  {
+    label: 'Engagement',
+    metrics: [
+      'total_sessions',
+      'avg_session_duration_sec',
+      'avg_events_per_session',
+      'avg_active_days',
+      'power_users',
+    ],
+  },
+  {
+    label: 'Acquisition',
+    metrics: ['new_users', 'returning_users', 'resurrected_users', 'churned_users'],
+  },
+  { label: 'Stickiness', metrics: ['retention_rate', 'dau_mau_ratio'] },
 ]
 
 function getConfig(key: TrendMetric) {
@@ -161,8 +128,8 @@ export const MissionControlGrid = memo(function MissionControlGrid({
           sparklinePreviousDates={trends[heroMetric]?.previousDates}
           color={heroConfig.color}
           loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
-          description={heroConfig.description}
-          changeLabel={heroConfig.changeLabel}
+          currentMetrics={data?.current}
+          previousMetrics={(data?.previous ?? null) as Partial<MissionControlMetrics> | null}
         />
       </DevCard>
 
@@ -179,12 +146,20 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                 const current = data?.current[metricKey as keyof typeof data.current] ?? 0
                 const previous = data?.previous[metricKey as keyof typeof data.previous] ?? null
                 // total_events spans full width in the Volume row
-                const isFullWidth = metricKey === 'dau_mau_ratio' || metricKey === 'total_events'
+                const isFullWidth =
+                  metricKey === 'dau_mau_ratio' ||
+                  metricKey === 'total_events' ||
+                  metricKey === 'retention_rate'
                 const cardLoading =
                   (metricLoading[metricKey] ?? true) || (trends[metricKey]?.loading ?? true)
                 // Float metrics need 2 decimal places during count-up animation
                 const decimalsOverride =
-                  metricKey === 'dau_mau_ratio' || metricKey === 'avg_events_per_session' ? 2 : 0
+                  metricKey === 'dau_mau_ratio' ||
+                  metricKey === 'avg_events_per_session' ||
+                  metricKey === 'retention_rate' ||
+                  metricKey === 'avg_active_days'
+                    ? 2
+                    : 0
                 const staggerIndex = flatMetrics.indexOf(metricKey)
                 return (
                   <DevCard
@@ -195,6 +170,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                     <MiniMetricCard
                       staggerIndex={staggerIndex}
                       label={cfg.label}
+                      metricKey={metricKey}
                       value={formatMetricValue(metricKey, current)}
                       rawValue={current}
                       pctChange={computePctChange(current, previous)}
@@ -204,8 +180,10 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                       onClick={() => setHeroMetric(metricKey)}
                       loading={cardLoading}
                       fullWidth={isFullWidth}
-                      description={cfg.description}
-                      changeLabel={cfg.changeLabel}
+                      currentMetrics={data?.current}
+                      previousMetrics={
+                        (data?.previous ?? null) as Partial<MissionControlMetrics> | null
+                      }
                       sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
                       decimalsOverride={decimalsOverride}
                     />
