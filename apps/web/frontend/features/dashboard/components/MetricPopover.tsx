@@ -240,7 +240,8 @@ export const MetricPopover = memo(function MetricPopover({
       <PopoverTrigger asChild>
         <button
           aria-label="info"
-          className="text-muted-foreground/60 hover:text-muted-foreground transition-colors flex-shrink-0"
+          onClick={(e) => e.stopPropagation()}
+          className="pointer-events-auto text-muted-foreground/60 hover:text-muted-foreground transition-colors flex-shrink-0"
         >
           <Info className="h-3 w-3" />
         </button>
