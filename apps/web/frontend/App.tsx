@@ -73,7 +73,25 @@ function PageSkeleton() {
   )
 }
 
+function usePreloadRoutes() {
+  useEffect(() => {
+    const preload = () => {
+      import('@/features/dashboard')
+      import('@/features/analytics')
+      import('@/features/events')
+      import('@/features/connections')
+      import('@/features/query-studio/QueryStudioPage')
+    }
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(preload)
+    } else {
+      setTimeout(preload, 1000)
+    }
+  }, [])
+}
+
 function App() {
+  usePreloadRoutes()
   return (
     <Suspense fallback={<PageSkeleton />}>
       <a
