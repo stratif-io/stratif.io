@@ -800,13 +800,13 @@ class BaseSeeder(ABC):
                     else random.randint(2, 8)
                 )
 
-            properties = self._build_event_properties(
+            props, traits, context = self._build_event_properties(
                 user, session_id, referrer, event_name, visited_products
             )
 
             if event_name == "ProductView":
                 product = self._get_random_product()
-                properties["properties"].update(
+                props.update(
                     {
                         "product_id": product["product_id"],
                         "product_name": product["product_name"],
@@ -819,10 +819,10 @@ class BaseSeeder(ABC):
                 while random.random() < 0.4:
                     current_time += timedelta(minutes=random.randint(1, 4))
                     product = self._get_random_product()
-                    additional_props = self._build_event_properties(
+                    add_props, add_traits, add_context = self._build_event_properties(
                         user, session_id, referrer, "ProductView", visited_products
                     )
-                    additional_props["properties"].update(
+                    add_props.update(
                         {
                             "product_id": product["product_id"],
                             "product_name": product["product_name"],
@@ -831,15 +831,15 @@ class BaseSeeder(ABC):
                         }
                     )
                     events.append(
-                        (user["id"], "ProductView", current_time, additional_props,
-                         self._get_server(user["country"]))
+                        (user["id"], "ProductView", current_time, add_props,
+                         self._get_server(user["country"]), add_traits, add_context)
                     )
                     visited_products.append(product)
 
             elif event_name == "AddToCart":
                 if visited_products:
                     cart_product = random.choice(visited_products)
-                    properties["properties"].update(
+                    props.update(
                         {
                             "product_id": cart_product["product_id"],
                             "product_name": cart_product["product_name"],
@@ -856,7 +856,7 @@ class BaseSeeder(ABC):
                         min(len(visited_products), random.randint(1, 3)),
                     )
                     total = sum(p["product_price"] for p in purchased)
-                    properties["properties"].update(
+                    props.update(
                         {
                             "order_id": str(uuid.uuid4())[:12],
                             "total_amount": round(total, 2),
@@ -869,8 +869,8 @@ class BaseSeeder(ABC):
                     )
                     user["completed_purchase"] = True
 
-            events.append((user["id"], event_name, current_time, properties,
-                           self._get_server(user["country"])))
+            events.append((user["id"], event_name, current_time, props,
+                           self._get_server(user["country"]), traits, context))
             progress_prob = FUNNEL_DROP_OFF[event_name]
 
         return events
@@ -881,35 +881,27 @@ class BaseSeeder(ABC):
         events = []
         current_time = session_start
 
-        events.append(
-            (
-                user["id"],
-                "Home",
-                current_time,
-                self._build_event_properties(user, session_id, referrer, "Home", []),
-                self._get_server(user["country"]),
-            )
+        home_props, home_traits, home_context = self._build_event_properties(
+            user, session_id, referrer, "Home", []
         )
+        events.append((user["id"], "Home", current_time, home_props,
+                       self._get_server(user["country"]), home_traits, home_context))
 
         current_time += timedelta(minutes=random.randint(1, 3))
-        events.append(
-            (
-                user["id"],
-                "Search",
-                current_time,
-                self._build_event_properties(user, session_id, referrer, "Search", []),
-                self._get_server(user["country"]),
-            )
+        search_props, search_traits, search_context = self._build_event_properties(
+            user, session_id, referrer, "Search", []
         )
+        events.append((user["id"], "Search", current_time, search_props,
+                       self._get_server(user["country"]), search_traits, search_context))
 
         num_products = random.randint(1, 5)
         for _ in range(num_products):
             current_time += timedelta(minutes=random.randint(1, 4))
             product = self._get_random_product()
-            props = self._build_event_properties(
+            props, traits, context = self._build_event_properties(
                 user, session_id, referrer, "ProductView", []
             )
-            props["properties"].update(
+            props.update(
                 {
                     "product_id": product["product_id"],
                     "product_name": product["product_name"],
@@ -918,7 +910,7 @@ class BaseSeeder(ABC):
                 }
             )
             events.append((user["id"], "ProductView", current_time, props,
-                           self._get_server(user["country"])))
+                           self._get_server(user["country"]), traits, context))
 
         return events
 
@@ -954,20 +946,18 @@ class BaseSeeder(ABC):
         elif event_name == "Purchase":
             event_props["page_url"] = URL_PATHS["Purchase"]
 
-        return {
-            "traits": user["traits"],
-            "context": {
-                "country": user["country"],
-                "city": user["city"],
-                "timezone": user["timezone"],
-                "device_type": user["device_type"],
-                "browser": user["browser"],
-                "os": user["os"],
-                "screen_resolution": user["screen_resolution"],
-                "referrer": referrer,
-            },
-            "properties": event_props,
+        traits = user["traits"]
+        context = {
+            "country": user["country"],
+            "city": user["city"],
+            "timezone": user["timezone"],
+            "device_type": user["device_type"],
+            "browser": user["browser"],
+            "os": user["os"],
+            "screen_resolution": user["screen_resolution"],
+            "referrer": referrer,
         }
+        return event_props, traits, context
 
     def _weighted_choice(self, choices: list[tuple]) -> str:
         items = [c[0] for c in choices]
