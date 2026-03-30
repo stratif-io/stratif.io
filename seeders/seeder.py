@@ -507,14 +507,14 @@ COUNTRY_TRAITS: dict[str, Any] = {
 }
 
 EMAIL_PROVIDERS = [
-    "gmail.com",
-    "yahoo.com",
-    "outlook.com",
-    "hotmail.com",
-    "icloud.com",
-    "proton.me",
-    "mail.com",
-    "zoho.com",
+    "fastmail.io",
+    "inboxhub.net",
+    "mailnest.com",
+    "quickpost.org",
+    "dropmail.co",
+    "pingbox.net",
+    "letterloop.com",
+    "postwave.io",
 ]
 
 INSERT_BATCH_SIZE = 5000
