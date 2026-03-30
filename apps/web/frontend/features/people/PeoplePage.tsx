@@ -118,7 +118,7 @@ export function PeoplePage() {
           </div>
 
           {/* Column 2 — timeline */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-r">
+          <div className="w-[36%] flex flex-col min-h-0 overflow-hidden border-r">
             {selectedUserId ? (
               <>
                 <div className="p-4 border-b shrink-0">
@@ -171,7 +171,7 @@ export function PeoplePage() {
           </div>
 
           {/* Column 3 — event properties */}
-          <div className="w-[26%] flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-h-0">
             <div className="px-4 py-3 border-b shrink-0">
               <h2 className="text-sm font-semibold">Properties</h2>
             </div>
