@@ -147,10 +147,12 @@ export const fetchRawEvents = (params: {
 export const fetchUserEvents = (params: {
   user_id: string
   limit?: number
+  offset?: number
   connection_id?: string
 }) => {
   const searchParams = new URLSearchParams()
   if (params.limit) searchParams.set('limit', String(params.limit))
+  if (params.offset !== undefined) searchParams.set('offset', String(params.offset))
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
   return fetchApi<UserEventsResponse>(
     `/api/users/${encodeURIComponent(params.user_id)}/events?${searchParams}`

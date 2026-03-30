@@ -20,6 +20,8 @@ describe('useUserTimeline', () => {
   it('returns events for the given user', async () => {
     vi.mocked(api.fetchUserEvents).mockResolvedValue({
       user_id: 'user-1',
+      limit: 100,
+      offset: 0,
       data: [
         {
           user_id: 'user-1',

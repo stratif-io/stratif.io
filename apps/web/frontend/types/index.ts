@@ -52,7 +52,10 @@ export interface RawEventsResponse {
 }
 
 export interface UserEventsResponse {
+  sql?: string | string[]
   user_id: string
+  limit: number
+  offset: number
   data: Event[]
 }
 

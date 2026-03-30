@@ -43,6 +43,9 @@ const emptyTimeline = {
   isLoading: false,
   isError: false,
   error: null,
+  hasNextPage: false,
+  fetchNextPage: vi.fn(),
+  isFetchingNextPage: false,
 }
 
 describe('PeoplePage', () => {
@@ -63,7 +66,7 @@ describe('PeoplePage', () => {
 
     renderPage()
 
-    expect(screen.getByText('user-abc')).toBeInTheDocument()
+    expect(screen.getAllByText('user-abc').length).toBeGreaterThan(0)
     expect(screen.getByText('user-def')).toBeInTheDocument()
   })
 
@@ -105,6 +108,9 @@ describe('PeoplePage', () => {
       isLoading: false,
       isError: false,
       error: null,
+      hasNextPage: false,
+      fetchNextPage: vi.fn(),
+      isFetchingNextPage: false,
     })
 
     renderPage()

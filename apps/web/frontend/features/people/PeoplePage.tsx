@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { Activity, Users } from 'lucide-react'
 import { PageTransition } from '@/components/layout/PageTransition'
@@ -40,7 +40,16 @@ export function PeoplePage() {
     isLoading: timelineLoading,
     isError: timelineError,
     error: timelineErr,
+    hasNextPage: timelineHasNextPage,
+    fetchNextPage: fetchTimelineNextPage,
+    isFetchingNextPage: timelineIsFetchingNextPage,
   } = useUserTimeline(selectedUserId)
+
+  useEffect(() => {
+    if (users.length > 0 && !selectedUserId) {
+      setSelectedUserId(users[0].user_id)
+    }
+  }, [users, selectedUserId])
 
   const filteredUsers = users.filter((u) => u.user_id.toLowerCase().includes(search.toLowerCase()))
 
@@ -111,8 +120,8 @@ export function PeoplePage() {
                   {selectedUser && (
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {selectedUser.event_count} events · first seen{' '}
-                      {formatLastSeen(selectedUser.first_seen)} · last seen{' '}
-                      {formatLastSeen(selectedUser.last_seen)}
+                      {formatTimestamp(selectedUser.first_seen)} · last seen{' '}
+                      {formatTimestamp(selectedUser.last_seen)}
                     </div>
                   )}
                 </div>
@@ -128,17 +137,28 @@ export function PeoplePage() {
                       description="This user has no recorded events."
                     />
                   ) : (
-                    events.map((event) => (
-                      <div
-                        key={`${event.timestamp}-${event.event_name}`}
-                        className="flex items-center justify-between px-4 py-2 border-b text-sm"
-                      >
-                        <span className="font-medium">{event.event_name}</span>
-                        <span className="text-muted-foreground text-xs">
-                          {formatTimestamp(event.timestamp)}
-                        </span>
-                      </div>
-                    ))
+                    <>
+                      {events.map((event) => (
+                        <div
+                          key={`${event.timestamp}-${event.event_name}`}
+                          className="flex items-center justify-between px-4 py-2 border-b text-sm"
+                        >
+                          <span className="font-medium">{event.event_name}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {formatTimestamp(event.timestamp)}
+                          </span>
+                        </div>
+                      ))}
+                      {timelineHasNextPage && (
+                        <button
+                          onClick={() => fetchTimelineNextPage()}
+                          disabled={timelineIsFetchingNextPage}
+                          className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {timelineIsFetchingNextPage ? 'Loading…' : 'Load more'}
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </>
