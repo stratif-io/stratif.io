@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { Plus, Trash2, ScanSearch, FolderSearch, Lock, ChevronsUpDown, Check } from 'lucide-react'
+import {
+  Plus,
+  Trash2,
+  ScanSearch,
+  FolderSearch,
+  Lock,
+  ChevronsUpDown,
+  Check,
+  X,
+  Sparkles,
+} from 'lucide-react'
 import { SaveStatus } from '@/components/ui/save-status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -154,6 +164,12 @@ function CategoryPicker({
   )
 }
 
+type PendingDetection = {
+  fieldKey: string
+  label: string
+  proposedColumn: string
+}
+
 // The five optional user identity fields in display order
 const USER_IDENTITY_FIELDS = [
   { key: 'email_field' as const, label: 'Email', icon: 'Mail' },
@@ -186,6 +202,7 @@ export function SchemaConfigTab({ connId }: Props) {
   const [powerUserThresholdDays, setPowerUserThresholdDays] = useState(4)
   const [customProps, setCustomProps] = useState<CustomProperty[]>([])
   const [detectedColumns, setDetectedColumns] = useState<string[]>([])
+  const [pendingDetections, setPendingDetections] = useState<PendingDetection[]>([])
 
   // Optional user identity fields — null means not mapped
   const [userIdentityFields, setUserIdentityFields] = useState<
@@ -331,24 +348,55 @@ export function SchemaConfigTab({ connId }: Props) {
     }
   }
 
+  const FIELD_LABELS: Record<string, string> = {
+    user_id_field: 'User ID',
+    event_name_field: 'Event Name',
+    timestamp_field: 'Timestamp',
+    email_field: 'Email',
+    first_name_field: 'First Name',
+    last_name_field: 'Last Name',
+    date_of_birth_field: 'Date of Birth',
+    phone_field: 'Phone',
+  }
+
+  function applyDetection(fieldKey: string, value: string) {
+    if (fieldKey === 'user_id_field') setUserIdField(value)
+    else if (fieldKey === 'event_name_field') setEventNameField(value)
+    else if (fieldKey === 'timestamp_field') setTimestampField(value)
+    else setUserIdentityField(fieldKey as UserIdentityKey, value)
+  }
+
+  function acceptDetection(fieldKey: string) {
+    const pending = pendingDetections.find((d) => d.fieldKey === fieldKey)
+    if (pending) {
+      applyDetection(fieldKey, pending.proposedColumn)
+      setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== fieldKey))
+    }
+  }
+
+  function acceptAllDetections() {
+    for (const d of pendingDetections) {
+      applyDetection(d.fieldKey, d.proposedColumn)
+    }
+    setPendingDetections([])
+  }
+
   function handleDetect() {
     detect.mutate(eventsTable || undefined, {
       onSuccess(result) {
         initialized.current = true
         const { suggestions, proposed_custom_properties, events_table, columns } = result
-        if (suggestions.user_id_field) setUserIdField(suggestions.user_id_field)
-        if (suggestions.timestamp_field) setTimestampField(suggestions.timestamp_field)
-        if (suggestions.event_name_field) setEventNameField(suggestions.event_name_field)
         if (events_table) setEventsTable(events_table)
 
-        // Apply user identity suggestions
-        setUserIdentityFields((prev) => ({
-          email_field: suggestions.email_field ?? prev.email_field,
-          first_name_field: suggestions.first_name_field ?? prev.first_name_field,
-          last_name_field: suggestions.last_name_field ?? prev.last_name_field,
-          date_of_birth_field: suggestions.date_of_birth_field ?? prev.date_of_birth_field,
-          phone_field: suggestions.phone_field ?? prev.phone_field,
-        }))
+        // Build pending detections instead of auto-applying
+        const pending: PendingDetection[] = []
+        for (const [key, label] of Object.entries(FIELD_LABELS)) {
+          const value = suggestions[key as keyof typeof suggestions] as string | null | undefined
+          if (value) {
+            pending.push({ fieldKey: key, label, proposedColumn: value })
+          }
+        }
+        setPendingDetections(pending)
 
         const columnNames = columns.map((c) => c.name)
         const nestedPaths = proposed_custom_properties.map((p) => p.path)
@@ -456,6 +504,67 @@ export function SchemaConfigTab({ connId }: Props) {
         )}
 
         {detect.isError && <p className="text-sm text-destructive">{detect.error?.message}</p>}
+
+        {pendingDetections.length > 0 && (
+          <div className="rounded-md border border-amber-500 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-3 py-2 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-500/40">
+              <span className="text-sm font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                {pendingDetections.length} field{pendingDetections.length !== 1 ? 's' : ''} detected
+                — review mappings
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                  onClick={acceptAllDetections}
+                >
+                  Accept all
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-muted-foreground"
+                  onClick={() => setPendingDetections([])}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+            {/* Rows */}
+            {pendingDetections.map((d) => (
+              <div
+                key={d.fieldKey}
+                className="flex items-center gap-3 px-3 py-2 border-b last:border-b-0"
+              >
+                <span className="w-32 text-xs text-muted-foreground shrink-0">{d.label}</span>
+                <span className="flex-1 font-mono text-xs px-2 py-1 rounded border border-amber-400/60 bg-amber-50/50 dark:bg-amber-950/10 text-foreground truncate">
+                  {d.proposedColumn}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Accept ${d.label}`}
+                  className="h-6 w-6 flex items-center justify-center rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
+                  onClick={() => acceptDetection(d.fieldKey)}
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Reject ${d.label}`}
+                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  onClick={() =>
+                    setPendingDetections((prev) => prev.filter((p) => p.fieldKey !== d.fieldKey))
+                  }
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <Label

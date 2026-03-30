@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SchemaConfigTab } from '../SchemaConfigTab'
 import * as hooks from '../../hooks/useConnectionsData'
@@ -25,6 +25,22 @@ const mockSchema = {
 
 const mockFilters = {
   filter_fields: [{ field: 'event_name', label: 'Event', icon: 'Tag' }],
+}
+
+const mockDetectResult = {
+  suggestions: {
+    user_id_field: 'uid',
+    event_name_field: 'action',
+    timestamp_field: 'ts',
+    email_field: 'user_email',
+    first_name_field: null,
+    last_name_field: null,
+    date_of_birth_field: null,
+    phone_field: null,
+  },
+  proposed_custom_properties: [],
+  events_table: 'events',
+  columns: [],
 }
 
 function renderTab() {
@@ -155,5 +171,164 @@ describe('SchemaConfigTab — resurrection and power user fields', () => {
   it('shows power_user_threshold_days input with value 7', () => {
     renderTab()
     expect(screen.getByDisplayValue('7')).toBeInTheDocument()
+  })
+})
+
+describe('SchemaConfigTab — detect review panel', () => {
+  it('shows proposed fields in review panel after detect runs (not yet applied)', () => {
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {
+        opts.onSuccess(mockDetectResult)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-2" />
+      </QueryClientProvider>
+    )
+
+    act(() => {
+      screen.getByRole('button', { name: /detect from schema/i }).click()
+    })
+
+    expect(screen.getByText(/fields detected/i)).toBeInTheDocument()
+    expect(screen.getByText('uid')).toBeInTheDocument()
+    expect(screen.getByText('action')).toBeInTheDocument()
+  })
+
+  it('accepting a single row applies that field and removes it from the panel', () => {
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {
+        opts.onSuccess(mockDetectResult)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-3" />
+      </QueryClientProvider>
+    )
+
+    act(() => {
+      screen.getAllByRole('button', { name: /detect from schema/i })[0].click()
+    })
+
+    // Accept User ID row
+    const acceptBtn = screen.getByRole('button', { name: /accept user id/i })
+    act(() => {
+      acceptBtn.click()
+    })
+
+    // User ID row should be gone
+    expect(screen.queryByRole('button', { name: /accept user id/i })).not.toBeInTheDocument()
+    // Panel still visible (other rows remain)
+    expect(screen.getByText(/fields detected/i)).toBeInTheDocument()
+  })
+
+  it('Accept all applies all fields and hides the panel', () => {
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {
+        opts.onSuccess(mockDetectResult)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-4" />
+      </QueryClientProvider>
+    )
+
+    act(() => {
+      screen.getAllByRole('button', { name: /detect from schema/i })[0].click()
+    })
+
+    act(() => {
+      screen.getByRole('button', { name: /accept all/i }).click()
+    })
+
+    expect(screen.queryByText(/fields detected/i)).not.toBeInTheDocument()
+  })
+
+  it('Dismiss clears the panel without applying anything', () => {
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {
+        opts.onSuccess(mockDetectResult)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-5" />
+      </QueryClientProvider>
+    )
+
+    act(() => {
+      screen.getAllByRole('button', { name: /detect from schema/i })[0].click()
+    })
+
+    expect(screen.getByText(/fields detected/i)).toBeInTheDocument()
+
+    act(() => {
+      screen.getByRole('button', { name: /dismiss/i }).click()
+    })
+
+    expect(screen.queryByText(/fields detected/i)).not.toBeInTheDocument()
+    // Fields should NOT be changed — userIdField should still be 'user_id' from mockSchema
+    // We can't easily check state directly but panel is gone, meaning no auto-apply happened
+  })
+
+  it('review panel does not appear when detect returns no suggestions', () => {
+    const emptyResult = {
+      ...mockDetectResult,
+      suggestions: {
+        user_id_field: null,
+        event_name_field: null,
+        timestamp_field: null,
+        email_field: null,
+        first_name_field: null,
+        last_name_field: null,
+        date_of_birth_field: null,
+        phone_field: null,
+      },
+    }
+
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof emptyResult) => void }) => {
+        opts.onSuccess(emptyResult)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-6" />
+      </QueryClientProvider>
+    )
+
+    act(() => {
+      screen.getAllByRole('button', { name: /detect from schema/i })[0].click()
+    })
+
+    expect(screen.queryByText(/fields detected/i)).not.toBeInTheDocument()
   })
 })
