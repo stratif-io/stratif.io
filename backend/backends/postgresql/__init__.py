@@ -170,12 +170,30 @@ class PostgreSQLBackend:
                             f'SELECT DISTINCT jsonb_object_keys("{col.name}"::jsonb) '
                             f'FROM "{events_table}" WHERE "{col.name}" IS NOT NULL LIMIT 2000'
                         )
-                        for (key,) in cur_keys.fetchall():
-                            if key:
-                                proposed.append({"name": key, "path": f"{col.name}.{key}", "type": "string"})
+                        top_keys = [r[0] for r in cur_keys.fetchall() if r[0]]
                     finally:
                         with contextlib.suppress(Exception):
                             cur_keys.close()
+                    for key in top_keys:
+                        try:
+                            cur_sub = conn.cursor()
+                            try:
+                                cur_sub.execute(
+                                    f'SELECT DISTINCT jsonb_object_keys(("{col.name}"::jsonb)->\'{key}\') '
+                                    f'FROM "{events_table}" '
+                                    f'WHERE jsonb_typeof(("{col.name}"::jsonb)->\'{key}\') = \'object\' LIMIT 2000'
+                                )
+                                sub_keys = [r[0] for r in cur_sub.fetchall() if r[0]]
+                            finally:
+                                with contextlib.suppress(Exception):
+                                    cur_sub.close()
+                        except Exception:
+                            sub_keys = []
+                        if sub_keys:
+                            for sub_key in sub_keys:
+                                proposed.append({"name": sub_key, "path": f"{col.name}.{key}.{sub_key}", "type": "string"})
+                        else:
+                            proposed.append({"name": key, "path": f"{col.name}.{key}", "type": "string"})
                 except Exception:
                     proposed.append({"name": col.name, "path": col.name, "type": "string"})
             else:
