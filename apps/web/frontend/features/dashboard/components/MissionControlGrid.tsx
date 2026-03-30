@@ -96,7 +96,11 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   const heroWrapperRef = useRef<HTMLDivElement>(null)
   const rightColRef = useRef<HTMLDivElement>(null)
 
+  const allMetricKeys = METRIC_CONFIG.map((m) => m.key)
+  const isInitialLoading = allMetricKeys.every((key) => metricLoading[key] ?? true)
+
   useEffect(() => {
+    if (isInitialLoading) return
     const rightCol = rightColRef.current
     const heroWrapper = heroWrapperRef.current
     if (!rightCol || !heroWrapper) return
@@ -105,10 +109,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
     })
     observer.observe(rightCol)
     return () => observer.disconnect()
-  }, [])
-
-  const allMetricKeys = METRIC_CONFIG.map((m) => m.key)
-  const isInitialLoading = allMetricKeys.every((key) => metricLoading[key] ?? true)
+  }, [isInitialLoading])
 
   if (isInitialLoading) {
     return (
