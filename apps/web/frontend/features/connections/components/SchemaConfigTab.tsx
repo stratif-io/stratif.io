@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Plus,
   Trash2,
@@ -45,7 +45,69 @@ import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
 import { cn } from '@/lib/utils'
 import type { CustomProperty, PropertyType, DimensionCategoryConfig, FilterField } from '@/types'
 
+// ── Constants ────────────────────────────────────────────────────────────────
+
 const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
+
+const EVENT_GRID = 'grid-cols-[120px_1fr_90px_110px_120px_28px]'
+
+const USER_IDENTITY_FIELDS = [
+  { key: 'email_field' as const, label: 'Email', icon: 'Mail' },
+  { key: 'first_name_field' as const, label: 'First Name', icon: 'User' },
+  { key: 'last_name_field' as const, label: 'Last Name', icon: 'User' },
+  { key: 'date_of_birth_field' as const, label: 'Date of Birth', icon: 'Calendar' },
+  { key: 'phone_field' as const, label: 'Phone', icon: 'Phone' },
+] as const
+
+type UserIdentityKey = (typeof USER_IDENTITY_FIELDS)[number]['key']
+
+// Single source of truth for field labels — derived from USER_IDENTITY_FIELDS plus core fields
+const FIELD_LABELS: Record<string, string> = {
+  user_id_field: 'User ID',
+  event_name_field: 'Event Name',
+  timestamp_field: 'Timestamp',
+  ...Object.fromEntries(USER_IDENTITY_FIELDS.map(({ key, label }) => [key, label])),
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type PendingDetection = {
+  fieldKey: string
+  label: string
+  proposedColumn: string
+}
+
+type SchemaFormState = {
+  userIdField: string
+  timestampField: string
+  eventNameField: string
+  eventsTable: string
+  sessionTimeoutMinutes: number
+  resurrectionWindowDays: number
+  powerUserThresholdDays: number
+  customProps: CustomProperty[]
+  userIdentityFields: Record<UserIdentityKey, string | null>
+}
+
+const DEFAULT_FORM: SchemaFormState = {
+  userIdField: 'user_id',
+  timestampField: 'timestamp',
+  eventNameField: 'event_name',
+  eventsTable: 'events',
+  sessionTimeoutMinutes: 30,
+  resurrectionWindowDays: 30,
+  powerUserThresholdDays: 4,
+  customProps: [],
+  userIdentityFields: {
+    email_field: null,
+    first_name_field: null,
+    last_name_field: null,
+    date_of_birth_field: null,
+    phone_field: null,
+  },
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 function defaultLabel(field: string) {
   return field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ')
@@ -164,33 +226,39 @@ function CategoryPicker({
   )
 }
 
-type PendingDetection = {
-  fieldKey: string
-  label: string
-  proposedColumn: string
+function PendingDetectionRow({
+  pending,
+  onAccept,
+  onReject,
+}: {
+  pending: PendingDetection
+  onAccept: () => void
+  onReject: () => void
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="flex-1 h-8 font-mono text-sm px-3 rounded-md border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate flex items-center">
+        {pending.proposedColumn}
+      </span>
+      <button
+        aria-label={`Accept ${pending.label}`}
+        onClick={onAccept}
+        className="h-6 w-6 flex items-center justify-center rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
+      >
+        <Check className="h-3.5 w-3.5" />
+      </button>
+      <button
+        aria-label={`Reject ${pending.label}`}
+        onClick={onReject}
+        className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )
 }
 
-// The five optional user identity fields in display order
-const USER_IDENTITY_FIELDS = [
-  { key: 'email_field' as const, label: 'Email', icon: 'Mail' },
-  { key: 'first_name_field' as const, label: 'First Name', icon: 'User' },
-  { key: 'last_name_field' as const, label: 'Last Name', icon: 'User' },
-  { key: 'date_of_birth_field' as const, label: 'Date of Birth', icon: 'Calendar' },
-  { key: 'phone_field' as const, label: 'Phone', icon: 'Phone' },
-] as const
-
-type UserIdentityKey = (typeof USER_IDENTITY_FIELDS)[number]['key']
-
-const FIELD_LABELS: Record<string, string> = {
-  user_id_field: 'User ID',
-  event_name_field: 'Event Name',
-  timestamp_field: 'Timestamp',
-  email_field: 'Email',
-  first_name_field: 'First Name',
-  last_name_field: 'Last Name',
-  date_of_birth_field: 'Date of Birth',
-  phone_field: 'Phone',
-}
+// ── Main component ─────────────────────────────────────────────────────────────
 
 interface Props {
   connId: string
@@ -202,138 +270,144 @@ export function SchemaConfigTab({ connId }: Props) {
   const detect = useDetectSchema(connId)
   const { data: filterData, isLoading: filterLoading } = useFilterConfig(connId)
   const upsertFilter = useUpsertFilterConfig(connId)
-  const [browseOpen, setBrowseOpen] = useState(false)
 
-  const [userIdField, setUserIdField] = useState('user_id')
-  const [timestampField, setTimestampField] = useState('timestamp')
-  const [eventNameField, setEventNameField] = useState('event_name')
-  const [eventsTable, setEventsTable] = useState('events')
-  const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30)
-  const [resurrectionWindowDays, setResurrectionWindowDays] = useState(30)
-  const [powerUserThresholdDays, setPowerUserThresholdDays] = useState(4)
-  const [customProps, setCustomProps] = useState<CustomProperty[]>([])
+  const [browseOpen, setBrowseOpen] = useState(false)
+  const [form, setForm] = useState<SchemaFormState>(DEFAULT_FORM)
   const [detectedColumns, setDetectedColumns] = useState<string[]>([])
   const [pendingDetections, setPendingDetections] = useState<PendingDetection[]>([])
-
-  // Optional user identity fields — null means not mapped
-  const [userIdentityFields, setUserIdentityFields] = useState<
-    Record<UserIdentityKey, string | null>
-  >({
-    email_field: null,
-    first_name_field: null,
-    last_name_field: null,
-    date_of_birth_field: null,
-    phone_field: null,
-  })
-
   const [enabledFields, setEnabledFields] = useState<
     Record<string, { label: string; icon: string }>
   >({})
 
+  // Refs prevent the auto-save effects from firing before server data has been
+  // loaded into local state for the first time.
   const initialized = useRef(false)
   const filterInitialized = useRef(false)
 
   useEffect(() => {
-    if (initialized.current) return
-    if (isLoading || isError) return
-    if (data) {
-      setUserIdField(data.user_id_field)
-      setTimestampField(data.timestamp_field)
-      setEventNameField(data.event_name_field)
-      setEventsTable(data.events_table ?? 'events')
-      setSessionTimeoutMinutes(data.session_timeout_minutes ?? 30)
-      setResurrectionWindowDays(data.resurrection_window_days ?? 30)
-      setPowerUserThresholdDays(data.power_user_threshold_days ?? 4)
-      setCustomProps(data.custom_properties)
-      setUserIdentityFields({
+    if (initialized.current || isLoading || isError || !data) return
+    setForm({
+      userIdField: data.user_id_field,
+      timestampField: data.timestamp_field,
+      eventNameField: data.event_name_field,
+      eventsTable: data.events_table ?? 'events',
+      sessionTimeoutMinutes: data.session_timeout_minutes ?? 30,
+      resurrectionWindowDays: data.resurrection_window_days ?? 30,
+      powerUserThresholdDays: data.power_user_threshold_days ?? 4,
+      customProps: data.custom_properties,
+      userIdentityFields: {
         email_field: data.email_field ?? null,
         first_name_field: data.first_name_field ?? null,
         last_name_field: data.last_name_field ?? null,
         date_of_birth_field: data.date_of_birth_field ?? null,
         phone_field: data.phone_field ?? null,
-      })
-    }
+      },
+    })
     initialized.current = true
   }, [data, isLoading, isError])
 
   useEffect(() => {
-    if (filterInitialized.current || filterLoading) return
-    if (filterData) {
-      const map: Record<string, { label: string; icon: string }> = {}
-      for (const ff of filterData.filter_fields) {
-        map[ff.field] = { label: ff.label, icon: ff.icon }
-      }
-      setEnabledFields(map)
+    if (filterInitialized.current || filterLoading || !filterData) return
+    const map: Record<string, { label: string; icon: string }> = {}
+    for (const ff of filterData.filter_fields) {
+      map[ff.field] = { label: ff.label, icon: ff.icon }
     }
+    setEnabledFields(map)
     filterInitialized.current = true
   }, [filterData, filterLoading])
 
-  // Auto-save schema (debounced 800ms)
+  // Auto-save schema (debounced 800ms).
+  // `upsert` is intentionally omitted from deps — it changes on every mutation
+  // state transition and would cause an infinite save loop if included.
   useEffect(() => {
     if (!initialized.current) return
-    const timer = setTimeout(() => {
-      upsert.mutate({
-        user_id_field: userIdField,
-        timestamp_field: timestampField,
-        event_name_field: eventNameField,
-        events_table: eventsTable,
-        custom_properties: customProps,
-        session_timeout_minutes: sessionTimeoutMinutes,
-        resurrection_window_days: resurrectionWindowDays,
-        power_user_threshold_days: powerUserThresholdDays,
-        ...userIdentityFields,
-      })
-    }, 800)
+    const timer = setTimeout(() => upsert.mutate(buildSavePayload(form)), 800)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    userIdField,
-    timestampField,
-    eventNameField,
-    eventsTable,
-    sessionTimeoutMinutes,
-    resurrectionWindowDays,
-    powerUserThresholdDays,
-    customProps,
-    userIdentityFields,
-  ])
+  }, [form])
 
-  // Auto-save filter (debounced 600ms)
+  // Auto-save filter (debounced 600ms). Same reasoning for omitting upsertFilter.
   useEffect(() => {
     if (!filterInitialized.current) return
-    const timer = setTimeout(() => {
-      const filter_fields: FilterField[] = Object.entries(enabledFields).map(
-        ([field, { label, icon }]) => ({ field, label, icon })
-      )
-      upsertFilter.mutate({ filter_fields })
-    }, 600)
+    const filter_fields: FilterField[] = Object.entries(enabledFields).map(
+      ([field, { label, icon }]) => ({ field, label, icon })
+    )
+    const timer = setTimeout(() => upsertFilter.mutate({ filter_fields }), 600)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabledFields])
 
+  // ── Form helpers ─────────────────────────────────────────────────────────────
+
+  function updateForm(patch: Partial<SchemaFormState>) {
+    setForm((prev) => ({ ...prev, ...patch }))
+  }
+
   function addProp() {
-    setCustomProps((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), name: '', path: '', type: 'string', category: undefined },
-    ])
+    updateForm({
+      customProps: [
+        ...form.customProps,
+        { id: crypto.randomUUID(), name: '', path: '', type: 'string', category: undefined },
+      ],
+    })
   }
 
   function removeProp(idx: number) {
-    setCustomProps((prev) => prev.filter((_, i) => i !== idx))
+    updateForm({ customProps: form.customProps.filter((_, i) => i !== idx) })
   }
 
   function updateProp(idx: number, patch: Partial<CustomProperty>) {
-    setCustomProps((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
+    updateForm({
+      customProps: form.customProps.map((p, i) => (i === idx ? { ...p, ...patch } : p)),
+    })
+  }
+
+  function setUserIdentityField(key: UserIdentityKey, value: string | null) {
+    const previous = form.userIdentityFields[key]
+    updateForm({ userIdentityFields: { ...form.userIdentityFields, [key]: value } })
+    // Remove from filter panel when a field is cleared
+    if (value === null && previous) {
+      setEnabledFields((prev) => {
+        const next = { ...prev }
+        delete next[previous]
+        return next
+      })
+    }
+  }
+
+  function applyDetection(fieldKey: string, value: string) {
+    const dispatch: Record<string, (v: string) => void> = {
+      user_id_field: (v) => updateForm({ userIdField: v }),
+      event_name_field: (v) => updateForm({ eventNameField: v }),
+      timestamp_field: (v) => updateForm({ timestampField: v }),
+      ...Object.fromEntries(
+        USER_IDENTITY_FIELDS.map(({ key }) => [key, (v: string) => setUserIdentityField(key, v)])
+      ),
+    }
+    dispatch[fieldKey]?.(value)
+  }
+
+  function acceptDetection(fieldKey: string) {
+    const pending = pendingDetections.find((d) => d.fieldKey === fieldKey)
+    if (!pending) return
+    applyDetection(fieldKey, pending.proposedColumn)
+    setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== fieldKey))
+  }
+
+  function rejectDetection(fieldKey: string) {
+    setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== fieldKey))
+  }
+
+  function acceptAllDetections() {
+    for (const d of pendingDetections) applyDetection(d.fieldKey, d.proposedColumn)
+    setPendingDetections([])
   }
 
   function toggleFilter(field: string, label: string, icon: string) {
     setEnabledFields((prev) => {
       const next = { ...prev }
-      if (next[field]) {
-        delete next[field]
-      } else {
-        next[field] = { label, icon }
-      }
+      if (next[field]) delete next[field]
+      else next[field] = { label, icon }
       return next
     })
   }
@@ -345,99 +419,74 @@ export function SchemaConfigTab({ connId }: Props) {
     toggleFilter(field, label, cat?.icon ?? 'Tag')
   }
 
-  function setUserIdentityField(key: UserIdentityKey, value: string | null) {
-    // Capture current column value before updating state
-    const currentColumnValue = userIdentityFields[key]
-    setUserIdentityFields((prev) => ({ ...prev, [key]: value }))
-    // If clearing a field that was in filters, remove it from filters too
-    if (value === null && currentColumnValue) {
-      setEnabledFields((prev) => {
-        const next = { ...prev }
-        delete next[currentColumnValue]
-        return next
-      })
-    }
-  }
-
-  function applyDetection(fieldKey: string, value: string) {
-    if (fieldKey === 'user_id_field') setUserIdField(value)
-    else if (fieldKey === 'event_name_field') setEventNameField(value)
-    else if (fieldKey === 'timestamp_field') setTimestampField(value)
-    else {
-      const validIdentityKeys = USER_IDENTITY_FIELDS.map((f) => f.key) as string[]
-      if (validIdentityKeys.includes(fieldKey)) {
-        setUserIdentityField(fieldKey as UserIdentityKey, value)
-      }
-    }
-  }
-
-  function acceptDetection(fieldKey: string) {
-    const pending = pendingDetections.find((d) => d.fieldKey === fieldKey)
-    if (pending) {
-      applyDetection(fieldKey, pending.proposedColumn)
-      setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== fieldKey))
-    }
-  }
-
-  function acceptAllDetections() {
-    for (const d of pendingDetections) {
-      applyDetection(d.fieldKey, d.proposedColumn)
-    }
-    setPendingDetections([])
-  }
-
   function handleDetect() {
-    detect.mutate(eventsTable || undefined, {
+    detect.mutate(form.eventsTable || undefined, {
       onSuccess(result) {
         const { suggestions, proposed_custom_properties, events_table, columns } = result
-        if (events_table) setEventsTable(events_table)
+        if (events_table) updateForm({ eventsTable: events_table })
 
-        // Build pending detections — always show all detected fields for review
         const pending: PendingDetection[] = []
         for (const [key, label] of Object.entries(FIELD_LABELS)) {
           const value = suggestions[key as keyof typeof suggestions] as string | null | undefined
-          if (value) {
-            pending.push({ fieldKey: key, label, proposedColumn: value })
-          }
+          if (value) pending.push({ fieldKey: key, label, proposedColumn: value })
         }
         setPendingDetections(pending)
 
-        const columnNames = columns.map((c) => c.name)
-        const nestedPaths = proposed_custom_properties.map((p) => p.path)
+        const columnNames = columns.map((c: { name: string }) => c.name)
+        const nestedPaths = proposed_custom_properties.map((p: { path: string }) => p.path)
         setDetectedColumns(Array.from(new Set([...columnNames, ...nestedPaths])))
 
-        const existingPaths = new Set(customProps.map((p) => p.path))
-        const newProps = proposed_custom_properties.filter((p) => !existingPaths.has(p.path))
+        const existingPaths = new Set(form.customProps.map((p) => p.path))
+        const newProps = proposed_custom_properties.filter(
+          (p: { path: string }) => !existingPaths.has(p.path)
+        )
         if (newProps.length > 0) {
           const allCategories = dimensionCategories as DimensionCategoryConfig[]
           const groups = groupDimensionsByCategory(
-            newProps.map((p) => ({ value: p.name, label: p.name })),
+            newProps.map((p: { name: string }) => ({ value: p.name, label: p.name })),
             allCategories
           )
           const categoryMap = new Map<string, string>()
           for (const group of groups) {
-            for (const dim of group.dimensions) {
-              categoryMap.set(dim.value, group.category.id)
-            }
+            for (const dim of group.dimensions) categoryMap.set(dim.value, group.category.id)
           }
-          const propsWithCategory = newProps.map((p) => ({
-            ...p,
-            id: crypto.randomUUID(),
-            category: categoryMap.get(p.name),
-          }))
-          setCustomProps((prev) => [...prev, ...propsWithCategory])
+          const propsWithCategory: CustomProperty[] = newProps.map(
+            (p: { name: string; path: string; type: PropertyType }) => ({
+              ...p,
+              id: crypto.randomUUID(),
+              category: categoryMap.get(p.name),
+            })
+          )
+          updateForm({ customProps: [...form.customProps, ...propsWithCategory] })
         }
       },
     })
   }
 
-  if (isLoading || filterLoading) return <LoadingState message="Loading schema config…" />
+  // ── Derived ───────────────────────────────────────────────────────────────────
 
-  const sortedCustomProps = [...customProps.map((prop, idx) => ({ prop, idx }))].sort((a, b) =>
-    a.prop.name.localeCompare(b.prop.name)
+  const sortedCustomProps = useMemo(
+    () =>
+      [...form.customProps.map((prop, idx) => ({ prop, idx }))].sort((a, b) =>
+        a.prop.name.localeCompare(b.prop.name)
+      ),
+    [form.customProps]
   )
 
-  const EVENT_GRID = 'grid-cols-[120px_1fr_90px_110px_120px_28px]'
+  if (isLoading || filterLoading) return <LoadingState message="Loading schema config…" />
+
+  const {
+    userIdField,
+    timestampField,
+    eventNameField,
+    eventsTable,
+    userIdentityFields,
+    sessionTimeoutMinutes,
+    resurrectionWindowDays,
+    powerUserThresholdDays,
+  } = form
+
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-8">
@@ -455,19 +504,7 @@ export function SchemaConfigTab({ connId }: Props) {
                     ? 'error'
                     : 'idle'
             }
-            onRetry={() =>
-              upsert.mutate({
-                user_id_field: userIdField,
-                timestamp_field: timestampField,
-                event_name_field: eventNameField,
-                events_table: eventsTable,
-                custom_properties: customProps,
-                session_timeout_minutes: sessionTimeoutMinutes,
-                resurrection_window_days: resurrectionWindowDays,
-                power_user_threshold_days: powerUserThresholdDays,
-                ...userIdentityFields,
-              })
-            }
+            onRetry={() => upsert.mutate(buildSavePayload(form))}
           />
         </div>
 
@@ -500,7 +537,7 @@ export function SchemaConfigTab({ connId }: Props) {
               connId={connId}
               value={eventsTable}
               onChange={(v) => {
-                setEventsTable(v)
+                updateForm({ eventsTable: v })
                 setBrowseOpen(false)
               }}
             />
@@ -522,7 +559,7 @@ export function SchemaConfigTab({ connId }: Props) {
             min={1}
             max={1440}
             value={sessionTimeoutMinutes}
-            onChange={(e) => setSessionTimeoutMinutes(Number(e.target.value))}
+            onChange={(e) => updateForm({ sessionTimeoutMinutes: Number(e.target.value) })}
             placeholder="30"
             className="w-20"
           />
@@ -542,7 +579,7 @@ export function SchemaConfigTab({ connId }: Props) {
             min={1}
             max={365}
             value={resurrectionWindowDays}
-            onChange={(e) => setResurrectionWindowDays(Number(e.target.value))}
+            onChange={(e) => updateForm({ resurrectionWindowDays: Number(e.target.value) })}
             placeholder="30"
             className="w-20"
           />
@@ -562,7 +599,7 @@ export function SchemaConfigTab({ connId }: Props) {
             min={1}
             max={31}
             value={powerUserThresholdDays}
-            onChange={(e) => setPowerUserThresholdDays(Number(e.target.value))}
+            onChange={(e) => updateForm({ powerUserThresholdDays: Number(e.target.value) })}
             placeholder="4"
             className="w-20"
           />
@@ -633,34 +670,16 @@ export function SchemaConfigTab({ connId }: Props) {
                   </span>
                 </div>
                 {pending ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="flex-1 h-8 font-mono text-sm px-3 rounded-md border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate flex items-center">
-                      {pending.proposedColumn}
-                    </span>
-                    <button
-                      aria-label="Accept User ID"
-                      onClick={() => acceptDetection('user_id_field')}
-                      className="h-6 w-6 flex items-center justify-center rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      aria-label="Reject User ID"
-                      onClick={() =>
-                        setPendingDetections((prev) =>
-                          prev.filter((d) => d.fieldKey !== 'user_id_field')
-                        )
-                      }
-                      className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  <PendingDetectionRow
+                    pending={pending}
+                    onAccept={() => acceptDetection('user_id_field')}
+                    onReject={() => rejectDetection('user_id_field')}
+                  />
                 ) : (
                   <ColumnCombobox
                     value={userIdField}
                     detectedColumns={detectedColumns}
-                    onChange={setUserIdField}
+                    onChange={(v) => updateForm({ userIdField: v })}
                     disabled={detectedColumns.length === 0}
                   />
                 )}
@@ -688,27 +707,11 @@ export function SchemaConfigTab({ connId }: Props) {
                   {label}
                 </span>
                 {pending ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="flex-1 h-8 font-mono text-sm px-3 rounded-md border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate flex items-center">
-                      {pending.proposedColumn}
-                    </span>
-                    <button
-                      aria-label={`Accept ${label}`}
-                      onClick={() => acceptDetection(key)}
-                      className="h-6 w-6 flex items-center justify-center rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      aria-label={`Reject ${label}`}
-                      onClick={() =>
-                        setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== key))
-                      }
-                      className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  <PendingDetectionRow
+                    pending={pending}
+                    onAccept={() => acceptDetection(key)}
+                    onReject={() => rejectDetection(key)}
+                  />
                 ) : (
                   <ColumnCombobox
                     value={mapped ?? ''}
@@ -768,17 +771,17 @@ export function SchemaConfigTab({ connId }: Props) {
           {[
             {
               field: eventNameField,
-              setField: setEventNameField,
+              onChangeField: (v: string) => updateForm({ eventNameField: v }),
               label: 'Event Name',
               fieldKey: 'event_name_field',
             },
             {
               field: timestampField,
-              setField: setTimestampField,
+              onChangeField: (v: string) => updateForm({ timestampField: v }),
               label: 'Timestamp',
               fieldKey: 'timestamp_field',
             },
-          ].map(({ field, setField, label, fieldKey }) => {
+          ].map(({ field, onChangeField, label, fieldKey }) => {
             const isEnabled = field in enabledFields
             const pending = pendingDetections.find((d) => d.fieldKey === fieldKey)
             return (
@@ -791,32 +794,16 @@ export function SchemaConfigTab({ connId }: Props) {
               >
                 <span className="text-xs text-muted-foreground">{label}</span>
                 {pending ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="flex-1 h-8 font-mono text-sm px-3 rounded-md border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate flex items-center">
-                      {pending.proposedColumn}
-                    </span>
-                    <button
-                      aria-label={`Accept ${label}`}
-                      onClick={() => acceptDetection(fieldKey)}
-                      className="h-6 w-6 flex items-center justify-center rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      aria-label={`Reject ${label}`}
-                      onClick={() =>
-                        setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== fieldKey))
-                      }
-                      className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  <PendingDetectionRow
+                    pending={pending}
+                    onAccept={() => acceptDetection(fieldKey)}
+                    onReject={() => rejectDetection(fieldKey)}
+                  />
                 ) : (
                   <ColumnCombobox
                     value={field}
                     detectedColumns={detectedColumns}
-                    onChange={setField}
+                    onChange={onChangeField}
                     disabled={detectedColumns.length === 0}
                   />
                 )}
@@ -913,4 +900,20 @@ export function SchemaConfigTab({ connId }: Props) {
       </div>
     </div>
   )
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function buildSavePayload(form: SchemaFormState) {
+  return {
+    user_id_field: form.userIdField,
+    timestamp_field: form.timestampField,
+    event_name_field: form.eventNameField,
+    events_table: form.eventsTable,
+    custom_properties: form.customProps,
+    session_timeout_minutes: form.sessionTimeoutMinutes,
+    resurrection_window_days: form.resurrectionWindowDays,
+    power_user_threshold_days: form.powerUserThresholdDays,
+    ...form.userIdentityFields,
+  }
 }
