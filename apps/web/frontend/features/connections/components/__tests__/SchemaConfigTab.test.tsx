@@ -1,4 +1,5 @@
 import { render, screen, act } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SchemaConfigTab } from '../SchemaConfigTab'
 import * as hooks from '../../hooks/useConnectionsData'
@@ -90,8 +91,9 @@ describe('SchemaConfigTab — Setup section', () => {
     expect(screen.getByDisplayValue('events')).toBeInTheDocument()
   })
 
-  it('shows session timeout input', () => {
+  it('shows session timeout input inside Advanced settings', async () => {
     renderTab()
+    await userEvent.click(screen.getByTestId('advanced-settings-toggle'))
     expect(screen.getByDisplayValue('30')).toBeInTheDocument()
   })
 
@@ -163,13 +165,15 @@ describe('SchemaConfigTab — Event Properties section', () => {
 })
 
 describe('SchemaConfigTab — resurrection and power user fields', () => {
-  it('shows resurrection_window_days input with value 45', () => {
+  it('shows resurrection_window_days input with value 45 (inside Advanced settings)', async () => {
     renderTab()
+    await userEvent.click(screen.getByTestId('advanced-settings-toggle'))
     expect(screen.getByDisplayValue('45')).toBeInTheDocument()
   })
 
-  it('shows power_user_threshold_days input with value 7', () => {
+  it('shows power_user_threshold_days input with value 7 (inside Advanced settings)', async () => {
     renderTab()
+    await userEvent.click(screen.getByTestId('advanced-settings-toggle'))
     expect(screen.getByDisplayValue('7')).toBeInTheDocument()
   })
 })
