@@ -32,13 +32,16 @@ class SQLiteSeeder(BaseSeeder):
     # ------------------------------------------------------------------
 
     def _create_events_table(self) -> None:
+        self._conn.execute("DROP TABLE IF EXISTS events")
         self._conn.execute("""
-            CREATE TABLE IF NOT EXISTS events (
+            CREATE TABLE events (
                 user_id     TEXT     NOT NULL,
                 event_name  TEXT     NOT NULL,
                 timestamp   DATETIME NOT NULL,
                 properties  TEXT     NOT NULL,
-                server      TEXT     NOT NULL
+                server      TEXT     NOT NULL,
+                traits      TEXT     NOT NULL,
+                context     TEXT     NOT NULL
             )
         """)
         self._conn.execute(
@@ -53,11 +56,13 @@ class SQLiteSeeder(BaseSeeder):
         if not events:
             return
         rows = [
-            (e[0], e[1], e[2].strftime("%Y-%m-%d %H:%M:%S"), json.dumps(e[3]), e[4])
+            (e[0], e[1], e[2].strftime("%Y-%m-%d %H:%M:%S"), json.dumps(e[3]), e[4],
+             json.dumps(e[5]), json.dumps(e[6]))
             for e in events
         ]
         self._conn.executemany(
-            "INSERT INTO events (user_id, event_name, timestamp, properties, server) VALUES (?,?,?,?,?)",
+            "INSERT INTO events (user_id, event_name, timestamp, properties, server, traits, context) "
+            "VALUES (?,?,?,?,?,?,?)",
             rows,
         )
         self._conn.commit()

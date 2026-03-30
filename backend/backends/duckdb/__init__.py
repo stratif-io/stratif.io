@@ -116,7 +116,21 @@ class DuckDBBackend:
                         f'FROM "{events_table}" WHERE "{col.name}" IS NOT NULL LIMIT 2000'
                     ).fetchall()
                     for (key,) in keys_result:
-                        if key:
+                        if not key:
+                            continue
+                        try:
+                            sub_result = conn.execute(
+                                f"SELECT DISTINCT unnest(json_keys(json_extract(\"{col.name}\", '$.{key}'))) "
+                                f'FROM "{events_table}" '
+                                f"WHERE json_type(\"{col.name}\", '$.{key}') = 'OBJECT' LIMIT 2000"
+                            ).fetchall()
+                            sub_keys = [r[0] for r in sub_result if r[0]]
+                        except Exception:
+                            sub_keys = []
+                        if sub_keys:
+                            for sub_key in sub_keys:
+                                proposed.append({"name": f"{key}.{sub_key}", "path": f"{col.name}.{key}.{sub_key}", "type": "string"})
+                        else:
                             proposed.append({"name": key, "path": f"{col.name}.{key}", "type": "string"})
                 except Exception:
                     proposed.append({"name": col.name, "path": col.name, "type": "string"})

@@ -118,12 +118,14 @@ class TestPostgreSQLDetectSchema:
         c1 = _make_cursor([("events",)])
         # Cursor 2: column list — user_id + properties jsonb
         c2 = _make_cursor([("user_id", "character varying"), ("properties", "jsonb")])
-        # Cursor 3: jsonb_object_keys for 'properties'
+        # Cursor 3: jsonb_object_keys for 'properties' top-level keys
         c3 = _make_cursor([("amount",)])
-        # Cursor 4: sampling query — non-null means numeric
-        c4 = _make_cursor([(1.0,)])
+        # Cursor 4: sub-key check for 'amount' — empty means it's a leaf, not an object
+        c4 = _make_cursor([])
+        # Cursor 5: sampling query — non-null means numeric
+        c5 = _make_cursor([(1.0,)])
 
-        cursor_seq = iter([c1, c2, c3, c4])
+        cursor_seq = iter([c1, c2, c3, c4, c5])
         conn = MagicMock()
         conn.cursor.side_effect = lambda: next(cursor_seq)
 
