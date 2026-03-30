@@ -35,6 +35,7 @@ export function usePathsData({
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
+    enabled: !!activeConnectionId,
     staleTime: QUERY_STALE_TIME.default,
   })
 
@@ -54,7 +55,7 @@ export function usePathsData({
         end_date: endDate,
         connection_id: activeConnectionId ?? undefined,
       }),
-    enabled: !!targetEvent && !!startDate && !!endDate,
+    enabled: !!activeConnectionId && !!targetEvent && !!startDate && !!endDate,
     staleTime: QUERY_STALE_TIME.default,
   })
 

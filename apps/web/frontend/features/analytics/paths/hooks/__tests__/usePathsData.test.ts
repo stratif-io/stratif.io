@@ -9,6 +9,10 @@ vi.mock('@/lib/api', () => ({
   fetchEvents: vi.fn(),
 }))
 
+vi.mock('@/stores', () => ({
+  useAppStore: vi.fn(() => ({ activeConnectionId: 'conn-1' })),
+}))
+
 import { fetchPaths, fetchEvents } from '@/lib/api'
 
 const createWrapper = () => {
