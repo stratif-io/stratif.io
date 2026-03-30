@@ -129,7 +129,7 @@ class DuckDBBackend:
                             sub_keys = []
                         if sub_keys:
                             for sub_key in sub_keys:
-                                proposed.append({"name": sub_key, "path": f"{col.name}.{key}.{sub_key}", "type": "string"})
+                                proposed.append({"name": f"{key}.{sub_key}", "path": f"{col.name}.{key}.{sub_key}", "type": "string"})
                         else:
                             proposed.append({"name": key, "path": f"{col.name}.{key}", "type": "string"})
                 except Exception:

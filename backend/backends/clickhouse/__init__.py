@@ -185,7 +185,7 @@ class ClickHouseBackend:
                             sub_keys = []
                         if sub_keys:
                             for sk in sub_keys:
-                                string_props.append({"name": sk, "path": f"{col.name}.{k}.{sk}", "type": "string"})
+                                string_props.append({"name": f"{k}.{sk}", "path": f"{col.name}.{k}.{sk}", "type": "string"})
                         else:
                             string_props.append({"name": k, "path": f"{col.name}.{k}", "type": "string"})
                     prop_exprs = {
