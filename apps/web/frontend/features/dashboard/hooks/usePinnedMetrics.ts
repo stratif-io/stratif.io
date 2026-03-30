@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 type MetricKey = string
 
@@ -28,18 +28,30 @@ export function usePinnedMetrics(connectionId: string | null) {
     }
   })
 
-  const togglePin = useCallback(
-    (key: MetricKey) => {
-      setPinned((prev) => {
-        const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-        if (connectionId) {
-          localStorage.setItem(storageKey(connectionId), JSON.stringify(next))
-        }
-        return next
-      })
-    },
-    [connectionId]
-  )
+  // Re-read localStorage when connectionId changes
+  useEffect(() => {
+    if (!connectionId) {
+      setPinned(DEFAULT_PINNED)
+      return
+    }
+    try {
+      const raw = localStorage.getItem(storageKey(connectionId))
+      setPinned(raw ? (JSON.parse(raw) as MetricKey[]) : DEFAULT_PINNED)
+    } catch {
+      setPinned(DEFAULT_PINNED)
+    }
+  }, [connectionId])
+
+  // Persist to localStorage whenever pinned or connectionId changes
+  useEffect(() => {
+    if (connectionId) {
+      localStorage.setItem(storageKey(connectionId), JSON.stringify(pinned))
+    }
+  }, [pinned, connectionId])
+
+  const togglePin = useCallback((key: MetricKey) => {
+    setPinned((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
+  }, [])
 
   const isPinned = useCallback((key: MetricKey) => pinned.includes(key), [pinned])
 

@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { usePinnedMetrics } from '../usePinnedMetrics'
 
 // Mock localStorage
@@ -15,7 +15,7 @@ const localStorageMock = (() => {
     },
   }
 })()
-Object.defineProperty(window, 'localStorage', { value: localStorageMock })
+vi.stubGlobal('localStorage', localStorageMock)
 
 describe('usePinnedMetrics', () => {
   beforeEach(() => localStorageMock.clear())
@@ -27,21 +27,27 @@ describe('usePinnedMetrics', () => {
     expect(result.current.pinned).toContain('dau_mau_ratio')
   })
 
-  it('togglePin adds an unpinned metric', () => {
+  it('togglePin adds an unpinned metric', async () => {
     const { result } = renderHook(() => usePinnedMetrics('conn-1'))
-    act(() => result.current.togglePin('wau'))
+    await act(async () => {
+      result.current.togglePin('wau')
+    })
     expect(result.current.isPinned('wau')).toBe(true)
   })
 
-  it('togglePin removes a pinned metric', () => {
+  it('togglePin removes a pinned metric', async () => {
     const { result } = renderHook(() => usePinnedMetrics('conn-1'))
-    act(() => result.current.togglePin('total_events'))
+    await act(async () => {
+      result.current.togglePin('total_events')
+    })
     expect(result.current.isPinned('total_events')).toBe(false)
   })
 
-  it('persists to localStorage on toggle', () => {
+  it('persists to localStorage on toggle', async () => {
     const { result } = renderHook(() => usePinnedMetrics('conn-1'))
-    act(() => result.current.togglePin('wau'))
+    await act(async () => {
+      result.current.togglePin('wau')
+    })
     const stored = JSON.parse(localStorageMock.getItem('stratifio_pinned_metrics_conn-1')!)
     expect(stored).toContain('wau')
   })
