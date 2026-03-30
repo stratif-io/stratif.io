@@ -14,21 +14,21 @@ export interface UseUserTimelineReturn {
   isFetchingNextPage: boolean
 }
 
-export function useUserTimeline(userId: string | null): UseUserTimelineReturn {
+export function useUserTimeline(userId: string | null, limit = 100): UseUserTimelineReturn {
   const { activeConnectionId } = useAppStore()
 
   const query = useInfiniteQuery({
-    queryKey: ['user-timeline', userId, activeConnectionId],
+    queryKey: ['user-timeline', userId, limit, activeConnectionId],
     queryFn: ({ pageParam }) =>
       fetchUserEvents({
         user_id: userId!,
-        limit: 100,
+        limit,
         offset: pageParam,
         connection_id: activeConnectionId ?? undefined,
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.data.length === 100 ? allPages.length * 100 : undefined,
+      lastPage.data.length === limit ? allPages.length * limit : undefined,
     enabled: !!userId && !!activeConnectionId,
     staleTime: QUERY_STALE_TIME.default,
   })

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { formatDistanceToNow, format } from 'date-fns'
-import { Activity, Users } from 'lucide-react'
+import { Users } from 'lucide-react'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { EmptyState } from '@/components/ui/empty-state'
 import { QueryError } from '@/components/ui/query-error'
 import { LoadingState } from '@/components/ui/loading-state'
 import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { UserTimeline } from '@/components/ui/user-timeline'
 import { cn } from '@/lib/utils'
 import { usePeopleList } from './hooks/usePeopleList'
 import { useUserTimeline } from './hooks/useUserTimeline'
@@ -31,6 +33,7 @@ function formatTimestamp(ts: string): string {
 export function PeoplePage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [limit, setLimit] = useState(100)
 
   const { users, isLoading, isError, error, hasNextPage, fetchNextPage, isFetchingNextPage } =
     usePeopleList()
@@ -40,10 +43,7 @@ export function PeoplePage() {
     isLoading: timelineLoading,
     isError: timelineError,
     error: timelineErr,
-    hasNextPage: timelineHasNextPage,
-    fetchNextPage: fetchTimelineNextPage,
-    isFetchingNextPage: timelineIsFetchingNextPage,
-  } = useUserTimeline(selectedUserId)
+  } = useUserTimeline(selectedUserId, limit)
 
   useEffect(() => {
     if (users.length > 0 && !selectedUserId) {
@@ -115,52 +115,45 @@ export function PeoplePage() {
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {selectedUserId ? (
               <>
+                {/* Right panel header */}
                 <div className="p-4 border-b shrink-0">
-                  <div className="font-semibold text-sm">{selectedUserId}</div>
-                  {selectedUser && (
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {selectedUser.event_count} events · first seen{' '}
-                      {formatTimestamp(selectedUser.first_seen)} · last seen{' '}
-                      {formatTimestamp(selectedUser.last_seen)}
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                  {timelineLoading ? (
-                    <LoadingState />
-                  ) : timelineError ? (
-                    <QueryError error={timelineErr} />
-                  ) : events.length === 0 ? (
-                    <EmptyState
-                      icon={Activity}
-                      title="No events"
-                      description="This user has no recorded events."
-                    />
-                  ) : (
-                    <>
-                      {events.map((event) => (
-                        <div
-                          key={`${event.timestamp}-${event.event_name}`}
-                          className="flex items-center justify-between px-4 py-2 border-b text-sm"
-                        >
-                          <span className="font-medium">{event.event_name}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {formatTimestamp(event.timestamp)}
-                          </span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-sm">{selectedUserId}</div>
+                      {selectedUser && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {selectedUser.event_count} events · first seen{' '}
+                          {formatTimestamp(selectedUser.first_seen)} · last seen{' '}
+                          {formatTimestamp(selectedUser.last_seen)}
                         </div>
-                      ))}
-                      {timelineHasNextPage && (
-                        <button
-                          onClick={() => fetchTimelineNextPage()}
-                          disabled={timelineIsFetchingNextPage}
-                          className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          {timelineIsFetchingNextPage ? 'Loading…' : 'Load more'}
-                        </button>
                       )}
-                    </>
-                  )}
+                    </div>
+                    {!timelineLoading && events.length > 0 && (
+                      <select
+                        value={limit}
+                        onChange={(e) => setLimit(Number(e.target.value))}
+                        className="text-xs bg-transparent border border-border rounded px-1.5 py-0.5 text-muted-foreground cursor-pointer"
+                      >
+                        {[50, 100, 200, 500].map((n) => (
+                          <option key={n} value={n}>
+                            last {n}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                 </div>
+
+                {/* Timeline */}
+                <ScrollArea className="flex-1">
+                  <div className="px-6 py-5">
+                    {timelineError ? (
+                      <QueryError error={timelineErr} />
+                    ) : (
+                      <UserTimeline events={events} isLoading={timelineLoading} />
+                    )}
+                  </div>
+                </ScrollArea>
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
