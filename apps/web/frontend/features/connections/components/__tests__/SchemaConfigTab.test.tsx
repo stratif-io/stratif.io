@@ -147,7 +147,7 @@ describe('SchemaConfigTab — Event Properties section', () => {
 
   it('shows Add Property button', () => {
     renderTab()
-    expect(screen.getByRole('button', { name: /add property/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /add/i })).toBeInTheDocument()
   })
 
   it('does NOT show User ID as a locked row in Event Properties (only one occurrence total — in User Identity)', () => {

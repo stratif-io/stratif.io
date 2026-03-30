@@ -509,67 +509,6 @@ export function SchemaConfigTab({ connId }: Props) {
 
         {detect.isError && <p className="text-sm text-destructive">{detect.error?.message}</p>}
 
-        {pendingDetections.length > 0 && (
-          <div className="rounded-md border border-amber-500 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-3 py-2 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-500/40">
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5" />
-                {pendingDetections.length} field{pendingDetections.length !== 1 ? 's' : ''} detected
-                — review mappings
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
-                  onClick={acceptAllDetections}
-                >
-                  Accept all
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs text-muted-foreground"
-                  onClick={() => setPendingDetections([])}
-                >
-                  Dismiss
-                </Button>
-              </div>
-            </div>
-            {/* Rows */}
-            {pendingDetections.map((d) => (
-              <div
-                key={d.fieldKey}
-                className="flex items-center gap-3 px-3 py-2 border-b last:border-b-0"
-              >
-                <span className="w-32 text-xs text-muted-foreground shrink-0">{d.label}</span>
-                <span className="flex-1 font-mono text-xs px-2 py-1 rounded border border-amber-400/60 bg-amber-50/50 dark:bg-amber-950/10 text-foreground truncate">
-                  {d.proposedColumn}
-                </span>
-                <button
-                  type="button"
-                  aria-label={`Accept ${d.label}`}
-                  className="h-6 w-6 flex items-center justify-center rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
-                  onClick={() => acceptDetection(d.fieldKey)}
-                >
-                  <Check className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Reject ${d.label}`}
-                  className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  onClick={() =>
-                    setPendingDetections((prev) => prev.filter((p) => p.fieldKey !== d.fieldKey))
-                  }
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
         <div className="flex items-center gap-3">
           <Label
             htmlFor="session_timeout_minutes"
@@ -631,17 +570,44 @@ export function SchemaConfigTab({ connId }: Props) {
         </div>
       </div>
 
-      {/* ── Section 2: User Identity ── */}
+      {/* ── Sections 2 + 3: Unified table ── */}
       <div className="space-y-3">
-        <div>
-          <h3 className="text-sm font-semibold">User Identity</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Map columns from your events table to known user attributes
-          </p>
-        </div>
+        <div className="rounded-md border overflow-hidden">
+          {/* Accept all bar */}
+          {pendingDetections.length > 0 && (
+            <div className="flex items-center justify-between px-3 py-2 bg-amber-50/80 dark:bg-amber-950/20 border-b border-amber-500/40">
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                {pendingDetections.length} field{pendingDetections.length !== 1 ? 's' : ''} detected
+                — review mappings
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                  onClick={acceptAllDetections}
+                >
+                  Accept all
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-muted-foreground"
+                  onClick={() => setPendingDetections([])}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          )}
 
-        <div className="rounded-md border">
-          {/* Header */}
+          {/* User Identity sub-header */}
+          <div className="px-3 py-1.5 bg-muted/20 border-b">
+            <span className="text-xs font-medium text-muted-foreground">User Identity</span>
+          </div>
+
+          {/* Identity column headers */}
           <div className="grid grid-cols-[140px_1fr_110px_28px] gap-3 px-3 py-2 border-b bg-muted/30">
             {['Field', 'Column', 'Filter', ''].map((h) => (
               <span key={h} className="text-xs font-medium text-muted-foreground">
@@ -650,77 +616,146 @@ export function SchemaConfigTab({ connId }: Props) {
             ))}
           </div>
 
-          {/* User ID — required, no filter, no clear */}
-          <div className="grid grid-cols-[140px_1fr_110px_28px] gap-3 px-3 py-2.5 border-b items-center opacity-70">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs">User ID</span>
-              <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
-                required
-              </span>
-            </div>
-            <ColumnCombobox
-              value={userIdField}
-              detectedColumns={detectedColumns}
-              onChange={setUserIdField}
-              disabled={detectedColumns.length === 0}
-            />
-            <span />
-            <Lock className="h-3.5 w-3.5 text-muted-foreground/40" />
-          </div>
+          {/* User ID — required row */}
+          {(() => {
+            const pending = pendingDetections.find((d) => d.fieldKey === 'user_id_field')
+            return (
+              <div
+                className={cn(
+                  'grid grid-cols-[140px_1fr_110px_28px] gap-3 px-3 py-2.5 border-b items-center',
+                  pending ? 'bg-amber-50/50 dark:bg-amber-950/10' : 'opacity-70'
+                )}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs">User ID</span>
+                  <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
+                    required
+                  </span>
+                </div>
+                {pending ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex-1 font-mono text-xs px-2 py-1.5 rounded border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate">
+                      {pending.proposedColumn}
+                    </span>
+                    <button
+                      aria-label="Accept User ID"
+                      onClick={() => acceptDetection('user_id_field')}
+                      className="h-6 w-6 flex items-center justify-center rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      aria-label="Reject User ID"
+                      onClick={() =>
+                        setPendingDetections((prev) =>
+                          prev.filter((d) => d.fieldKey !== 'user_id_field')
+                        )
+                      }
+                      className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <ColumnCombobox
+                    value={userIdField}
+                    detectedColumns={detectedColumns}
+                    onChange={setUserIdField}
+                    disabled={detectedColumns.length === 0}
+                  />
+                )}
+                <span />
+                <Lock className="h-3.5 w-3.5 text-muted-foreground/40" />
+              </div>
+            )
+          })()}
 
           {/* Optional user identity fields */}
           {USER_IDENTITY_FIELDS.map(({ key, label, icon }) => {
             const mapped = userIdentityFields[key]
             const isMapped = mapped !== null && mapped !== ''
             const isFilterEnabled = isMapped && mapped in enabledFields
+            const pending = pendingDetections.find((d) => d.fieldKey === key)
             return (
               <div
                 key={key}
-                className="grid grid-cols-[140px_1fr_110px_28px] gap-3 px-3 py-2.5 border-b last:border-b-0 items-center"
+                className={cn(
+                  'grid grid-cols-[140px_1fr_110px_28px] gap-3 px-3 py-2.5 border-b last:border-b-0 items-center',
+                  pending && 'bg-amber-50/50 dark:bg-amber-950/10'
+                )}
               >
-                <span className={cn('text-xs', !isMapped && 'text-muted-foreground')}>{label}</span>
-                <ColumnCombobox
-                  value={mapped ?? ''}
-                  detectedColumns={detectedColumns}
-                  onChange={(v) => setUserIdentityField(key, v || null)}
-                />
+                <span className={cn('text-xs', !isMapped && !pending && 'text-muted-foreground')}>
+                  {label}
+                </span>
+                {pending ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex-1 font-mono text-xs px-2 py-1.5 rounded border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate">
+                      {pending.proposedColumn}
+                    </span>
+                    <button
+                      aria-label={`Accept ${label}`}
+                      onClick={() => acceptDetection(key)}
+                      className="h-6 w-6 flex items-center justify-center rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      aria-label={`Reject ${label}`}
+                      onClick={() =>
+                        setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== key))
+                      }
+                      className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <ColumnCombobox
+                    value={mapped ?? ''}
+                    detectedColumns={detectedColumns}
+                    onChange={(v) => setUserIdentityField(key, v || null)}
+                  />
+                )}
                 <div className="flex items-center">
-                  {isMapped && (
+                  {!pending && isMapped && (
                     <Checkbox
                       checked={isFilterEnabled}
                       onCheckedChange={() => toggleFilter(mapped, label, icon)}
                     />
                   )}
                 </div>
-                <button
-                  type="button"
-                  className={cn(
-                    'h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive text-sm',
-                    !isMapped && 'invisible'
-                  )}
-                  onClick={() => setUserIdentityField(key, null)}
-                  aria-label={`Clear ${label}`}
-                >
-                  ×
-                </button>
+                {pending ? (
+                  <span />
+                ) : (
+                  <button
+                    type="button"
+                    className={cn(
+                      'h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive text-sm',
+                      !isMapped && 'invisible'
+                    )}
+                    onClick={() => setUserIdentityField(key, null)}
+                    aria-label={`Clear ${label}`}
+                  >
+                    ×
+                  </button>
+                )}
               </div>
             )
           })}
-        </div>
-      </div>
 
-      {/* ── Section 3: Event Properties ── */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Event Properties</h3>
-          <Button size="sm" variant="outline" onClick={addProp}>
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Add Property
-          </Button>
-        </div>
+          {/* Dashed divider */}
+          <div className="border-t border-dashed" />
 
-        <div className="rounded-md border">
-          {/* Column headers */}
+          {/* Event Properties sub-header */}
+          <div className="flex items-center justify-between px-3 py-1.5 bg-muted/20 border-b">
+            <span className="text-xs font-medium text-muted-foreground">Event Properties</span>
+            <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={addProp}>
+              <Plus className="h-3 w-3 mr-1" />
+              Add
+            </Button>
+          </div>
+
+          {/* Event props column headers */}
           <div className={`grid ${EVENT_GRID} gap-3 px-3 py-2 border-b bg-muted/30`}>
             {['Field', 'Column', 'Type', 'Category', 'Global Filter', ''].map((h) => (
               <span key={h} className="text-xs font-medium text-muted-foreground">
@@ -731,36 +766,76 @@ export function SchemaConfigTab({ connId }: Props) {
 
           {/* Event Name + Timestamp — required locked rows */}
           {[
-            { field: eventNameField, setField: setEventNameField, label: 'Event Name' },
-            { field: timestampField, setField: setTimestampField, label: 'Timestamp' },
-          ].map(({ field, setField, label }) => {
+            {
+              field: eventNameField,
+              setField: setEventNameField,
+              label: 'Event Name',
+              fieldKey: 'event_name_field',
+            },
+            {
+              field: timestampField,
+              setField: setTimestampField,
+              label: 'Timestamp',
+              fieldKey: 'timestamp_field',
+            },
+          ].map(({ field, setField, label, fieldKey }) => {
             const isEnabled = field in enabledFields
+            const pending = pendingDetections.find((d) => d.fieldKey === fieldKey)
             return (
               <div
                 key={label}
-                className={`grid ${EVENT_GRID} gap-3 px-3 py-2.5 border-b items-center opacity-70`}
+                className={cn(
+                  `grid ${EVENT_GRID} gap-3 px-3 py-2.5 border-b items-center`,
+                  pending ? 'bg-amber-50/50 dark:bg-amber-950/10' : 'opacity-70'
+                )}
               >
                 <span className="text-xs text-muted-foreground">{label}</span>
-                <ColumnCombobox
-                  value={field}
-                  detectedColumns={detectedColumns}
-                  onChange={setField}
-                  disabled={detectedColumns.length === 0}
-                />
+                {pending ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex-1 font-mono text-xs px-2 py-1.5 rounded border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate">
+                      {pending.proposedColumn}
+                    </span>
+                    <button
+                      aria-label={`Accept ${label}`}
+                      onClick={() => acceptDetection(fieldKey)}
+                      className="h-6 w-6 flex items-center justify-center rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      aria-label={`Reject ${label}`}
+                      onClick={() =>
+                        setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== fieldKey))
+                      }
+                      className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <ColumnCombobox
+                    value={field}
+                    detectedColumns={detectedColumns}
+                    onChange={setField}
+                    disabled={detectedColumns.length === 0}
+                  />
+                )}
                 <span className="text-xs text-muted-foreground/50">—</span>
                 <span className="text-xs text-muted-foreground/50">—</span>
                 <div className="flex items-center">
-                  <Checkbox
-                    checked={isEnabled}
-                    onCheckedChange={() => toggleFilter(field, label, 'Tag')}
-                  />
+                  {!pending && (
+                    <Checkbox
+                      checked={isEnabled}
+                      onCheckedChange={() => toggleFilter(field, label, 'Tag')}
+                    />
+                  )}
                 </div>
                 <Lock className="h-3.5 w-3.5 text-muted-foreground/40" />
               </div>
             )
           })}
 
-          {/* Dashed divider */}
+          {/* Dashed divider before custom props */}
           {sortedCustomProps.length > 0 && <div className="border-t border-dashed" />}
 
           {/* Custom property rows */}
