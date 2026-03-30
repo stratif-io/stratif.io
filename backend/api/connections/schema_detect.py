@@ -185,10 +185,22 @@ def detect_schema(conn_id: str, events_table: str | None = None):
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Schema detection failed: {exc}") from exc
 
+    # Augment backend suggestions with fuzzy user-identity detection.
+    # The backend only detects user_id / event_name / timestamp from top-level columns.
+    # Run the full fuzzy _suggest_fields against both top-level columns AND any
+    # expanded struct/JSON paths in proposed_custom_properties (e.g. traits.email).
+    all_cols = (
+        [{"name": c.name, "type": c.type} for c in info.columns]
+        + [{"name": p["path"], "type": p["type"]} for p in info.proposed_custom_properties]
+    )
+    fuzzy_suggestions = _suggest_fields(all_cols)
+    # Backend exact matches take priority; fill in any fields the backend missed
+    merged_suggestions = {**fuzzy_suggestions, **info.suggestions}
+
     return {
         "tables": info.tables,
         "events_table": info.events_table,
         "columns": [{"name": c.name, "type": c.type} for c in info.columns],
-        "suggestions": info.suggestions,
+        "suggestions": merged_suggestions,
         "proposed_custom_properties": info.proposed_custom_properties,
     }
