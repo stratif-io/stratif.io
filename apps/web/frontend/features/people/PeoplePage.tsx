@@ -123,7 +123,7 @@ export function PeoplePage() {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
-                <div className="flex-1 overflow-y-auto">
+                <ScrollArea className="flex-1">
                   {isLoading ? (
                     <LoadingState />
                   ) : isError ? (
@@ -162,7 +162,7 @@ export function PeoplePage() {
                       )}
                     </>
                   )}
-                </div>
+                </ScrollArea>
               </>
             )}
           </div>
@@ -286,12 +286,12 @@ export function PeoplePage() {
                     flipIcon
                   />
                 </div>
-                <div className="flex-1 overflow-hidden">
+                <ScrollArea className="flex-1">
                   <EventPropertiesPanel
                     event={selectedEvent}
                     onClose={selectedEvent ? () => setSelectedEvent(null) : undefined}
                   />
-                </div>
+                </ScrollArea>
               </>
             )}
           </div>

@@ -12,7 +12,6 @@ import {
   MousePointerClick,
 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { getEventColor } from '@/lib/event-color'
 import type { Event } from '@/types'
@@ -112,9 +111,9 @@ export function EventPropertiesPanel({
   )
 
   return (
-    <div className="flex flex-col h-full">
+    <div>
       {/* Header */}
-      <div className="px-4 py-3 border-b shrink-0 flex items-start justify-between gap-2">
+      <div className="px-4 py-3 border-b flex items-start justify-between gap-2">
         <div className="min-w-0">
           <span className={cn('text-sm font-semibold leading-snug block truncate', color.text)}>
             {event.event_name}
@@ -136,36 +135,34 @@ export function EventPropertiesPanel({
         )}
       </div>
 
-      {/* Scrollable body */}
-      <ScrollArea className="flex-1">
-        <div className="px-4 py-4 space-y-5">
-          {entries.length === 0 ? (
-            <p className="text-xs text-muted-foreground/50 italic">No properties</p>
-          ) : (
-            groups.map(({ cat, entries: catEntries }) => {
-              const Icon = cat.icon
-              return (
-                <div key={cat.id} className="space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <Icon className="h-3.5 w-3.5" />
-                    {cat.label}
-                  </div>
-                  <div className="space-y-2 pl-0.5">
-                    {catEntries.map(([key, val]) => (
-                      <div key={key} className="flex flex-col min-w-0">
-                        <span className="text-xs text-muted-foreground/50 leading-none">{key}</span>
-                        <span className="text-xs text-foreground break-all leading-snug mt-0.5">
-                          {String(val)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+      {/* Body */}
+      <div className="px-4 py-4 space-y-5">
+        {entries.length === 0 ? (
+          <p className="text-xs text-muted-foreground/50 italic">No properties</p>
+        ) : (
+          groups.map(({ cat, entries: catEntries }) => {
+            const Icon = cat.icon
+            return (
+              <div key={cat.id} className="space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Icon className="h-3.5 w-3.5" />
+                  {cat.label}
                 </div>
-              )
-            })
-          )}
-        </div>
-      </ScrollArea>
+                <div className="space-y-2 pl-0.5">
+                  {catEntries.map(([key, val]) => (
+                    <div key={key} className="flex flex-col min-w-0">
+                      <span className="text-xs text-muted-foreground/50 leading-none">{key}</span>
+                      <span className="text-xs text-foreground break-all leading-snug mt-0.5">
+                        {String(val)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }
