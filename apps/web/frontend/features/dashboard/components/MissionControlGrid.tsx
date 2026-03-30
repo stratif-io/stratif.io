@@ -16,6 +16,7 @@ export interface MissionControlGridProps {
   data: MissionControlResponse | undefined
   trends: Record<TrendMetric, MetricTrend>
   metricLoading: Record<TrendMetric, boolean>
+  metricSql?: Record<TrendMetric, string | string[] | null>
 }
 
 // Per-metric display config
@@ -70,6 +71,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   data,
   trends,
   metricLoading,
+  metricSql,
 }: MissionControlGridProps) {
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
   const activeConnectionId = useAppStore((s) => s.activeConnectionId)
@@ -119,7 +121,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
       {/* LEFT: Hero card */}
-      <DevCard sql={trends[heroMetric]?.sql} className="h-full">
+      <DevCard sql={metricSql?.[heroMetric] ?? trends[heroMetric]?.sql} className="h-full">
         <HeroMetricCard
           label={heroConfig.label}
           metricKey={heroMetric}
@@ -173,7 +175,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                   return (
                     <DevCard
                       key={metricKey}
-                      sql={trends[metricKey]?.sql}
+                      sql={metricSql?.[metricKey] ?? trends[metricKey]?.sql}
                       className={isFullWidth ? 'col-span-2' : undefined}
                     >
                       <MiniMetricCard

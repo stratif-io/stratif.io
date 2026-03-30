@@ -33,6 +33,7 @@ export interface UseMissionControlReturn {
   data: MissionControlResponse | undefined
   isLoading: boolean
   metricLoading: Record<MetricKey, boolean>
+  metricSql: Record<MetricKey, string | string[] | null>
   isError: boolean
   error: Error | null
   topEvents: Array<{ name: string; count: number }>
@@ -108,6 +109,11 @@ export function useMissionControl({
     METRICS.map((metric, i) => [metric, metricResults[i].isLoading])
   ) as Record<MetricKey, boolean>
 
+  // Per-metric SQL map — exposes the SQL for the "number" query on each card
+  const metricSql = Object.fromEntries(
+    METRICS.map((metric, i) => [metric, metricResults[i].data?.sql ?? null])
+  ) as Record<MetricKey, string | string[] | null>
+
   // Build data progressively: populate resolved metrics immediately, use 0 for still-loading ones.
   // data is undefined only when queries are disabled (no connection).
   const data: MissionControlResponse | undefined = enabled
@@ -130,6 +136,7 @@ export function useMissionControl({
     data,
     isLoading,
     metricLoading,
+    metricSql,
     isError,
     error,
     topEvents: topEventsData?.data ?? [],

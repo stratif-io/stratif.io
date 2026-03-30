@@ -479,3 +479,14 @@ def test_trend_power_users(client):
     )
     assert resp.status_code == 200
     assert all(d["value"] >= 0 for d in resp.json()["data"])
+
+
+def test_metric_response_includes_sql(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "unique_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "sql" in data
+    assert "COUNT(DISTINCT" in data["sql"]

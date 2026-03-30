@@ -144,25 +144,25 @@ def _fetch_period_metrics(
 
     # --- 5. New metrics (delegated to _fetch_single_metric) ---
     resurrected_users = int(
-        _fetch_single_metric(db, "resurrected_users", period_start, period_end, filter_clauses, filter_params)
+        _fetch_single_metric(db, "resurrected_users", period_start, period_end, filter_clauses, filter_params)[0]
     )
     returning_users = int(
-        _fetch_single_metric(db, "returning_users", period_start, period_end, filter_clauses, filter_params)
+        _fetch_single_metric(db, "returning_users", period_start, period_end, filter_clauses, filter_params)[0]
     )
     churned_users = int(
-        _fetch_single_metric(db, "churned_users", period_start, period_end, filter_clauses, filter_params)
+        _fetch_single_metric(db, "churned_users", period_start, period_end, filter_clauses, filter_params)[0]
     )
     retention_rate = float(
-        _fetch_single_metric(db, "retention_rate", period_start, period_end, filter_clauses, filter_params)
+        _fetch_single_metric(db, "retention_rate", period_start, period_end, filter_clauses, filter_params)[0]
     )
     wau = int(
-        _fetch_single_metric(db, "wau", period_start, period_end, filter_clauses, filter_params)
+        _fetch_single_metric(db, "wau", period_start, period_end, filter_clauses, filter_params)[0]
     )
     avg_active_days = float(
-        _fetch_single_metric(db, "avg_active_days", period_start, period_end, filter_clauses, filter_params)
+        _fetch_single_metric(db, "avg_active_days", period_start, period_end, filter_clauses, filter_params)[0]
     )
     power_users = int(
-        _fetch_single_metric(db, "power_users", period_start, period_end, filter_clauses, filter_params)
+        _fetch_single_metric(db, "power_users", period_start, period_end, filter_clauses, filter_params)[0]
     )
 
     return {
@@ -190,8 +190,8 @@ def _fetch_single_metric(
     period_end: date,
     filter_clauses: list[str],
     filter_params: list,
-) -> float:
-    """Run only the SQL needed for the requested metric; return a single scalar."""
+) -> tuple[float, str | list[str]]:
+    """Run only the SQL needed for the requested metric; return (value, sql_string)."""
     ps = f"{period_start} 00:00:00"
     pe = f"{period_end} 23:59:59"
     ev_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
@@ -201,14 +201,14 @@ def _fetch_single_metric(
     ev_where_sql = "WHERE " + " AND ".join(ev_where)
 
     if metric == "total_events":
-        rows = db.execute(f"SELECT COUNT(*) FROM events {ev_where_sql}", ev_params)
-        return rows[0][0] if rows else 0
+        sql = f"SELECT COUNT(*) FROM events {ev_where_sql}"
+        rows = db.execute(sql, ev_params)
+        return rows[0][0] if rows else 0, interpolate_sql(sql, ev_params)
 
     if metric == "unique_users":
-        rows = db.execute(
-            f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}", ev_params
-        )
-        return rows[0][0] if rows else 0
+        sql = f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}"
+        rows = db.execute(sql, ev_params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, ev_params)
 
     if metric in ("total_sessions", "avg_session_duration_sec", "avg_events_per_session"):
         sess_where: list[str] = ["ds.start_time >= ?", "ds.start_time <= ?"]
@@ -229,18 +229,15 @@ def _fetch_single_metric(
         else:
             agg = "AVG(ds.event_count)"
 
-        rows = db.execute(
-            f"""
+        sql = f"""
             WITH {session_ctes(timeout, dialect)}
             SELECT {agg} FROM derived_sessions ds {sess_where_sql}
-            """,
-            sess_params,
-        )
-        return round(rows[0][0] or 0.0, 2) if rows else 0.0
+            """
+        rows = db.execute(sql, sess_params)
+        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(sql, sess_params)
 
     if metric == "new_users":
-        rows = db.execute(
-            """
+        sql = """
             SELECT COUNT(*)
             FROM (
                 SELECT user_id
@@ -248,10 +245,10 @@ def _fetch_single_metric(
                 GROUP BY user_id
                 HAVING DATE(MIN(timestamp)) >= ? AND DATE(MIN(timestamp)) <= ?
             ) t
-            """,
-            [str(period_start), str(period_end)],
-        )
-        return rows[0][0] if rows else 0
+            """
+        params = [str(period_start), str(period_end)]
+        rows = db.execute(sql, params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, params)
 
     if metric in ("returning_users", "resurrected_users"):
         resurrection_cutoff = period_start - timedelta(days=db.get_resurrection_window_days())
@@ -264,50 +261,47 @@ def _fetch_single_metric(
                 "SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id "
                 "HAVING MAX(DATE(timestamp)) >= ?"
             )
-            rows = db.execute(
-                f"""
+            sql = f"""
                 SELECT COUNT(DISTINCT e.user_id)
                 FROM events e
                 {ev_where_sql}
                 AND e.user_id IN ({prior_active_subq})
                 AND e.user_id IN ({last_seen_subq})
-                """,
-                ev_params + [ps, ps, str(resurrection_cutoff)],
-            )
+                """
+            params = ev_params + [ps, ps, str(resurrection_cutoff)]
+            rows = db.execute(sql, params)
         else:
             # Last seen BEYOND resurrection window before period_start
             last_seen_subq = (
                 "SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id "
                 "HAVING MAX(DATE(timestamp)) < ?"
             )
-            rows = db.execute(
-                f"""
+            sql = f"""
                 SELECT COUNT(DISTINCT e.user_id)
                 FROM events e
                 {ev_where_sql}
                 AND e.user_id IN ({prior_active_subq})
                 AND e.user_id IN ({last_seen_subq})
-                """,
-                ev_params + [ps, ps, str(resurrection_cutoff)],
-            )
-        return rows[0][0] if rows else 0
+                """
+            params = ev_params + [ps, ps, str(resurrection_cutoff)]
+            rows = db.execute(sql, params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, params)
 
     if metric == "churned_users":
         prev_start, prev_end = _compute_previous_period(period_start, period_end)
         pps = f"{prev_start} 00:00:00"
         ppe = f"{prev_end} 23:59:59"
-        rows = db.execute(
-            f"""
+        sql = f"""
             SELECT COUNT(DISTINCT user_id)
             FROM events
             WHERE timestamp >= ? AND timestamp <= ?
               AND user_id NOT IN (
                 SELECT DISTINCT user_id FROM events {ev_where_sql}
               )
-            """,
-            [pps, ppe] + ev_params,
-        )
-        return rows[0][0] if rows else 0
+            """
+        params = [pps, ppe] + ev_params
+        rows = db.execute(sql, params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, params)
 
     if metric == "retention_rate":
         prev_start, prev_end = _compute_previous_period(period_start, period_end)
@@ -318,23 +312,24 @@ def _fetch_single_metric(
         prev_uniq_where.extend(filter_clauses)
         prev_uniq_params_r.extend(filter_params)
         prev_uniq_where_sql = "WHERE " + " AND ".join(prev_uniq_where)
-        prev_uniq_rows = db.execute(
-            f"SELECT COUNT(DISTINCT user_id) FROM events {prev_uniq_where_sql}",
-            prev_uniq_params_r,
-        )
+        prev_uniq_sql = f"SELECT COUNT(DISTINCT user_id) FROM events {prev_uniq_where_sql}"
+        prev_uniq_rows = db.execute(prev_uniq_sql, prev_uniq_params_r)
         prev_unique = prev_uniq_rows[0][0] if prev_uniq_rows else 0
-        retained_rows = db.execute(
-            f"""
+        retained_sql = f"""
             SELECT COUNT(DISTINCT user_id)
             FROM events {ev_where_sql}
             AND user_id IN (
                 SELECT DISTINCT user_id FROM events {prev_uniq_where_sql}
             )
-            """,
-            ev_params + prev_uniq_params_r,
-        )
+            """
+        retained_params = ev_params + prev_uniq_params_r
+        retained_rows = db.execute(retained_sql, retained_params)
         retained = retained_rows[0][0] if retained_rows else 0
-        return round(retained / prev_unique, 4) if prev_unique else 0.0
+        value = round(retained / prev_unique, 4) if prev_unique else 0.0
+        return value, [
+            interpolate_sql(prev_uniq_sql, prev_uniq_params_r),
+            interpolate_sql(retained_sql, retained_params),
+        ]
 
     if metric == "wau":
         wau_start = period_end - timedelta(days=6)
@@ -344,54 +339,48 @@ def _fetch_single_metric(
         wau_where.extend(filter_clauses)
         wau_params.extend(filter_params)
         wau_where_sql = "WHERE " + " AND ".join(wau_where)
-        rows = db.execute(
-            f"SELECT COUNT(DISTINCT user_id) FROM events {wau_where_sql}", wau_params
-        )
-        return rows[0][0] if rows else 0
+        sql = f"SELECT COUNT(DISTINCT user_id) FROM events {wau_where_sql}"
+        rows = db.execute(sql, wau_params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, wau_params)
 
     if metric == "avg_active_days":
-        rows = db.execute(
-            f"""
+        sql = f"""
             SELECT AVG(active_days) FROM (
                 SELECT user_id, COUNT(DISTINCT DATE(timestamp)) AS active_days
                 FROM events {ev_where_sql}
                 GROUP BY user_id
             ) t
-            """,
-            ev_params,
-        )
-        return round(rows[0][0] or 0.0, 2) if rows else 0.0
+            """
+        rows = db.execute(sql, ev_params)
+        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(sql, ev_params)
 
     if metric == "power_users":
         threshold = db.get_power_user_threshold_days()
-        rows = db.execute(
-            f"""
+        sql = f"""
             SELECT COUNT(*) FROM (
                 SELECT user_id
                 FROM events {ev_where_sql}
                 GROUP BY user_id
                 HAVING COUNT(DISTINCT DATE(timestamp)) >= ?
             ) t
-            """,
-            ev_params + [threshold],
-        )
-        return rows[0][0] if rows else 0
+            """
+        params = ev_params + [threshold]
+        rows = db.execute(sql, params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, params)
 
     # dau_mau_ratio
     if metric != "dau_mau_ratio":
         raise ValueError(f"Unknown metric: {metric}")
 
-    dau_rows = db.execute(
-        f"""
+    dau_sql = f"""
         SELECT AVG(daily_count)
         FROM (
             SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) AS daily_count
             FROM events {ev_where_sql}
             GROUP BY DATE(timestamp)
         ) t
-        """,
-        ev_params,
-    )
+        """
+    dau_rows = db.execute(dau_sql, ev_params)
     dau = dau_rows[0][0] if dau_rows else 0.0
 
     mau_start = period_end - timedelta(days=27)
@@ -400,11 +389,11 @@ def _fetch_single_metric(
     mau_where.extend(filter_clauses)
     mau_params.extend(filter_params)
     mau_where_sql = "WHERE " + " AND ".join(mau_where)
-    mau_rows = db.execute(
-        f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql}", mau_params
-    )
+    mau_sql = f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql}"
+    mau_rows = db.execute(mau_sql, mau_params)
     mau = mau_rows[0][0] if mau_rows else 0
-    return round(dau / mau, 4) if mau else 0.0
+    value = round(dau / mau, 4) if mau else 0.0
+    return value, [interpolate_sql(dau_sql, ev_params), interpolate_sql(mau_sql, mau_params)]
 
 
 def _fetch_single_metric_all_time(
@@ -412,17 +401,19 @@ def _fetch_single_metric_all_time(
     metric: str,
     filter_clauses: list[str],
     filter_params: list,
-) -> float:
-    """Run the metric query over all time (no date bounds)."""
+) -> tuple[float, str | list[str]]:
+    """Run the metric query over all time (no date bounds); return (value, sql_string)."""
     ev_where_sql = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
 
     if metric == "total_events":
-        rows = db.execute(f"SELECT COUNT(*) FROM events {ev_where_sql}", filter_params)
-        return rows[0][0] if rows else 0
+        sql = f"SELECT COUNT(*) FROM events {ev_where_sql}"
+        rows = db.execute(sql, filter_params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, filter_params)
 
     if metric == "unique_users":
-        rows = db.execute(f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}", filter_params)
-        return rows[0][0] if rows else 0
+        sql = f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}"
+        rows = db.execute(sql, filter_params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, filter_params)
 
     if metric in ("total_sessions", "avg_session_duration_sec", "avg_events_per_session"):
         sess_where_sql = ev_where_sql.replace("WHERE ", "WHERE ds.") if ev_where_sql else ""
@@ -434,22 +425,21 @@ def _fetch_single_metric_all_time(
             agg = "AVG(ds.duration_sec)"
         else:
             agg = "AVG(ds.event_count)"
-        rows = db.execute(
-            f"WITH {session_ctes(timeout, dialect)} SELECT {agg} FROM derived_sessions ds {sess_where_sql}",
-            filter_params,
-        )
-        return round(rows[0][0] or 0.0, 2) if rows else 0.0
+        sql = f"WITH {session_ctes(timeout, dialect)} SELECT {agg} FROM derived_sessions ds {sess_where_sql}"
+        rows = db.execute(sql, filter_params)
+        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(sql, filter_params)
 
     if metric == "new_users":
         # All users are "new" in all-time context — return unique users
-        rows = db.execute(f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}", filter_params)
-        return rows[0][0] if rows else 0
+        sql = f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}"
+        rows = db.execute(sql, filter_params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, filter_params)
 
     if metric in ("returning_users", "resurrected_users"):
-        return 0
+        return 0, ""
 
     if metric in ("churned_users", "retention_rate"):
-        return 0.0  # not meaningful without a fixed period
+        return 0.0, ""  # not meaningful without a fixed period
 
     if metric == "wau":
         # All-time: use last 7 days of all available data
@@ -459,7 +449,7 @@ def _fetch_single_metric_all_time(
             filter_params,
         )
         if not bounds or bounds[0][0] is None:
-            return 0
+            return 0, ""
         max_day = bounds[0][0]
         max_day_dt = datetime.strptime(str(max_day), '%Y-%m-%d').date()
         wau_start_at = max_day_dt - timedelta(days=6)
@@ -469,43 +459,38 @@ def _fetch_single_metric_all_time(
             wau_at_where.extend(filter_clauses)
             wau_at_params.extend(filter_params)
         wau_at_where_sql = "WHERE " + " AND ".join(wau_at_where)
-        rows = db.execute(
-            f"SELECT COUNT(DISTINCT user_id) FROM events {wau_at_where_sql}",
-            wau_at_params,
-        )
-        return rows[0][0] if rows else 0
+        sql = f"SELECT COUNT(DISTINCT user_id) FROM events {wau_at_where_sql}"
+        rows = db.execute(sql, wau_at_params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, wau_at_params)
 
     if metric == "avg_active_days":
         ev_where_sql_at = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
-        rows = db.execute(
-            f"""
+        sql = f"""
             SELECT AVG(active_days) FROM (
                 SELECT user_id, COUNT(DISTINCT DATE(timestamp)) AS active_days
                 FROM events {ev_where_sql_at}
                 GROUP BY user_id
             ) t
-            """,
-            filter_params,
-        )
-        return round(rows[0][0] or 0.0, 2) if rows else 0.0
+            """
+        rows = db.execute(sql, filter_params)
+        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(sql, filter_params)
 
     if metric == "power_users":
         threshold = db.get_power_user_threshold_days()
         ev_where_sql_at = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
-        rows = db.execute(
-            f"""
+        sql = f"""
             SELECT COUNT(*) FROM (
                 SELECT user_id FROM events {ev_where_sql_at}
                 GROUP BY user_id
                 HAVING COUNT(DISTINCT DATE(timestamp)) >= ?
             ) t
-            """,
-            filter_params + [threshold],
-        )
-        return rows[0][0] if rows else 0
+            """
+        params = filter_params + [threshold]
+        rows = db.execute(sql, params)
+        return (rows[0][0] if rows else 0), interpolate_sql(sql, params)
 
     # dau_mau_ratio — not meaningful without a fixed period, return 0
-    return 0.0
+    return 0.0, ""
 
 
 SUPPORTED_METRICS = {
@@ -552,10 +537,10 @@ def get_mission_control_metric(
     if start_date and end_date:
         start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
         prev_start, prev_end = _compute_previous_period(start, end)
-        current_value = _fetch_single_metric(db, metric, start, end, filter_clauses, filter_params)
-        previous_value = _fetch_single_metric(db, metric, prev_start, prev_end, filter_clauses, filter_params)
+        current_value, current_sql = _fetch_single_metric(db, metric, start, end, filter_clauses, filter_params)
+        previous_value, _ = _fetch_single_metric(db, metric, prev_start, prev_end, filter_clauses, filter_params)
     else:
-        current_value = _fetch_single_metric_all_time(db, metric, filter_clauses, filter_params)
+        current_value, current_sql = _fetch_single_metric_all_time(db, metric, filter_clauses, filter_params)
         previous_value = None
 
     breakdown: dict | None = None
@@ -604,6 +589,7 @@ def get_mission_control_metric(
         "metric": metric,
         "current": float(current_value),
         "previous": float(previous_value) if previous_value is not None else None,
+        "sql": current_sql,
         **({"breakdown": breakdown} if breakdown is not None else {}),
     }
 
