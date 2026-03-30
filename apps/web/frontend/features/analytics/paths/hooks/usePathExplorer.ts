@@ -47,6 +47,7 @@ export function usePathExplorer({
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
+    enabled: !!activeConnectionId,
     staleTime: QUERY_STALE_TIME.default,
   })
 
@@ -86,7 +87,7 @@ export function usePathExplorer({
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
-    enabled: true,
+    enabled: !!activeConnectionId,
     staleTime: QUERY_STALE_TIME.default,
   })
 

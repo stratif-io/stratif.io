@@ -15,6 +15,7 @@ import { usePathExplorer } from './hooks/usePathExplorer'
 import { PathFunnelDialog } from './components/PathFunnelDialog'
 import { Badge } from '@/components/ui/badge'
 import { PageTransition } from '@/components/layout/PageTransition'
+import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
 import { QueryError } from '@/components/ui/query-error'
@@ -241,307 +242,310 @@ export function PathsExplorerPage() {
 
   return (
     <PageTransition>
-      <div className="flex h-full flex-col">
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b shrink-0">
-          <div className="flex items-center rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border">
-            {/* Start event */}
-            <Select
-              value={startEvent || 'any'}
-              onValueChange={(v) => setParam('start', v === 'any' ? null : v)}
-            >
-              <SelectTrigger className={segTrigger} style={{ width: 'auto', minWidth: 0 }}>
-                <SelectValue placeholder="Any start" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Any start</SelectItem>
-                {events.map((e) => (
-                  <SelectItem key={e} value={e}>
-                    {e}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Arrow — non-interactive visual */}
-            <div
-              aria-hidden="true"
-              className="flex items-center justify-center w-8 shrink-0 text-muted-foreground/40 pointer-events-none select-none"
-            >
-              <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-
-            {/* End event */}
-            <Select
-              value={endEvent || 'any'}
-              onValueChange={(v) => setParam('end', v === 'any' ? null : v)}
-            >
-              <SelectTrigger className={segTrigger} style={{ width: 'auto', minWidth: 0 }}>
-                <SelectValue placeholder="Any end" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Any end</SelectItem>
-                {events.map((e) => (
-                  <SelectItem key={e} value={e}>
-                    {e}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Path length — popover */}
-            <Popover>
-              <PopoverTrigger
-                className={cn(
-                  segTrigger,
-                  'flex items-center gap-1.5',
-                  pathLengthActive && 'text-foreground'
-                )}
+      <NoConnectionGuard>
+        <div className="flex h-full flex-col">
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b shrink-0">
+            <div className="flex items-center rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border">
+              {/* Start event */}
+              <Select
+                value={startEvent || 'any'}
+                onValueChange={(v) => setParam('start', v === 'any' ? null : v)}
               >
-                <Layers
-                  className={cn('h-3.5 w-3.5 shrink-0', pathLengthActive && 'text-primary')}
-                />
-                <span>
-                  {effectiveMin}–{effectiveMax} steps
-                </span>
-              </PopoverTrigger>
-              <PopoverContent className="w-52 p-3 space-y-3" align="start">
-                <p className="text-xs font-semibold tracking-wide text-muted-foreground">
-                  Path length
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 space-y-1">
-                    <label htmlFor="path-length-min" className="text-xs text-muted-foreground">
-                      Min
-                    </label>
-                    <Input
-                      id="path-length-min"
-                      type="number"
-                      min={2}
-                      max={10}
-                      placeholder="2"
-                      value={minPathLength ?? ''}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value)
-                        setParam('min', isNaN(val) ? null : String(Math.max(2, val)))
-                      }}
-                      className="h-8 text-sm text-center"
-                    />
-                  </div>
-                  <span className="text-muted-foreground text-sm mt-5">–</span>
-                  <div className="flex-1 space-y-1">
-                    <label htmlFor="path-length-max" className="text-xs text-muted-foreground">
-                      Max
-                    </label>
-                    <Input
-                      id="path-length-max"
-                      type="number"
-                      min={effectiveMin}
-                      max={10}
-                      placeholder="5"
-                      value={maxPathLength ?? ''}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value)
-                        setParam('max', isNaN(val) ? null : String(Math.max(effectiveMin, val)))
-                      }}
-                      className="h-8 text-sm text-center"
-                    />
-                  </div>
-                </div>
-                {pathLengthActive && (
-                  <button
-                    onClick={clearPathLength}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Reset to defaults
-                  </button>
-                )}
-              </PopoverContent>
-            </Popover>
+                <SelectTrigger className={segTrigger} style={{ width: 'auto', minWidth: 0 }}>
+                  <SelectValue placeholder="Any start" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any start</SelectItem>
+                  {events.map((e) => (
+                    <SelectItem key={e} value={e}>
+                      {e}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            {/* Group by */}
-            <Select value={groupBy} onValueChange={(v) => setParam('groupBy', v)}>
-              <SelectTrigger className={segTrigger} style={{ width: 'auto', minWidth: 0 }}>
-                <Users className="h-3.5 w-3.5 shrink-0" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user_id">Per user</SelectItem>
-                <SelectItem value="session_id">Per session</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Top N — popover */}
-            <Popover>
-              <PopoverTrigger className={cn(segTrigger, 'flex items-center gap-1.5')}>
-                <span className="text-muted-foreground">Top</span>
-                <span className={cn('font-semibold', topN !== 20 && 'text-foreground')}>
-                  {topN}
-                </span>
-              </PopoverTrigger>
-              <PopoverContent className="w-44 p-3 space-y-2" align="start">
-                <p className="text-xs font-semibold tracking-wide text-muted-foreground">
-                  Show top N paths
-                </p>
-                <Input
-                  id="top-n-paths"
-                  aria-label="Show top N paths"
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={topN}
-                  onChange={(e) =>
-                    setParam(
-                      'top',
-                      String(Math.min(100, Math.max(1, parseInt(e.target.value) || 10)))
-                    )
-                  }
-                  className="h-8 text-sm text-center"
-                />
-              </PopoverContent>
-            </Popover>
-
-            {/* Advanced (time constraint) — popover */}
-            <Popover>
-              <PopoverTrigger
-                className={cn(
-                  segTrigger,
-                  'flex items-center gap-1.5',
-                  maxTimeBetweenEvents !== null && 'text-foreground'
-                )}
+              {/* Arrow — non-interactive visual */}
+              <div
+                aria-hidden="true"
+                className="flex items-center justify-center w-8 shrink-0 text-muted-foreground/40 pointer-events-none select-none"
               >
-                <Settings2 className="h-3.5 w-3.5 shrink-0" />
-                {maxTimeBetweenEvents !== null ? (
+                <ArrowRight className="h-3.5 w-3.5" />
+              </div>
+
+              {/* End event */}
+              <Select
+                value={endEvent || 'any'}
+                onValueChange={(v) => setParam('end', v === 'any' ? null : v)}
+              >
+                <SelectTrigger className={segTrigger} style={{ width: 'auto', minWidth: 0 }}>
+                  <SelectValue placeholder="Any end" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any end</SelectItem>
+                  {events.map((e) => (
+                    <SelectItem key={e} value={e}>
+                      {e}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Path length — popover */}
+              <Popover>
+                <PopoverTrigger
+                  className={cn(
+                    segTrigger,
+                    'flex items-center gap-1.5',
+                    pathLengthActive && 'text-foreground'
+                  )}
+                >
+                  <Layers
+                    className={cn('h-3.5 w-3.5 shrink-0', pathLengthActive && 'text-primary')}
+                  />
                   <span>
-                    ≤ {maxTimeBetweenEvents} {timeUnit}
+                    {effectiveMin}–{effectiveMax} steps
                   </span>
-                ) : (
-                  <span>Time limit</span>
-                )}
-              </PopoverTrigger>
-              <PopoverContent className="w-56 p-3 space-y-3" align="start">
-                <p className="text-xs font-semibold tracking-wide text-muted-foreground">
-                  Max time between steps
-                </p>
-                <div className="flex items-center gap-2">
+                </PopoverTrigger>
+                <PopoverContent className="w-52 p-3 space-y-3" align="start">
+                  <p className="text-xs font-semibold tracking-wide text-muted-foreground">
+                    Path length
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 space-y-1">
+                      <label htmlFor="path-length-min" className="text-xs text-muted-foreground">
+                        Min
+                      </label>
+                      <Input
+                        id="path-length-min"
+                        type="number"
+                        min={2}
+                        max={10}
+                        placeholder="2"
+                        value={minPathLength ?? ''}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value)
+                          setParam('min', isNaN(val) ? null : String(Math.max(2, val)))
+                        }}
+                        className="h-8 text-sm text-center"
+                      />
+                    </div>
+                    <span className="text-muted-foreground text-sm mt-5">–</span>
+                    <div className="flex-1 space-y-1">
+                      <label htmlFor="path-length-max" className="text-xs text-muted-foreground">
+                        Max
+                      </label>
+                      <Input
+                        id="path-length-max"
+                        type="number"
+                        min={effectiveMin}
+                        max={10}
+                        placeholder="5"
+                        value={maxPathLength ?? ''}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value)
+                          setParam('max', isNaN(val) ? null : String(Math.max(effectiveMin, val)))
+                        }}
+                        className="h-8 text-sm text-center"
+                      />
+                    </div>
+                  </div>
+                  {pathLengthActive && (
+                    <button
+                      onClick={clearPathLength}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Reset to defaults
+                    </button>
+                  )}
+                </PopoverContent>
+              </Popover>
+
+              {/* Group by */}
+              <Select value={groupBy} onValueChange={(v) => setParam('groupBy', v)}>
+                <SelectTrigger className={segTrigger} style={{ width: 'auto', minWidth: 0 }}>
+                  <Users className="h-3.5 w-3.5 shrink-0" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user_id">Per user</SelectItem>
+                  <SelectItem value="session_id">Per session</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Top N — popover */}
+              <Popover>
+                <PopoverTrigger className={cn(segTrigger, 'flex items-center gap-1.5')}>
+                  <span className="text-muted-foreground">Top</span>
+                  <span className={cn('font-semibold', topN !== 20 && 'text-foreground')}>
+                    {topN}
+                  </span>
+                </PopoverTrigger>
+                <PopoverContent className="w-44 p-3 space-y-2" align="start">
+                  <p className="text-xs font-semibold tracking-wide text-muted-foreground">
+                    Show top N paths
+                  </p>
                   <Input
+                    id="top-n-paths"
+                    aria-label="Show top N paths"
                     type="number"
                     min={1}
-                    placeholder="No limit"
-                    value={maxTimeBetweenEvents ?? ''}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value)
-                      setParam('maxTime', isNaN(val) ? null : String(val))
-                    }}
-                    className="h-8 text-sm w-20"
+                    max={100}
+                    value={topN}
+                    onChange={(e) =>
+                      setParam(
+                        'top',
+                        String(Math.min(100, Math.max(1, parseInt(e.target.value) || 10)))
+                      )
+                    }
+                    className="h-8 text-sm text-center"
                   />
-                  <Select value={timeUnit} onValueChange={(v) => setParam('timeUnit', v)}>
-                    <SelectTrigger className="h-8 text-sm flex-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TIME_UNITS.map((u) => (
-                        <SelectItem key={u.value} value={u.value}>
-                          {u.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {maxTimeBetweenEvents !== null && (
-                  <button
-                    onClick={() => setParam('maxTime', null)}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Clear limit
-                  </button>
-                )}
-              </PopoverContent>
-            </Popover>
-          </div>
+                </PopoverContent>
+              </Popover>
 
-          {/* Reset — outside container, appears only when dirty */}
-          {hasActiveFilters && (
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-1.5 h-10 px-3 rounded-lg border bg-background shadow-sm text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Reset
-            </button>
-          )}
-
-          {/* Unique paths badge */}
-          {totalPaths > 0 && (
-            <div className="ml-auto shrink-0 flex items-center gap-1.5 text-sm">
-              <GitFork className="h-3.5 w-3.5 text-primary" />
-              <span className="font-semibold text-primary">{totalPaths.toLocaleString()}</span>
-              <span className="text-muted-foreground">unique paths</span>
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
-          <DevCard sql={sql}>
-            {isLoading || eventsLoading ? (
-              <LoadingState message="Analyzing paths…" />
-            ) : isError ? (
-              <QueryError error={error} />
-            ) : pathData.length === 0 ? (
-              <EmptyState
-                icon={GitFork}
-                title="No paths found"
-                description="Try broadening your filters — relax path length, remove start/end events, or expand the date range."
-              />
-            ) : (
-              <div className="space-y-2 p-3">
-                <div className="flex items-center justify-between px-1">
-                  <p className="text-sm text-muted-foreground">
-                    Showing <span className="font-semibold text-foreground">{pathData.length}</span>{' '}
-                    of <span className="font-semibold text-foreground">{totalPaths}</span> paths —
-                    click a path to view its conversion funnel
+              {/* Advanced (time constraint) — popover */}
+              <Popover>
+                <PopoverTrigger
+                  className={cn(
+                    segTrigger,
+                    'flex items-center gap-1.5',
+                    maxTimeBetweenEvents !== null && 'text-foreground'
+                  )}
+                >
+                  <Settings2 className="h-3.5 w-3.5 shrink-0" />
+                  {maxTimeBetweenEvents !== null ? (
+                    <span>
+                      ≤ {maxTimeBetweenEvents} {timeUnit}
+                    </span>
+                  ) : (
+                    <span>Time limit</span>
+                  )}
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-3 space-y-3" align="start">
+                  <p className="text-xs font-semibold tracking-wide text-muted-foreground">
+                    Max time between steps
                   </p>
-                  <div className="flex gap-1.5">
-                    {startEvent && (
-                      <Badge variant="secondary" className="text-xs">
-                        From: {startEvent}
-                      </Badge>
-                    )}
-                    {endEvent && (
-                      <Badge variant="secondary" className="text-xs">
-                        To: {endEvent}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  {pathData.map((path, idx) => (
-                    <PathCard
-                      key={idx}
-                      path={path}
-                      rank={idx + 1}
-                      maxCount={maxCount}
-                      onClick={() => {
-                        setSelectedPath(path)
-                        setDialogOpen(true)
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      placeholder="No limit"
+                      value={maxTimeBetweenEvents ?? ''}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value)
+                        setParam('maxTime', isNaN(val) ? null : String(val))
                       }}
+                      className="h-8 text-sm w-20"
                     />
-                  ))}
-                </div>
+                    <Select value={timeUnit} onValueChange={(v) => setParam('timeUnit', v)}>
+                      <SelectTrigger className="h-8 text-sm flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIME_UNITS.map((u) => (
+                          <SelectItem key={u.value} value={u.value}>
+                            {u.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {maxTimeBetweenEvents !== null && (
+                    <button
+                      onClick={() => setParam('maxTime', null)}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Clear limit
+                    </button>
+                  )}
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Reset — outside container, appears only when dirty */}
+            {hasActiveFilters && (
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-1.5 h-10 px-3 rounded-lg border bg-background shadow-sm text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset
+              </button>
+            )}
+
+            {/* Unique paths badge */}
+            {totalPaths > 0 && (
+              <div className="ml-auto shrink-0 flex items-center gap-1.5 text-sm">
+                <GitFork className="h-3.5 w-3.5 text-primary" />
+                <span className="font-semibold text-primary">{totalPaths.toLocaleString()}</span>
+                <span className="text-muted-foreground">unique paths</span>
               </div>
             )}
-          </DevCard>
-        </div>
+          </div>
 
-        <PathFunnelDialog
-          path={selectedPath}
-          dateRange={dateRange}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-        />
-      </div>
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            <DevCard sql={sql}>
+              {isLoading || eventsLoading ? (
+                <LoadingState message="Analyzing paths…" />
+              ) : isError ? (
+                <QueryError error={error} />
+              ) : pathData.length === 0 ? (
+                <EmptyState
+                  icon={GitFork}
+                  title="No paths found"
+                  description="Try broadening your filters — relax path length, remove start/end events, or expand the date range."
+                />
+              ) : (
+                <div className="space-y-2 p-3">
+                  <div className="flex items-center justify-between px-1">
+                    <p className="text-sm text-muted-foreground">
+                      Showing{' '}
+                      <span className="font-semibold text-foreground">{pathData.length}</span> of{' '}
+                      <span className="font-semibold text-foreground">{totalPaths}</span> paths —
+                      click a path to view its conversion funnel
+                    </p>
+                    <div className="flex gap-1.5">
+                      {startEvent && (
+                        <Badge variant="secondary" className="text-xs">
+                          From: {startEvent}
+                        </Badge>
+                      )}
+                      {endEvent && (
+                        <Badge variant="secondary" className="text-xs">
+                          To: {endEvent}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {pathData.map((path, idx) => (
+                      <PathCard
+                        key={idx}
+                        path={path}
+                        rank={idx + 1}
+                        maxCount={maxCount}
+                        onClick={() => {
+                          setSelectedPath(path)
+                          setDialogOpen(true)
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </DevCard>
+          </div>
+
+          <PathFunnelDialog
+            path={selectedPath}
+            dateRange={dateRange}
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+          />
+        </div>
+      </NoConnectionGuard>
     </PageTransition>
   )
 }
