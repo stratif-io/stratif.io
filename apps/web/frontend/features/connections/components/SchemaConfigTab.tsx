@@ -634,7 +634,7 @@ export function SchemaConfigTab({ connId }: Props) {
                 </div>
                 {pending ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="flex-1 font-mono text-xs px-2 py-1.5 rounded border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate">
+                    <span className="flex-1 h-8 font-mono text-sm px-3 rounded-md border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate flex items-center">
                       {pending.proposedColumn}
                     </span>
                     <button
@@ -689,7 +689,7 @@ export function SchemaConfigTab({ connId }: Props) {
                 </span>
                 {pending ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="flex-1 font-mono text-xs px-2 py-1.5 rounded border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate">
+                    <span className="flex-1 h-8 font-mono text-sm px-3 rounded-md border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate flex items-center">
                       {pending.proposedColumn}
                     </span>
                     <button
@@ -792,7 +792,7 @@ export function SchemaConfigTab({ connId }: Props) {
                 <span className="text-xs text-muted-foreground">{label}</span>
                 {pending ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="flex-1 font-mono text-xs px-2 py-1.5 rounded border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate">
+                    <span className="flex-1 h-8 font-mono text-sm px-3 rounded-md border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate flex items-center">
                       {pending.proposedColumn}
                     </span>
                     <button
