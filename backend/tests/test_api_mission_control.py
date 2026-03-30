@@ -298,3 +298,29 @@ class TestMissionControlMetricEndpoint:
                 params={"metric": m, "start_date": "2024-01-15", "end_date": "2024-01-16"},
             )
             assert r.status_code == 200, f"metric {m} returned {r.status_code}"
+
+
+def test_analytics_db_exposes_resurrection_window():
+    from backend.services.analytics_db import AnalyticsDatabase
+    from unittest.mock import MagicMock
+    backend_mock = MagicMock()
+    backend_mock.dialect_name = "sqlite"
+    db = AnalyticsDatabase(
+        conn=MagicMock(),
+        backend=backend_mock,
+        events_cte=None,
+        resurrection_window_days=14,
+        power_user_threshold_days=7,
+    )
+    assert db.get_resurrection_window_days() == 14
+    assert db.get_power_user_threshold_days() == 7
+
+
+def test_analytics_db_defaults():
+    from backend.services.analytics_db import AnalyticsDatabase
+    from unittest.mock import MagicMock
+    backend_mock = MagicMock()
+    backend_mock.dialect_name = "sqlite"
+    db = AnalyticsDatabase(conn=MagicMock(), backend=backend_mock, events_cte=None)
+    assert db.get_resurrection_window_days() == 30
+    assert db.get_power_user_threshold_days() == 4

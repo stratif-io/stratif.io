@@ -66,6 +66,8 @@ class AnalyticsDatabase:
         custom_props: list[dict] | None = None,
         custom_prop_exprs: dict[str, str] | None = None,
         session_timeout_minutes: int = 30,
+        resurrection_window_days: int = 30,
+        power_user_threshold_days: int = 4,
         available_columns: frozenset[str] | None = None,
     ):
         self._conn = conn
@@ -75,6 +77,8 @@ class AnalyticsDatabase:
         self._custom_props: list[dict] = custom_props or []
         self._custom_prop_exprs: dict[str, str] = custom_prop_exprs or {}
         self._session_timeout_minutes: int = session_timeout_minutes
+        self._resurrection_window_days: int = resurrection_window_days
+        self._power_user_threshold_days: int = power_user_threshold_days
         self._events_cte: str | None = events_cte
         self._available_columns: frozenset[str] | None = available_columns
         self._pooled: bool = False
@@ -214,6 +218,12 @@ class AnalyticsDatabase:
     def get_session_timeout_minutes(self) -> int:
         return self._session_timeout_minutes
 
+    def get_resurrection_window_days(self) -> int:
+        return self._resurrection_window_days
+
+    def get_power_user_threshold_days(self) -> int:
+        return self._power_user_threshold_days
+
 
 def open_analytics_db(
     connection_id: str,
@@ -250,6 +260,16 @@ def open_analytics_db(
         if schema_row and schema_row["session_timeout_minutes"] is not None
         else 30
     )
+    resurrection_window_days: int = (
+        schema_row["resurrection_window_days"]
+        if schema_row and schema_row.get("resurrection_window_days") is not None
+        else 30
+    )
+    power_user_threshold_days: int = (
+        schema_row["power_user_threshold_days"]
+        if schema_row and schema_row.get("power_user_threshold_days") is not None
+        else 4
+    )
 
     dialect = backend.dialect_name
     needs_remap = (uid_f != "user_id" or ts_f != "timestamp" or en_f != "event_name" or events_table != "events")
@@ -281,6 +301,8 @@ def open_analytics_db(
         "custom_props": custom_props,
         "custom_prop_exprs": custom_prop_exprs,
         "session_timeout_minutes": session_timeout_minutes,
+        "resurrection_window_days": resurrection_window_days,
+        "power_user_threshold_days": power_user_threshold_days,
     }
 
     events_cte = (
