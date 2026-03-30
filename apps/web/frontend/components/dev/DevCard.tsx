@@ -136,46 +136,41 @@ function ResultsTable({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0">
-        <span className="text-[10px] text-muted-foreground">
-          {allRows.length} row{allRows.length !== 1 ? 's' : ''} · {result.execution_time_ms}ms
-        </span>
-        {totalPages > 1 && (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage(0)}
-              disabled={safePage === 0}
-              className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
-            >
-              «
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={safePage === 0}
-              className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
-            >
-              ‹
-            </button>
-            <span className="text-[10px] text-muted-foreground tabular-nums">
-              {safePage + 1} / {totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={safePage === totalPages - 1}
-              className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
-            >
-              ›
-            </button>
-            <button
-              onClick={() => setPage(totalPages - 1)}
-              disabled={safePage === totalPages - 1}
-              className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
-            >
-              »
-            </button>
-          </div>
-        )}
-      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end gap-1 px-3 py-1.5 border-b border-border shrink-0">
+          <button
+            onClick={() => setPage(0)}
+            disabled={safePage === 0}
+            className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
+          >
+            «
+          </button>
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+            className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
+          >
+            ‹
+          </button>
+          <span className="text-[10px] text-muted-foreground tabular-nums">
+            {safePage + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={safePage === totalPages - 1}
+            className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
+          >
+            ›
+          </button>
+          <button
+            onClick={() => setPage(totalPages - 1)}
+            disabled={safePage === totalPages - 1}
+            className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
+          >
+            »
+          </button>
+        </div>
+      )}
       <div className="flex-1 overflow-auto">
         {rows.length === 0 ? (
           <p className="px-4 py-3 text-xs text-muted-foreground italic">Query returned no rows.</p>
@@ -559,11 +554,6 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
 
                 {/* Right: Results */}
                 <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-background/50">
-                  <div className="flex items-center px-3 py-1.5 border-b border-border shrink-0">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-                      Results{multiQuery ? ` — Query ${activeResultIndex + 1}` : ''}
-                    </span>
-                  </div>
                   <div className="flex-1 min-h-0 overflow-hidden">
                     <ResultsTable
                       result={queryResults[activeResultIndex] ?? null}
