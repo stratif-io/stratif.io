@@ -350,3 +350,18 @@ def test_analytics_db_defaults():
     db = AnalyticsDatabase(conn=MagicMock(), backend=backend_mock, events_cte=None)
     assert db.get_resurrection_window_days() == 30
     assert db.get_power_user_threshold_days() == 4
+
+
+def test_trend_resurrected_users_returns_daily_counts(client):
+    resp = client.get(
+        "/api/mission-control/trend",
+        params={
+            "metric": "resurrected_users",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-16",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "data" in body
+    assert all(d["value"] >= 0 for d in body["data"])
