@@ -40,6 +40,7 @@ const navGroups: NavGroup[] = [
       { title: 'Trends', href: '/trends', icon: TrendingUp },
       { title: 'Retention', href: '/retention', icon: Users },
       { title: 'Journey', href: '/paths', icon: Route },
+      { title: 'People', href: '/people', icon: Users },
     ],
   },
   {
