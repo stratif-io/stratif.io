@@ -392,19 +392,11 @@ export function SchemaConfigTab({ connId }: Props) {
         const { suggestions, proposed_custom_properties, events_table, columns } = result
         if (events_table) setEventsTable(events_table)
 
-        // Current live values for skip comparison
-        const currentValues: Record<string, string | null> = {
-          user_id_field: userIdField,
-          event_name_field: eventNameField,
-          timestamp_field: timestampField,
-          ...userIdentityFields,
-        }
-
-        // Build pending detections instead of auto-applying
+        // Build pending detections — always show all detected fields for review
         const pending: PendingDetection[] = []
         for (const [key, label] of Object.entries(FIELD_LABELS)) {
           const value = suggestions[key as keyof typeof suggestions] as string | null | undefined
-          if (value && value !== currentValues[key]) {
+          if (value) {
             pending.push({ fieldKey: key, label, proposedColumn: value })
           }
         }
