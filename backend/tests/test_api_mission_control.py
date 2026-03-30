@@ -300,6 +300,32 @@ class TestMissionControlMetricEndpoint:
             assert r.status_code == 200, f"metric {m} returned {r.status_code}"
 
 
+def test_resurrected_users_in_supported_metrics(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "resurrected_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+
+
+def test_returning_users_non_negative(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "returning_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["current"] >= 0
+
+
+def test_resurrected_users_non_negative(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "resurrected_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["current"] >= 0
+
+
 def test_analytics_db_exposes_resurrection_window():
     from backend.services.analytics_db import AnalyticsDatabase
     from unittest.mock import MagicMock

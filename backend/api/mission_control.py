@@ -225,25 +225,44 @@ def _fetch_single_metric(
         )
         return rows[0][0] if rows else 0
 
-    if metric == "returning_users":
-        uniq_rows = db.execute(
-            f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}", ev_params
+    if metric in ("returning_users", "resurrected_users"):
+        resurrection_cutoff = period_start - timedelta(days=db.get_resurrection_window_days())
+        prior_active_subq = (
+            "SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id"
         )
-        unique_users = uniq_rows[0][0] if uniq_rows else 0
-        new_rows = db.execute(
-            """
-            SELECT COUNT(*)
-            FROM (
-                SELECT user_id
-                FROM events
-                GROUP BY user_id
-                HAVING DATE(MIN(timestamp)) >= ? AND DATE(MIN(timestamp)) <= ?
-            ) t
-            """,
-            [str(period_start), str(period_end)],
-        )
-        new_users = new_rows[0][0] if new_rows else 0
-        return max(0, unique_users - new_users)
+        if metric == "returning_users":
+            # Last seen WITHIN resurrection window before period_start
+            last_seen_subq = (
+                "SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id "
+                "HAVING MAX(DATE(timestamp)) >= ?"
+            )
+            rows = db.execute(
+                f"""
+                SELECT COUNT(DISTINCT e.user_id)
+                FROM events e
+                {ev_where_sql}
+                AND e.user_id IN ({prior_active_subq})
+                AND e.user_id IN ({last_seen_subq})
+                """,
+                ev_params + [ps, ps, str(resurrection_cutoff)],
+            )
+        else:
+            # Last seen BEYOND resurrection window before period_start
+            last_seen_subq = (
+                "SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id "
+                "HAVING MAX(DATE(timestamp)) < ?"
+            )
+            rows = db.execute(
+                f"""
+                SELECT COUNT(DISTINCT e.user_id)
+                FROM events e
+                {ev_where_sql}
+                AND e.user_id IN ({prior_active_subq})
+                AND e.user_id IN ({last_seen_subq})
+                """,
+                ev_params + [ps, ps, str(resurrection_cutoff)],
+            )
+        return rows[0][0] if rows else 0
 
     # dau_mau_ratio
     if metric != "dau_mau_ratio":
@@ -313,7 +332,7 @@ def _fetch_single_metric_all_time(
         rows = db.execute(f"SELECT COUNT(DISTINCT user_id) FROM events {ev_where_sql}", filter_params)
         return rows[0][0] if rows else 0
 
-    if metric == "returning_users":
+    if metric in ("returning_users", "resurrected_users"):
         return 0
 
     # dau_mau_ratio — not meaningful without a fixed period, return 0
@@ -328,6 +347,7 @@ SUPPORTED_METRICS = {
     "avg_events_per_session",
     "new_users",
     "returning_users",
+    "resurrected_users",
     "dau_mau_ratio",
 }
 
