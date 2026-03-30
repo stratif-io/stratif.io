@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { EditorView } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
@@ -7,9 +7,11 @@ import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { format as formatSql } from 'sql-formatter'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Minimize2, Terminal } from 'lucide-react'
+import { Minimize2, Play, Terminal } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
+import { executeQueryStudio } from '@/lib/api/queries'
+import type { QueryStudioResponse } from '@/types'
 
 function prettySql(q: string): string {
   try {
@@ -95,9 +97,141 @@ export function DevCard({ sql, children, className }: DevCardProps) {
   )
 }
 
+function ResultsTable({
+  result,
+  running,
+}: {
+  result: QueryStudioResponse | null
+  running: boolean
+}) {
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 50
+
+  useEffect(() => setPage(0), [result])
+
+  if (running) {
+    return <p className="px-4 py-3 text-xs text-muted-foreground animate-pulse">Running…</p>
+  }
+  if (!result) {
+    return (
+      <p className="px-4 py-3 text-xs text-muted-foreground italic">
+        Click Run to execute the query.
+      </p>
+    )
+  }
+  if (result.error) {
+    return (
+      <div className="px-4 py-3">
+        <p className="rounded bg-destructive/10 px-3 py-2 text-xs text-destructive font-mono whitespace-pre-wrap">
+          {result.error}
+        </p>
+      </div>
+    )
+  }
+
+  const allRows = result.rows
+  const totalPages = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages - 1)
+  const rows = allRows.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE)
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0">
+        <span className="text-[10px] text-muted-foreground">
+          {allRows.length} row{allRows.length !== 1 ? 's' : ''} · {result.execution_time_ms}ms
+        </span>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(0)}
+              disabled={safePage === 0}
+              className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
+            >
+              «
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={safePage === 0}
+              className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
+            >
+              ‹
+            </button>
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              {safePage + 1} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={safePage === totalPages - 1}
+              className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
+            >
+              ›
+            </button>
+            <button
+              onClick={() => setPage(totalPages - 1)}
+              disabled={safePage === totalPages - 1}
+              className="rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted disabled:opacity-30"
+            >
+              »
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="flex-1 overflow-auto">
+        {rows.length === 0 ? (
+          <p className="px-4 py-3 text-xs text-muted-foreground italic">Query returned no rows.</p>
+        ) : (
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="sticky top-0 bg-muted/80">
+                <th className="w-8 border-b border-border px-2 py-1.5 text-right text-[10px] font-medium text-muted-foreground">
+                  #
+                </th>
+                {result.columns.map((col) => (
+                  <th
+                    key={col}
+                    className="border-b border-border px-3 py-1.5 text-left font-semibold text-foreground whitespace-nowrap"
+                  >
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i} className="hover:bg-muted/40 transition-colors">
+                  <td className="border-b border-border px-2 py-1 text-right text-[10px] text-muted-foreground">
+                    {safePage * PAGE_SIZE + i + 1}
+                  </td>
+                  {row.map((cell, j) => (
+                    <td
+                      key={j}
+                      className="border-b border-border px-3 py-1 whitespace-nowrap font-mono text-[11px]"
+                    >
+                      {cell === null || cell === undefined ? (
+                        <span className="italic text-muted-foreground">null</span>
+                      ) : typeof cell === 'object' ? (
+                        <span className="truncate max-w-[200px] inline-block align-bottom">
+                          {JSON.stringify(cell)}
+                        </span>
+                      ) : (
+                        String(cell)
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function DevCardInner({ sql, children, className }: DevCardProps) {
   const devMode = useAppStore((s) => s.devMode)
   const setPendingQueryStudioSql = useAppStore((s) => s.setPendingQueryStudioSql)
+  const activeConnectionId = useAppStore((s) => s.activeConnectionId)
   const navigate = useNavigate()
   const dark = useIsDark()
   const [rotation, setRotation] = useState(0)
@@ -105,6 +239,9 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [cardRect, setCardRect] = useState<Rect | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const [queryResults, setQueryResults] = useState<Record<number, QueryStudioResponse | null>>({})
+  const [queryRunning, setQueryRunning] = useState<Record<number, boolean>>({})
+  const [activeResultIndex, setActiveResultIndex] = useState(0)
 
   useEffect(() => {
     if (!expanded) return
@@ -116,6 +253,37 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
+  }, [expanded])
+
+  const runQuery = useCallback(
+    async (q: string, index: number) => {
+      setQueryRunning((r) => ({ ...r, [index]: true }))
+      setActiveResultIndex(index)
+      try {
+        const res = await executeQueryStudio({
+          sql: q,
+          connection_id: activeConnectionId ?? undefined,
+        })
+        setQueryResults((r) => ({ ...r, [index]: res }))
+      } catch (e) {
+        setQueryResults((r) => ({
+          ...r,
+          [index]: { columns: [], rows: [], execution_time_ms: 0, error: String(e) },
+        }))
+      } finally {
+        setQueryRunning((r) => ({ ...r, [index]: false }))
+      }
+    },
+    [activeConnectionId]
+  )
+
+  // Reset results when collapsed
+  useEffect(() => {
+    if (!expanded) {
+      setQueryResults({})
+      setQueryRunning({})
+      setActiveResultIndex(0)
+    }
   }, [expanded])
 
   if (!devMode) return <>{children}</>
@@ -291,6 +459,7 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
               exit={{ ...collapsed, borderRadius: 8, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
+              {/* Header */}
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0">
                 <span className="text-xs font-mono font-semibold text-foreground">
                   SQL
@@ -324,7 +493,85 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-auto p-4">{sqlContent('13px', collapse)}</div>
+
+              {/* Body: SQL left | Results right */}
+              <div className="flex flex-1 min-h-0 divide-x divide-border">
+                {/* Left: SQL */}
+                <div className="flex flex-col w-[45%] min-w-0 overflow-hidden">
+                  <div className="flex-1 overflow-auto p-4">
+                    {queries.length === 0 ? (
+                      <p className="text-[10px] italic text-muted-foreground">No SQL available</p>
+                    ) : (
+                      queries.map((q, i) => (
+                        <div key={i}>
+                          {multiQuery && (
+                            <div className="flex items-center justify-between mb-1">
+                              <button
+                                onClick={() => setActiveResultIndex(i)}
+                                className={cn(
+                                  'text-[9px] font-mono transition-colors',
+                                  activeResultIndex === i
+                                    ? 'text-primary font-semibold'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                )}
+                              >
+                                — Query {i + 1}
+                              </button>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => runQuery(q, i)}
+                                  disabled={queryRunning[i]}
+                                  className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                                >
+                                  <Play className="h-2.5 w-2.5" />
+                                  {queryRunning[i] ? 'Running…' : 'Run'}
+                                </button>
+                                <button
+                                  onClick={() => openInStudio(q, collapse)}
+                                  className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground hover:bg-muted/70 transition-colors"
+                                >
+                                  <Terminal className="h-2.5 w-2.5" />
+                                  Editor
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          <SqlViewer query={q} dark={dark} fontSize="13px" />
+                          {i < queries.length - 1 && <hr className="my-3 border-border" />}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {/* Run button for single query */}
+                  {!multiQuery && firstQuery && (
+                    <div className="px-4 py-2 border-t border-border shrink-0">
+                      <button
+                        onClick={() => runQuery(firstQuery, 0)}
+                        disabled={queryRunning[0]}
+                        className="flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                      >
+                        <Play className="h-3 w-3" />
+                        {queryRunning[0] ? 'Running…' : queryResults[0] ? 'Re-run' : 'Run'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Results */}
+                <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-background/50">
+                  <div className="flex items-center px-3 py-1.5 border-b border-border shrink-0">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+                      Results{multiQuery ? ` — Query ${activeResultIndex + 1}` : ''}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <ResultsTable
+                      result={queryResults[activeResultIndex] ?? null}
+                      running={queryRunning[activeResultIndex] ?? false}
+                    />
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </>
         )}
