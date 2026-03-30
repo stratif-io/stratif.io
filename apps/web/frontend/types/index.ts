@@ -56,6 +56,20 @@ export interface UserEventsResponse {
   data: Event[]
 }
 
+export interface UserSummary {
+  user_id: string
+  event_count: number
+  first_seen: string
+  last_seen: string
+}
+
+export interface UserListResponse {
+  sql?: string | string[]
+  limit: number
+  offset: number
+  data: UserSummary[]
+}
+
 export interface Session {
   session_id: string
   user_id: string
