@@ -264,6 +264,46 @@ def _fetch_single_metric(
             )
         return rows[0][0] if rows else 0
 
+    if metric == "churned_users":
+        prev_start, prev_end = _compute_previous_period(period_start, period_end)
+        pps = f"{prev_start} 00:00:00"
+        ppe = f"{prev_end} 23:59:59"
+        rows = db.execute(
+            f"""
+            SELECT COUNT(DISTINCT user_id)
+            FROM events
+            WHERE timestamp >= ? AND timestamp <= ?
+              AND user_id NOT IN (
+                SELECT DISTINCT user_id FROM events {ev_where_sql}
+              )
+            """,
+            [pps, ppe] + ev_params,
+        )
+        return rows[0][0] if rows else 0
+
+    if metric == "retention_rate":
+        prev_start, prev_end = _compute_previous_period(period_start, period_end)
+        pps = f"{prev_start} 00:00:00"
+        ppe = f"{prev_end} 23:59:59"
+        prev_uniq_rows = db.execute(
+            "SELECT COUNT(DISTINCT user_id) FROM events WHERE timestamp >= ? AND timestamp <= ?",
+            [pps, ppe],
+        )
+        prev_unique = prev_uniq_rows[0][0] if prev_uniq_rows else 0
+        retained_rows = db.execute(
+            f"""
+            SELECT COUNT(DISTINCT user_id)
+            FROM events {ev_where_sql}
+            AND user_id IN (
+                SELECT DISTINCT user_id FROM events
+                WHERE timestamp >= ? AND timestamp <= ?
+            )
+            """,
+            ev_params + [pps, ppe],
+        )
+        retained = retained_rows[0][0] if retained_rows else 0
+        return round(retained / prev_unique, 4) if prev_unique else 0.0
+
     # dau_mau_ratio
     if metric != "dau_mau_ratio":
         raise ValueError(f"Unknown metric: {metric}")
@@ -335,6 +375,9 @@ def _fetch_single_metric_all_time(
     if metric in ("returning_users", "resurrected_users"):
         return 0
 
+    if metric in ("churned_users", "retention_rate"):
+        return 0.0  # not meaningful without a fixed period
+
     # dau_mau_ratio — not meaningful without a fixed period, return 0
     return 0.0
 
@@ -349,6 +392,8 @@ SUPPORTED_METRICS = {
     "returning_users",
     "resurrected_users",
     "dau_mau_ratio",
+    "churned_users",
+    "retention_rate",
 }
 
 
@@ -384,10 +429,25 @@ def get_mission_control_metric(
         current_value = _fetch_single_metric_all_time(db, metric, filter_clauses, filter_params)
         previous_value = None
 
+    breakdown: dict | None = None
+
+    if metric == "retention_rate" and start_date and end_date:
+        prev_start_b, prev_end_b = _compute_previous_period(start, end)
+        pps_b = f"{prev_start_b} 00:00:00"
+        ppe_b = f"{prev_end_b} 23:59:59"
+        pu_rows = db.execute(
+            "SELECT COUNT(DISTINCT user_id) FROM events WHERE timestamp >= ? AND timestamp <= ?",
+            [pps_b, ppe_b],
+        )
+        prev_uniq_b = pu_rows[0][0] if pu_rows else 0
+        retained_b = round(float(current_value) * prev_uniq_b) if prev_uniq_b else 0
+        breakdown = {"retained_count": int(retained_b), "prev_unique_users": int(prev_uniq_b)}
+
     return {
         "metric": metric,
         "current": float(current_value),
         "previous": float(previous_value) if previous_value is not None else None,
+        **({"breakdown": breakdown} if breakdown is not None else {}),
     }
 
 
@@ -564,6 +624,59 @@ def get_mission_control_trend(
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
         sql_val = "resurrected_users daily trend"
+
+    elif metric == "churned_users":
+        current_day = start
+        data = []
+        while current_day <= end:
+            day_ps = f"{current_day} 00:00:00"
+            day_pe = f"{current_day} 23:59:59"
+            prev_d_end = current_day - timedelta(days=1)
+            prev_d_start = current_day - timedelta(days=7)
+            rows = db.execute(
+                """
+                SELECT COUNT(DISTINCT user_id) FROM events
+                WHERE timestamp >= ? AND timestamp <= ?
+                  AND user_id NOT IN (
+                    SELECT DISTINCT user_id FROM events
+                    WHERE timestamp >= ? AND timestamp <= ?
+                  )
+                """,
+                [f"{prev_d_start} 00:00:00", f"{prev_d_end} 23:59:59", day_ps, day_pe],
+            )
+            data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
+            current_day += timedelta(days=1)
+        sql_val = "churned_users daily trend"
+
+    elif metric == "retention_rate":
+        current_day = start
+        data = []
+        while current_day <= end:
+            day_ps = f"{current_day} 00:00:00"
+            day_pe = f"{current_day} 23:59:59"
+            prev_d_end = current_day - timedelta(days=1)
+            prev_d_start = current_day - timedelta(days=7)
+            prev_rows = db.execute(
+                "SELECT COUNT(DISTINCT user_id) FROM events WHERE timestamp >= ? AND timestamp <= ?",
+                [f"{prev_d_start} 00:00:00", f"{prev_d_end} 23:59:59"],
+            )
+            prev_u = prev_rows[0][0] if prev_rows else 0
+            ret_rows = db.execute(
+                """
+                SELECT COUNT(DISTINCT user_id) FROM events
+                WHERE timestamp >= ? AND timestamp <= ?
+                  AND user_id IN (
+                    SELECT DISTINCT user_id FROM events
+                    WHERE timestamp >= ? AND timestamp <= ?
+                  )
+                """,
+                [day_ps, day_pe, f"{prev_d_start} 00:00:00", f"{prev_d_end} 23:59:59"],
+            )
+            retained = ret_rows[0][0] if ret_rows else 0
+            ratio = round(retained / prev_u, 4) if prev_u else 0.0
+            data.append({"date": str(current_day), "value": ratio})
+            current_day += timedelta(days=1)
+        sql_val = "retention_rate daily trend"
 
     else:  # dau_mau_ratio
         current_day = start

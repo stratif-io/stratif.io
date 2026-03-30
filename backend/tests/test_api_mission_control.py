@@ -365,3 +365,51 @@ def test_trend_resurrected_users_returns_daily_counts(client):
     body = resp.json()
     assert "data" in body
     assert all(d["value"] >= 0 for d in body["data"])
+
+
+def test_churned_users_non_negative(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "churned_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["current"] >= 0
+
+
+def test_retention_rate_between_zero_and_one(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "retention_rate", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert 0.0 <= resp.json()["current"] <= 1.0
+
+
+def test_retention_rate_breakdown_in_response(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "retention_rate", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "breakdown" in data
+    assert "retained_count" in data["breakdown"]
+    assert "prev_unique_users" in data["breakdown"]
+
+
+def test_trend_churned_users(client):
+    resp = client.get(
+        "/api/mission-control/trend",
+        params={"metric": "churned_users", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+    )
+    assert resp.status_code == 200
+    assert all(d["value"] >= 0 for d in resp.json()["data"])
+
+
+def test_trend_retention_rate(client):
+    resp = client.get(
+        "/api/mission-control/trend",
+        params={"metric": "retention_rate", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+    )
+    assert resp.status_code == 200
+    assert all(0.0 <= d["value"] <= 1.0 for d in resp.json()["data"])
