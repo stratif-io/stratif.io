@@ -8,11 +8,11 @@ import { QueryError } from '@/components/ui/query-error'
 import { LoadingState } from '@/components/ui/loading-state'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { UserTimeline } from '@/components/ui/user-timeline'
+import { UserTimeline, EventPropertiesPanel } from '@/components/ui/user-timeline'
 import { cn } from '@/lib/utils'
 import { usePeopleList } from './hooks/usePeopleList'
 import { useUserTimeline } from './hooks/useUserTimeline'
-import type { UserSummary } from '@/types'
+import type { UserSummary, Event } from '@/types'
 
 function formatLastSeen(ts: string): string {
   try {
@@ -32,6 +32,7 @@ function formatTimestamp(ts: string): string {
 
 export function PeoplePage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [search, setSearch] = useState('')
   const [limit, setLimit] = useState(100)
 
@@ -45,22 +46,27 @@ export function PeoplePage() {
     error: timelineErr,
   } = useUserTimeline(selectedUserId, limit)
 
+  // Auto-select first user
   useEffect(() => {
     if (users.length > 0 && !selectedUserId) {
       setSelectedUserId(users[0].user_id)
     }
   }, [users, selectedUserId])
 
-  const filteredUsers = users.filter((u) => u.user_id.toLowerCase().includes(search.toLowerCase()))
+  // Clear selected event when user changes
+  useEffect(() => {
+    setSelectedEvent(null)
+  }, [selectedUserId])
 
+  const filteredUsers = users.filter((u) => u.user_id.toLowerCase().includes(search.toLowerCase()))
   const selectedUser: UserSummary | undefined = users.find((u) => u.user_id === selectedUserId)
 
   return (
     <PageTransition>
       <NoConnectionGuard>
         <div className="flex h-full overflow-hidden">
-          {/* Left panel — user list */}
-          <div className="w-[38%] border-r flex flex-col min-h-0">
+          {/* Column 1 — user list */}
+          <div className="w-[28%] border-r flex flex-col min-h-0">
             <div className="p-4 border-b shrink-0">
               <h1 className="text-lg font-semibold mb-3">People</h1>
               <Input
@@ -111,11 +117,10 @@ export function PeoplePage() {
             </div>
           </div>
 
-          {/* Right panel — timeline */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* Column 2 — timeline */}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-r">
             {selectedUserId ? (
               <>
-                {/* Right panel header */}
                 <div className="p-4 border-b shrink-0">
                   <div className="flex items-center justify-between">
                     <div>
@@ -143,14 +148,17 @@ export function PeoplePage() {
                     )}
                   </div>
                 </div>
-
-                {/* Timeline */}
                 <ScrollArea className="flex-1">
                   <div className="px-6 py-5">
                     {timelineError ? (
                       <QueryError error={timelineErr} />
                     ) : (
-                      <UserTimeline events={events} isLoading={timelineLoading} />
+                      <UserTimeline
+                        events={events}
+                        isLoading={timelineLoading}
+                        selectedEvent={selectedEvent}
+                        onEventSelect={setSelectedEvent}
+                      />
                     )}
                   </div>
                 </ScrollArea>
@@ -160,6 +168,19 @@ export function PeoplePage() {
                 Select a user to view their timeline
               </div>
             )}
+          </div>
+
+          {/* Column 3 — event properties */}
+          <div className="w-[26%] flex flex-col min-h-0">
+            <div className="px-4 py-3 border-b shrink-0">
+              <h2 className="text-sm font-semibold">Properties</h2>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <EventPropertiesPanel
+                event={selectedEvent}
+                onClose={selectedEvent ? () => setSelectedEvent(null) : undefined}
+              />
+            </div>
           </div>
         </div>
       </NoConnectionGuard>
