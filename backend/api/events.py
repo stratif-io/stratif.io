@@ -175,7 +175,8 @@ def get_raw_events(
 def get_user_events(
     user_id: str,
     db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
-    limit: int = Query(300, description="Max events to return", ge=1, le=1000),
+    limit: int = Query(100, description="Max events to return", ge=1, le=500),
+    offset: int = Query(0, description="Offset for pagination", ge=0),
 ) -> dict:
     """Get all events for a specific user, sorted chronologically (ASC)."""
     props_col = "properties" if db.has_column("properties") else "NULL"
@@ -187,9 +188,9 @@ def get_user_events(
         FROM events
         WHERE user_id = ?
         ORDER BY timestamp DESC
-        LIMIT ?
+        LIMIT ? OFFSET ?
         """
-    result = db.execute(user_events_query, [user_id, limit])
+    result = db.execute(user_events_query, [user_id, limit, offset])
 
     def _build_props(row: tuple) -> dict:
         base = json.loads(row[3]) if isinstance(row[3], str) else (row[3] or {})
@@ -200,8 +201,10 @@ def get_user_events(
         return base
 
     return {
-        "sql": interpolate_sql(user_events_query, [user_id, limit]),
+        "sql": interpolate_sql(user_events_query, [user_id, limit, offset]),
         "user_id": user_id,
+        "limit": limit,
+        "offset": offset,
         "data": [
             {
                 "user_id": row[0],

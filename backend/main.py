@@ -35,6 +35,7 @@ from backend.api import (
     events_router,
     mission_control_router,
     paths_router,
+    people_router,
     pivot_router,
     query_studio_router,
     retention_router,
@@ -92,6 +93,7 @@ app.include_router(sessions_router)
 app.include_router(connections_router)
 app.include_router(mission_control_router)
 app.include_router(query_studio_router)
+app.include_router(people_router)
 
 
 @app.get("/api/reference", include_in_schema=False)

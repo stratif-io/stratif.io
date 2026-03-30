@@ -15,6 +15,7 @@ const RetentionPage = lazy(() =>
 const PathsPage = lazy(() =>
   import('@/features/analytics').then((m) => ({ default: m.PathsExplorerPage }))
 )
+const PeoplePage = lazy(() => import('@/features/people').then((m) => ({ default: m.PeoplePage })))
 const FunnelDetailPage = lazy(() =>
   import('@/features/analytics').then((m) => ({ default: m.FunnelDetailPage }))
 )
@@ -107,6 +108,7 @@ function App() {
           <Route path="/trends" element={<TrendsPage />} />
           <Route path="/retention" element={<RetentionPage />} />
           <Route path="/paths" element={<PathsPage />} />
+          <Route path="/people" element={<PeoplePage />} />
           <Route path="/funnel" element={<FunnelDetailPage />} />
           <Route path="/pivot" element={<PivotPage />} />
           <Route path="/events" element={<EventsPage />} />

@@ -6,7 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useUrlSync } from '@/hooks'
 
-const FULL_BLEED_ROUTES = ['/query-studio']
+const FULL_BLEED_ROUTES = ['/query-studio', '/people']
 
 export function DashboardLayout() {
   useUrlSync()

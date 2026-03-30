@@ -61,6 +61,12 @@ const navGroups: NavGroup[] = [
         icon: Route,
         preload: () => import('@/features/analytics'),
       },
+      {
+        title: 'People',
+        href: '/people',
+        icon: Users,
+        preload: () => import('@/features/people'),
+      },
     ],
   },
   {
