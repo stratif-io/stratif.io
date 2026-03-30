@@ -22,7 +22,7 @@ describe('usePinnedMetrics', () => {
 
   it('returns default pinned metrics when no localStorage entry', () => {
     const { result } = renderHook(() => usePinnedMetrics('conn-1'))
-    expect(result.current.pinned).toHaveLength(8)
+    expect(result.current.pinned).toHaveLength(7)
     expect(result.current.pinned).toContain('total_events')
     expect(result.current.pinned).toContain('dau_mau_ratio')
   })

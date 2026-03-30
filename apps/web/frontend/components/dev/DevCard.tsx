@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { EditorView } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { sql } from '@codemirror/lang-sql'
-import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
+import { tags } from '@lezer/highlight'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { format as formatSql } from 'sql-formatter'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -12,6 +13,38 @@ import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
 import { executeQueryStudio } from '@/lib/api/queries'
 import type { QueryStudioResponse } from '@/types'
+
+const lightHighlightStyle = HighlightStyle.define([
+  { tag: tags.keyword, color: '#0000ff' },
+  { tag: tags.string, color: '#a31515' },
+  { tag: tags.number, color: '#098658' },
+  { tag: tags.comment, color: '#008000', fontStyle: 'italic' },
+  { tag: tags.operator, color: '#000000' },
+  { tag: tags.punctuation, color: '#000000' },
+  { tag: tags.name, color: '#001080' },
+  { tag: tags.typeName, color: '#267f99' },
+  { tag: tags.function(tags.name), color: '#795e26' },
+])
+
+function sqlLabel(q: string): string {
+  const upper = q.toUpperCase()
+  // WITH ... AS (...) SELECT ... FROM <table>  →  try to get the outermost FROM
+  const fromMatch = upper.match(/\bFROM\s+([\w.]+)/)
+  if (fromMatch) {
+    const raw = fromMatch[1].toLowerCase()
+    // strip schema prefix (schema.table → table)
+    return raw.includes('.') ? raw.split('.').pop()! : raw
+  }
+  // INSERT INTO <table>
+  const insertMatch = upper.match(/\bINSERT\s+INTO\s+([\w.]+)/)
+  if (insertMatch) return insertMatch[1].toLowerCase()
+  // UPDATE <table>
+  const updateMatch = upper.match(/\bUPDATE\s+([\w.]+)/)
+  if (updateMatch) return updateMatch[1].toLowerCase()
+  // Fallback: first word
+  const first = q.trim().split(/\s+/)[0]
+  return first ? first.toLowerCase() : 'query'
+}
 
 function prettySql(q: string): string {
   try {
@@ -58,14 +91,18 @@ function SqlViewer({
         doc: prettySql(query),
         extensions: [
           sql(),
-          ...(dark ? [oneDark] : [syntaxHighlighting(defaultHighlightStyle)]),
+          ...(dark ? [oneDark] : [syntaxHighlighting(lightHighlightStyle)]),
           EditorState.readOnly.of(true),
-          EditorView.theme({
-            '&': { fontSize, background: 'transparent' },
-            '.cm-content': { padding: '4px 0' },
-            '.cm-gutters': { display: 'none' },
-            '.cm-scroller': { overflow: 'auto' },
-          }),
+          EditorView.theme(
+            {
+              '&': { fontSize, background: dark ? '#282c34' : '#ffffff' },
+              '&.cm-focused': { outline: 'none' },
+              '.cm-content': { padding: '4px 0' },
+              '.cm-gutters': { display: 'none' },
+              '.cm-scroller': { overflow: 'auto' },
+            },
+            { dark }
+          ),
         ],
       }),
       parent: containerRef.current,
@@ -85,13 +122,14 @@ interface Rect {
 
 interface DevCardProps {
   sql?: string | string[] | null
+  sqlLabels?: string | string[]
   children: React.ReactNode
   className?: string
 }
 
-export function DevCard({ sql, children, className }: DevCardProps) {
+export function DevCard({ sql, sqlLabels, children, className }: DevCardProps) {
   return (
-    <DevCardInner sql={sql} className={className}>
+    <DevCardInner sql={sql} sqlLabels={sqlLabels} className={className}>
       {children}
     </DevCardInner>
   )
@@ -223,7 +261,7 @@ function ResultsTable({
   )
 }
 
-function DevCardInner({ sql, children, className }: DevCardProps) {
+function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
   const devMode = useAppStore((s) => s.devMode)
   const setPendingQueryStudioSql = useAppStore((s) => s.setPendingQueryStudioSql)
   const activeConnectionId = useAppStore((s) => s.activeConnectionId)
@@ -286,9 +324,11 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
   if (!devMode) return <>{children}</>
 
   const queries = sql ? (Array.isArray(sql) ? sql : [sql]) : []
+  const labels = sqlLabels ? (Array.isArray(sqlLabels) ? sqlLabels : [sqlLabels]) : []
+  const getLabel = (q: string, i: number) => labels[i] ?? sqlLabel(q)
   const multiQuery = queries.length > 1
 
-  const sqlBg = dark ? 'bg-[#282c34] border-border' : 'bg-muted border-border'
+  const sqlBg = dark ? 'bg-[#282c34] border-border' : 'bg-white border-border'
 
   function openInStudio(query: string, collapseFirst?: () => void) {
     collapseFirst?.()
@@ -305,7 +345,7 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
           <div key={i}>
             {multiQuery && (
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[9px] font-mono text-muted-foreground">-- Query {i + 1}</p>
+                <p className="text-[9px] font-mono text-muted-foreground">-- {getLabel(q, i)}</p>
                 <button
                   onClick={() => openInStudio(q, collapseFirst)}
                   aria-label="Open in SQL Studio"
@@ -529,7 +569,7 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
                                     : 'text-muted-foreground hover:text-foreground'
                                 )}
                               >
-                                — Query {i + 1}
+                                — {getLabel(q, i)}
                               </button>
                               <div className="flex items-center gap-1.5">
                                 <button

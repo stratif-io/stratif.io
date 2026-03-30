@@ -24,6 +24,10 @@ vi.mock('@codemirror/lang-sql', () => ({ sql: vi.fn(() => null) }))
 vi.mock('@codemirror/language', () => ({
   syntaxHighlighting: vi.fn(() => null),
   defaultHighlightStyle: null,
+  HighlightStyle: { define: vi.fn(() => null) },
+}))
+vi.mock('@lezer/highlight', () => ({
+  tags: new Proxy({}, { get: () => Object.assign(() => null, {}) }),
 }))
 vi.mock('@codemirror/theme-one-dark', () => ({ oneDark: null }))
 vi.mock('sql-formatter', () => ({ format: (s: string) => s }))
@@ -64,10 +68,16 @@ function setDevMode(enabled: boolean) {
   useAppStore.setState({ devMode: enabled })
 }
 
-function renderCard(props: { sql?: string | string[] | null; children?: React.ReactNode } = {}) {
+function renderCard(
+  props: {
+    sql?: string | string[] | null
+    sqlLabels?: string | string[]
+    children?: React.ReactNode
+  } = {}
+) {
   return render(
     <MemoryRouter>
-      <DevCard sql={props.sql !== undefined ? props.sql : 'SELECT 1'}>
+      <DevCard sql={props.sql !== undefined ? props.sql : 'SELECT 1'} sqlLabels={props.sqlLabels}>
         {props.children ?? <div>content</div>}
       </DevCard>
     </MemoryRouter>
@@ -132,10 +142,10 @@ describe('DevCard', () => {
 
   it('renders multiple SQL query labels when sql is an array', () => {
     setDevMode(true)
-    renderCard({ sql: ['SELECT 1', 'SELECT 2'] })
+    renderCard({ sql: ['SELECT 1', 'SELECT 2'], sqlLabels: ['Label A', 'Label B'] })
     fireEvent.click(screen.getByLabelText('Show SQL'))
-    expect(screen.getByText('-- Query 1')).toBeInTheDocument()
-    expect(screen.getByText('-- Query 2')).toBeInTheDocument()
+    expect(screen.getByText('-- Label A')).toBeInTheDocument()
+    expect(screen.getByText('-- Label B')).toBeInTheDocument()
   })
 
   it('renders SQL badge even when sql is null', () => {

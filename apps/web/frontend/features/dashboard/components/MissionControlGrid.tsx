@@ -69,18 +69,32 @@ function getConfig(key: TrendMetric) {
 
 function buildAllSql(
   metricSql: string | string[] | null | undefined,
-  trendSql: string | string[] | undefined
-): string | string[] | undefined {
+  trendSql: string | string[] | undefined,
+  label: string
+): { sql: string | string[] | undefined; sqlLabels: string | string[] | undefined } {
   const parts: string[] = []
+  const labelParts: string[] = []
   if (metricSql) {
-    parts.push(...(Array.isArray(metricSql) ? metricSql : [metricSql]))
+    const qs = Array.isArray(metricSql) ? metricSql : [metricSql]
+    parts.push(...qs)
+    labelParts.push(
+      ...qs.map((_, i) =>
+        qs.length > 1
+          ? `Number of ${label} this period (${i + 1})`
+          : `Number of ${label} this period`
+      )
+    )
   }
   if (trendSql) {
-    parts.push(...(Array.isArray(trendSql) ? trendSql : [trendSql]))
+    const qs = Array.isArray(trendSql) ? trendSql : [trendSql]
+    parts.push(...qs)
+    labelParts.push(
+      ...qs.map((_, i) => (qs.length > 1 ? `${label} per day (${i + 1})` : `${label} per day`))
+    )
   }
-  if (parts.length === 0) return undefined
-  if (parts.length === 1) return parts[0]
-  return parts
+  if (parts.length === 0) return { sql: undefined, sqlLabels: undefined }
+  if (parts.length === 1) return { sql: parts[0], sqlLabels: labelParts[0] }
+  return { sql: parts, sqlLabels: labelParts }
 }
 
 export const MissionControlGrid = memo(function MissionControlGrid({
@@ -154,7 +168,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
       {/* LEFT: Hero card — height synced to right column via ResizeObserver */}
       <div ref={heroWrapperRef}>
         <DevCard
-          sql={buildAllSql(metricSql?.[heroMetric], trends[heroMetric]?.sql)}
+          {...buildAllSql(metricSql?.[heroMetric], trends[heroMetric]?.sql, heroConfig.label)}
           className="h-full"
         >
           <HeroMetricCard
@@ -208,7 +222,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                   return (
                     <DevCard
                       key={metricKey}
-                      sql={buildAllSql(metricSql?.[metricKey], trends[metricKey]?.sql)}
+                      {...buildAllSql(metricSql?.[metricKey], trends[metricKey]?.sql, cfg.label)}
                       className={isFullWidth ? 'col-span-2' : undefined}
                     >
                       <MiniMetricCard
