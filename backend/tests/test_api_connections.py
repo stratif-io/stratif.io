@@ -204,3 +204,21 @@ class TestSuggestFieldsUserIdentity:
         assert "last_name_field" not in result
         assert "date_of_birth_field" not in result
         assert "phone_field" not in result
+
+    # Fuzzy / camelCase / substring matching
+    def test_suggests_user_id_from_camel_case(self):
+        result = _suggest_fields(self._cols(["userId", "timestamp", "eventName"]))
+        assert result.get("user_id_field") == "userId"
+
+    def test_suggests_email_from_camel_case(self):
+        result = _suggest_fields(self._cols(["userId", "ts", "event", "userEmail"]))
+        assert result.get("email_field") == "userEmail"
+
+    def test_suggests_email_via_substring(self):
+        result = _suggest_fields(self._cols(["user_id", "ts", "event", "contact_email_address"]))
+        assert result.get("email_field") == "contact_email_address"
+
+    def test_suggests_user_id_via_fuzzy(self):
+        # "usr_id" is close enough to "user_id" (ratio > 0.65)
+        result = _suggest_fields(self._cols(["usr_id", "ts", "event"]))
+        assert result.get("user_id_field") == "usr_id"
