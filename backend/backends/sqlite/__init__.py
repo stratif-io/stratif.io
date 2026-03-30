@@ -121,8 +121,21 @@ class SQLiteBackend:
                         f'SELECT DISTINCT j.key FROM "{events_table}", json_each("{col.name}") AS j '
                         f'WHERE "{col.name}" IS NOT NULL LIMIT 2000'
                     ).fetchall()
-                    for (key,) in keys_result:
-                        if key:
+                    top_keys = [r[0] for r in keys_result if r[0]]
+                    for key in top_keys:
+                        try:
+                            sub_result = conn.execute(
+                                f'SELECT DISTINCT j.key FROM "{events_table}", '
+                                f'json_each(json_extract("{col.name}", \'$.{key}\')) AS j '
+                                f'WHERE json_type("{col.name}", \'$.{key}\') = \'object\' LIMIT 2000'
+                            ).fetchall()
+                            sub_keys = [r[0] for r in sub_result if r[0]]
+                        except Exception:
+                            sub_keys = []
+                        if sub_keys:
+                            for sub_key in sub_keys:
+                                proposed.append({"name": f"{key}.{sub_key}", "path": f"{col.name}.{key}.{sub_key}", "type": "string"})
+                        else:
                             proposed.append({"name": key, "path": f"{col.name}.{key}", "type": "string"})
                 except Exception:
                     proposed.append({"name": col.name, "path": col.name, "type": "string"})

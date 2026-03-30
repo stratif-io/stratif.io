@@ -171,10 +171,23 @@ class ClickHouseBackend:
             if should_explode:
                 keys = _extract_json_keys(col.name)
                 if keys:
-                    string_props = [
-                        {"name": k, "path": f"{col.name}.{k}", "type": "string"}
-                        for k in keys
-                    ]
+                    string_props = []
+                    for k in keys:
+                        try:
+                            r = conn.query(
+                                f"SELECT DISTINCT arrayJoin(JSONExtractKeys(`{col.name}`, '{k}')) AS sk "
+                                f"FROM (SELECT `{col.name}` FROM `{events_table}` "
+                                f"WHERE JSONType(`{col.name}`, '{k}') = 'Object' LIMIT 1000) "
+                                f"LIMIT 500"
+                            )
+                            sub_keys = [row[0] for row in r.result_rows if row[0]]
+                        except Exception:
+                            sub_keys = []
+                        if sub_keys:
+                            for sk in sub_keys:
+                                string_props.append({"name": f"{k}.{sk}", "path": f"{col.name}.{k}.{sk}", "type": "string"})
+                        else:
+                            string_props.append({"name": k, "path": f"{col.name}.{k}", "type": "string"})
                     prop_exprs = {
                         p["name"]: self.json_extract_string(col.name, p["name"])
                         for p in string_props

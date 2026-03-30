@@ -11,6 +11,8 @@ const mockSchema = {
   event_name_field: 'event_name',
   events_table: 'events',
   session_timeout_minutes: 30,
+  resurrection_window_days: 45,
+  power_user_threshold_days: 7,
   custom_properties: [
     { name: 'country', path: 'properties.country', type: 'string' as const, category: undefined },
   ],
@@ -145,5 +147,29 @@ describe('SchemaConfigTab — Properties table', () => {
   it('shows Add property button', () => {
     renderTab()
     expect(screen.getByRole('button', { name: /add property/i })).toBeInTheDocument()
+  })
+})
+
+describe('SchemaConfigTab — Resurrection window and Power user threshold', () => {
+  it('shows Resurrection window label', () => {
+    renderTab()
+    expect(screen.getByText(/resurrection window/i)).toBeInTheDocument()
+  })
+
+  it('shows Power user threshold label', () => {
+    renderTab()
+    expect(screen.getByText(/power user threshold/i)).toBeInTheDocument()
+  })
+
+  it('shows resurrection_window_days input with value 45', () => {
+    renderTab()
+    const input = screen.getByDisplayValue('45')
+    expect(input).toBeInTheDocument()
+  })
+
+  it('shows power_user_threshold_days input with value 7', () => {
+    renderTab()
+    const input = screen.getByDisplayValue('7')
+    expect(input).toBeInTheDocument()
   })
 })

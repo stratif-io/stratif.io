@@ -52,6 +52,8 @@ class SchemaConfigBody(BaseModel):
     events_table: str = "events"
     custom_properties: list[CustomProperty] = []
     session_timeout_minutes: int = 30
+    resurrection_window_days: int = 30
+    power_user_threshold_days: int = 4
 
 
 class SchemaConfigResponse(SchemaConfigBody):
