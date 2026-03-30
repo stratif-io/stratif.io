@@ -388,6 +388,12 @@ export interface MissionControlMetrics {
   avg_events_per_session: number
   new_users: number
   returning_users: number
+  resurrected_users: number
+  churned_users: number
+  retention_rate: number
+  wau: number
+  avg_active_days: number
+  power_users: number
   dau_mau_ratio: number
 }
 
@@ -397,6 +403,13 @@ export interface MissionControlPeriod {
 }
 
 export type MissionControlMetricsNullable = { [K in keyof MissionControlMetrics]: number | null }
+
+export interface MetricBreakdown {
+  retained_count?: number
+  prev_unique_users?: number
+  avg_dau?: number
+  mau_28d?: number
+}
 
 export interface MissionControlResponse {
   sql?: string | string[]
@@ -411,6 +424,7 @@ export interface MissionControlMetricResponse {
   metric: string
   current: number
   previous: number | null
+  breakdown?: MetricBreakdown
 }
 
 export interface MissionControlTrendPoint {

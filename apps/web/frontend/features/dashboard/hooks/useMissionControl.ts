@@ -14,6 +14,12 @@ const METRICS = [
   'avg_events_per_session',
   'new_users',
   'returning_users',
+  'resurrected_users',
+  'churned_users',
+  'retention_rate',
+  'wau',
+  'avg_active_days',
+  'power_users',
   'dau_mau_ratio',
 ] as const
 
