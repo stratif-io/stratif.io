@@ -394,7 +394,6 @@ COUNTRY_TRAITS: dict[str, Any] = {
         "phone_format": "+1-{area}-{mid}-XXXX",
         "phone_area_codes": ["212", "310", "312", "713", "602", "215", "210", "619", "214", "408"],
         "phone_mid_range": (100, 999),
-        "email_providers": ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"],
     },
     "UK": {
         "first_names": [
@@ -410,7 +409,6 @@ COUNTRY_TRAITS: dict[str, Any] = {
         "phone_format": "+44-7{mid}-XXX-XXX",
         "phone_area_codes": None,
         "phone_mid_range": (100, 999),
-        "email_providers": ["gmail.com", "yahoo.co.uk", "hotmail.co.uk", "outlook.com", "btinternet.com"],
     },
     "DE": {
         "first_names": [
@@ -427,7 +425,6 @@ COUNTRY_TRAITS: dict[str, Any] = {
         "phone_format": "+49-{area}-XXXXXXX",
         "phone_area_codes": ["30", "40", "89", "221", "69", "711", "211", "231", "201", "341"],
         "phone_mid_range": None,
-        "email_providers": ["gmail.com", "web.de", "gmx.de", "t-online.de", "freenet.de"],
     },
     "FR": {
         "first_names": [
@@ -444,7 +441,6 @@ COUNTRY_TRAITS: dict[str, Any] = {
         "phone_format": "+33-6{mid}-XX-XX-XX",
         "phone_area_codes": None,
         "phone_mid_range": (10, 99),
-        "email_providers": ["gmail.com", "orange.fr", "free.fr", "sfr.fr", "laposte.net"],
     },
     "JP": {
         "first_names": [
@@ -461,7 +457,6 @@ COUNTRY_TRAITS: dict[str, Any] = {
         "phone_format": "+81-{area}-XXXX-XXXX",
         "phone_area_codes": ["3", "45", "6", "52", "11", "92", "78", "75", "44", "48"],
         "phone_mid_range": None,
-        "email_providers": ["gmail.com", "yahoo.co.jp", "docomo.ne.jp", "ezweb.ne.jp", "softbank.ne.jp"],
     },
     "BR": {
         "first_names": [
@@ -478,7 +473,6 @@ COUNTRY_TRAITS: dict[str, Any] = {
         "phone_format": "+55-{area}-9XXXX-XXXX",
         "phone_area_codes": ["11", "21", "61", "71", "85", "31", "92", "41", "81", "51"],
         "phone_mid_range": None,
-        "email_providers": ["gmail.com", "hotmail.com", "yahoo.com.br", "uol.com.br", "bol.com.br"],
     },
     "IN": {
         "first_names": [
@@ -494,7 +488,6 @@ COUNTRY_TRAITS: dict[str, Any] = {
         "phone_format": "+91-{area}-XXXX-XXXX",
         "phone_area_codes": ["22", "11", "80", "40", "44", "33", "79", "20", "261", "141"],
         "phone_mid_range": None,
-        "email_providers": ["gmail.com", "yahoo.in", "hotmail.com", "rediffmail.com", "outlook.com"],
     },
     "AU": {
         "first_names": [
@@ -510,9 +503,19 @@ COUNTRY_TRAITS: dict[str, Any] = {
         "phone_format": "+61-4{mid}-XXX-XXX",
         "phone_area_codes": None,
         "phone_mid_range": (10, 99),
-        "email_providers": ["gmail.com", "yahoo.com.au", "hotmail.com", "outlook.com", "bigpond.com"],
     },
 }
+
+EMAIL_PROVIDERS = [
+    "gmail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "icloud.com",
+    "proton.me",
+    "mail.com",
+    "zoho.com",
+]
 
 INSERT_BATCH_SIZE = 5000
 PROGRESS_INTERVAL = 50_000
@@ -584,7 +587,7 @@ class BaseSeeder(ABC):
             str(random.randint(0, 9)) if ch == "X" else ch for ch in fmt
         )
 
-        provider = random.choice(t["email_providers"])
+        provider = random.choice(EMAIL_PROVIDERS)
         email_local = f"{first_name.lower()}.{last_name.lower()}{random.randint(1, 999)}"
         email = f"{email_local}@{provider}"
 
