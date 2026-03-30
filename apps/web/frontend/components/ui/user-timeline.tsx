@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
-import { ChevronDown, ChevronRight, Activity } from 'lucide-react'
+import { Activity } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import type { Event } from '@/types'
@@ -33,40 +32,22 @@ function getEventColor(eventName: string | null | undefined) {
   return EVENT_PALETTE[hash % EVENT_PALETTE.length]
 }
 
-function PropertiesExpander({
+function PropertiesColumn({
   properties,
 }: {
   properties: Record<string, unknown> | null | undefined
 }) {
-  const [open, setOpen] = useState(false)
   const entries = Object.entries(properties ?? {})
-  if (entries.length === 0) return null
+  if (entries.length === 0) return <div className="w-40 flex-shrink-0" />
 
   return (
-    <div className="mt-1">
-      <button
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        onClick={() => setOpen(!open)}
-      >
-        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        {entries.length} {entries.length === 1 ? 'property' : 'properties'}
-      </button>
-      {open && (
-        <div className="mt-1.5 ml-1 rounded-md border border-border/50 bg-muted/30 overflow-hidden">
-          <table className="w-full text-xs">
-            <tbody>
-              {entries.map(([key, val]) => (
-                <tr key={key} className="border-b border-border/30 last:border-0">
-                  <td className="py-1 pl-2.5 pr-3 font-medium text-muted-foreground whitespace-nowrap w-1/3">
-                    {key}
-                  </td>
-                  <td className="py-1 pr-2.5 text-foreground break-all">{String(val)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="w-40 flex-shrink-0 pt-0.5 space-y-0.5">
+      {entries.map(([key, val]) => (
+        <div key={key} className="flex gap-1 text-xs min-w-0">
+          <span className="text-muted-foreground/60 whitespace-nowrap">{key}:</span>
+          <span className="text-muted-foreground truncate">{String(val)}</span>
         </div>
-      )}
+      ))}
     </div>
   )
 }
@@ -81,11 +62,13 @@ export function TimelineSkeleton() {
             {i < 5 && <div className="w-0.5 flex-1 bg-border/30 min-h-[2.5rem] my-1" />}
           </div>
           <div className="flex-1 pb-6 space-y-1.5 pt-1">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-3 w-20" />
-            </div>
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-3 w-20" />
             <Skeleton className="h-3 w-16" />
+          </div>
+          <div className="w-40 flex-shrink-0 pt-1 space-y-1.5">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-3 w-24" />
           </div>
         </div>
       ))}
@@ -96,11 +79,10 @@ export function TimelineSkeleton() {
 function TimelineEvent({ event, isLast }: { event: Event; isLast: boolean }) {
   const color = getEventColor(event.event_name)
   const ts = event.timestamp ? new Date(event.timestamp) : null
-  const props = event.properties ?? {}
-  const hasProps = Object.keys(props).length > 0
 
   return (
     <li className="flex gap-3.5">
+      {/* Spine + dot */}
       <div className="flex flex-col items-center flex-shrink-0">
         <div
           className={cn(
@@ -115,24 +97,24 @@ function TimelineEvent({ event, isLast }: { event: Event; isLast: boolean }) {
         </div>
         {!isLast && <div className="w-0.5 flex-1 bg-border/50 min-h-[2rem] my-1" />}
       </div>
-      <div className={cn('flex-1 min-w-0', isLast ? 'pb-0' : 'pb-5')}>
-        <div className="flex items-start justify-between gap-2 pt-0.5">
-          <span className={cn('text-sm font-semibold leading-snug', color.text)}>
-            {event.event_name}
-          </span>
-          {ts && (
-            <div className="text-right flex-shrink-0">
-              <div className="text-xs text-muted-foreground tabular-nums">
-                {format(ts, 'MMM d, yyyy HH:mm:ss')}
-              </div>
-              <div className="text-xs text-muted-foreground/60">
-                {formatDistanceToNow(ts, { addSuffix: true })}
-              </div>
+      {/* Event name + timestamp */}
+      <div className={cn('flex-1 min-w-0 pt-0.5', isLast ? 'pb-0' : 'pb-5')}>
+        <span className={cn('text-sm font-semibold leading-snug', color.text)}>
+          {event.event_name}
+        </span>
+        {ts && (
+          <div className="mt-0.5">
+            <div className="text-xs text-muted-foreground tabular-nums">
+              {format(ts, 'MMM d, yyyy HH:mm:ss')}
             </div>
-          )}
-        </div>
-        {hasProps && <PropertiesExpander properties={props} />}
+            <div className="text-xs text-muted-foreground/60">
+              {formatDistanceToNow(ts, { addSuffix: true })}
+            </div>
+          </div>
+        )}
       </div>
+      {/* Properties column (always visible, right side) */}
+      <PropertiesColumn properties={event.properties} />
     </li>
   )
 }
