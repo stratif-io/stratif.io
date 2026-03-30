@@ -165,6 +165,7 @@ export const fetchUserList = (params: {
   limit?: number
   offset?: number
   connection_id?: string
+  filters?: Record<string, string | null>
 }) => {
   const searchParams = new URLSearchParams()
   if (params.start_date) searchParams.set('start_date', params.start_date)
@@ -172,6 +173,8 @@ export const fetchUserList = (params: {
   if (params.limit !== undefined) searchParams.set('limit', String(params.limit))
   if (params.offset !== undefined) searchParams.set('offset', String(params.offset))
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
+  const f = serializeFilters(params.filters)
+  if (f) searchParams.set('filters', f)
   return fetchApi<UserListResponse>(`/api/users?${searchParams}`)
 }
 

@@ -16,12 +16,12 @@ export interface UsePeopleListReturn {
 }
 
 export function usePeopleList(): UsePeopleListReturn {
-  const { dateRange, activeConnectionId } = useAppStore()
+  const { dateRange, activeConnectionId, activeFilters } = useAppStore()
   const startDate = dateRange?.from ? formatDateParam(dateRange.from) : ''
   const endDate = dateRange?.to ? formatDateParam(dateRange.to) : ''
 
   const query = useInfiniteQuery({
-    queryKey: ['people-list', startDate, endDate, activeConnectionId],
+    queryKey: ['people-list', startDate, endDate, activeConnectionId, activeFilters],
     queryFn: ({ pageParam }) =>
       fetchUserList({
         start_date: startDate,
@@ -29,6 +29,7 @@ export function usePeopleList(): UsePeopleListReturn {
         limit: 50,
         offset: pageParam,
         connection_id: activeConnectionId ?? undefined,
+        filters: activeFilters,
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) =>

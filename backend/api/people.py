@@ -1,5 +1,6 @@
 """People API — user list endpoint."""
 
+import json
 from datetime import datetime
 from typing import Annotated
 
@@ -24,8 +25,9 @@ def list_users(
     end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
+    filters: str | None = Query(None, description="JSON dict of active dimension filters"),
 ) -> dict:
-    """List users with event count and first/last seen, filtered by date range."""
+    """List users with event count and first/last seen, filtered by date range and filters."""
     start_date = parse_date(start_date)
     end_date = parse_date(end_date)
     where_clauses = []
@@ -36,6 +38,10 @@ def list_users(
     if end_date:
         where_clauses.append("timestamp <= ?")
         params.append(to_sql_datetime(end_date, "23:59:59"))
+    if filters:
+        filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+        where_clauses.extend(filter_clauses)
+        params.extend(filter_params)
 
     where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
