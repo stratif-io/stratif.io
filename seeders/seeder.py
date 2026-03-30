@@ -806,7 +806,7 @@ class BaseSeeder(ABC):
 
             if event_name == "ProductView":
                 product = self._get_random_product()
-                properties.update(
+                properties["properties"].update(
                     {
                         "product_id": product["product_id"],
                         "product_name": product["product_name"],
@@ -822,7 +822,7 @@ class BaseSeeder(ABC):
                     additional_props = self._build_event_properties(
                         user, session_id, referrer, "ProductView", visited_products
                     )
-                    additional_props.update(
+                    additional_props["properties"].update(
                         {
                             "product_id": product["product_id"],
                             "product_name": product["product_name"],
@@ -839,7 +839,7 @@ class BaseSeeder(ABC):
             elif event_name == "AddToCart":
                 if visited_products:
                     cart_product = random.choice(visited_products)
-                    properties.update(
+                    properties["properties"].update(
                         {
                             "product_id": cart_product["product_id"],
                             "product_name": cart_product["product_name"],
@@ -856,7 +856,7 @@ class BaseSeeder(ABC):
                         min(len(visited_products), random.randint(1, 3)),
                     )
                     total = sum(p["product_price"] for p in purchased)
-                    properties.update(
+                    properties["properties"].update(
                         {
                             "order_id": str(uuid.uuid4())[:12],
                             "total_amount": round(total, 2),
@@ -909,7 +909,7 @@ class BaseSeeder(ABC):
             props = self._build_event_properties(
                 user, session_id, referrer, "ProductView", []
             )
-            props.update(
+            props["properties"].update(
                 {
                     "product_id": product["product_id"],
                     "product_name": product["product_name"],
@@ -930,40 +930,44 @@ class BaseSeeder(ABC):
         event_name: str,
         visited_products: list[dict],
     ) -> dict:
-        properties = {
+        event_props: dict = {
             "session_id": session_id,
-            "country": user["country"],
-            "city": user["city"],
-            "timezone": user["timezone"],
-            "device_type": user["device_type"],
-            "browser": user["browser"],
-            "os": user["os"],
-            "screen_resolution": user["screen_resolution"],
-            "referrer": referrer,
             "is_returning_user": user["is_returning"],
-            **user["traits"],
         }
 
         if event_name == "Home":
-            properties["page_url"] = URL_PATHS["Home"]
+            event_props["page_url"] = URL_PATHS["Home"]
         elif event_name == "Search":
             query = random.choice(SEARCH_QUERIES)
-            properties["page_url"] = URL_PATHS["Search"].format(
+            event_props["page_url"] = URL_PATHS["Search"].format(
                 query=query.replace(" ", "+")
             )
-            properties["search_query"] = query
+            event_props["search_query"] = query
         elif event_name == "ProductView":
             if visited_products:
                 product = visited_products[-1]
-                properties["page_url"] = URL_PATHS["ProductView"].format(
+                event_props["page_url"] = URL_PATHS["ProductView"].format(
                     product_id=product["product_id"]
                 )
         elif event_name == "AddToCart":
-            properties["page_url"] = "/cart"
+            event_props["page_url"] = "/cart"
         elif event_name == "Purchase":
-            properties["page_url"] = URL_PATHS["Purchase"]
+            event_props["page_url"] = URL_PATHS["Purchase"]
 
-        return properties
+        return {
+            "traits": user["traits"],
+            "context": {
+                "country": user["country"],
+                "city": user["city"],
+                "timezone": user["timezone"],
+                "device_type": user["device_type"],
+                "browser": user["browser"],
+                "os": user["os"],
+                "screen_resolution": user["screen_resolution"],
+                "referrer": referrer,
+            },
+            "properties": event_props,
+        }
 
     def _weighted_choice(self, choices: list[tuple]) -> str:
         items = [c[0] for c in choices]
