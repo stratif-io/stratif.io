@@ -137,28 +137,30 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] lg:items-start gap-4">
       {/* LEFT: Hero card */}
-      <DevCard
-        sql={buildAllSql(metricSql?.[heroMetric], trends[heroMetric]?.sql)}
-        className="lg:self-stretch lg:min-h-0"
-      >
-        <HeroMetricCard
-          label={heroConfig.label}
-          metricKey={heroMetric}
-          value={formatMetricValue(heroMetric, heroCurrentValue)}
-          rawValue={heroCurrentValue}
-          pctChange={computePctChange(heroCurrentValue, heroPreviousValue)}
-          previousValue={
-            heroPreviousValue !== null ? formatMetricValue(heroMetric, heroPreviousValue) : '—'
-          }
-          sparklineValues={trends[heroMetric]?.values ?? []}
-          sparklineDates={trends[heroMetric]?.dates}
-          sparklinePreviousValues={trends[heroMetric]?.previousValues}
-          sparklinePreviousDates={trends[heroMetric]?.previousDates}
-          color={heroConfig.color}
-          loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
-          currentMetrics={data?.current}
-        />
-      </DevCard>
+      <div className="lg:self-stretch lg:min-h-0">
+        <DevCard
+          sql={buildAllSql(metricSql?.[heroMetric], trends[heroMetric]?.sql)}
+          className="h-full"
+        >
+          <HeroMetricCard
+            label={heroConfig.label}
+            metricKey={heroMetric}
+            value={formatMetricValue(heroMetric, heroCurrentValue)}
+            rawValue={heroCurrentValue}
+            pctChange={computePctChange(heroCurrentValue, heroPreviousValue)}
+            previousValue={
+              heroPreviousValue !== null ? formatMetricValue(heroMetric, heroPreviousValue) : '—'
+            }
+            sparklineValues={trends[heroMetric]?.values ?? []}
+            sparklineDates={trends[heroMetric]?.dates}
+            sparklinePreviousValues={trends[heroMetric]?.previousValues}
+            sparklinePreviousDates={trends[heroMetric]?.previousDates}
+            color={heroConfig.color}
+            loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
+            currentMetrics={data?.current}
+          />
+        </DevCard>
+      </div>
 
       {/* RIGHT: Categorized mini-grid */}
       <div className="flex flex-col gap-5">
