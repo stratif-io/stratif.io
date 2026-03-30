@@ -308,6 +308,47 @@ def _fetch_single_metric(
         retained = retained_rows[0][0] if retained_rows else 0
         return round(retained / prev_unique, 4) if prev_unique else 0.0
 
+    if metric == "wau":
+        wau_start = period_end - timedelta(days=6)
+        wau_start_ts = f"{wau_start} 00:00:00"
+        wau_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+        wau_params: list = [wau_start_ts, pe]
+        wau_where.extend(filter_clauses)
+        wau_params.extend(filter_params)
+        wau_where_sql = "WHERE " + " AND ".join(wau_where)
+        rows = db.execute(
+            f"SELECT COUNT(DISTINCT user_id) FROM events {wau_where_sql}", wau_params
+        )
+        return rows[0][0] if rows else 0
+
+    if metric == "avg_active_days":
+        rows = db.execute(
+            f"""
+            SELECT AVG(active_days) FROM (
+                SELECT user_id, COUNT(DISTINCT DATE(timestamp)) AS active_days
+                FROM events {ev_where_sql}
+                GROUP BY user_id
+            ) t
+            """,
+            ev_params,
+        )
+        return round(rows[0][0] or 0.0, 2) if rows else 0.0
+
+    if metric == "power_users":
+        threshold = db.get_power_user_threshold_days()
+        rows = db.execute(
+            f"""
+            SELECT COUNT(*) FROM (
+                SELECT user_id
+                FROM events {ev_where_sql}
+                GROUP BY user_id
+                HAVING COUNT(DISTINCT DATE(timestamp)) >= ?
+            ) t
+            """,
+            ev_params + [threshold],
+        )
+        return rows[0][0] if rows else 0
+
     # dau_mau_ratio
     if metric != "dau_mau_ratio":
         raise ValueError(f"Unknown metric: {metric}")
@@ -382,6 +423,51 @@ def _fetch_single_metric_all_time(
     if metric in ("churned_users", "retention_rate"):
         return 0.0  # not meaningful without a fixed period
 
+    if metric == "wau":
+        # All-time: use last 7 days of all available data
+        wau_where_sql = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        bounds = db.execute(
+            f"SELECT MAX(DATE(timestamp)) FROM events {wau_where_sql}",
+            filter_params,
+        )
+        if not bounds or bounds[0][0] is None:
+            return 0
+        max_day = bounds[0][0]
+        rows = db.execute(
+            f"SELECT COUNT(DISTINCT user_id) FROM events WHERE DATE(timestamp) >= DATE(?, '-6 days') AND DATE(timestamp) <= ?",
+            [str(max_day), str(max_day)],
+        )
+        return rows[0][0] if rows else 0
+
+    if metric == "avg_active_days":
+        ev_where_sql_at = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        rows = db.execute(
+            f"""
+            SELECT AVG(active_days) FROM (
+                SELECT user_id, COUNT(DISTINCT DATE(timestamp)) AS active_days
+                FROM events {ev_where_sql_at}
+                GROUP BY user_id
+            ) t
+            """,
+            filter_params,
+        )
+        return round(rows[0][0] or 0.0, 2) if rows else 0.0
+
+    if metric == "power_users":
+        threshold = db.get_power_user_threshold_days()
+        ev_where_sql_at = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        rows = db.execute(
+            f"""
+            SELECT COUNT(*) FROM (
+                SELECT user_id FROM events {ev_where_sql_at}
+                GROUP BY user_id
+                HAVING COUNT(DISTINCT DATE(timestamp)) >= ?
+            ) t
+            """,
+            filter_params + [threshold],
+        )
+        return rows[0][0] if rows else 0
+
     # dau_mau_ratio — not meaningful without a fixed period, return 0
     return 0.0
 
@@ -398,6 +484,9 @@ SUPPORTED_METRICS = {
     "dau_mau_ratio",
     "churned_users",
     "retention_rate",
+    "wau",
+    "avg_active_days",
+    "power_users",
 }
 
 
@@ -709,6 +798,59 @@ def get_mission_control_trend(
             data.append({"date": str(current_day), "value": ratio})
             current_day += timedelta(days=1)
         sql_val = "retention_rate daily trend"
+
+    elif metric == "wau":
+        current_day = start
+        data = []
+        while current_day <= end:
+            wau_s = current_day - timedelta(days=6)
+            wau_where_t: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+            wau_params_t: list = [f"{wau_s} 00:00:00", f"{current_day} 23:59:59"]
+            wau_where_t.extend(filter_clauses)
+            wau_params_t.extend(filter_params)
+            wau_where_sql_t = "WHERE " + " AND ".join(wau_where_t)
+            rows = db.execute(
+                f"SELECT COUNT(DISTINCT user_id) FROM events {wau_where_sql_t}", wau_params_t
+            )
+            data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
+            current_day += timedelta(days=1)
+        sql_val = "wau rolling 7-day trend"
+
+    elif metric == "avg_active_days":
+        trend_sql = f"""
+            SELECT DATE(timestamp) AS d, COUNT(DISTINCT DATE(timestamp)) AS avg_days
+            FROM events {ev_where_sql}
+            GROUP BY DATE(timestamp)
+            ORDER BY 1
+            """
+        rows = db.execute(trend_sql, ev_params)
+        data = [{"date": str(r[0]), "value": round(r[1] or 0.0, 2)} for r in rows]
+        sql_val = interpolate_sql(trend_sql, ev_params)
+
+    elif metric == "power_users":
+        threshold = db.get_power_user_threshold_days()
+        current_day = start
+        data = []
+        while current_day <= end:
+            day_ps = f"{current_day} 00:00:00"
+            day_pe = f"{current_day} 23:59:59"
+            pu_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+            pu_params: list = [day_ps, day_pe]
+            pu_where.extend(filter_clauses)
+            pu_params.extend(filter_params)
+            pu_where_sql = "WHERE " + " AND ".join(pu_where)
+            rows = db.execute(
+                f"""
+                SELECT COUNT(*) FROM (
+                    SELECT user_id FROM events {pu_where_sql}
+                    GROUP BY user_id HAVING COUNT(DISTINCT DATE(timestamp)) >= ?
+                ) t
+                """,
+                pu_params + [threshold],
+            )
+            data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
+            current_day += timedelta(days=1)
+        sql_val = "power_users daily trend"
 
     else:  # dau_mau_ratio
         current_day = start

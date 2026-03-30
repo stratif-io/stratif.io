@@ -413,3 +413,51 @@ def test_trend_retention_rate(client):
     )
     assert resp.status_code == 200
     assert all(0.0 <= d["value"] <= 1.0 for d in resp.json()["data"])
+
+
+def test_wau_non_negative(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "wau", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["current"] >= 0
+
+
+def test_avg_active_days_non_negative(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "avg_active_days", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["current"] >= 0
+
+
+def test_power_users_lte_unique_users(client):
+    uniq = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "unique_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    ).json()["current"]
+    power = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "power_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    ).json()["current"]
+    assert power <= uniq
+
+
+def test_trend_wau(client):
+    resp = client.get(
+        "/api/mission-control/trend",
+        params={"metric": "wau", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+    )
+    assert resp.status_code == 200
+    assert all(d["value"] >= 0 for d in resp.json()["data"])
+
+
+def test_trend_power_users(client):
+    resp = client.get(
+        "/api/mission-control/trend",
+        params={"metric": "power_users", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+    )
+    assert resp.status_code == 200
+    assert all(d["value"] >= 0 for d in resp.json()["data"])
