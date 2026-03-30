@@ -11,7 +11,7 @@ import random
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -379,6 +379,141 @@ SEARCH_QUERIES = [
     "fitness tracker",
 ]
 
+COUNTRY_TRAITS: dict[str, Any] = {
+    "US": {
+        "first_names": [
+            "James", "John", "Robert", "Michael", "William", "David", "Richard",
+            "Joseph", "Thomas", "Charles", "Mary", "Patricia", "Jennifer", "Linda",
+            "Barbara", "Elizabeth", "Susan", "Jessica", "Sarah", "Karen",
+        ],
+        "last_names": [
+            "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller",
+            "Davis", "Wilson", "Anderson", "Taylor", "Thomas", "Jackson", "White",
+            "Harris", "Martin", "Thompson", "Young", "Robinson", "Lewis",
+        ],
+        "phone_format": "+1-{area}-{mid}-XXXX",
+        "phone_area_codes": ["212", "310", "312", "713", "602", "215", "210", "619", "214", "408"],
+        "phone_mid_range": (100, 999),
+        "email_providers": ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"],
+    },
+    "UK": {
+        "first_names": [
+            "Oliver", "Jack", "Harry", "George", "Noah", "Charlie", "Jacob",
+            "Alfie", "Freddie", "Oscar", "Olivia", "Amelia", "Isla", "Ava",
+            "Mia", "Isabella", "Sophia", "Grace", "Lily", "Emily",
+        ],
+        "last_names": [
+            "Smith", "Jones", "Williams", "Taylor", "Brown", "Davies", "Evans",
+            "Wilson", "Thomas", "Roberts", "Johnson", "Lewis", "Walker", "Robinson",
+            "Wood", "Thompson", "White", "Watson", "Jackson", "Wright",
+        ],
+        "phone_format": "+44-7{mid}-XXX-XXX",
+        "phone_area_codes": None,
+        "phone_mid_range": (100, 999),
+        "email_providers": ["gmail.com", "yahoo.co.uk", "hotmail.co.uk", "outlook.com", "btinternet.com"],
+    },
+    "DE": {
+        "first_names": [
+            "Luca", "Leon", "Finn", "Jonas", "Luis", "Max", "Felix", "Paul",
+            "Ben", "Elias", "Emma", "Mia", "Hannah", "Sofia", "Anna",
+            "Lena", "Laura", "Julia", "Sarah", "Lea",
+        ],
+        "last_names": [
+            "Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer",
+            "Wagner", "Becker", "Schulz", "Hoffmann", "Schäfer", "Koch",
+            "Bauer", "Richter", "Klein", "Wolf", "Schröder", "Neumann",
+            "Schwarz", "Zimmermann",
+        ],
+        "phone_format": "+49-{area}-XXXXXXX",
+        "phone_area_codes": ["30", "40", "89", "221", "69", "711", "211", "231", "201", "341"],
+        "phone_mid_range": None,
+        "email_providers": ["gmail.com", "web.de", "gmx.de", "t-online.de", "freenet.de"],
+    },
+    "FR": {
+        "first_names": [
+            "Gabriel", "Léo", "Raphaël", "Louis", "Lucas", "Arthur", "Hugo",
+            "Adam", "Liam", "Jules", "Emma", "Jade", "Louise", "Alice",
+            "Chloé", "Inès", "Léa", "Manon", "Camille", "Zoé",
+        ],
+        "last_names": [
+            "Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard",
+            "Petit", "Durand", "Leroy", "Moreau", "Simon", "Laurent",
+            "Lefebvre", "Michel", "Garcia", "David", "Bertrand", "Roux",
+            "Vincent", "Fournier",
+        ],
+        "phone_format": "+33-6{mid}-XX-XX-XX",
+        "phone_area_codes": None,
+        "phone_mid_range": (10, 99),
+        "email_providers": ["gmail.com", "orange.fr", "free.fr", "sfr.fr", "laposte.net"],
+    },
+    "JP": {
+        "first_names": [
+            "Haruto", "Yuto", "Sota", "Yuki", "Hayato", "Haruki", "Ryusei",
+            "Kento", "Shota", "Daiki", "Yui", "Aoi", "Hina", "Rin",
+            "Saki", "Miyu", "Nanami", "Sakura", "Haruka", "Mana",
+        ],
+        "last_names": [
+            "Sato", "Suzuki", "Takahashi", "Tanaka", "Watanabe", "Ito",
+            "Yamamoto", "Nakamura", "Kobayashi", "Kato", "Yoshida", "Yamada",
+            "Sasaki", "Yamaguchi", "Matsumoto", "Inoue", "Kimura", "Hayashi",
+            "Shimizu", "Yamazaki",
+        ],
+        "phone_format": "+81-{area}-XXXX-XXXX",
+        "phone_area_codes": ["3", "45", "6", "52", "11", "92", "78", "75", "44", "48"],
+        "phone_mid_range": None,
+        "email_providers": ["gmail.com", "yahoo.co.jp", "docomo.ne.jp", "ezweb.ne.jp", "softbank.ne.jp"],
+    },
+    "BR": {
+        "first_names": [
+            "Miguel", "Arthur", "Heitor", "Bernardo", "Davi", "Lorenzo",
+            "Théo", "Pedro", "Gabriel", "Lucas", "Alice", "Sophia", "Helena",
+            "Valentina", "Laura", "Isabella", "Manuela", "Julia", "Heloísa", "Luisa",
+        ],
+        "last_names": [
+            "Silva", "Santos", "Oliveira", "Souza", "Rodrigues", "Ferreira",
+            "Alves", "Pereira", "Lima", "Gomes", "Costa", "Ribeiro",
+            "Martins", "Carvalho", "Almeida", "Lopes", "Sousa", "Fernandes",
+            "Vieira", "Barbosa",
+        ],
+        "phone_format": "+55-{area}-9XXXX-XXXX",
+        "phone_area_codes": ["11", "21", "61", "71", "85", "31", "92", "41", "81", "51"],
+        "phone_mid_range": None,
+        "email_providers": ["gmail.com", "hotmail.com", "yahoo.com.br", "uol.com.br", "bol.com.br"],
+    },
+    "IN": {
+        "first_names": [
+            "Aarav", "Vivaan", "Aditya", "Vihaan", "Arjun", "Sai", "Reyansh",
+            "Ayaan", "Krishna", "Ishaan", "Diya", "Ananya", "Pari", "Anika",
+            "Aadhya", "Aarohi", "Myra", "Sara", "Fatima", "Kiara",
+        ],
+        "last_names": [
+            "Sharma", "Verma", "Patel", "Singh", "Kumar", "Gupta", "Shah",
+            "Mehta", "Joshi", "Yadav", "Mishra", "Nair", "Iyer", "Reddy",
+            "Bose", "Chatterjee", "Das", "Mukherjee", "Pillai", "Menon",
+        ],
+        "phone_format": "+91-{area}-XXXX-XXXX",
+        "phone_area_codes": ["22", "11", "80", "40", "44", "33", "79", "20", "261", "141"],
+        "phone_mid_range": None,
+        "email_providers": ["gmail.com", "yahoo.in", "hotmail.com", "rediffmail.com", "outlook.com"],
+    },
+    "AU": {
+        "first_names": [
+            "Oliver", "William", "Jack", "Noah", "Thomas", "Liam", "Ethan",
+            "James", "Lucas", "Cooper", "Charlotte", "Olivia", "Amelia", "Isla",
+            "Mia", "Ava", "Grace", "Lily", "Sophie", "Chloe",
+        ],
+        "last_names": [
+            "Smith", "Jones", "Williams", "Brown", "Wilson", "Taylor", "Johnson",
+            "White", "Martin", "Anderson", "Thompson", "Nguyen", "Harris",
+            "Robinson", "Walker", "Young", "Allen", "King", "Wright", "Scott",
+        ],
+        "phone_format": "+61-4{mid}-XXX-XXX",
+        "phone_area_codes": None,
+        "phone_mid_range": (10, 99),
+        "email_providers": ["gmail.com", "yahoo.com.au", "hotmail.com", "outlook.com", "bigpond.com"],
+    },
+}
+
 INSERT_BATCH_SIZE = 5000
 PROGRESS_INTERVAL = 50_000
 
@@ -432,6 +567,40 @@ class BaseSeeder(ABC):
                     }
                 )
 
+    def _generate_traits(self, country_code: str) -> dict:
+        t = COUNTRY_TRAITS[country_code]
+
+        first_name = random.choice(t["first_names"])
+        last_name = random.choice(t["last_names"])
+
+        # Phone — replace X with random digits, keep the rest as-is
+        fmt: str = t["phone_format"]
+        if t["phone_area_codes"]:
+            fmt = fmt.replace("{area}", random.choice(t["phone_area_codes"]))
+        if t["phone_mid_range"]:
+            lo, hi = t["phone_mid_range"]
+            fmt = fmt.replace("{mid}", str(random.randint(lo, hi)))
+        phone = "".join(
+            str(random.randint(0, 9)) if ch == "X" else ch for ch in fmt
+        )
+
+        provider = random.choice(t["email_providers"])
+        email_local = f"{first_name.lower()}.{last_name.lower()}{random.randint(1, 999)}"
+        email = f"{email_local}@{provider}"
+
+        dob_start = date(1960, 1, 1)
+        dob_end = date(2005, 12, 31)
+        dob_days = (dob_end - dob_start).days
+        dob = dob_start + timedelta(days=random.randint(0, dob_days))
+
+        return {
+            "first_name": first_name,
+            "last_name": last_name,
+            "phone": phone,
+            "email": email,
+            "date_of_birth": dob.isoformat(),
+        }
+
     def _get_random_product(self) -> dict:
         weights = [p["weight"] for p in self._product_cache]
         return random.choices(self._product_cache, weights=weights, k=1)[0]
@@ -482,6 +651,7 @@ class BaseSeeder(ABC):
                     "browser_only": browser_only,
                     "completed_purchase": False,
                     "sessions": [],
+                    "traits": self._generate_traits(country_code),
                 }
             )
 
