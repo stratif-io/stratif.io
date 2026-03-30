@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/cabichahine/stratif.io/compare/v0.6.0...v0.7.0) (2026-03-30)
+
+
+### Features
+
+* People page — user list + event timeline with property inspector ([#125](https://github.com/cabichahine/stratif.io/issues/125)) ([bff2199](https://github.com/cabichahine/stratif.io/commit/bff2199b74bf60b2082a1f5a64882ac6237605dd))
+
 ## [0.6.0](https://github.com/cabichahine/stratif.io/compare/v0.5.1...v0.6.0) (2026-03-29)
 
 
