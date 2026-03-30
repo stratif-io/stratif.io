@@ -285,9 +285,14 @@ def _fetch_single_metric(
         prev_start, prev_end = _compute_previous_period(period_start, period_end)
         pps = f"{prev_start} 00:00:00"
         ppe = f"{prev_end} 23:59:59"
+        prev_uniq_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+        prev_uniq_params_r: list = [pps, ppe]
+        prev_uniq_where.extend(filter_clauses)
+        prev_uniq_params_r.extend(filter_params)
+        prev_uniq_where_sql = "WHERE " + " AND ".join(prev_uniq_where)
         prev_uniq_rows = db.execute(
-            "SELECT COUNT(DISTINCT user_id) FROM events WHERE timestamp >= ? AND timestamp <= ?",
-            [pps, ppe],
+            f"SELECT COUNT(DISTINCT user_id) FROM events {prev_uniq_where_sql}",
+            prev_uniq_params_r,
         )
         prev_unique = prev_uniq_rows[0][0] if prev_uniq_rows else 0
         retained_rows = db.execute(
@@ -295,11 +300,10 @@ def _fetch_single_metric(
             SELECT COUNT(DISTINCT user_id)
             FROM events {ev_where_sql}
             AND user_id IN (
-                SELECT DISTINCT user_id FROM events
-                WHERE timestamp >= ? AND timestamp <= ?
+                SELECT DISTINCT user_id FROM events {prev_uniq_where_sql}
             )
             """,
-            ev_params + [pps, ppe],
+            ev_params + prev_uniq_params_r,
         )
         retained = retained_rows[0][0] if retained_rows else 0
         return round(retained / prev_unique, 4) if prev_unique else 0.0
@@ -435,12 +439,40 @@ def get_mission_control_metric(
         prev_start_b, prev_end_b = _compute_previous_period(start, end)
         pps_b = f"{prev_start_b} 00:00:00"
         ppe_b = f"{prev_end_b} 23:59:59"
-        pu_rows = db.execute(
-            "SELECT COUNT(DISTINCT user_id) FROM events WHERE timestamp >= ? AND timestamp <= ?",
-            [pps_b, ppe_b],
+
+        # Build current-period where clause for the retained subquery
+        ps_b = f"{start} 00:00:00"
+        pe_b = f"{end} 23:59:59"
+        ev_where_b: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+        ev_params: list = [ps_b, pe_b]
+        ev_where_b.extend(filter_clauses)
+        ev_params.extend(filter_params)
+        ev_where_sql = "WHERE " + " AND ".join(ev_where_b)
+
+        # Previous period unique users (with filters applied)
+        prev_uniq_where_b: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+        prev_uniq_params_b: list = [pps_b, ppe_b]
+        prev_uniq_where_b.extend(filter_clauses)
+        prev_uniq_params_b.extend(filter_params)
+        prev_uniq_where_sql_b = "WHERE " + " AND ".join(prev_uniq_where_b)
+        prev_uniq_rows_b = db.execute(
+            f"SELECT COUNT(DISTINCT user_id) FROM events {prev_uniq_where_sql_b}",
+            prev_uniq_params_b,
         )
-        prev_uniq_b = pu_rows[0][0] if pu_rows else 0
-        retained_b = round(float(current_value) * prev_uniq_b) if prev_uniq_b else 0
+        prev_uniq_b = prev_uniq_rows_b[0][0] if prev_uniq_rows_b else 0
+
+        # Users retained (active in current period AND previous period)
+        retained_rows_b = db.execute(
+            f"""
+            SELECT COUNT(DISTINCT user_id)
+            FROM events {ev_where_sql}
+            AND user_id IN (
+                SELECT DISTINCT user_id FROM events {prev_uniq_where_sql_b}
+            )
+            """,
+            ev_params + prev_uniq_params_b,
+        )
+        retained_b = retained_rows_b[0][0] if retained_rows_b else 0
         breakdown = {"retained_count": int(retained_b), "prev_unique_users": int(prev_uniq_b)}
 
     return {
