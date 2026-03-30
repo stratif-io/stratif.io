@@ -9,8 +9,6 @@ import {
   Check,
   X,
   Sparkles,
-  ChevronDown,
-  Settings2,
 } from 'lucide-react'
 import { SaveStatus } from '@/components/ui/save-status'
 import { Button } from '@/components/ui/button'
@@ -34,7 +32,6 @@ import {
   CommandGroup,
   CommandItem,
 } from '@/components/ui/command'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   useSchemaConfig,
   useUpsertSchemaConfig,
@@ -274,7 +271,7 @@ export function SchemaConfigTab({ connId }: Props) {
   const upsertFilter = useUpsertFilterConfig(connId)
 
   const [browseOpen, setBrowseOpen] = useState(false)
-  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'fields' | 'properties' | 'advanced'>('fields')
   const [form, setForm] = useState<SchemaFormState>(DEFAULT_FORM)
   const [detectedColumns, setDetectedColumns] = useState<string[]>([])
   const [pendingDetections, setPendingDetections] = useState<PendingDetection[]>([])
@@ -433,6 +430,7 @@ export function SchemaConfigTab({ connId }: Props) {
           if (value) pending.push({ fieldKey: key, label, proposedColumn: value })
         }
         setPendingDetections(pending)
+        setActiveTab('fields')
 
         const columnNames = columns.map((c: { name: string }) => c.name)
         const nestedPaths = proposed_custom_properties.map((p: { path: string }) => p.path)
@@ -545,277 +543,290 @@ export function SchemaConfigTab({ connId }: Props) {
 
       {detect.isError && <p className="text-sm text-destructive">{detect.error?.message}</p>}
 
-      {/* ── Pending detections banner ── */}
-      {pendingDetections.length > 0 && (
-        <div className="flex items-center justify-between px-3 py-2 rounded-md bg-amber-50/80 dark:bg-amber-950/20 border border-amber-400/40">
-          <span className="text-xs font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5" />
-            {pendingDetections.length} field{pendingDetections.length !== 1 ? 's' : ''} detected —
-            review mappings below
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
-              onClick={acceptAllDetections}
-            >
-              Accept all
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 text-xs text-muted-foreground"
-              onClick={() => setPendingDetections([])}
-            >
-              Dismiss
+      {/* ── Tab bar ── */}
+      <div className="flex border-b">
+        {(['fields', 'properties', 'advanced'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+              activeTab === tab
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Fields tab ── */}
+      {activeTab === 'fields' && (
+        <>
+          {/* ── Pending detections banner ── */}
+          {pendingDetections.length > 0 && (
+            <div className="flex items-center justify-between px-3 py-2 rounded-md bg-amber-50/80 dark:bg-amber-950/20 border border-amber-400/40">
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                {pendingDetections.length} field{pendingDetections.length !== 1 ? 's' : ''} detected
+                — review mappings below
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                  onClick={acceptAllDetections}
+                >
+                  Accept all
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-muted-foreground"
+                  onClick={() => setPendingDetections([])}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Field Mapping ── */}
+          <div className="rounded-md border overflow-hidden">
+            {/* Required fields — compact, no header row needed */}
+            <div className="px-3 py-1.5 bg-muted/20 border-b">
+              <span className="text-xs font-medium text-muted-foreground">Required Fields</span>
+            </div>
+
+            {[
+              {
+                label: 'User ID',
+                fieldKey: 'user_id_field',
+                value: userIdField,
+                onChange: (v: string) => updateForm({ userIdField: v }),
+              },
+              {
+                label: 'Event Name',
+                fieldKey: 'event_name_field',
+                value: eventNameField,
+                onChange: (v: string) => updateForm({ eventNameField: v }),
+              },
+              {
+                label: 'Timestamp',
+                fieldKey: 'timestamp_field',
+                value: timestampField,
+                onChange: (v: string) => updateForm({ timestampField: v }),
+              },
+            ].map(({ label, fieldKey, value, onChange }) => {
+              const pending = pendingDetections.find((d) => d.fieldKey === fieldKey)
+              const isEnabled = value in enabledFields
+              return (
+                <div
+                  key={fieldKey}
+                  className={cn(
+                    'grid grid-cols-[140px_1fr_28px_28px] gap-3 px-3 py-2 border-b last:border-b-0 items-center',
+                    pending && 'bg-amber-50/50 dark:bg-amber-950/10'
+                  )}
+                >
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                  {pending ? (
+                    <PendingDetectionRow
+                      pending={pending}
+                      onAccept={() => acceptDetection(fieldKey)}
+                      onReject={() => rejectDetection(fieldKey)}
+                    />
+                  ) : (
+                    <ColumnCombobox
+                      value={value}
+                      detectedColumns={detectedColumns}
+                      onChange={onChange}
+                      disabled={detectedColumns.length === 0}
+                    />
+                  )}
+                  {/* Filter toggle — only visible when not pending */}
+                  <div className="flex items-center justify-center">
+                    {!pending && value && (
+                      <Checkbox
+                        checked={isEnabled}
+                        onCheckedChange={() => toggleFilter(value, label, 'Tag')}
+                      />
+                    )}
+                  </div>
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground/30" />
+                </div>
+              )
+            })}
+
+            {/* Identity fields */}
+            <div className="border-t border-dashed" />
+            <div className="px-3 py-1.5 bg-muted/20 border-b">
+              <span className="text-xs font-medium text-muted-foreground">User Identity</span>
+            </div>
+
+            {USER_IDENTITY_FIELDS.map(({ key, label, icon }) => {
+              const mapped = userIdentityFields[key]
+              const isMapped = mapped !== null && mapped !== ''
+              const isFilterEnabled = isMapped && mapped in enabledFields
+              const pending = pendingDetections.find((d) => d.fieldKey === key)
+              return (
+                <div
+                  key={key}
+                  className={cn(
+                    'grid grid-cols-[140px_1fr_28px_28px] gap-3 px-3 py-2 border-b last:border-b-0 items-center',
+                    pending && 'bg-amber-50/50 dark:bg-amber-950/10'
+                  )}
+                >
+                  <span className={cn('text-xs', !isMapped && !pending && 'text-muted-foreground')}>
+                    {label}
+                  </span>
+                  {pending ? (
+                    <PendingDetectionRow
+                      pending={pending}
+                      onAccept={() => acceptDetection(key)}
+                      onReject={() => rejectDetection(key)}
+                    />
+                  ) : (
+                    <ColumnCombobox
+                      value={mapped ?? ''}
+                      detectedColumns={detectedColumns}
+                      onChange={(v) => setUserIdentityField(key, v || null)}
+                    />
+                  )}
+                  <div className="flex items-center justify-center">
+                    {!pending && isMapped && (
+                      <Checkbox
+                        checked={isFilterEnabled}
+                        onCheckedChange={() => toggleFilter(mapped, label, icon)}
+                      />
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className={cn(
+                      'h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive text-sm',
+                      (!isMapped || pending) && 'invisible'
+                    )}
+                    onClick={() => setUserIdentityField(key, null)}
+                    aria-label={`Clear ${label}`}
+                  >
+                    ×
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {/* ── Properties tab ── */}
+      {activeTab === 'properties' && (
+        <div className="rounded-md border overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-muted/20 border-b">
+            <span className="text-xs font-medium text-muted-foreground">Event Properties</span>
+            <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={addProp}>
+              <Plus className="h-3 w-3 mr-1" />
+              Add
             </Button>
           </div>
+
+          {sortedCustomProps.length > 0 && (
+            <div className={`grid ${EVENT_GRID} gap-3 px-3 py-2 border-b bg-muted/30`}>
+              {['Field', 'Column', 'Type', 'Category', 'Global Filter', ''].map((h) => (
+                <span key={h} className="text-xs font-medium text-muted-foreground">
+                  {h}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {sortedCustomProps.map(({ prop, idx }) => {
+            const isEnabled = prop.name in enabledFields
+            return (
+              <div
+                key={prop.id ?? String(idx)}
+                className={`grid ${EVENT_GRID} gap-3 px-3 py-2 border-b last:border-b-0 items-center`}
+              >
+                <Input
+                  value={prop.name}
+                  onChange={(e) => updateProp(idx, { name: e.target.value })}
+                  placeholder="campaign_source"
+                  className="h-8 text-sm"
+                />
+                <ColumnCombobox
+                  value={prop.path}
+                  detectedColumns={detectedColumns}
+                  onChange={(v) => updateProp(idx, { path: v })}
+                  disabled={detectedColumns.length === 0}
+                />
+                <Select
+                  value={prop.type}
+                  onValueChange={(v) => updateProp(idx, { type: v as PropertyType })}
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROPERTY_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <CategoryPicker
+                  value={prop.category ?? null}
+                  onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
+                />
+                <div className="flex items-center">
+                  <Checkbox
+                    checked={isEnabled}
+                    onCheckedChange={() =>
+                      toggleEventPropFilter(prop.name, defaultLabel(prop.name), prop.category)
+                    }
+                  />
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeProp(idx)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )
+          })}
+
+          {sortedCustomProps.length === 0 && (
+            <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+              No custom properties yet.{' '}
+              <button
+                type="button"
+                className="text-foreground underline underline-offset-2 hover:no-underline"
+                onClick={handleDetect}
+              >
+                Detect from schema
+              </button>{' '}
+              or{' '}
+              <button
+                type="button"
+                className="text-foreground underline underline-offset-2 hover:no-underline"
+                onClick={addProp}
+              >
+                add one manually
+              </button>
+              .
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Field Mapping ── */}
-      <div className="rounded-md border overflow-hidden">
-        {/* Required fields — compact, no header row needed */}
-        <div className="px-3 py-1.5 bg-muted/20 border-b">
-          <span className="text-xs font-medium text-muted-foreground">Required Fields</span>
-        </div>
-
-        {[
-          {
-            label: 'User ID',
-            fieldKey: 'user_id_field',
-            value: userIdField,
-            onChange: (v: string) => updateForm({ userIdField: v }),
-          },
-          {
-            label: 'Event Name',
-            fieldKey: 'event_name_field',
-            value: eventNameField,
-            onChange: (v: string) => updateForm({ eventNameField: v }),
-          },
-          {
-            label: 'Timestamp',
-            fieldKey: 'timestamp_field',
-            value: timestampField,
-            onChange: (v: string) => updateForm({ timestampField: v }),
-          },
-        ].map(({ label, fieldKey, value, onChange }) => {
-          const pending = pendingDetections.find((d) => d.fieldKey === fieldKey)
-          const isEnabled = value in enabledFields
-          return (
-            <div
-              key={fieldKey}
-              className={cn(
-                'grid grid-cols-[140px_1fr_28px_28px] gap-3 px-3 py-2 border-b last:border-b-0 items-center',
-                pending && 'bg-amber-50/50 dark:bg-amber-950/10'
-              )}
-            >
-              <span className="text-xs text-muted-foreground">{label}</span>
-              {pending ? (
-                <PendingDetectionRow
-                  pending={pending}
-                  onAccept={() => acceptDetection(fieldKey)}
-                  onReject={() => rejectDetection(fieldKey)}
-                />
-              ) : (
-                <ColumnCombobox
-                  value={value}
-                  detectedColumns={detectedColumns}
-                  onChange={onChange}
-                  disabled={detectedColumns.length === 0}
-                />
-              )}
-              {/* Filter toggle — only visible when not pending */}
-              <div className="flex items-center justify-center">
-                {!pending && value && (
-                  <Checkbox
-                    checked={isEnabled}
-                    onCheckedChange={() => toggleFilter(value, label, 'Tag')}
-                  />
-                )}
-              </div>
-              <Lock className="h-3.5 w-3.5 text-muted-foreground/30" />
-            </div>
-          )
-        })}
-
-        {/* Identity fields */}
-        <div className="border-t border-dashed" />
-        <div className="px-3 py-1.5 bg-muted/20 border-b">
-          <span className="text-xs font-medium text-muted-foreground">User Identity</span>
-        </div>
-
-        {USER_IDENTITY_FIELDS.map(({ key, label, icon }) => {
-          const mapped = userIdentityFields[key]
-          const isMapped = mapped !== null && mapped !== ''
-          const isFilterEnabled = isMapped && mapped in enabledFields
-          const pending = pendingDetections.find((d) => d.fieldKey === key)
-          return (
-            <div
-              key={key}
-              className={cn(
-                'grid grid-cols-[140px_1fr_28px_28px] gap-3 px-3 py-2 border-b last:border-b-0 items-center',
-                pending && 'bg-amber-50/50 dark:bg-amber-950/10'
-              )}
-            >
-              <span className={cn('text-xs', !isMapped && !pending && 'text-muted-foreground')}>
-                {label}
-              </span>
-              {pending ? (
-                <PendingDetectionRow
-                  pending={pending}
-                  onAccept={() => acceptDetection(key)}
-                  onReject={() => rejectDetection(key)}
-                />
-              ) : (
-                <ColumnCombobox
-                  value={mapped ?? ''}
-                  detectedColumns={detectedColumns}
-                  onChange={(v) => setUserIdentityField(key, v || null)}
-                />
-              )}
-              <div className="flex items-center justify-center">
-                {!pending && isMapped && (
-                  <Checkbox
-                    checked={isFilterEnabled}
-                    onCheckedChange={() => toggleFilter(mapped, label, icon)}
-                  />
-                )}
-              </div>
-              <button
-                type="button"
-                className={cn(
-                  'h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive text-sm',
-                  (!isMapped || pending) && 'invisible'
-                )}
-                onClick={() => setUserIdentityField(key, null)}
-                aria-label={`Clear ${label}`}
-              >
-                ×
-              </button>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* ── Event Properties ── */}
-      <div className="rounded-md border overflow-hidden">
-        <div className="flex items-center justify-between px-3 py-1.5 bg-muted/20 border-b">
-          <span className="text-xs font-medium text-muted-foreground">Event Properties</span>
-          <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={addProp}>
-            <Plus className="h-3 w-3 mr-1" />
-            Add
-          </Button>
-        </div>
-
-        {sortedCustomProps.length > 0 && (
-          <div className={`grid ${EVENT_GRID} gap-3 px-3 py-2 border-b bg-muted/30`}>
-            {['Field', 'Column', 'Type', 'Category', 'Global Filter', ''].map((h) => (
-              <span key={h} className="text-xs font-medium text-muted-foreground">
-                {h}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {sortedCustomProps.map(({ prop, idx }) => {
-          const isEnabled = prop.name in enabledFields
-          return (
-            <div
-              key={prop.id ?? String(idx)}
-              className={`grid ${EVENT_GRID} gap-3 px-3 py-2 border-b last:border-b-0 items-center`}
-            >
-              <Input
-                value={prop.name}
-                onChange={(e) => updateProp(idx, { name: e.target.value })}
-                placeholder="campaign_source"
-                className="h-8 text-sm"
-              />
-              <ColumnCombobox
-                value={prop.path}
-                detectedColumns={detectedColumns}
-                onChange={(v) => updateProp(idx, { path: v })}
-                disabled={detectedColumns.length === 0}
-              />
-              <Select
-                value={prop.type}
-                onValueChange={(v) => updateProp(idx, { type: v as PropertyType })}
-              >
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROPERTY_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <CategoryPicker
-                value={prop.category ?? null}
-                onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
-              />
-              <div className="flex items-center">
-                <Checkbox
-                  checked={isEnabled}
-                  onCheckedChange={() =>
-                    toggleEventPropFilter(prop.name, defaultLabel(prop.name), prop.category)
-                  }
-                />
-              </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                onClick={() => removeProp(idx)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          )
-        })}
-
-        {sortedCustomProps.length === 0 && (
-          <div className="px-3 py-8 text-center text-sm text-muted-foreground">
-            No custom properties yet.{' '}
-            <button
-              type="button"
-              className="text-foreground underline underline-offset-2 hover:no-underline"
-              onClick={handleDetect}
-            >
-              Detect from schema
-            </button>{' '}
-            or{' '}
-            <button
-              type="button"
-              className="text-foreground underline underline-offset-2 hover:no-underline"
-              onClick={addProp}
-            >
-              add one manually
-            </button>
-            .
-          </div>
-        )}
-      </div>
-
-      {/* ── Advanced settings (collapsed by default) ── */}
-      <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-        <CollapsibleTrigger
-          data-testid="advanced-settings-toggle"
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"
-        >
-          <Settings2 className="h-3.5 w-3.5" />
-          Advanced settings
-          <ChevronDown
-            className={cn(
-              'h-3.5 w-3.5 transition-transform duration-200',
-              advancedOpen && 'rotate-180'
-            )}
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-4 space-y-3">
+      {/* ── Advanced tab ── */}
+      {activeTab === 'advanced' && (
+        <div className="space-y-3">
           <div className="flex items-center gap-3">
             <Label
               htmlFor="session_timeout_minutes"
@@ -873,8 +884,8 @@ export function SchemaConfigTab({ connId }: Props) {
             />
             <span className="text-sm text-muted-foreground">active days</span>
           </div>
-        </CollapsibleContent>
-      </Collapsible>
+        </div>
+      )}
 
       {(upsert.isError || upsertFilter.isError) && (
         <p className="text-sm text-destructive">

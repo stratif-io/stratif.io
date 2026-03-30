@@ -1,5 +1,4 @@
 import { render, screen, act } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SchemaConfigTab } from '../SchemaConfigTab'
 import * as hooks from '../../hooks/useConnectionsData'
@@ -85,21 +84,37 @@ function renderTab() {
   return { detectMutate }
 }
 
+function renderTabOnTab(tab: 'fields' | 'properties' | 'advanced') {
+  const { detectMutate } = renderTab()
+  // Switch to the requested tab by clicking the tab button
+  const label =
+    tab === 'fields' ? /^fields$/i : tab === 'properties' ? /^properties$/i : /^advanced$/i
+  act(() => {
+    screen.getByRole('button', { name: label }).click()
+  })
+  return { detectMutate }
+}
+
 describe('SchemaConfigTab — Setup section', () => {
   it('shows the events table input with current value', () => {
     renderTab()
     expect(screen.getByDisplayValue('events')).toBeInTheDocument()
   })
 
-  it('shows session timeout input inside Advanced settings', async () => {
-    renderTab()
-    await userEvent.click(screen.getByTestId('advanced-settings-toggle'))
+  it('shows session timeout input on the Advanced tab', () => {
+    renderTabOnTab('advanced')
     expect(screen.getByDisplayValue('30')).toBeInTheDocument()
   })
 
   it('shows Detect from Schema button', () => {
     renderTab()
     expect(screen.getByRole('button', { name: /detect from schema/i })).toBeInTheDocument()
+  })
+
+  it('shows Event Name and Timestamp as required field rows on the Fields tab', () => {
+    renderTab()
+    expect(screen.getByText('Event Name')).toBeInTheDocument()
+    expect(screen.getByText('Timestamp')).toBeInTheDocument()
   })
 })
 
@@ -132,48 +147,39 @@ describe('SchemaConfigTab — User Identity section', () => {
 
 describe('SchemaConfigTab — Event Properties section', () => {
   it('renders "Event Properties" section heading', () => {
-    renderTab()
+    renderTabOnTab('properties')
     expect(screen.getByText('Event Properties')).toBeInTheDocument()
   })
 
-  it('shows Event Name and Timestamp as locked rows', () => {
-    renderTab()
-    expect(screen.getByText('Event Name')).toBeInTheDocument()
-    expect(screen.getByText('Timestamp')).toBeInTheDocument()
-  })
-
   it('shows custom property name in an editable input', () => {
-    renderTab()
+    renderTabOnTab('properties')
     expect(screen.getByDisplayValue('country')).toBeInTheDocument()
   })
 
   it('shows Add Property button', () => {
-    renderTab()
+    renderTabOnTab('properties')
     expect(screen.getByRole('button', { name: /add/i })).toBeInTheDocument()
   })
 
-  it('does NOT show User ID as a locked row in Event Properties (only one occurrence total — in User Identity)', () => {
-    renderTab()
-    const allUserIdTexts = screen.getAllByText('User ID')
-    expect(allUserIdTexts).toHaveLength(1)
+  it('does NOT show User ID in Event Properties (User ID only appears in Required Fields on the Fields tab)', () => {
+    renderTabOnTab('properties')
+    expect(screen.queryByText('User ID')).not.toBeInTheDocument()
   })
 
   it('renders Global Filter column header in Event Properties', () => {
-    renderTab()
+    renderTabOnTab('properties')
     expect(screen.getByText(/global filter/i)).toBeInTheDocument()
   })
 })
 
 describe('SchemaConfigTab — resurrection and power user fields', () => {
-  it('shows resurrection_window_days input with value 45 (inside Advanced settings)', async () => {
-    renderTab()
-    await userEvent.click(screen.getByTestId('advanced-settings-toggle'))
+  it('shows resurrection_window_days input with value 45 on the Advanced tab', () => {
+    renderTabOnTab('advanced')
     expect(screen.getByDisplayValue('45')).toBeInTheDocument()
   })
 
-  it('shows power_user_threshold_days input with value 7 (inside Advanced settings)', async () => {
-    renderTab()
-    await userEvent.click(screen.getByTestId('advanced-settings-toggle'))
+  it('shows power_user_threshold_days input with value 7 on the Advanced tab', () => {
+    renderTabOnTab('advanced')
     expect(screen.getByDisplayValue('7')).toBeInTheDocument()
   })
 })
@@ -334,5 +340,38 @@ describe('SchemaConfigTab — detect review panel', () => {
     })
 
     expect(screen.queryByText(/fields detected/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('SchemaConfigTab — tab behaviour', () => {
+  it('switches to Fields tab automatically when detect returns suggestions', () => {
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {
+        opts.onSuccess(mockDetectResult)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-tab-switch" />
+      </QueryClientProvider>
+    )
+
+    // Switch away from Fields first
+    act(() => {
+      screen.getByRole('button', { name: /^properties$/i }).click()
+    })
+
+    // Trigger detect
+    act(() => {
+      screen.getByRole('button', { name: /detect from schema/i }).click()
+    })
+
+    // Banner should be visible — proves we're on Fields tab
+    expect(screen.getByText(/fields detected/i)).toBeInTheDocument()
   })
 })
