@@ -7,7 +7,7 @@ import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { format as formatSql } from 'sql-formatter'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Minimize2, Play, Terminal } from 'lucide-react'
+import { Minimize2, PanelRightClose, PanelRightOpen, Play, Terminal } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
 import { executeQueryStudio } from '@/lib/api/queries'
@@ -237,6 +237,7 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
   const [queryResults, setQueryResults] = useState<Record<number, QueryStudioResponse | null>>({})
   const [queryRunning, setQueryRunning] = useState<Record<number, boolean>>({})
   const [activeResultIndex, setActiveResultIndex] = useState(0)
+  const [resultsOpen, setResultsOpen] = useState(true)
 
   useEffect(() => {
     if (!expanded) return
@@ -480,6 +481,18 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
                     </button>
                   )}
                   <button
+                    onClick={() => setResultsOpen((o) => !o)}
+                    aria-label={resultsOpen ? 'Hide results' : 'Show results'}
+                    title={resultsOpen ? 'Hide results' : 'Show results'}
+                    className="transition-colors text-muted-foreground hover:text-foreground"
+                  >
+                    {resultsOpen ? (
+                      <PanelRightClose className="h-3.5 w-3.5" />
+                    ) : (
+                      <PanelRightOpen className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                  <button
                     onClick={collapse}
                     aria-label="Collapse"
                     className="transition-colors text-muted-foreground hover:text-foreground"
@@ -492,7 +505,12 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
               {/* Body: SQL left | Results right */}
               <div className="flex flex-1 min-h-0 divide-x divide-border">
                 {/* Left: SQL */}
-                <div className="flex flex-col w-[45%] min-w-0 overflow-hidden">
+                <div
+                  className={cn(
+                    'flex flex-col min-w-0 overflow-hidden',
+                    resultsOpen ? 'w-[45%]' : 'flex-1'
+                  )}
+                >
                   <div className="flex-1 overflow-auto p-4">
                     {queries.length === 0 ? (
                       <p className="text-[10px] italic text-muted-foreground">No SQL available</p>
@@ -553,14 +571,16 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
                 </div>
 
                 {/* Right: Results */}
-                <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-background/50">
-                  <div className="flex-1 min-h-0 overflow-hidden">
-                    <ResultsTable
-                      result={queryResults[activeResultIndex] ?? null}
-                      running={queryRunning[activeResultIndex] ?? false}
-                    />
+                {resultsOpen && (
+                  <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-background/50">
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                      <ResultsTable
+                        result={queryResults[activeResultIndex] ?? null}
+                        running={queryRunning[activeResultIndex] ?? false}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </motion.div>
           </>
