@@ -146,8 +146,9 @@ async def upsert_schema_config(conn_id: str, body: SchemaConfigBody):
     db.execute(
         """INSERT INTO connection_schema_configs
            (id, connection_id, user_id_field, timestamp_field, event_name_field,
-            events_table, custom_properties, session_timeout_minutes, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            events_table, custom_properties, session_timeout_minutes,
+            resurrection_window_days, power_user_threshold_days, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(connection_id) DO UPDATE SET
              user_id_field = excluded.user_id_field,
              timestamp_field = excluded.timestamp_field,
@@ -155,10 +156,13 @@ async def upsert_schema_config(conn_id: str, body: SchemaConfigBody):
              events_table = excluded.events_table,
              custom_properties = excluded.custom_properties,
              session_timeout_minutes = excluded.session_timeout_minutes,
+             resurrection_window_days = excluded.resurrection_window_days,
+             power_user_threshold_days = excluded.power_user_threshold_days,
              updated_at = excluded.updated_at""",
         (config_id, conn_id, body.user_id_field, body.timestamp_field,
          body.event_name_field, body.events_table, custom_props_json,
-         body.session_timeout_minutes, now),
+         body.session_timeout_minutes, body.resurrection_window_days,
+         body.power_user_threshold_days, now),
     )
     return {**body.model_dump(), "id": config_id, "connection_id": conn_id,
             "updated_at": now, "custom_properties": [p.model_dump() for p in body.custom_properties]}

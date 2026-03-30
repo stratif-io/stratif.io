@@ -1,12 +1,45 @@
 import React from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MissionControlGrid } from '../MissionControlGrid'
 import type { MissionControlResponse } from '@/types'
 import type { TrendMetric, MetricTrend } from '../../hooks/useMissionControlTrends'
 
 vi.mock('@/components/dev', () => ({
   DevCard: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}))
+
+vi.mock('@/stores/app-store', () => ({
+  useAppStore: (selector: (s: { activeConnectionId: string | null }) => unknown) =>
+    selector({ activeConnectionId: 'test-conn' }),
+}))
+
+vi.mock('../../hooks/usePinnedMetrics', () => ({
+  usePinnedMetrics: () => ({
+    pinned: [
+      'total_events',
+      'unique_users',
+      'wau',
+      'total_sessions',
+      'avg_session_duration_sec',
+      'avg_events_per_session',
+      'avg_active_days',
+      'power_users',
+      'new_users',
+      'returning_users',
+      'resurrected_users',
+      'churned_users',
+      'retention_rate',
+      'dau_mau_ratio',
+    ],
+    togglePin: vi.fn(),
+    isPinned: () => true,
+  }),
+}))
+
+vi.mock('../MetricPopover', () => ({
+  MetricPopover: () => null,
 }))
 
 vi.mock('../MiniMetricCard', () => ({
@@ -41,6 +74,12 @@ const mockData: MissionControlResponse = {
     new_users: 12400,
     returning_users: 35800,
     dau_mau_ratio: 0.34,
+    wau: 15000,
+    avg_active_days: 3.2,
+    power_users: 5000,
+    resurrected_users: 800,
+    churned_users: 1200,
+    retention_rate: 0.72,
   },
   previous: {
     total_events: 1100000,
@@ -51,34 +90,40 @@ const mockData: MissionControlResponse = {
     new_users: 11200,
     returning_users: 33300,
     dau_mau_ratio: 0.31,
+    wau: 14000,
+    avg_active_days: 3.0,
+    power_users: 4500,
+    resurrected_users: 700,
+    churned_users: 1100,
+    retention_rate: 0.68,
   },
 }
 
+const allMetricKeys: TrendMetric[] = [
+  'total_events',
+  'unique_users',
+  'wau',
+  'total_sessions',
+  'avg_session_duration_sec',
+  'avg_events_per_session',
+  'avg_active_days',
+  'power_users',
+  'new_users',
+  'returning_users',
+  'resurrected_users',
+  'churned_users',
+  'retention_rate',
+  'dau_mau_ratio',
+]
+
 const emptyTrends = Object.fromEntries(
-  [
-    'total_events',
-    'unique_users',
-    'total_sessions',
-    'avg_session_duration_sec',
-    'avg_events_per_session',
-    'new_users',
-    'returning_users',
-    'dau_mau_ratio',
-  ].map((k) => [k, { values: [], loading: false }])
+  allMetricKeys.map((k) => [k, { values: [], loading: false }])
 ) as Record<TrendMetric, MetricTrend>
 
-const noMetricLoading = Object.fromEntries(
-  [
-    'total_events',
-    'unique_users',
-    'total_sessions',
-    'avg_session_duration_sec',
-    'avg_events_per_session',
-    'new_users',
-    'returning_users',
-    'dau_mau_ratio',
-  ].map((k) => [k, false])
-) as Record<TrendMetric, boolean>
+const noMetricLoading = Object.fromEntries(allMetricKeys.map((k) => [k, false])) as Record<
+  TrendMetric,
+  boolean
+>
 
 describe('MissionControlGrid', () => {
   it('renders the hero card with Total Events by default', () => {
@@ -88,17 +133,55 @@ describe('MissionControlGrid', () => {
     expect(screen.getByTestId('hero-card')).toHaveTextContent('Total Events')
   })
 
-  it('renders all 7 supporting mini cards', () => {
+  it('renders all 13 supporting mini cards', () => {
     render(
       <MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />
     )
     expect(screen.getByTestId('mini-Unique Users')).toBeInTheDocument()
+    expect(screen.getByTestId('mini-WAU')).toBeInTheDocument()
     expect(screen.getByTestId('mini-Sessions')).toBeInTheDocument()
     expect(screen.getByTestId('mini-Avg Session')).toBeInTheDocument()
     expect(screen.getByTestId('mini-Events / Session')).toBeInTheDocument()
+    expect(screen.getByTestId('mini-Active Days')).toBeInTheDocument()
+    expect(screen.getByTestId('mini-Power Users')).toBeInTheDocument()
     expect(screen.getByTestId('mini-New Users')).toBeInTheDocument()
     expect(screen.getByTestId('mini-Returning Users')).toBeInTheDocument()
+    expect(screen.getByTestId('mini-Resurrected')).toBeInTheDocument()
+    expect(screen.getByTestId('mini-Churned')).toBeInTheDocument()
+    expect(screen.getByTestId('mini-Retention Rate')).toBeInTheDocument()
     expect(screen.getByTestId('mini-DAU / MAU')).toBeInTheDocument()
+  })
+
+  it('renders all 14 metric labels including new ones', () => {
+    render(
+      <MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />
+    )
+    // All 14 metrics from METRIC_CONFIG
+    const expectedLabels = [
+      'Total Events',
+      'Unique Users',
+      'WAU',
+      'Sessions',
+      'Avg Session',
+      'Events / Session',
+      'Active Days',
+      'Power Users',
+      'New Users',
+      'Returning Users',
+      'Resurrected',
+      'Churned',
+      'Retention Rate',
+      'DAU / MAU',
+    ]
+
+    expectedLabels.forEach((label) => {
+      // Total Events is in hero, so it won't have a mini- testid
+      if (label === 'Total Events') {
+        expect(screen.getByTestId('hero-card')).toHaveTextContent(label)
+      } else {
+        expect(screen.getByTestId(`mini-${label}`)).toBeInTheDocument()
+      }
+    })
   })
 
   it('shows category headers', () => {
@@ -132,5 +215,17 @@ describe('MissionControlGrid', () => {
     )
     fireEvent.click(screen.getByTestId('mini-Sessions'))
     expect(screen.getByTestId('mini-Sessions')).toHaveAttribute('data-hero', 'true')
+  })
+
+  it('shows Customize metrics button and toggles chips', async () => {
+    render(
+      <MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />
+    )
+    const customizeBtn = screen.getByText('Customize metrics')
+    expect(customizeBtn).toBeInTheDocument()
+    // Click to open
+    await userEvent.click(customizeBtn)
+    // WAU chip should appear
+    expect(screen.getAllByText('WAU').length).toBeGreaterThan(0)
   })
 })
