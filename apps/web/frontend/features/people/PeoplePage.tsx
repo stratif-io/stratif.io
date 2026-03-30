@@ -290,14 +290,20 @@ export function PeoplePage() {
                     flipIcon
                   />
                 </div>
-                <div className="flex-1 overflow-hidden">
-                  <ScrollArea className="h-full">
-                    <EventPropertiesPanel
-                      event={selectedEvent}
-                      onClose={selectedEvent ? () => setSelectedEvent(null) : undefined}
-                    />
-                  </ScrollArea>
-                </div>
+                {selectedEvent ? (
+                  <div className="flex-1 overflow-hidden">
+                    <ScrollArea className="h-full">
+                      <EventPropertiesPanel
+                        event={selectedEvent}
+                        onClose={() => setSelectedEvent(null)}
+                      />
+                    </ScrollArea>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-6">
+                    <EventPropertiesPanel event={null} />
+                  </div>
+                )}
               </>
             )}
           </div>

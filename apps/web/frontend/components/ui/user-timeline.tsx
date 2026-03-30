@@ -86,12 +86,12 @@ export function EventPropertiesPanel({
 }) {
   if (!event) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
+      <>
         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
           <MousePointerClick className="h-4 w-4 text-muted-foreground/40" />
         </div>
         <p className="text-sm text-muted-foreground/60">Click an event to inspect its properties</p>
-      </div>
+      </>
     )
   }
 
