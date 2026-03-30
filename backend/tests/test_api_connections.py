@@ -98,3 +98,55 @@ class TestSchemaConfigNewFields:
         body = resp.json()
         assert body["resurrection_window_days"] == 30
         assert body["power_user_threshold_days"] == 4
+
+
+class TestSchemaConfigUserIdentityFields:
+    def test_put_and_get_roundtrip_user_identity_fields(self, schema_client):
+        """PUT stores optional user identity fields; GET returns them."""
+        payload = {
+            "user_id_field": "uid",
+            "timestamp_field": "ts",
+            "event_name_field": "event",
+            "events_table": "events",
+            "custom_properties": [],
+            "session_timeout_minutes": 30,
+            "resurrection_window_days": 30,
+            "power_user_threshold_days": 4,
+            "email_field": "user_email",
+            "first_name_field": "fname",
+            "last_name_field": None,
+            "date_of_birth_field": None,
+            "phone_field": "mobile",
+        }
+        resp = schema_client.put("/api/connections/conn-1/schema", json=payload)
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["email_field"] == "user_email"
+        assert body["first_name_field"] == "fname"
+        assert body["last_name_field"] is None
+        assert body["phone_field"] == "mobile"
+
+        get_resp = schema_client.get("/api/connections/conn-1/schema")
+        assert get_resp.status_code == 200
+        got = get_resp.json()
+        assert got["email_field"] == "user_email"
+        assert got["first_name_field"] == "fname"
+        assert got["phone_field"] == "mobile"
+
+    def test_put_without_user_identity_fields_defaults_to_none(self, schema_client):
+        """Omitting user identity fields is valid; they default to None."""
+        payload = {
+            "user_id_field": "user_id",
+            "timestamp_field": "timestamp",
+            "event_name_field": "event_name",
+            "events_table": "events",
+            "custom_properties": [],
+            "session_timeout_minutes": 30,
+            "resurrection_window_days": 30,
+            "power_user_threshold_days": 4,
+        }
+        resp = schema_client.put("/api/connections/conn-1/schema", json=payload)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["email_field"] is None
+        assert body["first_name_field"] is None
