@@ -237,7 +237,7 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
   const [queryResults, setQueryResults] = useState<Record<number, QueryStudioResponse | null>>({})
   const [queryRunning, setQueryRunning] = useState<Record<number, boolean>>({})
   const [activeResultIndex, setActiveResultIndex] = useState(0)
-  const [resultsOpen, setResultsOpen] = useState(true)
+  const [resultsOpen, setResultsOpen] = useState(false)
 
   useEffect(() => {
     if (!expanded) return
@@ -255,6 +255,7 @@ function DevCardInner({ sql, children, className }: DevCardProps) {
     async (q: string, index: number) => {
       setQueryRunning((r) => ({ ...r, [index]: true }))
       setActiveResultIndex(index)
+      setResultsOpen(true)
       try {
         const res = await executeQueryStudio({
           sql: q,
