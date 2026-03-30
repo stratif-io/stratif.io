@@ -150,7 +150,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   const flatMetrics = CATEGORIES.flatMap((c) => c.metrics)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] lg:items-start gap-4">
       {/* LEFT: Hero card — height synced to right column via ResizeObserver */}
       <div ref={heroWrapperRef}>
         <DevCard
