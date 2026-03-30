@@ -135,11 +135,11 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   const flatMetrics = CATEGORIES.flatMap((c) => c.metrics)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] lg:items-start gap-4">
       {/* LEFT: Hero card */}
       <DevCard
         sql={buildAllSql(metricSql?.[heroMetric], trends[heroMetric]?.sql)}
-        className="lg:self-start"
+        className="lg:self-stretch"
       >
         <HeroMetricCard
           label={heroConfig.label}
