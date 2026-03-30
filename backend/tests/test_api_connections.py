@@ -189,7 +189,18 @@ class TestSuggestFieldsUserIdentity:
         result = _suggest_fields(self._cols(["user_id", "ts", "event", "phone"]))
         assert result.get("phone_field") == "phone"
 
+    def test_suggests_last_name_from_surname(self):
+        result = _suggest_fields(self._cols(["user_id", "ts", "event", "surname"]))
+        assert result.get("last_name_field") == "surname"
+
+    def test_suggests_phone_from_mobile(self):
+        result = _suggest_fields(self._cols(["user_id", "ts", "event", "mobile"]))
+        assert result.get("phone_field") == "mobile"
+
     def test_no_suggestion_when_no_match(self):
         result = _suggest_fields(self._cols(["user_id", "ts", "event"]))
         assert "email_field" not in result
         assert "first_name_field" not in result
+        assert "last_name_field" not in result
+        assert "date_of_birth_field" not in result
+        assert "phone_field" not in result
