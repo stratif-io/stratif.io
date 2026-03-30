@@ -32,8 +32,9 @@ class SQLiteSeeder(BaseSeeder):
     # ------------------------------------------------------------------
 
     def _create_events_table(self) -> None:
+        self._conn.execute("DROP TABLE IF EXISTS events")
         self._conn.execute("""
-            CREATE TABLE IF NOT EXISTS events (
+            CREATE TABLE events (
                 user_id     TEXT     NOT NULL,
                 event_name  TEXT     NOT NULL,
                 timestamp   DATETIME NOT NULL,

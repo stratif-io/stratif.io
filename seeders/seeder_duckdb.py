@@ -38,8 +38,9 @@ class DuckDBSeeder(BaseSeeder):
     # ------------------------------------------------------------------
 
     def _create_events_table(self) -> None:
+        self._conn.execute("DROP TABLE IF EXISTS events")
         self._conn.execute("""
-            CREATE TABLE IF NOT EXISTS events (
+            CREATE TABLE events (
                 user_id     VARCHAR,
                 event_name  VARCHAR,
                 timestamp   TIMESTAMP,

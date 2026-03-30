@@ -38,8 +38,9 @@ class ClickHouseSeeder(BaseSeeder):
 
     def _create_events_table(self) -> None:
         assert self._client is not None, "_client not initialized — call seed() first"
+        self._client.command("DROP TABLE IF EXISTS events")
         self._client.command("""
-            CREATE TABLE IF NOT EXISTS events (
+            CREATE TABLE events (
                 user_id     String,
                 event_name  String,
                 timestamp   DateTime64(6),

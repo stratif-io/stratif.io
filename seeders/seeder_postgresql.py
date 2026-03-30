@@ -38,8 +38,9 @@ class PostgreSQLSeeder(BaseSeeder):
         assert self._conn is not None, "_conn not initialized — call seed() first"
         cur = self._conn.cursor()
         try:
+            cur.execute("DROP TABLE IF EXISTS events")
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS events (
+                CREATE TABLE events (
                     user_id     TEXT        NOT NULL,
                     event_name  TEXT        NOT NULL,
                     timestamp   TIMESTAMPTZ NOT NULL,
