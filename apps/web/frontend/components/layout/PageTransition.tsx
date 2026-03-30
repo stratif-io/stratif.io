@@ -9,7 +9,7 @@ interface PageTransitionProps {
  */
 export function PageTransition({ children }: PageTransitionProps) {
   return (
-    <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300">
+    <div className="h-full motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300">
       {children}
     </div>
   )

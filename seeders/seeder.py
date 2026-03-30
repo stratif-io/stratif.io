@@ -11,7 +11,7 @@ import random
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -379,6 +379,144 @@ SEARCH_QUERIES = [
     "fitness tracker",
 ]
 
+COUNTRY_TRAITS: dict[str, Any] = {
+    "US": {
+        "first_names": [
+            "James", "John", "Robert", "Michael", "William", "David", "Richard",
+            "Joseph", "Thomas", "Charles", "Mary", "Patricia", "Jennifer", "Linda",
+            "Barbara", "Elizabeth", "Susan", "Jessica", "Sarah", "Karen",
+        ],
+        "last_names": [
+            "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller",
+            "Davis", "Wilson", "Anderson", "Taylor", "Thomas", "Jackson", "White",
+            "Harris", "Martin", "Thompson", "Young", "Robinson", "Lewis",
+        ],
+        "phone_format": "+1-{area}-{mid}-XXXX",
+        "phone_area_codes": ["212", "310", "312", "713", "602", "215", "210", "619", "214", "408"],
+        "phone_mid_range": (100, 999),
+    },
+    "UK": {
+        "first_names": [
+            "Oliver", "Jack", "Harry", "George", "Noah", "Charlie", "Jacob",
+            "Alfie", "Freddie", "Oscar", "Olivia", "Amelia", "Isla", "Ava",
+            "Mia", "Isabella", "Sophia", "Grace", "Lily", "Emily",
+        ],
+        "last_names": [
+            "Smith", "Jones", "Williams", "Taylor", "Brown", "Davies", "Evans",
+            "Wilson", "Thomas", "Roberts", "Johnson", "Lewis", "Walker", "Robinson",
+            "Wood", "Thompson", "White", "Watson", "Jackson", "Wright",
+        ],
+        "phone_format": "+44-7{mid}-XXX-XXX",
+        "phone_area_codes": None,
+        "phone_mid_range": (100, 999),
+    },
+    "DE": {
+        "first_names": [
+            "Luca", "Leon", "Finn", "Jonas", "Luis", "Max", "Felix", "Paul",
+            "Ben", "Elias", "Emma", "Mia", "Hannah", "Sofia", "Anna",
+            "Lena", "Laura", "Julia", "Sarah", "Lea",
+        ],
+        "last_names": [
+            "Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer",
+            "Wagner", "Becker", "Schulz", "Hoffmann", "Schäfer", "Koch",
+            "Bauer", "Richter", "Klein", "Wolf", "Schröder", "Neumann",
+            "Schwarz", "Zimmermann",
+        ],
+        "phone_format": "+49-{area}-XXXXXXX",
+        "phone_area_codes": ["30", "40", "89", "221", "69", "711", "211", "231", "201", "341"],
+        "phone_mid_range": None,
+    },
+    "FR": {
+        "first_names": [
+            "Gabriel", "Léo", "Raphaël", "Louis", "Lucas", "Arthur", "Hugo",
+            "Adam", "Liam", "Jules", "Emma", "Jade", "Louise", "Alice",
+            "Chloé", "Inès", "Léa", "Manon", "Camille", "Zoé",
+        ],
+        "last_names": [
+            "Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard",
+            "Petit", "Durand", "Leroy", "Moreau", "Simon", "Laurent",
+            "Lefebvre", "Michel", "Garcia", "David", "Bertrand", "Roux",
+            "Vincent", "Fournier",
+        ],
+        "phone_format": "+33-6{mid}-XX-XX-XX",
+        "phone_area_codes": None,
+        "phone_mid_range": (10, 99),
+    },
+    "JP": {
+        "first_names": [
+            "Haruto", "Yuto", "Sota", "Yuki", "Hayato", "Haruki", "Ryusei",
+            "Kento", "Shota", "Daiki", "Yui", "Aoi", "Hina", "Rin",
+            "Saki", "Miyu", "Nanami", "Sakura", "Haruka", "Mana",
+        ],
+        "last_names": [
+            "Sato", "Suzuki", "Takahashi", "Tanaka", "Watanabe", "Ito",
+            "Yamamoto", "Nakamura", "Kobayashi", "Kato", "Yoshida", "Yamada",
+            "Sasaki", "Yamaguchi", "Matsumoto", "Inoue", "Kimura", "Hayashi",
+            "Shimizu", "Yamazaki",
+        ],
+        "phone_format": "+81-{area}-XXXX-XXXX",
+        "phone_area_codes": ["3", "45", "6", "52", "11", "92", "78", "75", "44", "48"],
+        "phone_mid_range": None,
+    },
+    "BR": {
+        "first_names": [
+            "Miguel", "Arthur", "Heitor", "Bernardo", "Davi", "Lorenzo",
+            "Théo", "Pedro", "Gabriel", "Lucas", "Alice", "Sophia", "Helena",
+            "Valentina", "Laura", "Isabella", "Manuela", "Julia", "Heloísa", "Luisa",
+        ],
+        "last_names": [
+            "Silva", "Santos", "Oliveira", "Souza", "Rodrigues", "Ferreira",
+            "Alves", "Pereira", "Lima", "Gomes", "Costa", "Ribeiro",
+            "Martins", "Carvalho", "Almeida", "Lopes", "Sousa", "Fernandes",
+            "Vieira", "Barbosa",
+        ],
+        "phone_format": "+55-{area}-9XXXX-XXXX",
+        "phone_area_codes": ["11", "21", "61", "71", "85", "31", "92", "41", "81", "51"],
+        "phone_mid_range": None,
+    },
+    "IN": {
+        "first_names": [
+            "Aarav", "Vivaan", "Aditya", "Vihaan", "Arjun", "Sai", "Reyansh",
+            "Ayaan", "Krishna", "Ishaan", "Diya", "Ananya", "Pari", "Anika",
+            "Aadhya", "Aarohi", "Myra", "Sara", "Fatima", "Kiara",
+        ],
+        "last_names": [
+            "Sharma", "Verma", "Patel", "Singh", "Kumar", "Gupta", "Shah",
+            "Mehta", "Joshi", "Yadav", "Mishra", "Nair", "Iyer", "Reddy",
+            "Bose", "Chatterjee", "Das", "Mukherjee", "Pillai", "Menon",
+        ],
+        "phone_format": "+91-{area}-XXXX-XXXX",
+        "phone_area_codes": ["22", "11", "80", "40", "44", "33", "79", "20", "261", "141"],
+        "phone_mid_range": None,
+    },
+    "AU": {
+        "first_names": [
+            "Oliver", "William", "Jack", "Noah", "Thomas", "Liam", "Ethan",
+            "James", "Lucas", "Cooper", "Charlotte", "Olivia", "Amelia", "Isla",
+            "Mia", "Ava", "Grace", "Lily", "Sophie", "Chloe",
+        ],
+        "last_names": [
+            "Smith", "Jones", "Williams", "Brown", "Wilson", "Taylor", "Johnson",
+            "White", "Martin", "Anderson", "Thompson", "Nguyen", "Harris",
+            "Robinson", "Walker", "Young", "Allen", "King", "Wright", "Scott",
+        ],
+        "phone_format": "+61-4{mid}-XXX-XXX",
+        "phone_area_codes": None,
+        "phone_mid_range": (10, 99),
+    },
+}
+
+EMAIL_PROVIDERS = [
+    "fastmail.io",
+    "inboxhub.net",
+    "mailnest.com",
+    "quickpost.org",
+    "dropmail.co",
+    "pingbox.net",
+    "letterloop.com",
+    "postwave.io",
+]
+
 INSERT_BATCH_SIZE = 5000
 PROGRESS_INTERVAL = 50_000
 
@@ -432,6 +570,40 @@ class BaseSeeder(ABC):
                     }
                 )
 
+    def _generate_traits(self, country_code: str) -> dict:
+        t = COUNTRY_TRAITS[country_code]
+
+        first_name = random.choice(t["first_names"])
+        last_name = random.choice(t["last_names"])
+
+        # Phone — replace X with random digits, keep the rest as-is
+        fmt: str = t["phone_format"]
+        if t["phone_area_codes"]:
+            fmt = fmt.replace("{area}", random.choice(t["phone_area_codes"]))
+        if t["phone_mid_range"]:
+            lo, hi = t["phone_mid_range"]
+            fmt = fmt.replace("{mid}", str(random.randint(lo, hi)))
+        phone = "".join(
+            str(random.randint(0, 9)) if ch == "X" else ch for ch in fmt
+        )
+
+        provider = random.choice(EMAIL_PROVIDERS)
+        email_local = f"{first_name.lower()}.{last_name.lower()}{random.randint(1, 999)}"
+        email = f"{email_local}@{provider}"
+
+        dob_start = date(1960, 1, 1)
+        dob_end = date(2005, 12, 31)
+        dob_days = (dob_end - dob_start).days
+        dob = dob_start + timedelta(days=random.randint(0, dob_days))
+
+        return {
+            "first_name": first_name,
+            "last_name": last_name,
+            "phone": phone,
+            "email": email,
+            "date_of_birth": dob.isoformat(),
+        }
+
     def _get_random_product(self) -> dict:
         weights = [p["weight"] for p in self._product_cache]
         return random.choices(self._product_cache, weights=weights, k=1)[0]
@@ -482,6 +654,7 @@ class BaseSeeder(ABC):
                     "browser_only": browser_only,
                     "completed_purchase": False,
                     "sessions": [],
+                    "traits": self._generate_traits(country_code),
                 }
             )
 
@@ -627,13 +800,13 @@ class BaseSeeder(ABC):
                     else random.randint(2, 8)
                 )
 
-            properties = self._build_event_properties(
+            props, traits, context = self._build_event_properties(
                 user, session_id, referrer, event_name, visited_products
             )
 
             if event_name == "ProductView":
                 product = self._get_random_product()
-                properties.update(
+                props.update(
                     {
                         "product_id": product["product_id"],
                         "product_name": product["product_name"],
@@ -646,10 +819,10 @@ class BaseSeeder(ABC):
                 while random.random() < 0.4:
                     current_time += timedelta(minutes=random.randint(1, 4))
                     product = self._get_random_product()
-                    additional_props = self._build_event_properties(
+                    add_props, add_traits, add_context = self._build_event_properties(
                         user, session_id, referrer, "ProductView", visited_products
                     )
-                    additional_props.update(
+                    add_props.update(
                         {
                             "product_id": product["product_id"],
                             "product_name": product["product_name"],
@@ -658,15 +831,15 @@ class BaseSeeder(ABC):
                         }
                     )
                     events.append(
-                        (user["id"], "ProductView", current_time, additional_props,
-                         self._get_server(user["country"]))
+                        (user["id"], "ProductView", current_time, add_props,
+                         self._get_server(user["country"]), add_traits, add_context)
                     )
                     visited_products.append(product)
 
             elif event_name == "AddToCart":
                 if visited_products:
                     cart_product = random.choice(visited_products)
-                    properties.update(
+                    props.update(
                         {
                             "product_id": cart_product["product_id"],
                             "product_name": cart_product["product_name"],
@@ -683,7 +856,7 @@ class BaseSeeder(ABC):
                         min(len(visited_products), random.randint(1, 3)),
                     )
                     total = sum(p["product_price"] for p in purchased)
-                    properties.update(
+                    props.update(
                         {
                             "order_id": str(uuid.uuid4())[:12],
                             "total_amount": round(total, 2),
@@ -696,8 +869,8 @@ class BaseSeeder(ABC):
                     )
                     user["completed_purchase"] = True
 
-            events.append((user["id"], event_name, current_time, properties,
-                           self._get_server(user["country"])))
+            events.append((user["id"], event_name, current_time, props,
+                           self._get_server(user["country"]), traits, context))
             progress_prob = FUNNEL_DROP_OFF[event_name]
 
         return events
@@ -708,32 +881,24 @@ class BaseSeeder(ABC):
         events = []
         current_time = session_start
 
-        events.append(
-            (
-                user["id"],
-                "Home",
-                current_time,
-                self._build_event_properties(user, session_id, referrer, "Home", []),
-                self._get_server(user["country"]),
-            )
+        home_props, home_traits, home_context = self._build_event_properties(
+            user, session_id, referrer, "Home", []
         )
+        events.append((user["id"], "Home", current_time, home_props,
+                       self._get_server(user["country"]), home_traits, home_context))
 
         current_time += timedelta(minutes=random.randint(1, 3))
-        events.append(
-            (
-                user["id"],
-                "Search",
-                current_time,
-                self._build_event_properties(user, session_id, referrer, "Search", []),
-                self._get_server(user["country"]),
-            )
+        search_props, search_traits, search_context = self._build_event_properties(
+            user, session_id, referrer, "Search", []
         )
+        events.append((user["id"], "Search", current_time, search_props,
+                       self._get_server(user["country"]), search_traits, search_context))
 
         num_products = random.randint(1, 5)
         for _ in range(num_products):
             current_time += timedelta(minutes=random.randint(1, 4))
             product = self._get_random_product()
-            props = self._build_event_properties(
+            props, traits, context = self._build_event_properties(
                 user, session_id, referrer, "ProductView", []
             )
             props.update(
@@ -745,7 +910,7 @@ class BaseSeeder(ABC):
                 }
             )
             events.append((user["id"], "ProductView", current_time, props,
-                           self._get_server(user["country"])))
+                           self._get_server(user["country"]), traits, context))
 
         return events
 
@@ -757,8 +922,32 @@ class BaseSeeder(ABC):
         event_name: str,
         visited_products: list[dict],
     ) -> dict:
-        properties = {
+        event_props: dict = {
             "session_id": session_id,
+            "is_returning_user": user["is_returning"],
+        }
+
+        if event_name == "Home":
+            event_props["page_url"] = URL_PATHS["Home"]
+        elif event_name == "Search":
+            query = random.choice(SEARCH_QUERIES)
+            event_props["page_url"] = URL_PATHS["Search"].format(
+                query=query.replace(" ", "+")
+            )
+            event_props["search_query"] = query
+        elif event_name == "ProductView":
+            if visited_products:
+                product = visited_products[-1]
+                event_props["page_url"] = URL_PATHS["ProductView"].format(
+                    product_id=product["product_id"]
+                )
+        elif event_name == "AddToCart":
+            event_props["page_url"] = "/cart"
+        elif event_name == "Purchase":
+            event_props["page_url"] = URL_PATHS["Purchase"]
+
+        traits = user["traits"]
+        context = {
             "country": user["country"],
             "city": user["city"],
             "timezone": user["timezone"],
@@ -767,29 +956,8 @@ class BaseSeeder(ABC):
             "os": user["os"],
             "screen_resolution": user["screen_resolution"],
             "referrer": referrer,
-            "is_returning_user": user["is_returning"],
         }
-
-        if event_name == "Home":
-            properties["page_url"] = URL_PATHS["Home"]
-        elif event_name == "Search":
-            query = random.choice(SEARCH_QUERIES)
-            properties["page_url"] = URL_PATHS["Search"].format(
-                query=query.replace(" ", "+")
-            )
-            properties["search_query"] = query
-        elif event_name == "ProductView":
-            if visited_products:
-                product = visited_products[-1]
-                properties["page_url"] = URL_PATHS["ProductView"].format(
-                    product_id=product["product_id"]
-                )
-        elif event_name == "AddToCart":
-            properties["page_url"] = "/cart"
-        elif event_name == "Purchase":
-            properties["page_url"] = URL_PATHS["Purchase"]
-
-        return properties
+        return event_props, traits, context
 
     def _weighted_choice(self, choices: list[tuple]) -> str:
         items = [c[0] for c in choices]
