@@ -112,7 +112,6 @@ def _fetch_period_metrics(
         [str(period_start), str(period_end)],
     )
     new_users = new_rows[0][0] if new_rows else 0
-    returning_users = max(0, unique_users - new_users)
 
     # --- 4. DAU/MAU ratio ---
     mau_start = period_end - timedelta(days=27)
@@ -143,6 +142,29 @@ def _fetch_period_metrics(
     dau = dau_rows[0][0] if dau_rows else 0.0
     dau_mau_ratio = round(dau / mau, 4) if mau else 0.0
 
+    # --- 5. New metrics (delegated to _fetch_single_metric) ---
+    resurrected_users = int(
+        _fetch_single_metric(db, "resurrected_users", period_start, period_end, filter_clauses, filter_params)
+    )
+    returning_users = int(
+        _fetch_single_metric(db, "returning_users", period_start, period_end, filter_clauses, filter_params)
+    )
+    churned_users = int(
+        _fetch_single_metric(db, "churned_users", period_start, period_end, filter_clauses, filter_params)
+    )
+    retention_rate = float(
+        _fetch_single_metric(db, "retention_rate", period_start, period_end, filter_clauses, filter_params)
+    )
+    wau = int(
+        _fetch_single_metric(db, "wau", period_start, period_end, filter_clauses, filter_params)
+    )
+    avg_active_days = float(
+        _fetch_single_metric(db, "avg_active_days", period_start, period_end, filter_clauses, filter_params)
+    )
+    power_users = int(
+        _fetch_single_metric(db, "power_users", period_start, period_end, filter_clauses, filter_params)
+    )
+
     return {
         "total_events": int(total_events),
         "unique_users": int(unique_users),
@@ -150,7 +172,13 @@ def _fetch_period_metrics(
         "avg_session_duration_sec": float(avg_session_duration_sec),
         "avg_events_per_session": float(avg_events_per_session),
         "new_users": int(new_users),
-        "returning_users": int(returning_users),
+        "returning_users": returning_users,
+        "resurrected_users": resurrected_users,
+        "churned_users": churned_users,
+        "retention_rate": retention_rate,
+        "wau": wau,
+        "avg_active_days": avg_active_days,
+        "power_users": power_users,
         "dau_mau_ratio": float(dau_mau_ratio),
     }
 

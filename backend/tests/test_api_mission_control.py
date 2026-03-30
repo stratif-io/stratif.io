@@ -286,11 +286,12 @@ class TestMissionControlMetricEndpoint:
         body = response.json()
         assert 0.0 <= body["current"] <= 1.0
 
-    def test_all_9_metrics_return_200(self, client):
+    def test_all_14_metrics_return_200(self, client):
         metrics = [
             "total_events", "unique_users", "total_sessions",
             "avg_session_duration_sec", "avg_events_per_session",
             "new_users", "returning_users", "resurrected_users", "dau_mau_ratio",
+            "wau", "avg_active_days", "power_users", "churned_users", "retention_rate",
         ]
         for m in metrics:
             r = client.get(
@@ -298,6 +299,23 @@ class TestMissionControlMetricEndpoint:
                 params={"metric": m, "start_date": "2024-01-15", "end_date": "2024-01-16"},
             )
             assert r.status_code == 200, f"metric {m} returned {r.status_code}"
+
+
+def test_mission_control_aggregate_includes_all_14_metrics(client):
+    resp = client.get(
+        "/api/mission-control",
+        params={"start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    current = resp.json()["current"]
+    expected_keys = {
+        "total_events", "unique_users", "total_sessions",
+        "avg_session_duration_sec", "avg_events_per_session",
+        "new_users", "returning_users", "resurrected_users",
+        "churned_users", "retention_rate", "wau",
+        "avg_active_days", "power_users", "dau_mau_ratio",
+    }
+    assert expected_keys == set(current.keys())
 
 
 def test_resurrected_users_in_supported_metrics(client):
