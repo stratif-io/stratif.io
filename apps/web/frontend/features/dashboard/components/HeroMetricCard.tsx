@@ -140,7 +140,7 @@ export const HeroMetricCard = memo(function HeroMetricCard({
       {/* Chart fills the card — no padding, chart is the primary visual */}
       <div
         className={cn(
-          'flex-1 min-h-[160px] h-0 transition-opacity duration-700',
+          'flex-1 min-h-0 h-0 transition-opacity duration-700',
           loading ? 'opacity-0' : 'opacity-100'
         )}
       >
