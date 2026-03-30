@@ -1,11 +1,57 @@
 import { useEffect, useRef, useState } from 'react'
 import { EditorView, keymap, lineNumbers, highlightActiveLine } from '@codemirror/view'
-import { EditorState } from '@codemirror/state'
+import { EditorState, Compartment } from '@codemirror/state'
 import { sql } from '@codemirror/lang-sql'
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
+import { tags } from '@lezer/highlight'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { autocompletion, closeBrackets } from '@codemirror/autocomplete'
 import { format } from 'sql-formatter'
+import { useAppStore } from '@/stores'
+
+const lightHighlightStyle = HighlightStyle.define([
+  { tag: tags.keyword, color: '#0000ff' },
+  { tag: tags.string, color: '#a31515' },
+  { tag: tags.number, color: '#098658' },
+  { tag: tags.comment, color: '#008000', fontStyle: 'italic' },
+  { tag: tags.operator, color: '#000000' },
+  { tag: tags.punctuation, color: '#000000' },
+  { tag: tags.name, color: '#001080' },
+  { tag: tags.typeName, color: '#267f99' },
+  { tag: tags.function(tags.name), color: '#795e26' },
+])
+
+const lightTheme = EditorView.theme(
+  {
+    '&': { background: '#ffffff', color: '#000000' },
+    '.cm-content': { caretColor: '#000000' },
+    '.cm-cursor': { borderLeftColor: '#000000' },
+    '.cm-activeLine': { backgroundColor: '#f0f0f0' },
+    '.cm-gutters': { background: '#f5f5f5', color: '#999', border: 'none' },
+    '.cm-activeLineGutter': { backgroundColor: '#e8e8e8' },
+    '.cm-selectionBackground': { backgroundColor: '#add6ff' },
+    '&.cm-focused .cm-selectionBackground': { backgroundColor: '#add6ff' },
+  },
+  { dark: false }
+)
+
+function useIsDark(): boolean {
+  const theme = useAppStore((s) => s.theme)
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
+  useEffect(() => {
+    if (theme === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)')
+      setDark(mq.matches)
+      const handler = (e: MediaQueryListEvent) => setDark(e.matches)
+      mq.addEventListener('change', handler)
+      return () => mq.removeEventListener('change', handler)
+    } else {
+      setDark(theme === 'dark')
+    }
+  }, [theme])
+  return dark
+}
 
 const LIMIT_VALUE = 1000
 
@@ -28,8 +74,10 @@ export function QueryEditor({
 }: QueryEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const themeCompartmentRef = useRef(new Compartment())
   const limitEnabledRef = useRef(limitEnabled)
   const onExecuteRef = useRef(onExecute)
+  const dark = useIsDark()
   useEffect(() => {
     limitEnabledRef.current = limitEnabled
   }, [limitEnabled])
@@ -55,7 +103,9 @@ export function QueryEditor({
               ? Object.fromEntries(tableNames.map((t) => [t, []]))
               : undefined,
           }),
-          oneDark,
+          themeCompartmentRef.current.of(
+            dark ? oneDark : [lightTheme, syntaxHighlighting(lightHighlightStyle)]
+          ),
           keymap.of([
             ...defaultKeymap,
             ...historyKeymap,
@@ -99,6 +149,17 @@ export function QueryEditor({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // mount once
+
+  // Swap theme when dark mode changes
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view) return
+    view.dispatch({
+      effects: themeCompartmentRef.current.reconfigure(
+        dark ? oneDark : [lightTheme, syntaxHighlighting(lightHighlightStyle)]
+      ),
+    })
+  }, [dark])
 
   // Sync external value changes (e.g. restoring from history)
   useEffect(() => {

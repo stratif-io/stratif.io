@@ -11,15 +11,18 @@ CREATE TABLE IF NOT EXISTS connections (
 );
 
 CREATE TABLE IF NOT EXISTS connection_schema_configs (
-    id                      TEXT PRIMARY KEY,
-    connection_id           TEXT UNIQUE NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
-    user_id_field           TEXT NOT NULL DEFAULT 'user_id',
-    timestamp_field         TEXT NOT NULL DEFAULT 'timestamp',
-    event_name_field        TEXT NOT NULL DEFAULT 'event_name',
-    events_table            TEXT NOT NULL DEFAULT 'events',
-    custom_properties       TEXT NOT NULL DEFAULT '[]',
-    session_timeout_minutes INTEGER NOT NULL DEFAULT 30,
-    updated_at              TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    id                        TEXT PRIMARY KEY,
+    connection_id             TEXT UNIQUE NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
+    user_id_field             TEXT NOT NULL DEFAULT 'user_id',
+    timestamp_field           TEXT NOT NULL DEFAULT 'timestamp',
+    event_name_field          TEXT NOT NULL DEFAULT 'event_name',
+    events_table              TEXT NOT NULL DEFAULT 'events',
+    custom_properties         TEXT NOT NULL DEFAULT '[]',
+    session_timeout_minutes   INTEGER NOT NULL DEFAULT 30,
+    resurrection_window_days  INTEGER NOT NULL DEFAULT 30,
+    power_user_threshold_days INTEGER NOT NULL DEFAULT 4,
+    pinned_metrics            TEXT NOT NULL DEFAULT '[]',
+    updated_at                TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
 CREATE TABLE IF NOT EXISTS connection_filter_configs (
@@ -57,3 +60,18 @@ def init_product_db(db=None) -> None:
             DROP TABLE connections;
             ALTER TABLE connections_new RENAME TO connections;
         """)
+    # Migrate: add resurrection_window_days, power_user_threshold_days, pinned_metrics
+    existing_cols = db.fetchall("PRAGMA table_info(connection_schema_configs)")
+    existing_names = {r["name"] for r in existing_cols}
+    if "resurrection_window_days" not in existing_names:
+        db.executescript(
+            "ALTER TABLE connection_schema_configs ADD COLUMN resurrection_window_days INTEGER NOT NULL DEFAULT 30;"
+        )
+    if "power_user_threshold_days" not in existing_names:
+        db.executescript(
+            "ALTER TABLE connection_schema_configs ADD COLUMN power_user_threshold_days INTEGER NOT NULL DEFAULT 4;"
+        )
+    if "pinned_metrics" not in existing_names:
+        db.executescript(
+            "ALTER TABLE connection_schema_configs ADD COLUMN pinned_metrics TEXT NOT NULL DEFAULT '[]';"
+        )

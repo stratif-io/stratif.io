@@ -131,6 +131,8 @@ export function SchemaConfigTab({ connId }: Props) {
   const [eventNameField, setEventNameField] = useState('event_name')
   const [eventsTable, setEventsTable] = useState('events')
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30)
+  const [resurrectionWindowDays, setResurrectionWindowDays] = useState(30)
+  const [powerUserThresholdDays, setPowerUserThresholdDays] = useState(4)
   const [customProps, setCustomProps] = useState<CustomProperty[]>([])
   const [detectedColumns, setDetectedColumns] = useState<string[]>([])
 
@@ -150,6 +152,8 @@ export function SchemaConfigTab({ connId }: Props) {
       setEventNameField(data.event_name_field)
       setEventsTable(data.events_table ?? 'events')
       setSessionTimeoutMinutes(data.session_timeout_minutes ?? 30)
+      setResurrectionWindowDays(data.resurrection_window_days ?? 30)
+      setPowerUserThresholdDays(data.power_user_threshold_days ?? 4)
       setCustomProps(data.custom_properties)
     }
     initialized.current = true
@@ -178,11 +182,22 @@ export function SchemaConfigTab({ connId }: Props) {
         events_table: eventsTable,
         custom_properties: customProps,
         session_timeout_minutes: sessionTimeoutMinutes,
+        resurrection_window_days: resurrectionWindowDays,
+        power_user_threshold_days: powerUserThresholdDays,
       })
     }, 800)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userIdField, timestampField, eventNameField, eventsTable, sessionTimeoutMinutes, customProps])
+  }, [
+    userIdField,
+    timestampField,
+    eventNameField,
+    eventsTable,
+    sessionTimeoutMinutes,
+    resurrectionWindowDays,
+    powerUserThresholdDays,
+    customProps,
+  ])
 
   // Auto-save filter (debounced 600ms)
   useEffect(() => {
@@ -303,6 +318,8 @@ export function SchemaConfigTab({ connId }: Props) {
                 events_table: eventsTable,
                 custom_properties: customProps,
                 session_timeout_minutes: sessionTimeoutMinutes,
+                resurrection_window_days: resurrectionWindowDays,
+                power_user_threshold_days: powerUserThresholdDays,
               })
             }
           />
@@ -366,6 +383,48 @@ export function SchemaConfigTab({ connId }: Props) {
             className="w-20"
           />
           <span className="text-sm text-muted-foreground">min</span>
+        </div>
+
+        {/* Resurrection window */}
+        <div className="flex items-center gap-3">
+          <Label
+            htmlFor="resurrection_window_days"
+            className="text-sm text-muted-foreground whitespace-nowrap"
+          >
+            Resurrection window
+          </Label>
+          <Input
+            id="resurrection_window_days"
+            type="number"
+            min={1}
+            max={365}
+            value={resurrectionWindowDays}
+            onChange={(e) => setResurrectionWindowDays(Number(e.target.value))}
+            placeholder="30"
+            className="w-20"
+          />
+          <span className="text-sm text-muted-foreground">days</span>
+        </div>
+
+        {/* Power user threshold */}
+        <div className="flex items-center gap-3">
+          <Label
+            htmlFor="power_user_threshold_days"
+            className="text-sm text-muted-foreground whitespace-nowrap"
+          >
+            Power user threshold
+          </Label>
+          <Input
+            id="power_user_threshold_days"
+            type="number"
+            min={1}
+            max={31}
+            value={powerUserThresholdDays}
+            onChange={(e) => setPowerUserThresholdDays(Number(e.target.value))}
+            placeholder="4"
+            className="w-20"
+          />
+          <span className="text-sm text-muted-foreground">active days</span>
         </div>
       </div>
 

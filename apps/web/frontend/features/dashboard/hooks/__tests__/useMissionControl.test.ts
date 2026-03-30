@@ -37,6 +37,12 @@ const METRICS = [
   'avg_events_per_session',
   'new_users',
   'returning_users',
+  'resurrected_users',
+  'churned_users',
+  'retention_rate',
+  'wau',
+  'avg_active_days',
+  'power_users',
   'dau_mau_ratio',
 ] as const
 
@@ -63,7 +69,7 @@ describe('useMissionControl', () => {
     expect(result.current.data!.current.total_events).toBe(0)
   })
 
-  it('reconstructs MissionControlResponse from 8 individual results', async () => {
+  it('reconstructs MissionControlResponse from 14 individual results', async () => {
     const { result } = renderHook(() => useMissionControl({ dateRange }), {
       wrapper: makeWrapper(),
     })
@@ -122,7 +128,7 @@ describe('useMissionControl', () => {
     )
     // Queries must fire even when no date range is selected (all-time)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
-    expect(fetchMissionControlMetric).toHaveBeenCalledTimes(8)
+    expect(fetchMissionControlMetric).toHaveBeenCalledTimes(14)
     // Data must be populated, not undefined
     expect(result.current.data).toBeDefined()
     expect(result.current.data!.current.total_events).toBe(42)
@@ -154,12 +160,12 @@ describe('useMissionControl', () => {
     }
   })
 
-  it('calls fetchMissionControlMetric once per metric (8 times)', async () => {
+  it('calls fetchMissionControlMetric once per metric (14 times)', async () => {
     const { result } = renderHook(() => useMissionControl({ dateRange }), {
       wrapper: makeWrapper(),
     })
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
-    expect(fetchMissionControlMetric).toHaveBeenCalledTimes(8)
+    expect(fetchMissionControlMetric).toHaveBeenCalledTimes(14)
   })
 })

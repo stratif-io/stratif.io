@@ -7,8 +7,10 @@ export function formatMetricValue(metric: string, value: number): string {
     case 'avg_session_duration_sec':
       return formatDuration(value)
     case 'dau_mau_ratio':
+    case 'retention_rate':
       return `${(value * 100).toFixed(1)}%`
     case 'avg_events_per_session':
+    case 'avg_active_days':
       return value.toFixed(1)
     default:
       return formatCompactNumber(value)

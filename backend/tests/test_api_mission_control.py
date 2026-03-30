@@ -286,11 +286,12 @@ class TestMissionControlMetricEndpoint:
         body = response.json()
         assert 0.0 <= body["current"] <= 1.0
 
-    def test_all_8_metrics_return_200(self, client):
+    def test_all_14_metrics_return_200(self, client):
         metrics = [
             "total_events", "unique_users", "total_sessions",
             "avg_session_duration_sec", "avg_events_per_session",
-            "new_users", "returning_users", "dau_mau_ratio",
+            "new_users", "returning_users", "resurrected_users", "dau_mau_ratio",
+            "wau", "avg_active_days", "power_users", "churned_users", "retention_rate",
         ]
         for m in metrics:
             r = client.get(
@@ -298,3 +299,196 @@ class TestMissionControlMetricEndpoint:
                 params={"metric": m, "start_date": "2024-01-15", "end_date": "2024-01-16"},
             )
             assert r.status_code == 200, f"metric {m} returned {r.status_code}"
+
+
+def test_mission_control_aggregate_includes_all_14_metrics(client):
+    resp = client.get(
+        "/api/mission-control",
+        params={"start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    current = resp.json()["current"]
+    expected_keys = {
+        "total_events", "unique_users", "total_sessions",
+        "avg_session_duration_sec", "avg_events_per_session",
+        "new_users", "returning_users", "resurrected_users",
+        "churned_users", "retention_rate", "wau",
+        "avg_active_days", "power_users", "dau_mau_ratio",
+    }
+    assert expected_keys == set(current.keys())
+
+
+def test_resurrected_users_in_supported_metrics(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "resurrected_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+
+
+def test_returning_users_non_negative(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "returning_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["current"] >= 0
+
+
+def test_resurrected_users_non_negative(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "resurrected_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["current"] >= 0
+
+
+def test_analytics_db_exposes_resurrection_window():
+    from backend.services.analytics_db import AnalyticsDatabase
+    from unittest.mock import MagicMock
+    backend_mock = MagicMock()
+    backend_mock.dialect_name = "sqlite"
+    db = AnalyticsDatabase(
+        conn=MagicMock(),
+        backend=backend_mock,
+        events_cte=None,
+        resurrection_window_days=14,
+        power_user_threshold_days=7,
+    )
+    assert db.get_resurrection_window_days() == 14
+    assert db.get_power_user_threshold_days() == 7
+
+
+def test_analytics_db_defaults():
+    from backend.services.analytics_db import AnalyticsDatabase
+    from unittest.mock import MagicMock
+    backend_mock = MagicMock()
+    backend_mock.dialect_name = "sqlite"
+    db = AnalyticsDatabase(conn=MagicMock(), backend=backend_mock, events_cte=None)
+    assert db.get_resurrection_window_days() == 30
+    assert db.get_power_user_threshold_days() == 4
+
+
+def test_trend_resurrected_users_returns_daily_counts(client):
+    resp = client.get(
+        "/api/mission-control/trend",
+        params={
+            "metric": "resurrected_users",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-16",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "data" in body
+    assert all(d["value"] >= 0 for d in body["data"])
+
+
+def test_churned_users_non_negative(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "churned_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["current"] >= 0
+
+
+def test_retention_rate_between_zero_and_one(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "retention_rate", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert 0.0 <= resp.json()["current"] <= 1.0
+
+
+def test_retention_rate_breakdown_in_response(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "retention_rate", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "breakdown" in data
+    assert "retained_count" in data["breakdown"]
+    assert "prev_unique_users" in data["breakdown"]
+
+
+def test_trend_churned_users(client):
+    resp = client.get(
+        "/api/mission-control/trend",
+        params={"metric": "churned_users", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+    )
+    assert resp.status_code == 200
+    assert all(d["value"] >= 0 for d in resp.json()["data"])
+
+
+def test_trend_retention_rate(client):
+    resp = client.get(
+        "/api/mission-control/trend",
+        params={"metric": "retention_rate", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+    )
+    assert resp.status_code == 200
+    assert all(0.0 <= d["value"] <= 1.0 for d in resp.json()["data"])
+
+
+def test_wau_non_negative(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "wau", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["current"] >= 0
+
+
+def test_avg_active_days_non_negative(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "avg_active_days", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["current"] >= 0
+
+
+def test_power_users_lte_unique_users(client):
+    uniq = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "unique_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    ).json()["current"]
+    power = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "power_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    ).json()["current"]
+    assert power <= uniq
+
+
+def test_trend_wau(client):
+    resp = client.get(
+        "/api/mission-control/trend",
+        params={"metric": "wau", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+    )
+    assert resp.status_code == 200
+    assert all(d["value"] >= 0 for d in resp.json()["data"])
+
+
+def test_trend_power_users(client):
+    resp = client.get(
+        "/api/mission-control/trend",
+        params={"metric": "power_users", "start_date": "2024-01-15", "end_date": "2024-01-16"},
+    )
+    assert resp.status_code == 200
+    assert all(d["value"] >= 0 for d in resp.json()["data"])
+
+
+def test_metric_response_includes_sql(client):
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={"metric": "unique_users", "start_date": "2024-01-01", "end_date": "2024-01-31"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "sql" in data
+    sql = data["sql"]
+    sql_text = " ".join(sql) if isinstance(sql, list) else sql
+    assert "COUNT(DISTINCT" in sql_text
