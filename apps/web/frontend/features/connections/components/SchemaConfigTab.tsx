@@ -114,6 +114,17 @@ function CategoryPicker({
   )
 }
 
+// The five optional user identity fields in display order
+const USER_IDENTITY_FIELDS = [
+  { key: 'email_field' as const, label: 'Email', icon: 'Mail' },
+  { key: 'first_name_field' as const, label: 'First Name', icon: 'User' },
+  { key: 'last_name_field' as const, label: 'Last Name', icon: 'User' },
+  { key: 'date_of_birth_field' as const, label: 'Date of Birth', icon: 'Calendar' },
+  { key: 'phone_field' as const, label: 'Phone', icon: 'Phone' },
+] as const
+
+type UserIdentityKey = (typeof USER_IDENTITY_FIELDS)[number]['key']
+
 interface Props {
   connId: string
 }
@@ -136,6 +147,17 @@ export function SchemaConfigTab({ connId }: Props) {
   const [customProps, setCustomProps] = useState<CustomProperty[]>([])
   const [detectedColumns, setDetectedColumns] = useState<string[]>([])
 
+  // Optional user identity fields — null means not mapped
+  const [userIdentityFields, setUserIdentityFields] = useState<
+    Record<UserIdentityKey, string | null>
+  >({
+    email_field: null,
+    first_name_field: null,
+    last_name_field: null,
+    date_of_birth_field: null,
+    phone_field: null,
+  })
+
   const [enabledFields, setEnabledFields] = useState<
     Record<string, { label: string; icon: string }>
   >({})
@@ -155,6 +177,13 @@ export function SchemaConfigTab({ connId }: Props) {
       setResurrectionWindowDays(data.resurrection_window_days ?? 30)
       setPowerUserThresholdDays(data.power_user_threshold_days ?? 4)
       setCustomProps(data.custom_properties)
+      setUserIdentityFields({
+        email_field: data.email_field ?? null,
+        first_name_field: data.first_name_field ?? null,
+        last_name_field: data.last_name_field ?? null,
+        date_of_birth_field: data.date_of_birth_field ?? null,
+        phone_field: data.phone_field ?? null,
+      })
     }
     initialized.current = true
   }, [data, isLoading, isError])
@@ -184,6 +213,7 @@ export function SchemaConfigTab({ connId }: Props) {
         session_timeout_minutes: sessionTimeoutMinutes,
         resurrection_window_days: resurrectionWindowDays,
         power_user_threshold_days: powerUserThresholdDays,
+        ...userIdentityFields,
       })
     }, 800)
     return () => clearTimeout(timer)
@@ -197,6 +227,7 @@ export function SchemaConfigTab({ connId }: Props) {
     resurrectionWindowDays,
     powerUserThresholdDays,
     customProps,
+    userIdentityFields,
   ])
 
   // Auto-save filter (debounced 600ms)
@@ -227,19 +258,37 @@ export function SchemaConfigTab({ connId }: Props) {
     setCustomProps((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
   }
 
-  function toggleFilter(field: string, label: string, categoryId?: string) {
+  function toggleFilter(field: string, label: string, icon: string) {
     setEnabledFields((prev) => {
       const next = { ...prev }
       if (next[field]) {
         delete next[field]
       } else {
-        const cat = categoryId
-          ? (dimensionCategories as DimensionCategoryConfig[]).find((c) => c.id === categoryId)
-          : undefined
-        next[field] = { label, icon: cat?.icon ?? 'Tag' }
+        next[field] = { label, icon }
       }
       return next
     })
+  }
+
+  function toggleEventPropFilter(field: string, label: string, categoryId?: string) {
+    const cat = categoryId
+      ? (dimensionCategories as DimensionCategoryConfig[]).find((c) => c.id === categoryId)
+      : undefined
+    toggleFilter(field, label, cat?.icon ?? 'Tag')
+  }
+
+  function setUserIdentityField(key: UserIdentityKey, value: string | null) {
+    // Capture current column value before updating state
+    const currentColumnValue = userIdentityFields[key]
+    setUserIdentityFields((prev) => ({ ...prev, [key]: value }))
+    // If clearing a field that was in filters, remove it from filters too
+    if (value === null && currentColumnValue) {
+      setEnabledFields((prev) => {
+        const next = { ...prev }
+        delete next[currentColumnValue]
+        return next
+      })
+    }
   }
 
   function handleDetect() {
@@ -251,6 +300,16 @@ export function SchemaConfigTab({ connId }: Props) {
         if (suggestions.timestamp_field) setTimestampField(suggestions.timestamp_field)
         if (suggestions.event_name_field) setEventNameField(suggestions.event_name_field)
         if (events_table) setEventsTable(events_table)
+
+        // Apply user identity suggestions
+        setUserIdentityFields((prev) => ({
+          email_field: suggestions.email_field ?? prev.email_field,
+          first_name_field: suggestions.first_name_field ?? prev.first_name_field,
+          last_name_field: suggestions.last_name_field ?? prev.last_name_field,
+          date_of_birth_field: suggestions.date_of_birth_field ?? prev.date_of_birth_field,
+          phone_field: suggestions.phone_field ?? prev.phone_field,
+        }))
+
         const columnNames = columns.map((c) => c.name)
         const nestedPaths = proposed_custom_properties.map((p) => p.path)
         setDetectedColumns(Array.from(new Set([...columnNames, ...nestedPaths])))
@@ -282,17 +341,11 @@ export function SchemaConfigTab({ connId }: Props) {
 
   if (isLoading || filterLoading) return <LoadingState message="Loading schema config…" />
 
-  const requiredRows = [
-    { field: userIdField, setField: setUserIdField, label: 'User ID' },
-    { field: timestampField, setField: setTimestampField, label: 'Timestamp' },
-    { field: eventNameField, setField: setEventNameField, label: 'Event Name' },
-  ]
-
   const sortedCustomProps = [...customProps.map((prop, idx) => ({ prop, idx }))].sort((a, b) =>
     a.prop.name.localeCompare(b.prop.name)
   )
 
-  const TABLE_GRID = 'grid-cols-[120px_1fr_90px_110px_120px_28px]'
+  const EVENT_GRID = 'grid-cols-[120px_1fr_90px_110px_120px_28px]'
 
   return (
     <div className="space-y-8">
@@ -320,12 +373,12 @@ export function SchemaConfigTab({ connId }: Props) {
                 session_timeout_minutes: sessionTimeoutMinutes,
                 resurrection_window_days: resurrectionWindowDays,
                 power_user_threshold_days: powerUserThresholdDays,
+                ...userIdentityFields,
               })
             }
           />
         </div>
 
-        {/* Events table + Detect */}
         <div className="flex items-center gap-2">
           <Input
             readOnly
@@ -364,7 +417,6 @@ export function SchemaConfigTab({ connId }: Props) {
 
         {detect.isError && <p className="text-sm text-destructive">{detect.error?.message}</p>}
 
-        {/* Session timeout */}
         <div className="flex items-center gap-3">
           <Label
             htmlFor="session_timeout_minutes"
@@ -385,7 +437,6 @@ export function SchemaConfigTab({ connId }: Props) {
           <span className="text-sm text-muted-foreground">min</span>
         </div>
 
-        {/* Resurrection window */}
         <div className="flex items-center gap-3">
           <Label
             htmlFor="resurrection_window_days"
@@ -406,7 +457,6 @@ export function SchemaConfigTab({ connId }: Props) {
           <span className="text-sm text-muted-foreground">days</span>
         </div>
 
-        {/* Power user threshold */}
         <div className="flex items-center gap-3">
           <Label
             htmlFor="power_user_threshold_days"
@@ -428,10 +478,108 @@ export function SchemaConfigTab({ connId }: Props) {
         </div>
       </div>
 
-      {/* ── Section 2: Properties ── */}
+      {/* ── Section 2: User Identity ── */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">User Identity</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Map columns from your events table to known user attributes
+          </p>
+        </div>
+
+        <div className="rounded-md border">
+          {/* Header */}
+          <div className="grid grid-cols-[140px_1fr_110px_28px] gap-3 px-3 py-2 border-b bg-muted/30">
+            {['Field', 'Column', 'Filter', ''].map((h) => (
+              <span key={h} className="text-xs font-medium text-muted-foreground">
+                {h}
+              </span>
+            ))}
+          </div>
+
+          {/* User ID — required, no filter, no clear */}
+          <div className="grid grid-cols-[140px_1fr_110px_28px] gap-3 px-3 py-2.5 border-b items-center opacity-70">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs">User ID</span>
+              <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
+                required
+              </span>
+            </div>
+            <ColumnSelect
+              value={userIdField}
+              detectedColumns={detectedColumns}
+              onChange={setUserIdField}
+              disabled={detectedColumns.length === 0}
+            />
+            <span />
+            <Lock className="h-3.5 w-3.5 text-muted-foreground/40" />
+          </div>
+
+          {/* Optional user identity fields */}
+          {USER_IDENTITY_FIELDS.map(({ key, label, icon }) => {
+            const mapped = userIdentityFields[key]
+            const isMapped = mapped !== null && mapped !== ''
+            const isFilterEnabled = isMapped && mapped in enabledFields
+            return (
+              <div
+                key={key}
+                className="grid grid-cols-[140px_1fr_110px_28px] gap-3 px-3 py-2.5 border-b last:border-b-0 items-center"
+              >
+                <span className={cn('text-xs', !isMapped && 'text-muted-foreground')}>{label}</span>
+                <Select
+                  value={mapped ?? ''}
+                  onValueChange={(v) => setUserIdentityField(key, v || null)}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      'h-8 text-sm font-mono',
+                      !isMapped && 'border-dashed text-muted-foreground'
+                    )}
+                  >
+                    <SelectValue placeholder="Select column…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mapped && !detectedColumns.includes(mapped) && (
+                      <SelectItem key={mapped} value={mapped} className="font-mono text-xs">
+                        {mapped}
+                      </SelectItem>
+                    )}
+                    {detectedColumns.map((col) => (
+                      <SelectItem key={col} value={col} className="font-mono text-xs">
+                        {col}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center">
+                  {isMapped && (
+                    <Checkbox
+                      checked={isFilterEnabled}
+                      onCheckedChange={() => toggleFilter(mapped, label, icon)}
+                    />
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className={cn(
+                    'h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive text-sm',
+                    !isMapped && 'invisible'
+                  )}
+                  onClick={() => setUserIdentityField(key, null)}
+                  aria-label={`Clear ${label}`}
+                >
+                  ×
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Section 3: Event Properties ── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Properties</h3>
+          <h3 className="text-sm font-semibold">Event Properties</h3>
           <Button size="sm" variant="outline" onClick={addProp}>
             <Plus className="h-3.5 w-3.5 mr-1" />
             Add Property
@@ -440,21 +588,24 @@ export function SchemaConfigTab({ connId }: Props) {
 
         <div className="rounded-md border">
           {/* Column headers */}
-          <div className={`grid ${TABLE_GRID} gap-3 px-3 py-2 border-b bg-muted/30`}>
-            {['Field', 'Column', 'Type', 'Category', 'Add to Global Filters', ''].map((h) => (
+          <div className={`grid ${EVENT_GRID} gap-3 px-3 py-2 border-b bg-muted/30`}>
+            {['Field', 'Column', 'Type', 'Category', 'Global Filter', ''].map((h) => (
               <span key={h} className="text-xs font-medium text-muted-foreground">
                 {h}
               </span>
             ))}
           </div>
 
-          {/* Required field rows */}
-          {requiredRows.map(({ field, setField, label }) => {
+          {/* Event Name + Timestamp — required locked rows */}
+          {[
+            { field: eventNameField, setField: setEventNameField, label: 'Event Name' },
+            { field: timestampField, setField: setTimestampField, label: 'Timestamp' },
+          ].map(({ field, setField, label }) => {
             const isEnabled = field in enabledFields
             return (
               <div
                 key={label}
-                className={`grid ${TABLE_GRID} gap-3 px-3 py-2.5 border-b last:border-b-0 items-center opacity-70`}
+                className={`grid ${EVENT_GRID} gap-3 px-3 py-2.5 border-b items-center opacity-70`}
               >
                 <span className="text-xs text-muted-foreground">{label}</span>
                 <ColumnSelect
@@ -468,7 +619,7 @@ export function SchemaConfigTab({ connId }: Props) {
                 <div className="flex items-center">
                   <Checkbox
                     checked={isEnabled}
-                    onCheckedChange={() => toggleFilter(field, label)}
+                    onCheckedChange={() => toggleFilter(field, label, 'Tag')}
                   />
                 </div>
                 <Lock className="h-3.5 w-3.5 text-muted-foreground/40" />
@@ -485,7 +636,7 @@ export function SchemaConfigTab({ connId }: Props) {
             return (
               <div
                 key={prop.id ?? String(idx)}
-                className={`grid ${TABLE_GRID} gap-3 px-3 py-2 border-b last:border-b-0 items-center`}
+                className={`grid ${EVENT_GRID} gap-3 px-3 py-2 border-b last:border-b-0 items-center`}
               >
                 <Input
                   value={prop.name}
@@ -522,7 +673,7 @@ export function SchemaConfigTab({ connId }: Props) {
                   <Checkbox
                     checked={isEnabled}
                     onCheckedChange={() =>
-                      toggleFilter(prop.name, defaultLabel(prop.name), prop.category)
+                      toggleEventPropFilter(prop.name, defaultLabel(prop.name), prop.category)
                     }
                   />
                 </div>
@@ -541,7 +692,7 @@ export function SchemaConfigTab({ connId }: Props) {
           {/* Empty state */}
           {sortedCustomProps.length === 0 && (
             <div className="px-3 py-6 text-center text-sm text-muted-foreground">
-              No custom properties. Use "Detect from Schema" or add one manually.
+              No custom properties. Use &quot;Detect from Schema&quot; or add one manually.
             </div>
           )}
         </div>

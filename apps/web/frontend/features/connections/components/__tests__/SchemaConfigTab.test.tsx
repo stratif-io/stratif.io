@@ -13,6 +13,11 @@ const mockSchema = {
   session_timeout_minutes: 30,
   resurrection_window_days: 45,
   power_user_threshold_days: 7,
+  email_field: 'user_email',
+  first_name_field: null,
+  last_name_field: null,
+  date_of_birth_field: null,
+  phone_field: null,
   custom_properties: [
     { name: 'country', path: 'properties.country', type: 'string' as const, category: undefined },
   ],
@@ -78,98 +83,77 @@ describe('SchemaConfigTab — Setup section', () => {
     renderTab()
     expect(screen.getByRole('button', { name: /detect from schema/i })).toBeInTheDocument()
   })
-
-  it('does NOT show standalone text inputs for User ID, Timestamp, Event Name in Setup', () => {
-    renderTab()
-    // These used to be inputs in Setup — now they are Select dropdowns in the Properties table
-    expect(screen.queryByLabelText(/user id column/i)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/timestamp column/i)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/event name column/i)).not.toBeInTheDocument()
-  })
 })
 
-describe('SchemaConfigTab — Properties table required rows', () => {
-  it('shows "Field" and "Column" column headers', () => {
+describe('SchemaConfigTab — User Identity section', () => {
+  it('renders "User Identity" section heading', () => {
     renderTab()
-    expect(screen.getByText('Field')).toBeInTheDocument()
-    expect(screen.getByText('Column')).toBeInTheDocument()
+    expect(screen.getByText('User Identity')).toBeInTheDocument()
   })
 
-  it('shows semantic labels for required rows', () => {
+  it('shows User ID label', () => {
     renderTab()
     expect(screen.getByText('User ID')).toBeInTheDocument()
-    expect(screen.getByText('Timestamp')).toBeInTheDocument()
-    expect(screen.getByText('Event Name')).toBeInTheDocument()
   })
 
-  it('shows current column values as selected option text in required rows', () => {
+  it('shows all five optional field labels', () => {
+    renderTab()
+    expect(screen.getByText('Email')).toBeInTheDocument()
+    expect(screen.getByText('First Name')).toBeInTheDocument()
+    expect(screen.getByText('Last Name')).toBeInTheDocument()
+    expect(screen.getByText('Date of Birth')).toBeInTheDocument()
+    expect(screen.getByText('Phone')).toBeInTheDocument()
+  })
+
+  it('shows the mapped email column value', () => {
     renderTab()
     // Radix Select renders the selected value as visible text
-    expect(screen.getByText('user_id')).toBeInTheDocument()
-    expect(screen.getByText('created_at')).toBeInTheDocument()
-    expect(screen.getByText('event_name')).toBeInTheDocument()
+    expect(screen.getByText('user_email')).toBeInTheDocument()
   })
 })
 
-describe('SchemaConfigTab — Properties table', () => {
+describe('SchemaConfigTab — Event Properties section', () => {
+  it('renders "Event Properties" section heading', () => {
+    renderTab()
+    expect(screen.getByText('Event Properties')).toBeInTheDocument()
+  })
+
+  it('shows Event Name and Timestamp as locked rows', () => {
+    renderTab()
+    expect(screen.getByText('Event Name')).toBeInTheDocument()
+    expect(screen.getByText('Timestamp')).toBeInTheDocument()
+  })
+
   it('shows custom property name in an editable input', () => {
     renderTab()
     expect(screen.getByDisplayValue('country')).toBeInTheDocument()
   })
 
-  it('renders "Add to Global Filters" column header', () => {
-    renderTab()
-    expect(screen.getByText(/add to global filters/i)).toBeInTheDocument()
-  })
-
-  it('has a checkbox for each required field and custom prop (4 total)', () => {
-    renderTab()
-    const checkboxes = screen.getAllByRole('checkbox')
-    expect(checkboxes.length).toBeGreaterThanOrEqual(4)
-  })
-
-  it('shows event_name filter checkbox as checked based on filter config', () => {
-    renderTab()
-    const checked = screen
-      .getAllByRole('checkbox')
-      .filter(
-        (el) => el.getAttribute('aria-checked') === 'true' || (el as HTMLInputElement).checked
-      )
-    expect(checked.length).toBeGreaterThan(0)
-  })
-
-  it('does not render any icon select dropdowns', () => {
-    renderTab()
-    expect(screen.queryByText('Globe')).not.toBeInTheDocument()
-    expect(screen.queryByText('Chrome')).not.toBeInTheDocument()
-  })
-
-  it('shows Add property button', () => {
+  it('shows Add Property button', () => {
     renderTab()
     expect(screen.getByRole('button', { name: /add property/i })).toBeInTheDocument()
   })
+
+  it('does NOT show User ID as a locked row in Event Properties (only one occurrence total — in User Identity)', () => {
+    renderTab()
+    const allUserIdTexts = screen.getAllByText('User ID')
+    expect(allUserIdTexts).toHaveLength(1)
+  })
+
+  it('renders Global Filter column header in Event Properties', () => {
+    renderTab()
+    expect(screen.getByText(/global filter/i)).toBeInTheDocument()
+  })
 })
 
-describe('SchemaConfigTab — Resurrection window and Power user threshold', () => {
-  it('shows Resurrection window label', () => {
-    renderTab()
-    expect(screen.getByText(/resurrection window/i)).toBeInTheDocument()
-  })
-
-  it('shows Power user threshold label', () => {
-    renderTab()
-    expect(screen.getByText(/power user threshold/i)).toBeInTheDocument()
-  })
-
+describe('SchemaConfigTab — resurrection and power user fields', () => {
   it('shows resurrection_window_days input with value 45', () => {
     renderTab()
-    const input = screen.getByDisplayValue('45')
-    expect(input).toBeInTheDocument()
+    expect(screen.getByDisplayValue('45')).toBeInTheDocument()
   })
 
   it('shows power_user_threshold_days input with value 7', () => {
     renderTab()
-    const input = screen.getByDisplayValue('7')
-    expect(input).toBeInTheDocument()
+    expect(screen.getByDisplayValue('7')).toBeInTheDocument()
   })
 })
