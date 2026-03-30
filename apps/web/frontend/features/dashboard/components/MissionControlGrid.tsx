@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useState, useRef, useEffect } from 'react'
 import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
 import { MetricCardSkeleton } from '@/components/ui/loading-state'
@@ -93,6 +93,20 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   const activeConnectionId = useAppStore((s) => s.activeConnectionId)
   const { togglePin, isPinned, resetToDefault } = usePinnedMetrics(activeConnectionId ?? null)
 
+  const heroWrapperRef = useRef<HTMLDivElement>(null)
+  const rightColRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const rightCol = rightColRef.current
+    const heroWrapper = heroWrapperRef.current
+    if (!rightCol || !heroWrapper) return
+    const observer = new ResizeObserver(([entry]) => {
+      heroWrapper.style.height = `${entry.contentRect.height}px`
+    })
+    observer.observe(rightCol)
+    return () => observer.disconnect()
+  }, [])
+
   const allMetricKeys = METRIC_CONFIG.map((m) => m.key)
   const isInitialLoading = allMetricKeys.every((key) => metricLoading[key] ?? true)
 
@@ -135,9 +149,9 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   const flatMetrics = CATEGORIES.flatMap((c) => c.metrics)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] lg:items-start gap-4">
-      {/* LEFT: Hero card */}
-      <div className="lg:self-stretch lg:min-h-0">
+    <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
+      {/* LEFT: Hero card — height synced to right column via ResizeObserver */}
+      <div ref={heroWrapperRef}>
         <DevCard
           sql={buildAllSql(metricSql?.[heroMetric], trends[heroMetric]?.sql)}
           className="h-full"
@@ -163,7 +177,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
       </div>
 
       {/* RIGHT: Categorized mini-grid */}
-      <div className="flex flex-col gap-5">
+      <div ref={rightColRef} className="flex flex-col gap-5">
         {CATEGORIES.map(({ label, metrics }) => {
           const visibleMetrics = metrics.filter((k) => isPinned(k))
           if (visibleMetrics.length === 0) return null
