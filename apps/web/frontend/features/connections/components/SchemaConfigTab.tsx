@@ -181,6 +181,17 @@ const USER_IDENTITY_FIELDS = [
 
 type UserIdentityKey = (typeof USER_IDENTITY_FIELDS)[number]['key']
 
+const FIELD_LABELS: Record<string, string> = {
+  user_id_field: 'User ID',
+  event_name_field: 'Event Name',
+  timestamp_field: 'Timestamp',
+  email_field: 'Email',
+  first_name_field: 'First Name',
+  last_name_field: 'Last Name',
+  date_of_birth_field: 'Date of Birth',
+  phone_field: 'Phone',
+}
+
 interface Props {
   connId: string
 }
@@ -348,22 +359,16 @@ export function SchemaConfigTab({ connId }: Props) {
     }
   }
 
-  const FIELD_LABELS: Record<string, string> = {
-    user_id_field: 'User ID',
-    event_name_field: 'Event Name',
-    timestamp_field: 'Timestamp',
-    email_field: 'Email',
-    first_name_field: 'First Name',
-    last_name_field: 'Last Name',
-    date_of_birth_field: 'Date of Birth',
-    phone_field: 'Phone',
-  }
-
   function applyDetection(fieldKey: string, value: string) {
     if (fieldKey === 'user_id_field') setUserIdField(value)
     else if (fieldKey === 'event_name_field') setEventNameField(value)
     else if (fieldKey === 'timestamp_field') setTimestampField(value)
-    else setUserIdentityField(fieldKey as UserIdentityKey, value)
+    else {
+      const validIdentityKeys = USER_IDENTITY_FIELDS.map((f) => f.key) as string[]
+      if (validIdentityKeys.includes(fieldKey)) {
+        setUserIdentityField(fieldKey as UserIdentityKey, value)
+      }
+    }
   }
 
   function acceptDetection(fieldKey: string) {
@@ -384,15 +389,22 @@ export function SchemaConfigTab({ connId }: Props) {
   function handleDetect() {
     detect.mutate(eventsTable || undefined, {
       onSuccess(result) {
-        initialized.current = true
         const { suggestions, proposed_custom_properties, events_table, columns } = result
         if (events_table) setEventsTable(events_table)
+
+        // Current live values for skip comparison
+        const currentValues: Record<string, string | null> = {
+          user_id_field: userIdField,
+          event_name_field: eventNameField,
+          timestamp_field: timestampField,
+          ...userIdentityFields,
+        }
 
         // Build pending detections instead of auto-applying
         const pending: PendingDetection[] = []
         for (const [key, label] of Object.entries(FIELD_LABELS)) {
           const value = suggestions[key as keyof typeof suggestions] as string | null | undefined
-          if (value) {
+          if (value && value !== currentValues[key]) {
             pending.push({ fieldKey: key, label, proposedColumn: value })
           }
         }
