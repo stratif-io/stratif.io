@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { formatDistanceToNow, format } from 'date-fns'
-import { Users } from 'lucide-react'
+import { Activity, Users } from 'lucide-react'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -123,14 +123,14 @@ export function PeoplePage() {
                     <QueryError error={timelineErr} />
                   ) : events.length === 0 ? (
                     <EmptyState
-                      icon={Users}
+                      icon={Activity}
                       title="No events"
                       description="This user has no recorded events."
                     />
                   ) : (
-                    events.map((event, i) => (
+                    events.map((event) => (
                       <div
-                        key={i}
+                        key={`${event.timestamp}-${event.event_name}`}
                         className="flex items-center justify-between px-4 py-2 border-b text-sm"
                       >
                         <span className="font-medium">{event.event_name}</span>
