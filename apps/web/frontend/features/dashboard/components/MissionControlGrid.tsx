@@ -126,7 +126,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                   <div
                     key={metricKey}
                     className={
-                      metricKey === 'dau_mau_ratio' || metricKey === 'total_events'
+                      metricKey === 'dau_mau_ratio' || metricKey === 'retention_rate'
                         ? 'col-span-2'
                         : undefined
                     }
@@ -191,11 +191,8 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                   const cfg = getConfig(metricKey)
                   const current = data?.current[metricKey as keyof typeof data.current] ?? 0
                   const previous = data?.previous[metricKey as keyof typeof data.previous] ?? null
-                  // total_events spans full width in the Volume row
                   const isFullWidth =
-                    metricKey === 'dau_mau_ratio' ||
-                    metricKey === 'total_events' ||
-                    metricKey === 'retention_rate'
+                    metricKey === 'dau_mau_ratio' || metricKey === 'retention_rate'
                   const cardLoading =
                     (metricLoading[metricKey] ?? true) || (trends[metricKey]?.loading ?? true)
                   // Float metrics need 2 decimal places during count-up animation

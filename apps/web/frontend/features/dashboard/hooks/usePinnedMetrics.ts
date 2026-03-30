@@ -7,7 +7,6 @@ const DEFAULT_PINNED: MetricKey[] = [
   'unique_users',
   'total_sessions',
   'avg_session_duration_sec',
-  'avg_events_per_session',
   'new_users',
   'returning_users',
   'dau_mau_ratio',
