@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
+import { SPACING } from '@/lib/constants'
 import { useQueryStudio } from './hooks/useQueryStudio'
 import { CatalogBrowser } from './components/CatalogBrowser'
 import { QueryEditor } from './components/QueryEditor'
@@ -50,7 +51,7 @@ export function QueryStudioPage() {
   }, [])
 
   return (
-    <NoConnectionGuard>
+    <NoConnectionGuard screenClassName={SPACING.page}>
       <div className="flex h-full flex-col">
         <div className="flex flex-1 overflow-hidden">
           {/* Catalog — fixed width */}

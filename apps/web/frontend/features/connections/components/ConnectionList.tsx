@@ -129,10 +129,12 @@ export function ConnectionList() {
           <h1 className={TYPOGRAPHY.sectionTitle}>Connections</h1>
           <p className={`${TYPOGRAPHY.muted} mt-0.5`}>Manage your event database connections</p>
         </div>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-1.5" />
-          Add Connection
-        </Button>
+        {data && data.length > 0 && (
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add Connection
+          </Button>
+        )}
       </div>
 
       {isLoading && <LoadingState message="Loading connections…" />}
@@ -144,7 +146,7 @@ export function ConnectionList() {
           icon={Database}
           title="No connections yet"
           description="Connect your event database to start exploring your analytics. Supports DuckDB, PostgreSQL, Snowflake, Databricks and more."
-          action={{ label: 'Add connection', onClick: () => setCreateOpen(true) }}
+          action={{ label: 'Add your first connection', onClick: () => setCreateOpen(true) }}
         />
       )}
 
