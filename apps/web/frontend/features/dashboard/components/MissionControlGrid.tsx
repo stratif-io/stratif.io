@@ -2,10 +2,15 @@ import { memo, useState } from 'react'
 import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
 import { MetricCardSkeleton } from '@/components/ui/loading-state'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Settings2 } from 'lucide-react'
 import { formatMetricValue, computePctChange } from '@/lib/format-metric'
+import { cn } from '@/lib/utils'
 import type { MissionControlResponse } from '@/types'
 import type { TrendMetric, MetricTrend } from '../hooks/useMissionControlTrends'
 import { DevCard } from '@/components/dev'
+import { usePinnedMetrics } from '../hooks/usePinnedMetrics'
+import { useAppStore } from '@/stores/app-store'
 
 export interface MissionControlGridProps {
   data: MissionControlResponse | undefined
@@ -67,6 +72,8 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   metricLoading,
 }: MissionControlGridProps) {
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
+  const activeConnectionId = useAppStore((s) => s.activeConnectionId)
+  const { togglePin, isPinned } = usePinnedMetrics(activeConnectionId ?? null)
 
   const allMetricKeys = METRIC_CONFIG.map((m) => m.key)
   const isInitialLoading = allMetricKeys.every((key) => metricLoading[key] ?? true)
@@ -134,61 +141,90 @@ export const MissionControlGrid = memo(function MissionControlGrid({
 
       {/* RIGHT: Categorized mini-grid */}
       <div className="flex flex-col gap-5">
-        {CATEGORIES.map(({ label, metrics }) => (
-          <div key={label}>
-            <div className="text-[11px] font-semibold tracking-widest text-muted-foreground mb-2">
-              {label}
+        {CATEGORIES.map(({ label, metrics }) => {
+          const visibleMetrics = metrics.filter((k) => isPinned(k))
+          if (visibleMetrics.length === 0) return null
+          return (
+            <div key={label}>
+              <div className="text-[11px] font-semibold tracking-widest text-muted-foreground mb-2">
+                {label}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {visibleMetrics.map((metricKey) => {
+                  const cfg = getConfig(metricKey)
+                  const current = data?.current[metricKey as keyof typeof data.current] ?? 0
+                  const previous = data?.previous[metricKey as keyof typeof data.previous] ?? null
+                  // total_events spans full width in the Volume row
+                  const isFullWidth =
+                    metricKey === 'dau_mau_ratio' ||
+                    metricKey === 'total_events' ||
+                    metricKey === 'retention_rate'
+                  const cardLoading =
+                    (metricLoading[metricKey] ?? true) || (trends[metricKey]?.loading ?? true)
+                  // Float metrics need 2 decimal places during count-up animation
+                  const decimalsOverride =
+                    metricKey === 'dau_mau_ratio' ||
+                    metricKey === 'avg_events_per_session' ||
+                    metricKey === 'retention_rate' ||
+                    metricKey === 'avg_active_days'
+                      ? 2
+                      : 0
+                  const staggerIndex = flatMetrics.indexOf(metricKey)
+                  return (
+                    <DevCard
+                      key={metricKey}
+                      sql={trends[metricKey]?.sql}
+                      className={isFullWidth ? 'col-span-2' : undefined}
+                    >
+                      <MiniMetricCard
+                        staggerIndex={staggerIndex}
+                        label={cfg.label}
+                        metricKey={metricKey}
+                        value={formatMetricValue(metricKey, current)}
+                        rawValue={current}
+                        pctChange={computePctChange(current, previous)}
+                        sparklineValues={trends[metricKey]?.values ?? []}
+                        color={cfg.color}
+                        isHero={heroMetric === metricKey}
+                        onClick={() => setHeroMetric(metricKey)}
+                        loading={cardLoading}
+                        fullWidth={isFullWidth}
+                        currentMetrics={data?.current}
+                        sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
+                        decimalsOverride={decimalsOverride}
+                      />
+                    </DevCard>
+                  )
+                })}
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {metrics.map((metricKey) => {
-                const cfg = getConfig(metricKey)
-                const current = data?.current[metricKey as keyof typeof data.current] ?? 0
-                const previous = data?.previous[metricKey as keyof typeof data.previous] ?? null
-                // total_events spans full width in the Volume row
-                const isFullWidth =
-                  metricKey === 'dau_mau_ratio' ||
-                  metricKey === 'total_events' ||
-                  metricKey === 'retention_rate'
-                const cardLoading =
-                  (metricLoading[metricKey] ?? true) || (trends[metricKey]?.loading ?? true)
-                // Float metrics need 2 decimal places during count-up animation
-                const decimalsOverride =
-                  metricKey === 'dau_mau_ratio' ||
-                  metricKey === 'avg_events_per_session' ||
-                  metricKey === 'retention_rate' ||
-                  metricKey === 'avg_active_days'
-                    ? 2
-                    : 0
-                const staggerIndex = flatMetrics.indexOf(metricKey)
-                return (
-                  <DevCard
-                    key={metricKey}
-                    sql={trends[metricKey]?.sql}
-                    className={isFullWidth ? 'col-span-2' : undefined}
-                  >
-                    <MiniMetricCard
-                      staggerIndex={staggerIndex}
-                      label={cfg.label}
-                      metricKey={metricKey}
-                      value={formatMetricValue(metricKey, current)}
-                      rawValue={current}
-                      pctChange={computePctChange(current, previous)}
-                      sparklineValues={trends[metricKey]?.values ?? []}
-                      color={cfg.color}
-                      isHero={heroMetric === metricKey}
-                      onClick={() => setHeroMetric(metricKey)}
-                      loading={cardLoading}
-                      fullWidth={isFullWidth}
-                      currentMetrics={data?.current}
-                      sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
-                      decimalsOverride={decimalsOverride}
-                    />
-                  </DevCard>
-                )
-              })}
+          )
+        })}
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mt-3">
+              <Settings2 className="h-3 w-3" /> Customize metrics
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {METRIC_CONFIG.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => togglePin(key)}
+                  className={cn(
+                    'text-xs px-2 py-1 rounded-md border transition-colors',
+                    isPinned(key)
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/50'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
-          </div>
-        ))}
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </div>
   )
