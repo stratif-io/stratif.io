@@ -50,14 +50,12 @@ describe('ConnectionList empty state', () => {
 
     expect(screen.getByText('No connections yet')).toBeInTheDocument()
     expect(screen.getByText(/Connect your event database/i)).toBeInTheDocument()
-    const buttons = screen.getAllByRole('button', { name: /add connection/i })
-    expect(buttons.length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: /add your first connection/i })).toBeInTheDocument()
   })
 
   it('does not show the old dashed-box empty state', () => {
     renderList()
 
     expect(screen.queryByText(/--snowflake/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Add your first connection/)).not.toBeInTheDocument()
   })
 })
