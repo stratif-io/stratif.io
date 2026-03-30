@@ -941,7 +941,7 @@ class BaseSeeder(ABC):
             "screen_resolution": user["screen_resolution"],
             "referrer": referrer,
             "is_returning_user": user["is_returning"],
-            "traits": user["traits"],
+            **user["traits"],
         }
 
         if event_name == "Home":
