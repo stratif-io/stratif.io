@@ -11,6 +11,11 @@ router = APIRouter()
 _KNOWN_USER_ID_COLS = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
 _KNOWN_TIMESTAMP_COLS = ("timestamp", "ts", "created_at", "event_time", "time", "datetime", "date")
 _KNOWN_EVENT_NAME_COLS = ("event_name", "event", "action", "event_type", "name", "type")
+_KNOWN_EMAIL_COLS = ("email", "user_email", "email_address", "e_mail")
+_KNOWN_FIRST_NAME_COLS = ("first_name", "firstname", "fname", "given_name")
+_KNOWN_LAST_NAME_COLS = ("last_name", "lastname", "lname", "surname", "family_name")
+_KNOWN_DOB_COLS = ("date_of_birth", "dob", "birth_date", "birthdate", "birthday")
+_KNOWN_PHONE_COLS = ("phone", "phone_number", "mobile", "mobile_number", "telephone")
 
 
 def _suggest_fields(columns: list[dict]) -> dict[str, str]:
@@ -27,6 +32,26 @@ def _suggest_fields(columns: list[dict]) -> dict[str, str]:
     for candidate in _KNOWN_EVENT_NAME_COLS:
         if candidate in col_lower:
             suggestions["event_name_field"] = col_lower[candidate]
+            break
+    for candidate in _KNOWN_EMAIL_COLS:
+        if candidate in col_lower:
+            suggestions["email_field"] = col_lower[candidate]
+            break
+    for candidate in _KNOWN_FIRST_NAME_COLS:
+        if candidate in col_lower:
+            suggestions["first_name_field"] = col_lower[candidate]
+            break
+    for candidate in _KNOWN_LAST_NAME_COLS:
+        if candidate in col_lower:
+            suggestions["last_name_field"] = col_lower[candidate]
+            break
+    for candidate in _KNOWN_DOB_COLS:
+        if candidate in col_lower:
+            suggestions["date_of_birth_field"] = col_lower[candidate]
+            break
+    for candidate in _KNOWN_PHONE_COLS:
+        if candidate in col_lower:
+            suggestions["phone_field"] = col_lower[candidate]
             break
     return suggestions
 

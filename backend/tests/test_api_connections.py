@@ -7,6 +7,7 @@ from starlette.testclient import TestClient
 
 from backend.main import app
 from backend.product_db import get_product_db
+from backend.api.connections.schema_detect import _suggest_fields
 from backend.product_db.database import SQLiteProductDB
 from backend.product_db.migrations import init_product_db
 
@@ -150,3 +151,45 @@ class TestSchemaConfigUserIdentityFields:
         body = resp.json()
         assert body["email_field"] is None
         assert body["first_name_field"] is None
+
+
+class TestSuggestFieldsUserIdentity:
+    def _cols(self, names: list[str]) -> list[dict]:
+        return [{"name": n, "type": "TEXT"} for n in names]
+
+    def test_suggests_email_field(self):
+        result = _suggest_fields(self._cols(["user_id", "timestamp", "event_name", "email"]))
+        assert result.get("email_field") == "email"
+
+    def test_suggests_email_from_user_email(self):
+        result = _suggest_fields(self._cols(["uid", "ts", "action", "user_email"]))
+        assert result.get("email_field") == "user_email"
+
+    def test_suggests_first_name(self):
+        result = _suggest_fields(self._cols(["user_id", "ts", "event", "first_name"]))
+        assert result.get("first_name_field") == "first_name"
+
+    def test_suggests_first_name_from_fname(self):
+        result = _suggest_fields(self._cols(["user_id", "ts", "event", "fname"]))
+        assert result.get("first_name_field") == "fname"
+
+    def test_suggests_last_name(self):
+        result = _suggest_fields(self._cols(["user_id", "ts", "event", "last_name"]))
+        assert result.get("last_name_field") == "last_name"
+
+    def test_suggests_date_of_birth(self):
+        result = _suggest_fields(self._cols(["user_id", "ts", "event", "date_of_birth"]))
+        assert result.get("date_of_birth_field") == "date_of_birth"
+
+    def test_suggests_dob(self):
+        result = _suggest_fields(self._cols(["user_id", "ts", "event", "dob"]))
+        assert result.get("date_of_birth_field") == "dob"
+
+    def test_suggests_phone(self):
+        result = _suggest_fields(self._cols(["user_id", "ts", "event", "phone"]))
+        assert result.get("phone_field") == "phone"
+
+    def test_no_suggestion_when_no_match(self):
+        result = _suggest_fields(self._cols(["user_id", "ts", "event"]))
+        assert "email_field" not in result
+        assert "first_name_field" not in result
