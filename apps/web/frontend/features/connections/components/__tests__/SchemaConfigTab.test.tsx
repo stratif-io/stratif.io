@@ -272,6 +272,46 @@ describe('SchemaConfigTab — detect review panel', () => {
     expect(screen.queryByText(/fields detected/i)).not.toBeInTheDocument()
   })
 
+  it('Accept all applies ALL identity fields when multiple are detected', () => {
+    const multiDetectResult = {
+      ...mockDetectResult,
+      suggestions: {
+        ...mockDetectResult.suggestions,
+        email_field: 'user_email',
+        first_name_field: 'fname',
+        last_name_field: 'lname',
+      },
+    }
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof multiDetectResult) => void }) => {
+        opts.onSuccess(multiDetectResult)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-accept-all-multi" />
+      </QueryClientProvider>
+    )
+
+    act(() => {
+      screen.getAllByRole('button', { name: /detect from schema/i })[0].click()
+    })
+
+    act(() => {
+      screen.getByRole('button', { name: /accept all/i }).click()
+    })
+
+    // All three identity fields must be applied — not just the last one
+    // ColumnCombobox renders the selected value as visible text (Radix Select)
+    expect(screen.getByText('fname')).toBeInTheDocument()
+    expect(screen.getByText('lname')).toBeInTheDocument()
+  })
+
   it('Dismiss clears the panel without applying anything', () => {
     vi.mocked(hooks.useDetectSchema).mockReturnValue({
       mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {

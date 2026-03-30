@@ -364,7 +364,10 @@ export function SchemaConfigTab({ connId }: Props) {
 
   function setUserIdentityField(key: UserIdentityKey, value: string | null) {
     const previous = form.userIdentityFields[key]
-    updateForm({ userIdentityFields: { ...form.userIdentityFields, [key]: value } })
+    setForm((prev) => ({
+      ...prev,
+      userIdentityFields: { ...prev.userIdentityFields, [key]: value },
+    }))
     if (value === null && previous) {
       setEnabledFields((prev) => {
         const next = { ...prev }
