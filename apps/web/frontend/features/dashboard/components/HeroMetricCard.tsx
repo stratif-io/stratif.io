@@ -27,7 +27,6 @@ export interface HeroMetricCardProps {
   description?: string
   changeLabel?: string
   currentMetrics?: MissionControlMetrics
-  previousMetrics?: Partial<MissionControlMetrics> | null
   breakdown?: MetricBreakdown
 }
 
@@ -92,7 +91,6 @@ export const HeroMetricCard = memo(function HeroMetricCard({
   description,
   changeLabel,
   currentMetrics,
-  previousMetrics,
   breakdown,
 }: HeroMetricCardProps) {
   const reducedMotion = useReducedMotion()
@@ -217,7 +215,6 @@ export const HeroMetricCard = memo(function HeroMetricCard({
             <MetricPopover
               metricKey={metricKey as keyof MissionControlMetrics}
               currentMetrics={currentMetrics}
-              previousMetrics={previousMetrics ?? null}
               breakdown={breakdown}
             />
           ) : description ? (

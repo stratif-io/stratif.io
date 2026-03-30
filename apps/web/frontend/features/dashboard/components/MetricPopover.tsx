@@ -9,7 +9,6 @@ type MetricKey = keyof MissionControlMetrics
 interface MetricPopoverProps {
   metricKey: MetricKey
   currentMetrics: MissionControlMetrics
-  previousMetrics: Partial<MissionControlMetrics> | null
   breakdown?: MetricBreakdown
 }
 
@@ -232,7 +231,6 @@ const OP_LABELS: Record<string, string> = {
 export const MetricPopover = memo(function MetricPopover({
   metricKey,
   currentMetrics,
-  previousMetrics: _previousMetrics,
   breakdown,
 }: MetricPopoverProps) {
   const { definition, lines, footnote } = buildFormula(metricKey, currentMetrics, breakdown)
@@ -255,8 +253,8 @@ export const MetricPopover = memo(function MetricPopover({
             <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
               How it&apos;s counted
             </p>
-            {lines.map((line, i) => (
-              <div key={i} className="text-xs">
+            {lines.map((line) => (
+              <div key={`${line.op ?? 'val'}-${line.label}`} className="text-xs">
                 {line.op && line.op !== 'equals' && (
                   <div className="text-muted-foreground/50 pl-2 text-[10px] mb-1">
                     {OP_LABELS[line.op]}

@@ -3,7 +3,7 @@ import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
 import { MetricCardSkeleton } from '@/components/ui/loading-state'
 import { formatMetricValue, computePctChange } from '@/lib/format-metric'
-import type { MissionControlResponse, MissionControlMetrics } from '@/types'
+import type { MissionControlResponse } from '@/types'
 import type { TrendMetric, MetricTrend } from '../hooks/useMissionControlTrends'
 import { DevCard } from '@/components/dev'
 
@@ -129,7 +129,6 @@ export const MissionControlGrid = memo(function MissionControlGrid({
           color={heroConfig.color}
           loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
           currentMetrics={data?.current}
-          previousMetrics={(data?.previous ?? null) as Partial<MissionControlMetrics> | null}
         />
       </DevCard>
 
@@ -181,9 +180,6 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                       loading={cardLoading}
                       fullWidth={isFullWidth}
                       currentMetrics={data?.current}
-                      previousMetrics={
-                        (data?.previous ?? null) as Partial<MissionControlMetrics> | null
-                      }
                       sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
                       decimalsOverride={decimalsOverride}
                     />

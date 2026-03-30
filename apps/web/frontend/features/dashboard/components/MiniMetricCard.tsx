@@ -10,7 +10,7 @@ import type { MissionControlMetrics, MetricBreakdown } from '@/types'
 
 export interface MiniMetricCardProps {
   label: string
-  metricKey?: string
+  metricKey?: keyof MissionControlMetrics
   value: string // pre-formatted fallback
   rawValue?: number // raw number for count-up animation
   pctChange: number | null // null → show "—"
@@ -26,7 +26,6 @@ export interface MiniMetricCardProps {
   decimalsOverride?: number
   staggerIndex?: number
   currentMetrics?: MissionControlMetrics
-  previousMetrics?: Partial<MissionControlMetrics> | null
   breakdown?: MetricBreakdown
 }
 
@@ -48,7 +47,6 @@ export const MiniMetricCard = memo(function MiniMetricCard({
   decimalsOverride = 0,
   staggerIndex = 0,
   currentMetrics,
-  previousMetrics,
   breakdown,
 }: MiniMetricCardProps) {
   const sparklineData = useMemo(
@@ -114,9 +112,8 @@ export const MiniMetricCard = memo(function MiniMetricCard({
         </div>
         {currentMetrics && metricKey ? (
           <MetricPopover
-            metricKey={metricKey as keyof MissionControlMetrics}
+            metricKey={metricKey}
             currentMetrics={currentMetrics}
-            previousMetrics={previousMetrics ?? null}
             breakdown={breakdown}
           />
         ) : description ? (
