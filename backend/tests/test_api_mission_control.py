@@ -489,4 +489,6 @@ def test_metric_response_includes_sql(client):
     assert resp.status_code == 200
     data = resp.json()
     assert "sql" in data
-    assert "COUNT(DISTINCT" in data["sql"]
+    sql = data["sql"]
+    sql_text = " ".join(sql) if isinstance(sql, list) else sql
+    assert "COUNT(DISTINCT" in sql_text

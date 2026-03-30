@@ -538,10 +538,11 @@ def get_mission_control_metric(
         start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
         prev_start, prev_end = _compute_previous_period(start, end)
         current_value, current_sql = _fetch_single_metric(db, metric, start, end, filter_clauses, filter_params)
-        previous_value, _ = _fetch_single_metric(db, metric, prev_start, prev_end, filter_clauses, filter_params)
+        previous_value, previous_sql = _fetch_single_metric(db, metric, prev_start, prev_end, filter_clauses, filter_params)
     else:
         current_value, current_sql = _fetch_single_metric_all_time(db, metric, filter_clauses, filter_params)
         previous_value = None
+        previous_sql = None
 
     breakdown: dict | None = None
 
@@ -585,11 +586,19 @@ def get_mission_control_metric(
         retained_b = retained_rows_b[0][0] if retained_rows_b else 0
         breakdown = {"retained_count": int(retained_b), "prev_unique_users": int(prev_uniq_b)}
 
+    all_sqls: list[str] = []
+    for s in ([current_sql] if isinstance(current_sql, str) else (current_sql or [])):
+        if s:
+            all_sqls.append(s)
+    for s in ([previous_sql] if isinstance(previous_sql, str) else (previous_sql or [])):
+        if s:
+            all_sqls.append(s)
+
     return {
         "metric": metric,
         "current": float(current_value),
         "previous": float(previous_value) if previous_value is not None else None,
-        "sql": current_sql,
+        "sql": all_sqls if len(all_sqls) > 1 else (all_sqls[0] if all_sqls else ""),
         **({"breakdown": breakdown} if breakdown is not None else {}),
     }
 

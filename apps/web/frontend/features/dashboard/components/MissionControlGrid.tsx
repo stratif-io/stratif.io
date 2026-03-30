@@ -67,6 +67,22 @@ function getConfig(key: TrendMetric) {
   return METRIC_CONFIG.find((m) => m.key === key)!
 }
 
+function buildAllSql(
+  metricSql: string | string[] | null | undefined,
+  trendSql: string | string[] | undefined
+): string | string[] | undefined {
+  const parts: string[] = []
+  if (metricSql) {
+    parts.push(...(Array.isArray(metricSql) ? metricSql : [metricSql]))
+  }
+  if (trendSql) {
+    parts.push(...(Array.isArray(trendSql) ? trendSql : [trendSql]))
+  }
+  if (parts.length === 0) return undefined
+  if (parts.length === 1) return parts[0]
+  return parts
+}
+
 export const MissionControlGrid = memo(function MissionControlGrid({
   data,
   trends,
@@ -121,7 +137,10 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
       {/* LEFT: Hero card */}
-      <DevCard sql={metricSql?.[heroMetric] ?? trends[heroMetric]?.sql} className="h-full">
+      <DevCard
+        sql={buildAllSql(metricSql?.[heroMetric], trends[heroMetric]?.sql)}
+        className="h-full"
+      >
         <HeroMetricCard
           label={heroConfig.label}
           metricKey={heroMetric}
@@ -175,7 +194,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                   return (
                     <DevCard
                       key={metricKey}
-                      sql={metricSql?.[metricKey] ?? trends[metricKey]?.sql}
+                      sql={buildAllSql(metricSql?.[metricKey], trends[metricKey]?.sql)}
                       className={isFullWidth ? 'col-span-2' : undefined}
                     >
                       <MiniMetricCard
