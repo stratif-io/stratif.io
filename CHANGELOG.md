@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/cabichahine/stratif.io/compare/v0.7.0...v0.8.0) (2026-03-30)
+
+
+### Features
+
+* **dashboard:** Mission Control v2 — metrics grid, SQL viewer, theme support ([#129](https://github.com/cabichahine/stratif.io/issues/129)) ([b689b65](https://github.com/cabichahine/stratif.io/commit/b689b6576b2e044289380ff8ace49f9f45e743bb))
+
 ## [0.7.0](https://github.com/cabichahine/stratif.io/compare/v0.6.0...v0.7.0) (2026-03-30)
 
 ### Features
