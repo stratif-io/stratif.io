@@ -239,6 +239,11 @@ export const SchemaConfigSchema = z.object({
   timestamp_field: z.string().min(1),
   event_name_field: z.string().min(1),
   custom_properties: z.array(CustomPropertySchema),
+  email_field: z.string().nullable().optional(),
+  first_name_field: z.string().nullable().optional(),
+  last_name_field: z.string().nullable().optional(),
+  date_of_birth_field: z.string().nullable().optional(),
+  phone_field: z.string().nullable().optional(),
   updated_at: z.string(),
 })
 
