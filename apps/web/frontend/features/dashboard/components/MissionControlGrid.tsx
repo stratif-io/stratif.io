@@ -139,7 +139,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
       {/* LEFT: Hero card */}
       <DevCard
         sql={buildAllSql(metricSql?.[heroMetric], trends[heroMetric]?.sql)}
-        className="h-full"
+        className="lg:self-start"
       >
         <HeroMetricCard
           label={heroConfig.label}

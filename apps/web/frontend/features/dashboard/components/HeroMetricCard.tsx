@@ -136,7 +136,7 @@ export const HeroMetricCard = memo(function HeroMetricCard({
   const gradientId = `hero-gradient-${metricKey}`
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-md p-0 flex flex-col h-full transition-colors hover:bg-accent/20">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-md p-0 flex flex-col min-h-[280px] transition-colors hover:bg-accent/20">
       {/* Chart fills the card — no padding, chart is the primary visual */}
       <div
         className={cn(
