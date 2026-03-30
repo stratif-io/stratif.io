@@ -91,7 +91,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
 }: MissionControlGridProps) {
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
   const activeConnectionId = useAppStore((s) => s.activeConnectionId)
-  const { togglePin, isPinned } = usePinnedMetrics(activeConnectionId ?? null)
+  const { togglePin, isPinned, resetToDefault } = usePinnedMetrics(activeConnectionId ?? null)
 
   const allMetricKeys = METRIC_CONFIG.map((m) => m.key)
   const isInitialLoading = allMetricKeys.every((key) => metricLoading[key] ?? true)
@@ -244,6 +244,12 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                 </button>
               ))}
             </div>
+            <button
+              onClick={resetToDefault}
+              className="text-xs text-muted-foreground hover:text-foreground mt-2"
+            >
+              Reset to defaults
+            </button>
           </CollapsibleContent>
         </Collapsible>
       </div>

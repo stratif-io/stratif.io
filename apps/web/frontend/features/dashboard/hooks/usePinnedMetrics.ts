@@ -55,5 +55,9 @@ export function usePinnedMetrics(connectionId: string | null) {
 
   const isPinned = useCallback((key: MetricKey) => pinned.includes(key), [pinned])
 
-  return { pinned, togglePin, isPinned }
+  const resetToDefault = useCallback(() => {
+    setPinned(DEFAULT_PINNED)
+  }, [])
+
+  return { pinned, togglePin, isPinned, resetToDefault }
 }
