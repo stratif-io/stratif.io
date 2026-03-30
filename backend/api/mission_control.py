@@ -433,9 +433,17 @@ def _fetch_single_metric_all_time(
         if not bounds or bounds[0][0] is None:
             return 0
         max_day = bounds[0][0]
+        max_day_dt = datetime.strptime(str(max_day), '%Y-%m-%d').date()
+        wau_start_at = max_day_dt - timedelta(days=6)
+        wau_at_where: list[str] = ["DATE(timestamp) >= ?", "DATE(timestamp) <= ?"]
+        wau_at_params: list = [str(wau_start_at), str(max_day)]
+        if filter_clauses:
+            wau_at_where.extend(filter_clauses)
+            wau_at_params.extend(filter_params)
+        wau_at_where_sql = "WHERE " + " AND ".join(wau_at_where)
         rows = db.execute(
-            f"SELECT COUNT(DISTINCT user_id) FROM events WHERE DATE(timestamp) >= DATE(?, '-6 days') AND DATE(timestamp) <= ?",
-            [str(max_day), str(max_day)],
+            f"SELECT COUNT(DISTINCT user_id) FROM events {wau_at_where_sql}",
+            wau_at_params,
         )
         return rows[0][0] if rows else 0
 
@@ -817,15 +825,32 @@ def get_mission_control_trend(
         sql_val = "wau rolling 7-day trend"
 
     elif metric == "avg_active_days":
-        trend_sql = f"""
-            SELECT DATE(timestamp) AS d, COUNT(DISTINCT DATE(timestamp)) AS avg_days
-            FROM events {ev_where_sql}
-            GROUP BY DATE(timestamp)
-            ORDER BY 1
-            """
-        rows = db.execute(trend_sql, ev_params)
-        data = [{"date": str(r[0]), "value": round(r[1] or 0.0, 2)} for r in rows]
-        sql_val = interpolate_sql(trend_sql, ev_params)
+        current_day = start
+        data = []
+        while current_day <= end:
+            day_ps = f"{current_day} 00:00:00"
+            day_pe = f"{current_day} 23:59:59"
+            # For each day: among users active that day, avg their distinct active days in the full period
+            day_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+            day_params: list = [day_ps, day_pe]
+            day_where.extend(filter_clauses)
+            day_params.extend(filter_params)
+            day_where_sql = "WHERE " + " AND ".join(day_where)
+            rows = db.execute(
+                f"""
+                SELECT AVG(active_days) FROM (
+                    SELECT e2.user_id, COUNT(DISTINCT DATE(e2.timestamp)) AS active_days
+                    FROM events e2
+                    {ev_where_sql}
+                    AND e2.user_id IN (SELECT DISTINCT user_id FROM events {day_where_sql})
+                    GROUP BY e2.user_id
+                ) t
+                """,
+                ev_params + day_params,
+            )
+            data.append({"date": str(current_day), "value": round(rows[0][0] or 0.0, 2) if rows else 0.0})
+            current_day += timedelta(days=1)
+        sql_val = "avg_active_days daily trend"
 
     elif metric == "power_users":
         threshold = db.get_power_user_threshold_days()
