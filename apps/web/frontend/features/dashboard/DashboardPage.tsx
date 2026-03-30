@@ -9,6 +9,8 @@ import { QueryError } from '@/components/ui/query-error'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { DevCard } from '@/components/dev'
 import { NoConnectionScreen } from '@/components/ui/no-connection-guard'
+import { EmptyState } from '@/components/ui/empty-state'
+import { TrendingUp } from 'lucide-react'
 
 export function DashboardPage() {
   useEffect(() => {
@@ -33,6 +35,9 @@ export function DashboardPage() {
     }
   }, [isConnectionNotFound, activeConnectionId, setActiveConnectionId])
 
+  const allMetricsLoaded = Object.values(metricLoading).every((v) => !v)
+  const isEmpty = !isError && allMetricsLoaded && topEvents.length === 0
+
   if (!activeConnectionId || isConnectionNotFound) {
     return (
       <PageTransition>
@@ -49,6 +54,12 @@ export function DashboardPage() {
 
           {isError ? (
             <QueryError error={error} />
+          ) : isEmpty ? (
+            <EmptyState
+              icon={TrendingUp}
+              title="No events yet"
+              description="Your dashboard will populate once events start flowing in. Try expanding the date range if you expect data."
+            />
           ) : (
             <>
               <MissionControlGrid data={data} trends={trends} metricLoading={metricLoading} />

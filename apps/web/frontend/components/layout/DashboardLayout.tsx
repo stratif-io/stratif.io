@@ -6,13 +6,14 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useUrlSync } from '@/hooks'
 
-const FULL_BLEED_ROUTES = ['/query-studio']
+const FULL_BLEED_ROUTES = ['/query-studio', '/people']
 
 export function DashboardLayout() {
   useUrlSync()
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
+  const activeConnectionId = useAppStore((state) => state.activeConnectionId)
   const location = useLocation()
-  const fullBleed = FULL_BLEED_ROUTES.includes(location.pathname)
+  const fullBleed = FULL_BLEED_ROUTES.includes(location.pathname) && !!activeConnectionId
 
   return (
     <TooltipProvider delayDuration={300}>

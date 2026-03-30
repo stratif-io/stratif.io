@@ -23,6 +23,7 @@ interface NavItem {
   href: string
   icon: React.ElementType
   badge?: string
+  preload?: () => void
 }
 
 interface NavGroup {
@@ -36,25 +37,73 @@ const navGroups: NavGroup[] = [
     title: 'Analytics',
     icon: LayoutDashboard,
     items: [
-      { title: 'Mission Control', href: '/dashboard', icon: LayoutDashboard },
-      { title: 'Trends', href: '/trends', icon: TrendingUp },
-      { title: 'Retention', href: '/retention', icon: Users },
-      { title: 'Journey', href: '/paths', icon: Route },
+      {
+        title: 'Mission Control',
+        href: '/dashboard',
+        icon: LayoutDashboard,
+        preload: () => import('@/features/dashboard'),
+      },
+      {
+        title: 'Trends',
+        href: '/trends',
+        icon: TrendingUp,
+        preload: () => import('@/features/analytics'),
+      },
+      {
+        title: 'Retention',
+        href: '/retention',
+        icon: Users,
+        preload: () => import('@/features/analytics'),
+      },
+      {
+        title: 'Journey',
+        href: '/paths',
+        icon: Route,
+        preload: () => import('@/features/analytics'),
+      },
+      {
+        title: 'People',
+        href: '/people',
+        icon: Users,
+        preload: () => import('@/features/people'),
+      },
     ],
   },
   {
     title: 'Explore',
     icon: Database,
     items: [
-      { title: 'Events', href: '/events', icon: Activity },
-      { title: 'Pivot', href: '/pivot', icon: Table },
-      { title: 'SQL Studio', href: '/query-studio', icon: Terminal },
+      {
+        title: 'Events',
+        href: '/events',
+        icon: Activity,
+        preload: () => import('@/features/events'),
+      },
+      {
+        title: 'Pivot',
+        href: '/pivot',
+        icon: Table,
+        preload: () => import('@/features/analytics'),
+      },
+      {
+        title: 'SQL Studio',
+        href: '/query-studio',
+        icon: Terminal,
+        preload: () => import('@/features/query-studio/QueryStudioPage'),
+      },
     ],
   },
   {
     title: 'Configuration',
     icon: Settings,
-    items: [{ title: 'Connections', href: '/connections', icon: Database }],
+    items: [
+      {
+        title: 'Connections',
+        href: '/connections',
+        icon: Database,
+        preload: () => import('@/features/connections'),
+      },
+    ],
   },
   ...(import.meta.env.DEV
     ? [
@@ -83,6 +132,8 @@ function NavLink({
     <Link
       to={{ pathname: item.href, search: location.search }}
       onClick={onClick}
+      onMouseEnter={item.preload}
+      onFocus={item.preload}
       className={cn(
         'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
         collapsed ? 'justify-center px-2' : '',

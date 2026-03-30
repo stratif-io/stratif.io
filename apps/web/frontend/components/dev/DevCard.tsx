@@ -88,7 +88,6 @@ interface DevCardProps {
 }
 
 export function DevCard({ sql, children, className }: DevCardProps) {
-  if (import.meta.env.PROD) return <>{children}</>
   return (
     <DevCardInner sql={sql} className={className}>
       {children}
