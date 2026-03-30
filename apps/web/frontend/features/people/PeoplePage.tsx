@@ -95,7 +95,7 @@ export function PeoplePage() {
           {/* Column 1 — user list */}
           <div
             className={cn(
-              'border-r flex flex-col min-h-0 transition-all duration-200',
+              'border-r flex flex-col overflow-hidden transition-all duration-200',
               col1Collapsed ? 'w-10' : 'w-[28%]'
             )}
           >
@@ -123,46 +123,48 @@ export function PeoplePage() {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
-                <ScrollArea className="flex-1">
-                  {isLoading ? (
-                    <LoadingState />
-                  ) : isError ? (
-                    <QueryError error={error} />
-                  ) : filteredUsers.length === 0 ? (
-                    <EmptyState
-                      icon={Users}
-                      title="No users found"
-                      description="No events match the selected date range."
-                    />
-                  ) : (
-                    <>
-                      {filteredUsers.map((user) => (
-                        <button
-                          key={user.user_id}
-                          onClick={() => setSelectedUserId(user.user_id)}
-                          className={cn(
-                            'w-full text-left px-4 py-3 border-b hover:bg-muted/50 transition-colors',
-                            selectedUserId === user.user_id && 'bg-muted'
-                          )}
-                        >
-                          <div className="font-medium text-sm truncate">{user.user_id}</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {user.event_count} events · {formatLastSeen(user.last_seen)}
-                          </div>
-                        </button>
-                      ))}
-                      {hasNextPage && (
-                        <button
-                          onClick={() => fetchNextPage()}
-                          disabled={isFetchingNextPage}
-                          className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          {isFetchingNextPage ? 'Loading…' : 'Load more'}
-                        </button>
-                      )}
-                    </>
-                  )}
-                </ScrollArea>
+                <div className="flex-1 overflow-hidden">
+                  <ScrollArea className="h-full">
+                    {isLoading ? (
+                      <LoadingState />
+                    ) : isError ? (
+                      <QueryError error={error} />
+                    ) : filteredUsers.length === 0 ? (
+                      <EmptyState
+                        icon={Users}
+                        title="No users found"
+                        description="No events match the selected date range."
+                      />
+                    ) : (
+                      <>
+                        {filteredUsers.map((user) => (
+                          <button
+                            key={user.user_id}
+                            onClick={() => setSelectedUserId(user.user_id)}
+                            className={cn(
+                              'w-full text-left px-4 py-3 border-b hover:bg-muted/50 transition-colors',
+                              selectedUserId === user.user_id && 'bg-muted'
+                            )}
+                          >
+                            <div className="font-medium text-sm truncate">{user.user_id}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {user.event_count} events · {formatLastSeen(user.last_seen)}
+                            </div>
+                          </button>
+                        ))}
+                        {hasNextPage && (
+                          <button
+                            onClick={() => fetchNextPage()}
+                            disabled={isFetchingNextPage}
+                            className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {isFetchingNextPage ? 'Loading…' : 'Load more'}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </ScrollArea>
+                </div>
               </>
             )}
           </div>
@@ -170,7 +172,7 @@ export function PeoplePage() {
           {/* Column 2 — timeline */}
           <div
             className={cn(
-              'flex flex-col min-h-0 overflow-hidden border-r transition-all duration-200',
+              'flex flex-col overflow-hidden border-r transition-all duration-200',
               col2Collapsed ? 'w-10' : 'w-[36%]'
             )}
           >
@@ -223,20 +225,22 @@ export function PeoplePage() {
                     </div>
                   </div>
                 </div>
-                <ScrollArea className="flex-1">
-                  <div className="px-6 py-5">
-                    {timelineError ? (
-                      <QueryError error={timelineErr} />
-                    ) : (
-                      <UserTimeline
-                        events={events}
-                        isLoading={timelineLoading}
-                        selectedEvent={selectedEvent}
-                        onEventSelect={setSelectedEvent}
-                      />
-                    )}
-                  </div>
-                </ScrollArea>
+                <div className="flex-1 overflow-hidden">
+                  <ScrollArea className="h-full">
+                    <div className="px-6 py-5">
+                      {timelineError ? (
+                        <QueryError error={timelineErr} />
+                      ) : (
+                        <UserTimeline
+                          events={events}
+                          isLoading={timelineLoading}
+                          selectedEvent={selectedEvent}
+                          onEventSelect={setSelectedEvent}
+                        />
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
               </>
             ) : (
               <div className="flex-1 flex flex-col">
@@ -259,7 +263,7 @@ export function PeoplePage() {
           {/* Column 3 — event properties */}
           <div
             className={cn(
-              'flex flex-col min-h-0 transition-all duration-200',
+              'flex flex-col overflow-hidden transition-all duration-200',
               col3Collapsed ? 'w-10' : 'flex-1'
             )}
           >
@@ -286,12 +290,14 @@ export function PeoplePage() {
                     flipIcon
                   />
                 </div>
-                <ScrollArea className="flex-1">
-                  <EventPropertiesPanel
-                    event={selectedEvent}
-                    onClose={selectedEvent ? () => setSelectedEvent(null) : undefined}
-                  />
-                </ScrollArea>
+                <div className="flex-1 overflow-hidden">
+                  <ScrollArea className="h-full">
+                    <EventPropertiesPanel
+                      event={selectedEvent}
+                      onClose={selectedEvent ? () => setSelectedEvent(null) : undefined}
+                    />
+                  </ScrollArea>
+                </div>
               </>
             )}
           </div>
