@@ -10,13 +10,15 @@ import { useConnection, useTestConnection } from './hooks/useConnectionsData'
 import { useAppStore } from '@/stores'
 import { ConnectionConfigTab } from './components/ConnectionConfigTab'
 import { SchemaConfigTab } from './components/SchemaConfigTab'
+import { FilterConfigTab } from './components/FilterConfigTab'
 import { ConnectionWizardProgress } from './components/ConnectionWizardProgress'
 
-type Tab = 'connection' | 'schema'
+type Tab = 'connection' | 'schema' | 'filters'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'connection', label: 'Connection' },
   { id: 'schema', label: 'Schema Mapping' },
+  { id: 'filters', label: 'Filters' },
 ]
 
 const DB_TYPE_LABELS: Record<string, string> = {
@@ -28,7 +30,9 @@ const DB_TYPE_LABELS: Record<string, string> = {
 
 export function ConnectionDetailPage() {
   const { id, tab: tabParam } = useParams<{ id: string; tab?: string }>()
-  const tab: Tab = (tabParam === 'schema' ? 'schema' : 'connection') as Tab
+  const tab: Tab = (
+    tabParam === 'schema' ? 'schema' : tabParam === 'filters' ? 'filters' : 'connection'
+  ) as Tab
   const navigate = useNavigate()
   const { data: connection, isLoading, error } = useConnection(id ?? '')
   const setActiveConnectionId = useAppStore((s) => s.setActiveConnectionId)
@@ -121,6 +125,22 @@ export function ConnectionDetailPage() {
           {/* Tab content */}
           {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
           {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
+          {tab === 'filters' && <FilterConfigTab connId={connection.id} />}
+
+          {/* Next buttons */}
+          <div className="flex justify-end mt-6">
+            {tab === 'connection' && (
+              <Button onClick={() => navigate(`/connections/${id}/schema`)}>
+                Next: Configure Schema →
+              </Button>
+            )}
+            {tab === 'schema' && (
+              <Button onClick={() => navigate(`/connections/${id}/filters`)}>
+                Next: Configure Filters →
+              </Button>
+            )}
+            {tab === 'filters' && <Button onClick={() => navigate('/connections')}>Done →</Button>}
+          </div>
         </>
       ) : (
         <>
@@ -145,6 +165,7 @@ export function ConnectionDetailPage() {
           {/* Tab content */}
           {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
           {tab === 'schema' && <SchemaConfigTab connId={connection.id} />}
+          {tab === 'filters' && <FilterConfigTab connId={connection.id} />}
         </>
       )}
     </div>

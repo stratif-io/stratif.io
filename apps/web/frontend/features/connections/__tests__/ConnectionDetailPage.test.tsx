@@ -88,8 +88,8 @@ describe('ConnectionDetailPage — wizard mode', () => {
 
   it('hides tab buttons in wizard mode', () => {
     renderPage()
+    expect(screen.queryByText('Connection')).not.toBeInTheDocument()
     expect(screen.queryByText('Schema Mapping')).not.toBeInTheDocument()
-    expect(screen.queryByText('Global Filters')).not.toBeInTheDocument()
   })
 
   it('shows tab buttons when not in wizard mode', () => {
@@ -100,13 +100,41 @@ describe('ConnectionDetailPage — wizard mode', () => {
     } as ReturnType<typeof useConnection>)
 
     renderPage()
+    expect(screen.getByText('Connection')).toBeInTheDocument()
     expect(screen.getByText('Schema Mapping')).toBeInTheDocument()
-    expect(screen.queryByText('Global Filters')).not.toBeInTheDocument()
   })
 
-  it('does not show a Next button — wizard steps are navigated by clicking the pills', () => {
+  it('shows Next: Configure Schema button on connection step in wizard mode', () => {
     renderPage()
-    expect(screen.queryByText(/next/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/Next: Configure Schema/i)).toBeInTheDocument()
+  })
+
+  it('shows filters step in wizard mode', () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={['/connections/conn-1/filters']}>
+          <Routes>
+            <Route path="/connections/:id/:tab?" element={<ConnectionDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+    expect(screen.getByTestId('step-filters')).toBeInTheDocument()
+  })
+
+  it('shows Done button on filters step in wizard mode', () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={['/connections/conn-1/filters']}>
+          <Routes>
+            <Route path="/connections/:id/:tab?" element={<ConnectionDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+    expect(screen.getByText(/Done/i)).toBeInTheDocument()
   })
 })
 
