@@ -72,7 +72,7 @@ describe('ConnectionDetailPage — wizard mode', () => {
     renderPage()
     expect(screen.getByTestId('step-connection')).toBeInTheDocument()
     expect(screen.getByTestId('step-schema')).toBeInTheDocument()
-    expect(screen.queryByTestId('step-filters')).not.toBeInTheDocument()
+    expect(screen.getByTestId('step-filters')).toBeInTheDocument()
   })
 
   it('does not show wizard progress when schema_config is set (returning user)', () => {

@@ -116,10 +116,7 @@ export function ConnectionDetailPage() {
 
       {isWizardMode ? (
         <>
-          <ConnectionWizardProgress
-            currentStep={tab}
-            onStepClick={(value) => navigate(`/connections/${id}/${value}`)}
-          />
+          <ConnectionWizardProgress currentStep={tab} />
 
           {/* Tab content */}
           {tab === 'connection' && <ConnectionConfigTab connection={connection} />}
