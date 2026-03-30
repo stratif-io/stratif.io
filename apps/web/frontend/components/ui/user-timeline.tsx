@@ -209,7 +209,7 @@ function TimelineEvent({
   return (
     <li
       className={cn(
-        'flex gap-3.5 rounded-md -mx-2 px-2 cursor-pointer transition-colors',
+        'flex gap-3.5 rounded-md cursor-pointer transition-colors',
         isSelected ? 'bg-muted/60' : 'hover:bg-muted/30'
       )}
       onClick={onClick}
