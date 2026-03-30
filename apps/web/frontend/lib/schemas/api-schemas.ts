@@ -193,6 +193,23 @@ export type ConversionResponseType = z.infer<typeof ConversionResponseSchema>
 export type ApiErrorType = z.infer<typeof ApiErrorSchema>
 export type MetricCardType = z.infer<typeof MetricCardSchema>
 
+export const UserSummarySchema = z.object({
+  user_id: z.string(),
+  event_count: z.number().int().nonnegative(),
+  first_seen: z.string(),
+  last_seen: z.string(),
+})
+
+export const UserListResponseSchema = z.object({
+  sql: z.union([z.string(), z.array(z.string())]).optional(),
+  limit: z.number().int().positive(),
+  offset: z.number().int().nonnegative(),
+  data: z.array(UserSummarySchema),
+})
+
+export type UserSummaryType = z.infer<typeof UserSummarySchema>
+export type UserListResponseType = z.infer<typeof UserListResponseSchema>
+
 // Connections
 
 export const DbTypeSchema = z.enum(['duckdb', 'databricks', 'postgresql', 'sqlite'])
