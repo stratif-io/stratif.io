@@ -146,7 +146,11 @@ export function ConnectionList() {
           icon={Database}
           title="No connections yet"
           description="Connect your event database to start exploring your analytics. Supports DuckDB, PostgreSQL, Snowflake, Databricks and more."
-          action={{ label: 'Add your first connection', onClick: () => setCreateOpen(true) }}
+          action={{
+            label: 'Add your first connection',
+            onClick: () => setCreateOpen(true),
+            variant: 'default',
+          }}
         />
       )}
 

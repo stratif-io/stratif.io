@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout'
 import { SPACING } from '@/lib/constants'
@@ -44,6 +44,12 @@ const DesignSystemPage = import.meta.env.DEV
   : null
 
 function PageSkeleton() {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 300)
+    return () => clearTimeout(t)
+  }, [])
+  if (!visible) return null
   return (
     <div className={`${SPACING.page} space-y-6 animate-pulse`}>
       <div className="space-y-2">

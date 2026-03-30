@@ -5,10 +5,10 @@ import { Database } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 
-export function NoConnectionScreen({ className }: { className?: string }) {
+export function NoConnectionScreen() {
   const navigate = useNavigate()
   return (
-    <div className={cn(SPACING.page, className)}>
+    <div className={SPACING.page}>
       <div className="flex flex-col items-start gap-8 px-1 py-8 max-w-lg">
         <div className="flex h-10 w-10 items-center justify-center border border-border">
           <Database className="h-5 w-5 text-muted-foreground" />
@@ -69,11 +69,10 @@ export function NoConnectionScreen({ className }: { className?: string }) {
 
 interface NoConnectionGuardProps {
   children: React.ReactNode
-  screenClassName?: string
 }
 
-export function NoConnectionGuard({ children, screenClassName }: NoConnectionGuardProps) {
+export function NoConnectionGuard({ children }: NoConnectionGuardProps) {
   const { activeConnectionId } = useAppStore()
-  if (!activeConnectionId) return <NoConnectionScreen className={screenClassName} />
+  if (!activeConnectionId) return <NoConnectionScreen />
   return <>{children}</>
 }
