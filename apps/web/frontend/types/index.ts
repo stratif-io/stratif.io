@@ -327,6 +327,8 @@ export interface SchemaConfig {
   events_table: string
   custom_properties: CustomProperty[]
   session_timeout_minutes: number
+  resurrection_window_days?: number
+  power_user_threshold_days?: number
   updated_at: string
 }
 
@@ -374,6 +376,8 @@ export interface SchemaConfigBody {
   events_table: string
   custom_properties: CustomProperty[]
   session_timeout_minutes: number
+  resurrection_window_days?: number
+  power_user_threshold_days?: number
 }
 
 export interface FilterConfigBody {
