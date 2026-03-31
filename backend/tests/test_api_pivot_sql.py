@@ -68,3 +68,44 @@ class TestPivotSqlField:
         assert "?" not in body["sql"]
         # Should contain the actual date values
         assert "2024-01-01" in body["sql"] or "2024-01-" in body["sql"]
+
+
+def test_pivot_month_dimension(client):
+    """month dim should group by start-of-month."""
+    resp = client.get("/api/pivot?row_dimensions=month&measures=count_events")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "data" in data
+    assert data.get("error") is None
+
+
+def test_pivot_quarter_dimension(client):
+    """quarter dim should group by start-of-quarter."""
+    resp = client.get("/api/pivot?row_dimensions=quarter&measures=count_events")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "data" in data
+    assert data.get("error") is None
+
+
+def test_pivot_year_dimension(client):
+    """year dim should group by start-of-year."""
+    resp = client.get("/api/pivot?row_dimensions=year&measures=count_events")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "data" in data
+    assert data.get("error") is None
+
+
+def test_pivot_hour_bucket_dimension(client):
+    """hour_bucket dim should group by truncated timestamp hour, not hour-of-day integer."""
+    resp = client.get("/api/pivot?row_dimensions=hour_bucket&measures=count_events")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data.get("error") is None
+    rows = data.get("data", [])
+    assert len(rows) > 0
+    # Values must be date/datetime strings, not integers (0–23)
+    sample = rows[0]["hour_bucket"]
+    assert isinstance(sample, str), f"Expected date string, got {type(sample)}: {sample!r}"
+    assert "T" in sample or len(sample) == 10, f"Expected ISO datetime, got: {sample!r}"

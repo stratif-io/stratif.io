@@ -242,3 +242,41 @@ class TestEpochDiffSeconds:
     def test_mysql(self):
         result = epoch_diff_seconds("s", "e", "mysql")
         assert "TIMESTAMPDIFF(SECOND" in result
+
+
+# ---------------------------------------------------------------------------
+# date_trunc — quarter granularity
+# ---------------------------------------------------------------------------
+
+
+class TestDateTruncQuarter:
+    def test_duckdb(self):
+        result = date_trunc("quarter", "timestamp", "duckdb")
+        assert result == "DATE_TRUNC('quarter', timestamp)"
+
+    def test_postgres(self):
+        result = date_trunc("quarter", "ts", "postgres")
+        assert result == "DATE_TRUNC('quarter', ts)"
+
+    def test_sqlite(self):
+        result = date_trunc("quarter", "ts", "sqlite")
+        expected = "STRFTIME('%Y-', ts) || CASE WHEN CAST(STRFTIME('%m', ts) AS INTEGER) <= 3 THEN '01-01' WHEN CAST(STRFTIME('%m', ts) AS INTEGER) <= 6 THEN '04-01' WHEN CAST(STRFTIME('%m', ts) AS INTEGER) <= 9 THEN '07-01' ELSE '10-01' END"
+        assert result == expected
+
+    def test_mysql(self):
+        result = date_trunc("quarter", "ts", "mysql")
+        expected = "STR_TO_DATE(CONCAT(YEAR(ts), '-', LPAD((QUARTER(ts)-1)*3+1, 2, '0'), '-01'), '%Y-%m-%d')"
+        assert result == expected
+
+    def test_bigquery(self):
+        result = date_trunc("quarter", "ts", "bigquery")
+        assert result == "DATE_TRUNC(ts, QUARTER)"
+
+    def test_tsql(self):
+        result = date_trunc("quarter", "ts", "tsql")
+        expected = "DATEADD(quarter, DATEDIFF(quarter, 0, ts), 0)"
+        assert result == expected
+
+    def test_clickhouse(self):
+        result = date_trunc("quarter", "ts", "clickhouse")
+        assert result == "toStartOfQuarter(ts)"

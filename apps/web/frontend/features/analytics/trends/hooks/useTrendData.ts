@@ -1,10 +1,10 @@
 import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchTrend, fetchEvents, fetchPivot } from '@/lib/api'
+import { fetchPivot, fetchEvents } from '@/lib/api'
 import { formatDateParam } from '@/lib/utils'
 import { useAppStore } from '@/stores'
-import type { DateRange } from '@/types'
+import type { DateRange, Granularity } from '@/types'
 
 export interface TrendDataItem {
   date: string
@@ -15,13 +15,48 @@ export interface TrendDataItem {
 export interface UseTrendDataOptions {
   dateRange: DateRange
   selectedEvent: string
-  granularity: 'day' | 'week'
+  granularity: Granularity
   breakdownDimension?: string | null
   measure?: string
   localFilters?: Record<string, string[]>
 }
 
-const GRANULARITY_DIM = { day: 'date', week: 'week' } as const
+/** Maps UI granularity value to the pivot row_dimension key. */
+export function granularityToDim(granularity: Granularity): string {
+  const map: Record<Granularity, string> = {
+    hour: 'hour_bucket',
+    day: 'date',
+    week: 'week',
+    month: 'month',
+    quarter: 'quarter',
+    year: 'year',
+  }
+  return map[granularity]
+}
+
+/** Format a raw date/timestamp string from pivot response for chart display. */
+export function formatTrendDate(rawDate: string, granularity: Granularity): string {
+  const d = new Date(rawDate)
+  if (isNaN(d.getTime())) return rawDate
+
+  if (granularity === 'hour') {
+    const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const hour = String(d.getHours()).padStart(2, '0')
+    return `${datePart}, ${hour}:00`
+  }
+  if (granularity === 'month') {
+    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  }
+  if (granularity === 'quarter') {
+    const q = Math.floor(d.getMonth() / 3) + 1
+    return `Q${q} ${d.getFullYear()}`
+  }
+  if (granularity === 'year') {
+    return String(d.getFullYear())
+  }
+  // day, week
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
 
 export interface UseTrendDataReturn {
   trendData: Array<Record<string, unknown>>
@@ -41,7 +76,6 @@ export interface UseTrendDataReturn {
 /** Top-N cap for stacked series. Values beyond this are merged into "(other)". */
 const MAX_SERIES = 8
 
-/** Derive the row key used in pivot response rows for a given measure string. */
 function measureRowKey(measure: string): string {
   return measure.includes(':') ? measure.replace(':', '_') : measure
 }
@@ -57,7 +91,7 @@ export function useTrendData({
   const startDate = dateRange.from ? formatDateParam(dateRange.from) : ''
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : ''
   const { activeFilters, activeConnectionId } = useAppStore()
-  // Serialize localFilters (string[]) to pipe-joined strings and merge with global filters
+
   const serializedLocal: Record<string, string | null> = {}
   if (localFilters) {
     for (const [field, values] of Object.entries(localFilters)) {
@@ -66,50 +100,17 @@ export function useTrendData({
   }
   const mergedFilters = localFilters ? { ...activeFilters, ...serializedLocal } : activeFilters
 
-  const usePivot =
-    !!breakdownDimension || (measure !== 'count_events' && measure !== 'unique_users')
+  const dateDim = granularityToDim(granularity)
+  const pivotRowDims = breakdownDimension ? [dateDim, breakdownDimension] : [dateDim]
 
-  // ── Events list (always needed for the event selector) ───────────────────
+  // ── Events list ───────────────────────────────────────────────────────────
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
     staleTime: QUERY_STALE_TIME.default,
   })
 
-  // ── Trend query (count_events or unique_users, no breakdown) ──────────────
-  const {
-    data: trendResponse,
-    isLoading: trendLoading,
-    isError: trendIsError,
-    error: trendError,
-  } = useQuery({
-    queryKey: [
-      'trend',
-      selectedEvent,
-      granularity,
-      startDate,
-      endDate,
-      mergedFilters,
-      activeConnectionId,
-      measure,
-    ],
-    queryFn: () =>
-      fetchTrend({
-        event_name: selectedEvent || undefined,
-        granularity,
-        start_date: startDate,
-        end_date: endDate,
-        filters: mergedFilters,
-        connection_id: activeConnectionId ?? undefined,
-      }),
-    enabled: !usePivot,
-    staleTime: QUERY_STALE_TIME.default,
-  })
-
-  // ── Pivot query (breakdown OR non-default measure) ────────────────────────
-  const dateDim = GRANULARITY_DIM[granularity]
-  const pivotRowDims = breakdownDimension ? [dateDim, breakdownDimension] : [dateDim]
-
+  // ── Pivot query (always) ──────────────────────────────────────────────────
   const {
     data: pivotResponse,
     isLoading: pivotLoading,
@@ -117,7 +118,7 @@ export function useTrendData({
     error: pivotError,
   } = useQuery({
     queryKey: [
-      'trend-breakdown',
+      'trend-pivot',
       breakdownDimension,
       measure,
       granularity,
@@ -137,42 +138,33 @@ export function useTrendData({
         filters: mergedFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
-    enabled: usePivot,
     staleTime: QUERY_STALE_TIME.default,
   })
 
-  // ── Transform: flat pivot rows → wide-format (breakdown) or single (no breakdown) ──
-  const { stackedData, seriesKeys } = useMemo(() => {
-    if (!usePivot || !pivotResponse?.data?.length) {
-      return { stackedData: [], seriesKeys: null }
-    }
+  // ── Transform pivot rows ──────────────────────────────────────────────────
+  const { trendData, seriesKeys } = useMemo(() => {
+    if (!pivotResponse?.data?.length) return { trendData: [], seriesKeys: null }
 
     const rows = pivotResponse.data as Array<Record<string, unknown>>
     const rowKey = measureRowKey(measure)
 
-    // No-breakdown pivot path: just normalise to { date, fullDate, count }
     if (!breakdownDimension) {
       const data = rows
         .map((row) => ({
-          date: new Date(String(row[dateDim] ?? '')).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          }),
+          date: formatTrendDate(String(row[dateDim] ?? ''), granularity),
           fullDate: String(row[dateDim] ?? ''),
           count: Number(row[rowKey] ?? 0),
         }))
         .sort((a, b) => a.fullDate.localeCompare(b.fullDate))
-      return { stackedData: data, seriesKeys: null }
+      return { trendData: data, seriesKeys: null }
     }
 
-    // Breakdown pivot path: flat → wide
+    // Breakdown path: flat → wide
     const totals: Record<string, number> = {}
     for (const row of rows) {
       const dimVal = String(row[breakdownDimension] ?? '(unknown)')
-      const cnt = Number(row[rowKey] ?? 0)
-      totals[dimVal] = (totals[dimVal] ?? 0) + cnt
+      totals[dimVal] = (totals[dimVal] ?? 0) + Number(row[rowKey] ?? 0)
     }
-
     const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1])
     const topKeys = sorted.slice(0, MAX_SERIES).map(([k]) => k)
     const hasOther = sorted.length > MAX_SERIES
@@ -183,15 +175,12 @@ export function useTrendData({
       const dimVal = String(row[breakdownDimension] ?? '(unknown)')
       const cnt = Number(row[rowKey] ?? 0)
       const key = topKeys.includes(dimVal) ? dimVal : '(other)'
-
       if (!byDate.has(rawDate)) {
-        const label = new Date(rawDate).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
+        byDate.set(rawDate, {
+          date: formatTrendDate(rawDate, granularity),
+          fullDate: rawDate,
         })
-        byDate.set(rawDate, { date: label, fullDate: rawDate })
       }
-
       const record = byDate.get(rawDate)!
       record[key] = Number(record[key] ?? 0) + cnt
     }
@@ -200,27 +189,16 @@ export function useTrendData({
     const data = Array.from(byDate.values()).sort((a, b) =>
       String(a.fullDate).localeCompare(String(b.fullDate))
     )
-    return { stackedData: data, seriesKeys: finalKeys }
-  }, [usePivot, breakdownDimension, measure, dateDim, pivotResponse])
+    return { trendData: data, seriesKeys: finalKeys }
+  }, [pivotResponse, measure, granularity, breakdownDimension, dateDim])
 
-  // ── Non-pivot trend data ───────────────────────────────────────────────────
-  const trendData = useMemo(() => {
-    if (usePivot) return stackedData
-    if (!trendResponse?.data) return []
-    const field = measure === 'unique_users' ? 'unique_users' : 'count'
-    return trendResponse.data.map((d) => ({
-      date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      fullDate: d.date,
-      count: (d as unknown as Record<string, number>)[field] ?? d.count,
-    }))
-  }, [usePivot, trendResponse, stackedData, measure])
-
-  // ── Metrics ──────────────────────────────────────────────────────────────
+  // ── Metrics ───────────────────────────────────────────────────────────────
   const totalEvents = useMemo(() => {
     if (breakdownDimension && seriesKeys) {
-      return trendData.reduce((acc, row) => {
-        return acc + seriesKeys.reduce((s, k) => s + Number(row[k] ?? 0), 0)
-      }, 0)
+      return trendData.reduce(
+        (acc, row) => acc + seriesKeys.reduce((s, k) => s + Number(row[k] ?? 0), 0),
+        0
+      )
     }
     return (trendData as TrendDataItem[]).reduce((acc, d) => acc + d.count, 0)
   }, [trendData, breakdownDimension, seriesKeys])
@@ -243,15 +221,15 @@ export function useTrendData({
   return {
     trendData,
     events: eventsResponse?.events || [],
-    isLoading: usePivot ? pivotLoading : trendLoading,
-    isError: usePivot ? pivotIsError : trendIsError,
-    error: (usePivot ? pivotError : trendError) as Error | null,
+    isLoading: pivotLoading,
+    isError: pivotIsError,
+    error: pivotError as Error | null,
     eventsLoading,
     totalEvents,
     averageValue,
     maxValue,
     seriesKeys: breakdownDimension ? seriesKeys : null,
     measureKey: 'count',
-    sql: usePivot ? pivotResponse?.sql : trendResponse?.sql,
+    sql: pivotResponse?.sql,
   }
 }

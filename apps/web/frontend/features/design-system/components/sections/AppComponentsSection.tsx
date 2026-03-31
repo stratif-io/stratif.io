@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { DbLogo } from '@/components/DbLogo'
 import { DB_BRAND_COLORS } from '@/lib/db-colors'
 import { FilterBar } from '@/components/shared/FilterBar'
-import { GlobalFilters } from '@/components/GlobalFilters'
+import { GlobalFilters, GranularityControl } from '@/components/GlobalFilters'
 import { QueryStatusIndicator } from '@/components/layout/QueryStatusIndicator'
 import { useAppStore } from '@/stores'
 import { subDays } from 'date-fns'
@@ -219,6 +219,19 @@ export function AppComponentsSection() {
       <ComponentRow label="GlobalFilters">
         <div className="w-full max-w-2xl">
           <GlobalFilters />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="GranularityControl">
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Active (interactive)</p>
+          <div className="flex h-10 rounded-lg border bg-background shadow-sm overflow-hidden w-fit">
+            <GranularityControl />
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">Disabled (not applicable)</p>
+          <div className="flex h-10 rounded-lg border bg-background shadow-sm overflow-hidden w-fit">
+            <GranularityControl disabled />
+          </div>
         </div>
       </ComponentRow>
 

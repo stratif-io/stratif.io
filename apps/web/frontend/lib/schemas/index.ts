@@ -1,7 +1,5 @@
 export {
   DateRangeSchema,
-  TrendDataSchema,
-  TrendResponseSchema,
   EventSchema,
   EventsResponseSchema,
   RawEventsResponseSchema,
@@ -18,8 +16,6 @@ export {
   ApiErrorSchema,
   MetricCardSchema,
   type DateRangeType,
-  type TrendDataType,
-  type TrendResponseType,
   type EventType,
   type EventsResponseType,
   type RawEventsResponseType,
