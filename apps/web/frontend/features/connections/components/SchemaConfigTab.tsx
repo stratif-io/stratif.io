@@ -116,28 +116,42 @@ function ColumnCombobox({
   value,
   detectedColumns,
   onChange,
-  disabled,
 }: {
   value: string
   detectedColumns: string[]
   onChange: (v: string) => void
-  disabled?: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+
   const options = Array.from(
     new Set([...(value ? [value] : []), ...detectedColumns.filter(Boolean)])
   ).sort((a, b) => (a === value ? -1 : b === value ? 1 : a.localeCompare(b)))
 
+  const trimmed = search.trim()
+  const showCreate =
+    trimmed.length > 0 && !options.some((o) => o.toLowerCase() === trimmed.toLowerCase())
+
+  function select(v: string) {
+    onChange(v)
+    setOpen(false)
+    setSearch('')
+  }
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o)
+        if (!o) setSearch('')
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           type="button"
-          disabled={disabled}
           className={cn(
             'h-8 w-full flex items-center justify-between rounded-md border border-input bg-background px-3 text-sm font-mono text-left',
             'hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-1 focus:ring-ring',
-            disabled && 'opacity-50 cursor-not-allowed',
             !value && 'text-muted-foreground'
           )}
         >
@@ -147,19 +161,27 @@ function ColumnCombobox({
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search columns…" />
+          <CommandInput
+            placeholder="Search or type column…"
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
-            <CommandEmpty>No column found.</CommandEmpty>
+            {!showCreate && options.length === 0 && (
+              <CommandEmpty>Type a column name to set it.</CommandEmpty>
+            )}
+            {!showCreate && options.length > 0 && <CommandEmpty>No column found.</CommandEmpty>}
+            {showCreate && (
+              <CommandGroup>
+                <CommandItem value={trimmed} onSelect={() => select(trimmed)}>
+                  <Check className="mr-2 h-3.5 w-3.5 shrink-0 opacity-0" />
+                  Use &ldquo;{trimmed}&rdquo;
+                </CommandItem>
+              </CommandGroup>
+            )}
             <CommandGroup>
               {options.map((col) => (
-                <CommandItem
-                  key={col}
-                  value={col}
-                  onSelect={(v) => {
-                    onChange(v)
-                    setOpen(false)
-                  }}
-                >
+                <CommandItem key={col} value={col} onSelect={() => select(col)}>
                   <Check
                     className={cn(
                       'mr-2 h-3.5 w-3.5 shrink-0',
@@ -646,7 +668,6 @@ export function SchemaConfigTab({ connId }: Props) {
                       value={value}
                       detectedColumns={detectedColumns}
                       onChange={onChange}
-                      disabled={detectedColumns.length === 0}
                     />
                   )}
                   {/* Filter toggle — only visible when not pending */}
@@ -762,7 +783,6 @@ export function SchemaConfigTab({ connId }: Props) {
                   value={prop.path}
                   detectedColumns={detectedColumns}
                   onChange={(v) => updateProp(idx, { path: v })}
-                  disabled={detectedColumns.length === 0}
                 />
                 <Select
                   value={prop.type}
