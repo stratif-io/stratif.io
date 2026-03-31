@@ -1,11 +1,24 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { DateRange } from '@/types'
+import type { DateRange, Granularity } from '@/types'
 import { initSemaphore } from '@/lib/api/semaphore'
+
+function suggestGranularity(range: DateRange): Granularity | null {
+  if (!range.from || !range.to) return null
+  const days = (range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24)
+  if (days <= 2) return 'hour'
+  if (days <= 60) return 'day'
+  if (days <= 183) return 'week'
+  if (days <= 730) return 'month'
+  return 'year'
+}
 
 interface AppState {
   theme: 'light' | 'dark' | 'system'
   setTheme: (theme: 'light' | 'dark' | 'system') => void
+
+  granularity: Granularity
+  setGranularity: (g: Granularity) => void
 
   dateRange: DateRange
   setDateRange: (range: DateRange) => void
@@ -52,6 +65,9 @@ export const useAppStore = create<AppState>()(
       theme: 'system',
       setTheme: (theme) => set({ theme }),
 
+      granularity: 'day',
+      setGranularity: (granularity) => set({ granularity }),
+
       dateRange: {
         from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         to: new Date(),
@@ -59,7 +75,15 @@ export const useAppStore = create<AppState>()(
       setDateRange: (dateRange) => set({ dateRange }),
 
       presetId: '7d',
-      applyPreset: (dateRange, presetId) => set({ dateRange, presetId }),
+      applyPreset: (dateRange, presetId) =>
+        set((state) => {
+          const suggested = suggestGranularity(dateRange)
+          return {
+            dateRange,
+            presetId,
+            granularity: suggested ?? state.granularity,
+          }
+        }),
 
       sidebarOpen: true,
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
@@ -100,6 +124,7 @@ export const useAppStore = create<AppState>()(
       name: 'stratifio-storage',
       partialize: (state) => ({
         theme: state.theme,
+        granularity: state.granularity,
         dateRange: state.dateRange,
         presetId: state.presetId,
         sidebarOpen: state.sidebarOpen,

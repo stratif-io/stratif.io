@@ -13,6 +13,8 @@ export interface DateRange {
   to: Date | null
 }
 
+export type Granularity = 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'
+
 export interface TrendData {
   date: string
   count: number
