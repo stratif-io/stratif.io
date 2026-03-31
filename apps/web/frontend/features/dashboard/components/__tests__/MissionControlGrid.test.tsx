@@ -10,34 +10,6 @@ vi.mock('@/components/dev', () => ({
   DevCard: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
-vi.mock('@/stores/app-store', () => ({
-  useAppStore: (selector: (s: { activeConnectionId: string | null }) => unknown) =>
-    selector({ activeConnectionId: 'test-conn' }),
-}))
-
-vi.mock('../../hooks/usePinnedMetrics', () => ({
-  usePinnedMetrics: () => ({
-    pinned: [
-      'total_events',
-      'unique_users',
-      'wau',
-      'total_sessions',
-      'avg_session_duration_sec',
-      'avg_events_per_session',
-      'avg_active_days',
-      'power_users',
-      'new_users',
-      'returning_users',
-      'resurrected_users',
-      'churned_users',
-      'retention_rate',
-      'dau_mau_ratio',
-    ],
-    togglePin: vi.fn(),
-    isPinned: () => true,
-  }),
-}))
-
 vi.mock('../MetricPopover', () => ({
   MetricPopover: () => null,
 }))
@@ -125,17 +97,33 @@ const noMetricLoading = Object.fromEntries(allMetricKeys.map((k) => [k, false]))
   boolean
 >
 
+const defaultPinProps = {
+  togglePin: vi.fn(),
+  isPinned: () => true,
+  resetToDefault: vi.fn(),
+}
+
 describe('MissionControlGrid', () => {
   it('renders the hero card with Total Events by default', () => {
     render(
-      <MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        {...defaultPinProps}
+      />
     )
     expect(screen.getByTestId('hero-card')).toHaveTextContent('Total Events')
   })
 
   it('renders all 13 supporting mini cards', () => {
     render(
-      <MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        {...defaultPinProps}
+      />
     )
     expect(screen.getByTestId('mini-Unique Users')).toBeInTheDocument()
     expect(screen.getByTestId('mini-WAU')).toBeInTheDocument()
@@ -154,7 +142,12 @@ describe('MissionControlGrid', () => {
 
   it('renders all 14 metric labels including new ones', () => {
     render(
-      <MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        {...defaultPinProps}
+      />
     )
     // All 14 metrics from METRIC_CONFIG
     const expectedLabels = [
@@ -186,7 +179,12 @@ describe('MissionControlGrid', () => {
 
   it('shows category headers', () => {
     render(
-      <MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        {...defaultPinProps}
+      />
     )
     expect(screen.getByText('Volume')).toBeInTheDocument()
     expect(screen.getByText('Engagement')).toBeInTheDocument()
@@ -196,7 +194,12 @@ describe('MissionControlGrid', () => {
 
   it('promotes a mini card to hero when clicked', () => {
     render(
-      <MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        {...defaultPinProps}
+      />
     )
 
     // Initially hero is Total Events
@@ -211,7 +214,12 @@ describe('MissionControlGrid', () => {
 
   it('marks the promoted mini card with isHero', () => {
     render(
-      <MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        {...defaultPinProps}
+      />
     )
     fireEvent.click(screen.getByTestId('mini-Sessions'))
     expect(screen.getByTestId('mini-Sessions')).toHaveAttribute('data-hero', 'true')
@@ -219,7 +227,12 @@ describe('MissionControlGrid', () => {
 
   it('shows Customize metrics button and toggles chips', async () => {
     render(
-      <MissionControlGrid data={mockData} trends={emptyTrends} metricLoading={noMetricLoading} />
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        {...defaultPinProps}
+      />
     )
     const customizeBtn = screen.getByText('Customize metrics')
     expect(customizeBtn).toBeInTheDocument()

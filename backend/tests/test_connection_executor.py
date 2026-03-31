@@ -124,22 +124,6 @@ class TestBuildFilterClauses:
         assert len(params) == 2
 
 
-def test_trend_endpoint_signature_requires_db():
-    """trend endpoint should declare db as non-Optional AnalyticsDatabase."""
-    import inspect
-    import typing
-
-    from backend.api.trend import get_trend
-    from backend.services.connection_executor import AnalyticsDatabase
-
-    sig = inspect.signature(get_trend)
-    db_param = sig.parameters["db"]
-    annotation = db_param.annotation
-    args = typing.get_args(annotation)
-    db_type = args[0] if args else annotation
-    assert db_type is AnalyticsDatabase, f"Expected AnalyticsDatabase, got {db_type}"
-
-
 class TestHasColumn:
     def _make_db(self, available_columns=None, custom_props=None, events_cte=None):
         conn = duckdb.connect(":memory:")

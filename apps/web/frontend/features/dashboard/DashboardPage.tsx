@@ -5,6 +5,7 @@ import { MissionControlGrid } from './components/MissionControlGrid'
 import { TopEvents } from './components/TopEvents'
 import { useMissionControl } from './hooks/useMissionControl'
 import { useMissionControlTrends } from './hooks/useMissionControlTrends'
+import { usePinnedMetrics } from './hooks/usePinnedMetrics'
 import { QueryError } from '@/components/ui/query-error'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { DevCard } from '@/components/dev'
@@ -18,11 +19,14 @@ export function DashboardPage() {
   }, [])
 
   const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()
+  const { pinned, togglePin, isPinned, resetToDefault } = usePinnedMetrics(
+    activeConnectionId ?? null
+  )
   const { data, metricLoading, metricSql, isError, error, topEvents, eventsLoading, topEventsSql } =
     useMissionControl({
       dateRange,
     })
-  const { trends } = useMissionControlTrends({ dateRange })
+  const { trends } = useMissionControlTrends({ dateRange, visibleMetrics: pinned })
 
   const isConnectionNotFound =
     isError &&
@@ -67,6 +71,9 @@ export function DashboardPage() {
                 trends={trends}
                 metricLoading={metricLoading}
                 metricSql={metricSql}
+                togglePin={togglePin}
+                isPinned={isPinned}
+                resetToDefault={resetToDefault}
               />
               <DevCard sql={topEventsSql}>
                 <TopEvents events={topEvents} loading={eventsLoading} />

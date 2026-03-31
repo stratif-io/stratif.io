@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from backend.core.auth import get_current_user
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
-from backend.services.sql_builder import date_diff_days, date_trunc
+from backend.services.sql_builder import date_diff_days, date_diff_months, date_trunc
 from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
 
 router = APIRouter(prefix="/api", tags=["retention"], dependencies=[Depends(get_current_user)])
@@ -32,6 +32,16 @@ RETENTION_CONFIG: dict[str, dict] = {
         "milestones": [1, 2, 3, 4, 5, 6],  # months after cohort start (30-day approx)
         "max_units": 6,
         "unit_divisor": 30,
+    },
+    "quarter": {
+        "milestones": [1, 2, 3, 4],  # quarters after cohort start (91-day approx)
+        "max_units": 4,
+        "unit_divisor": 91,
+    },
+    "year": {
+        "milestones": [1, 2, 3],  # years after cohort start (365-day approx)
+        "max_units": 3,
+        "unit_divisor": 365,
     },
 }
 
@@ -68,8 +78,20 @@ def get_retention(
 
     # Cohort trunc unit (day/week/month for the cohort_date column)
     day_col = date_trunc(gran, "timestamp", dialect)
-    # Days difference expression (always in days — we convert to units in Python/SQL)
-    days_diff = date_diff_days("s.cohort_date", "a.activity_date", dialect)
+
+    # Unit expression: for day/week use FLOOR(days / divisor); for month/quarter/year
+    # use calendar-month arithmetic to avoid 31-day months bleeding into the next unit.
+    if gran in ("month", "quarter", "year"):
+        months_diff = date_diff_months("s.cohort_date", "a.activity_date", dialect)
+        if gran == "month":
+            unit_expr = months_diff
+        elif gran == "quarter":
+            unit_expr = f"FLOOR(({months_diff}) / 3)"
+        else:  # year
+            unit_expr = f"FLOOR(({months_diff}) / 12)"
+    else:
+        days_diff = date_diff_days("s.cohort_date", "a.activity_date", dialect)
+        unit_expr = f"FLOOR(({days_diff}) / {unit_divisor})"
 
     # ── WHERE clauses ──────────────────────────────────────────────────────────
     cohort_clauses: list[str] = []
@@ -94,10 +116,6 @@ def get_retention(
 
     params = cohort_params + filter_params
 
-    # unit expression: integer-divide days by unit_divisor so that SQL GROUP BY
-    # collapses per-day rows into the right week/month bucket and COUNT DISTINCT
-    # correctly handles users who returned multiple times within the same unit.
-
     query = f"""
         WITH signups AS (
             SELECT
@@ -118,7 +136,7 @@ def get_retention(
             SELECT
                 s.user_id,
                 s.cohort_date,
-                {days_diff} AS days_since_signup
+                {unit_expr} AS unit_since_signup
             FROM signups s
             LEFT JOIN user_activity a ON s.user_id = a.user_id
             WHERE a.activity_date >= s.cohort_date
@@ -133,11 +151,11 @@ def get_retention(
         retention_counts AS (
             SELECT
                 ca.cohort_date,
-                FLOOR(ca.days_since_signup / {unit_divisor}) AS unit_since_signup,
+                ca.unit_since_signup,
                 COUNT(DISTINCT ca.user_id) AS returning_users
             FROM cohort_activity ca
             JOIN cohort_sizes cs ON ca.cohort_date = cs.cohort_date
-            GROUP BY ca.cohort_date, FLOOR(ca.days_since_signup / {unit_divisor})
+            GROUP BY ca.cohort_date, ca.unit_since_signup
         )
         SELECT
             cs.cohort_date,

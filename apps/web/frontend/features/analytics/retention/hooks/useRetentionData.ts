@@ -6,7 +6,7 @@ import { formatDateParam } from '@/lib/utils'
 import { useAppStore } from '@/stores'
 import type { DateRange, RetentionCohort } from '@/types'
 
-export type RetentionGranularity = 'day' | 'week' | 'month'
+export type RetentionGranularity = 'day' | 'week' | 'month' | 'quarter' | 'year'
 
 export interface UseRetentionDataOptions {
   dateRange: DateRange

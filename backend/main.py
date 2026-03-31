@@ -40,7 +40,6 @@ from backend.api import (
     query_studio_router,
     retention_router,
     sessions_router,
-    trend_router,
 )
 
 
@@ -83,7 +82,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(trend_router)
 app.include_router(retention_router)
 app.include_router(events_router)
 app.include_router(paths_router)
