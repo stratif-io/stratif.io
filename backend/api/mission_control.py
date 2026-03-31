@@ -10,6 +10,8 @@ from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.views import session_ctes
 from backend.services.validators import interpolate_sql, parse_date
+from backend.services.sql_builder import date_trunc
+from collections import defaultdict as _defaultdict
 
 router = APIRouter(prefix="/api", tags=["mission-control"])
 
@@ -603,10 +605,47 @@ def get_mission_control_metric(
     }
 
 
+def _trunc_to_bucket(d: date, granularity: str) -> date:
+    """Truncate a date to the start of the granularity bucket."""
+    if granularity in ('hour', 'day'):
+        return d
+    if granularity == 'week':
+        return d - timedelta(days=d.weekday())  # ISO Monday
+    if granularity == 'month':
+        return d.replace(day=1)
+    if granularity == 'quarter':
+        return d.replace(month=((d.month - 1) // 3) * 3 + 1, day=1)
+    if granularity == 'year':
+        return d.replace(month=1, day=1)
+    return d
+
+
+def _resample(data: list[dict], granularity: str, agg: str = 'sum') -> list[dict]:
+    """Resample daily data to the requested granularity bucket.
+
+    agg='sum' for count metrics (new_users, resurrected, etc.)
+    agg='avg' for rate/average metrics (retention_rate, dau_mau_ratio, etc.)
+    """
+    if granularity == 'day':
+        return data
+    buckets: dict[date, list[float]] = _defaultdict(list)
+    for item in data:
+        d = date.fromisoformat(item['date'])
+        bucket = _trunc_to_bucket(d, granularity)
+        buckets[bucket].append(float(item['value']))
+    result = []
+    for bucket_date in sorted(buckets):
+        vals = buckets[bucket_date]
+        value = sum(vals) if agg == 'sum' else (sum(vals) / len(vals) if vals else 0.0)
+        result.append({'date': str(bucket_date), 'value': round(value, 4)})
+    return result
+
+
 @router.get("/mission-control/trend")
 def get_mission_control_trend(
     db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
     metric: str = Query(..., description="Metric name"),
+    granularity: str = Query('day', description="Aggregation granularity"),
     start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     filters: str | None = Query(None, description="JSON dict of dimension filters"),
@@ -652,13 +691,15 @@ def get_mission_control_trend(
     trend_sql: str | list[str] = ""
 
     if metric == "total_events":
-        trend_sql = f"SELECT DATE(timestamp), COUNT(*) FROM events {ev_where_sql} GROUP BY DATE(timestamp) ORDER BY 1"
+        trunc_expr = date_trunc(granularity, "timestamp", dialect)
+        trend_sql = f"SELECT {trunc_expr}, COUNT(*) FROM events {ev_where_sql} GROUP BY {trunc_expr} ORDER BY 1"
         rows = db.execute(trend_sql, ev_params)
         data = [{"date": str(r[0]), "value": r[1] or 0} for r in rows]
         sql_val = interpolate_sql(trend_sql, ev_params)
 
     elif metric == "unique_users":
-        trend_sql = f"SELECT DATE(timestamp), COUNT(DISTINCT user_id) FROM events {ev_where_sql} GROUP BY DATE(timestamp) ORDER BY 1"
+        trunc_expr = date_trunc(granularity, "timestamp", dialect)
+        trend_sql = f"SELECT {trunc_expr}, COUNT(DISTINCT user_id) FROM events {ev_where_sql} GROUP BY {trunc_expr} ORDER BY 1"
         rows = db.execute(trend_sql, ev_params)
         data = [{"date": str(r[0]), "value": r[1] or 0} for r in rows]
         sql_val = interpolate_sql(trend_sql, ev_params)
@@ -680,12 +721,13 @@ def get_mission_control_trend(
         else:
             agg = "AVG(ds.event_count)"
 
+        trunc_expr = date_trunc(granularity, "ds.start_time", dialect)
         trend_sql = f"""
             WITH {session_ctes(timeout, dialect)}
-            SELECT DATE(ds.start_time), {agg}
+            SELECT {trunc_expr}, {agg}
             FROM derived_sessions ds
             {sess_where_sql}
-            GROUP BY DATE(ds.start_time)
+            GROUP BY {trunc_expr}
             ORDER BY 1
             """
         rows = db.execute(trend_sql, sess_params)
@@ -713,6 +755,7 @@ def get_mission_control_trend(
         while current_day <= end:
             data.append({"date": str(current_day), "value": by_day.get(str(current_day), 0)})
             current_day += timedelta(days=1)
+        data = _resample(data, granularity, agg='sum')
         sql_val = interpolate_sql(trend_sql, new_params)
 
     elif metric == "returning_users":
@@ -743,6 +786,7 @@ def get_mission_control_trend(
             returning = max(0, daily_uniq.get(d, 0) - new_by_day.get(d, 0))
             data.append({"date": d, "value": returning})
             current_day += timedelta(days=1)
+        data = _resample(data, granularity, agg='sum')
         sql_val = [interpolate_sql(uniq_sql, ev_params), interpolate_sql(new_sql, new_ret_params)]
 
     elif metric == "resurrected_users":
@@ -775,6 +819,7 @@ def get_mission_control_trend(
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
+        data = _resample(data, granularity, agg='sum')
         sql_val = "resurrected_users daily trend"
 
     elif metric == "churned_users":
@@ -798,6 +843,7 @@ def get_mission_control_trend(
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
+        data = _resample(data, granularity, agg='sum')
         sql_val = "churned_users daily trend"
 
     elif metric == "retention_rate":
@@ -828,6 +874,7 @@ def get_mission_control_trend(
             ratio = round(retained / prev_u, 4) if prev_u else 0.0
             data.append({"date": str(current_day), "value": ratio})
             current_day += timedelta(days=1)
+        data = _resample(data, granularity, agg='avg')
         sql_val = "retention_rate daily trend"
 
     elif metric == "wau":
@@ -845,6 +892,7 @@ def get_mission_control_trend(
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
+        data = _resample(data, granularity, agg='avg')
         sql_val = "wau rolling 7-day trend"
 
     elif metric == "avg_active_days":
@@ -873,6 +921,7 @@ def get_mission_control_trend(
             )
             data.append({"date": str(current_day), "value": round(rows[0][0] or 0.0, 2) if rows else 0.0})
             current_day += timedelta(days=1)
+        data = _resample(data, granularity, agg='avg')
         sql_val = "avg_active_days daily trend"
 
     elif metric == "power_users":
@@ -898,6 +947,7 @@ def get_mission_control_trend(
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
+        data = _resample(data, granularity, agg='sum')
         sql_val = "power_users daily trend"
 
     else:  # dau_mau_ratio
@@ -942,6 +992,7 @@ def get_mission_control_trend(
             ratio = round(dau_val / mau_val, 4) if mau_val else 0.0
             data.append({"date": str(current_day), "value": ratio})
             current_day += timedelta(days=1)
+        data = _resample(data, granularity, agg='avg')
 
     return {"sql": sql_val, "metric": metric, "data": [{"date": d["date"], "value": float(d["value"])} for d in data]}
 

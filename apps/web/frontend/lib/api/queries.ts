@@ -467,6 +467,7 @@ export const fetchMissionControl = (params: {
 
 export const fetchMissionControlTrend = (params: {
   metric: string
+  granularity?: string
   start_date?: string
   end_date?: string
   filters?: Record<string, string | null>
@@ -474,6 +475,7 @@ export const fetchMissionControlTrend = (params: {
 }) => {
   const searchParams = new URLSearchParams()
   searchParams.set('metric', params.metric)
+  if (params.granularity) searchParams.set('granularity', params.granularity)
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
   const f = serializeFilters(params.filters)

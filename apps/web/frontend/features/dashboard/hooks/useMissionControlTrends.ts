@@ -45,7 +45,7 @@ export function useMissionControlTrends({
 }): UseMissionControlTrendsReturn {
   const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
-  const { activeFilters, activeConnectionId } = useAppStore()
+  const { activeFilters, activeConnectionId, granularity } = useAppStore()
 
   // Calculate the previous period (same length, immediately before)
   const periodDays =
@@ -69,6 +69,7 @@ export function useMissionControlTrends({
         queryKey: [
           'missionControlTrend',
           metric,
+          granularity,
           startDate,
           endDate,
           activeFilters,
@@ -77,6 +78,7 @@ export function useMissionControlTrends({
         queryFn: () =>
           fetchMissionControlTrend({
             metric,
+            granularity,
             start_date: startDate,
             end_date: endDate,
             filters: activeFilters,
@@ -89,6 +91,7 @@ export function useMissionControlTrends({
         queryKey: [
           'missionControlTrend',
           metric,
+          granularity,
           prevStartDate,
           prevEndDate,
           activeFilters,
@@ -97,6 +100,7 @@ export function useMissionControlTrends({
         queryFn: () =>
           fetchMissionControlTrend({
             metric,
+            granularity,
             start_date: prevStartDate!,
             end_date: prevEndDate!,
             filters: activeFilters,

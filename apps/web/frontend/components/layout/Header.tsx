@@ -14,7 +14,7 @@ import { GlobalFilters } from '@/components/GlobalFilters'
 import { QueryStatusIndicator } from './QueryStatusIndicator'
 import { cn } from '@/lib/utils'
 
-const GRANULARITY_ROUTES = new Set(['/trends', '/retention'])
+const GRANULARITY_ROUTES = new Set(['/trends', '/retention', '/dashboard'])
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
