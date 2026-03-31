@@ -383,6 +383,132 @@ describe('SchemaConfigTab — detect review panel', () => {
   })
 })
 
+describe('SchemaConfigTab — auto-save with null schema (new connection)', () => {
+  afterEach(() => {
+    // Restore standard mock so subsequent tests don't inherit the null-schema state
+    vi.mocked(hooks.useSchemaConfig).mockReturnValue({
+      data: mockSchema,
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+  })
+
+  it('triggers upsert.mutate with default values when schema is null', () => {
+    vi.useFakeTimers()
+
+    const upsertMutate = vi.fn()
+    vi.mocked(hooks.useSchemaConfig).mockReturnValue({
+      data: null,
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+    vi.mocked(hooks.useFilterConfig).mockReturnValue({
+      data: mockFilters,
+      isLoading: false,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+    vi.mocked(hooks.useUpsertSchemaConfig).mockReturnValue({
+      mutate: upsertMutate,
+      isPending: false,
+      isSuccess: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+    vi.mocked(hooks.useUpsertFilterConfig).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isSuccess: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-null-schema" />
+      </QueryClientProvider>
+    )
+
+    // Advance past the 800ms debounce
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+
+    // upsert.mutate must be called even when schema data was null
+    expect(upsertMutate).toHaveBeenCalled()
+
+    vi.useRealTimers()
+  })
+})
+
+describe('SchemaConfigTab — auto-save after detect', () => {
+  it('triggers upsert.mutate with accepted field values after detect + accept all', async () => {
+    vi.useFakeTimers()
+
+    const upsertMutate = vi.fn()
+    vi.mocked(hooks.useUpsertSchemaConfig).mockReturnValue({
+      mutate: upsertMutate,
+      isPending: false,
+      isSuccess: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {
+        opts.onSuccess(mockDetectResult)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-autosave-detect" />
+      </QueryClientProvider>
+    )
+
+    // Advance past initial auto-save timer
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+    upsertMutate.mockClear()
+
+    // Run detect
+    act(() => {
+      screen.getByRole('button', { name: /detect from schema/i }).click()
+    })
+
+    // Accept all proposals
+    act(() => {
+      screen.getByRole('button', { name: /accept all/i }).click()
+    })
+
+    // Advance past the 800ms debounce
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+
+    // upsert.mutate should have been called with the detected field values
+    expect(upsertMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id_field: 'uid',
+        event_name_field: 'action',
+        timestamp_field: 'ts',
+        email_field: 'user_email',
+      })
+    )
+
+    vi.useRealTimers()
+  })
+})
+
 describe('SchemaConfigTab — tab behaviour', () => {
   it('switches to Fields tab automatically when detect returns suggestions', () => {
     vi.mocked(hooks.useDetectSchema).mockReturnValue({

@@ -307,24 +307,26 @@ export function SchemaConfigTab({ connId }: Props) {
   const filterInitialized = useRef(false)
 
   useEffect(() => {
-    if (initialized.current || isLoading || isError || !data) return
-    setForm({
-      userIdField: data.user_id_field,
-      timestampField: data.timestamp_field,
-      eventNameField: data.event_name_field,
-      eventsTable: data.events_table ?? 'events',
-      sessionTimeoutMinutes: data.session_timeout_minutes ?? 30,
-      resurrectionWindowDays: data.resurrection_window_days ?? 30,
-      powerUserThresholdDays: data.power_user_threshold_days ?? 4,
-      customProps: data.custom_properties,
-      userIdentityFields: {
-        email_field: data.email_field ?? null,
-        first_name_field: data.first_name_field ?? null,
-        last_name_field: data.last_name_field ?? null,
-        date_of_birth_field: data.date_of_birth_field ?? null,
-        phone_field: data.phone_field ?? null,
-      },
-    })
+    if (initialized.current || isLoading || isError) return
+    if (data) {
+      setForm({
+        userIdField: data.user_id_field,
+        timestampField: data.timestamp_field,
+        eventNameField: data.event_name_field,
+        eventsTable: data.events_table ?? 'events',
+        sessionTimeoutMinutes: data.session_timeout_minutes ?? 30,
+        resurrectionWindowDays: data.resurrection_window_days ?? 30,
+        powerUserThresholdDays: data.power_user_threshold_days ?? 4,
+        customProps: data.custom_properties,
+        userIdentityFields: {
+          email_field: data.email_field ?? null,
+          first_name_field: data.first_name_field ?? null,
+          last_name_field: data.last_name_field ?? null,
+          date_of_birth_field: data.date_of_birth_field ?? null,
+          phone_field: data.phone_field ?? null,
+        },
+      })
+    }
     initialized.current = true
   }, [data, isLoading, isError])
 
