@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -5,10 +6,32 @@ import { QueryError } from '@/components/ui/query-error'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { UnderConstruction } from '@/components/UnderConstruction'
 import { NoConnectionScreen } from '@/components/ui/no-connection-guard'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast-provider'
 
 const stubError = new Error('Failed to load data.')
+
+function ThrowOnRender(): never {
+  throw new Error('Test error from design system demo')
+}
+
+function ErrorBoundaryDemo() {
+  const [triggered, setTriggered] = useState(false)
+  return (
+    <div className="w-full max-w-lg">
+      {triggered ? (
+        <ErrorBoundary key="triggered">
+          <ThrowOnRender />
+        </ErrorBoundary>
+      ) : (
+        <Button size="sm" variant="outline" onClick={() => setTriggered(true)}>
+          Trigger error boundary
+        </Button>
+      )}
+    </div>
+  )
+}
 
 export function FeedbackSection() {
   return (
@@ -48,6 +71,10 @@ export function FeedbackSection() {
         <div className="border rounded-md w-full overflow-hidden max-w-xl max-h-72 overflow-y-auto">
           <NoConnectionScreen />
         </div>
+      </ComponentRow>
+
+      <ComponentRow label="ErrorBoundary">
+        <ErrorBoundaryDemo />
       </ComponentRow>
 
       <ComponentRow label="Toast">

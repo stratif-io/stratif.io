@@ -4,6 +4,7 @@ import { FeedbackSection } from './components/sections/FeedbackSection'
 import { ChartsSection } from './components/sections/ChartsSection'
 import { DataSection } from './components/sections/DataSection'
 import { AppComponentsSection } from './components/sections/AppComponentsSection'
+import { LayoutSection } from './components/sections/LayoutSection'
 
 const NAV_SECTIONS = [
   { id: 'primitives', label: 'UI Primitives' },
@@ -11,6 +12,7 @@ const NAV_SECTIONS = [
   { id: 'charts', label: 'Charts' },
   { id: 'data', label: 'Data Display' },
   { id: 'app', label: 'App Components' },
+  { id: 'layout', label: 'Layout' },
 ]
 
 function scrollTo(id: string) {
@@ -53,6 +55,7 @@ export function DesignSystemPage() {
           <ChartsSection />
           <DataSection />
           <AppComponentsSection />
+          <LayoutSection />
         </div>
       </div>
     </PageTransition>
