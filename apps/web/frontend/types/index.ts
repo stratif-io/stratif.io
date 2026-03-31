@@ -13,17 +13,7 @@ export interface DateRange {
   to: Date | null
 }
 
-export interface TrendData {
-  date: string
-  count: number
-  unique_users: number
-}
-
-export interface TrendResponse {
-  sql?: string | string[]
-  total_unique_users: number
-  data: TrendData[]
-}
+export type Granularity = 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'
 
 export interface Event {
   user_id: string

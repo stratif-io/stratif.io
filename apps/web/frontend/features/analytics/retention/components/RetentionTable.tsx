@@ -42,6 +42,13 @@ function formatDate(d: string, granularity: RetentionGranularity) {
   if (granularity === 'month') {
     return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
   }
+  if (granularity === 'quarter') {
+    const q = Math.floor(date.getMonth() / 3) + 1
+    return `Q${q} ${date.getFullYear()}`
+  }
+  if (granularity === 'year') {
+    return String(date.getFullYear())
+  }
   if (granularity === 'week') {
     return `Wk ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
   }
@@ -51,6 +58,8 @@ function formatDate(d: string, granularity: RetentionGranularity) {
 function milestoneLabel(unit: number, granularity: RetentionGranularity): string {
   if (granularity === 'week') return `Wk ${unit}`
   if (granularity === 'month') return `Mo ${unit}`
+  if (granularity === 'quarter') return `Q${unit}`
+  if (granularity === 'year') return `Yr ${unit}`
   return `Day ${unit}`
 }
 

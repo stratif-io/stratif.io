@@ -252,17 +252,14 @@ class BaseE2ETest:
         # All-time must return actual data — measures must not be null/zero.
         # This guards against regressions where the all-time path disables queries
         # because no date range is present.
-        r = client.get("/api/trend", params=params)
+        r = client.get("/api/pivot", params={**params, "measures": "unique_users"})
         assert r.status_code == 200, r.text
         body = r.json()
-        assert body.get("total_unique_users") is not None, (
-            "total_unique_users is None in all-time trend — backend returned null"
-        )
-        assert body["total_unique_users"] > 0, (
-            f"total_unique_users is 0 in all-time trend — got: {body}"
+        assert body.get("data") is not None, (
+            "data is None in all-time pivot — backend returned null"
         )
         assert len(body.get("data", [])) > 0, (
-            "all-time trend returned empty data array"
+            "all-time pivot returned empty data array"
         )
 
     # ------------------------------------------------------------------
@@ -294,12 +291,12 @@ class BaseE2ETest:
         assert r.status_code == 200, f"GET /api/events/top failed: {r.text}"
         assert isinstance(r.json().get("data"), list), r.json()
 
-        # trend — {data: list, total_unique_users: int}
-        r = client.get("/api/trend", params=params)
-        assert r.status_code == 200, f"GET /api/trend failed: {r.text}"
+        # pivot — {data: list, measures: list}
+        r = client.get("/api/pivot", params={**params, "measures": "unique_users"})
+        assert r.status_code == 200, f"GET /api/pivot failed: {r.text}"
         body = r.json()
         assert isinstance(body.get("data"), list), body
-        assert isinstance(body.get("total_unique_users"), (int, float)), body
+        assert isinstance(body.get("measures"), list), body
 
         # retention — {data: list, granularity: str}
         r = client.get("/api/retention", params=params)

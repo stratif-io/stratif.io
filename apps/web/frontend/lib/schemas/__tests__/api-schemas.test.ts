@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   DateRangeSchema,
-  TrendDataSchema,
-  TrendResponseSchema,
   EventSchema,
   EventsResponseSchema,
   RawEventsResponseSchema,
@@ -48,87 +46,6 @@ describe('DateRangeSchema', () => {
     const result = DateRangeSchema.safeParse({
       from: 'not a date',
       to: new Date(),
-    })
-    expect(result.success).toBe(false)
-  })
-})
-
-describe('TrendDataSchema', () => {
-  it('validates valid trend data with datetime string', () => {
-    const result = TrendDataSchema.safeParse({
-      date: '2024-01-01T00:00:00Z',
-      count: 100,
-      unique_users: 50,
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('validates valid trend data with date string', () => {
-    const result = TrendDataSchema.safeParse({
-      date: '2024-01-01',
-      count: 50,
-      unique_users: 25,
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('rejects invalid date format', () => {
-    const result = TrendDataSchema.safeParse({
-      date: '01/01/2024',
-      count: 100,
-      unique_users: 50,
-    })
-    expect(result.success).toBe(false)
-  })
-
-  it('rejects negative count', () => {
-    const result = TrendDataSchema.safeParse({
-      date: '2024-01-01',
-      count: -1,
-      unique_users: 50,
-    })
-    expect(result.success).toBe(false)
-  })
-
-  it('rejects non-integer count', () => {
-    const result = TrendDataSchema.safeParse({
-      date: '2024-01-01',
-      count: 1.5,
-      unique_users: 50,
-    })
-    expect(result.success).toBe(false)
-  })
-
-  it('accepts zero count', () => {
-    const result = TrendDataSchema.safeParse({
-      date: '2024-01-01',
-      count: 0,
-      unique_users: 0,
-    })
-    expect(result.success).toBe(true)
-  })
-})
-
-describe('TrendResponseSchema', () => {
-  it('validates valid trend response', () => {
-    const result = TrendResponseSchema.safeParse({
-      total_unique_users: 100,
-      data: [
-        { date: '2024-01-01', count: 100, unique_users: 50 },
-        { date: '2024-01-02', count: 150, unique_users: 75 },
-      ],
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('validates empty data array', () => {
-    const result = TrendResponseSchema.safeParse({ total_unique_users: 0, data: [] })
-    expect(result.success).toBe(true)
-  })
-
-  it('rejects invalid data in array', () => {
-    const result = TrendResponseSchema.safeParse({
-      data: [{ date: '2024-01-01', count: -1 }],
     })
     expect(result.success).toBe(false)
   })

@@ -1,4 +1,5 @@
 import { useAppStore } from '@/stores'
+import { useLocation } from 'react-router-dom'
 import { ConnectionSelector } from './ConnectionSelector'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,11 +14,15 @@ import { GlobalFilters } from '@/components/GlobalFilters'
 import { QueryStatusIndicator } from './QueryStatusIndicator'
 import { cn } from '@/lib/utils'
 
+const GRANULARITY_ROUTES = new Set(['/trends', '/retention', '/dashboard'])
+
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const devMode = useAppStore((s) => s.devMode)
   const { theme, setTheme } = useTheme()
+  const { pathname } = useLocation()
+  const granularityDisabled = !GRANULARITY_ROUTES.has(pathname)
   return (
     <header className="sticky top-0 z-[var(--z-header)] w-full border-b bg-background">
       <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
@@ -37,7 +42,7 @@ export function Header() {
 
         {/* Filters — takes remaining space */}
         <div className="flex-1 min-w-0">
-          <GlobalFilters />
+          <GlobalFilters granularityDisabled={granularityDisabled} />
         </div>
 
         {/* Right actions */}
