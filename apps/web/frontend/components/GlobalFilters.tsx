@@ -4,7 +4,18 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DateRangePicker } from '@/components/DateRangePicker'
-import { ChevronDown, X } from 'lucide-react'
+import {
+  ChevronDown,
+  X,
+  Timer,
+  Activity,
+  CircleUserRound,
+  Globe2,
+  Laptop,
+  Target,
+  MoreHorizontal,
+  type LucideIcon,
+} from 'lucide-react'
 import { useFilterConfig, useFilterOptions } from '@/features/connections/hooks/useConnectionsData'
 import { cn } from '@/lib/utils'
 import type { DimensionCategoryConfig, FilterField, Granularity } from '@/types'
@@ -15,16 +26,26 @@ function pluralize(word: string): string {
   return word + 's'
 }
 
+const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
+  Timer,
+  Activity,
+  CircleUserRound,
+  Globe2,
+  Laptop,
+  Target,
+  MoreHorizontal,
+}
+
 const compiledCategories = (dimensionCategories as DimensionCategoryConfig[]).map((cat) => ({
-  emoji: cat.emoji,
+  icon: cat.icon,
   regexes: cat.patterns.map((p) => new RegExp(p, 'i')),
 }))
 
-function resolveEmoji(fieldName: string): string {
-  for (const { emoji, regexes } of compiledCategories) {
-    if (regexes.some((r) => r.test(fieldName))) return emoji
+function resolveIcon(fieldName: string): LucideIcon {
+  for (const { icon, regexes } of compiledCategories) {
+    if (regexes.some((r) => r.test(fieldName))) return CATEGORY_ICON_MAP[icon] ?? MoreHorizontal
   }
-  return '🏷️'
+  return MoreHorizontal
 }
 
 function DimensionFilter({ field, options }: { field: FilterField; options: string[] }) {
@@ -36,7 +57,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   const value = activeFilters[field.field] ?? null
-  const emoji = resolveEmoji(field.field)
+  const FieldIcon = resolveIcon(field.field)
 
   const filtered = search
     ? options.filter((o) => o.toLowerCase().includes(search.toLowerCase()))
@@ -89,7 +110,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
             value ? 'text-foreground' : 'text-muted-foreground'
           )}
         >
-          <span className="shrink-0 text-sm leading-none">{emoji}</span>
+          <FieldIcon className="shrink-0 h-3.5 w-3.5" />
           <span className="max-w-[100px] truncate">
             {value ?? `All ${pluralize(field.label.toLowerCase())}`}
           </span>
