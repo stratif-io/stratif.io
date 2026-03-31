@@ -444,6 +444,53 @@ describe('SchemaConfigTab — auto-save with null schema (new connection)', () =
 
     vi.useRealTimers()
   })
+
+  it('triggers upsertFilter.mutate when filter config is null (global filter toggle)', () => {
+    vi.useFakeTimers()
+
+    const upsertFilterMutate = vi.fn()
+    vi.mocked(hooks.useFilterConfig).mockReturnValue({
+      data: null,
+      isLoading: false,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+    vi.mocked(hooks.useUpsertFilterConfig).mockReturnValue({
+      mutate: upsertFilterMutate,
+      isPending: false,
+      isSuccess: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-null-filters" />
+      </QueryClientProvider>
+    )
+
+    // Advance past initial auto-save timer so filterInitialized is set
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+    upsertFilterMutate.mockClear()
+
+    // Switch to Properties tab and toggle the global filter for the 'country' custom prop
+    act(() => {
+      screen.getByRole('button', { name: /^properties$/i }).click()
+    })
+    act(() => {
+      screen.getAllByRole('checkbox')[0].click()
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+
+    // upsertFilter.mutate must fire after toggling a global filter
+    expect(upsertFilterMutate).toHaveBeenCalled()
+
+    vi.useRealTimers()
+  })
 })
 
 describe('SchemaConfigTab — auto-save after detect', () => {

@@ -331,12 +331,14 @@ export function SchemaConfigTab({ connId }: Props) {
   }, [data, isLoading, isError])
 
   useEffect(() => {
-    if (filterInitialized.current || filterLoading || !filterData) return
-    const map: Record<string, { label: string; icon: string }> = {}
-    for (const ff of filterData.filter_fields) {
-      map[ff.field] = { label: ff.label, icon: ff.icon }
+    if (filterInitialized.current || filterLoading) return
+    if (filterData) {
+      const map: Record<string, { label: string; icon: string }> = {}
+      for (const ff of filterData.filter_fields) {
+        map[ff.field] = { label: ff.label, icon: ff.icon }
+      }
+      setEnabledFields(map)
     }
-    setEnabledFields(map)
     filterInitialized.current = true
   }, [filterData, filterLoading])
 
