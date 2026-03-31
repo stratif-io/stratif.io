@@ -1,5 +1,4 @@
 import {
-  TrendResponse,
   EventsResponse,
   TopEventsResponse,
   RawEventsResponse,
@@ -70,26 +69,6 @@ function serializeFilters(filters?: Record<string, string | null>): string | und
   if (!filters) return undefined
   const active = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== null))
   return Object.keys(active).length > 0 ? JSON.stringify(active) : undefined
-}
-
-export const fetchTrend = (params: {
-  event_name?: string
-  granularity?: string
-  start_date?: string
-  end_date?: string
-  filters?: Record<string, string | null>
-  connection_id?: string
-}) => {
-  const searchParams = new URLSearchParams()
-  if (params.event_name) searchParams.set('event_name', params.event_name)
-  if (params.granularity) searchParams.set('granularity', params.granularity)
-  if (params.start_date) searchParams.set('start_date', params.start_date)
-  if (params.end_date) searchParams.set('end_date', params.end_date)
-  const f = serializeFilters(params.filters)
-  if (f) searchParams.set('filters', f)
-  if (params.connection_id) searchParams.set('connection_id', params.connection_id)
-
-  return fetchApi<TrendResponse>(`/api/trend?${searchParams}`)
 }
 
 export const fetchEvents = (connection_id?: string) => {
