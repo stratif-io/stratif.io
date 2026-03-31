@@ -2,49 +2,49 @@
   {
     "id": "time",
     "label": "🕐 Time",
-    "icon": "Tag",
+    "icon": "Timer",
     "emoji": "🕐",
     "patterns": ["^ts_", "^(date|week|hour|month|quarter|year)$", "_(at|date|time|ts)$"]
   },
   {
     "id": "event",
     "label": "📣 Event",
-    "icon": "Layers",
+    "icon": "Activity",
     "emoji": "📣",
     "patterns": ["^event_", "^day_of_week$"]
   },
   {
     "id": "user",
     "label": "👤 User",
-    "icon": "Building",
+    "icon": "CircleUserRound",
     "emoji": "👤",
     "patterns": ["^user_", "_(user|account|customer|tenant)$"]
   },
   {
     "id": "geography",
     "label": "🌍 Geography",
-    "icon": "Globe",
+    "icon": "Globe2",
     "emoji": "🌍",
     "patterns": ["(country|city|region|state|geo|locale|timezone)"]
   },
   {
     "id": "device",
     "label": "💻 Device",
-    "icon": "Monitor",
+    "icon": "Laptop",
     "emoji": "💻",
     "patterns": ["(device|browser|os|platform|screen|viewport)"]
   },
   {
     "id": "marketing",
     "label": "📢 Marketing",
-    "icon": "Chrome",
+    "icon": "Target",
     "emoji": "📢",
     "patterns": ["^utm_", "(referrer|campaign|channel|source|medium)"]
   },
   {
     "id": "other",
     "label": "⚙️ Other",
-    "icon": "Tag",
+    "icon": "MoreHorizontal",
     "emoji": "⚙️",
     "patterns": [".*"]
   }
