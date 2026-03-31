@@ -149,7 +149,7 @@ describe('SchemaConfigTab — User Identity section', () => {
 describe('SchemaConfigTab — Event Properties section', () => {
   it('renders "Event Properties" section heading', () => {
     renderTab()
-    expect(screen.getByText('Event Properties')).toBeInTheDocument()
+    expect(screen.getByText(/event properties/i)).toBeInTheDocument()
   })
 
   it('shows custom property name in an editable input', () => {
@@ -470,10 +470,7 @@ describe('SchemaConfigTab — auto-save with null schema (new connection)', () =
     })
     upsertFilterMutate.mockClear()
 
-    // Switch to Properties tab and toggle the global filter for the 'country' custom prop
-    act(() => {
-      screen.getByRole('button', { name: /^properties$/i }).click()
-    })
+    // Toggle the global filter for the 'country' custom prop (Event Properties is open by default)
     act(() => {
       screen.getByRole('button', { name: /add country to global filters/i }).click()
     })

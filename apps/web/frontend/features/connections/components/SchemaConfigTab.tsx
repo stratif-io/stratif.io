@@ -6,6 +6,8 @@ import {
   FolderSearch,
   ChevronsUpDown,
   Check,
+  ChevronDown,
+  Search,
   X,
   Sparkles,
   Tag,
@@ -282,6 +284,40 @@ function PendingDetectionRow({
   )
 }
 
+function SectionHeader({
+  title,
+  open,
+  onToggle,
+  hint,
+  action,
+}: {
+  title: string
+  open: boolean
+  onToggle: () => void
+  hint?: string
+  action?: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="w-full flex items-center gap-2 px-3 py-2 bg-muted/20 hover:bg-muted/30 transition-colors text-left"
+    >
+      <ChevronDown
+        className={cn(
+          'h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-150',
+          !open && '-rotate-90'
+        )}
+      />
+      <span className="text-xs font-medium flex-1">{title}</span>
+      {!open && hint && (
+        <span className="text-xs text-muted-foreground font-normal font-mono">{hint}</span>
+      )}
+      {action && <div onClick={(e) => e.stopPropagation()}>{action}</div>}
+    </button>
+  )
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 interface Props {
@@ -296,7 +332,17 @@ export function SchemaConfigTab({ connId }: Props) {
   const upsertFilter = useUpsertFilterConfig(connId)
 
   const [browseOpen, setBrowseOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'fields' | 'properties' | 'advanced'>('fields')
+  const [openSections, setOpenSections] = useState({
+    fields: true,
+    identity: false,
+    properties: true,
+    advanced: false,
+  })
+  const [propSearch, setPropSearch] = useState('')
+
+  function toggleSection(key: keyof typeof openSections) {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
   const [form, setForm] = useState<SchemaFormState>(DEFAULT_FORM)
   const [detectedColumns, setDetectedColumns] = useState<string[]>([])
   const [pendingDetections, setPendingDetections] = useState<PendingDetection[]>([])
@@ -430,6 +476,9 @@ export function SchemaConfigTab({ connId }: Props) {
   }
 
   function acceptAllDetections() {
+    const identityKeys = new Set(USER_IDENTITY_FIELDS.map((f) => f.key as string))
+    const hasIdentity = pendingDetections.some((d) => identityKeys.has(d.fieldKey))
+    if (hasIdentity) setOpenSections((prev) => ({ ...prev, identity: true }))
     for (const d of pendingDetections) applyDetection(d.fieldKey, d.proposedColumn)
     setPendingDetections([])
   }
@@ -462,7 +511,6 @@ export function SchemaConfigTab({ connId }: Props) {
           if (value) pending.push({ fieldKey: key, label, proposedColumn: value })
         }
         setPendingDetections(pending)
-        setActiveTab('fields')
 
         const columnNames = columns.map((c: { name: string }) => c.name)
         const nestedPaths = proposed_custom_properties.map((p: { path: string }) => p.path)
@@ -504,6 +552,26 @@ export function SchemaConfigTab({ connId }: Props) {
       ),
     [form.customProps]
   )
+
+  const groupedProps = useMemo(() => {
+    const q = propSearch.trim().toLowerCase()
+    const filtered = sortedCustomProps.filter(
+      ({ prop }) => !q || prop.name.toLowerCase().includes(q) || prop.path.toLowerCase().includes(q)
+    )
+    const groups = new Map<string, typeof filtered>()
+    for (const item of filtered) {
+      const key = item.prop.category ?? '__uncategorized__'
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)!.push(item)
+    }
+    const allCats = dimensionCategories as DimensionCategoryConfig[]
+    const catLabel = (id: string) => allCats.find((c) => c.id === id)?.label ?? id
+    return [...groups.entries()].sort(([a], [b]) => {
+      if (a === '__uncategorized__') return 1
+      if (b === '__uncategorized__') return -1
+      return catLabel(a).localeCompare(catLabel(b))
+    })
+  }, [sortedCustomProps, propSearch])
 
   if (isLoading || filterLoading) return <LoadingState message="Loading schema config…" />
 
@@ -569,64 +637,43 @@ export function SchemaConfigTab({ connId }: Props) {
 
       {detect.isError && <p className="text-sm text-destructive">{detect.error?.message}</p>}
 
-      {/* ── Tab bar ── */}
-      <div className="flex border-b">
-        {(['fields', 'properties', 'advanced'] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            className={cn(
-              'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-              activeTab === tab
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Fields tab ── */}
-      {activeTab === 'fields' && (
-        <>
-          {/* ── Pending detections banner ── */}
-          {pendingDetections.length > 0 && (
-            <div className="flex items-center justify-between px-3 py-2 rounded-md bg-amber-50/80 dark:bg-amber-950/20 border border-amber-400/40">
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5" />
-                {pendingDetections.length} field{pendingDetections.length !== 1 ? 's' : ''} detected
-                — review mappings below
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
-                  onClick={acceptAllDetections}
-                >
-                  Accept all
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs text-muted-foreground"
-                  onClick={() => setPendingDetections([])}
-                >
-                  Dismiss
-                </Button>
+      {/* ── Collapsible sections ── */}
+      <div className="rounded-md border overflow-hidden">
+        {/* ── Required Fields ── */}
+        <SectionHeader
+          title="Required Fields"
+          open={openSections.fields}
+          onToggle={() => toggleSection('fields')}
+        />
+        {openSections.fields && (
+          <>
+            {pendingDetections.length > 0 && (
+              <div className="flex items-center justify-between px-3 py-2 border-b bg-amber-50/80 dark:bg-amber-950/20 border-amber-400/40">
+                <span className="text-xs font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {pendingDetections.length} field{pendingDetections.length !== 1 ? 's' : ''}{' '}
+                  detected — review mappings below
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                    onClick={acceptAllDetections}
+                  >
+                    Accept all
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs text-muted-foreground"
+                    onClick={() => setPendingDetections([])}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* ── Field Mapping ── */}
-          <div className="rounded-md border overflow-hidden">
-            {/* Required fields — compact, no header row needed */}
-            <div className="px-3 py-1.5 bg-muted/20 border-b">
-              <span className="text-xs font-medium text-muted-foreground">Required Fields</span>
-            </div>
-
+            )}
             {[
               {
                 label: 'User ID',
@@ -692,13 +739,19 @@ export function SchemaConfigTab({ connId }: Props) {
                 </div>
               )
             })}
+          </>
+        )}
 
-            {/* Identity fields */}
-            <div className="border-t border-dashed" />
-            <div className="px-3 py-1.5 bg-muted/20 border-b">
-              <span className="text-xs font-medium text-muted-foreground">User Identity</span>
-            </div>
-
+        {/* ── User Identity ── */}
+        <div className="border-t" />
+        <SectionHeader
+          title="User Identity"
+          open={openSections.identity}
+          onToggle={() => toggleSection('identity')}
+          hint="Email, Name, Phone…"
+        />
+        {openSections.identity && (
+          <>
             {USER_IDENTITY_FIELDS.map(({ key, label, icon }) => {
               const mapped = userIdentityFields[key]
               const isMapped = mapped !== null && mapped !== ''
@@ -770,184 +823,246 @@ export function SchemaConfigTab({ connId }: Props) {
                 </div>
               )
             })}
-          </div>
-        </>
-      )}
+          </>
+        )}
 
-      {/* ── Properties tab ── */}
-      {activeTab === 'properties' && (
-        <div className="rounded-md border overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-1.5 bg-muted/20 border-b">
-            <span className="text-xs font-medium text-muted-foreground">Event Properties</span>
+        {/* ── Properties ── */}
+        <div className="border-t" />
+        <SectionHeader
+          title={`Event Properties${sortedCustomProps.length > 0 ? ` (${sortedCustomProps.length})` : ''}`}
+          open={openSections.properties}
+          onToggle={() => toggleSection('properties')}
+          action={
             <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={addProp}>
               <Plus className="h-3 w-3 mr-1" />
               Add
             </Button>
-          </div>
-
-          {sortedCustomProps.length > 0 && (
-            <div className={`grid ${EVENT_GRID} gap-2 px-3 py-2 border-b bg-muted/30`}>
-              {['Name', 'Path', 'Type', 'Cat.', '', ''].map((h) => (
-                <span key={h} className="text-xs font-medium text-muted-foreground">
-                  {h}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {sortedCustomProps.map(({ prop, idx }) => {
-            const isEnabled = prop.name in enabledFields
-            return (
-              <div
-                key={prop.id ?? String(idx)}
-                className={`grid ${EVENT_GRID} gap-2 px-3 py-2 border-b last:border-b-0 items-center`}
-              >
-                <Input
-                  value={prop.name}
-                  onChange={(e) => updateProp(idx, { name: e.target.value })}
-                  placeholder="campaign_source"
-                  className="h-8 text-sm font-mono"
-                />
-                <ColumnCombobox
-                  value={prop.path}
-                  detectedColumns={detectedColumns}
-                  onChange={(v) => updateProp(idx, { path: v })}
-                />
-                <Select
-                  value={prop.type}
-                  onValueChange={(v) => updateProp(idx, { type: v as PropertyType })}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROPERTY_TYPES.map((t) => (
-                      <SelectItem key={t} value={t} className="text-xs">
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <CompactCategoryButton
-                  value={prop.category ?? null}
-                  onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
-                />
+          }
+        />
+        {openSections.properties && (
+          <>
+            {sortedCustomProps.length === 0 ? (
+              <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+                No custom properties yet.{' '}
                 <button
                   type="button"
-                  onClick={() =>
-                    toggleEventPropFilter(prop.name, defaultLabel(prop.name), prop.category)
-                  }
-                  className={cn(
-                    'h-7 w-7 flex items-center justify-center rounded text-muted-foreground/40 hover:text-muted-foreground transition-colors',
-                    isEnabled && 'text-primary hover:text-primary'
-                  )}
-                  title={isEnabled ? 'Remove from global filters' : 'Add to global filters'}
-                  aria-label={
-                    isEnabled
-                      ? `Remove ${prop.name} from global filters`
-                      : `Add ${prop.name} to global filters`
-                  }
+                  className="text-foreground underline underline-offset-2 hover:no-underline"
+                  onClick={handleDetect}
                 >
-                  <Tag className="h-3.5 w-3.5" />
-                </button>
+                  Detect from schema
+                </button>{' '}
+                or{' '}
                 <button
                   type="button"
-                  className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive transition-colors"
-                  onClick={() => removeProp(idx)}
-                  aria-label={`Remove ${prop.name}`}
+                  className="text-foreground underline underline-offset-2 hover:no-underline"
+                  onClick={addProp}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  add one manually
                 </button>
+                .
               </div>
-            )
-          })}
+            ) : (
+              <>
+                {/* Search */}
+                <div className="flex items-center gap-2 px-3 py-2 border-b">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <input
+                    type="text"
+                    value={propSearch}
+                    onChange={(e) => setPropSearch(e.target.value)}
+                    placeholder="Search properties…"
+                    className="flex-1 text-xs bg-transparent outline-none placeholder:text-muted-foreground"
+                  />
+                  {propSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setPropSearch('')}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label="Clear search"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+                {/* Column headers */}
+                <div className={`grid ${EVENT_GRID} gap-2 px-3 py-2 border-b bg-muted/30`}>
+                  {['Name', 'Path', 'Type', 'Cat.', '', ''].map((h, i) => (
+                    <span key={i} className="text-xs font-medium text-muted-foreground">
+                      {h}
+                    </span>
+                  ))}
+                </div>
+                {/* Grouped rows */}
+                {groupedProps.length === 0 ? (
+                  <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                    No properties match &ldquo;{propSearch}&rdquo;
+                  </div>
+                ) : (
+                  groupedProps.map(([categoryId, items]) => {
+                    const allCats = dimensionCategories as DimensionCategoryConfig[]
+                    const catLabel =
+                      categoryId === '__uncategorized__'
+                        ? 'Uncategorized'
+                        : (allCats.find((c) => c.id === categoryId)?.label ?? categoryId)
+                    return (
+                      <div key={categoryId}>
+                        <div className="px-3 py-1.5 bg-muted/20 border-b text-xs font-medium text-muted-foreground flex items-center gap-2">
+                          {catLabel}
+                          <span className="text-muted-foreground/60 font-normal">
+                            {items.length}
+                          </span>
+                        </div>
+                        {items.map(({ prop, idx }) => {
+                          const isEnabled = prop.name in enabledFields
+                          return (
+                            <div
+                              key={prop.id ?? String(idx)}
+                              className={`grid ${EVENT_GRID} gap-2 px-3 py-2 border-b last:border-b-0 items-center`}
+                            >
+                              <Input
+                                value={prop.name}
+                                onChange={(e) => updateProp(idx, { name: e.target.value })}
+                                placeholder="campaign_source"
+                                className="h-8 text-sm font-mono"
+                              />
+                              <ColumnCombobox
+                                value={prop.path}
+                                detectedColumns={detectedColumns}
+                                onChange={(v) => updateProp(idx, { path: v })}
+                              />
+                              <Select
+                                value={prop.type}
+                                onValueChange={(v) => updateProp(idx, { type: v as PropertyType })}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {PROPERTY_TYPES.map((t) => (
+                                    <SelectItem key={t} value={t} className="text-xs">
+                                      {t}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <CompactCategoryButton
+                                value={prop.category ?? null}
+                                onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  toggleEventPropFilter(
+                                    prop.name,
+                                    defaultLabel(prop.name),
+                                    prop.category
+                                  )
+                                }
+                                className={cn(
+                                  'h-7 w-7 flex items-center justify-center rounded text-muted-foreground/40 hover:text-muted-foreground transition-colors',
+                                  isEnabled && 'text-primary hover:text-primary'
+                                )}
+                                title={
+                                  isEnabled ? 'Remove from global filters' : 'Add to global filters'
+                                }
+                                aria-label={
+                                  isEnabled
+                                    ? `Remove ${prop.name} from global filters`
+                                    : `Add ${prop.name} to global filters`
+                                }
+                              >
+                                <Tag className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive transition-colors"
+                                onClick={() => removeProp(idx)}
+                                aria-label={`Remove ${prop.name}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })
+                )}
+              </>
+            )}
+          </>
+        )}
 
-          {sortedCustomProps.length === 0 && (
-            <div className="px-3 py-8 text-center text-sm text-muted-foreground">
-              No custom properties yet.{' '}
-              <button
-                type="button"
-                className="text-foreground underline underline-offset-2 hover:no-underline"
-                onClick={handleDetect}
+        {/* ── Advanced ── */}
+        <div className="border-t" />
+        <SectionHeader
+          title="Advanced"
+          open={openSections.advanced}
+          onToggle={() => toggleSection('advanced')}
+          hint={`${sessionTimeoutMinutes}m · ${resurrectionWindowDays}d · ${powerUserThresholdDays}d`}
+        />
+        {openSections.advanced && (
+          <div className="px-3 py-3 space-y-3">
+            <div className="flex items-center gap-3">
+              <Label
+                htmlFor="session_timeout_minutes"
+                className="text-sm text-muted-foreground whitespace-nowrap w-44"
               >
-                Detect from schema
-              </button>{' '}
-              or{' '}
-              <button
-                type="button"
-                className="text-foreground underline underline-offset-2 hover:no-underline"
-                onClick={addProp}
-              >
-                add one manually
-              </button>
-              .
+                Session timeout
+              </Label>
+              <Input
+                id="session_timeout_minutes"
+                type="number"
+                min={1}
+                max={1440}
+                value={sessionTimeoutMinutes}
+                onChange={(e) => updateForm({ sessionTimeoutMinutes: Number(e.target.value) })}
+                placeholder="30"
+                className="w-20"
+              />
+              <span className="text-sm text-muted-foreground">min</span>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Advanced tab ── */}
-      {activeTab === 'advanced' && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Label
-              htmlFor="session_timeout_minutes"
-              className="text-sm text-muted-foreground whitespace-nowrap w-44"
-            >
-              Session timeout
-            </Label>
-            <Input
-              id="session_timeout_minutes"
-              type="number"
-              min={1}
-              max={1440}
-              value={sessionTimeoutMinutes}
-              onChange={(e) => updateForm({ sessionTimeoutMinutes: Number(e.target.value) })}
-              placeholder="30"
-              className="w-20"
-            />
-            <span className="text-sm text-muted-foreground">min</span>
+            <div className="flex items-center gap-3">
+              <Label
+                htmlFor="resurrection_window_days"
+                className="text-sm text-muted-foreground whitespace-nowrap w-44"
+              >
+                Resurrection window
+              </Label>
+              <Input
+                id="resurrection_window_days"
+                type="number"
+                min={1}
+                max={365}
+                value={resurrectionWindowDays}
+                onChange={(e) => updateForm({ resurrectionWindowDays: Number(e.target.value) })}
+                placeholder="30"
+                className="w-20"
+              />
+              <span className="text-sm text-muted-foreground">days</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Label
+                htmlFor="power_user_threshold_days"
+                className="text-sm text-muted-foreground whitespace-nowrap w-44"
+              >
+                Power user threshold
+              </Label>
+              <Input
+                id="power_user_threshold_days"
+                type="number"
+                min={1}
+                max={31}
+                value={powerUserThresholdDays}
+                onChange={(e) => updateForm({ powerUserThresholdDays: Number(e.target.value) })}
+                placeholder="4"
+                className="w-20"
+              />
+              <span className="text-sm text-muted-foreground">active days</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Label
-              htmlFor="resurrection_window_days"
-              className="text-sm text-muted-foreground whitespace-nowrap w-44"
-            >
-              Resurrection window
-            </Label>
-            <Input
-              id="resurrection_window_days"
-              type="number"
-              min={1}
-              max={365}
-              value={resurrectionWindowDays}
-              onChange={(e) => updateForm({ resurrectionWindowDays: Number(e.target.value) })}
-              placeholder="30"
-              className="w-20"
-            />
-            <span className="text-sm text-muted-foreground">days</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Label
-              htmlFor="power_user_threshold_days"
-              className="text-sm text-muted-foreground whitespace-nowrap w-44"
-            >
-              Power user threshold
-            </Label>
-            <Input
-              id="power_user_threshold_days"
-              type="number"
-              min={1}
-              max={31}
-              value={powerUserThresholdDays}
-              onChange={(e) => updateForm({ powerUserThresholdDays: Number(e.target.value) })}
-              placeholder="4"
-              className="w-20"
-            />
-            <span className="text-sm text-muted-foreground">active days</span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {(upsert.isError || upsertFilter.isError) && (
         <p className="text-sm text-destructive">
