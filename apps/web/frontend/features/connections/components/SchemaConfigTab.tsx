@@ -650,11 +650,16 @@ export function SchemaConfigTab({ connId }: Props) {
       groups.get(key)!.push(item)
     }
     const allCats = dimensionCategories as DimensionCategoryConfig[]
-    const catLabel = (id: string) => allCats.find((c) => c.id === id)?.label ?? id
+    const catName = (id: string) => {
+      const label = allCats.find((c) => c.id === id)?.label ?? id
+      return label.slice(label.indexOf(' ') + 1)
+    }
     return [...groups.entries()].sort(([a], [b]) => {
+      if (a === 'other') return 1
+      if (b === 'other') return -1
       if (a === '__uncategorized__') return 1
       if (b === '__uncategorized__') return -1
-      return catLabel(a).localeCompare(catLabel(b))
+      return catName(a).localeCompare(catName(b))
     })
   }, [sortedCustomProps, propSearch])
 
