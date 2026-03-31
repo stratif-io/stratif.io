@@ -10,6 +10,14 @@ import {
   Search,
   X,
   Sparkles,
+  Timer,
+  Activity,
+  CircleUserRound,
+  Globe2,
+  Laptop,
+  Target,
+  MoreHorizontal,
+  type LucideIcon,
 } from 'lucide-react'
 import { SaveStatus } from '@/components/ui/save-status'
 import { Button } from '@/components/ui/button'
@@ -58,6 +66,16 @@ const USER_IDENTITY_FIELDS = [
   { key: 'date_of_birth_field' as const, label: 'Date of Birth', icon: 'Calendar' },
   { key: 'phone_field' as const, label: 'Phone', icon: 'Phone' },
 ] as const
+
+const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
+  Timer,
+  Activity,
+  CircleUserRound,
+  Globe2,
+  Laptop,
+  Target,
+  MoreHorizontal,
+}
 
 type UserIdentityKey = (typeof USER_IDENTITY_FIELDS)[number]['key']
 
@@ -208,6 +226,7 @@ function CompactCategoryButton({
 }) {
   const [open, setOpen] = useState(false)
   const selected = (dimensionCategories as DimensionCategoryConfig[]).find((c) => c.id === value)
+  const SelectedIcon = selected ? (CATEGORY_ICON_MAP[selected.icon] ?? null) : null
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -219,7 +238,7 @@ function CompactCategoryButton({
             value ? 'text-foreground' : 'text-muted-foreground/40'
           )}
         >
-          {selected ? selected.label.charAt(0).toUpperCase() : '—'}
+          {SelectedIcon ? <SelectedIcon className="h-3.5 w-3.5" /> : '—'}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-1" align="start">
@@ -233,19 +252,24 @@ function CompactCategoryButton({
         >
           — none —
         </button>
-        {(dimensionCategories as DimensionCategoryConfig[]).map((cat) => (
-          <button
-            key={cat.id}
-            type="button"
-            className="w-full rounded px-2 py-1 text-left text-xs hover:bg-accent"
-            onClick={() => {
-              onChange(cat.id)
-              setOpen(false)
-            }}
-          >
-            {cat.label}
-          </button>
-        ))}
+        {(dimensionCategories as DimensionCategoryConfig[]).map((cat) => {
+          const CatIcon = CATEGORY_ICON_MAP[cat.icon] ?? null
+          const catName = cat.label.slice(cat.label.indexOf(' ') + 1)
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              className="w-full rounded px-2 py-1 text-left text-xs hover:bg-accent flex items-center gap-2"
+              onClick={() => {
+                onChange(cat.id)
+                setOpen(false)
+              }}
+            >
+              {CatIcon && <CatIcon className="h-3 w-3 shrink-0 text-muted-foreground" />}
+              {catName}
+            </button>
+          )
+        })}
       </PopoverContent>
     </Popover>
   )
@@ -935,14 +959,17 @@ export function SchemaConfigTab({ connId }: Props) {
                 ) : (
                   groupedProps.map(([categoryId, items]) => {
                     const allCats = dimensionCategories as DimensionCategoryConfig[]
-                    const catLabel =
+                    const cat = allCats.find((c) => c.id === categoryId)
+                    const catName =
                       categoryId === '__uncategorized__'
                         ? 'Uncategorized'
-                        : (allCats.find((c) => c.id === categoryId)?.label ?? categoryId)
+                        : (cat?.label.slice(cat.label.indexOf(' ') + 1) ?? categoryId)
+                    const CatIcon = cat ? (CATEGORY_ICON_MAP[cat.icon] ?? MoreHorizontal) : null
                     return (
                       <div key={categoryId}>
-                        <div className="px-3 py-1.5 bg-muted/20 border-b text-xs font-medium text-muted-foreground flex items-center gap-2">
-                          {catLabel}
+                        <div className="px-3 py-1.5 bg-muted/20 border-b text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                          {CatIcon && <CatIcon className="h-3 w-3 shrink-0" />}
+                          {catName}
                           <span className="text-muted-foreground/60 font-normal">
                             {items.length}
                           </span>
