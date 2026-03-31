@@ -1,7 +1,7 @@
 [
   {
     "id": "time",
-    "label": "🕐 Time",
+    "label": "Time",
     "icon": "Timer",
     "emoji": "🕐",
     "patterns": [
@@ -13,47 +13,48 @@
   },
   {
     "id": "event",
-    "label": "📣 Event",
+    "label": "Event",
     "icon": "Activity",
     "emoji": "📣",
     "patterns": ["^event_", "^day_of_week$"]
   },
   {
     "id": "user",
-    "label": "👤 User",
+    "label": "User",
     "icon": "CircleUserRound",
     "emoji": "👤",
     "patterns": [
       "^user_",
       "_(user|account|customer|tenant)$",
       "^(email|first_name|last_name|phone|date_of_birth)$",
-      "_(email|first_name|last_name|phone)$"
+      "_(email|first_name|last_name|phone)$",
+      "\\.(email|first_name|last_name|phone|date_of_birth)$"
     ]
   },
   {
     "id": "geography",
-    "label": "🌍 Geography",
+    "label": "Geography",
     "icon": "Globe2",
     "emoji": "🌍",
     "patterns": ["(country|city|region|state|geo|locale|timezone)"]
   },
   {
     "id": "device",
-    "label": "💻 Device",
+    "label": "Device",
     "icon": "Laptop",
     "emoji": "💻",
     "patterns": ["(device|browser|os|platform|screen|viewport)"]
   },
   {
     "id": "marketing",
-    "label": "📢 Marketing",
+    "label": "Marketing",
     "icon": "Target",
     "emoji": "📢",
     "patterns": ["^utm_", "(referrer|campaign|channel|source|medium)"]
   },
   {
     "id": "other",
-    "label": "⚙️ Other",
+    "label": "Other",
     "icon": "MoreHorizontal",
     "emoji": "⚙️",
     "patterns": [".*"]

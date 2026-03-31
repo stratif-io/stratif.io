@@ -254,7 +254,7 @@ function CompactCategoryButton({
         </button>
         {(dimensionCategories as DimensionCategoryConfig[]).map((cat) => {
           const CatIcon = CATEGORY_ICON_MAP[cat.icon] ?? null
-          const catName = cat.label.slice(cat.label.indexOf(' ') + 1)
+          const catName = cat.label
           return (
             <button
               key={cat.id}
@@ -671,7 +671,7 @@ export function SchemaConfigTab({ connId }: Props) {
     const allCats = dimensionCategories as DimensionCategoryConfig[]
     const catName = (id: string) => {
       const label = allCats.find((c) => c.id === id)?.label ?? id
-      return label.slice(label.indexOf(' ') + 1)
+      return label
     }
     return [...groups.entries()].sort(([a], [b]) => {
       if (a === 'other') return 1
@@ -999,7 +999,7 @@ export function SchemaConfigTab({ connId }: Props) {
                     const catName =
                       categoryId === '__uncategorized__'
                         ? 'Uncategorized'
-                        : (cat?.label.slice(cat.label.indexOf(' ') + 1) ?? categoryId)
+                        : (cat?.label ?? categoryId)
                     const CatIcon = cat ? (CATEGORY_ICON_MAP[cat.icon] ?? MoreHorizontal) : null
                     return (
                       <div key={categoryId}>
