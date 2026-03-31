@@ -128,10 +128,11 @@ After creating or modifying any component, update the design system page to refl
 The design system lives at `apps/web/frontend/features/design-system/` and is split into sections:
 
 - `components/sections/PrimitivesSection.tsx` — buttons, badges, inputs, selects, checkboxes, switches, sliders, progress, skeleton, spinner, avatar, separator, tooltip, popover, dialog, dropdown, card, scroll area, calendar, collapsible, save status
-- `components/sections/FeedbackSection.tsx` — LoadingState, EmptyState, QueryError, CardLoadingBar, UnderConstruction, NoConnectionScreen, Toast
+- `components/sections/FeedbackSection.tsx` — LoadingState, EmptyState, QueryError, CardLoadingBar, UnderConstruction, NoConnectionScreen, Toast, ErrorBoundary
 - `components/sections/ChartsSection.tsx` — area, bar, line, donut, funnel, heatmap, sparkline, comparison charts
 - `components/sections/DataSection.tsx` — VirtualList, Pagination, DataTable, EventsTable, PivotTable
 - `components/sections/AppComponentsSection.tsx` — DateRangePicker, FilterSelect, DbLogo, FilterBar, GlobalFilters, QueryStatusIndicator
+- `components/sections/LayoutSection.tsx` — DashboardLayout, Header, Sidebar, PageTransition, ConnectionSelector
 
 Add new components to the appropriate section, or create a new section if none fits.
 

@@ -19,6 +19,9 @@ vi.mock('../components/sections/DataSection', () => ({
 vi.mock('../components/sections/AppComponentsSection', () => ({
   AppComponentsSection: () => <div>App Components</div>,
 }))
+vi.mock('../components/sections/LayoutSection', () => ({
+  LayoutSection: () => <div>Layout</div>,
+}))
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return <MemoryRouter>{children}</MemoryRouter>
@@ -33,11 +36,13 @@ describe('DesignSystemPage', () => {
     expect(screen.getAllByText('Charts').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('Data Display').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('App Components').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Layout').length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders the inner nav buttons', () => {
     render(<DesignSystemPage />, { wrapper })
     expect(screen.getByRole('button', { name: 'UI Primitives' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Charts' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Layout' })).toBeInTheDocument()
   })
 })
