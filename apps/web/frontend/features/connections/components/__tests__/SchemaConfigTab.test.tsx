@@ -24,7 +24,7 @@ const mockSchema = {
 }
 
 const mockFilters = {
-  filter_fields: [{ field: 'event_name', label: 'Event', icon: 'Tag' }],
+  filter_fields: [{ field: 'event_name', label: 'Event', icon: 'Activity' }],
 }
 
 const mockDetectResult = {

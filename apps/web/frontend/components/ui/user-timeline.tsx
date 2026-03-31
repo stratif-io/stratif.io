@@ -3,12 +3,12 @@ import { format, formatDistanceToNow } from 'date-fns'
 import {
   Activity,
   X,
-  Monitor,
+  Laptop,
   MapPin,
-  Globe,
+  Target,
   Clock,
   User,
-  Tag,
+  MoreHorizontal,
   MousePointerClick,
 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -29,7 +29,7 @@ const CATEGORIES: Category[] = [
   {
     id: 'device',
     label: 'Device',
-    icon: Monitor,
+    icon: Laptop,
     keywords: [
       'device',
       'os',
@@ -50,7 +50,7 @@ const CATEGORIES: Category[] = [
   {
     id: 'traffic',
     label: 'Traffic',
-    icon: Globe,
+    icon: Target,
     keywords: ['source', 'referrer', 'campaign', 'medium', 'utm', 'channel', 'ad', 'keyword'],
   },
   {
@@ -72,7 +72,7 @@ function categorise(key: string): Category {
   for (const cat of CATEGORIES) {
     if (cat.keywords.some((kw) => lower.includes(kw))) return cat
   }
-  return { id: 'other', label: 'Other', icon: Tag, keywords: [] }
+  return { id: 'other', label: 'Other', icon: MoreHorizontal, keywords: [] }
 }
 
 // ─── Event properties panel ───────────────────────────────────────────────────

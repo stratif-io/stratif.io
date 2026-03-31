@@ -557,7 +557,7 @@ export function SchemaConfigTab({ connId }: Props) {
     const cat = categoryId
       ? (dimensionCategories as DimensionCategoryConfig[]).find((c) => c.id === categoryId)
       : undefined
-    toggleFilter(field, label, cat?.icon ?? 'Tag')
+    toggleFilter(field, label, cat?.icon ?? 'MoreHorizontal')
   }
 
   function handleDetect() {
