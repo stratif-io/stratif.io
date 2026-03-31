@@ -7,7 +7,7 @@ import { DateRangePicker } from '@/components/DateRangePicker'
 import { ChevronDown, X } from 'lucide-react'
 import { useFilterConfig, useFilterOptions } from '@/features/connections/hooks/useConnectionsData'
 import { cn } from '@/lib/utils'
-import type { DimensionCategoryConfig, FilterField } from '@/types'
+import type { DimensionCategoryConfig, FilterField, Granularity } from '@/types'
 import dimensionCategories from '@/config/dimension-categories.json'
 
 function pluralize(word: string): string {
@@ -174,7 +174,73 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
   )
 }
 
-export function GlobalFilters() {
+const GRANULARITY_OPTIONS: { value: Granularity; label: string }[] = [
+  { value: 'hour', label: 'Hour' },
+  { value: 'day', label: 'Day' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+  { value: 'quarter', label: 'Qtr' },
+  { value: 'year', label: 'Year' },
+]
+
+interface GranularityControlProps {
+  disabled?: boolean
+}
+
+export function GranularityControl({ disabled = false }: GranularityControlProps) {
+  const { granularity, setGranularity } = useAppStore()
+  const [expanded, setExpanded] = useState(false)
+
+  function select(g: Granularity) {
+    setGranularity(g)
+    setExpanded(false)
+  }
+
+  return (
+    <div
+      className={cn(
+        'flex items-center h-10 shrink-0',
+        disabled && 'opacity-30 pointer-events-none'
+      )}
+    >
+      <span className="text-[10px] font-semibold tracking-wider text-muted-foreground pl-3 pr-1 uppercase select-none">
+        By
+      </span>
+      <div className="flex items-center gap-0.5 px-1">
+        {GRANULARITY_OPTIONS.map(({ value, label }) => {
+          const isActive = granularity === value
+          const isHidden = !expanded && !isActive
+          return (
+            <button
+              key={value}
+              onClick={() => select(value)}
+              className={cn(
+                'px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap overflow-hidden',
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                isHidden && 'max-w-0 px-0 opacity-0 pointer-events-none'
+              )}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        className="flex items-center justify-center h-10 px-2 text-muted-foreground hover:text-foreground transition-colors"
+        aria-label={expanded ? 'Collapse granularity' : 'Expand granularity'}
+      >
+        <ChevronDown
+          className={cn('h-3 w-3 transition-transform duration-200', expanded && 'rotate-180')}
+        />
+      </button>
+    </div>
+  )
+}
+
+export function GlobalFilters({ granularityDisabled = false }: { granularityDisabled?: boolean }) {
   const { dateRange, setDateRange, activeConnectionId } = useAppStore()
 
   const { data: filterConfig, isLoading: configLoading } = useFilterConfig(activeConnectionId ?? '')
@@ -196,6 +262,7 @@ export function GlobalFilters() {
         <div className="shrink-0">
           <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
         </div>
+        <GranularityControl disabled={granularityDisabled} />
         {isLoading
           ? Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="px-3 h-full flex items-center shrink-0">
