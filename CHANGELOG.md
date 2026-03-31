@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/cabichahine/stratif.io/compare/v0.9.0...v0.10.0) (2026-03-31)
+
+
+### Features
+
+* add missing components to design system ([#139](https://github.com/cabichahine/stratif.io/issues/139)) ([3014497](https://github.com/cabichahine/stratif.io/commit/301449784d8acf5586cafa1b1f448094b5ce4065))
+
 ## [0.9.0](https://github.com/cabichahine/stratif.io/compare/v0.8.0...v0.9.0) (2026-03-31)
 
 
