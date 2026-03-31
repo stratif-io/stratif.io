@@ -28,12 +28,12 @@ const DEFAULT_PIVOT_COLS: ZoneCol[] = []
 const DEFAULT_VALUE_COLS: ZoneCol[] = []
 
 const GRANULARITY_TO_DIM: Record<Granularity, string> = {
-  hour: 'hour_bucket',
-  day: 'date',
-  week: 'week',
-  month: 'month',
-  quarter: 'quarter',
-  year: 'year',
+  hour: 'ts_hour',
+  day: 'ts_date',
+  week: 'ts_week',
+  month: 'ts_month',
+  quarter: 'ts_quarter',
+  year: 'ts_year',
 }
 
 export function PivotTable({
@@ -79,8 +79,8 @@ export function PivotTable({
 
     const timeDimId = GRANULARITY_TO_DIM[granularity]
     const timeMeta = leafCols.find((c) => c.colId === timeDimId)
-    const eventsMeta = leafCols.find((c) => c.colId === 'count_events')
-    const usersMeta = leafCols.find((c) => c.colId === 'unique_users')
+    const eventsMeta = leafCols.find((c) => c.colId === 'event_count')
+    const usersMeta = leafCols.find((c) => c.colId === 'user_id')
 
     if (timeMeta) {
       setRowGroups([{ colId: timeMeta.colId, label: timeMeta.label }])
