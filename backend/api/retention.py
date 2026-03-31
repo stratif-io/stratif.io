@@ -33,6 +33,16 @@ RETENTION_CONFIG: dict[str, dict] = {
         "max_units": 6,
         "unit_divisor": 30,
     },
+    "quarter": {
+        "milestones": [1, 2, 3, 4],  # quarters after cohort start (91-day approx)
+        "max_units": 4,
+        "unit_divisor": 91,
+    },
+    "year": {
+        "milestones": [1, 2, 3],  # years after cohort start (365-day approx)
+        "max_units": 3,
+        "unit_divisor": 365,
+    },
 }
 
 

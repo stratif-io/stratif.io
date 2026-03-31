@@ -160,7 +160,7 @@ export const fetchUserList = (params: {
 export const fetchRetention = (params: {
   start_date?: string
   end_date?: string
-  granularity?: 'day' | 'week' | 'month'
+  granularity?: 'day' | 'week' | 'month' | 'quarter' | 'year'
   filters?: Record<string, string | null>
   connection_id?: string
 }) => {

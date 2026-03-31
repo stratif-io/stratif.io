@@ -103,29 +103,27 @@ describe('DevCard', () => {
     expect(screen.getByLabelText('Show SQL')).toBeInTheDocument()
   })
 
-  it('flips to show SQL when badge is clicked', () => {
+  it('opens expanded SQLViewer directly when SQL badge is clicked', () => {
     setDevMode(true)
     renderCard({ sql: 'SELECT 1 FROM events' })
     fireEvent.click(screen.getByLabelText('Show SQL'))
-    expect(screen.getByLabelText('Close SQL')).toBeInTheDocument()
+    expect(screen.getByLabelText('Collapse')).toBeInTheDocument()
   })
 
-  it('flips back when close button is clicked', () => {
+  it('collapses expanded overlay when Collapse button is clicked', () => {
     setDevMode(true)
     renderCard()
     fireEvent.click(screen.getByLabelText('Show SQL'))
-    fireEvent.click(screen.getByLabelText('Close SQL'))
-    expect(screen.queryByLabelText('Close SQL')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Collapse'))
+    expect(screen.queryByLabelText('Collapse')).not.toBeInTheDocument()
   })
 
   it('pressing Escape collapses the expanded (full-screen) overlay', () => {
     setDevMode(true)
     renderCard()
-    // Flip to back face first
+    // SQL button goes straight to expanded overlay
     fireEvent.click(screen.getByLabelText('Show SQL'))
-    // Then expand to full-screen
-    fireEvent.click(screen.getByLabelText('Expand SQL'))
-    // Escape should collapse the overlay (and flip back)
+    // Escape should collapse the overlay
     fireEvent.keyDown(document, { key: 'Escape' })
     // The expanded overlay backdrop should be gone
     expect(screen.queryByLabelText('Collapse')).not.toBeInTheDocument()

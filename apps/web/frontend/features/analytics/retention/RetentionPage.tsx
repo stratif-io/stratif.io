@@ -20,10 +20,8 @@ import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 
 function toRetentionGranularity(g: Granularity): RetentionGranularity {
-  if (g === 'week') return 'week'
-  if (g === 'month') return 'month'
-  if (g === 'quarter' || g === 'year') return 'month'
-  return 'day' // hour, day → day
+  if (g === 'hour') return 'day'
+  return g
 }
 
 // Benchmark thresholds per granularity+milestone
@@ -45,6 +43,13 @@ const BENCHMARKS: Record<string, { good: number; ok: number }> = {
   month_4: { good: 15, ok: 5 },
   month_5: { good: 12, ok: 3 },
   month_6: { good: 10, ok: 2 },
+  quarter_1: { good: 30, ok: 12 },
+  quarter_2: { good: 20, ok: 8 },
+  quarter_3: { good: 15, ok: 5 },
+  quarter_4: { good: 10, ok: 3 },
+  year_1: { good: 25, ok: 10 },
+  year_2: { good: 15, ok: 5 },
+  year_3: { good: 10, ok: 3 },
 }
 
 function getRetentionLabel(value: number, granularity: RetentionGranularity, milestone: number) {
@@ -58,6 +63,8 @@ function getRetentionLabel(value: number, granularity: RetentionGranularity, mil
 function milestoneTitle(granularity: RetentionGranularity, unit: number): string {
   if (granularity === 'week') return `Week ${unit} Retention`
   if (granularity === 'month') return `Month ${unit} Retention`
+  if (granularity === 'quarter') return `Quarter ${unit} Retention`
+  if (granularity === 'year') return `Year ${unit} Retention`
   return `Day ${unit} Retention`
 }
 
