@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/cabichahine/stratif.io/compare/v0.8.0...v0.9.0) (2026-03-31)
+
+
+### Features
+
+* global granularity control (hour/day/week/month/quarter/year) ([#137](https://github.com/cabichahine/stratif.io/issues/137)) ([c159187](https://github.com/cabichahine/stratif.io/commit/c15918733c18401d5bf4a61f4c6900153c00e871))
+
 ## [0.8.0](https://github.com/cabichahine/stratif.io/compare/v0.7.0...v0.8.0) (2026-03-30)
 
 
