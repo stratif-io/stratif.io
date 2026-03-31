@@ -420,6 +420,51 @@ describe('SchemaConfigTab — detect review panel', () => {
     expect(screen.queryByDisplayValue('event_name')).not.toBeInTheDocument()
     expect(screen.queryByDisplayValue('user_email')).not.toBeInTheDocument()
   })
+
+  it('detect removes existing custom props whose path conflicts with required or identity fields', () => {
+    // Schema where a reserved column was previously saved as a custom property
+    vi.mocked(hooks.useSchemaConfig).mockReturnValue({
+      data: {
+        ...mockSchema,
+        custom_properties: [
+          { name: 'user_id', path: 'user_id', type: 'string' as const, category: undefined },
+          {
+            name: 'safe_prop',
+            path: 'properties.safe_prop',
+            type: 'string' as const,
+            category: undefined,
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {
+        opts.onSuccess({ ...mockDetectResult, proposed_custom_properties: [] })
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-cleanup" />
+      </QueryClientProvider>
+    )
+
+    act(() => {
+      screen.getAllByRole('button', { name: /detect from schema/i })[0].click()
+    })
+
+    // user_id was a reserved path — should be removed from the list
+    expect(screen.queryByDisplayValue('user_id')).not.toBeInTheDocument()
+    // safe_prop should remain
+    expect(screen.getByDisplayValue('safe_prop')).toBeInTheDocument()
+  })
 })
 
 describe('SchemaConfigTab — auto-save with null schema (new connection)', () => {

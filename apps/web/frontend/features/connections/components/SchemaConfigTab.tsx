@@ -607,7 +607,12 @@ export function SchemaConfigTab({ connId }: Props) {
           form.timestampField,
           ...Object.values(form.userIdentityFields).filter(Boolean),
         ])
-        const existingPaths = new Set(form.customProps.map((p) => p.path))
+        // Remove any existing custom props that now conflict with reserved fields
+        const cleanedProps = form.customProps.filter((p) => !reservedPaths.has(p.path))
+        if (cleanedProps.length !== form.customProps.length) {
+          updateForm({ customProps: cleanedProps })
+        }
+        const existingPaths = new Set(cleanedProps.map((p) => p.path))
         const newProps = proposed_custom_properties.filter(
           (p: { path: string }) => !existingPaths.has(p.path) && !reservedPaths.has(p.path)
         )
