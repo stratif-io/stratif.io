@@ -210,9 +210,8 @@ export interface DimensionOption {
 
 export interface DimensionCategoryConfig {
   id: string
-  label: string // includes emoji, e.g. "🕐 Time"
-  icon: string // Lucide icon name key for ICON_MAP, e.g. "Globe"
-  emoji: string // emoji character, e.g. "👤"
+  label: string // e.g. "Time"
+  icon: string // Lucide icon name key for ICON_MAP, e.g. "Timer"
   patterns: string[] // raw regex strings
 }
 
@@ -317,6 +316,11 @@ export interface SchemaDetectResponse {
     user_id_field?: string
     timestamp_field?: string
     event_name_field?: string
+    email_field?: string
+    first_name_field?: string
+    last_name_field?: string
+    date_of_birth_field?: string
+    phone_field?: string
   }
   proposed_custom_properties: Array<{
     name: string
@@ -346,6 +350,11 @@ export interface SchemaConfig {
   session_timeout_minutes: number
   resurrection_window_days?: number
   power_user_threshold_days?: number
+  email_field?: string | null
+  first_name_field?: string | null
+  last_name_field?: string | null
+  date_of_birth_field?: string | null
+  phone_field?: string | null
   updated_at: string
 }
 
@@ -395,6 +404,11 @@ export interface SchemaConfigBody {
   session_timeout_minutes: number
   resurrection_window_days?: number
   power_user_threshold_days?: number
+  email_field?: string | null
+  first_name_field?: string | null
+  last_name_field?: string | null
+  date_of_birth_field?: string | null
+  phone_field?: string | null
 }
 
 export interface FilterConfigBody {

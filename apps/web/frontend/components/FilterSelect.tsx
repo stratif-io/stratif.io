@@ -70,10 +70,7 @@ export function FilterSelect({
   const groups = useMemo(() => {
     if (!tree) return []
     const raw = groupDimensionsByCategory(options as DimensionOption[], CATEGORIES)
-    const labelText = (label: string) => label.slice(label.indexOf(' ') + 1)
-    return [...raw].sort((a, b) =>
-      labelText(a.category.label).localeCompare(labelText(b.category.label))
-    )
+    return [...raw].sort((a, b) => a.category.label.localeCompare(b.category.label))
   }, [tree, options])
 
   function handleOpenChange(next: boolean) {
@@ -282,12 +279,7 @@ export function FilterSelect({
                         )}
                         onClick={() => setActiveCategory(group.category.id)}
                       >
-                        <span className="shrink-0 leading-none">
-                          {group.category.label.split(' ')[0]}
-                        </span>
-                        <span className="truncate flex-1 min-w-0">
-                          {group.category.label.slice(group.category.label.indexOf(' ') + 1)}
-                        </span>
+                        <span className="truncate flex-1 min-w-0">{group.category.label}</span>
                         {hasSelections ? (
                           <span className="shrink-0 text-[10px] leading-none bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 font-medium">
                             {categorySelectedCount}

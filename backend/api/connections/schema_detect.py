@@ -1,5 +1,7 @@
 """Schema detection endpoint for the Connections API."""
 
+import difflib
+import re
 from fastapi import APIRouter, HTTPException
 
 from backend.product_db import get_product_db
@@ -11,23 +13,80 @@ router = APIRouter()
 _KNOWN_USER_ID_COLS = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
 _KNOWN_TIMESTAMP_COLS = ("timestamp", "ts", "created_at", "event_time", "time", "datetime", "date")
 _KNOWN_EVENT_NAME_COLS = ("event_name", "event", "action", "event_type", "name", "type")
+_KNOWN_EMAIL_COLS = ("email", "user_email", "email_address", "e_mail")
+_KNOWN_FIRST_NAME_COLS = ("first_name", "firstname", "fname", "given_name")
+_KNOWN_LAST_NAME_COLS = ("last_name", "lastname", "lname", "surname", "family_name")
+_KNOWN_DOB_COLS = ("date_of_birth", "dob", "birth_date", "birthdate", "birthday")
+_KNOWN_PHONE_COLS = ("phone", "phone_number", "mobile", "mobile_number", "telephone")
+
+
+def _normalize(name: str) -> str:
+    """Lowercase + split camelCase/PascalCase into snake_case for comparison."""
+    s = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name)
+    return s.lower()
+
+
+def _best_match(col_names: list[str], aliases: tuple[str, ...], threshold: float = 0.80) -> str | None:
+    """Return the best-matching column name for the given aliases, or None.
+
+    Priority:
+    1. Exact match (case-insensitive)
+    2. Normalised exact match (handles camelCase vs snake_case)
+    3. Substring containment (alias is a substring of the column or vice-versa)
+    4. Fuzzy match via difflib with the given similarity threshold
+    """
+    col_lower: dict[str, str] = {c.lower(): c for c in col_names}
+    col_norm: dict[str, str] = {_normalize(c): c for c in col_names}
+
+    # 1. Exact (case-insensitive)
+    for alias in aliases:
+        if alias in col_lower:
+            return col_lower[alias]
+
+    # 2. Normalised exact (camelCase / PascalCase tolerance)
+    for alias in aliases:
+        norm = _normalize(alias)
+        if norm in col_norm:
+            return col_norm[norm]
+
+    # 3. Substring containment
+    for alias in aliases:
+        for col_l, col_orig in col_lower.items():
+            if alias in col_l or col_l in alias:
+                return col_orig
+
+    # 4. Fuzzy similarity
+    all_lower = list(col_lower.keys())
+    for alias in aliases:
+        matches = difflib.get_close_matches(alias, all_lower, n=1, cutoff=threshold)
+        if matches:
+            return col_lower[matches[0]]
+
+    return None
+
+
+_FIELD_ALIASES: dict[str, tuple[str, ...]] = {
+    "user_id_field": _KNOWN_USER_ID_COLS,
+    "timestamp_field": _KNOWN_TIMESTAMP_COLS,
+    "event_name_field": _KNOWN_EVENT_NAME_COLS,
+    "email_field": _KNOWN_EMAIL_COLS,
+    "first_name_field": _KNOWN_FIRST_NAME_COLS,
+    "last_name_field": _KNOWN_LAST_NAME_COLS,
+    "date_of_birth_field": _KNOWN_DOB_COLS,
+    "phone_field": _KNOWN_PHONE_COLS,
+}
 
 
 def _suggest_fields(columns: list[dict]) -> dict[str, str]:
-    col_lower: dict[str, str] = {c["name"].lower(): c["name"] for c in columns}
+    col_names = [c["name"] for c in columns]
     suggestions: dict[str, str] = {}
-    for candidate in _KNOWN_USER_ID_COLS:
-        if candidate in col_lower:
-            suggestions["user_id_field"] = col_lower[candidate]
-            break
-    for candidate in _KNOWN_TIMESTAMP_COLS:
-        if candidate in col_lower:
-            suggestions["timestamp_field"] = col_lower[candidate]
-            break
-    for candidate in _KNOWN_EVENT_NAME_COLS:
-        if candidate in col_lower:
-            suggestions["event_name_field"] = col_lower[candidate]
-            break
+    used: set[str] = set()
+    for field_key, aliases in _FIELD_ALIASES.items():
+        available = [c for c in col_names if c not in used]
+        match = _best_match(available, aliases)
+        if match:
+            suggestions[field_key] = match
+            used.add(match)
     return suggestions
 
 
@@ -126,10 +185,22 @@ def detect_schema(conn_id: str, events_table: str | None = None):
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Schema detection failed: {exc}") from exc
 
+    # Augment backend suggestions with fuzzy user-identity detection.
+    # The backend only detects user_id / event_name / timestamp from top-level columns.
+    # Run the full fuzzy _suggest_fields against both top-level columns AND any
+    # expanded struct/JSON paths in proposed_custom_properties (e.g. traits.email).
+    all_cols = (
+        [{"name": c.name, "type": c.type} for c in info.columns]
+        + [{"name": p["path"], "type": p["type"]} for p in info.proposed_custom_properties]
+    )
+    fuzzy_suggestions = _suggest_fields(all_cols)
+    # Backend exact matches take priority; fill in any fields the backend missed
+    merged_suggestions = {**fuzzy_suggestions, **info.suggestions}
+
     return {
         "tables": info.tables,
         "events_table": info.events_table,
         "columns": [{"name": c.name, "type": c.type} for c in info.columns],
-        "suggestions": info.suggestions,
+        "suggestions": merged_suggestions,
         "proposed_custom_properties": info.proposed_custom_properties,
     }

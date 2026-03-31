@@ -54,6 +54,12 @@ class SchemaConfigBody(BaseModel):
     session_timeout_minutes: int = 30
     resurrection_window_days: int = 30
     power_user_threshold_days: int = 4
+    # optional user identity fields — None means not mapped
+    email_field: str | None = None
+    first_name_field: str | None = None
+    last_name_field: str | None = None
+    date_of_birth_field: str | None = None
+    phone_field: str | None = None
 
 
 class SchemaConfigResponse(SchemaConfigBody):

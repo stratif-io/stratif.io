@@ -130,7 +130,7 @@ describe('FilterSelect', () => {
     // Initially shows first category alphabetically (device)
     expect(within(dialog).getByRole('button', { name: /device_type/i })).toBeInTheDocument()
     // Click User category
-    await userEvent.click(within(dialog).getByRole('button', { name: /👤/i }))
+    await userEvent.click(within(dialog).getByRole('button', { name: /^User/ }))
     expect(within(dialog).getByRole('button', { name: /user_id/i })).toBeInTheDocument()
     expect(within(dialog).queryByRole('button', { name: /device_type/i })).not.toBeInTheDocument()
   })
@@ -156,12 +156,12 @@ describe('FilterSelect', () => {
     await userEvent.click(screen.getByRole('button'))
     const searchInput = screen.getByPlaceholderText(/search/i)
     await userEvent.type(searchInput, 'user')
-    // Category panel is hidden during search (use emoji to target category button specifically)
-    expect(screen.queryByRole('button', { name: /💻/i })).not.toBeInTheDocument()
+    // Category panel is hidden during search
+    expect(screen.queryByRole('button', { name: /^Device/ })).not.toBeInTheDocument()
     // Clear search
     await userEvent.clear(searchInput)
     // Category panel is restored
-    expect(screen.getByRole('button', { name: /💻/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Device/ })).toBeInTheDocument()
   })
 
   it('tree mode shows no-results message when search matches nothing', async () => {
@@ -206,13 +206,13 @@ describe('FilterSelect', () => {
     await userEvent.click(screen.getByRole('button'))
     const dialog = screen.getByRole('dialog')
     // 'user' category has 2 columns: user_id, user_country
-    const userRow = within(dialog).getByRole('button', { name: /👤/ })
+    const userRow = within(dialog).getByRole('button', { name: /^User/ })
     expect(within(userRow).getByText('2')).toBeInTheDocument()
     // 'time' category has 1 column: ts_event
-    const timeRow = within(dialog).getByRole('button', { name: /🕐/ })
+    const timeRow = within(dialog).getByRole('button', { name: /^Time/ })
     expect(within(timeRow).getByText('1')).toBeInTheDocument()
     // 'device' category has 1 column: device_type
-    const deviceRow = within(dialog).getByRole('button', { name: /💻/ })
+    const deviceRow = within(dialog).getByRole('button', { name: /^Device/ })
     expect(within(deviceRow).getByText('1')).toBeInTheDocument()
   })
 
@@ -229,11 +229,11 @@ describe('FilterSelect', () => {
     await userEvent.click(screen.getByRole('button'))
     const dialog = screen.getByRole('dialog')
     // 'user' category has 1 selected value — badge shows selected count with primary styling
-    const userRow = within(dialog).getByRole('button', { name: /👤/ })
+    const userRow = within(dialog).getByRole('button', { name: /^User/ })
     const userBadge = within(userRow).getByText('1')
     expect(userBadge).toHaveClass('bg-primary')
     // 'device' category has no selected values — badge should NOT have primary styling
-    const deviceRow = within(dialog).getByRole('button', { name: /💻/ })
+    const deviceRow = within(dialog).getByRole('button', { name: /^Device/ })
     const deviceBadge = within(deviceRow).getByText('1')
     expect(deviceBadge).not.toHaveClass('bg-primary')
   })

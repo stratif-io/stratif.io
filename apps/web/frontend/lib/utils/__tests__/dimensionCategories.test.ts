@@ -3,10 +3,10 @@ import { groupDimensionsByCategory } from '../dimensionCategories'
 import type { DimensionOption, DimensionCategoryConfig } from '@/types'
 
 const categories: DimensionCategoryConfig[] = [
-  { id: 'time', label: '🕐 Time', patterns: ['^ts_', '^(date|week|hour)$'] },
-  { id: 'user', label: '👤 User', patterns: ['^user_'] },
-  { id: 'marketing', label: '📊 Marketing', patterns: ['^marketing_'] },
-  { id: 'other', label: '⚙️ Other', patterns: ['.*'] },
+  { id: 'time', label: 'Time', icon: 'Timer', patterns: ['^ts_', '^(date|week|hour)$'] },
+  { id: 'user', label: 'User', icon: 'CircleUserRound', patterns: ['^user_'] },
+  { id: 'marketing', label: 'Marketing', icon: 'Target', patterns: ['^marketing_'] },
+  { id: 'other', label: 'Other', icon: 'MoreHorizontal', patterns: ['.*'] },
 ]
 
 describe('groupDimensionsByCategory', () => {
@@ -28,8 +28,8 @@ describe('groupDimensionsByCategory', () => {
 
   it('first match wins when patterns overlap', () => {
     const overlappingCategories: DimensionCategoryConfig[] = [
-      { id: 'first', label: 'First', patterns: ['^user_'] },
-      { id: 'second', label: 'Second', patterns: ['.*'] },
+      { id: 'first', label: 'First', icon: 'MoreHorizontal', patterns: ['^user_'] },
+      { id: 'second', label: 'Second', icon: 'MoreHorizontal', patterns: ['.*'] },
     ]
     const dims: DimensionOption[] = [{ value: 'user_id', label: 'User ID' }]
     const groups = groupDimensionsByCategory(dims, overlappingCategories)
