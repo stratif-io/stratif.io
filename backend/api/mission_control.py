@@ -931,19 +931,24 @@ def get_mission_control_trend(
         while current_day <= end:
             day_ps = f"{current_day} 00:00:00"
             day_pe = f"{current_day} 23:59:59"
-            pu_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
-            pu_params: list = [day_ps, day_pe]
-            pu_where.extend(filter_clauses)
-            pu_params.extend(filter_params)
-            pu_where_sql = "WHERE " + " AND ".join(pu_where)
+            day_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+            day_params: list = [day_ps, day_pe]
+            day_where.extend(filter_clauses)
+            day_params.extend(filter_params)
+            day_where_sql = "WHERE " + " AND ".join(day_where)
+            # Count users active on this day who qualify as power users over the full period
             rows = db.execute(
                 f"""
                 SELECT COUNT(*) FROM (
-                    SELECT user_id FROM events {pu_where_sql}
-                    GROUP BY user_id HAVING COUNT(DISTINCT DATE(timestamp)) >= ?
+                    SELECT e2.user_id
+                    FROM events e2
+                    {ev_where_sql}
+                    AND e2.user_id IN (SELECT DISTINCT user_id FROM events {day_where_sql})
+                    GROUP BY e2.user_id
+                    HAVING COUNT(DISTINCT DATE(e2.timestamp)) >= ?
                 ) t
                 """,
-                pu_params + [threshold],
+                ev_params + day_params + [threshold],
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
