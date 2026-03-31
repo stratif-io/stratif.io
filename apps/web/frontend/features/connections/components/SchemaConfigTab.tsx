@@ -10,7 +10,6 @@ import {
   Search,
   X,
   Sparkles,
-  Tag,
 } from 'lucide-react'
 import { SaveStatus } from '@/components/ui/save-status'
 import { Button } from '@/components/ui/button'
@@ -50,7 +49,7 @@ import type { CustomProperty, PropertyType, DimensionCategoryConfig, FilterField
 
 const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
 
-const EVENT_GRID = 'grid-cols-[1fr_1fr_80px_28px_28px_28px]'
+const EVENT_GRID = 'grid-cols-[1fr_1fr_80px_28px_56px_28px]'
 
 const USER_IDENTITY_FIELDS = [
   { key: 'email_field' as const, label: 'Email', icon: 'Mail' },
@@ -281,6 +280,55 @@ function PendingDetectionRow({
         <X className="h-3.5 w-3.5" />
       </button>
     </div>
+  )
+}
+
+function FilterToggle({
+  enabled,
+  onToggle,
+  invisible,
+  label,
+}: {
+  enabled: boolean
+  onToggle: () => void
+  invisible?: boolean
+  label: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={
+        enabled ? `Remove ${label} from global filters` : `Add ${label} to global filters`
+      }
+      className={cn('flex items-center gap-1.5 shrink-0 group', invisible && 'invisible')}
+    >
+      <span
+        className={cn(
+          'text-[9px] font-medium transition-colors',
+          enabled
+            ? 'text-teal-600 dark:text-teal-400'
+            : 'text-muted-foreground/40 group-hover:text-muted-foreground/70'
+        )}
+      >
+        filter
+      </span>
+      <span
+        className={cn(
+          'relative inline-flex w-6 h-3.5 rounded-full transition-colors shrink-0',
+          enabled
+            ? 'bg-teal-600 dark:bg-teal-500'
+            : 'bg-muted-foreground/20 group-hover:bg-muted-foreground/30'
+        )}
+      >
+        <span
+          className={cn(
+            'absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow-sm transition-transform',
+            enabled ? 'translate-x-[11px]' : 'translate-x-0.5'
+          )}
+        />
+      </span>
+    </button>
   )
 }
 
@@ -733,22 +781,11 @@ export function SchemaConfigTab({ connId }: Props) {
                       />
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleFilter(value, label, 'Tag')}
-                    className={cn(
-                      'h-7 w-7 shrink-0 flex items-center justify-center rounded text-muted-foreground/40 hover:text-muted-foreground transition-colors',
-                      isEnabled && 'text-primary hover:text-primary'
-                    )}
-                    title={isEnabled ? 'Remove from global filters' : 'Add to global filters'}
-                    aria-label={
-                      isEnabled
-                        ? `Remove ${label} from global filters`
-                        : `Add ${label} to global filters`
-                    }
-                  >
-                    <Tag className="h-3.5 w-3.5" />
-                  </button>
+                  <FilterToggle
+                    enabled={isEnabled}
+                    onToggle={() => toggleFilter(value, label, 'Tag')}
+                    label={label}
+                  />
                 </div>
               )
             })}
@@ -801,27 +838,12 @@ export function SchemaConfigTab({ connId }: Props) {
                       />
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => isMapped && !pending && toggleFilter(mapped, label, icon)}
-                    className={cn(
-                      'h-7 w-7 shrink-0 flex items-center justify-center rounded transition-colors',
-                      isMapped && !pending
-                        ? cn(
-                            'text-muted-foreground/40 hover:text-muted-foreground',
-                            isFilterEnabled && 'text-primary hover:text-primary'
-                          )
-                        : 'invisible'
-                    )}
-                    title={isFilterEnabled ? 'Remove from global filters' : 'Add to global filters'}
-                    aria-label={
-                      isFilterEnabled
-                        ? `Remove ${label} from global filters`
-                        : `Add ${label} to global filters`
-                    }
-                  >
-                    <Tag className="h-3.5 w-3.5" />
-                  </button>
+                  <FilterToggle
+                    enabled={isFilterEnabled}
+                    onToggle={() => isMapped && !pending && toggleFilter(mapped, label, icon)}
+                    invisible={!isMapped || !!pending}
+                    label={label}
+                  />
                   <button
                     type="button"
                     className={cn(
@@ -962,30 +984,17 @@ export function SchemaConfigTab({ connId }: Props) {
                                 value={prop.category ?? null}
                                 onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
                               />
-                              <button
-                                type="button"
-                                onClick={() =>
+                              <FilterToggle
+                                enabled={isEnabled}
+                                onToggle={() =>
                                   toggleEventPropFilter(
                                     prop.name,
                                     defaultLabel(prop.name),
                                     prop.category
                                   )
                                 }
-                                className={cn(
-                                  'h-7 w-7 flex items-center justify-center rounded text-muted-foreground/40 hover:text-muted-foreground transition-colors',
-                                  isEnabled && 'text-primary hover:text-primary'
-                                )}
-                                title={
-                                  isEnabled ? 'Remove from global filters' : 'Add to global filters'
-                                }
-                                aria-label={
-                                  isEnabled
-                                    ? `Remove ${prop.name} from global filters`
-                                    : `Add ${prop.name} to global filters`
-                                }
-                              >
-                                <Tag className="h-3.5 w-3.5" />
-                              </button>
+                                label={prop.name}
+                              />
                               <button
                                 type="button"
                                 className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive transition-colors"
