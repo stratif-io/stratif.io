@@ -84,13 +84,15 @@ function renderTab() {
   return { detectMutate }
 }
 
-function renderTabOnTab(tab: 'fields' | 'properties' | 'advanced') {
+function renderAndExpand(section: 'identity' | 'properties' | 'advanced') {
   const { detectMutate } = renderTab()
-  // Switch to the requested tab by clicking the tab button
-  const label =
-    tab === 'fields' ? /^fields$/i : tab === 'properties' ? /^properties$/i : /^advanced$/i
+  const nameMap = {
+    identity: /user identity/i,
+    properties: /event properties/i,
+    advanced: /advanced/i,
+  }
   act(() => {
-    screen.getByRole('button', { name: label }).click()
+    screen.getByRole('button', { name: nameMap[section] }).click()
   })
   return { detectMutate }
 }
@@ -101,8 +103,8 @@ describe('SchemaConfigTab — Setup section', () => {
     expect(screen.getByRole('button', { name: /events/i })).toBeInTheDocument()
   })
 
-  it('shows session timeout input on the Advanced tab', () => {
-    renderTabOnTab('advanced')
+  it('shows session timeout input in the Advanced section', () => {
+    renderAndExpand('advanced')
     expect(screen.getByDisplayValue('30')).toBeInTheDocument()
   })
 
@@ -111,7 +113,7 @@ describe('SchemaConfigTab — Setup section', () => {
     expect(screen.getByRole('button', { name: /detect from schema/i })).toBeInTheDocument()
   })
 
-  it('shows Event Name and Timestamp as required field rows on the Fields tab', () => {
+  it('shows Event Name and Timestamp as required field rows', () => {
     renderTab()
     expect(screen.getByText('Event Name')).toBeInTheDocument()
     expect(screen.getByText('Timestamp')).toBeInTheDocument()
@@ -121,16 +123,16 @@ describe('SchemaConfigTab — Setup section', () => {
 describe('SchemaConfigTab — User Identity section', () => {
   it('renders "User Identity" section heading', () => {
     renderTab()
-    expect(screen.getByText('User Identity')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /user identity/i })).toBeInTheDocument()
   })
 
-  it('shows User ID label', () => {
+  it('shows User ID label in Required Fields', () => {
     renderTab()
     expect(screen.getByText('User ID')).toBeInTheDocument()
   })
 
-  it('shows all five optional field labels', () => {
-    renderTab()
+  it('shows all five optional field labels when identity section is expanded', () => {
+    renderAndExpand('identity')
     expect(screen.getByText('Email')).toBeInTheDocument()
     expect(screen.getByText('First Name')).toBeInTheDocument()
     expect(screen.getByText('Last Name')).toBeInTheDocument()
@@ -138,48 +140,42 @@ describe('SchemaConfigTab — User Identity section', () => {
     expect(screen.getByText('Phone')).toBeInTheDocument()
   })
 
-  it('shows the mapped email column value', () => {
-    renderTab()
-    // Radix Select renders the selected value as visible text
+  it('shows the mapped email column value when identity section is expanded', () => {
+    renderAndExpand('identity')
     expect(screen.getByText('user_email')).toBeInTheDocument()
   })
 })
 
 describe('SchemaConfigTab — Event Properties section', () => {
   it('renders "Event Properties" section heading', () => {
-    renderTabOnTab('properties')
+    renderTab()
     expect(screen.getByText('Event Properties')).toBeInTheDocument()
   })
 
   it('shows custom property name in an editable input', () => {
-    renderTabOnTab('properties')
+    renderTab()
     expect(screen.getByDisplayValue('country')).toBeInTheDocument()
   })
 
-  it('shows Add Property button', () => {
-    renderTabOnTab('properties')
+  it('shows Add button', () => {
+    renderTab()
     expect(screen.getByRole('button', { name: /^add$/i })).toBeInTheDocument()
   })
 
-  it('does NOT show User ID in Event Properties (User ID only appears in Required Fields on the Fields tab)', () => {
-    renderTabOnTab('properties')
-    expect(screen.queryByText('User ID')).not.toBeInTheDocument()
-  })
-
   it('renders Cat. column header in Event Properties', () => {
-    renderTabOnTab('properties')
+    renderTab()
     expect(screen.getByText(/^cat\.$/i)).toBeInTheDocument()
   })
 })
 
 describe('SchemaConfigTab — resurrection and power user fields', () => {
-  it('shows resurrection_window_days input with value 45 on the Advanced tab', () => {
-    renderTabOnTab('advanced')
+  it('shows resurrection_window_days input with value 45 in the Advanced section', () => {
+    renderAndExpand('advanced')
     expect(screen.getByDisplayValue('45')).toBeInTheDocument()
   })
 
-  it('shows power_user_threshold_days input with value 7 on the Advanced tab', () => {
-    renderTabOnTab('advanced')
+  it('shows power_user_threshold_days input with value 7 in the Advanced section', () => {
+    renderAndExpand('advanced')
     expect(screen.getByDisplayValue('7')).toBeInTheDocument()
   })
 })
@@ -553,38 +549,5 @@ describe('SchemaConfigTab — auto-save after detect', () => {
     )
 
     vi.useRealTimers()
-  })
-})
-
-describe('SchemaConfigTab — tab behaviour', () => {
-  it('switches to Fields tab automatically when detect returns suggestions', () => {
-    vi.mocked(hooks.useDetectSchema).mockReturnValue({
-      mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {
-        opts.onSuccess(mockDetectResult)
-      },
-      isPending: false,
-      isError: false,
-      error: null,
-    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
-
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    render(
-      <QueryClientProvider client={qc}>
-        <SchemaConfigTab connId="conn-tab-switch" />
-      </QueryClientProvider>
-    )
-
-    // Switch away from Fields first
-    act(() => {
-      screen.getByRole('button', { name: /^properties$/i }).click()
-    })
-
-    // Trigger detect
-    act(() => {
-      screen.getByRole('button', { name: /detect from schema/i }).click()
-    })
-
-    // Banner should be visible — proves we're on Fields tab
-    expect(screen.getByText(/fields detected/i)).toBeInTheDocument()
   })
 })
