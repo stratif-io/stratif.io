@@ -40,8 +40,10 @@ export interface UseMissionControlTrendsReturn {
 
 export function useMissionControlTrends({
   dateRange,
+  visibleMetrics,
 }: {
   dateRange: DateRange
+  visibleMetrics?: string[]
 }): UseMissionControlTrendsReturn {
   const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
@@ -84,7 +86,7 @@ export function useMissionControlTrends({
             filters: activeFilters,
             connection_id: activeConnectionId ?? undefined,
           }),
-        enabled,
+        enabled: enabled && (visibleMetrics == null || visibleMetrics.includes(metric)),
         staleTime: QUERY_STALE_TIME.default,
       })),
       ...METRICS.map((metric) => ({
@@ -106,7 +108,11 @@ export function useMissionControlTrends({
             filters: activeFilters,
             connection_id: activeConnectionId ?? undefined,
           }),
-        enabled: enabled && !!prevStartDate && !!prevEndDate,
+        enabled:
+          enabled &&
+          !!prevStartDate &&
+          !!prevEndDate &&
+          (visibleMetrics == null || visibleMetrics.includes(metric)),
         staleTime: QUERY_STALE_TIME.default,
       })),
     ],
