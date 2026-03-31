@@ -795,21 +795,24 @@ export function SchemaConfigTab({ connId }: Props) {
                 label: 'User ID',
                 fieldKey: 'user_id_field',
                 value: userIdField,
+                icon: 'CircleUserRound',
                 onChange: (v: string) => updateForm({ userIdField: v }),
               },
               {
                 label: 'Event Name',
                 fieldKey: 'event_name_field',
                 value: eventNameField,
+                icon: 'Activity',
                 onChange: (v: string) => updateForm({ eventNameField: v }),
               },
               {
                 label: 'Timestamp',
                 fieldKey: 'timestamp_field',
                 value: timestampField,
+                icon: 'Timer',
                 onChange: (v: string) => updateForm({ timestampField: v }),
               },
-            ].map(({ label, fieldKey, value, onChange }) => {
+            ].map(({ label, fieldKey, value, icon, onChange }) => {
               const pending = pendingDetections.find((d) => d.fieldKey === fieldKey)
               const isEnabled = value in enabledFields
               return (
@@ -838,7 +841,7 @@ export function SchemaConfigTab({ connId }: Props) {
                   </div>
                   <FilterToggle
                     enabled={isEnabled}
-                    onToggle={() => toggleFilter(value, label, 'Tag')}
+                    onToggle={() => toggleFilter(value, label, icon)}
                     label={label}
                   />
                 </div>
@@ -857,7 +860,7 @@ export function SchemaConfigTab({ connId }: Props) {
         />
         {openSections.identity && (
           <>
-            {USER_IDENTITY_FIELDS.map(({ key, label, icon }) => {
+            {USER_IDENTITY_FIELDS.map(({ key, label }) => {
               const mapped = userIdentityFields[key]
               const isMapped = mapped !== null && mapped !== ''
               const isFilterEnabled = isMapped && mapped in enabledFields
@@ -895,7 +898,9 @@ export function SchemaConfigTab({ connId }: Props) {
                   </div>
                   <FilterToggle
                     enabled={isFilterEnabled}
-                    onToggle={() => isMapped && !pending && toggleFilter(mapped, label, icon)}
+                    onToggle={() =>
+                      isMapped && !pending && toggleFilter(mapped!, label, 'CircleUserRound')
+                    }
                     invisible={!isMapped || !!pending}
                     label={label}
                   />

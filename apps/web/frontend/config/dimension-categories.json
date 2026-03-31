@@ -4,7 +4,12 @@
     "label": "🕐 Time",
     "icon": "Timer",
     "emoji": "🕐",
-    "patterns": ["^ts_", "^(date|week|hour|month|quarter|year)$", "_(at|date|time|ts)$"]
+    "patterns": [
+      "^ts_",
+      "^timestamp$",
+      "^(date|week|hour|month|quarter|year)$",
+      "_(at|date|time|ts)$"
+    ]
   },
   {
     "id": "event",
@@ -18,7 +23,12 @@
     "label": "👤 User",
     "icon": "CircleUserRound",
     "emoji": "👤",
-    "patterns": ["^user_", "_(user|account|customer|tenant)$"]
+    "patterns": [
+      "^user_",
+      "_(user|account|customer|tenant)$",
+      "^(email|first_name|last_name|phone|date_of_birth)$",
+      "_(email|first_name|last_name|phone)$"
+    ]
   },
   {
     "id": "geography",
