@@ -24,7 +24,7 @@ const mockSchema = {
 }
 
 const mockFilters = {
-  filter_fields: [{ field: 'event_name', label: 'Event', icon: 'Tag' }],
+  filter_fields: [{ field: 'event_name', label: 'Event', icon: 'Activity' }],
 }
 
 const mockDetectResult = {
@@ -84,13 +84,15 @@ function renderTab() {
   return { detectMutate }
 }
 
-function renderTabOnTab(tab: 'fields' | 'properties' | 'advanced') {
+function renderAndExpand(section: 'identity' | 'properties' | 'advanced') {
   const { detectMutate } = renderTab()
-  // Switch to the requested tab by clicking the tab button
-  const label =
-    tab === 'fields' ? /^fields$/i : tab === 'properties' ? /^properties$/i : /^advanced$/i
+  const nameMap = {
+    identity: /user identity/i,
+    properties: /event properties/i,
+    advanced: /advanced/i,
+  }
   act(() => {
-    screen.getByRole('button', { name: label }).click()
+    screen.getByRole('button', { name: nameMap[section] }).click()
   })
   return { detectMutate }
 }
@@ -98,11 +100,11 @@ function renderTabOnTab(tab: 'fields' | 'properties' | 'advanced') {
 describe('SchemaConfigTab — Setup section', () => {
   it('shows the events table input with current value', () => {
     renderTab()
-    expect(screen.getByDisplayValue('events')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /events/i })).toBeInTheDocument()
   })
 
-  it('shows session timeout input on the Advanced tab', () => {
-    renderTabOnTab('advanced')
+  it('shows session timeout input in the Advanced section', () => {
+    renderAndExpand('advanced')
     expect(screen.getByDisplayValue('30')).toBeInTheDocument()
   })
 
@@ -111,7 +113,7 @@ describe('SchemaConfigTab — Setup section', () => {
     expect(screen.getByRole('button', { name: /detect from schema/i })).toBeInTheDocument()
   })
 
-  it('shows Event Name and Timestamp as required field rows on the Fields tab', () => {
+  it('shows Event Name and Timestamp as required field rows', () => {
     renderTab()
     expect(screen.getByText('Event Name')).toBeInTheDocument()
     expect(screen.getByText('Timestamp')).toBeInTheDocument()
@@ -121,16 +123,16 @@ describe('SchemaConfigTab — Setup section', () => {
 describe('SchemaConfigTab — User Identity section', () => {
   it('renders "User Identity" section heading', () => {
     renderTab()
-    expect(screen.getByText('User Identity')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /user identity/i })).toBeInTheDocument()
   })
 
-  it('shows User ID label', () => {
+  it('shows User ID label in Required Fields', () => {
     renderTab()
     expect(screen.getByText('User ID')).toBeInTheDocument()
   })
 
-  it('shows all five optional field labels', () => {
-    renderTab()
+  it('shows all five optional field labels when identity section is expanded', () => {
+    renderAndExpand('identity')
     expect(screen.getByText('Email')).toBeInTheDocument()
     expect(screen.getByText('First Name')).toBeInTheDocument()
     expect(screen.getByText('Last Name')).toBeInTheDocument()
@@ -138,48 +140,42 @@ describe('SchemaConfigTab — User Identity section', () => {
     expect(screen.getByText('Phone')).toBeInTheDocument()
   })
 
-  it('shows the mapped email column value', () => {
-    renderTab()
-    // Radix Select renders the selected value as visible text
+  it('shows the mapped email column value when identity section is expanded', () => {
+    renderAndExpand('identity')
     expect(screen.getByText('user_email')).toBeInTheDocument()
   })
 })
 
 describe('SchemaConfigTab — Event Properties section', () => {
   it('renders "Event Properties" section heading', () => {
-    renderTabOnTab('properties')
-    expect(screen.getByText('Event Properties')).toBeInTheDocument()
+    renderTab()
+    expect(screen.getByText(/event properties/i)).toBeInTheDocument()
   })
 
   it('shows custom property name in an editable input', () => {
-    renderTabOnTab('properties')
+    renderTab()
     expect(screen.getByDisplayValue('country')).toBeInTheDocument()
   })
 
-  it('shows Add Property button', () => {
-    renderTabOnTab('properties')
-    expect(screen.getByRole('button', { name: /add/i })).toBeInTheDocument()
+  it('shows Add button', () => {
+    renderTab()
+    expect(screen.getByRole('button', { name: /^add$/i })).toBeInTheDocument()
   })
 
-  it('does NOT show User ID in Event Properties (User ID only appears in Required Fields on the Fields tab)', () => {
-    renderTabOnTab('properties')
-    expect(screen.queryByText('User ID')).not.toBeInTheDocument()
-  })
-
-  it('renders Global Filter column header in Event Properties', () => {
-    renderTabOnTab('properties')
-    expect(screen.getByText(/global filter/i)).toBeInTheDocument()
+  it('renders Cat. column header in Event Properties', () => {
+    renderTab()
+    expect(screen.getByText(/^cat\.$/i)).toBeInTheDocument()
   })
 })
 
 describe('SchemaConfigTab — resurrection and power user fields', () => {
-  it('shows resurrection_window_days input with value 45 on the Advanced tab', () => {
-    renderTabOnTab('advanced')
+  it('shows resurrection_window_days input with value 45 in the Advanced section', () => {
+    renderAndExpand('advanced')
     expect(screen.getByDisplayValue('45')).toBeInTheDocument()
   })
 
-  it('shows power_user_threshold_days input with value 7 on the Advanced tab', () => {
-    renderTabOnTab('advanced')
+  it('shows power_user_threshold_days input with value 7 in the Advanced section', () => {
+    renderAndExpand('advanced')
     expect(screen.getByDisplayValue('7')).toBeInTheDocument()
   })
 })
@@ -381,6 +377,94 @@ describe('SchemaConfigTab — detect review panel', () => {
 
     expect(screen.queryByText(/fields detected/i)).not.toBeInTheDocument()
   })
+
+  it('proposed custom properties exclude columns already mapped to required or identity fields', async () => {
+    // mockSchema has: user_id_field='user_id', timestamp_field='created_at',
+    //                 event_name_field='event_name', email_field='user_email'
+    const detectWithConflicts = {
+      ...mockDetectResult,
+      proposed_custom_properties: [
+        { name: 'safe_prop', path: 'properties.safe_prop', type: 'string' as const },
+        { name: 'user_id', path: 'user_id', type: 'string' as const },
+        { name: 'created_at', path: 'created_at', type: 'timestamp' as const },
+        { name: 'event_name', path: 'event_name', type: 'string' as const },
+        { name: 'user_email', path: 'user_email', type: 'string' as const },
+      ],
+      columns: [],
+    }
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof detectWithConflicts) => void }) => {
+        opts.onSuccess(detectWithConflicts)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-reserved-cols" />
+      </QueryClientProvider>
+    )
+
+    act(() => {
+      screen.getAllByRole('button', { name: /detect from schema/i })[0].click()
+    })
+
+    // Properties section is open by default — safe_prop should be added as a new custom property
+    expect(screen.getByDisplayValue('safe_prop')).toBeInTheDocument()
+    // reserved paths must NOT appear as new custom properties
+    expect(screen.queryByDisplayValue('user_id')).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('created_at')).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('event_name')).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('user_email')).not.toBeInTheDocument()
+  })
+
+  it('detect removes existing custom props whose path conflicts with required or identity fields', () => {
+    // Schema where a reserved column was previously saved as a custom property
+    vi.mocked(hooks.useSchemaConfig).mockReturnValue({
+      data: {
+        ...mockSchema,
+        custom_properties: [
+          { name: 'user_id', path: 'user_id', type: 'string' as const, category: undefined },
+          {
+            name: 'safe_prop',
+            path: 'properties.safe_prop',
+            type: 'string' as const,
+            category: undefined,
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {
+        opts.onSuccess({ ...mockDetectResult, proposed_custom_properties: [] })
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-cleanup" />
+      </QueryClientProvider>
+    )
+
+    act(() => {
+      screen.getAllByRole('button', { name: /detect from schema/i })[0].click()
+    })
+
+    // user_id was a reserved path — should be removed from the list
+    expect(screen.queryByDisplayValue('user_id')).not.toBeInTheDocument()
+    // safe_prop should remain
+    expect(screen.getByDisplayValue('safe_prop')).toBeInTheDocument()
+  })
 })
 
 describe('SchemaConfigTab — auto-save with null schema (new connection)', () => {
@@ -474,12 +558,9 @@ describe('SchemaConfigTab — auto-save with null schema (new connection)', () =
     })
     upsertFilterMutate.mockClear()
 
-    // Switch to Properties tab and toggle the global filter for the 'country' custom prop
+    // Toggle the global filter for the 'country' custom prop (Event Properties is open by default)
     act(() => {
-      screen.getByRole('button', { name: /^properties$/i }).click()
-    })
-    act(() => {
-      screen.getAllByRole('checkbox')[0].click()
+      screen.getByRole('button', { name: /add country to global filters/i }).click()
     })
 
     act(() => {
@@ -553,38 +634,5 @@ describe('SchemaConfigTab — auto-save after detect', () => {
     )
 
     vi.useRealTimers()
-  })
-})
-
-describe('SchemaConfigTab — tab behaviour', () => {
-  it('switches to Fields tab automatically when detect returns suggestions', () => {
-    vi.mocked(hooks.useDetectSchema).mockReturnValue({
-      mutate: (_table: unknown, opts: { onSuccess: (r: typeof mockDetectResult) => void }) => {
-        opts.onSuccess(mockDetectResult)
-      },
-      isPending: false,
-      isError: false,
-      error: null,
-    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
-
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    render(
-      <QueryClientProvider client={qc}>
-        <SchemaConfigTab connId="conn-tab-switch" />
-      </QueryClientProvider>
-    )
-
-    // Switch away from Fields first
-    act(() => {
-      screen.getByRole('button', { name: /^properties$/i }).click()
-    })
-
-    // Trigger detect
-    act(() => {
-      screen.getByRole('button', { name: /detect from schema/i }).click()
-    })
-
-    // Banner should be visible — proves we're on Fields tab
-    expect(screen.getByText(/fields detected/i)).toBeInTheDocument()
   })
 })
