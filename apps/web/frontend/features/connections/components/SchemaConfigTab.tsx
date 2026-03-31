@@ -650,9 +650,17 @@ export function SchemaConfigTab({ connId }: Props) {
   )
 
   const groupedProps = useMemo(() => {
+    const reservedPaths = new Set([
+      form.userIdField,
+      form.eventNameField,
+      form.timestampField,
+      ...Object.values(form.userIdentityFields).filter(Boolean),
+    ])
     const q = propSearch.trim().toLowerCase()
     const filtered = sortedCustomProps.filter(
-      ({ prop }) => !q || prop.name.toLowerCase().includes(q) || prop.path.toLowerCase().includes(q)
+      ({ prop }) =>
+        !reservedPaths.has(prop.path) &&
+        (!q || prop.name.toLowerCase().includes(q) || prop.path.toLowerCase().includes(q))
     )
     const groups = new Map<string, typeof filtered>()
     for (const item of filtered) {
@@ -672,7 +680,14 @@ export function SchemaConfigTab({ connId }: Props) {
       if (b === '__uncategorized__') return -1
       return catName(a).localeCompare(catName(b))
     })
-  }, [sortedCustomProps, propSearch])
+  }, [
+    sortedCustomProps,
+    propSearch,
+    form.userIdField,
+    form.eventNameField,
+    form.timestampField,
+    form.userIdentityFields,
+  ])
 
   if (isLoading || filterLoading) return <LoadingState message="Loading schema config…" />
 
