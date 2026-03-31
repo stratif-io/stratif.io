@@ -144,6 +144,46 @@ def date_diff_days(start_expr: str, end_expr: str, dialect: str = "duckdb") -> s
     return f"DATE_DIFF('day', {start_expr}, {end_expr})"
 
 
+def date_diff_months(start_expr: str, end_expr: str, dialect: str = "duckdb") -> str:
+    """Integer number of whole calendar months between *start_expr* and *end_expr*.
+
+    Both expressions should be date/timestamp values truncated to month boundaries
+    so that the arithmetic is clean.
+
+    Dialect rendering:
+        DuckDB:             DATE_DIFF('month', start, end)
+        Postgres:           EXTRACT(YEAR FROM age(end, start))*12 + EXTRACT(MONTH FROM age(end, start))
+        SQLite:             (strftime('%Y', end) - strftime('%Y', start)) * 12 + (strftime('%m', end) - strftime('%m', start))
+        MySQL:              TIMESTAMPDIFF(MONTH, start, end)
+        BigQuery:           DATE_DIFF(end, start, MONTH)
+        Snowflake/Redshift: DATEDIFF('month', start, end)
+        TSQL:               DATEDIFF(month, start, end)
+        Databricks:         MONTHS_BETWEEN(end, start)
+    """
+    if dialect == "sqlite":
+        return (
+            f"((CAST(strftime('%Y', {end_expr}) AS INTEGER) - CAST(strftime('%Y', {start_expr}) AS INTEGER)) * 12"
+            f" + (CAST(strftime('%m', {end_expr}) AS INTEGER) - CAST(strftime('%m', {start_expr}) AS INTEGER)))"
+        )
+    if dialect == "mysql":
+        return f"TIMESTAMPDIFF(MONTH, {start_expr}, {end_expr})"
+    if dialect == "postgres":
+        return (
+            f"(CAST(EXTRACT(YEAR FROM AGE({end_expr}::date, {start_expr}::date)) AS INTEGER) * 12"
+            f" + CAST(EXTRACT(MONTH FROM AGE({end_expr}::date, {start_expr}::date)) AS INTEGER))"
+        )
+    if dialect == "bigquery":
+        return f"DATE_DIFF({end_expr}, {start_expr}, MONTH)"
+    if dialect in ("snowflake", "redshift"):
+        return f"DATEDIFF('month', {start_expr}, {end_expr})"
+    if dialect == "tsql":
+        return f"DATEDIFF(month, {start_expr}, {end_expr})"
+    if dialect == "databricks":
+        return f"CAST(MONTHS_BETWEEN({end_expr}, {start_expr}) AS INTEGER)"
+    # DuckDB
+    return f"DATE_DIFF('month', {start_expr}, {end_expr})"
+
+
 # ---------------------------------------------------------------------------
 # Epoch / seconds difference
 # ---------------------------------------------------------------------------
