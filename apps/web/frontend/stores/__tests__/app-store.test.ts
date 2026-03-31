@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { useAppStore } from '../app-store'
+import { useAppStore } from '@/stores'
 
 describe('useAppStore', () => {
   const _originalLocalStorage = window.localStorage
@@ -296,6 +296,66 @@ describe('useAppStore', () => {
     it('does not set queryEverActive when called with zeros', () => {
       useAppStore.getState().setQueryCounts(0, 0)
       expect(useAppStore.getState().queryEverActive).toBe(false)
+    })
+  })
+
+  describe('granularity', () => {
+    beforeEach(() => {
+      useAppStore.setState({
+        granularity: 'day',
+        dateRange: { from: new Date('2026-03-01'), to: new Date('2026-03-31') },
+        presetId: '30d',
+      })
+    })
+
+    it('defaults to day', () => {
+      expect(useAppStore.getState().granularity).toBe('day')
+    })
+
+    it('setGranularity updates the value', () => {
+      useAppStore.getState().setGranularity('week')
+      expect(useAppStore.getState().granularity).toBe('week')
+    })
+
+    it('applyPreset with ≤2 day range suggests hour', () => {
+      const from = new Date('2026-03-31')
+      const to = new Date('2026-03-31')
+      useAppStore.getState().applyPreset({ from, to }, 'today')
+      expect(useAppStore.getState().granularity).toBe('hour')
+    })
+
+    it('applyPreset with ≤60 day range suggests day', () => {
+      const from = new Date('2026-02-01')
+      const to = new Date('2026-03-31')
+      useAppStore.getState().applyPreset({ from, to }, '30d')
+      expect(useAppStore.getState().granularity).toBe('day')
+    })
+
+    it('applyPreset with ≤6 month range suggests week', () => {
+      const from = new Date('2025-10-01')
+      const to = new Date('2026-03-31')
+      useAppStore.getState().applyPreset({ from, to }, '6m')
+      expect(useAppStore.getState().granularity).toBe('week')
+    })
+
+    it('applyPreset with ≤2 year range suggests month', () => {
+      const from = new Date('2024-04-01')
+      const to = new Date('2026-03-31')
+      useAppStore.getState().applyPreset({ from, to }, '12m')
+      expect(useAppStore.getState().granularity).toBe('month')
+    })
+
+    it('applyPreset with >2 year range suggests year', () => {
+      const from = new Date('2020-01-01')
+      const to = new Date('2026-03-31')
+      useAppStore.getState().applyPreset({ from, to }, null)
+      expect(useAppStore.getState().granularity).toBe('year')
+    })
+
+    it('applyPreset with null dates does not change granularity', () => {
+      useAppStore.getState().setGranularity('month')
+      useAppStore.getState().applyPreset({ from: null, to: null }, 'all_time')
+      expect(useAppStore.getState().granularity).toBe('month')
     })
   })
 

@@ -5,21 +5,6 @@ export const DateRangeSchema = z.object({
   to: z.date(),
 })
 
-export const TrendDataSchema = z.object({
-  date: z
-    .string()
-    .datetime()
-    .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
-  count: z.number().int().nonnegative(),
-  unique_users: z.number().int().nonnegative(),
-})
-
-export const TrendResponseSchema = z.object({
-  sql: z.union([z.string(), z.array(z.string())]).optional(),
-  total_unique_users: z.number().int().nonnegative(),
-  data: z.array(TrendDataSchema),
-})
-
 export const EventSchema = z.object({
   user_id: z.string().min(1),
   event_name: z.string().min(1),
@@ -171,8 +156,6 @@ export const MetricCardSchema = z.object({
 })
 
 export type DateRangeType = z.infer<typeof DateRangeSchema>
-export type TrendDataType = z.infer<typeof TrendDataSchema>
-export type TrendResponseType = z.infer<typeof TrendResponseSchema>
 export type EventType = z.infer<typeof EventSchema>
 export type EventsResponseType = z.infer<typeof EventsResponseSchema>
 export type RawEventsResponseType = z.infer<typeof RawEventsResponseSchema>

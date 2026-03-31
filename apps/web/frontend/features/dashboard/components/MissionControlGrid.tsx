@@ -9,14 +9,15 @@ import { cn } from '@/lib/utils'
 import type { MissionControlResponse } from '@/types'
 import type { TrendMetric, MetricTrend } from '../hooks/useMissionControlTrends'
 import { DevCard } from '@/components/dev'
-import { usePinnedMetrics } from '../hooks/usePinnedMetrics'
-import { useAppStore } from '@/stores/app-store'
 
 export interface MissionControlGridProps {
   data: MissionControlResponse | undefined
   trends: Record<TrendMetric, MetricTrend>
   metricLoading: Record<TrendMetric, boolean>
   metricSql?: Record<TrendMetric, string | string[] | null>
+  togglePin: (key: string) => void
+  isPinned: (key: string) => boolean
+  resetToDefault: () => void
 }
 
 // Per-metric display config
@@ -102,10 +103,11 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   trends,
   metricLoading,
   metricSql,
+  togglePin,
+  isPinned,
+  resetToDefault,
 }: MissionControlGridProps) {
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
-  const activeConnectionId = useAppStore((s) => s.activeConnectionId)
-  const { togglePin, isPinned, resetToDefault } = usePinnedMetrics(activeConnectionId ?? null)
 
   const heroWrapperRef = useRef<HTMLDivElement>(null)
   const rightColRef = useRef<HTMLDivElement>(null)

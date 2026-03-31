@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
+import type { Granularity } from '@/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 
-import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { TableSkeleton } from '@/components/ui/loading-state'
@@ -19,11 +19,10 @@ import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 
-const GRANULARITIES: { value: RetentionGranularity; label: string }[] = [
-  { value: 'day', label: 'Daily' },
-  { value: 'week', label: 'Weekly' },
-  { value: 'month', label: 'Monthly' },
-]
+function toRetentionGranularity(g: Granularity): RetentionGranularity {
+  if (g === 'hour') return 'day'
+  return g
+}
 
 // Benchmark thresholds per granularity+milestone
 // Keyed as `${granularity}_${milestone}` → { good, ok }
@@ -44,6 +43,13 @@ const BENCHMARKS: Record<string, { good: number; ok: number }> = {
   month_4: { good: 15, ok: 5 },
   month_5: { good: 12, ok: 3 },
   month_6: { good: 10, ok: 2 },
+  quarter_1: { good: 30, ok: 12 },
+  quarter_2: { good: 20, ok: 8 },
+  quarter_3: { good: 15, ok: 5 },
+  quarter_4: { good: 10, ok: 3 },
+  year_1: { good: 25, ok: 10 },
+  year_2: { good: 15, ok: 5 },
+  year_3: { good: 10, ok: 3 },
 }
 
 function getRetentionLabel(value: number, granularity: RetentionGranularity, milestone: number) {
@@ -57,6 +63,8 @@ function getRetentionLabel(value: number, granularity: RetentionGranularity, mil
 function milestoneTitle(granularity: RetentionGranularity, unit: number): string {
   if (granularity === 'week') return `Week ${unit} Retention`
   if (granularity === 'month') return `Month ${unit} Retention`
+  if (granularity === 'quarter') return `Quarter ${unit} Retention`
+  if (granularity === 'year') return `Year ${unit} Retention`
   return `Day ${unit} Retention`
 }
 
@@ -100,8 +108,8 @@ export function RetentionPage() {
     document.title = 'Retention — stratif.io'
   }, [])
 
-  const { dateRange } = useAppStore()
-  const [granularity, setGranularity] = useState<RetentionGranularity>('day')
+  const { dateRange, granularity: globalGranularity } = useAppStore()
+  const granularity = toRetentionGranularity(globalGranularity)
   const [cohortLimit, setCohortLimit] = useState(10)
 
   const {
@@ -146,20 +154,6 @@ export function RetentionPage() {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <h1 className={TYPOGRAPHY.pageLabel}>Retention</h1>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                {/* Granularity toggle */}
-                <div className="flex items-center border rounded-md p-1">
-                  {GRANULARITIES.map(({ value, label }) => (
-                    <Button
-                      key={value}
-                      variant={granularity === value ? 'secondary' : 'ghost'}
-                      size="sm"
-                      onClick={() => setGranularity(value)}
-                    >
-                      {label}
-                    </Button>
-                  ))}
-                </div>
-
                 {/* Cohort count slider */}
                 {totalAvailable > 1 && (
                   <div className="flex items-center gap-3">
