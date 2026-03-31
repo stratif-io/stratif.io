@@ -4,17 +4,16 @@ import {
   Trash2,
   ScanSearch,
   FolderSearch,
-  Lock,
   ChevronsUpDown,
   Check,
   X,
   Sparkles,
+  Tag,
 } from 'lucide-react'
 import { SaveStatus } from '@/components/ui/save-status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -49,7 +48,7 @@ import type { CustomProperty, PropertyType, DimensionCategoryConfig, FilterField
 
 const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
 
-const EVENT_GRID = 'grid-cols-[120px_1fr_90px_110px_120px_28px]'
+const EVENT_GRID = 'grid-cols-[1fr_1fr_80px_28px_28px_28px]'
 
 const USER_IDENTITY_FIELDS = [
   { key: 'email_field' as const, label: 'Email', icon: 'Mail' },
@@ -199,7 +198,7 @@ function ColumnCombobox({
   )
 }
 
-function CategoryPicker({
+function CompactCategoryButton({
   value,
   onChange,
 }: {
@@ -213,9 +212,13 @@ function CategoryPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="h-8 w-full truncate rounded-md border border-input bg-background px-2 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground focus:outline-none"
+          title={selected ? selected.label : 'No category'}
+          className={cn(
+            'h-7 w-7 flex items-center justify-center rounded border border-input text-xs font-medium hover:bg-accent transition-colors',
+            value ? 'text-foreground' : 'text-muted-foreground/40'
+          )}
         >
-          {selected ? selected.label : '— none —'}
+          {selected ? selected.label.charAt(0).toUpperCase() : '—'}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-1" align="start">
@@ -522,21 +525,15 @@ export function SchemaConfigTab({ connId }: Props) {
       {/* ── Header row: table picker + detect ── */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Input
-            readOnly
-            value={eventsTable}
-            placeholder="events"
-            className="font-mono text-sm text-muted-foreground bg-muted/40 cursor-default max-w-xs"
-            onClick={() => setBrowseOpen(true)}
-          />
           <Button
             type="button"
             size="sm"
             variant="outline"
             onClick={() => setBrowseOpen((o) => !o)}
+            className="font-mono"
           >
-            <FolderSearch className="h-3.5 w-3.5 mr-1.5" />
-            Browse
+            <FolderSearch className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+            {eventsTable || 'events'}
           </Button>
           <Button size="sm" variant="outline" onClick={handleDetect} disabled={detect.isPending}>
             <ScanSearch className="h-3.5 w-3.5 mr-1.5" />
@@ -656,34 +653,42 @@ export function SchemaConfigTab({ connId }: Props) {
                 <div
                   key={fieldKey}
                   className={cn(
-                    'grid grid-cols-[140px_1fr_28px_28px] gap-3 px-3 py-2 border-b last:border-b-0 items-center',
+                    'flex items-center gap-3 px-3 py-2 border-b last:border-b-0',
                     pending && 'bg-amber-50/50 dark:bg-amber-950/10'
                   )}
                 >
-                  <span className="text-xs text-muted-foreground">{label}</span>
-                  {pending ? (
-                    <PendingDetectionRow
-                      pending={pending}
-                      onAccept={() => acceptDetection(fieldKey)}
-                      onReject={() => rejectDetection(fieldKey)}
-                    />
-                  ) : (
-                    <ColumnCombobox
-                      value={value}
-                      detectedColumns={detectedColumns}
-                      onChange={onChange}
-                    />
-                  )}
-                  {/* Filter toggle — only visible when not pending */}
-                  <div className="flex items-center justify-center">
-                    {!pending && value && (
-                      <Checkbox
-                        checked={isEnabled}
-                        onCheckedChange={() => toggleFilter(value, label, 'Tag')}
+                  <span className="text-xs text-muted-foreground w-28 shrink-0">{label}</span>
+                  <div className="flex-1 min-w-0">
+                    {pending ? (
+                      <PendingDetectionRow
+                        pending={pending}
+                        onAccept={() => acceptDetection(fieldKey)}
+                        onReject={() => rejectDetection(fieldKey)}
+                      />
+                    ) : (
+                      <ColumnCombobox
+                        value={value}
+                        detectedColumns={detectedColumns}
+                        onChange={onChange}
                       />
                     )}
                   </div>
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground/30" />
+                  <button
+                    type="button"
+                    onClick={() => toggleFilter(value, label, 'Tag')}
+                    className={cn(
+                      'h-7 w-7 shrink-0 flex items-center justify-center rounded text-muted-foreground/40 hover:text-muted-foreground transition-colors',
+                      isEnabled && 'text-primary hover:text-primary'
+                    )}
+                    title={isEnabled ? 'Remove from global filters' : 'Add to global filters'}
+                    aria-label={
+                      isEnabled
+                        ? `Remove ${label} from global filters`
+                        : `Add ${label} to global filters`
+                    }
+                  >
+                    <Tag className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               )
             })}
@@ -703,44 +708,64 @@ export function SchemaConfigTab({ connId }: Props) {
                 <div
                   key={key}
                   className={cn(
-                    'grid grid-cols-[140px_1fr_28px_28px] gap-3 px-3 py-2 border-b last:border-b-0 items-center',
+                    'flex items-center gap-3 px-3 py-2 border-b last:border-b-0',
                     pending && 'bg-amber-50/50 dark:bg-amber-950/10'
                   )}
                 >
-                  <span className={cn('text-xs', !isMapped && !pending && 'text-muted-foreground')}>
+                  <span
+                    className={cn(
+                      'text-xs w-28 shrink-0',
+                      !isMapped && !pending && 'text-muted-foreground'
+                    )}
+                  >
                     {label}
                   </span>
-                  {pending ? (
-                    <PendingDetectionRow
-                      pending={pending}
-                      onAccept={() => acceptDetection(key)}
-                      onReject={() => rejectDetection(key)}
-                    />
-                  ) : (
-                    <ColumnCombobox
-                      value={mapped ?? ''}
-                      detectedColumns={detectedColumns}
-                      onChange={(v) => setUserIdentityField(key, v || null)}
-                    />
-                  )}
-                  <div className="flex items-center justify-center">
-                    {!pending && isMapped && (
-                      <Checkbox
-                        checked={isFilterEnabled}
-                        onCheckedChange={() => toggleFilter(mapped, label, icon)}
+                  <div className="flex-1 min-w-0">
+                    {pending ? (
+                      <PendingDetectionRow
+                        pending={pending}
+                        onAccept={() => acceptDetection(key)}
+                        onReject={() => rejectDetection(key)}
+                      />
+                    ) : (
+                      <ColumnCombobox
+                        value={mapped ?? ''}
+                        detectedColumns={detectedColumns}
+                        onChange={(v) => setUserIdentityField(key, v || null)}
                       />
                     )}
                   </div>
                   <button
                     type="button"
+                    onClick={() => isMapped && !pending && toggleFilter(mapped, label, icon)}
                     className={cn(
-                      'h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive text-sm',
+                      'h-7 w-7 shrink-0 flex items-center justify-center rounded transition-colors',
+                      isMapped && !pending
+                        ? cn(
+                            'text-muted-foreground/40 hover:text-muted-foreground',
+                            isFilterEnabled && 'text-primary hover:text-primary'
+                          )
+                        : 'invisible'
+                    )}
+                    title={isFilterEnabled ? 'Remove from global filters' : 'Add to global filters'}
+                    aria-label={
+                      isFilterEnabled
+                        ? `Remove ${label} from global filters`
+                        : `Add ${label} to global filters`
+                    }
+                  >
+                    <Tag className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      'h-7 w-7 shrink-0 flex items-center justify-center rounded text-muted-foreground hover:text-destructive transition-colors',
                       (!isMapped || pending) && 'invisible'
                     )}
                     onClick={() => setUserIdentityField(key, null)}
                     aria-label={`Clear ${label}`}
                   >
-                    ×
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
               )
@@ -761,8 +786,8 @@ export function SchemaConfigTab({ connId }: Props) {
           </div>
 
           {sortedCustomProps.length > 0 && (
-            <div className={`grid ${EVENT_GRID} gap-3 px-3 py-2 border-b bg-muted/30`}>
-              {['Field', 'Column', 'Type', 'Category', 'Global Filter', ''].map((h) => (
+            <div className={`grid ${EVENT_GRID} gap-2 px-3 py-2 border-b bg-muted/30`}>
+              {['Name', 'Path', 'Type', 'Cat.', '', ''].map((h) => (
                 <span key={h} className="text-xs font-medium text-muted-foreground">
                   {h}
                 </span>
@@ -775,13 +800,13 @@ export function SchemaConfigTab({ connId }: Props) {
             return (
               <div
                 key={prop.id ?? String(idx)}
-                className={`grid ${EVENT_GRID} gap-3 px-3 py-2 border-b last:border-b-0 items-center`}
+                className={`grid ${EVENT_GRID} gap-2 px-3 py-2 border-b last:border-b-0 items-center`}
               >
                 <Input
                   value={prop.name}
                   onChange={(e) => updateProp(idx, { name: e.target.value })}
                   placeholder="campaign_source"
-                  className="h-8 text-sm"
+                  className="h-8 text-sm font-mono"
                 />
                 <ColumnCombobox
                   value={prop.path}
@@ -792,37 +817,47 @@ export function SchemaConfigTab({ connId }: Props) {
                   value={prop.type}
                   onValueChange={(v) => updateProp(idx, { type: v as PropertyType })}
                 >
-                  <SelectTrigger className="h-8 text-sm">
+                  <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {PROPERTY_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
+                      <SelectItem key={t} value={t} className="text-xs">
                         {t}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <CategoryPicker
+                <CompactCategoryButton
                   value={prop.category ?? null}
                   onChange={(cat) => updateProp(idx, { category: cat ?? undefined })}
                 />
-                <div className="flex items-center">
-                  <Checkbox
-                    checked={isEnabled}
-                    onCheckedChange={() =>
-                      toggleEventPropFilter(prop.name, defaultLabel(prop.name), prop.category)
-                    }
-                  />
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                <button
+                  type="button"
+                  onClick={() =>
+                    toggleEventPropFilter(prop.name, defaultLabel(prop.name), prop.category)
+                  }
+                  className={cn(
+                    'h-7 w-7 flex items-center justify-center rounded text-muted-foreground/40 hover:text-muted-foreground transition-colors',
+                    isEnabled && 'text-primary hover:text-primary'
+                  )}
+                  title={isEnabled ? 'Remove from global filters' : 'Add to global filters'}
+                  aria-label={
+                    isEnabled
+                      ? `Remove ${prop.name} from global filters`
+                      : `Add ${prop.name} to global filters`
+                  }
+                >
+                  <Tag className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive transition-colors"
                   onClick={() => removeProp(idx)}
+                  aria-label={`Remove ${prop.name}`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                </button>
               </div>
             )
           })}

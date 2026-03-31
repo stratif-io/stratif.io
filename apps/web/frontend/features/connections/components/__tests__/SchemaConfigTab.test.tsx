@@ -98,7 +98,7 @@ function renderTabOnTab(tab: 'fields' | 'properties' | 'advanced') {
 describe('SchemaConfigTab — Setup section', () => {
   it('shows the events table input with current value', () => {
     renderTab()
-    expect(screen.getByDisplayValue('events')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /events/i })).toBeInTheDocument()
   })
 
   it('shows session timeout input on the Advanced tab', () => {
@@ -158,7 +158,7 @@ describe('SchemaConfigTab — Event Properties section', () => {
 
   it('shows Add Property button', () => {
     renderTabOnTab('properties')
-    expect(screen.getByRole('button', { name: /add/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^add$/i })).toBeInTheDocument()
   })
 
   it('does NOT show User ID in Event Properties (User ID only appears in Required Fields on the Fields tab)', () => {
@@ -166,9 +166,9 @@ describe('SchemaConfigTab — Event Properties section', () => {
     expect(screen.queryByText('User ID')).not.toBeInTheDocument()
   })
 
-  it('renders Global Filter column header in Event Properties', () => {
+  it('renders Cat. column header in Event Properties', () => {
     renderTabOnTab('properties')
-    expect(screen.getByText(/global filter/i)).toBeInTheDocument()
+    expect(screen.getByText(/^cat\.$/i)).toBeInTheDocument()
   })
 })
 
@@ -479,7 +479,7 @@ describe('SchemaConfigTab — auto-save with null schema (new connection)', () =
       screen.getByRole('button', { name: /^properties$/i }).click()
     })
     act(() => {
-      screen.getAllByRole('checkbox')[0].click()
+      screen.getByRole('button', { name: /add country to global filters/i }).click()
     })
 
     act(() => {
