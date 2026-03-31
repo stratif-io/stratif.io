@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   Select,
   SelectContent,
@@ -19,11 +19,22 @@ import { DevCard } from '@/components/dev'
 import { EmptyState } from '@/components/ui/empty-state'
 import { QueryError } from '@/components/ui/query-error'
 import { BarChart2 } from 'lucide-react'
+import { useAppStore } from '@/stores'
+import type { Granularity } from '@/types'
 // FilterEntry used for pivotFilters state
 
 const DEFAULT_ROW_GROUPS: ZoneCol[] = []
 const DEFAULT_PIVOT_COLS: ZoneCol[] = []
 const DEFAULT_VALUE_COLS: ZoneCol[] = []
+
+const GRANULARITY_TO_DIM: Record<Granularity, string> = {
+  hour: 'ts_hour',
+  day: 'ts_date',
+  week: 'ts_week',
+  month: 'ts_month',
+  quarter: 'ts_quarter',
+  year: 'ts_year',
+}
 
 export function PivotTable({
   colDefsData,
@@ -47,12 +58,69 @@ export function PivotTable({
   const [filterField, setFilterField] = useState<string | null>(null)
   const [filterOptions, setFilterOptions] = useState<string[]>([])
 
+  const granularity = useAppStore((s) => s.granularity)
+  // tracks whether the current sole row group is still the default time dim
+  const defaultTimeDimRef = useRef<string | null>(null)
+
   const fetchIdRef = useRef(0)
   const parentRef = useRef<HTMLDivElement>(null)
 
-  const leafCols = colDefsData
-    ? buildLeafMeta(colDefsData.columnDefs as Parameters<typeof buildLeafMeta>[0])
-    : []
+  const leafCols = useMemo(
+    () =>
+      colDefsData
+        ? buildLeafMeta(colDefsData.columnDefs as Parameters<typeof buildLeafMeta>[0])
+        : [],
+    [colDefsData]
+  )
+
+  useEffect(() => {
+    if (!colDefsData || leafCols.length === 0) return
+    if (rowGroups.length > 0 || valueCols.length > 0) return
+
+    const timeDimId = GRANULARITY_TO_DIM[granularity]
+    const timeMeta = leafCols.find((c) => c.colId === timeDimId)
+    const eventsMeta = leafCols.find((c) => c.colId === 'event_count')
+    const usersMeta = leafCols.find((c) => c.colId === 'user_id')
+
+    if (timeMeta) {
+      setRowGroups([{ colId: timeMeta.colId, label: timeMeta.label }])
+      defaultTimeDimRef.current = timeMeta.colId
+    }
+
+    const defaults: ZoneCol[] = []
+    if (eventsMeta)
+      defaults.push({
+        colId: eventsMeta.colId,
+        label: eventsMeta.label,
+        aggFunc: eventsMeta.allowedAggFuncs?.[0] ?? 'sum',
+        allowedAggFuncs: eventsMeta.allowedAggFuncs,
+      })
+    if (usersMeta)
+      defaults.push({
+        colId: usersMeta.colId,
+        label: usersMeta.label,
+        aggFunc: usersMeta.allowedAggFuncs?.[0] ?? 'sum',
+        allowedAggFuncs: usersMeta.allowedAggFuncs,
+      })
+    if (defaults.length > 0) setValueCols(defaults)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colDefsData, leafCols.length])
+
+  useEffect(() => {
+    const newDimId = GRANULARITY_TO_DIM[granularity]
+    const prev = defaultTimeDimRef.current
+    if (!prev || prev === newDimId) return
+    const timeMeta = leafCols.find((c) => c.colId === newDimId)
+    if (!timeMeta) return
+
+    setRowGroups((current) => {
+      if (current.length === 1 && current[0].colId === prev) {
+        defaultTimeDimRef.current = newDimId
+        return [{ colId: timeMeta.colId, label: timeMeta.label }]
+      }
+      return current
+    })
+  }, [granularity, leafCols])
 
   const runQuery = useCallback(async () => {
     if (rowGroups.length === 0 && valueCols.length === 0) {
@@ -120,6 +188,7 @@ export function PivotTable({
     setPivotCols(DEFAULT_PIVOT_COLS)
     setValueCols(DEFAULT_VALUE_COLS)
     setPivotFilters([])
+    defaultTimeDimRef.current = null
   }
 
   function handleExportCsv() {

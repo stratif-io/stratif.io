@@ -110,6 +110,17 @@ describe('DevCard', () => {
     expect(screen.getByLabelText('Collapse')).toBeInTheDocument()
   })
 
+  it('clicking SQL badge again while expanded collapses the overlay', () => {
+    setDevMode(true)
+    renderCard({ sql: 'SELECT 1 FROM events' })
+    // Open
+    fireEvent.click(screen.getByLabelText('Show SQL'))
+    expect(screen.getByLabelText('Collapse')).toBeInTheDocument()
+    // Close via badge
+    fireEvent.click(screen.getByLabelText('Show SQL'))
+    expect(screen.queryByLabelText('Collapse')).not.toBeInTheDocument()
+  })
+
   it('collapses expanded overlay when Collapse button is clicked', () => {
     setDevMode(true)
     renderCard()

@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
+import { CategoryIcon } from '@/lib/utils/categoryIcon'
 import categoriesConfig from '@/config/dimension-categories.json'
 import type { DimensionCategoryConfig, DimensionOption } from '@/types'
 
@@ -279,6 +280,7 @@ export function FilterSelect({
                         )}
                         onClick={() => setActiveCategory(group.category.id)}
                       >
+                        <CategoryIcon name={group.category.icon} className="h-3 w-3 shrink-0" />
                         <span className="truncate flex-1 min-w-0">{group.category.label}</span>
                         {hasSelections ? (
                           <span className="shrink-0 text-[10px] leading-none bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 font-medium">
