@@ -63,17 +63,15 @@ export function ZoneBar({
   }
 
   const addTrigger = (
-    <Button variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs text-muted-foreground">
+    <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Add">
       <Plus className="h-3 w-3" />
-      Add
     </Button>
   )
 
   return (
     <div className="border-b border-border bg-muted/20 px-4 py-2">
-      <div className="flex gap-3">
-        {/* Rows */}
-        <Zone label="Rows">
+      <div className="flex border border-border rounded-md bg-background overflow-hidden">
+        <ZoneSection label="Rows">
           {rowGroups.map((col) => (
             <Chip
               key={col.colId}
@@ -89,10 +87,11 @@ export function ZoneBar({
             onChange={(colId) => addToZone(onRowGroupsChange, rowGroups, colId as string)}
             triggerContent={addTrigger}
           />
-        </Zone>
+        </ZoneSection>
 
-        {/* Columns */}
-        <Zone label="Columns">
+        <div className="w-px bg-border shrink-0" />
+
+        <ZoneSection label="Columns">
           {pivotCols.map((col) => (
             <Chip
               key={col.colId}
@@ -108,10 +107,11 @@ export function ZoneBar({
             onChange={(colId) => addToZone(onPivotColsChange, pivotCols, colId as string)}
             triggerContent={addTrigger}
           />
-        </Zone>
+        </ZoneSection>
 
-        {/* Values */}
-        <Zone label="Values">
+        <div className="w-px bg-border shrink-0" />
+
+        <ZoneSection label="Values">
           {valueCols.map((col) => (
             <ValueChip
               key={`${col.colId}-${col.aggFunc}`}
@@ -135,24 +135,26 @@ export function ZoneBar({
               ])
             }
           />
-        </Zone>
+        </ZoneSection>
       </div>
     </div>
   )
 }
 
-function Zone({ label, children }: { label: string; children: React.ReactNode }) {
+function ZoneSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex-1 min-h-[36px] rounded border border-dashed border-border px-2 py-1 flex flex-wrap gap-1 items-center">
-      <span className="text-xs text-muted-foreground mr-1 shrink-0">{label}</span>
-      {children}
+    <div className="flex-1 px-3 py-2 flex flex-col gap-1 min-w-0">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      <div className="flex flex-wrap gap-1 items-center">{children}</div>
     </div>
   )
 }
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-muted text-foreground">
       {label}
       <Button
         variant="ghost"
@@ -188,7 +190,7 @@ function ValueChip({
   }
 
   return (
-    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-muted text-foreground">
       {col.label}
       <Button
         variant="ghost"
