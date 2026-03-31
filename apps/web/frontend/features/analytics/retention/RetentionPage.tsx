@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
+import type { Granularity } from '@/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 
-import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { TableSkeleton } from '@/components/ui/loading-state'
@@ -19,11 +19,12 @@ import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 
-const GRANULARITIES: { value: RetentionGranularity; label: string }[] = [
-  { value: 'day', label: 'Daily' },
-  { value: 'week', label: 'Weekly' },
-  { value: 'month', label: 'Monthly' },
-]
+function toRetentionGranularity(g: Granularity): RetentionGranularity {
+  if (g === 'week') return 'week'
+  if (g === 'month') return 'month'
+  if (g === 'quarter' || g === 'year') return 'month'
+  return 'day' // hour, day → day
+}
 
 // Benchmark thresholds per granularity+milestone
 // Keyed as `${granularity}_${milestone}` → { good, ok }
@@ -100,8 +101,8 @@ export function RetentionPage() {
     document.title = 'Retention — stratif.io'
   }, [])
 
-  const { dateRange } = useAppStore()
-  const [granularity, setGranularity] = useState<RetentionGranularity>('day')
+  const { dateRange, granularity: globalGranularity } = useAppStore()
+  const granularity = toRetentionGranularity(globalGranularity)
   const [cohortLimit, setCohortLimit] = useState(10)
 
   const {
@@ -146,20 +147,6 @@ export function RetentionPage() {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <h1 className={TYPOGRAPHY.pageLabel}>Retention</h1>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                {/* Granularity toggle */}
-                <div className="flex items-center border rounded-md p-1">
-                  {GRANULARITIES.map(({ value, label }) => (
-                    <Button
-                      key={value}
-                      variant={granularity === value ? 'secondary' : 'ghost'}
-                      size="sm"
-                      onClick={() => setGranularity(value)}
-                    >
-                      {label}
-                    </Button>
-                  ))}
-                </div>
-
                 {/* Cohort count slider */}
                 {totalAvailable > 1 && (
                   <div className="flex items-center gap-3">
