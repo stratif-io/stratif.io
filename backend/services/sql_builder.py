@@ -26,7 +26,7 @@ def date_trunc(unit: str, col_expr: str, dialect: str = "duckdb") -> str:
     """Truncate *col_expr* to the start of the given time *unit*.
 
     Args:
-        unit:     "hour" | "day" | "week" | "month" | "year"
+        unit:     "hour" | "day" | "week" | "month" | "quarter" | "year"
         col_expr: SQL expression for the timestamp column (e.g. ``"timestamp"``)
         dialect:  Target SQL dialect
 
@@ -46,6 +46,13 @@ def date_trunc(unit: str, col_expr: str, dialect: str = "duckdb") -> str:
             "day": f"DATE({col_expr})",
             "week": f"DATE({col_expr}, 'weekday 1', '-6 days')",  # ISO Mon
             "month": f"STRFTIME('%Y-%m-01', {col_expr})",
+            "quarter": (
+                f"STRFTIME('%Y-', {col_expr}) || "
+                f"CASE WHEN CAST(STRFTIME('%m', {col_expr}) AS INTEGER) <= 3 THEN '01-01' "
+                f"WHEN CAST(STRFTIME('%m', {col_expr}) AS INTEGER) <= 6 THEN '04-01' "
+                f"WHEN CAST(STRFTIME('%m', {col_expr}) AS INTEGER) <= 9 THEN '07-01' "
+                f"ELSE '10-01' END"
+            ),
             "year": f"STRFTIME('%Y-01-01', {col_expr})",
         }
         return _sqlite_map.get(unit, f"DATE({col_expr})")
@@ -56,6 +63,7 @@ def date_trunc(unit: str, col_expr: str, dialect: str = "duckdb") -> str:
             "day": f"DATE({col_expr})",
             "week": f"DATE_FORMAT({col_expr}, '%x-%v')",  # ISO week
             "month": f"DATE_FORMAT({col_expr}, '%Y-%m-01')",
+            "quarter": f"STR_TO_DATE(CONCAT(YEAR({col_expr}), '-', LPAD((QUARTER({col_expr})-1)*3+1, 2, '0'), '-01'), '%Y-%m-%d')",
             "year": f"DATE_FORMAT({col_expr}, '%Y-01-01')",
         }
         return _mysql_map.get(unit, f"DATE({col_expr})")
@@ -66,6 +74,7 @@ def date_trunc(unit: str, col_expr: str, dialect: str = "duckdb") -> str:
             "day": "DAY",
             "week": "WEEK",
             "month": "MONTH",
+            "quarter": "QUARTER",
             "year": "YEAR",
         }.get(unit, unit.upper())
         return f"DATE_TRUNC({col_expr}, {_bq_unit})"
@@ -76,6 +85,7 @@ def date_trunc(unit: str, col_expr: str, dialect: str = "duckdb") -> str:
             "day": f"CAST({col_expr} AS DATE)",
             "week": f"DATEADD(week, DATEDIFF(week, 0, {col_expr}), 0)",
             "month": f"DATEADD(month, DATEDIFF(month, 0, {col_expr}), 0)",
+            "quarter": f"DATEADD(quarter, DATEDIFF(quarter, 0, {col_expr}), 0)",
             "year": f"DATEADD(year, DATEDIFF(year, 0, {col_expr}), 0)",
         }
         return _tsql_map.get(unit, f"CAST({col_expr} AS DATE)")
@@ -86,6 +96,7 @@ def date_trunc(unit: str, col_expr: str, dialect: str = "duckdb") -> str:
             "day": f"toStartOfDay({col_expr})",
             "week": f"toStartOfWeek({col_expr})",
             "month": f"toStartOfMonth({col_expr})",
+            "quarter": f"toStartOfQuarter({col_expr})",
             "year": f"toStartOfYear({col_expr})",
         }
         return _ch_map.get(unit, f"toStartOfDay({col_expr})")
