@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
+import { CategoryIcon } from '@/lib/utils/categoryIcon'
 import categoriesConfig from '@/config/dimension-categories.json'
 import type { LeafMeta } from './types'
 import type { DimensionCategoryConfig } from '@/types'
@@ -162,6 +163,7 @@ export function ValuePickerPopover({ leafCols, onSelect }: ValuePickerPopoverPro
                       )}
                       onClick={() => setActiveCategory(group.category.id)}
                     >
+                      <CategoryIcon name={group.category.icon} className="h-3 w-3 shrink-0" />
                       <span className="truncate flex-1">{group.category.label}</span>
                       <span className="shrink-0 text-[10px] text-muted-foreground/50 ml-1">
                         {group.dimensions.length}
