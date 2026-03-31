@@ -24,17 +24,26 @@ import { TrendChart } from './components/TrendChart'
 import { TrendFilters } from './components/TrendFilters'
 import { FilterSelect } from '@/components/FilterSelect'
 import { SPACING, TYPOGRAPHY, QUERY_STALE_TIME } from '@/lib/constants'
+import type { Granularity } from '@/types'
 import { DevCard } from '@/components/dev'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
+
+const GRANULARITY_PERIOD_LABELS: Record<Granularity, string> = {
+  hour: 'Hourly',
+  day: 'Daily',
+  week: 'Weekly',
+  month: 'Monthly',
+  quarter: 'Quarterly',
+  year: 'Yearly',
+}
 
 export function TrendsPage() {
   useEffect(() => {
     document.title = 'Trends — stratif.io'
   }, [])
 
-  const { dateRange, activeConnectionId } = useAppStore()
+  const { dateRange, activeConnectionId, granularity } = useAppStore()
   const [selectedEvent, setSelectedEvent] = useState<string>('')
-  const [granularity, setGranularity] = useState<'day' | 'week'>('day')
   const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area')
   const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
   const [measureField, setMeasureField] = useState<string>('count_events')
@@ -95,6 +104,8 @@ export function TrendsPage() {
 
   const measureIsNonDefault = measure !== 'count_events'
 
+  const periodLabel = GRANULARITY_PERIOD_LABELS[granularity]
+
   return (
     <PageTransition>
       <NoConnectionGuard>
@@ -110,11 +121,15 @@ export function TrendsPage() {
                   span: 'col-span-2 lg:col-span-2',
                 },
                 {
-                  label: 'Daily Average',
+                  label: `${periodLabel} Average`,
                   value: averageValue.toLocaleString(),
                   span: 'col-span-1',
                 },
-                { label: 'Daily Peak', value: maxValue.toLocaleString(), span: 'col-span-1' },
+                {
+                  label: `${periodLabel} Peak`,
+                  value: maxValue.toLocaleString(),
+                  span: 'col-span-1',
+                },
               ].map(({ label, value, span }) => (
                 <div
                   key={label}
@@ -243,20 +258,6 @@ export function TrendsPage() {
                           Bar
                         </Button>
                       </div>
-
-                      {/* Granularity selector */}
-                      <Select
-                        value={granularity}
-                        onValueChange={(val) => setGranularity(val as 'day' | 'week')}
-                      >
-                        <SelectTrigger className="w-[min(120px,35vw)]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="day">Daily</SelectItem>
-                          <SelectItem value="week">Weekly</SelectItem>
-                        </SelectContent>
-                      </Select>
 
                       {/* Breakdown selector */}
                       {dimensions.length > 0 && (
