@@ -601,9 +601,15 @@ export function SchemaConfigTab({ connId }: Props) {
         const nestedPaths = proposed_custom_properties.map((p: { path: string }) => p.path)
         setDetectedColumns(Array.from(new Set([...columnNames, ...nestedPaths])))
 
+        const reservedPaths = new Set([
+          form.userIdField,
+          form.eventNameField,
+          form.timestampField,
+          ...Object.values(form.userIdentityFields).filter(Boolean),
+        ])
         const existingPaths = new Set(form.customProps.map((p) => p.path))
         const newProps = proposed_custom_properties.filter(
-          (p: { path: string }) => !existingPaths.has(p.path)
+          (p: { path: string }) => !existingPaths.has(p.path) && !reservedPaths.has(p.path)
         )
         if (newProps.length > 0) {
           const allCategories = dimensionCategories as DimensionCategoryConfig[]

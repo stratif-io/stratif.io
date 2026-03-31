@@ -377,6 +377,49 @@ describe('SchemaConfigTab — detect review panel', () => {
 
     expect(screen.queryByText(/fields detected/i)).not.toBeInTheDocument()
   })
+
+  it('proposed custom properties exclude columns already mapped to required or identity fields', async () => {
+    // mockSchema has: user_id_field='user_id', timestamp_field='created_at',
+    //                 event_name_field='event_name', email_field='user_email'
+    const detectWithConflicts = {
+      ...mockDetectResult,
+      proposed_custom_properties: [
+        { name: 'safe_prop', path: 'properties.safe_prop', type: 'string' as const },
+        { name: 'user_id', path: 'user_id', type: 'string' as const },
+        { name: 'created_at', path: 'created_at', type: 'timestamp' as const },
+        { name: 'event_name', path: 'event_name', type: 'string' as const },
+        { name: 'user_email', path: 'user_email', type: 'string' as const },
+      ],
+      columns: [],
+    }
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof detectWithConflicts) => void }) => {
+        opts.onSuccess(detectWithConflicts)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-reserved-cols" />
+      </QueryClientProvider>
+    )
+
+    act(() => {
+      screen.getAllByRole('button', { name: /detect from schema/i })[0].click()
+    })
+
+    // Properties section is open by default — safe_prop should be added as a new custom property
+    expect(screen.getByDisplayValue('safe_prop')).toBeInTheDocument()
+    // reserved paths must NOT appear as new custom properties
+    expect(screen.queryByDisplayValue('user_id')).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('created_at')).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('event_name')).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('user_email')).not.toBeInTheDocument()
+  })
 })
 
 describe('SchemaConfigTab — auto-save with null schema (new connection)', () => {
