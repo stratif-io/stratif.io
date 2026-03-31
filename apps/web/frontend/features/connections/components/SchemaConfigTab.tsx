@@ -301,15 +301,28 @@ function SectionHeader({
     <button
       type="button"
       onClick={onToggle}
-      className="w-full flex items-center gap-2 px-3 py-2 bg-muted/20 hover:bg-muted/30 transition-colors text-left"
+      className={cn(
+        'w-full flex items-center gap-2 px-3 py-2 transition-colors text-left',
+        open
+          ? 'bg-teal-50 dark:bg-teal-950/20 hover:bg-teal-100/60 dark:hover:bg-teal-950/30'
+          : 'bg-muted/20 hover:bg-muted/30'
+      )}
     >
       <ChevronDown
         className={cn(
-          'h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-150',
+          'h-3.5 w-3.5 shrink-0 transition-transform duration-150',
+          open ? 'text-teal-700 dark:text-teal-400' : 'text-muted-foreground',
           !open && '-rotate-90'
         )}
       />
-      <span className="text-xs font-medium flex-1">{title}</span>
+      <span
+        className={cn(
+          'text-xs font-semibold flex-1',
+          open ? 'text-teal-900 dark:text-teal-200' : 'text-muted-foreground'
+        )}
+      >
+        {title}
+      </span>
       {!open && hint && (
         <span className="text-xs text-muted-foreground font-normal font-mono">{hint}</span>
       )}
