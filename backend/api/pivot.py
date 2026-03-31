@@ -64,6 +64,9 @@ AVAILABLE_DIMENSIONS = {
     "hour": "Hour of Day",
     "day_of_week": "Day of Week",
     "user_id": "User ID",
+    "month": "Month",
+    "quarter": "Quarter",
+    "year": "Year",
 }
 
 # Fields whose values are integers (needed for groupKey casting)
@@ -130,6 +133,12 @@ def _get_dim_expr(
             return date_trunc("week", "timestamp", dialect)
         case "hour":
             return extract_hour("timestamp", dialect)
+        case "month":
+            return date_trunc("month", "timestamp", dialect)
+        case "quarter":
+            return date_trunc("quarter", "timestamp", dialect)
+        case "year":
+            return date_trunc("year", "timestamp", dialect)
         case _:
             if field in custom_prop_exprs:
                 return custom_prop_exprs[field]
