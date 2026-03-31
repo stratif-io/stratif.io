@@ -3,7 +3,6 @@
     "id": "time",
     "label": "Time",
     "icon": "Timer",
-    "emoji": "🕐",
     "patterns": [
       "^ts_",
       "^timestamp$",
@@ -15,14 +14,12 @@
     "id": "event",
     "label": "Event",
     "icon": "Activity",
-    "emoji": "📣",
     "patterns": ["^event_", "^day_of_week$"]
   },
   {
     "id": "user",
     "label": "User",
     "icon": "CircleUserRound",
-    "emoji": "👤",
     "patterns": [
       "^user_",
       "_(user|account|customer|tenant)$",
@@ -35,28 +32,24 @@
     "id": "geography",
     "label": "Geography",
     "icon": "Globe2",
-    "emoji": "🌍",
     "patterns": ["(country|city|region|state|geo|locale|timezone)"]
   },
   {
     "id": "device",
     "label": "Device",
     "icon": "Laptop",
-    "emoji": "💻",
     "patterns": ["(device|browser|os|platform|screen|viewport)"]
   },
   {
     "id": "marketing",
     "label": "Marketing",
     "icon": "Target",
-    "emoji": "📢",
     "patterns": ["^utm_", "(referrer|campaign|channel|source|medium)"]
   },
   {
     "id": "other",
     "label": "Other",
     "icon": "MoreHorizontal",
-    "emoji": "⚙️",
     "patterns": [".*"]
   }
 ]
