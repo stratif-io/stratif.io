@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS connection_schema_configs (
     session_timeout_minutes   INTEGER NOT NULL DEFAULT 30,
     resurrection_window_days  INTEGER NOT NULL DEFAULT 30,
     power_user_threshold_days INTEGER NOT NULL DEFAULT 4,
+    email_field               TEXT,
+    first_name_field          TEXT,
+    last_name_field           TEXT,
+    date_of_birth_field       TEXT,
+    phone_field               TEXT,
     pinned_metrics            TEXT NOT NULL DEFAULT '[]',
     updated_at                TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
@@ -75,3 +80,9 @@ def init_product_db(db=None) -> None:
         db.executescript(
             "ALTER TABLE connection_schema_configs ADD COLUMN pinned_metrics TEXT NOT NULL DEFAULT '[]';"
         )
+    for col in ("email_field", "first_name_field", "last_name_field",
+                "date_of_birth_field", "phone_field"):
+        if col not in existing_names:
+            db.executescript(
+                f"ALTER TABLE connection_schema_configs ADD COLUMN {col} TEXT;"
+            )

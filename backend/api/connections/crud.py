@@ -147,8 +147,10 @@ async def upsert_schema_config(conn_id: str, body: SchemaConfigBody):
         """INSERT INTO connection_schema_configs
            (id, connection_id, user_id_field, timestamp_field, event_name_field,
             events_table, custom_properties, session_timeout_minutes,
-            resurrection_window_days, power_user_threshold_days, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            resurrection_window_days, power_user_threshold_days,
+            email_field, first_name_field, last_name_field,
+            date_of_birth_field, phone_field, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(connection_id) DO UPDATE SET
              user_id_field = excluded.user_id_field,
              timestamp_field = excluded.timestamp_field,
@@ -158,11 +160,18 @@ async def upsert_schema_config(conn_id: str, body: SchemaConfigBody):
              session_timeout_minutes = excluded.session_timeout_minutes,
              resurrection_window_days = excluded.resurrection_window_days,
              power_user_threshold_days = excluded.power_user_threshold_days,
+             email_field = excluded.email_field,
+             first_name_field = excluded.first_name_field,
+             last_name_field = excluded.last_name_field,
+             date_of_birth_field = excluded.date_of_birth_field,
+             phone_field = excluded.phone_field,
              updated_at = excluded.updated_at""",
         (config_id, conn_id, body.user_id_field, body.timestamp_field,
          body.event_name_field, body.events_table, custom_props_json,
          body.session_timeout_minutes, body.resurrection_window_days,
-         body.power_user_threshold_days, now),
+         body.power_user_threshold_days,
+         body.email_field, body.first_name_field, body.last_name_field,
+         body.date_of_birth_field, body.phone_field, now),
     )
     return {**body.model_dump(), "id": config_id, "connection_id": conn_id,
             "updated_at": now, "custom_properties": [p.model_dump() for p in body.custom_properties]}
