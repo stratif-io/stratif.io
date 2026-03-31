@@ -24,7 +24,7 @@ export interface UseTrendDataOptions {
 /** Maps UI granularity value to the pivot row_dimension key. */
 export function granularityToDim(granularity: Granularity): string {
   const map: Record<Granularity, string> = {
-    hour: 'hour',
+    hour: 'hour_bucket',
     day: 'date',
     week: 'week',
     month: 'month',

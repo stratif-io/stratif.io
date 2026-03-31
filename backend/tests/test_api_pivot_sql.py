@@ -95,3 +95,17 @@ def test_pivot_year_dimension(client):
     data = resp.json()
     assert "data" in data
     assert data.get("error") is None
+
+
+def test_pivot_hour_bucket_dimension(client):
+    """hour_bucket dim should group by truncated timestamp hour, not hour-of-day integer."""
+    resp = client.get("/api/pivot?row_dimensions=hour_bucket&measures=count_events")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data.get("error") is None
+    rows = data.get("data", [])
+    assert len(rows) > 0
+    # Values must be date/datetime strings, not integers (0–23)
+    sample = rows[0]["hour_bucket"]
+    assert isinstance(sample, str), f"Expected date string, got {type(sample)}: {sample!r}"
+    assert "T" in sample or len(sample) == 10, f"Expected ISO datetime, got: {sample!r}"

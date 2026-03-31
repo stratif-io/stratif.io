@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { formatTrendDate, granularityToDim } from '../useTrendData'
 
 describe('granularityToDim', () => {
-  it('maps hour → hour', () => expect(granularityToDim('hour')).toBe('hour'))
+  it('maps hour → hour_bucket', () => expect(granularityToDim('hour')).toBe('hour_bucket'))
   it('maps day → date', () => expect(granularityToDim('day')).toBe('date'))
   it('maps week → week', () => expect(granularityToDim('week')).toBe('week'))
   it('maps month → month', () => expect(granularityToDim('month')).toBe('month'))

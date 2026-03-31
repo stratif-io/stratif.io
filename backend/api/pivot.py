@@ -67,6 +67,7 @@ AVAILABLE_DIMENSIONS = {
     "month": "Month",
     "quarter": "Quarter",
     "year": "Year",
+    "hour_bucket": "Hour (truncated)",
 }
 
 # Fields whose values are integers (needed for groupKey casting)
@@ -139,6 +140,8 @@ def _get_dim_expr(
             return date_trunc("quarter", "timestamp", dialect)
         case "year":
             return date_trunc("year", "timestamp", dialect)
+        case "hour_bucket":
+            return date_trunc("hour", "timestamp", dialect)
         case _:
             if field in custom_prop_exprs:
                 return custom_prop_exprs[field]
