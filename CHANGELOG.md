@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.0](https://github.com/cabichahine/stratif.io/compare/v0.11.0...v0.12.0) (2026-04-01)
+
+
+### Features
+
+* **pivot:** default state, unified zone bar, two-panel value picker, SQL badge toggle ([#144](https://github.com/cabichahine/stratif.io/issues/144)) ([3001538](https://github.com/cabichahine/stratif.io/commit/30015380ddd5ca43e9610d7e5a6b087bf3e969f8))
+* precise period labels in SQL viewer and metric cards ([#148](https://github.com/cabichahine/stratif.io/issues/148)) ([0e52a28](https://github.com/cabichahine/stratif.io/commit/0e52a28eb5a57550f69337eac24a9794156a20e8))
+
 ## [0.11.0](https://github.com/cabichahine/stratif.io/compare/v0.10.0...v0.11.0) (2026-03-31)
 
 
