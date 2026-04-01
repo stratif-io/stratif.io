@@ -395,7 +395,7 @@ def get_pivot(
             "data": [],
         }
 
-    all_prop_names = {p["name"] for p in custom_props if p.get("name")}
+    all_prop_names = set(AVAILABLE_DIMENSIONS.keys()) | {p["name"] for p in custom_props if p.get("name")}
     numeric_prop_names = {p["name"] for p in custom_props if p.get("name")}
     NUMERIC_AGGS = {"sum", "avg", "min", "max"}
     COUNT_AGGS = {"count", "count_distinct"}
