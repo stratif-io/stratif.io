@@ -146,7 +146,7 @@ bun run test:e2e             # end-to-end tests (Playwright)
 - **Sessions** use HTTP-only, Secure, SameSite=Lax JWT cookies
 - **Rate limiting** on login (10 req/min) and registration (3 req/min)
 
-**For production:** set `STRATIFIO_DEBUG=false` and pin `STRATIFIO_CORS_ORIGINS` to your frontend domain.
+For production: set `STRATIFIO_DEBUG=false` and pin `STRATIFIO_CORS_ORIGINS` to your frontend domain.
 
 ---
 
