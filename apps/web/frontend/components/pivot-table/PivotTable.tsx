@@ -45,11 +45,14 @@ export function PivotTable({
   activeConnectionId,
   fetchRows,
   fetchFilterValues,
+  initialRowGroups,
+  initialValueCols,
+  initialPivotFilters,
 }: PivotTableProps) {
-  const [rowGroups, setRowGroups] = useState<ZoneCol[]>(DEFAULT_ROW_GROUPS)
+  const [rowGroups, setRowGroups] = useState<ZoneCol[]>(initialRowGroups ?? DEFAULT_ROW_GROUPS)
   const [pivotCols, setPivotCols] = useState<ZoneCol[]>(DEFAULT_PIVOT_COLS)
-  const [valueCols, setValueCols] = useState<ZoneCol[]>(DEFAULT_VALUE_COLS)
-  const [pivotFilters, setPivotFilters] = useState<FilterEntry[]>([])
+  const [valueCols, setValueCols] = useState<ZoneCol[]>(initialValueCols ?? DEFAULT_VALUE_COLS)
+  const [pivotFilters, setPivotFilters] = useState<FilterEntry[]>(initialPivotFilters ?? [])
   const [rows, setRows] = useState<Record<string, unknown>[]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [isQuerying, setIsQuerying] = useState(false)
@@ -75,7 +78,7 @@ export function PivotTable({
 
   useEffect(() => {
     if (!colDefsData || leafCols.length === 0) return
-    if (rowGroups.length > 0 || valueCols.length > 0) return
+    if (rowGroups.length > 0 || valueCols.length > 0 || initialValueCols?.length) return
 
     const timeDimId = GRANULARITY_TO_DIM[granularity]
     const timeMeta = leafCols.find((c) => c.colId === timeDimId)
