@@ -2,6 +2,7 @@ import { Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FilterSelect } from '@/components/FilterSelect'
 import { AggBadge } from '@/components/AggBadge'
+import { DEFAULT_AGG_FUNCS } from '@/components/agg-badge-config'
 import { ValuePickerPopover } from './ValuePickerPopover'
 import type { ZoneCol, LeafMeta } from './types'
 
@@ -173,7 +174,7 @@ function ValueChip({
   onAggChange: (agg: string) => void
 }) {
   const meta = leafCols.find((c) => c.colId === col.colId)
-  const aggCycle = meta?.allowedAggFuncs ?? ['sum', 'count', 'avg', 'min', 'max', 'countDistinct']
+  const aggCycle = meta?.allowedAggFuncs ?? DEFAULT_AGG_FUNCS
 
   return (
     <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-muted text-foreground">

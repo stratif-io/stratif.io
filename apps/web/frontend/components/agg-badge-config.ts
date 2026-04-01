@@ -1,3 +1,7 @@
+export const DEFAULT_AGG_FUNCS = ['sum', 'count', 'avg', 'min', 'max', 'countDistinct']
+
+// Both camelCase (internal UI) and snake_case (backend API normalization) are mapped
+// so AggBadge renders correctly regardless of which format the parent uses.
 export const AGG_SYMBOLS: Record<string, string> = {
   sum: 'Σ',
   count: 'n',
@@ -8,6 +12,8 @@ export const AGG_SYMBOLS: Record<string, string> = {
   count_distinct: '#',
 }
 
+// Both camelCase (internal UI) and snake_case (backend API normalization) are mapped
+// so AggBadge renders correctly regardless of which format the parent uses.
 export const AGG_LABELS: Record<string, string> = {
   sum: 'Σ Sum',
   count: 'n Count',
