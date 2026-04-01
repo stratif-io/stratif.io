@@ -11,7 +11,9 @@ from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
 from backend.services.views import session_ctes
 
-router = APIRouter(prefix="/api", tags=["sessions"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/api", tags=["sessions"], dependencies=[Depends(get_current_user)]
+)
 
 
 @router.get("/raw/sessions")
@@ -58,7 +60,10 @@ def get_raw_sessions(
     rows = db.execute(data_query, (params or []) + [limit, offset])
 
     return {
-        "sql": [interpolate_sql(count_query, params or []), interpolate_sql(data_query, (params or []) + [limit, offset])],
+        "sql": [
+            interpolate_sql(count_query, params or []),
+            interpolate_sql(data_query, (params or []) + [limit, offset]),
+        ],
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -147,5 +152,5 @@ def get_sessions_summary(
                 "avg_duration_sec": round(row[1] or 0.0, 2),
                 "avg_events_per_session": round(row[2] or 0.0, 2),
             }
-        ]
+        ],
     }

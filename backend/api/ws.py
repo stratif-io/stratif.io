@@ -139,13 +139,17 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
             pending = set(subscriptions.values())
             for event_type in pending:
                 try:
-                    payload = await loop.run_in_executor(None, _FETCHERS[event_type], db)
-                    await websocket.send_json({
-                        "type": "data",
-                        "event": event_type,
-                        "payload": payload,
-                        "timestamp": _now(),
-                    })
+                    payload = await loop.run_in_executor(
+                        None, _FETCHERS[event_type], db
+                    )
+                    await websocket.send_json(
+                        {
+                            "type": "data",
+                            "event": event_type,
+                            "payload": payload,
+                            "timestamp": _now(),
+                        }
+                    )
                 except Exception as exc:
                     log.warning("ws_push_error", event=event_type, error=str(exc))
 
@@ -172,15 +176,19 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                     subscriptions[sub_id] = event
                     try:
                         payload = await loop.run_in_executor(None, _FETCHERS[event], db)
-                        await websocket.send_json({
-                            "type": "data",
-                            "event": event,
-                            "payload": payload,
-                            "timestamp": _now(),
-                            "subscriptionId": sub_id,
-                        })
+                        await websocket.send_json(
+                            {
+                                "type": "data",
+                                "event": event,
+                                "payload": payload,
+                                "timestamp": _now(),
+                                "subscriptionId": sub_id,
+                            }
+                        )
                     except Exception as exc:
-                        log.warning("ws_subscribe_fetch_error", event=event, error=str(exc))
+                        log.warning(
+                            "ws_subscribe_fetch_error", event=event, error=str(exc)
+                        )
 
             elif msg_type == "unsubscribe":
                 subscriptions.pop(msg.get("subscriptionId", ""), None)

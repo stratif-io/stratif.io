@@ -1,4 +1,5 @@
 """Tests for the SQLite database backend."""
+
 import sqlite3
 
 import pytest
@@ -57,7 +58,9 @@ class TestSQLiteExecution:
         assert rows == [(1,)]
 
     def test_execute_with_params(self, backend, mem_conn):
-        rows = backend.execute(mem_conn, "SELECT user_id FROM events WHERE event_name = ?", ["PageView"])
+        rows = backend.execute(
+            mem_conn, "SELECT user_id FROM events WHERE event_name = ?", ["PageView"]
+        )
         assert rows == [("u1",)]
 
     def test_table_exists_true(self, backend, mem_conn):
@@ -103,16 +106,23 @@ class TestSQLiteDetectSchema:
 
     def test_detect_schema_infers_numeric_json_property(self, backend):
         import sqlite3 as _sqlite3
+
         conn = _sqlite3.connect(":memory:")
         conn.execute(
             "CREATE TABLE purchases (user_id TEXT, timestamp TEXT, event_name TEXT, props TEXT)"
         )
-        conn.execute("INSERT INTO purchases VALUES ('u1', '2024-01-01', 'Buy', '{\"price\": \"9.99\"}')")
-        conn.execute("INSERT INTO purchases VALUES ('u2', '2024-01-02', 'Buy', '{\"price\": \"19.99\"}')")
+        conn.execute(
+            "INSERT INTO purchases VALUES ('u1', '2024-01-01', 'Buy', '{\"price\": \"9.99\"}')"
+        )
+        conn.execute(
+            "INSERT INTO purchases VALUES ('u2', '2024-01-02', 'Buy', '{\"price\": \"19.99\"}')"
+        )
         conn.commit()
         info = backend.detect_schema(conn, "purchases")
         conn.close()
-        prop = next((p for p in info.proposed_custom_properties if p["name"] == "price"), None)
+        prop = next(
+            (p for p in info.proposed_custom_properties if p["name"] == "price"), None
+        )
         assert prop is not None, "price should be in proposed_custom_properties"
         assert prop["type"] == "number", f"expected 'number', got '{prop['type']}'"
 
@@ -125,7 +135,9 @@ class TestSQLiteCTE:
         assert cte_body in result
 
     def test_build_events_cte_no_exclude(self, backend):
-        cte = backend.build_events_cte("raw", "uid", "ts", "action", [{"path": "props"}])
+        cte = backend.build_events_cte(
+            "raw", "uid", "ts", "action", [{"path": "props"}]
+        )
         assert "uid" in cte and "user_id" in cte
         assert "EXCLUDE" not in cte
 
@@ -156,7 +168,9 @@ class TestSQLiteSQLFragments:
         assert "STRFTIME" in backend.extract_hour("ts").upper()
 
     def test_extract_quarter(self, backend):
-        assert "QUARTER" in backend.extract_quarter("ts").upper() or "/" in backend.extract_quarter("ts")
+        assert "QUARTER" in backend.extract_quarter(
+            "ts"
+        ).upper() or "/" in backend.extract_quarter("ts")
 
 
 class TestSQLiteConnection:

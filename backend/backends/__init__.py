@@ -1,4 +1,5 @@
 """Database backend registry."""
+
 from __future__ import annotations
 
 from backend.backends.base import DatabaseBackend

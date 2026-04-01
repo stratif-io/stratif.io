@@ -1,4 +1,5 @@
 """Connections API — manage database connections and their schema/filter configs."""
+
 from fastapi import APIRouter
 
 from .browse import router as _browse_router
@@ -32,8 +33,13 @@ connections_router.include_router(_browse_router)
 __all__ = [
     "connections_router",
     "detect_schema",
-    "ConnectionCreate", "ConnectionResponse", "ConnectionUpdate",
+    "ConnectionCreate",
+    "ConnectionResponse",
+    "ConnectionUpdate",
     "CustomProperty",
-    "FilterConfigBody", "FilterConfigResponse", "FilterField",
-    "SchemaConfigBody", "SchemaConfigResponse",
+    "FilterConfigBody",
+    "FilterConfigResponse",
+    "FilterField",
+    "SchemaConfigBody",
+    "SchemaConfigResponse",
 ]

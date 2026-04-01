@@ -21,6 +21,7 @@ State flows through class variables:
 Skip guards: if a required class var is None (prior step didn't complete),
 subsequent steps skip rather than fail, keeping the output clean.
 """
+
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -258,9 +259,7 @@ class BaseE2ETest:
         assert body.get("data") is not None, (
             "data is None in all-time pivot — backend returned null"
         )
-        assert len(body.get("data", [])) > 0, (
-            "all-time pivot returned empty data array"
-        )
+        assert len(body.get("data", [])) > 0, "all-time pivot returned empty data array"
 
     # ------------------------------------------------------------------
     # Step 11 — Cleanup: delete the connection

@@ -18,12 +18,14 @@ log = structlog.get_logger(__name__)
 
 class APITrailingSlashMiddleware(BaseHTTPMiddleware):
     """Rewrite the specific API collection paths that are registered with a trailing slash."""
+
     _TRAILING_SLASH_PATHS = {"/api/connections"}
 
     async def dispatch(self, request: Request, call_next):
         if request.scope["path"] in self._TRAILING_SLASH_PATHS:
             request.scope["path"] += "/"
         return await call_next(request)
+
 
 from backend.api import (  # noqa: E402
     connections_router,
@@ -56,6 +58,7 @@ app = FastAPI(
     openapi_url="/openapi.json",  # always available — OSS product, spec is public
     lifespan=lifespan,
 )
+
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -124,6 +127,7 @@ if dist_path.exists():
         svg_path = dist_path / f"{filename}.svg"
         if not svg_path.exists():
             from fastapi import HTTPException
+
             raise HTTPException(status_code=404, detail="Not found")
         return FileResponse(svg_path, media_type="image/svg+xml")
 
@@ -131,6 +135,7 @@ if dist_path.exists():
     async def spa_fallback(full_path: str):
         if full_path.startswith("api/"):
             from fastapi import HTTPException
+
             raise HTTPException(status_code=404, detail="Not found")
         return FileResponse(
             dist_path / "index.html",
@@ -140,4 +145,5 @@ if dist_path.exists():
 
 def main():
     import uvicorn
+
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=settings.debug)

@@ -12,7 +12,15 @@ router = APIRouter()
 
 
 _KNOWN_USER_ID_COLS = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
-_KNOWN_TIMESTAMP_COLS = ("timestamp", "ts", "created_at", "event_time", "time", "datetime", "date")
+_KNOWN_TIMESTAMP_COLS = (
+    "timestamp",
+    "ts",
+    "created_at",
+    "event_time",
+    "time",
+    "datetime",
+    "date",
+)
 _KNOWN_EVENT_NAME_COLS = ("event_name", "event", "action", "event_type", "name", "type")
 _KNOWN_EMAIL_COLS = ("email", "user_email", "email_address", "e_mail")
 _KNOWN_FIRST_NAME_COLS = ("first_name", "firstname", "fname", "given_name")
@@ -27,7 +35,9 @@ def _normalize(name: str) -> str:
     return s.lower()
 
 
-def _best_match(col_names: list[str], aliases: tuple[str, ...], threshold: float = 0.80) -> str | None:
+def _best_match(
+    col_names: list[str], aliases: tuple[str, ...], threshold: float = 0.80
+) -> str | None:
     """Return the best-matching column name for the given aliases, or None.
 
     Priority:
@@ -102,8 +112,21 @@ def _pick_events_table(tables: list[str], hint: str | None) -> str | None:
 
 def _infer_type(sql_type: str) -> str:
     t = sql_type.upper()
-    if any(x in t for x in ("INT", "FLOAT", "DOUBLE", "DECIMAL", "NUMERIC", "REAL",
-                              "HUGEINT", "BIGINT", "SMALLINT", "TINYINT")):
+    if any(
+        x in t
+        for x in (
+            "INT",
+            "FLOAT",
+            "DOUBLE",
+            "DECIMAL",
+            "NUMERIC",
+            "REAL",
+            "HUGEINT",
+            "BIGINT",
+            "SMALLINT",
+            "TINYINT",
+        )
+    ):
         return "number"
     if "BOOL" in t:
         return "boolean"
@@ -143,12 +166,14 @@ def _parse_struct_field(field_def: str, prefix: str, results: list) -> None:
     if colon < 0:
         return
     name = field_def[:colon].strip().strip("`")
-    type_str = field_def[colon + 1:].strip()
+    type_str = field_def[colon + 1 :].strip()
     path = f"{prefix}.{name}" if prefix else name
     upper = type_str.upper()
     if upper.startswith("STRUCT<"):
         nested = _parse_struct_fields(type_str, path)
-        results.extend(nested if nested else [{"name": name, "path": path, "type": "string"}])
+        results.extend(
+            nested if nested else [{"name": name, "path": path, "type": "string"}]
+        )
     else:
         results.append({"name": name, "path": path, "type": _infer_type(upper)})
 
@@ -167,12 +192,16 @@ def detect_schema(conn_id: str, events_table: str | None = None):
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
     except ValueError as exc:
-        raise HTTPException(status_code=500, detail="Failed to decrypt credentials") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to decrypt credentials"
+        ) from exc
 
     try:
         backend = get_backend(db_type)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Unsupported db type: {db_type}") from None
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported db type: {db_type}"
+        ) from None
 
     try:
         credentials = backend.parse_credentials(creds)
@@ -184,16 +213,17 @@ def detect_schema(conn_id: str, events_table: str | None = None):
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Schema detection failed: {exc}") from exc
+        raise HTTPException(
+            status_code=400, detail=f"Schema detection failed: {exc}"
+        ) from exc
 
     # Augment backend suggestions with fuzzy user-identity detection.
     # The backend only detects user_id / event_name / timestamp from top-level columns.
     # Run the full fuzzy _suggest_fields against both top-level columns AND any
     # expanded struct/JSON paths in proposed_custom_properties (e.g. traits.email).
-    all_cols = (
-        [{"name": c.name, "type": c.type} for c in info.columns]
-        + [{"name": p["path"], "type": p["type"]} for p in info.proposed_custom_properties]
-    )
+    all_cols = [{"name": c.name, "type": c.type} for c in info.columns] + [
+        {"name": p["path"], "type": p["type"]} for p in info.proposed_custom_properties
+    ]
     fuzzy_suggestions = _suggest_fields(all_cols)
     # Backend exact matches take priority; fill in any fields the backend missed
     merged_suggestions = {**fuzzy_suggestions, **info.suggestions}

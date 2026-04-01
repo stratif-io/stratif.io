@@ -1,9 +1,11 @@
 """Tests for backend/_utils.py shared helpers."""
+
 from backend.backends._utils import sample_property_types
 
 
 def test_sample_detects_numeric_property():
     """Non-null MAX result → property upgraded to 'number'."""
+
     def execute_fn(sql):
         return [(3.14,)]
 
@@ -18,6 +20,7 @@ def test_sample_detects_numeric_property():
 
 def test_sample_non_numeric_not_upgraded():
     """NULL MAX result → property not in result dict."""
+
     def execute_fn(sql):
         return [(None,)]
 
@@ -32,6 +35,7 @@ def test_sample_non_numeric_not_upgraded():
 
 def test_sample_mixed_properties():
     """Multiple props: only non-null ones upgraded."""
+
     def execute_fn(sql):
         return [(5.0, None, 42.0)]
 
@@ -47,26 +51,34 @@ def test_sample_mixed_properties():
 
 def test_sample_returns_empty_on_db_exception():
     """Any DB error → empty dict (silent fallback)."""
+
     def execute_fn(sql):
         raise RuntimeError("db error")
 
-    result = sample_property_types(execute_fn, "events", {"x": "expr"}, "TRY_CAST({expr} AS DOUBLE)")
+    result = sample_property_types(
+        execute_fn, "events", {"x": "expr"}, "TRY_CAST({expr} AS DOUBLE)"
+    )
     assert result == {}
 
 
 def test_sample_returns_empty_for_empty_props():
     """No properties → empty dict, no query issued."""
     called = []
+
     def execute_fn(sql):
         called.append(sql)
         return []
 
-    result = sample_property_types(execute_fn, "events", {}, "TRY_CAST({expr} AS DOUBLE)")
+    result = sample_property_types(
+        execute_fn, "events", {}, "TRY_CAST({expr} AS DOUBLE)"
+    )
     assert result == {}
     assert called == []
 
 
 def test_sample_returns_empty_when_no_rows():
     """Empty result set → empty dict."""
-    result = sample_property_types(lambda sql: [], "events", {"x": "e"}, "TRY_CAST({expr} AS DOUBLE)")
+    result = sample_property_types(
+        lambda sql: [], "events", {"x": "e"}, "TRY_CAST({expr} AS DOUBLE)"
+    )
     assert result == {}

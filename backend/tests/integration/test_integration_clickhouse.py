@@ -3,6 +3,7 @@
 Credentials are read from connections.yaml (``backends.clickhouse``).
 Set ``enabled: true`` and fill in host/port/database/user/password/secure.
 """
+
 import pytest
 
 from backend.tests.integration.conftest import get_backend_config

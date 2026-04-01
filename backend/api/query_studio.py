@@ -1,4 +1,5 @@
 """Query Studio API — executes arbitrary SQL against the active connection."""
+
 import time
 from typing import Annotated
 
