@@ -1,4 +1,5 @@
 """FastAPI dependency for the product database."""
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -19,6 +20,7 @@ def get_product_db() -> ProductDB:
     Never call get_product_db() directly in tests — use dependency_overrides.
     """
     from backend.product_db.database import SQLiteProductDB
+
     if not settings.product_db_url or settings.product_db_url.startswith("sqlite"):
         return SQLiteProductDB(settings.product_db_path)
     raise ValueError(f"Unsupported product_db_url: {settings.product_db_url!r}")

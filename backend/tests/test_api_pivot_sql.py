@@ -1,7 +1,6 @@
 """Tests verifying that /api/pivot responses include the `sql` key."""
-from __future__ import annotations
 
-import pytest
+from __future__ import annotations
 
 
 class TestPivotSqlField:
@@ -15,7 +14,9 @@ class TestPivotSqlField:
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert "sql" in body, f"Expected 'sql' key in response, got keys: {list(body.keys())}"
+        assert "sql" in body, (
+            f"Expected 'sql' key in response, got keys: {list(body.keys())}"
+        )
         assert isinstance(body["sql"], str)
         assert len(body["sql"]) > 0
 
@@ -46,7 +47,9 @@ class TestPivotSqlField:
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert "sql" in body, f"Expected 'sql' key in pivoted response, got keys: {list(body.keys())}"
+        assert "sql" in body, (
+            f"Expected 'sql' key in pivoted response, got keys: {list(body.keys())}"
+        )
         assert isinstance(body["sql"], str)
         assert body["pivoted"] is True
 
@@ -107,5 +110,7 @@ def test_pivot_hour_bucket_dimension(client):
     assert len(rows) > 0
     # Values must be date/datetime strings, not integers (0–23)
     sample = rows[0]["hour_bucket"]
-    assert isinstance(sample, str), f"Expected date string, got {type(sample)}: {sample!r}"
+    assert isinstance(sample, str), (
+        f"Expected date string, got {type(sample)}: {sample!r}"
+    )
     assert "T" in sample or len(sample) == 10, f"Expected ISO datetime, got: {sample!r}"

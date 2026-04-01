@@ -44,7 +44,9 @@ async def list_connections():
     return [dict(r) for r in rows]
 
 
-@router.post("/", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_connection(body: ConnectionCreate):
     db = get_product_db()
     conn_id = str(uuid.uuid4())
@@ -54,14 +56,25 @@ async def create_connection(body: ConnectionCreate):
         "INSERT INTO connections (id, name, db_type, credentials_encrypted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
         (conn_id, body.name, body.db_type, encrypted, now, now),
     )
-    return {"id": conn_id, "name": body.name, "db_type": body.db_type, "created_at": now, "updated_at": now}
+    return {
+        "id": conn_id,
+        "name": body.name,
+        "db_type": body.db_type,
+        "created_at": now,
+        "updated_at": now,
+    }
 
 
 @router.get("/{conn_id}", response_model=ConnectionResponse)
 async def get_connection(conn_id: str):
     row = _get_connection_or_404(conn_id)
-    return {"id": row["id"], "name": row["name"], "db_type": row["db_type"],
-            "created_at": row["created_at"], "updated_at": row["updated_at"]}
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "db_type": row["db_type"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
 
 
 @router.patch("/{conn_id}", response_model=ConnectionResponse)
@@ -81,7 +94,13 @@ async def update_connection(conn_id: str, body: ConnectionUpdate):
         "UPDATE connections SET name = ?, credentials_encrypted = ?, updated_at = ? WHERE id = ?",
         (name, encrypted, now, conn_id),
     )
-    return {"id": conn_id, "name": name, "db_type": row["db_type"], "created_at": row["created_at"], "updated_at": now}
+    return {
+        "id": conn_id,
+        "name": name,
+        "db_type": row["db_type"],
+        "created_at": row["created_at"],
+        "updated_at": now,
+    }
 
 
 @router.delete("/{conn_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -94,6 +113,7 @@ async def delete_connection(conn_id: str):
 async def test_connection(conn_id: str):
     import asyncio
     from concurrent.futures import ThreadPoolExecutor
+
     from backend.backends import get_backend
     from backend.services.crypto import decrypt_credentials
 
@@ -113,9 +133,14 @@ async def test_connection(conn_id: str):
             await asyncio.wait_for(loop.run_in_executor(pool, _do_test), timeout=10)
         return {"ok": True, "db_type": row["db_type"]}
     except TimeoutError:
-        raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT, detail="Connection timed out after 10 seconds")
+        raise HTTPException(
+            status_code=status.HTTP_408_REQUEST_TIMEOUT,
+            detail="Connection timed out after 10 seconds",
+        ) from None
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -166,15 +191,32 @@ async def upsert_schema_config(conn_id: str, body: SchemaConfigBody):
              date_of_birth_field = excluded.date_of_birth_field,
              phone_field = excluded.phone_field,
              updated_at = excluded.updated_at""",
-        (config_id, conn_id, body.user_id_field, body.timestamp_field,
-         body.event_name_field, body.events_table, custom_props_json,
-         body.session_timeout_minutes, body.resurrection_window_days,
-         body.power_user_threshold_days,
-         body.email_field, body.first_name_field, body.last_name_field,
-         body.date_of_birth_field, body.phone_field, now),
+        (
+            config_id,
+            conn_id,
+            body.user_id_field,
+            body.timestamp_field,
+            body.event_name_field,
+            body.events_table,
+            custom_props_json,
+            body.session_timeout_minutes,
+            body.resurrection_window_days,
+            body.power_user_threshold_days,
+            body.email_field,
+            body.first_name_field,
+            body.last_name_field,
+            body.date_of_birth_field,
+            body.phone_field,
+            now,
+        ),
     )
-    return {**body.model_dump(), "id": config_id, "connection_id": conn_id,
-            "updated_at": now, "custom_properties": [p.model_dump() for p in body.custom_properties]}
+    return {
+        **body.model_dump(),
+        "id": config_id,
+        "connection_id": conn_id,
+        "updated_at": now,
+        "custom_properties": [p.model_dump() for p in body.custom_properties],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -210,8 +252,12 @@ async def upsert_filter_config(conn_id: str, body: FilterConfigBody):
              updated_at = excluded.updated_at""",
         (config_id, conn_id, fields_json, now),
     )
-    return {"id": config_id, "connection_id": conn_id,
-            "filter_fields": [f.model_dump() for f in body.filter_fields], "updated_at": now}
+    return {
+        "id": config_id,
+        "connection_id": conn_id,
+        "filter_fields": [f.model_dump() for f in body.filter_fields],
+        "updated_at": now,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -253,11 +299,12 @@ async def get_field_options(conn_id: str, field: str):
 @router.get("/{conn_id}/string")
 async def get_connection_string(conn_id: str):
     from backend.backends import get_backend
+
     row = _get_connection_or_404(conn_id)
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
     except ValueError:
-        raise HTTPException(500, "Failed to decrypt credentials")
+        raise HTTPException(500, "Failed to decrypt credentials") from None
     backend = get_backend(row["db_type"])
     credentials = backend.parse_credentials(creds)
     return {"connection_string": backend.connection_string(credentials)}
@@ -273,7 +320,17 @@ async def get_connection_credentials(conn_id: str):
     row = _get_connection_or_404(conn_id)
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
-        return {"fields": {k: (None if "password" in k.lower() or "token" in k.lower() or "secret" in k.lower() else v)
-                           for k, v in creds.items()}}
+        return {
+            "fields": {
+                k: (
+                    None
+                    if "password" in k.lower()
+                    or "token" in k.lower()
+                    or "secret" in k.lower()
+                    else v
+                )
+                for k, v in creds.items()
+            }
+        }
     except ValueError:
-        raise HTTPException(500, "Failed to decrypt credentials")
+        raise HTTPException(500, "Failed to decrypt credentials") from None

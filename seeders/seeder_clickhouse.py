@@ -61,10 +61,26 @@ class ClickHouseSeeder(BaseSeeder):
         self._client.insert(
             "events",
             data=[
-                [e[0], e[1], e[2], json.dumps(e[3]), e[4], json.dumps(e[5]), json.dumps(e[6])]
+                [
+                    e[0],
+                    e[1],
+                    e[2],
+                    json.dumps(e[3]),
+                    e[4],
+                    json.dumps(e[5]),
+                    json.dumps(e[6]),
+                ]
                 for e in events
             ],
-            column_names=["user_id", "event_name", "timestamp", "properties", "server", "traits", "context"],
+            column_names=[
+                "user_id",
+                "event_name",
+                "timestamp",
+                "properties",
+                "server",
+                "traits",
+                "context",
+            ],
         )
 
     def seed(self) -> dict[str, int]:
