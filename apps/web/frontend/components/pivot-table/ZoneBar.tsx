@@ -1,17 +1,9 @@
 import { Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FilterSelect } from '@/components/FilterSelect'
+import { AggBadge } from '@/components/AggBadge'
 import { ValuePickerPopover } from './ValuePickerPopover'
 import type { ZoneCol, LeafMeta } from './types'
-
-const AGG_LABELS: Record<string, string> = {
-  sum: 'Σ',
-  count: 'n',
-  avg: 'avg',
-  min: 'min',
-  max: 'max',
-  countDistinct: '#',
-}
 
 interface ZoneBarProps {
   leafCols: LeafMeta[]
@@ -182,25 +174,15 @@ function ValueChip({
 }) {
   const meta = leafCols.find((c) => c.colId === col.colId)
   const aggCycle = meta?.allowedAggFuncs ?? ['sum', 'count', 'avg', 'min', 'max', 'countDistinct']
-  const currentIdx = aggCycle.indexOf(col.aggFunc ?? aggCycle[0])
-
-  function cycleAgg() {
-    const next = aggCycle[(currentIdx + 1) % aggCycle.length]
-    onAggChange(next)
-  }
 
   return (
     <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-muted text-foreground">
       {col.label}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={cycleAgg}
-        className="ml-0.5 h-auto px-1 py-0 text-[10px] bg-primary/20 hover:bg-primary/30"
-        title="Click to cycle aggregation"
-      >
-        {AGG_LABELS[col.aggFunc ?? ''] ?? col.aggFunc}
-      </Button>
+      <AggBadge
+        aggFunc={col.aggFunc ?? 'sum'}
+        allowedAggFuncs={aggCycle}
+        onAggChange={onAggChange}
+      />
       <Button
         variant="ghost"
         size="icon"
