@@ -72,4 +72,8 @@ describe('parseTrendParams', () => {
     const result = parseTrendParams(params({ from_trend: '1', measure: 'count_events' }))
     expect(result?.initialPivotFilters).toEqual([])
   })
+
+  it('returns null for malformed measure with no colon', () => {
+    expect(parseTrendParams(params({ from_trend: '1', measure: 'badvalue' }))).toBeNull()
+  })
 })
