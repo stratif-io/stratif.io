@@ -9,7 +9,9 @@ from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
 
-router = APIRouter(prefix="/api", tags=["conversion"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/api", tags=["conversion"], dependencies=[Depends(get_current_user)]
+)
 
 
 @router.get("/conversion")
@@ -43,12 +45,7 @@ def get_conversion(
     # Two parameterised event_name bindings (entry, goal), each followed by date params.
     # Uses JOIN on a pre-aggregated CTE instead of correlated subqueries for broad
     # dialect compatibility — ClickHouse rejects correlated references to outer columns.
-    all_params = (
-        [entry_event]
-        + date_params
-        + [goal_event]
-        + date_params
-    )
+    all_params = [entry_event] + date_params + [goal_event] + date_params
 
     query = f"""
         WITH entry_times AS (

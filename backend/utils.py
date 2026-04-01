@@ -1,4 +1,5 @@
 """Shared utility helpers for the stratif.io backend."""
+
 from datetime import UTC, datetime
 
 
@@ -10,4 +11,5 @@ def utcnow_str() -> str:
 def utcnow_plus_str(hours: int) -> str:
     """Return UTC time `hours` from now as an ISO 8601 string."""
     from datetime import timedelta
+
     return (datetime.now(UTC) + timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")

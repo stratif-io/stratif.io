@@ -1,9 +1,9 @@
 """Connections API — manage database connections and their schema/filter configs."""
+
 from fastapi import APIRouter
 
-from .crud import router as _crud_router
-from .schema_detect import router as _detect_router
 from .browse import router as _browse_router
+from .crud import router as _crud_router
 
 # Re-export models so SaaS can import from backend.api.connections
 from .models import (
@@ -20,6 +20,7 @@ from .models import (
 
 # Also re-export detect_schema for SaaS to call directly
 from .schema_detect import detect_schema
+from .schema_detect import router as _detect_router
 
 # Single assembled router — same interface as before
 connections_router = APIRouter(prefix="/api/connections", tags=["connections"])
@@ -32,8 +33,13 @@ connections_router.include_router(_browse_router)
 __all__ = [
     "connections_router",
     "detect_schema",
-    "ConnectionCreate", "ConnectionResponse", "ConnectionUpdate",
+    "ConnectionCreate",
+    "ConnectionResponse",
+    "ConnectionUpdate",
     "CustomProperty",
-    "FilterConfigBody", "FilterConfigResponse", "FilterField",
-    "SchemaConfigBody", "SchemaConfigResponse",
+    "FilterConfigBody",
+    "FilterConfigResponse",
+    "FilterField",
+    "SchemaConfigBody",
+    "SchemaConfigResponse",
 ]

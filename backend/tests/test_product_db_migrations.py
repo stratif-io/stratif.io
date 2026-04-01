@@ -1,4 +1,5 @@
 import pytest
+
 from backend.product_db.database import SQLiteProductDB
 from backend.product_db.migrations import init_product_db
 

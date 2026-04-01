@@ -12,7 +12,9 @@ from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.sql_builder import date_diff_days, date_diff_months, date_trunc
 from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
 
-router = APIRouter(prefix="/api", tags=["retention"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/api", tags=["retention"], dependencies=[Depends(get_current_user)]
+)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Configurable retention milestones per granularity

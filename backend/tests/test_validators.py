@@ -72,7 +72,11 @@ class TestToSqlDatetime:
         assert to_sql_datetime("2025-03-22", "23:59:59") == "2025-03-22 23:59:59"
 
     def test_datetime_preserves_time_ignores_default(self):
-        assert to_sql_datetime("2025-03-22T14:30:00", "00:00:00") == "2025-03-22 14:30:00"
+        assert (
+            to_sql_datetime("2025-03-22T14:30:00", "00:00:00") == "2025-03-22 14:30:00"
+        )
 
     def test_datetime_replaces_T_with_space(self):
-        assert to_sql_datetime("2025-03-22T23:59:59", "00:00:00") == "2025-03-22 23:59:59"
+        assert (
+            to_sql_datetime("2025-03-22T23:59:59", "00:00:00") == "2025-03-22 23:59:59"
+        )
