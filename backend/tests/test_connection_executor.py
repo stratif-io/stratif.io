@@ -122,6 +122,21 @@ class TestBuildFilterClauses:
         assert len(clauses) == 2
         assert len(params) == 2
 
+    def test_standard_field_in_filter_exprs_but_not_custom_prop_exprs(self):
+        """user_id is a standard field — it lives in filter_exprs, not custom_prop_exprs.
+        build_filter_clauses must apply it when it's in filter_exprs."""
+        conn = duckdb.connect(":memory:")
+        db = AnalyticsDatabase(
+            conn=conn,
+            backend=DuckDBBackend(),
+            events_cte=None,
+            custom_prop_exprs={},  # user_id is NOT a custom prop
+            filter_exprs={"user_id": '"user_id"'},  # but IS a configured filter field
+        )
+        clauses, params = db.build_filter_clauses({"user_id": "abc-123"})
+        assert len(clauses) == 1, "user_id filter must generate a WHERE clause"
+        assert params == ["abc-123"]
+
 
 class TestHasColumn:
     def _make_db(self, available_columns=None, custom_props=None, events_cte=None):

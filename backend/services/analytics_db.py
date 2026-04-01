@@ -137,9 +137,11 @@ class AnalyticsDatabase:
         where_clauses: list[str] = []
         params: list = []
         for field, value in filters.items():
-            if not value or field not in self._custom_prop_exprs:
+            if not value:
                 continue
-            expr = self._custom_prop_exprs[field]
+            expr = self._filter_exprs.get(field) or self._custom_prop_exprs.get(field)
+            if not expr:
+                continue
             values = [v for v in str(value).split("|") if v]
             if len(values) > 1:
                 placeholders = ", ".join("?" * len(values))
