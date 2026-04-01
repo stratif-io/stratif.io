@@ -318,8 +318,13 @@ def open_analytics_db(
 
     # Identity fields (first_name, email, etc.) are plain columns — add them to
     # custom_prop_exprs so they work as filter fields (autocomplete + WHERE clauses).
-    _identity_field_keys = ("email_field", "first_name_field", "last_name_field",
-                            "date_of_birth_field", "phone_field")
+    _identity_field_keys = (
+        "email_field",
+        "first_name_field",
+        "last_name_field",
+        "date_of_birth_field",
+        "phone_field",
+    )
     if schema_row:
         for _key in _identity_field_keys:
             _col = schema_row[_key]

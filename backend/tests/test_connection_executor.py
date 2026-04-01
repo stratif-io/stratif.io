@@ -267,10 +267,15 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
 
         filter_fields_json = json.dumps(filter_fields)
         filter_row = MagicMock()
-        filter_row.__getitem__ = lambda s, k: filter_fields_json if k == "filter_fields" else None
+        filter_row.__getitem__ = lambda s, k: (
+            filter_fields_json if k == "filter_fields" else None
+        )
 
         conn_row = MagicMock()
-        conn_row.__getitem__ = lambda s, k: {"db_type": "duckdb", "credentials_encrypted": "dummy"}.get(k)
+        conn_row.__getitem__ = lambda s, k: {
+            "db_type": "duckdb",
+            "credentials_encrypted": "dummy",
+        }.get(k)
 
         def fetchone(query, params=None):
             if "connection_schema_configs" in query:
@@ -286,8 +291,10 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         return product_db
 
     def _open_db(self, schema_row_data: dict, filter_fields: list[dict]):
-        import duckdb
         from unittest.mock import patch
+
+        import duckdb
+
         from backend.backends.duckdb import DuckDBBackend
         from backend.services.analytics_db import open_analytics_db
 
@@ -295,9 +302,14 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         real_conn = duckdb.connect(":memory:")
         product_db = self._make_product_db(schema_row_data, filter_fields)
 
-        with patch("backend.services.crypto.decrypt_credentials", return_value={"file_path": ":memory:"}), \
-             patch.object(backend, "open", return_value=real_conn), \
-             patch.object(backend, "get_table_columns", return_value=None):
+        with (
+            patch(
+                "backend.services.crypto.decrypt_credentials",
+                return_value={"file_path": ":memory:"},
+            ),
+            patch.object(backend, "open", return_value=real_conn),
+            patch.object(backend, "get_table_columns", return_value=None),
+        ):
             return open_analytics_db("conn-1", product_db, {"duckdb": backend})
 
     def _default_schema(self, **overrides):
@@ -321,21 +333,29 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
 
     def test_first_name_identity_field_included_in_filter_exprs(self):
         schema = self._default_schema(first_name_field="first_name")
-        db = self._open_db(schema, [{"field": "first_name", "label": "First Name", "icon": "user"}])
+        db = self._open_db(
+            schema, [{"field": "first_name", "label": "First Name", "icon": "user"}]
+        )
         assert "first_name" in db.get_filter_exprs(), (
             "first_name should be in filter_exprs so get_filter_options() can return values"
         )
 
     def test_first_name_identity_field_filterable_via_build_filter_clauses(self):
         schema = self._default_schema(first_name_field="first_name")
-        db = self._open_db(schema, [{"field": "first_name", "label": "First Name", "icon": "user"}])
+        db = self._open_db(
+            schema, [{"field": "first_name", "label": "First Name", "icon": "user"}]
+        )
         clauses, params = db.build_filter_clauses({"first_name": "Alice"})
-        assert len(clauses) == 1, "build_filter_clauses must generate a WHERE clause for first_name"
+        assert len(clauses) == 1, (
+            "build_filter_clauses must generate a WHERE clause for first_name"
+        )
         assert params == ["Alice"]
 
     def test_email_identity_field_included_in_filter_exprs(self):
         schema = self._default_schema(email_field="user_email")
-        db = self._open_db(schema, [{"field": "user_email", "label": "Email", "icon": "mail"}])
+        db = self._open_db(
+            schema, [{"field": "user_email", "label": "Email", "icon": "mail"}]
+        )
         assert "user_email" in db.get_filter_exprs()
 
     def test_identity_field_not_added_when_not_selected_as_filter_field(self):
@@ -345,7 +365,9 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
 
     def test_identity_field_with_custom_column_name(self):
         schema = self._default_schema(first_name_field="fname")
-        db = self._open_db(schema, [{"field": "fname", "label": "First Name", "icon": "user"}])
+        db = self._open_db(
+            schema, [{"field": "fname", "label": "First Name", "icon": "user"}]
+        )
         clauses, params = db.build_filter_clauses({"fname": "Bob"})
         assert len(clauses) == 1
         assert params == ["Bob"]
