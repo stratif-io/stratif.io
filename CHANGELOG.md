@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.14.0](https://github.com/cabichahine/stratif.io/compare/v0.13.0...v0.14.0) (2026-04-01)
+
+
+### Features
+
+* add Metrics category to dimension-categories config ([889e2aa](https://github.com/cabichahine/stratif.io/commit/889e2aa46cebaf537f77e8b82f16e48c7bbe9402))
+* add shared AggBadge component with popover agg picker ([434eba2](https://github.com/cabichahine/stratif.io/commit/434eba22c0d9804e704fe0bb23c3be6f5bc92eb9))
+* extend LeafMeta and ValuePickerPopover with trigger, fixedAgg, category ([99816b6](https://github.com/cabichahine/stratif.io/commit/99816b6c6485f8caa69b134a8704a2c9f36d85ec))
+* move ValuePickerPopover to shared components; add all dimensions to Trends picker ([2de5e73](https://github.com/cabichahine/stratif.io/commit/2de5e73280d3904ee49ed741fa52795d02678171))
+* replace cycle button with AggBadge in pivot ValueChip ([c0e9ca3](https://github.com/cabichahine/stratif.io/commit/c0e9ca3817ab3d5002d0239150238beee121ad81))
+* rewrite TrendMetricPicker as thin adapter over ValuePickerPopover ([bfc60cd](https://github.com/cabichahine/stratif.io/commit/bfc60cd3152d1e9d78515023f011088a87a17cad))
+* **trends:** integrate AggBadge into TrendMetricPicker chip ([758fa25](https://github.com/cabichahine/stratif.io/commit/758fa25e5cb7b09ebac8a75bddcc40a8136d8dcb))
+* unify trends toolbar controls to h-7 chip/inner-pill style ([f38afef](https://github.com/cabichahine/stratif.io/commit/f38afef8a12269a9fa2799454f94c38d74d9b7e0))
+
+
+### Bug Fixes
+
+* allow count/count_distinct on standard dimensions (user_id, country, etc.) ([5c0c56f](https://github.com/cabichahine/stratif.io/commit/5c0c56fdb688921027daf2d226dfed5316652157))
+* build_filter_clauses must check filter_exprs not only custom_prop_exprs ([09fbaf1](https://github.com/cabichahine/stratif.io/commit/09fbaf1787a49fa178cc06210ae7ace2283f5ff5))
+* dotted path filter fields resolve to JSON extraction not quoted identifier ([8f8bcc5](https://github.com/cabichahine/stratif.io/commit/8f8bcc5e9d58729424d1808f0e1e5587d60ca354))
+* identity field expressions use _resolve_path_to_sql to support dotted paths ([a084e46](https://github.com/cabichahine/stratif.io/commit/a084e4675f7bb65a9a70855be0d0355202c8021f))
+* include identity fields in filter_exprs so global filters work ([88b795b](https://github.com/cabichahine/stratif.io/commit/88b795b721de803cfd6e508dba074dc38a1e23d2))
+* plain column filter fields work without identity field mapping ([17bf6fc](https://github.com/cabichahine/stratif.io/commit/17bf6fccc7f9cd3e93fd909912f8f984fc821e3e))
+* remove special Metrics category from TrendMetricPicker — use natural categories like Pivot ([14e0407](https://github.com/cabichahine/stratif.io/commit/14e0407d90329fab1f141a81ab6f55a8ce13a184))
+* resolve all ruff violations (B904, B905, E702, F401, C408, SIM108, SIM117, E402, B008, F811, B017) ([01bd536](https://github.com/cabichahine/stratif.io/commit/01bd536bb908ffe27ab22117725d52b38098c2bf))
+* run ruff format + add pull-requests:write for pr-title job ([066a4fd](https://github.com/cabichahine/stratif.io/commit/066a4fdea62ebdf8c37b1616971e10aa3649dda8))
+* sort imports in test file (ruff I001) ([ec1ba07](https://github.com/cabichahine/stratif.io/commit/ec1ba07cbefae08566415d63432f1b412f9b4a53))
+* update uv.lock (stratifio-core 0.12.0 → 0.13.0) ([#158](https://github.com/cabichahine/stratif.io/issues/158)) ([ed7ae4f](https://github.com/cabichahine/stratif.io/commit/ed7ae4f4ed691d6f61683c11bcef25fe843482c3))
+* wire onAggChange in design system demo; test countDistinct badge passthrough ([105b607](https://github.com/cabichahine/stratif.io/commit/105b6072de5d1c12a38debc55bc7966f20063a9a))
+
 ## [0.13.0](https://github.com/cabichahine/stratif.io/compare/v0.12.0...v0.13.0) (2026-04-01)
 
 ### Features
