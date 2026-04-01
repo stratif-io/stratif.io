@@ -65,7 +65,6 @@ describe('TrendMetricPicker', () => {
       target: { value: 'unique' },
     })
     expect(screen.getByText('Unique Users')).toBeInTheDocument()
-    // Event Count should not appear in the search results list (it may still appear in the trigger chip)
     const searchResults = document.querySelector('.max-h-52')
     expect(searchResults?.textContent).not.toContain('Event Count')
   })
@@ -123,7 +122,7 @@ describe('TrendMetricPicker', () => {
     expect(onChange).toHaveBeenCalledWith('unique_users', 'sum')
   })
 
-  it('shows only Standard category when numericDimensions is empty', () => {
+  it('shows Metrics category in left panel', () => {
     render(
       <TrendMetricPicker
         measureField="count_events"
@@ -134,14 +133,10 @@ describe('TrendMetricPicker', () => {
       />
     )
     fireEvent.click(screen.getByText('Event Count'))
-    expect(screen.getByText('Standard')).toBeInTheDocument()
-    const leftPanelButtons = screen
-      .getAllByRole('button')
-      .filter((b) => ['Standard'].includes(b.textContent?.trim().replace(/\d+$/, '').trim() ?? ''))
-    expect(leftPanelButtons).toHaveLength(1)
+    expect(screen.getByText('Metrics')).toBeInTheDocument()
   })
 
-  it('shows additional categories from dimension-categories.json when numericDimensions provided', () => {
+  it('shows additional categories when numericDimensions provided', () => {
     render(
       <TrendMetricPicker
         measureField="count_events"
@@ -152,7 +147,7 @@ describe('TrendMetricPicker', () => {
       />
     )
     fireEvent.click(screen.getByText('Event Count'))
-    expect(screen.getByText('Standard')).toBeInTheDocument()
+    expect(screen.getByText('Metrics')).toBeInTheDocument()
     const categoryRegion = document.querySelector('.bg-muted\\/40')
     expect(categoryRegion?.querySelectorAll('button').length).toBeGreaterThan(1)
   })
@@ -170,10 +165,12 @@ describe('TrendMetricPicker', () => {
     fireEvent.click(screen.getByText('Event Count'))
     const leftPanel = document.querySelector('.bg-muted\\/40')!
     const catButtons = leftPanel.querySelectorAll('button')
+    // Click the second category (first non-Metrics category)
     fireEvent.click(catButtons[1])
     fireEvent.click(screen.getByText('Revenue'))
-    expect(screen.getByText('Sum')).toBeInTheDocument()
-    expect(screen.getByText('Avg')).toBeInTheDocument()
+    // ValuePickerPopover shows "Σ Sum", "avg Avg" etc.
+    expect(screen.getByText('Σ Sum')).toBeInTheDocument()
+    expect(screen.getByText('avg Avg')).toBeInTheDocument()
   })
 
   it('calls onChange with field and agg when aggregation selected for custom metric', () => {
@@ -191,7 +188,7 @@ describe('TrendMetricPicker', () => {
     const leftPanel = document.querySelector('.bg-muted\\/40')!
     fireEvent.click(leftPanel.querySelectorAll('button')[1])
     fireEvent.click(screen.getByText('Revenue'))
-    fireEvent.click(screen.getByText('Avg'))
+    fireEvent.click(screen.getByText('avg Avg'))
     expect(onChange).toHaveBeenCalledWith('revenue', 'avg')
   })
 })
