@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   sync:
@@ -16,10 +17,11 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Merge main into develop
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout develop
-          git merge main --no-edit
-          git push origin develop
+      - name: Open sync PR
+        uses: repo-sync/pull-request@v2
+        with:
+          source_branch: main
+          destination_branch: develop
+          pr_title: "chore: sync main → develop after release"
+          pr_body: "Automated PR to sync version bump and changelog from main back into develop."
+          github_token: ${{ secrets.GITHUB_TOKEN }}
