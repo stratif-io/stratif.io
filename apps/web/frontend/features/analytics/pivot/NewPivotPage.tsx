@@ -1,4 +1,5 @@
 import { useMemo, useCallback, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
@@ -12,6 +13,7 @@ import {
 } from '@/lib/api'
 import { PivotTable } from '@/components/pivot-table/PivotTable'
 import type { PivotRowsRequest, PivotRowsResponse } from '@/components/pivot-table/types'
+import { parseTrendParams } from './parseTrendParams'
 
 // ── Helper: map PivotRowsRequest ZoneCol → fetchPivotGridRows shape ─────────
 
@@ -27,6 +29,9 @@ export function NewPivotPage() {
   useEffect(() => {
     document.title = 'Pivot — stratif.io'
   }, [])
+
+  const [searchParams] = useSearchParams()
+  const trendInitial = useMemo(() => parseTrendParams(searchParams), [searchParams])
 
   const { dateRange, activeFilters, activeConnectionId, setActiveFilter } = useAppStore()
 
@@ -119,6 +124,9 @@ export function NewPivotPage() {
             activeConnectionId={activeConnectionId}
             fetchRows={fetchRows}
             fetchFilterValues={fetchFilterValues}
+            initialRowGroups={trendInitial?.initialRowGroups}
+            initialValueCols={trendInitial?.initialValueCols}
+            initialPivotFilters={trendInitial?.initialPivotFilters}
           />
         </div>
       </NoConnectionGuard>
