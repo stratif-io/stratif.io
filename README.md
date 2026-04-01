@@ -64,12 +64,6 @@ Open **http://localhost:9999** when it's done.
 
 ---
 
-## 🏗️ Architecture
-
-Built on the shoulders of giants — [React](https://react.dev), [FastAPI](https://fastapi.tiangolo.com), [SQLGlot](https://github.com/tobymao/sqlglot), [shadcn/ui](https://ui.shadcn.com), [TanStack Query](https://tanstack.com/query), [Zustand](https://zustand-demo.pmnd.rs), [Recharts](https://recharts.org), [Tailwind CSS](https://tailwindcss.com).
-
----
-
 ## ⚙️ Configuration
 
 | Variable                    | Default                      | Description                                                      |
@@ -148,3 +142,7 @@ bun run lint && bun run build && bun run test:run
 ## 📄 License
 
 MIT © stratif.io Contributors
+
+---
+
+Built on the shoulders of giants — [React](https://react.dev), [FastAPI](https://fastapi.tiangolo.com), [SQLGlot](https://github.com/tobymao/sqlglot), [shadcn/ui](https://ui.shadcn.com), [TanStack Query](https://tanstack.com/query), [Zustand](https://zustand-demo.pmnd.rs), [Recharts](https://recharts.org), [Tailwind CSS](https://tailwindcss.com).
