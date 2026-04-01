@@ -56,8 +56,15 @@ class SQLiteSeeder(BaseSeeder):
         if not events:
             return
         rows = [
-            (e[0], e[1], e[2].strftime("%Y-%m-%d %H:%M:%S"), json.dumps(e[3]), e[4],
-             json.dumps(e[5]), json.dumps(e[6]))
+            (
+                e[0],
+                e[1],
+                e[2].strftime("%Y-%m-%d %H:%M:%S"),
+                json.dumps(e[3]),
+                e[4],
+                json.dumps(e[5]),
+                json.dumps(e[6]),
+            )
             for e in events
         ]
         self._conn.executemany(

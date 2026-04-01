@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS connection_filter_configs (
 def init_product_db(db=None) -> None:
     if db is None:
         from backend.product_db.deps import get_product_db
+
         db = get_product_db()
     db.executescript(SCHEMA)
     # Migrate existing connections table to allow clickhouse and snowflake db_types.
@@ -80,8 +81,13 @@ def init_product_db(db=None) -> None:
         db.executescript(
             "ALTER TABLE connection_schema_configs ADD COLUMN pinned_metrics TEXT NOT NULL DEFAULT '[]';"
         )
-    for col in ("email_field", "first_name_field", "last_name_field",
-                "date_of_birth_field", "phone_field"):
+    for col in (
+        "email_field",
+        "first_name_field",
+        "last_name_field",
+        "date_of_birth_field",
+        "phone_field",
+    ):
         if col not in existing_names:
             db.executescript(
                 f"ALTER TABLE connection_schema_configs ADD COLUMN {col} TEXT;"

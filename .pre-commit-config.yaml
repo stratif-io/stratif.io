@@ -10,14 +10,14 @@ repos:
 
       - id: ruff-lint
         name: ruff (lint)
-        entry: uv run ruff check . --fix
+        entry: uv run ruff check .
         language: system
         types: [python]
         pass_filenames: false
 
       - id: ruff-format
         name: ruff (format)
-        entry: uv run ruff format .
+        entry: uv run ruff format --check .
         language: system
         types: [python]
         pass_filenames: false 

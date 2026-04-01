@@ -22,7 +22,9 @@ from backend.services.sql_builder import (
 )
 from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
 
-router = APIRouter(prefix="/api", tags=["pivot"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/api", tags=["pivot"], dependencies=[Depends(get_current_user)]
+)
 
 
 class MeasureType(Enum):
@@ -105,7 +107,10 @@ DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
 
 def _get_dim_expr(
-    field: str, dialect: str, custom_prop_exprs: dict[str, str], filter_exprs: dict[str, str] | None = None
+    field: str,
+    dialect: str,
+    custom_prop_exprs: dict[str, str],
+    filter_exprs: dict[str, str] | None = None,
 ) -> str:
     """Return the SQL expression for a dimension field."""
     match field:
@@ -301,8 +306,11 @@ def get_pivot_options(
     # Check all candidate props in a single query to avoid N round-trips.
     custom_prop_exprs = db.get_custom_prop_exprs()
     candidates = [
-        p for p in custom_props
-        if p.get("name") and p.get("type") != "number" and custom_prop_exprs.get(p["name"])
+        p
+        for p in custom_props
+        if p.get("name")
+        and p.get("type") != "number"
+        and custom_prop_exprs.get(p["name"])
     ]
     numeric_names: set[str] = {
         p["name"] for p in custom_props if p.get("type") == "number"
@@ -323,12 +331,19 @@ def get_pivot_options(
         except Exception:
             pass
     numeric_dimensions = [
-        {"value": p["name"], "label": p["name"].replace("_", " ").title(), "category": p.get("category")}
+        {
+            "value": p["name"],
+            "label": p["name"].replace("_", " ").title(),
+            "category": p.get("category"),
+        }
         for p in custom_props
         if p.get("name") in numeric_names
     ]
     result = {
-        "dimensions": [{"value": k, "label": v, "category": category_map.get(k)} for k, v in dimensions.items()],
+        "dimensions": [
+            {"value": k, "label": v, "category": category_map.get(k)}
+            for k, v in dimensions.items()
+        ],
         "measures": [
             {"value": "count_events", "label": "Event Count"},
             {"value": "unique_users", "label": "Unique Users"},
@@ -380,7 +395,9 @@ def get_pivot(
             "data": [],
         }
 
-    all_prop_names = {p["name"] for p in custom_props if p.get("name")}
+    all_prop_names = set(AVAILABLE_DIMENSIONS.keys()) | {
+        p["name"] for p in custom_props if p.get("name")
+    }
     numeric_prop_names = {p["name"] for p in custom_props if p.get("name")}
     NUMERIC_AGGS = {"sum", "avg", "min", "max"}
     COUNT_AGGS = {"count", "count_distinct"}
@@ -397,11 +414,15 @@ def get_pivot(
     invalid_measures = []
     for m in measure_list:
         parsed = parse_measure(m)
-        if m in valid_base_measures:
-            continue
-        elif parsed and parsed[0] in COUNT_AGGS and parsed[1] in all_prop_names:
-            continue
-        elif parsed and parsed[0] in NUMERIC_AGGS and parsed[1] in numeric_prop_names:
+        if (
+            m in valid_base_measures
+            or parsed
+            and parsed[0] in COUNT_AGGS
+            and parsed[1] in all_prop_names
+            or parsed
+            and parsed[0] in NUMERIC_AGGS
+            and parsed[1] in numeric_prop_names
+        ):
             continue
         else:
             invalid_measures.append(m)
@@ -814,8 +835,9 @@ def get_pivot_grid_rows(
         return _pivot_grid_rows_impl(body, db)
     except Exception:
         from fastapi import HTTPException
+
         err = _traceback.format_exc()
-        raise HTTPException(status_code=500, detail=err)
+        raise HTTPException(status_code=500, detail=err) from None
 
 
 def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> dict:
@@ -945,7 +967,10 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
             # Group by all remaining row group columns at once (flat multi-dim GROUP BY)
             group_exprs = [dim_expr(rg.field) for rg in remaining_groups]
             page_size = body.endRow - body.startRow
-            select_parts = [f"{expr} AS {rg.field}" for expr, rg in zip(group_exprs, remaining_groups)]
+            select_parts = [
+                f"{expr} AS {rg.field}"
+                for expr, rg in zip(group_exprs, remaining_groups, strict=False)
+            ]
             select_parts += [f"{sql} AS {alias}" for sql, alias in resolved_values]
             group_by_clause = "GROUP BY " + ", ".join(group_exprs)
             query = f"""
@@ -981,7 +1006,11 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
                 record[f] = val.isoformat() if isinstance(val, datetime) else val
             rows.append(record)
 
-        return {"rows": rows, "rowCount": len(rows), "sql": interpolate_sql(query, where_params + having_params)}
+        return {
+            "rows": rows,
+            "rowCount": len(rows),
+            "sql": interpolate_sql(query, where_params + having_params),
+        }
 
     # ================================================================== #
     # PIVOT MODE — server-side cross-tabulation                           #
@@ -1016,12 +1045,17 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
     select_params: list = []
     select_parts = []
 
-    for expr, rg in zip(row_group_exprs, remaining_groups):
+    for expr, rg in zip(row_group_exprs, remaining_groups, strict=False):
         select_parts.append(f"{expr} AS {rg.field}")
 
     _AGG_LABELS = {
-        "sum": "Sum", "min": "Min", "max": "Max", "avg": "Avg",
-        "count": "Count", "countDistinct": "Count Distinct", "count_distinct": "Count Distinct",
+        "sum": "Sum",
+        "min": "Min",
+        "max": "Max",
+        "avg": "Avg",
+        "count": "Count",
+        "countDistinct": "Count Distinct",
+        "count_distinct": "Count Distinct",
     }
 
     pivot_field_names: list[str] = []
@@ -1031,7 +1065,8 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
         combo_vals = [v.isoformat() if isinstance(v, datetime) else v for v in combo]
         combo_safe = _safe_field_name("__".join(str(v) for v in combo_vals))
         combo_label = " / ".join(
-            _format_pivot_label(field, val) for field, val in zip(p_fields, combo_vals)
+            _format_pivot_label(field, val)
+            for field, val in zip(p_fields, combo_vals, strict=False)
         )
 
         # Build CASE WHEN condition matching all pivot columns
@@ -1053,7 +1088,9 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
                 d_expr = dim_expr(vc_alias)
                 match agg_func:
                     case "countDistinct" | "count_distinct" | "count":
-                        agg = f"COUNT(DISTINCT CASE {when_clause} {d_expr} ELSE NULL END)"
+                        agg = (
+                            f"COUNT(DISTINCT CASE {when_clause} {d_expr} ELSE NULL END)"
+                        )
                     case "min":
                         agg = f"MIN(CASE {when_clause} {d_expr} ELSE NULL END)"
                     case "max":
@@ -1063,7 +1100,9 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
                     case "sum":
                         agg = f"SUM(CASE {when_clause} CAST({d_expr} AS DOUBLE) ELSE NULL END)"
                     case _:
-                        agg = f"COUNT(DISTINCT CASE {when_clause} {d_expr} ELSE NULL END)"
+                        agg = (
+                            f"COUNT(DISTINCT CASE {when_clause} {d_expr} ELSE NULL END)"
+                        )
 
             select_parts.append(f'{agg} AS "{col_key}"')
             select_params.extend(when_params)
@@ -1075,11 +1114,21 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
                 child_header = f"{agg_label} ({raw})"
             else:
                 child_header = vc_alias
-            children.append({"field": col_key, "headerName": child_header, "type": "numericColumn", "aggFunc": col_agg, "resizable": True})
+            children.append(
+                {
+                    "field": col_key,
+                    "headerName": child_header,
+                    "type": "numericColumn",
+                    "aggFunc": col_agg,
+                    "resizable": True,
+                }
+            )
 
         secondary_col_defs.append({"headerName": combo_label, "children": children})
 
-    group_by_clause = ("GROUP BY " + ", ".join(row_group_exprs)) if row_group_exprs else ""
+    group_by_clause = (
+        ("GROUP BY " + ", ".join(row_group_exprs)) if row_group_exprs else ""
+    )
     order_by = build_order_by()
 
     # Full params: select CASE WHEN params come first (appear first in SQL string)

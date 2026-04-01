@@ -10,6 +10,7 @@ from unittest.mock import patch
 def _patch_settings(db_path, enc_key):
     """Patch settings in all modules that reference it directly."""
     from backend.product_db.deps import get_product_db
+
     get_product_db.cache_clear()
     with (
         patch("backend.product_db.deps.settings") as db_s,
@@ -27,6 +28,7 @@ def _setup_db(tmp_path, enc_key="test-encryption-key-for-testing-only"):
     db_path = str(tmp_path / "test_product.sqlite")
     with _patch_settings(db_path, enc_key):
         from backend.product_db.migrations import init_product_db
+
         init_product_db()
     return db_path
 
@@ -38,6 +40,7 @@ def test_bootstrap_inserts_all_rows(tmp_path):
 
     with _patch_settings(db_path, enc_key):
         from seeders.bootstrap_connection import bootstrap
+
         bootstrap("/data/sample.duckdb")
 
     conn = sqlite3.connect(db_path)
@@ -74,6 +77,7 @@ def test_bootstrap_credentials_decrypt_correctly(tmp_path):
 
     with _patch_settings(db_path, enc_key):
         from seeders.bootstrap_connection import bootstrap
+
         bootstrap("/data/sample.duckdb")
 
     conn = sqlite3.connect(db_path)
@@ -83,6 +87,7 @@ def test_bootstrap_credentials_decrypt_correctly(tmp_path):
     with patch("backend.services.crypto.settings") as s:
         s.encryption_key = enc_key
         from backend.services.crypto import decrypt_credentials
+
         creds = decrypt_credentials(row[0])
 
     assert creds == {"file_path": "/data/sample.duckdb"}
@@ -95,6 +100,7 @@ def test_bootstrap_is_idempotent(tmp_path):
 
     with _patch_settings(db_path, enc_key):
         from seeders.bootstrap_connection import bootstrap
+
         bootstrap("/data/sample.duckdb")
         bootstrap("/data/sample.duckdb")  # second call
 
@@ -112,6 +118,7 @@ def test_bootstrap_custom_path(tmp_path):
 
     with _patch_settings(db_path, enc_key):
         from seeders.bootstrap_connection import bootstrap
+
         bootstrap(custom_path)
 
     conn = sqlite3.connect(db_path)
@@ -121,6 +128,7 @@ def test_bootstrap_custom_path(tmp_path):
     with patch("backend.services.crypto.settings") as s:
         s.encryption_key = enc_key
         from backend.services.crypto import decrypt_credentials
+
         creds = decrypt_credentials(row[0])
 
     assert creds == {"file_path": custom_path}
@@ -133,31 +141,44 @@ def test_bootstrap_fixes_stale_credentials(tmp_path):
 
     # Insert a connection with the old wrong key {"path": ...}
     with _patch_settings(db_path, enc_key):
-        from backend.services.crypto import encrypt_credentials
         from backend.product_db.deps import get_product_db
+        from backend.services.crypto import encrypt_credentials
+
         db = get_product_db()
         import uuid
         from datetime import UTC, datetime
+
         now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         conn_id = str(uuid.uuid4())
         db.execute(
             "INSERT INTO connections (id, name, db_type, credentials_encrypted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (conn_id, "Sample DuckDB", "duckdb", encrypt_credentials({"path": "/data/sample.duckdb"}), now, now),
+            (
+                conn_id,
+                "Sample DuckDB",
+                "duckdb",
+                encrypt_credentials({"path": "/data/sample.duckdb"}),
+                now,
+                now,
+            ),
         )
 
     # Now run bootstrap — it should detect stale creds and fix them
     with _patch_settings(db_path, enc_key):
         from seeders.bootstrap_connection import bootstrap
+
         bootstrap("/data/sample.duckdb")
 
     conn = sqlite3.connect(db_path)
-    row = conn.execute("SELECT credentials_encrypted FROM connections WHERE name = 'Sample DuckDB'").fetchone()
+    row = conn.execute(
+        "SELECT credentials_encrypted FROM connections WHERE name = 'Sample DuckDB'"
+    ).fetchone()
     count = conn.execute("SELECT COUNT(*) FROM connections").fetchone()[0]
     conn.close()
 
     with patch("backend.services.crypto.settings") as s:
         s.encryption_key = enc_key
         from backend.services.crypto import decrypt_credentials
+
         creds = decrypt_credentials(row[0])
 
     assert count == 1  # no duplicate created

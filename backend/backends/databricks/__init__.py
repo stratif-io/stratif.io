@@ -1,4 +1,5 @@
 """Databricks database backend."""
+
 from __future__ import annotations
 
 import contextlib
@@ -7,8 +8,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from backend.backends._utils import (
+    _to_named_params,
+    infer_type,
+    pick_events_table,
+    suggest_fields,
+)
 from backend.backends.base import ColumnInfo, SchemaInfo
-from backend.backends._utils import _to_named_params, infer_type, pick_events_table, suggest_fields
 from backend.backends.databricks.credentials import DatabricksCredentials
 
 
@@ -23,11 +29,14 @@ def _parse_struct_fields(sql_type: str, prefix: str = "") -> list[dict]:
     current = ""
     for ch in inner:
         if ch in ("<", "("):
-            depth += 1; current += ch
+            depth += 1
+            current += ch
         elif ch in (">", ")"):
-            depth -= 1; current += ch
+            depth -= 1
+            current += ch
         elif ch == "," and depth == 0:
-            _parse_struct_field(current.strip(), prefix, results); current = ""
+            _parse_struct_field(current.strip(), prefix, results)
+            current = ""
         else:
             current += ch
     if current.strip():
@@ -40,18 +49,19 @@ def _parse_struct_field(field_def: str, prefix: str, results: list) -> None:
     if colon < 0:
         return
     name = field_def[:colon].strip().strip("`")
-    type_str = field_def[colon + 1:].strip()
+    type_str = field_def[colon + 1 :].strip()
     path = f"{prefix}.{name}" if prefix else name
     upper = type_str.upper()
     if upper.startswith("STRUCT<"):
         nested = _parse_struct_fields(type_str, path)
-        results.extend(nested if nested else [{"name": name, "path": path, "type": "string"}])
+        results.extend(
+            nested if nested else [{"name": name, "path": path, "type": "string"}]
+        )
     else:
         results.append({"name": name, "path": path, "type": infer_type(upper)})
 
 
 class DatabricksBackend:
-
     @property
     def dialect_name(self) -> str:
         return "databricks"
@@ -73,6 +83,7 @@ class DatabricksBackend:
 
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         from databricks import sql as dbsql
+
         creds = DatabricksCredentials.model_validate(credentials.model_dump())
         return dbsql.connect(
             server_hostname=creds.host,
@@ -86,6 +97,7 @@ class DatabricksBackend:
     def is_connection_error(self, exc: Exception) -> bool:
         try:
             from databricks.sql.exc import Error as _DatabricksError
+
             return isinstance(exc, _DatabricksError)
         except ImportError:
             return False
@@ -140,14 +152,26 @@ class DatabricksBackend:
             if catalog is None:
                 cursor.execute("SHOW CATALOGS")
                 rows = cursor.fetchall()
-                return [{"name": r[0], "full_name": r[0], "kind": "catalog"} for r in rows]
+                return [
+                    {"name": r[0], "full_name": r[0], "kind": "catalog"} for r in rows
+                ]
             if schema is None:
                 cursor.execute(f"SHOW SCHEMAS IN `{catalog}`")
                 rows = cursor.fetchall()
-                return [{"name": r[0], "full_name": f"{catalog}.{r[0]}", "kind": "schema"} for r in rows]
+                return [
+                    {"name": r[0], "full_name": f"{catalog}.{r[0]}", "kind": "schema"}
+                    for r in rows
+                ]
             cursor.execute(f"SHOW TABLES IN `{catalog}`.`{schema}`")
             rows = cursor.fetchall()
-            return [{"name": r[1], "full_name": f"{catalog}.{schema}.{r[1]}", "kind": "table"} for r in rows]
+            return [
+                {
+                    "name": r[1],
+                    "full_name": f"{catalog}.{schema}.{r[1]}",
+                    "kind": "table",
+                }
+                for r in rows
+            ]
         finally:
             with contextlib.suppress(Exception):
                 cursor.close()
@@ -158,25 +182,40 @@ class DatabricksBackend:
             if events_table_hint and events_table_hint.count(".") == 2:
                 cat, sch, tbl = events_table_hint.split(".", 2)
                 cursor.execute(f"DESCRIBE `{cat}`.`{sch}`.`{tbl}`")
-                columns = [ColumnInfo(name=r[0], type=r[1]) for r in cursor.fetchall()
-                           if r[0] and not r[0].startswith("#")]
+                columns = [
+                    ColumnInfo(name=r[0], type=r[1])
+                    for r in cursor.fetchall()
+                    if r[0] and not r[0].startswith("#")
+                ]
                 tables = [events_table_hint]
                 events_table = events_table_hint
             else:
                 cursor.execute("SELECT current_catalog(), current_database()")
                 row = cursor.fetchone()
-                default_cat, default_sch = (row[0], row[1]) if row else ("hive_metastore", "default")
+                default_cat, default_sch = (
+                    (row[0], row[1]) if row else ("hive_metastore", "default")
+                )
                 cursor.execute(f"SHOW TABLES IN `{default_cat}`.`{default_sch}`")
                 rows = cursor.fetchall()
                 tables = [r[1] if len(r) > 1 else r[0] for r in rows]
                 events_table_name = pick_events_table(tables, events_table_hint)
                 if not events_table_name:
-                    return SchemaInfo(tables=tables, events_table="", columns=[], suggestions={},
-                                      proposed_custom_properties=[])
+                    return SchemaInfo(
+                        tables=tables,
+                        events_table="",
+                        columns=[],
+                        suggestions={},
+                        proposed_custom_properties=[],
+                    )
                 events_table = f"{default_cat}.{default_sch}.{events_table_name}"
-                cursor.execute(f"DESCRIBE `{default_cat}`.`{default_sch}`.`{events_table_name}`")
-                columns = [ColumnInfo(name=r[0], type=r[1]) for r in cursor.fetchall()
-                           if r[0] and not r[0].startswith("#")]
+                cursor.execute(
+                    f"DESCRIBE `{default_cat}`.`{default_sch}`.`{events_table_name}`"
+                )
+                columns = [
+                    ColumnInfo(name=r[0], type=r[1])
+                    for r in cursor.fetchall()
+                    if r[0] and not r[0].startswith("#")
+                ]
 
             suggestions = suggest_fields(columns)
             core_values = set(suggestions.values())
@@ -187,14 +226,31 @@ class DatabricksBackend:
                 sql_type = col.type.upper()
                 if sql_type.startswith("STRUCT<"):
                     nested = _parse_struct_fields(col.type, col.name)
-                    proposed.extend(nested if nested else [{"name": col.name, "path": col.name, "type": "string"}])
+                    proposed.extend(
+                        nested
+                        if nested
+                        else [{"name": col.name, "path": col.name, "type": "string"}]
+                    )
                 elif "MAP<" in sql_type:
-                    proposed.append({"name": col.name, "path": col.name, "type": "string"})
+                    proposed.append(
+                        {"name": col.name, "path": col.name, "type": "string"}
+                    )
                 else:
-                    proposed.append({"name": col.name, "path": col.name, "type": infer_type(sql_type)})
+                    proposed.append(
+                        {
+                            "name": col.name,
+                            "path": col.name,
+                            "type": infer_type(sql_type),
+                        }
+                    )
 
-            return SchemaInfo(tables=tables, events_table=events_table, columns=columns,
-                              suggestions=suggestions, proposed_custom_properties=proposed)
+            return SchemaInfo(
+                tables=tables,
+                events_table=events_table,
+                columns=columns,
+                suggestions=suggestions,
+                proposed_custom_properties=proposed,
+            )
         finally:
             with contextlib.suppress(Exception):
                 cursor.close()
@@ -216,7 +272,9 @@ class DatabricksBackend:
         cursor = conn.cursor()
         try:
             cursor.execute(named_query, named_params or None)
-            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            columns = (
+                [desc[0] for desc in cursor.description] if cursor.description else []
+            )
             rows = cursor.fetchall()
             return columns, rows
         finally:
@@ -224,12 +282,16 @@ class DatabricksBackend:
                 cursor.close()
 
     def build_events_cte(
-        self, source_table: str, uid_field: str, ts_field: str,
-        en_field: str, custom_props: list[dict],
+        self,
+        source_table: str,
+        uid_field: str,
+        ts_field: str,
+        en_field: str,
+        custom_props: list[dict],
     ) -> str:
         q = "`"
         quoted_table = ".".join(f"{q}{p}{q}" for p in source_table.split("."))
-        core = f'{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name'
+        core = f"{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name"
         remapped_src = {uid_field, ts_field, en_field}
         excl = ", ".join(f"{q}{c}{q}" for c in sorted(remapped_src))
         return f"(SELECT {core}, * EXCEPT ({excl}) FROM {quoted_table})"
@@ -239,7 +301,7 @@ class DatabricksBackend:
         cte_def = f"events AS {cte_body}"
         m = re.match(r"(with\s+)", q, re.IGNORECASE)
         if m:
-            return q[: m.end()] + cte_def + ", " + q[m.end():]
+            return q[: m.end()] + cte_def + ", " + q[m.end() :]
         return f"WITH {cte_def} {q}"
 
     def date_trunc(self, unit: str, col: str) -> str:
