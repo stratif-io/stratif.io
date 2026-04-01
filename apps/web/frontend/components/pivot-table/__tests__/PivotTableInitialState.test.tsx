@@ -36,6 +36,12 @@ describe('PivotTable initial state from Trend handoff', () => {
     expect(screen.getByText('Country')).toBeInTheDocument()
   })
 
+  it('renders initial pivot col chip when initialPivotCols provided', () => {
+    const initialPivotCols: ZoneCol[] = [{ colId: 'country', label: 'Country' }]
+    renderInRouter(<PivotTable {...makeProps({ initialPivotCols })} />)
+    expect(screen.getByText('Country')).toBeInTheDocument()
+  })
+
   it('renders initial pivot filter when initialPivotFilters provided', () => {
     const initialPivotFilters: FilterEntry[] = [
       { field: 'platform', fieldLabel: 'platform', value: 'web' },

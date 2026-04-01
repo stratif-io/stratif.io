@@ -39,16 +39,16 @@ describe('parseTrendParams', () => {
     ])
   })
 
-  it('maps breakdown to initialRowGroups', () => {
+  it('maps breakdown to initialPivotCols', () => {
     const result = parseTrendParams(
       params({ from_trend: '1', measure: 'count_events', breakdown: 'country' })
     )
-    expect(result?.initialRowGroups).toEqual<ZoneCol[]>([{ colId: 'country', label: 'country' }])
+    expect(result?.initialPivotCols).toEqual<ZoneCol[]>([{ colId: 'country', label: 'country' }])
   })
 
-  it('returns undefined initialRowGroups when no breakdown', () => {
+  it('returns undefined initialPivotCols when no breakdown', () => {
     const result = parseTrendParams(params({ from_trend: '1', measure: 'count_events' }))
-    expect(result?.initialRowGroups).toBeUndefined()
+    expect(result?.initialPivotCols).toBeUndefined()
   })
 
   it('maps filter_ params to initialPivotFilters', () => {
