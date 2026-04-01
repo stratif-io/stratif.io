@@ -45,6 +45,12 @@
 
 ---
 
+## 🗄️ Supported Databases
+
+DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
+
+---
+
 ## ⚡ Quick Start
 
 ```bash
@@ -69,12 +75,6 @@ Open **http://localhost:9999** when it's done.
 | 🔌 **Multi-database**        | One UI, many backends — DuckDB, Postgres, Snowflake & more |
 | 🔐 **Encrypted credentials** | AES-128-CBC + HMAC-SHA256 via Fernet                       |
 | 🐳 **Docker deploy**         | One `docker compose up` from dev to production             |
-
----
-
-## 🗄️ Supported Databases
-
-DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
 
 ---
 
