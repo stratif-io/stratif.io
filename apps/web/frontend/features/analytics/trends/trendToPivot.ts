@@ -7,6 +7,9 @@ export interface BuildPivotUrlOptions {
 /**
  * Encodes the current Trend page state into a /pivot URL with search params
  * so NewPivotPage can pre-seed the Pivot Explorer.
+ *
+ * Note: only the first value of each filter array is forwarded — Pivot filters
+ * are single-valued, so additional values are intentionally dropped.
  */
 export function buildPivotUrl({
   measure,

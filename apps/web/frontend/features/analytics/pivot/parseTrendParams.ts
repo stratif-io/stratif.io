@@ -26,6 +26,7 @@ export function parseTrendParams(params: URLSearchParams): TrendInitialState | n
   } else {
     // Format: "<agg>:<field>"
     const colonIdx = measure.indexOf(':')
+    if (colonIdx === -1) return null
     const aggFunc = measure.slice(0, colonIdx)
     const colId = measure.slice(colonIdx + 1)
     valueCol = { colId, label: colId, aggFunc }
