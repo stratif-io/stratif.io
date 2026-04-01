@@ -124,7 +124,7 @@ export function NewPivotPage() {
             activeConnectionId={activeConnectionId}
             fetchRows={fetchRows}
             fetchFilterValues={fetchFilterValues}
-            initialRowGroups={trendInitial?.initialRowGroups}
+            initialPivotCols={trendInitial?.initialPivotCols}
             initialValueCols={trendInitial?.initialValueCols}
             initialPivotFilters={trendInitial?.initialPivotFilters}
           />

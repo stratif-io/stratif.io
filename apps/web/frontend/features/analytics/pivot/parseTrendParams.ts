@@ -2,7 +2,7 @@ import type { ZoneCol, FilterEntry } from '@/components/pivot-table/types'
 
 export interface TrendInitialState {
   initialValueCols: ZoneCol[]
-  initialRowGroups?: ZoneCol[]
+  initialPivotCols?: ZoneCol[]
   initialPivotFilters: FilterEntry[]
 }
 
@@ -32,8 +32,8 @@ export function parseTrendParams(params: URLSearchParams): TrendInitialState | n
     valueCol = { colId, label: colId, aggFunc }
   }
 
-  // Map breakdown → row group
-  const initialRowGroups: ZoneCol[] | undefined = breakdown
+  // Map breakdown → pivot column (date stays as default row group)
+  const initialPivotCols: ZoneCol[] | undefined = breakdown
     ? [{ colId: breakdown, label: breakdown }]
     : undefined
 
@@ -48,7 +48,7 @@ export function parseTrendParams(params: URLSearchParams): TrendInitialState | n
 
   return {
     initialValueCols: [valueCol],
-    initialRowGroups,
+    initialPivotCols,
     initialPivotFilters,
   }
 }

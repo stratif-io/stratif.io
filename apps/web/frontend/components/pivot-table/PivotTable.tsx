@@ -46,11 +46,12 @@ export function PivotTable({
   fetchRows,
   fetchFilterValues,
   initialRowGroups,
+  initialPivotCols,
   initialValueCols,
   initialPivotFilters,
 }: PivotTableProps) {
   const [rowGroups, setRowGroups] = useState<ZoneCol[]>(initialRowGroups ?? DEFAULT_ROW_GROUPS)
-  const [pivotCols, setPivotCols] = useState<ZoneCol[]>(DEFAULT_PIVOT_COLS)
+  const [pivotCols, setPivotCols] = useState<ZoneCol[]>(initialPivotCols ?? DEFAULT_PIVOT_COLS)
   const [valueCols, setValueCols] = useState<ZoneCol[]>(initialValueCols ?? DEFAULT_VALUE_COLS)
   const [pivotFilters, setPivotFilters] = useState<FilterEntry[]>(initialPivotFilters ?? [])
   const [rows, setRows] = useState<Record<string, unknown>[]>([])

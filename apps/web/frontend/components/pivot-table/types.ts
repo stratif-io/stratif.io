@@ -57,6 +57,7 @@ export interface PivotTableProps {
   fetchFilterValues: (field: string) => Promise<string[]>
   // Optional initial state injected from Trend page handoff
   initialRowGroups?: ZoneCol[]
+  initialPivotCols?: ZoneCol[]
   initialValueCols?: ZoneCol[]
   initialPivotFilters?: FilterEntry[]
 }
