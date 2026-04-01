@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.16.0](https://github.com/cabichahine/stratif.io/compare/v0.15.0...v0.16.0) (2026-04-01)
+
+
+### Features
+
+* breakdown goes to pivot columns, date stays as row group ([01b2ff4](https://github.com/cabichahine/stratif.io/commit/01b2ff42c1af39c0143e8ef9dea60e768f46553d))
+
+
+### Bug Fixes
+
+* add ([5bddeea](https://github.com/cabichahine/stratif.io/commit/5bddeea1be9324f53ca86bf592cd6cf6eedaeff3))
+* run pre-commit from Husky and resolve all ty type errors ([758b144](https://github.com/cabichahine/stratif.io/commit/758b14429a1b70c9c9e498ca1327a0b19ffe71ca))
+* seed time dimension into rows even when initialValueCols is provided ([19a218a](https://github.com/cabichahine/stratif.io/commit/19a218a2b304ec987573cf33edf93cbf48b6e96b))
+
 ## [0.15.0](https://github.com/cabichahine/stratif.io/compare/v0.14.0...v0.15.0) (2026-04-01)
 
 
