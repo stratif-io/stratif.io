@@ -75,7 +75,14 @@ fi
 # Disable interactive credential prompts — required when running via curl | bash
 export GIT_TERMINAL_PROMPT=0
 
-if [ -d "$INSTALL_DIR/.git" ]; then
+# STRATIFIO_REPO_DIR can point at an already-checked-out repo (used by CI tests)
+# to skip the clone entirely.
+if [ -n "${STRATIFIO_REPO_DIR:-}" ]; then
+  info "Using local repo at $STRATIFIO_REPO_DIR"
+  if [ "$STRATIFIO_REPO_DIR" != "$INSTALL_DIR" ]; then
+    cp -r "$STRATIFIO_REPO_DIR/." "$INSTALL_DIR"
+  fi
+elif [ -d "$INSTALL_DIR/.git" ]; then
   info "Updating to $LATEST"
   git -C "$INSTALL_DIR" fetch --tags --quiet
   git -C "$INSTALL_DIR" checkout --quiet "$LATEST"
