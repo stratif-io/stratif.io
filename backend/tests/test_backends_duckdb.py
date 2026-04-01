@@ -2,9 +2,9 @@
 import duckdb
 import pytest
 
+from backend.backends.base import DatabaseBackend
 from backend.backends.duckdb import DuckDBBackend
 from backend.backends.duckdb.credentials import DuckDBCredentials
-from backend.backends.base import DatabaseBackend
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ class TestDuckDBCredentials:
         assert c.s3_path == "s3://bucket/db.duckdb"
 
     def test_neither_path_raises(self):
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             DuckDBCredentials()
 
     def test_parse_credentials_file_path(self, backend):

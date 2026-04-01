@@ -1,4 +1,3 @@
-import pytest
 from fastapi import Depends, FastAPI
 from starlette.testclient import TestClient
 
@@ -10,7 +9,7 @@ def _make_app_with_auth():
     app = FastAPI()
 
     @app.get("/protected")
-    async def protected(user=Depends(get_current_user)):
+    async def protected(user=Depends(get_current_user)):  # noqa: B008
         return {"ok": True}
 
     return app

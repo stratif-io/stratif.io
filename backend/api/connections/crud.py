@@ -94,6 +94,7 @@ async def delete_connection(conn_id: str):
 async def test_connection(conn_id: str):
     import asyncio
     from concurrent.futures import ThreadPoolExecutor
+
     from backend.backends import get_backend
     from backend.services.crypto import decrypt_credentials
 
@@ -113,9 +114,9 @@ async def test_connection(conn_id: str):
             await asyncio.wait_for(loop.run_in_executor(pool, _do_test), timeout=10)
         return {"ok": True, "db_type": row["db_type"]}
     except TimeoutError:
-        raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT, detail="Connection timed out after 10 seconds")
+        raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT, detail="Connection timed out after 10 seconds") from None
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -257,7 +258,7 @@ async def get_connection_string(conn_id: str):
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
     except ValueError:
-        raise HTTPException(500, "Failed to decrypt credentials")
+        raise HTTPException(500, "Failed to decrypt credentials") from None
     backend = get_backend(row["db_type"])
     credentials = backend.parse_credentials(creds)
     return {"connection_string": backend.connection_string(credentials)}
@@ -276,4 +277,4 @@ async def get_connection_credentials(conn_id: str):
         return {"fields": {k: (None if "password" in k.lower() or "token" in k.lower() or "secret" in k.lower() else v)
                            for k, v in creds.items()}}
     except ValueError:
-        raise HTTPException(500, "Failed to decrypt credentials")
+        raise HTTPException(500, "Failed to decrypt credentials") from None

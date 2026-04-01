@@ -1,8 +1,6 @@
 """Tests verifying that /api/pivot responses include the `sql` key."""
 from __future__ import annotations
 
-import pytest
-
 
 class TestPivotSqlField:
     def test_flat_mode_response_includes_sql_key(self, client):

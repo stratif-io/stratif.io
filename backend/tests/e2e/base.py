@@ -24,7 +24,7 @@ subsequent steps skip rather than fail, keeping the output clean.
 from __future__ import annotations
 
 from datetime import date, timedelta
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 import pytest
 
@@ -33,8 +33,8 @@ from backend.tests.e2e.conftest import E2E_CONFIG
 
 class BaseE2ETest:
     db_type: ClassVar[str] = ""
-    connection_id: ClassVar[Optional[str]] = None
-    detected_schema: ClassVar[Optional[dict]] = None
+    connection_id: ClassVar[str | None] = None
+    detected_schema: ClassVar[dict | None] = None
 
     # ------------------------------------------------------------------
     # Class setup — skip entire class if backend is not enabled

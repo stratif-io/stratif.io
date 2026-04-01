@@ -7,8 +7,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from backend.backends._utils import (
+    infer_type,
+    pick_events_table,
+    sample_property_types,
+    suggest_fields,
+)
 from backend.backends.base import ColumnInfo, SchemaInfo
-from backend.backends._utils import infer_type, pick_events_table, suggest_fields, sample_property_types
 from backend.backends.postgresql.credentials import PostgreSQLCredentials
 
 _PG_NUMERIC_CAST = r"(CASE WHEN {expr} ~ '^-?[0-9]+(\.[0-9]+)?$' THEN 1.0 ELSE NULL END)"
@@ -39,8 +44,8 @@ class PostgreSQLBackend:
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         import psycopg2
         creds = PostgreSQLCredentials.model_validate(credentials.model_dump())
-        kwargs: dict = dict(host=creds.host, port=creds.port, dbname=creds.database,
-                            user=creds.user, password=creds.password)
+        kwargs: dict = {"host": creds.host, "port": creds.port, "dbname": creds.database,
+                        "user": creds.user, "password": creds.password}
         if creds.sslmode:
             kwargs["sslmode"] = creds.sslmode
         conn = psycopg2.connect(**kwargs)

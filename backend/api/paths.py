@@ -6,10 +6,10 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query
 
 from backend.core.auth import get_current_user
-from backend.services.views import path_analysis_ctes
 from backend.services import generate_path_analysis_query, get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.validators import interpolate_sql, parse_date, to_sql_datetime
+from backend.services.views import path_analysis_ctes
 
 router = APIRouter(prefix="/api", tags=["paths"], dependencies=[Depends(get_current_user)])
 

@@ -1,13 +1,17 @@
 """ClickHouse database backend."""
 from __future__ import annotations
 
-import contextlib
 import re
 from typing import Any
 
 from pydantic import BaseModel
 
-from backend.backends._utils import infer_type, pick_events_table, sample_property_types, suggest_fields
+from backend.backends._utils import (
+    infer_type,
+    pick_events_table,
+    sample_property_types,
+    suggest_fields,
+)
 from backend.backends.base import ColumnInfo, SchemaInfo
 from backend.backends.clickhouse.credentials import ClickHouseCredentials
 
@@ -215,10 +219,7 @@ class ClickHouseBackend:
         always_final = getattr(creds, "always_final", False)
         if always_final:
             query = _FROM_TABLE_RE.sub(lambda m: m.group(0) + " FINAL", query, count=1)
-        if params:
-            result = conn.query(query, parameters=params)
-        else:
-            result = conn.query(query)
+        result = conn.query(query, parameters=params) if params else conn.query(query)
         return [tuple(row) for row in result.result_rows]
 
     def execute_with_columns(

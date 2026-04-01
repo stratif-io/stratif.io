@@ -1,5 +1,4 @@
 """Tests for backend/_utils.py shared helpers."""
-import pytest
 from backend.backends._utils import sample_property_types
 
 

@@ -1,6 +1,5 @@
 """Unit tests for path analysis and path funnel."""
 
-import re
 import pytest
 
 from backend.api.paths import get_paths

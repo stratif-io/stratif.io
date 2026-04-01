@@ -133,8 +133,8 @@ def test_bootstrap_fixes_stale_credentials(tmp_path):
 
     # Insert a connection with the old wrong key {"path": ...}
     with _patch_settings(db_path, enc_key):
-        from backend.services.crypto import encrypt_credentials
         from backend.product_db.deps import get_product_db
+        from backend.services.crypto import encrypt_credentials
         db = get_product_db()
         import uuid
         from datetime import UTC, datetime

@@ -4,12 +4,12 @@ from __future__ import annotations
 import duckdb
 import pytest
 
-from backend.backends.duckdb import DuckDBBackend
-from backend.backends.sqlite import SQLiteBackend
-from backend.backends.postgresql import PostgreSQLBackend
 from backend.backends.clickhouse import ClickHouseBackend
-from backend.backends.snowflake import SnowflakeBackend
 from backend.backends.databricks import DatabricksBackend
+from backend.backends.duckdb import DuckDBBackend
+from backend.backends.postgresql import PostgreSQLBackend
+from backend.backends.snowflake import SnowflakeBackend
+from backend.backends.sqlite import SQLiteBackend
 
 _SEED_SQL = """
 CREATE TABLE IF NOT EXISTS test_events (

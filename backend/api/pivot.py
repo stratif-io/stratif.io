@@ -397,11 +397,7 @@ def get_pivot(
     invalid_measures = []
     for m in measure_list:
         parsed = parse_measure(m)
-        if m in valid_base_measures:
-            continue
-        elif parsed and parsed[0] in COUNT_AGGS and parsed[1] in all_prop_names:
-            continue
-        elif parsed and parsed[0] in NUMERIC_AGGS and parsed[1] in numeric_prop_names:
+        if m in valid_base_measures or parsed and parsed[0] in COUNT_AGGS and parsed[1] in all_prop_names or parsed and parsed[0] in NUMERIC_AGGS and parsed[1] in numeric_prop_names:
             continue
         else:
             invalid_measures.append(m)
@@ -815,7 +811,7 @@ def get_pivot_grid_rows(
     except Exception:
         from fastapi import HTTPException
         err = _traceback.format_exc()
-        raise HTTPException(status_code=500, detail=err)
+        raise HTTPException(status_code=500, detail=err) from None
 
 
 def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> dict:
@@ -945,7 +941,7 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
             # Group by all remaining row group columns at once (flat multi-dim GROUP BY)
             group_exprs = [dim_expr(rg.field) for rg in remaining_groups]
             page_size = body.endRow - body.startRow
-            select_parts = [f"{expr} AS {rg.field}" for expr, rg in zip(group_exprs, remaining_groups)]
+            select_parts = [f"{expr} AS {rg.field}" for expr, rg in zip(group_exprs, remaining_groups, strict=False)]
             select_parts += [f"{sql} AS {alias}" for sql, alias in resolved_values]
             group_by_clause = "GROUP BY " + ", ".join(group_exprs)
             query = f"""
@@ -1016,7 +1012,7 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
     select_params: list = []
     select_parts = []
 
-    for expr, rg in zip(row_group_exprs, remaining_groups):
+    for expr, rg in zip(row_group_exprs, remaining_groups, strict=False):
         select_parts.append(f"{expr} AS {rg.field}")
 
     _AGG_LABELS = {
@@ -1031,7 +1027,7 @@ def _pivot_grid_rows_impl(body: PivotGridRequest, db: "AnalyticsDatabase") -> di
         combo_vals = [v.isoformat() if isinstance(v, datetime) else v for v in combo]
         combo_safe = _safe_field_name("__".join(str(v) for v in combo_vals))
         combo_label = " / ".join(
-            _format_pivot_label(field, val) for field, val in zip(p_fields, combo_vals)
+            _format_pivot_label(field, val) for field, val in zip(p_fields, combo_vals, strict=False)
         )
 
         # Build CASE WHEN condition matching all pivot columns

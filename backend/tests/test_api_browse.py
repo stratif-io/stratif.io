@@ -1,16 +1,15 @@
 """Tests for GET /connections/{id}/tables and /connections/{id}/columns endpoints."""
 from __future__ import annotations
 
-import duckdb
-import json
-import tempfile
 import os
-import pytest
+import tempfile
 from unittest.mock import MagicMock, patch
+
+import duckdb
+import pytest
 from starlette.testclient import TestClient
 
 from backend.main import app
-from backend.product_db import get_product_db
 
 
 def _make_sqlite_row(data: dict):
@@ -66,9 +65,8 @@ def browse_client(duckdb_file):
     }
     mock_db = _make_product_db_mock(conn_row)
 
-    with patch("backend.api.connections.browse.get_product_db", return_value=mock_db):
-        with TestClient(app) as client:
-            yield client
+    with patch("backend.api.connections.browse.get_product_db", return_value=mock_db), TestClient(app) as client:
+        yield client
 
 
 class TestListTables:

@@ -7,8 +7,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from backend.backends._utils import (
+    infer_type,
+    pick_events_table,
+    sample_property_types,
+    suggest_fields,
+)
 from backend.backends.base import ColumnInfo, SchemaInfo
-from backend.backends._utils import infer_type, pick_events_table, sample_property_types, suggest_fields
 from backend.backends.sqlite.credentials import SQLiteCredentials
 
 _EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)

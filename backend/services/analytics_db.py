@@ -83,7 +83,7 @@ class AnalyticsDatabase:
         self._available_columns: frozenset[str] | None = available_columns
         self._pooled: bool = False
         self._pool_key: tuple | None = None
-        self._pool_factory: "Callable[[], Any] | None" = None
+        self._pool_factory: Callable[[], Any] | None = None
 
     def execute(self, query: str, params: list | None = None) -> list[tuple]:
         if self._events_cte:
