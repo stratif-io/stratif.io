@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { ValuePickerPopover } from '../ValuePickerPopover'
-import type { LeafMeta } from '../types'
+import type { LeafMeta } from '../pivot-table/types'
 
 const leafCols: LeafMeta[] = [
   {
