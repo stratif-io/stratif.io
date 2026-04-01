@@ -1,4 +1,5 @@
 """Analytics database wrapper for stratif.io Analytics."""
+
 import contextlib
 from typing import TYPE_CHECKING, Any
 
@@ -83,18 +84,25 @@ class AnalyticsDatabase:
         self._available_columns: frozenset[str] | None = available_columns
         self._pooled: bool = False
         self._pool_key: tuple | None = None
-        self._pool_factory: "Callable[[], Any] | None" = None
+        self._pool_factory: Callable[[], Any] | None = None
 
     def execute(self, query: str, params: list | None = None) -> list[tuple]:
         if self._events_cte:
             query = self._backend.prepend_events_cte(self._events_cte, query)
         if settings.log_sql:
-            log.debug("sql_query", sql=query, params=params, dialect=self._backend.dialect_name)
+            log.debug(
+                "sql_query",
+                sql=query,
+                params=params,
+                dialect=self._backend.dialect_name,
+            )
         try:
             return self._backend.execute(self._conn, query, params)
         except Exception as exc:
             if self._pooled and self._backend.is_connection_error(exc):
-                log.warning("stale_pooled_connection", pool_key=self._pool_key, error=str(exc))
+                log.warning(
+                    "stale_pooled_connection", pool_key=self._pool_key, error=str(exc)
+                )
                 if self._pool_factory:
                     # Evict the dead connection and retry once with a fresh one.
                     _pool_evict(self._pool_key)
@@ -105,7 +113,9 @@ class AnalyticsDatabase:
                         raise HTTPException(
                             status_code=503, detail="Connection lost — please retry."
                         ) from retry_exc
-                raise HTTPException(status_code=503, detail="Connection lost — please retry.") from exc
+                raise HTTPException(
+                    status_code=503, detail="Connection lost — please retry."
+                ) from exc
             raise
 
     def execute_with_columns(
@@ -127,9 +137,11 @@ class AnalyticsDatabase:
         where_clauses: list[str] = []
         params: list = []
         for field, value in filters.items():
-            if not value or field not in self._custom_prop_exprs:
+            if not value:
                 continue
-            expr = self._custom_prop_exprs[field]
+            expr = self._filter_exprs.get(field) or self._custom_prop_exprs.get(field)
+            if not expr:
+                continue
             values = [v for v in str(value).split("|") if v]
             if len(values) > 1:
                 placeholders = ", ".join("?" * len(values))
@@ -160,7 +172,8 @@ class AnalyticsDatabase:
                     f"WHERE {expr} IS NOT NULL GROUP BY {expr} ORDER BY n DESC LIMIT 200"
                 )
                 options[field] = [str(row[0]) for row in rows if row[0] is not None]
-            except Exception:
+            except Exception as _exc:
+                log.warning("filter_options_query_failed", field=field, error=str(_exc))
                 options[field] = []
         return options
 
@@ -235,7 +248,9 @@ def open_analytics_db(
 
     from backend.services.crypto import decrypt_credentials
 
-    row = product_db.fetchone("SELECT * FROM connections WHERE id = ?", (connection_id,))
+    row = product_db.fetchone(
+        "SELECT * FROM connections WHERE id = ?", (connection_id,)
+    )
     if not row:
         raise HTTPException(status_code=404, detail="Connection not found")
 
@@ -248,13 +263,20 @@ def open_analytics_db(
     credentials = backend.parse_credentials(creds)
 
     schema_row = product_db.fetchone(
-        "SELECT * FROM connection_schema_configs WHERE connection_id = ?", (connection_id,)
+        "SELECT * FROM connection_schema_configs WHERE connection_id = ?",
+        (connection_id,),
     )
     uid_f = schema_row["user_id_field"] if schema_row else "user_id"
     ts_f = schema_row["timestamp_field"] if schema_row else "timestamp"
     en_f = schema_row["event_name_field"] if schema_row else "event_name"
-    events_table = schema_row["events_table"] if schema_row and schema_row["events_table"] else "events"
-    custom_props: list[dict] = json.loads(schema_row["custom_properties"]) if schema_row else []
+    events_table = (
+        schema_row["events_table"]
+        if schema_row and schema_row["events_table"]
+        else "events"
+    )
+    custom_props: list[dict] = (
+        json.loads(schema_row["custom_properties"]) if schema_row else []
+    )
     session_timeout_minutes: int = (
         schema_row["session_timeout_minutes"]
         if schema_row and schema_row["session_timeout_minutes"] is not None
@@ -272,7 +294,12 @@ def open_analytics_db(
     )
 
     dialect = backend.dialect_name
-    needs_remap = (uid_f != "user_id" or ts_f != "timestamp" or en_f != "event_name" or events_table != "events")
+    needs_remap = (
+        uid_f != "user_id"
+        or ts_f != "timestamp"
+        or en_f != "event_name"
+        or events_table != "events"
+    )
 
     custom_prop_exprs: dict[str, str] = {
         p["name"]: _resolve_path_to_sql(p["path"], dialect)
@@ -281,11 +308,30 @@ def open_analytics_db(
     }
 
     filter_row = product_db.fetchone(
-        "SELECT * FROM connection_filter_configs WHERE connection_id = ?", (connection_id,)
+        "SELECT * FROM connection_filter_configs WHERE connection_id = ?",
+        (connection_id,),
     )
-    filter_fields: list[dict] = json.loads(filter_row["filter_fields"]) if filter_row else []
+    filter_fields: list[dict] = (
+        json.loads(filter_row["filter_fields"]) if filter_row else []
+    )
 
     _iq = backend.identifier_quote_char
+
+    # Identity fields (first_name, email, etc.) are plain columns — add them to
+    # custom_prop_exprs so they work as filter fields (autocomplete + WHERE clauses).
+    _identity_field_keys = (
+        "email_field",
+        "first_name_field",
+        "last_name_field",
+        "date_of_birth_field",
+        "phone_field",
+    )
+    if schema_row:
+        for _key in _identity_field_keys:
+            _col = schema_row[_key]
+            if _col:
+                custom_prop_exprs[_col] = _resolve_path_to_sql(_col, dialect)
+
     filter_exprs: dict[str, str] = {}
     _src_to_std_name = {uid_f: "user_id", ts_f: "timestamp", en_f: "event_name"}
     for ff in filter_fields:
@@ -293,7 +339,13 @@ def open_analytics_db(
         if field in custom_prop_exprs:
             filter_exprs[field] = custom_prop_exprs[field]
         elif field in (uid_f, ts_f, en_f):
-            filter_exprs[field] = _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
+            filter_exprs[field] = (
+                _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
+            )
+        else:
+            # Not a known custom prop or standard field — resolve as a path (handles both
+            # plain columns like "first_name" and dotted paths like "traits.first_name").
+            filter_exprs[field] = _resolve_path_to_sql(field, dialect)
 
     shared_kwargs: dict = {
         "filter_fields": filter_fields,
@@ -307,16 +359,21 @@ def open_analytics_db(
 
     events_cte = (
         backend.build_events_cte(events_table, uid_f, ts_f, en_f, custom_props)
-        if needs_remap else None
+        if needs_remap
+        else None
     )
 
     if backend.use_pool:
         pool_key = backend.pool_key(connection_id, credentials)
         factory = lambda: backend.open(credentials, read_only=False)  # noqa: E731
         conn = _pool_get(pool_key, factory)
-        cols = backend.get_table_columns(conn, f'{_iq}{events_table}{_iq}')
+        cols = backend.get_table_columns(conn, f"{_iq}{events_table}{_iq}")
         db = AnalyticsDatabase(
-            conn, backend, events_cte=events_cte, available_columns=cols or None, **shared_kwargs
+            conn,
+            backend,
+            events_cte=events_cte,
+            available_columns=cols or None,
+            **shared_kwargs,
         )
         db._pooled = True
         db._pool_key = pool_key
@@ -324,7 +381,11 @@ def open_analytics_db(
         return db
 
     conn = backend.open(credentials, read_only=True)
-    cols = backend.get_table_columns(conn, f'{_iq}{events_table}{_iq}')
+    cols = backend.get_table_columns(conn, f"{_iq}{events_table}{_iq}")
     return AnalyticsDatabase(
-        conn, backend, events_cte=events_cte, available_columns=cols or None, **shared_kwargs
+        conn,
+        backend,
+        events_cte=events_cte,
+        available_columns=cols or None,
+        **shared_kwargs,
     )

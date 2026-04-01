@@ -3,6 +3,7 @@
 Credentials are read from connections.yaml (``backends.databricks``).
 Set ``enabled: true`` and fill in host/token/http_path.
 """
+
 import pytest
 
 from backend.tests.integration.conftest import get_backend_config

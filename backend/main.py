@@ -1,16 +1,15 @@
 # backend/main.py
+import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-
-import traceback
 
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.base import BaseHTTPMiddleware
 from scalar_fastapi import get_scalar_api_reference
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from backend.core.middleware import RequestIdMiddleware
 
@@ -19,6 +18,7 @@ log = structlog.get_logger(__name__)
 
 class APITrailingSlashMiddleware(BaseHTTPMiddleware):
     """Rewrite the specific API collection paths that are registered with a trailing slash."""
+
     _TRAILING_SLASH_PATHS = {"/api/connections"}
 
     async def dispatch(self, request: Request, call_next):
@@ -26,10 +26,8 @@ class APITrailingSlashMiddleware(BaseHTTPMiddleware):
             request.scope["path"] += "/"
         return await call_next(request)
 
-from backend.config import settings
-from backend.core.logging import setup_logging
-from backend.product_db import init_product_db
-from backend.api import (
+
+from backend.api import (  # noqa: E402
     connections_router,
     conversion_router,
     events_router,
@@ -41,6 +39,9 @@ from backend.api import (
     retention_router,
     sessions_router,
 )
+from backend.config import settings  # noqa: E402
+from backend.core.logging import setup_logging  # noqa: E402
+from backend.product_db import init_product_db  # noqa: E402
 
 
 @asynccontextmanager
@@ -57,6 +58,7 @@ app = FastAPI(
     openapi_url="/openapi.json",  # always available — OSS product, spec is public
     lifespan=lifespan,
 )
+
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -125,6 +127,7 @@ if dist_path.exists():
         svg_path = dist_path / f"{filename}.svg"
         if not svg_path.exists():
             from fastapi import HTTPException
+
             raise HTTPException(status_code=404, detail="Not found")
         return FileResponse(svg_path, media_type="image/svg+xml")
 
@@ -132,6 +135,7 @@ if dist_path.exists():
     async def spa_fallback(full_path: str):
         if full_path.startswith("api/"):
             from fastapi import HTTPException
+
             raise HTTPException(status_code=404, detail="Not found")
         return FileResponse(
             dist_path / "index.html",
@@ -141,4 +145,5 @@ if dist_path.exists():
 
 def main():
     import uvicorn
+
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=settings.debug)

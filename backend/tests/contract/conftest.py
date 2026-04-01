@@ -1,15 +1,16 @@
 """Session-scoped fixtures for contract tests."""
+
 from __future__ import annotations
 
 import duckdb
 import pytest
 
-from backend.backends.duckdb import DuckDBBackend
-from backend.backends.sqlite import SQLiteBackend
-from backend.backends.postgresql import PostgreSQLBackend
 from backend.backends.clickhouse import ClickHouseBackend
-from backend.backends.snowflake import SnowflakeBackend
 from backend.backends.databricks import DatabricksBackend
+from backend.backends.duckdb import DuckDBBackend
+from backend.backends.postgresql import PostgreSQLBackend
+from backend.backends.snowflake import SnowflakeBackend
+from backend.backends.sqlite import SQLiteBackend
 
 _SEED_SQL = """
 CREATE TABLE IF NOT EXISTS test_events (
@@ -27,6 +28,7 @@ INSERT INTO test_events VALUES
 
 # ── DuckDB ───────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="session")
 def duckdb_conn():
     conn = duckdb.connect(":memory:")
@@ -37,23 +39,32 @@ def duckdb_conn():
 
 # ── SQLite ───────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="session")
 def sqlite_conn():
     import sqlite3
+
     conn = sqlite3.connect(":memory:")
-    conn.executescript(_SEED_SQL.replace("VARCHAR", "TEXT").replace("TIMESTAMP", "TEXT"))
+    conn.executescript(
+        _SEED_SQL.replace("VARCHAR", "TEXT").replace("TIMESTAMP", "TEXT")
+    )
     yield conn
     conn.close()
 
 
 # ── PostgreSQL (testcontainers) ───────────────────────────────────────────────
 
+
 @pytest.fixture(scope="session")
 def postgresql_conn():
     from testcontainers.postgres import PostgresContainer
+
     with PostgresContainer("postgres:16") as pg:
         import psycopg2
-        conn = psycopg2.connect(pg.get_connection_url().replace("postgresql+psycopg2://", ""))
+
+        conn = psycopg2.connect(
+            pg.get_connection_url().replace("postgresql+psycopg2://", "")
+        )
         conn.autocommit = True
         cur = conn.cursor()
         cur.execute("""
@@ -74,11 +85,14 @@ def postgresql_conn():
 
 # ── ClickHouse (testcontainers) ───────────────────────────────────────────────
 
+
 @pytest.fixture(scope="session")
 def clickhouse_conn():
     from testcontainers.clickhouse import ClickHouseContainer
+
     with ClickHouseContainer("clickhouse/clickhouse-server:24") as ch:
         import clickhouse_connect
+
         client = clickhouse_connect.get_client(
             host=ch.get_container_host_ip(),
             port=int(ch.get_exposed_port(8123)),
@@ -106,14 +120,20 @@ def clickhouse_conn():
 
 # ── Snowflake (fakesnow) ──────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="session")
 def snowflake_conn():
     fakesnow = pytest.importorskip("fakesnow")
     with fakesnow.patch():
         import snowflake.connector
+
         conn = snowflake.connector.connect(
-            account="fakesnow", user="test", password="test",
-            warehouse="wh", database="DB", schema="PUBLIC",
+            account="fakesnow",
+            user="test",
+            password="test",
+            warehouse="wh",
+            database="DB",
+            schema="PUBLIC",
         )
         cur = conn.cursor()
         cur.execute("""
@@ -135,9 +155,11 @@ def snowflake_conn():
 
 # ── Databricks (stub) ─────────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="session")
 def databricks_conn():
     from backend.tests.contract.stubs.databricks_stub import connect
+
     conn = connect(server_hostname="stub", http_path="/sql/stub", access_token="stub")
     cur = conn.cursor()
     cur.execute("""
@@ -160,12 +182,14 @@ def databricks_conn():
 
 
 @pytest.fixture(scope="session")
-def all_backend_fixtures(request, duckdb_conn, sqlite_conn, snowflake_conn, databricks_conn):
+def all_backend_fixtures(
+    request, duckdb_conn, sqlite_conn, snowflake_conn, databricks_conn
+):
     """Build backend map. Docker-backed fixtures are fetched lazily so tests skip gracefully."""
     result = {
-        "duckdb":     (DuckDBBackend(),     duckdb_conn),
-        "sqlite":     (SQLiteBackend(),     sqlite_conn),
-        "snowflake":  (SnowflakeBackend(),  snowflake_conn),
+        "duckdb": (DuckDBBackend(), duckdb_conn),
+        "sqlite": (SQLiteBackend(), sqlite_conn),
+        "snowflake": (SnowflakeBackend(), snowflake_conn),
         "databricks": (DatabricksBackend(), databricks_conn),
     }
     for db_type, backend_cls, fixture_name in [

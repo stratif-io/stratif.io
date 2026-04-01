@@ -1,5 +1,7 @@
 """Unit tests for SnowflakeBackend (mock-based)."""
+
 import pytest
+
 from backend.backends.snowflake.credentials import SnowflakeCredentials
 
 
@@ -28,8 +30,8 @@ class TestSnowflakeCredentials:
         assert c.role == "ANALYST"
 
 
-from backend.backends.snowflake import SnowflakeBackend
-from backend.backends.base import DatabaseBackend
+from backend.backends.base import DatabaseBackend  # noqa: E402
+from backend.backends.snowflake import SnowflakeBackend  # noqa: E402
 
 
 @pytest.fixture
@@ -52,8 +54,7 @@ class TestSnowflakeIdentity:
 
     def test_pool_key(self, backend):
         creds = SnowflakeCredentials(
-            account="a", user="u", password="p",
-            warehouse="w", database="d", schema="s"
+            account="a", user="u", password="p", warehouse="w", database="d", schema="s"
         )
         assert backend.pool_key("conn1", creds) == ("conn1", "snowflake")
 
@@ -131,7 +132,11 @@ class TestSnowflakeSQLFragments:
     def test_cast_to_text(self, backend):
         result = backend.cast_to_text("x")
         assert "x" in result
-        assert "TEXT" in result.upper() or "VARCHAR" in result.upper() or "STRING" in result.upper()
+        assert (
+            "TEXT" in result.upper()
+            or "VARCHAR" in result.upper()
+            or "STRING" in result.upper()
+        )
 
     def test_interval_minutes_exceeded(self, backend):
         result = backend.interval_minutes_exceeded("a", "b", 30)

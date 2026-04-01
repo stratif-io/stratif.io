@@ -1,4 +1,5 @@
 """Custom Starlette middleware for stratif.io Analytics."""
+
 from __future__ import annotations
 
 import uuid

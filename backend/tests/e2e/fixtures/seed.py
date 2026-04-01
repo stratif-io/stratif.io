@@ -10,6 +10,7 @@ Produces:
 Uses 200 users over 90 days — small enough to be fast, large enough
 for all analytics endpoints to return results.
 """
+
 import sys
 from pathlib import Path
 
@@ -81,7 +82,9 @@ def _seed_sqlite() -> None:
                 "device_type": device,
                 "session_id": str(uuid.uuid4())[:12],
             }
-            rows.append((uid, event, ts.strftime("%Y-%m-%d %H:%M:%S"), json.dumps(props)))
+            rows.append(
+                (uid, event, ts.strftime("%Y-%m-%d %H:%M:%S"), json.dumps(props))
+            )
 
     conn.executemany(
         "INSERT INTO events (user_id, event_name, timestamp, properties) VALUES (?,?,?,?)",
@@ -139,13 +142,15 @@ def _seed_duckdb() -> None:
                 minutes=rng.randint(0, 59),
             )
             event = rng.choice(list(FUNNEL_PATH))
-            props = json.dumps({
-                "country": country,
-                "city": city,
-                "browser": browser,
-                "device_type": device,
-                "session_id": str(uuid.uuid4())[:12],
-            })
+            props = json.dumps(
+                {
+                    "country": country,
+                    "city": city,
+                    "browser": browser,
+                    "device_type": device,
+                    "session_id": str(uuid.uuid4())[:12],
+                }
+            )
             rows.append((uid, event, ts, props))
 
     conn.executemany(
