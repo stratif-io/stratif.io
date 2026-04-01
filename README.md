@@ -23,9 +23,11 @@
 
 ## Why stratif.io?
 
-Most analytics platforms force a choice: pay for a SaaS that owns your data, or spend months building custom dashboards from scratch.
+**Your events are already in your warehouse.** Most analytics platforms require you to re-pipe your data into their system. stratif.io connects directly to your existing DuckDB, Postgres, Snowflake, or ClickHouse — no ingestion, no pipelines, no duplicate data.
 
-**stratif.io does neither.** Connect it to your existing database — DuckDB, PostgreSQL, Snowflake, or others — and get a full analytics suite running on your own infrastructure in under 10 minutes. No data leaves your environment. No vendor lock-in. No surprise invoices.
+**Open source and self-hosted.** No vendor lock-in, no surprise invoices. One install script and you own your analytics stack completely.
+
+**Learn product analytics hands-on.** stratif.io ships with ~5,000 realistic sample events. Explore funnels, retention, and user journeys without needing your own data — no account, no credit card.
 
 ---
 
