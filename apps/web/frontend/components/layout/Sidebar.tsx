@@ -195,8 +195,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <button
-          aria-hidden="true"
-          tabIndex={-1}
+          aria-label="Close sidebar"
           className="fixed inset-0 z-[var(--z-sidebar-overlay)] bg-background/80 backdrop-blur-sm lg:hidden cursor-default"
           onClick={() => setSidebarOpen(false)}
         />
