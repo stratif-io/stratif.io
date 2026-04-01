@@ -117,6 +117,7 @@ export function TrendsPage() {
                           setMeasureField(field)
                           setAggregation(agg as typeof aggregation)
                         }}
+                        onAggChange={(agg) => setAggregation(agg as typeof aggregation)}
                       />
                     </div>
 

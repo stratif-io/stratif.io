@@ -20,12 +20,13 @@ describe('TrendMetricPicker', () => {
         numericDimensions={[]}
         dimensions={[]}
         onChange={vi.fn()}
+        onAggChange={vi.fn()}
       />
     )
     expect(screen.getByText('Event Count')).toBeInTheDocument()
   })
 
-  it('renders chip with custom measure label including aggregation', () => {
+  it('renders chip with custom measure label without agg suffix', () => {
     render(
       <TrendMetricPicker
         measureField="revenue"
@@ -34,26 +35,13 @@ describe('TrendMetricPicker', () => {
         numericDimensions={numericDimensions}
         dimensions={[]}
         onChange={vi.fn()}
+        onAggChange={vi.fn()}
       />
     )
-    expect(screen.getByText('Revenue (Sum)')).toBeInTheDocument()
+    expect(screen.getByText('Revenue')).toBeInTheDocument()
   })
 
-  it('renders chip with dimension label including aggregation', () => {
-    render(
-      <TrendMetricPicker
-        measureField="country"
-        aggregation="count"
-        standardMeasures={standardMeasures}
-        numericDimensions={[]}
-        dimensions={dimensions}
-        onChange={vi.fn()}
-      />
-    )
-    expect(screen.getByText('Country (Count)')).toBeInTheDocument()
-  })
-
-  it('renders search input when popover opens', () => {
+  it('shows no AggBadge for standard measure', () => {
     render(
       <TrendMetricPicker
         measureField="count_events"
@@ -62,6 +50,90 @@ describe('TrendMetricPicker', () => {
         numericDimensions={[]}
         dimensions={[]}
         onChange={vi.fn()}
+        onAggChange={vi.fn()}
+      />
+    )
+    expect(screen.queryByTitle('Change aggregation')).not.toBeInTheDocument()
+  })
+
+  it('shows AggBadge with correct symbol for numeric dimension', () => {
+    render(
+      <TrendMetricPicker
+        measureField="revenue"
+        aggregation="sum"
+        standardMeasures={standardMeasures}
+        numericDimensions={numericDimensions}
+        dimensions={[]}
+        onChange={vi.fn()}
+        onAggChange={vi.fn()}
+      />
+    )
+    expect(screen.getByTitle('Change aggregation')).toBeInTheDocument()
+    expect(screen.getByTitle('Change aggregation').textContent).toBe('Σ')
+  })
+
+  it('shows AggBadge with correct symbol for categorical dimension', () => {
+    render(
+      <TrendMetricPicker
+        measureField="country"
+        aggregation="count"
+        standardMeasures={standardMeasures}
+        numericDimensions={[]}
+        dimensions={dimensions}
+        onChange={vi.fn()}
+        onAggChange={vi.fn()}
+      />
+    )
+    expect(screen.getByTitle('Change aggregation').textContent).toBe('n')
+  })
+
+  it('calls onAggChange when agg is changed via badge, not onChange', () => {
+    const onChange = vi.fn()
+    const onAggChange = vi.fn()
+    render(
+      <TrendMetricPicker
+        measureField="revenue"
+        aggregation="sum"
+        standardMeasures={standardMeasures}
+        numericDimensions={numericDimensions}
+        dimensions={[]}
+        onChange={onChange}
+        onAggChange={onAggChange}
+      />
+    )
+    fireEvent.click(screen.getByTitle('Change aggregation'))
+    fireEvent.click(screen.getByText('n Count'))
+    expect(onAggChange).toHaveBeenCalledWith('count')
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('agg badge click does not open the metric picker', () => {
+    render(
+      <TrendMetricPicker
+        measureField="revenue"
+        aggregation="sum"
+        standardMeasures={standardMeasures}
+        numericDimensions={numericDimensions}
+        dimensions={[]}
+        onChange={vi.fn()}
+        onAggChange={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByTitle('Change aggregation'))
+    // The metric picker search input should NOT appear
+    expect(screen.queryByPlaceholderText('Search metrics…')).not.toBeInTheDocument()
+  })
+
+  it('renders search input when main chip clicked', () => {
+    render(
+      <TrendMetricPicker
+        measureField="count_events"
+        aggregation="sum"
+        standardMeasures={standardMeasures}
+        numericDimensions={[]}
+        dimensions={[]}
+        onChange={vi.fn()}
+        onAggChange={vi.fn()}
       />
     )
     fireEvent.click(screen.getByText('Event Count'))
@@ -77,6 +149,7 @@ describe('TrendMetricPicker', () => {
         numericDimensions={numericDimensions}
         dimensions={[]}
         onChange={vi.fn()}
+        onAggChange={vi.fn()}
       />
     )
     fireEvent.click(screen.getByText('Event Count'))
@@ -97,6 +170,7 @@ describe('TrendMetricPicker', () => {
         numericDimensions={[]}
         dimensions={[]}
         onChange={vi.fn()}
+        onAggChange={vi.fn()}
       />
     )
     fireEvent.click(screen.getByText('Event Count'))
@@ -115,6 +189,7 @@ describe('TrendMetricPicker', () => {
         numericDimensions={[]}
         dimensions={[]}
         onChange={vi.fn()}
+        onAggChange={vi.fn()}
       />
     )
     fireEvent.click(screen.getByText('Event Count'))
@@ -133,6 +208,7 @@ describe('TrendMetricPicker', () => {
         numericDimensions={[]}
         dimensions={[]}
         onChange={onChange}
+        onAggChange={vi.fn()}
       />
     )
     fireEvent.click(screen.getByText('Event Count'))
@@ -151,10 +227,10 @@ describe('TrendMetricPicker', () => {
         numericDimensions={[]}
         dimensions={dimensions}
         onChange={vi.fn()}
+        onAggChange={vi.fn()}
       />
     )
     fireEvent.click(screen.getByText('count_events'))
-    // Click Country
     const leftPanel = document.querySelector('.bg-muted\\/40')!
     fireEvent.click(leftPanel.querySelectorAll('button')[0])
     fireEvent.click(screen.getByText('Country'))
@@ -173,9 +249,9 @@ describe('TrendMetricPicker', () => {
         numericDimensions={[]}
         dimensions={dimensions}
         onChange={onChange}
+        onAggChange={vi.fn()}
       />
     )
-    // open picker, click Country, then # Distinct
     fireEvent.click(screen.getByText('count_events'))
     const leftPanel = document.querySelector('.bg-muted\\/40')!
     fireEvent.click(leftPanel.querySelectorAll('button')[0])
@@ -193,6 +269,7 @@ describe('TrendMetricPicker', () => {
         numericDimensions={[]}
         dimensions={[]}
         onChange={vi.fn()}
+        onAggChange={vi.fn()}
       />
     )
     fireEvent.click(screen.getByText('Event Count'))

@@ -1,18 +1,12 @@
 import { useMemo } from 'react'
 import { BarChart2, ChevronDown } from 'lucide-react'
 import { ValuePickerPopover } from '@/components/ValuePickerPopover'
+import { AggBadge } from '@/components/AggBadge'
 import type { LeafMeta } from '@/components/pivot-table/types'
 import type { DimensionOption } from '@/types'
 
-const CHIP_AGG_LABELS: Record<string, string> = {
-  sum: 'Sum',
-  count: 'Count',
-  avg: 'Avg',
-  min: 'Min',
-  max: 'Max',
-  countDistinct: 'Distinct',
-  count_distinct: 'Distinct',
-}
+const DEFAULT_AGG_FUNCS = ['sum', 'count', 'avg', 'min', 'max', 'countDistinct']
+const CATEGORICAL_AGG_FUNCS = ['count', 'countDistinct']
 
 export interface TrendMetricPickerProps {
   measureField: string
@@ -21,6 +15,7 @@ export interface TrendMetricPickerProps {
   numericDimensions: DimensionOption[]
   dimensions: DimensionOption[]
   onChange: (field: string, agg: string) => void
+  onAggChange: (agg: string) => void
 }
 
 export function TrendMetricPicker({
@@ -30,6 +25,7 @@ export function TrendMetricPicker({
   numericDimensions,
   dimensions,
   onChange,
+  onAggChange,
 }: TrendMetricPickerProps) {
   const leafCols: LeafMeta[] = useMemo(
     () => [
@@ -58,25 +54,35 @@ export function TrendMetricPicker({
           enableValue: true,
           enableRowGroup: false,
           enablePivot: false,
-          allowedAggFuncs: ['count', 'countDistinct'],
+          allowedAggFuncs: CATEGORICAL_AGG_FUNCS,
         })
       ),
     ],
     [standardMeasures, numericDimensions, dimensions]
   )
 
+  const isStandard = standardMeasures.some((m) => m.value === measureField)
+  const isNumeric = numericDimensions.some((d) => d.value === measureField)
+  const isCategorical = dimensions.some((d) => d.value === measureField)
+  const isCustom = !isStandard
+
   const chipLabel = useMemo(() => {
     const std = standardMeasures.find((m) => m.value === measureField)
     if (std) return std.label
     const num = numericDimensions.find((d) => d.value === measureField)
-    if (num) return `${num.label} (${CHIP_AGG_LABELS[aggregation] ?? aggregation})`
+    if (num) return num.label
     const dim = dimensions.find((d) => d.value === measureField)
-    if (dim) return `${dim.label} (${CHIP_AGG_LABELS[aggregation] ?? aggregation})`
+    if (dim) return dim.label
     return measureField
-  }, [measureField, aggregation, standardMeasures, numericDimensions, dimensions])
+  }, [measureField, standardMeasures, numericDimensions, dimensions])
+
+  const badgeAllowedAggFuncs = isCategorical
+    ? CATEGORICAL_AGG_FUNCS
+    : isNumeric
+      ? DEFAULT_AGG_FUNCS
+      : []
 
   function handleSelect(colId: string, _label: string, aggFunc: string) {
-    // Normalize countDistinct → count_distinct for backend compatibility
     onChange(colId, aggFunc === 'countDistinct' ? 'count_distinct' : aggFunc)
   }
 
@@ -87,6 +93,15 @@ export function TrendMetricPicker({
     >
       <BarChart2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
       <span>{chipLabel}</span>
+      {isCustom && badgeAllowedAggFuncs.length > 0 && (
+        <span onClick={(e) => e.stopPropagation()}>
+          <AggBadge
+            aggFunc={aggregation}
+            allowedAggFuncs={badgeAllowedAggFuncs}
+            onAggChange={onAggChange}
+          />
+        </span>
+      )}
       <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
     </button>
   )
