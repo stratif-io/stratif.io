@@ -4,6 +4,7 @@ import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { DateRangePicker } from '@/components/DateRangePicker'
 import { FilterSelect } from '@/components/FilterSelect'
 import { TrendMetricPicker } from '@/features/analytics/trends/components/TrendMetricPicker'
+import { AggBadge } from '@/components/AggBadge'
 import { Button } from '@/components/ui/button'
 import { DbLogo } from '@/components/DbLogo'
 import { DB_BRAND_COLORS } from '@/lib/db-colors'
@@ -288,6 +289,19 @@ export function AppComponentsSection() {
               numericDimensions={[{ value: 'revenue', label: 'Revenue' }]}
             />
           </div>
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="AggBadge">
+        <div className="flex gap-2 items-center flex-wrap">
+          {(['sum', 'count', 'avg', 'min', 'max', 'countDistinct'] as const).map((agg) => (
+            <AggBadge
+              key={agg}
+              aggFunc={agg}
+              allowedAggFuncs={['sum', 'count', 'avg', 'min', 'max', 'countDistinct']}
+              onAggChange={() => {}}
+            />
+          ))}
         </div>
       </ComponentRow>
     </ComponentSection>
