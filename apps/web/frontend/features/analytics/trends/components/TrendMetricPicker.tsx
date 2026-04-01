@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { BarChart2, ChevronDown } from 'lucide-react'
-import { ValuePickerPopover } from '@/components/pivot-table/ValuePickerPopover'
+import { ValuePickerPopover } from '@/components/ValuePickerPopover'
 import type { LeafMeta } from '@/components/pivot-table/types'
 import type { DimensionOption } from '@/types'
 
@@ -19,6 +19,7 @@ export interface TrendMetricPickerProps {
   aggregation: string
   standardMeasures: DimensionOption[]
   numericDimensions: DimensionOption[]
+  dimensions: DimensionOption[]
   onChange: (field: string, agg: string) => void
 }
 
@@ -27,6 +28,7 @@ export function TrendMetricPicker({
   aggregation,
   standardMeasures,
   numericDimensions,
+  dimensions,
   onChange,
 }: TrendMetricPickerProps) {
   const leafCols: LeafMeta[] = useMemo(
@@ -49,8 +51,18 @@ export function TrendMetricPicker({
           enablePivot: false,
         })
       ),
+      ...dimensions.map(
+        (d): LeafMeta => ({
+          colId: d.value,
+          label: d.label,
+          enableValue: true,
+          enableRowGroup: false,
+          enablePivot: false,
+          allowedAggFuncs: ['count', 'countDistinct'],
+        })
+      ),
     ],
-    [standardMeasures, numericDimensions]
+    [standardMeasures, numericDimensions, dimensions]
   )
 
   const chipLabel = useMemo(() => {
@@ -58,11 +70,14 @@ export function TrendMetricPicker({
     if (std) return std.label
     const num = numericDimensions.find((d) => d.value === measureField)
     if (num) return `${num.label} (${CHIP_AGG_LABELS[aggregation] ?? aggregation})`
+    const dim = dimensions.find((d) => d.value === measureField)
+    if (dim) return `${dim.label} (${CHIP_AGG_LABELS[aggregation] ?? aggregation})`
     return measureField
-  }, [measureField, aggregation, standardMeasures, numericDimensions])
+  }, [measureField, aggregation, standardMeasures, numericDimensions, dimensions])
 
   function handleSelect(colId: string, _label: string, aggFunc: string) {
-    onChange(colId, aggFunc)
+    // Normalize countDistinct → count_distinct for backend compatibility
+    onChange(colId, aggFunc === 'countDistinct' ? 'count_distinct' : aggFunc)
   }
 
   const trigger = (
