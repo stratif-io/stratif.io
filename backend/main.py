@@ -74,10 +74,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
-app.add_middleware(APITrailingSlashMiddleware)
-app.add_middleware(RequestIdMiddleware)
+app.add_middleware(APITrailingSlashMiddleware)  # type: ignore[arg-type]
+app.add_middleware(RequestIdMiddleware)  # type: ignore[arg-type]
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # type: ignore[arg-type]
     allow_origins=settings.cors_list,
     allow_credentials=True,
     allow_methods=["*"],

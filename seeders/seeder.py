@@ -1276,7 +1276,7 @@ class BaseSeeder(ABC):
         referrer: str,
         event_name: str,
         visited_products: list[dict],
-    ) -> dict:
+    ) -> tuple:
         event_props: dict = {
             "session_id": session_id,
             "is_returning_user": user["is_returning"],
