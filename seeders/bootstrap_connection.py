@@ -18,24 +18,23 @@ from backend.product_db.deps import get_product_db
 from backend.product_db.migrations import init_product_db
 from backend.services.crypto import decrypt_credentials, encrypt_credentials
 
-
 CONNECTION_NAME = "Sample DuckDB"
 DEFAULT_PATH = "/data/sample.duckdb"
 
 # Custom properties extracted from the seeded events' properties JSON column
 CUSTOM_PROPERTIES = [
-    {"name": "country",     "path": "properties.country",     "type": "string"},
-    {"name": "city",        "path": "properties.city",        "type": "string"},
+    {"name": "country", "path": "properties.country", "type": "string"},
+    {"name": "city", "path": "properties.city", "type": "string"},
     {"name": "device_type", "path": "properties.device_type", "type": "string"},
-    {"name": "browser",     "path": "properties.browser",     "type": "string"},
-    {"name": "os",          "path": "properties.os",          "type": "string"},
-    {"name": "referrer",    "path": "properties.referrer",    "type": "string"},
+    {"name": "browser", "path": "properties.browser", "type": "string"},
+    {"name": "os", "path": "properties.os", "type": "string"},
+    {"name": "referrer", "path": "properties.referrer", "type": "string"},
 ]
 
 # Filter dimensions shown in the global filter bar
 FILTER_FIELDS = [
     {"field": "country", "label": "Country", "icon": "globe"},
-    {"field": "city",    "label": "City",    "icon": "map-pin"},
+    {"field": "city", "label": "City", "icon": "map-pin"},
 ]
 
 
@@ -49,7 +48,8 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
     db = get_product_db()
 
     existing = db.fetchone(
-        "SELECT id, credentials_encrypted FROM connections WHERE name = ?", (CONNECTION_NAME,)
+        "SELECT id, credentials_encrypted FROM connections WHERE name = ?",
+        (CONNECTION_NAME,),
     )
     if existing:
         # Validate credentials have the correct key; fix silently if stale.
@@ -58,7 +58,9 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
         except Exception:
             creds = {}
         if creds.get("file_path") == db_path:
-            print(f"[stratifio] Connection '{CONNECTION_NAME}' already exists — skipping.")
+            print(
+                f"[stratifio] Connection '{CONNECTION_NAME}' already exists — skipping."
+            )
             return
         # Credentials are stale (e.g. wrong key from an older bootstrap run) — update them.
         db.execute(

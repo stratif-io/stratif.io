@@ -1,10 +1,11 @@
 """Tests for the DuckDB database backend."""
+
 import duckdb
 import pytest
 
+from backend.backends.base import DatabaseBackend
 from backend.backends.duckdb import DuckDBBackend
 from backend.backends.duckdb.credentials import DuckDBCredentials
-from backend.backends.base import DatabaseBackend
 
 
 @pytest.fixture
@@ -53,7 +54,7 @@ class TestDuckDBCredentials:
         assert c.s3_path == "s3://bucket/db.duckdb"
 
     def test_neither_path_raises(self):
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             DuckDBCredentials()
 
     def test_parse_credentials_file_path(self, backend):
@@ -73,7 +74,9 @@ class TestDuckDBExecution:
         assert rows == [(2,)]
 
     def test_execute_with_params(self, backend, mem_conn):
-        rows = backend.execute(mem_conn, "SELECT user_id FROM events WHERE event_name = ?", ["Purchase"])
+        rows = backend.execute(
+            mem_conn, "SELECT user_id FROM events WHERE event_name = ?", ["Purchase"]
+        )
         assert rows == [("u2",)]
 
     def test_table_exists_true(self, backend, mem_conn):
@@ -165,6 +168,7 @@ class TestDuckDBDetectSchema:
 
     def test_detect_schema_infers_numeric_json_property(self, backend):
         import duckdb as _duckdb
+
         conn = _duckdb.connect(":memory:")
         conn.execute(
             "CREATE TABLE events (user_id VARCHAR, timestamp TIMESTAMP, event_name VARCHAR, properties JSON)"
@@ -176,7 +180,10 @@ class TestDuckDBDetectSchema:
         )
         info = backend.detect_schema(conn, None)
         conn.close()
-        prop = next((p for p in info.proposed_custom_properties if p["name"] == "total_amount"), None)
+        prop = next(
+            (p for p in info.proposed_custom_properties if p["name"] == "total_amount"),
+            None,
+        )
         assert prop is not None, "total_amount should be in proposed_custom_properties"
         assert prop["type"] == "number", f"expected 'number', got '{prop['type']}'"
 

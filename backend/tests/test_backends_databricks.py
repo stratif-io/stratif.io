@@ -1,10 +1,12 @@
 """Tests for the Databricks database backend (mock-based)."""
+
 from unittest.mock import MagicMock
+
 import pytest
 
+from backend.backends.base import DatabaseBackend
 from backend.backends.databricks import DatabricksBackend
 from backend.backends.databricks.credentials import DatabricksCredentials
-from backend.backends.base import DatabaseBackend
 
 
 @pytest.fixture
@@ -41,7 +43,9 @@ class TestDatabricksCredentials:
         assert c.host == "h"
 
     def test_parse_credentials(self, backend):
-        creds = backend.parse_credentials({"host": "h", "http_path": "/p", "token": "t"})
+        creds = backend.parse_credentials(
+            {"host": "h", "http_path": "/p", "token": "t"}
+        )
         assert isinstance(creds, DatabricksCredentials)
 
     def test_pool_key(self, backend):
@@ -92,7 +96,9 @@ class TestDatabricksCTE:
         assert "uid" in cte and "user_id" in cte
 
     def test_prepend_events_cte(self, backend):
-        result = backend.prepend_events_cte("(SELECT * FROM raw)", "SELECT 1 FROM events")
+        result = backend.prepend_events_cte(
+            "(SELECT * FROM raw)", "SELECT 1 FROM events"
+        )
         assert "WITH events AS" in result
 
 
@@ -116,13 +122,13 @@ class TestDatabricksSQLFragments:
         assert "QUARTER" in backend.extract_quarter("ts").upper()
 
     def test_identifier_quote_char_is_backtick(self, backend):
-        assert backend.identifier_quote_char == '`'
+        assert backend.identifier_quote_char == "`"
 
     def test_date_trunc_day(self, backend):
         result = backend.date_trunc("day", "ts")
         assert "DATE_TRUNC" in result.upper() or "TRUNC" in result.upper()
 
-    def test_date_diff_days(self, backend):
+    def test_date_diff_days_with_alias(self, backend):
         result = backend.date_diff_days("a", "b")
         assert "DATEDIFF" in result.upper() or "TIMESTAMPDIFF" in result.upper()
 
@@ -142,4 +148,8 @@ class TestDatabricksSQLFragments:
     def test_cast_to_text(self, backend):
         result = backend.cast_to_text("x")
         assert "x" in result
-        assert "STRING" in result.upper() or "TEXT" in result.upper() or "VARCHAR" in result.upper()
+        assert (
+            "STRING" in result.upper()
+            or "TEXT" in result.upper()
+            or "VARCHAR" in result.upper()
+        )

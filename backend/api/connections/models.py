@@ -5,7 +5,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, field_validator
 
-DbType = Literal["duckdb", "databricks", "postgresql", "sqlite", "clickhouse", "snowflake"]
+DbType = Literal[
+    "duckdb", "databricks", "postgresql", "sqlite", "clickhouse", "snowflake"
+]
 
 _PATH_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.]*$")
 

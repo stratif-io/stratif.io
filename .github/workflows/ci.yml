@@ -2,10 +2,24 @@ name: CI
 
 on:
   pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
 
 jobs:
-  frontend-checks:
-    name: Frontend checks
+  pr-title:
+    if: github.event_name == 'pull_request'
+    name: PR title
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  frontend:
+    name: Frontend
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -28,8 +42,8 @@ jobs:
       - name: Unit tests
         run: bun run test:run
 
-  backend-unit:
-    name: Backend unit tests
+  backend:
+    name: Backend
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -42,9 +56,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Check uv.lock is up to date
+        run: uv lock --check
+
       - name: Install dependencies
         run: uv sync
 
-      - name: Run unit tests
-        run: uv run pytest --ignore=backend/tests/e2e -m "not integration and not e2e" -v
+      - name: Lint (ruff)
+        run: uv run ruff check . && uv run ruff format --check .
 
+      - name: Unit tests
+        run: uv run pytest --ignore=backend/tests/e2e -m "not integration and not e2e" -v

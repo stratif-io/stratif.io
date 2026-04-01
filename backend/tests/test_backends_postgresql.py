@@ -1,10 +1,12 @@
 """Tests for the PostgreSQL database backend (mock-based)."""
+
 from unittest.mock import MagicMock
+
 import pytest
 
+from backend.backends.base import DatabaseBackend
 from backend.backends.postgresql import PostgreSQLBackend
 from backend.backends.postgresql.credentials import PostgreSQLCredentials
-from backend.backends.base import DatabaseBackend
 
 
 @pytest.fixture
@@ -47,11 +49,15 @@ class TestPostgreSQLCredentials:
         assert c.port == 5432 and c.sslmode is None
 
     def test_with_sslmode(self):
-        c = PostgreSQLCredentials(host="h", database="d", user="u", password="p", sslmode="require")
+        c = PostgreSQLCredentials(
+            host="h", database="d", user="u", password="p", sslmode="require"
+        )
         assert c.sslmode == "require"
 
     def test_parse_credentials(self, backend):
-        creds = backend.parse_credentials({"host": "h", "database": "d", "user": "u", "password": "p"})
+        creds = backend.parse_credentials(
+            {"host": "h", "database": "d", "user": "u", "password": "p"}
+        )
         assert isinstance(creds, PostgreSQLCredentials)
 
     def test_pool_key(self, backend):
@@ -75,7 +81,10 @@ class TestPostgreSQLExecution:
     def test_is_connection_error_operational(self, backend):
         try:
             import psycopg2
-            assert backend.is_connection_error(psycopg2.OperationalError("lost")) is True
+
+            assert (
+                backend.is_connection_error(psycopg2.OperationalError("lost")) is True
+            )
         except ImportError:
             pytest.skip("psycopg2 not installed")
 
@@ -95,17 +104,24 @@ class TestPostgreSQLExecution:
 
 class TestPostgreSQLCTE:
     def test_build_events_cte_explicit_enumeration(self, backend):
-        cte = backend.build_events_cte("raw", "uid", "ts", "action", [{"path": "extra"}])
+        cte = backend.build_events_cte(
+            "raw", "uid", "ts", "action", [{"path": "extra"}]
+        )
         assert "uid" in cte and "user_id" in cte
         assert "EXCLUDE" not in cte and "EXCEPT" not in cte
 
     def test_prepend_events_cte(self, backend):
-        result = backend.prepend_events_cte("(SELECT * FROM raw)", "SELECT 1 FROM events")
+        result = backend.prepend_events_cte(
+            "(SELECT * FROM raw)", "SELECT 1 FROM events"
+        )
         assert result.startswith("WITH events AS")
 
     def test_build_events_cte_with_custom_props_includes_root_col(self, backend):
         cte = backend.build_events_cte(
-            "raw", "uid", "ts", "action",
+            "raw",
+            "uid",
+            "ts",
+            "action",
             [{"name": "device", "path": "properties.device"}],
         )
         assert '"properties"' in cte
@@ -130,7 +146,9 @@ class TestPostgreSQLDetectSchema:
         conn.cursor.side_effect = lambda: next(cursor_seq)
 
         info = backend.detect_schema(conn, None)
-        prop = next((p for p in info.proposed_custom_properties if p["name"] == "amount"), None)
+        prop = next(
+            (p for p in info.proposed_custom_properties if p["name"] == "amount"), None
+        )
         assert prop is not None, "amount should be in proposed_custom_properties"
         assert prop["type"] == "number", f"expected 'number', got '{prop['type']}'"
 
@@ -153,7 +171,9 @@ class TestPostgreSQLSQLFragments:
         assert "->>" in backend.json_extract_string("p", "k")
 
     def test_json_extract_nested(self, backend):
-        assert "json_extract_path_text" in backend.json_extract_string("p", "a.b").lower()
+        assert (
+            "json_extract_path_text" in backend.json_extract_string("p", "a.b").lower()
+        )
 
     def test_cast_to_text(self, backend):
         assert "TEXT" in backend.cast_to_text("x").upper()
