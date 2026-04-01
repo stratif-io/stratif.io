@@ -86,7 +86,25 @@ describe('TrendMetricPicker', () => {
     expect(screen.getByText('No metrics match')).toBeInTheDocument()
   })
 
-  it('calls onChange immediately when standard measure clicked via search', () => {
+  it('opens agg step when standard measure clicked via search', async () => {
+    render(
+      <TrendMetricPicker
+        measureField="count_events"
+        aggregation="sum"
+        standardMeasures={standardMeasures}
+        numericDimensions={[]}
+        onChange={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByText('Event Count'))
+    fireEvent.change(screen.getByPlaceholderText('Search metrics…'), {
+      target: { value: 'unique' },
+    })
+    fireEvent.click(screen.getByText('Unique Users'))
+    expect(screen.getByText('Σ Sum')).toBeInTheDocument()
+  })
+
+  it('calls onChange when standard measure agg selected via search', async () => {
     const onChange = vi.fn()
     render(
       <TrendMetricPicker
@@ -102,10 +120,27 @@ describe('TrendMetricPicker', () => {
       target: { value: 'unique' },
     })
     fireEvent.click(screen.getByText('Unique Users'))
+    fireEvent.click(screen.getByText('Σ Sum'))
     expect(onChange).toHaveBeenCalledWith('unique_users', 'sum')
   })
 
-  it('calls onChange immediately when standard measure clicked in two-panel mode', () => {
+  it('opens agg step when standard measure clicked in two-panel mode', () => {
+    render(
+      <TrendMetricPicker
+        measureField="count_events"
+        aggregation="sum"
+        standardMeasures={standardMeasures}
+        numericDimensions={[]}
+        onChange={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByText('Event Count'))
+    const buttons = screen.getAllByText('Unique Users')
+    fireEvent.click(buttons[0])
+    expect(screen.getByText('Σ Sum')).toBeInTheDocument()
+  })
+
+  it('calls onChange when standard measure agg selected in two-panel mode', () => {
     const onChange = vi.fn()
     render(
       <TrendMetricPicker
@@ -119,10 +154,11 @@ describe('TrendMetricPicker', () => {
     fireEvent.click(screen.getByText('Event Count'))
     const buttons = screen.getAllByText('Unique Users')
     fireEvent.click(buttons[0])
+    fireEvent.click(screen.getByText('Σ Sum'))
     expect(onChange).toHaveBeenCalledWith('unique_users', 'sum')
   })
 
-  it('shows Metrics category in left panel', () => {
+  it('shows categories without a special Metrics bucket', () => {
     render(
       <TrendMetricPicker
         measureField="count_events"
@@ -133,10 +169,10 @@ describe('TrendMetricPicker', () => {
       />
     )
     fireEvent.click(screen.getByText('Event Count'))
-    expect(screen.getByText('Metrics')).toBeInTheDocument()
+    expect(screen.queryByText('Metrics')).not.toBeInTheDocument()
   })
 
-  it('shows additional categories when numericDimensions provided', () => {
+  it('shows left panel with category buttons when picker opens', () => {
     render(
       <TrendMetricPicker
         measureField="count_events"
@@ -147,12 +183,11 @@ describe('TrendMetricPicker', () => {
       />
     )
     fireEvent.click(screen.getByText('Event Count'))
-    expect(screen.getByText('Metrics')).toBeInTheDocument()
     const categoryRegion = document.querySelector('.bg-muted\\/40')
-    expect(categoryRegion?.querySelectorAll('button').length).toBeGreaterThan(1)
+    expect(categoryRegion?.querySelectorAll('button').length).toBeGreaterThan(0)
   })
 
-  it('opens step 2 aggregation picker when custom metric clicked', () => {
+  it('opens step 2 aggregation picker when any metric clicked', () => {
     render(
       <TrendMetricPicker
         measureField="count_events"
@@ -163,17 +198,15 @@ describe('TrendMetricPicker', () => {
       />
     )
     fireEvent.click(screen.getByText('Event Count'))
+    // Click the first (and only) category in the left panel
     const leftPanel = document.querySelector('.bg-muted\\/40')!
-    const catButtons = leftPanel.querySelectorAll('button')
-    // Click the second category (first non-Metrics category)
-    fireEvent.click(catButtons[1])
+    fireEvent.click(leftPanel.querySelectorAll('button')[0])
     fireEvent.click(screen.getByText('Revenue'))
-    // ValuePickerPopover shows "Σ Sum", "avg Avg" etc.
     expect(screen.getByText('Σ Sum')).toBeInTheDocument()
     expect(screen.getByText('avg Avg')).toBeInTheDocument()
   })
 
-  it('calls onChange with field and agg when aggregation selected for custom metric', () => {
+  it('calls onChange with field and agg when aggregation selected', () => {
     const onChange = vi.fn()
     render(
       <TrendMetricPicker
@@ -186,7 +219,7 @@ describe('TrendMetricPicker', () => {
     )
     fireEvent.click(screen.getByText('Event Count'))
     const leftPanel = document.querySelector('.bg-muted\\/40')!
-    fireEvent.click(leftPanel.querySelectorAll('button')[1])
+    fireEvent.click(leftPanel.querySelectorAll('button')[0])
     fireEvent.click(screen.getByText('Revenue'))
     fireEvent.click(screen.getByText('avg Avg'))
     expect(onChange).toHaveBeenCalledWith('revenue', 'avg')

@@ -38,8 +38,6 @@ export function TrendMetricPicker({
           enableValue: true,
           enableRowGroup: false,
           enablePivot: false,
-          fixedAgg: 'none',
-          category: 'metrics',
         })
       ),
       ...numericDimensions.map(
@@ -64,7 +62,7 @@ export function TrendMetricPicker({
   }, [measureField, aggregation, standardMeasures, numericDimensions])
 
   function handleSelect(colId: string, _label: string, aggFunc: string) {
-    onChange(colId, aggFunc === 'none' ? 'sum' : aggFunc)
+    onChange(colId, aggFunc)
   }
 
   const trigger = (
