@@ -80,24 +80,9 @@ Open **http://localhost:9999** when it's done.
 
 ## 🏗️ Architecture
 
-```
-stratifio-oss/
-├── apps/web/frontend/     # React 18, Vite 6, Tailwind CSS v4, shadcn/ui
-│   ├── features/          # Analytics pages (trends, retention, funnels…)
-│   ├── components/        # Shared UI (charts, tables, layout)
-│   └── stores/            # Zustand client state
-├── backend/               # FastAPI, SQLGlot
-│   ├── api/               # Route handlers
-│   ├── backends/          # Database adapters (DuckDB, PG, Snowflake…)
-│   ├── services/          # Business logic & SQL transpilation
-│   └── product_db/        # SQLite for connection configs
-├── seeders/               # Sample data generators
-├── Dockerfile             # Multi-stage build (Node → Python → Caddy → final)
-└── docker-compose.yml
-```
+Built on the shoulders of giants — [React](https://react.dev), [FastAPI](https://fastapi.tiangolo.com), [SQLGlot](https://github.com/tobymao/sqlglot), [shadcn/ui](https://ui.shadcn.com), [TanStack Query](https://tanstack.com/query), [Zustand](https://zustand-demo.pmnd.rs), [Recharts](https://recharts.org), [Tailwind CSS](https://tailwindcss.com).
 
-**Frontend state:** TanStack Query v5 for server state, Zustand for client state.
-**Backend SQL:** SQLGlot transpiles a unified query dialect to each database's native SQL.
+---
 
 ---
 
