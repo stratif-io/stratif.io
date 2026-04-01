@@ -77,7 +77,7 @@ export const MiniMetricCard = memo(function MiniMetricCard({
       aria-label={`View ${label} trend`}
       aria-pressed={isHero}
       className={cn(
-        'relative overflow-hidden rounded-xl border p-3 text-left w-full transition-colors',
+        'relative overflow-hidden rounded-xl border pt-3 px-3 pb-10 text-left w-full transition-colors',
         'hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         isHero
           ? 'border-2 border-primary bg-card shadow-md ring-2 ring-primary/40'
@@ -87,17 +87,24 @@ export const MiniMetricCard = memo(function MiniMetricCard({
     >
       <CardLoadingBar loading={loading} />
 
-      {/* Sparkline — subtle background */}
+      {/* Sparkline — dedicated strip at bottom */}
       {sparklineData.length > 1 && !loading && (
-        <div className="absolute bottom-0 left-0 right-0 h-10 opacity-20 pointer-events-none">
+        <div className="absolute bottom-0 left-0 right-0 h-9 pointer-events-none">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={sparklineData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id={`mini-grad-${label}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color ?? 'hsl(var(--primary))'} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={color ?? 'hsl(var(--primary))'} stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <Area
                 type="monotone"
                 dataKey="v"
                 stroke={color ?? 'hsl(var(--primary))'}
-                fill={color ?? 'hsl(var(--primary))'}
+                fill={`url(#mini-grad-${label})`}
                 strokeWidth={1.5}
+                strokeOpacity={0.6}
                 dot={false}
                 isAnimationActive={false}
               />
