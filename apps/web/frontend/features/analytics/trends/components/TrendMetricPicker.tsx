@@ -2,10 +2,10 @@ import { useMemo } from 'react'
 import { BarChart2, ChevronDown } from 'lucide-react'
 import { ValuePickerPopover } from '@/components/ValuePickerPopover'
 import { AggBadge } from '@/components/AggBadge'
+import { DEFAULT_AGG_FUNCS } from '@/components/agg-badge-config'
 import type { LeafMeta } from '@/components/pivot-table/types'
 import type { DimensionOption } from '@/types'
 
-const DEFAULT_AGG_FUNCS = ['sum', 'count', 'avg', 'min', 'max', 'countDistinct']
 const CATEGORICAL_AGG_FUNCS = ['count', 'countDistinct']
 
 export interface TrendMetricPickerProps {
@@ -94,13 +94,11 @@ export function TrendMetricPicker({
       <BarChart2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
       <span>{chipLabel}</span>
       {isCustom && badgeAllowedAggFuncs.length > 0 && (
-        <span onClick={(e) => e.stopPropagation()}>
-          <AggBadge
-            aggFunc={aggregation}
-            allowedAggFuncs={badgeAllowedAggFuncs}
-            onAggChange={onAggChange}
-          />
-        </span>
+        <AggBadge
+          aggFunc={aggregation}
+          allowedAggFuncs={badgeAllowedAggFuncs}
+          onAggChange={onAggChange}
+        />
       )}
       <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
     </button>
