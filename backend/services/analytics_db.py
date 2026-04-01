@@ -330,7 +330,7 @@ def open_analytics_db(
         for _key in _identity_field_keys:
             _col = schema_row[_key]
             if _col:
-                custom_prop_exprs[_col] = f"{_iq}{_col}{_iq}"
+                custom_prop_exprs[_col] = _resolve_path_to_sql(_col, dialect)
 
     filter_exprs: dict[str, str] = {}
     _src_to_std_name = {uid_f: "user_id", ts_f: "timestamp", en_f: "event_name"}
