@@ -55,8 +55,6 @@ export interface PivotTableProps {
   activeConnectionId?: string | null
   fetchRows: (params: PivotRowsRequest) => Promise<PivotRowsResponse>
   fetchFilterValues: (field: string) => Promise<string[]>
-  initialRowGroups?: ZoneCol[]
-  initialValueCols?: ZoneCol[]
 }
 
 type ColDefInput = {
