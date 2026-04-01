@@ -132,7 +132,7 @@ export function MetricCardSkeleton({ className }: { className?: string }) {
     <div
       role="status"
       aria-label="Loading metric"
-      className={cn('rounded-lg border bg-card p-4 space-y-3 animate-pulse', className)}
+      className={cn('rounded-xl border bg-card p-4 space-y-3 animate-pulse', className)}
     >
       <div className="h-3 w-2/5 rounded bg-muted" />
       <div className="h-7 w-1/3 rounded bg-muted" />

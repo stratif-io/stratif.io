@@ -101,97 +101,96 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
   }
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          className={cn(
-            'h-10 flex items-center gap-1.5 px-3 text-sm font-medium shrink-0',
-            'hover:bg-accent/60 transition-colors',
-            value ? 'text-foreground' : 'text-muted-foreground'
-          )}
-        >
-          <FieldIcon className="shrink-0 h-3.5 w-3.5" />
-          <span className="max-w-[100px] truncate">
-            {value ?? `All ${pluralize(field.label.toLowerCase())}`}
-          </span>
-          {value ? (
-            <button
-              type="button"
-              aria-label={`Clear ${field.label} filter`}
-              className="flex items-center justify-center -mr-1 -mx-1 px-1 -my-2 py-2 text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.stopPropagation()
-                select(null)
-              }}
-            >
-              <X className="h-3 w-3 shrink-0" />
-            </button>
-          ) : (
-            <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
-          )}
-        </button>
-      </PopoverTrigger>
-
-      <PopoverContent className="w-56 p-0" align="start">
-        <div className="p-2 border-b">
-          <Input
-            placeholder={`Search ${pluralize(field.label.toLowerCase())}…`}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setFocusedIndex(-1)
-            }}
-            onKeyDown={handleKeyDown}
-            className="h-7 text-sm"
-            autoFocus
-          />
-        </div>
-
-        <div className="max-h-60 overflow-y-auto">
-          <div className="p-1">
-            {allItems.length === 0 ? (
-              <p className="px-2 py-3 text-xs text-muted-foreground text-center">No results</p>
-            ) : (
-              allItems.map((opt, i) => (
-                <button
-                  key={opt ?? '__all__'}
-                  ref={(el) => {
-                    optionRefs.current[i] = el
-                  }}
-                  className={cn(
-                    'w-full text-left px-2 py-1.5 rounded text-sm truncate',
-                    'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
-                    (opt === null ? value === null : value === opt) && 'bg-accent font-medium'
-                  )}
-                  onClick={() => select(opt)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'ArrowDown') {
-                      e.preventDefault()
-                      const next = Math.min(i + 1, allItems.length - 1)
-                      setFocusedIndex(next)
-                      optionRefs.current[next]?.focus()
-                    } else if (e.key === 'ArrowUp') {
-                      e.preventDefault()
-                      if (i === 0) {
-                        // back to search input — handled by focus moving up naturally
-                        return
-                      }
-                      const prev = i - 1
-                      setFocusedIndex(prev)
-                      optionRefs.current[prev]?.focus()
-                    } else if (e.key === 'Escape') {
-                      setOpen(false)
-                    }
-                  }}
-                >
-                  {opt === null ? `All ${pluralize(field.label.toLowerCase())}` : opt}
-                </button>
-              ))
+    <div className="flex items-center shrink-0">
+      <Popover open={open} onOpenChange={handleOpenChange}>
+        <PopoverTrigger asChild>
+          <button
+            className={cn(
+              'h-11 flex items-center gap-1.5 pl-3 text-sm font-medium',
+              'hover:bg-accent/60 transition-colors',
+              value ? 'pr-1' : 'pr-3',
+              value ? 'text-foreground' : 'text-muted-foreground'
             )}
+          >
+            <FieldIcon className="shrink-0 h-3.5 w-3.5" />
+            <span className="max-w-[100px] truncate">
+              {value ?? `All ${pluralize(field.label.toLowerCase())}`}
+            </span>
+            {!value && <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />}
+          </button>
+        </PopoverTrigger>
+
+        <PopoverContent className="w-56 p-0" align="start">
+          <div className="p-2 border-b">
+            <Input
+              placeholder={`Search ${pluralize(field.label.toLowerCase())}…`}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setFocusedIndex(-1)
+              }}
+              onKeyDown={handleKeyDown}
+              className="h-7 text-sm"
+              autoFocus
+            />
           </div>
-        </div>
-      </PopoverContent>
-    </Popover>
+
+          <div className="max-h-60 overflow-y-auto">
+            <div className="p-1">
+              {allItems.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground text-center">No results</p>
+              ) : (
+                allItems.map((opt, i) => (
+                  <button
+                    key={opt ?? '__all__'}
+                    ref={(el) => {
+                      optionRefs.current[i] = el
+                    }}
+                    className={cn(
+                      'w-full text-left px-2 py-1.5 rounded text-sm truncate',
+                      'hover:bg-accent transition-colors focus:bg-accent focus:outline-none',
+                      (opt === null ? value === null : value === opt) && 'bg-accent font-medium'
+                    )}
+                    onClick={() => select(opt)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault()
+                        const next = Math.min(i + 1, allItems.length - 1)
+                        setFocusedIndex(next)
+                        optionRefs.current[next]?.focus()
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault()
+                        if (i === 0) {
+                          // back to search input — handled by focus moving up naturally
+                          return
+                        }
+                        const prev = i - 1
+                        setFocusedIndex(prev)
+                        optionRefs.current[prev]?.focus()
+                      } else if (e.key === 'Escape') {
+                        setOpen(false)
+                      }
+                    }}
+                  >
+                    {opt === null ? `All ${pluralize(field.label.toLowerCase())}` : opt}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+      {value && (
+        <button
+          type="button"
+          aria-label={`Clear ${field.label} filter`}
+          className="flex items-center justify-center h-11 w-9 text-muted-foreground hover:text-foreground transition-colors"
+          onClick={() => select(null)}
+        >
+          <X className="h-3 w-3 shrink-0" />
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -220,7 +219,7 @@ export function GranularityControl({ disabled = false }: GranularityControlProps
   return (
     <div
       className={cn(
-        'flex items-center h-10 shrink-0',
+        'flex items-center h-11 shrink-0',
         disabled && 'opacity-30 pointer-events-none'
       )}
     >
@@ -250,7 +249,7 @@ export function GranularityControl({ disabled = false }: GranularityControlProps
       </div>
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="flex items-center justify-center h-10 px-2 text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center justify-center h-11 px-2 text-muted-foreground hover:text-foreground transition-colors"
         aria-label={expanded ? 'Collapse granularity' : 'Expand granularity'}
       >
         <ChevronDown
@@ -278,7 +277,7 @@ export function GlobalFilters({ granularityDisabled = false }: { granularityDisa
         role="group"
         aria-label="Global filters"
         aria-live="polite"
-        className="flex flex-col sm:flex-row sm:items-center sm:h-10 w-full rounded-lg border bg-background shadow-sm sm:divide-x divide-y sm:divide-y-0 divide-border overflow-x-auto scrollbar-none"
+        className="flex flex-row items-center h-11 w-full rounded-lg border bg-background shadow-sm divide-x divide-border overflow-x-auto scrollbar-none"
       >
         <div className="shrink-0">
           <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
