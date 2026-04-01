@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Settings2 } from 'lucide-react'
 import { formatMetricValue, computePctChange, formatPeriodRange } from '@/lib/format-metric'
 import { cn } from '@/lib/utils'
-import type { MissionControlResponse, DateRange, Granularity } from '@/types'
+import type { MissionControlResponse, Granularity } from '@/types'
 import type { TrendMetric, MetricTrend } from '../hooks/useMissionControlTrends'
 import { DevCard } from '@/components/dev'
 import { useAppStore } from '@/stores'
@@ -16,7 +16,6 @@ export interface MissionControlGridProps {
   trends: Record<TrendMetric, MetricTrend>
   metricLoading: Record<TrendMetric, boolean>
   metricSql?: Record<TrendMetric, string | string[] | null>
-  dateRange: DateRange
   togglePin: (key: string) => void
   isPinned: (key: string) => boolean
   resetToDefault: () => void
@@ -115,7 +114,6 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   trends,
   metricLoading,
   metricSql,
-  dateRange: _dateRange,
   togglePin,
   isPinned,
   resetToDefault,

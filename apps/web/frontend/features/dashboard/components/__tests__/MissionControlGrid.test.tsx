@@ -131,16 +131,6 @@ const defaultPinProps = {
   resetToDefault: vi.fn(),
 }
 
-const mockDateRange = {
-  from: new Date('2025-01-01'),
-  to: new Date('2026-01-01'),
-}
-
-const mockDateRangeNoEnd = {
-  from: new Date('2025-01-01'),
-  to: null,
-}
-
 describe('MissionControlGrid', () => {
   it('renders the hero card with Total Events by default', () => {
     render(
@@ -148,7 +138,6 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -161,7 +150,6 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -186,7 +174,6 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -224,7 +211,6 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -240,7 +226,6 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -261,7 +246,6 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -275,7 +259,6 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -295,7 +278,6 @@ describe('MissionControlGrid period labels', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -311,7 +293,6 @@ describe('MissionControlGrid period labels', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -327,7 +308,6 @@ describe('MissionControlGrid period labels', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -347,7 +327,6 @@ describe('MissionControlGrid period labels', () => {
         data={dataWithoutPrevPeriod}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
-        dateRange={mockDateRangeNoEnd}
         {...defaultPinProps}
       />
     )
