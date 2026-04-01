@@ -19,6 +19,14 @@ const leafCols: LeafMeta[] = [
     enableValue: true,
     allowedAggFuncs: ['sum'],
   },
+  {
+    colId: 'revenue',
+    label: 'Revenue',
+    enableRowGroup: false,
+    enablePivot: false,
+    enableValue: true,
+    allowedAggFuncs: ['sum', 'avg'],
+  },
 ]
 
 function makeProps(overrides = {}) {
@@ -51,6 +59,23 @@ describe('ZoneBar', () => {
       />
     )
     expect(screen.getByText('Country')).toBeInTheDocument()
+  })
+
+  it('AggBadge onAggChange inside ValueChip calls onValueColsChange with updated aggFunc', async () => {
+    const onValueColsChange = vi.fn()
+    render(
+      <ZoneBar
+        {...makeProps({
+          valueCols: [{ colId: 'revenue', label: 'Revenue', aggFunc: 'sum' }],
+          onValueColsChange,
+        })}
+      />
+    )
+    fireEvent.click(screen.getByTitle('Change aggregation'))
+    fireEvent.click(screen.getByText('avg Avg'))
+    expect(onValueColsChange).toHaveBeenCalledWith([
+      { colId: 'revenue', label: 'Revenue', aggFunc: 'avg' },
+    ])
   })
 
   it('remove chip calls onRowGroupsChange without that col', async () => {
