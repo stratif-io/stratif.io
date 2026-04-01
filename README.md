@@ -61,23 +61,6 @@ Open **http://localhost:9999** when it's done.
 
 ---
 
-## ✨ Features
-
-| Feature                      | Description                                                |
-| ---------------------------- | ---------------------------------------------------------- |
-| 📈 **Trends**                | Event counts over time with customizable granularity       |
-| 🔁 **Retention**             | Cohort-based retention tables                              |
-| 🚦 **Funnels**               | Step-by-step conversion analysis                           |
-| 🗺️ **Journey**               | User journey flows with Sankey diagrams                    |
-| 🔀 **Pivot**                 | Drag-and-drop data exploration (Graphic Walker)            |
-| 💻 **SQL Studio**            | Write and run SQL directly against your database           |
-| 🔍 **Sessions**              | Raw session browser with full event timelines              |
-| 🔌 **Multi-database**        | One UI, many backends — DuckDB, Postgres, Snowflake & more |
-| 🔐 **Encrypted credentials** | AES-128-CBC + HMAC-SHA256 via Fernet                       |
-| 🐳 **Docker deploy**         | One `docker compose up` from dev to production             |
-
----
-
 ## 🏗️ Architecture
 
 Built on the shoulders of giants — [React](https://react.dev), [FastAPI](https://fastapi.tiangolo.com), [SQLGlot](https://github.com/tobymao/sqlglot), [shadcn/ui](https://ui.shadcn.com), [TanStack Query](https://tanstack.com/query), [Zustand](https://zustand-demo.pmnd.rs), [Recharts](https://recharts.org), [Tailwind CSS](https://tailwindcss.com).
