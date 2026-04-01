@@ -1,10 +1,11 @@
 """Tests for the SQLite database backend."""
 import sqlite3
+
 import pytest
 
+from backend.backends.base import DatabaseBackend
 from backend.backends.sqlite import SQLiteBackend
 from backend.backends.sqlite.credentials import SQLiteCredentials
-from backend.backends.base import DatabaseBackend
 
 
 @pytest.fixture

@@ -1,5 +1,6 @@
 """Unit tests for ClickHouseBackend (mock-based)."""
 import pytest
+
 from backend.backends.clickhouse.credentials import ClickHouseCredentials
 
 
@@ -23,8 +24,8 @@ class TestClickHouseCredentials:
         assert c.always_final is True
 
 
-from backend.backends.clickhouse import ClickHouseBackend
-from backend.backends.base import DatabaseBackend
+from backend.backends.base import DatabaseBackend  # noqa: E402
+from backend.backends.clickhouse import ClickHouseBackend  # noqa: E402
 
 
 @pytest.fixture

@@ -1,12 +1,16 @@
 """FastAPI dependency for the analytics database."""
-from typing import Annotated
 
-from fastapi import Depends, HTTPException, Query
+from fastapi import HTTPException, Query
 
-from backend.backends._utils import _to_named_params  # noqa: F401 (re-exported for callers)
+from backend.backends._utils import (
+    _to_named_params,  # noqa: F401 (re-exported for callers)
+)
 from backend.backends.deps import BackendRegistryDep
 from backend.product_db import ProductDBDep
-from backend.services.analytics_db import AnalyticsDatabase, open_analytics_db
+from backend.services.analytics_db import (  # noqa: F401 (AnalyticsDatabase re-exported for callers)
+    AnalyticsDatabase,
+    open_analytics_db,
+)
 
 
 async def get_analytics_db(

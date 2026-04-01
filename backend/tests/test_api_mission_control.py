@@ -345,8 +345,9 @@ def test_resurrected_users_non_negative(client):
 
 
 def test_analytics_db_exposes_resurrection_window():
-    from backend.services.analytics_db import AnalyticsDatabase
     from unittest.mock import MagicMock
+
+    from backend.services.analytics_db import AnalyticsDatabase
     backend_mock = MagicMock()
     backend_mock.dialect_name = "sqlite"
     db = AnalyticsDatabase(
@@ -361,8 +362,9 @@ def test_analytics_db_exposes_resurrection_window():
 
 
 def test_analytics_db_defaults():
-    from backend.services.analytics_db import AnalyticsDatabase
     from unittest.mock import MagicMock
+
+    from backend.services.analytics_db import AnalyticsDatabase
     backend_mock = MagicMock()
     backend_mock.dialect_name = "sqlite"
     db = AnalyticsDatabase(conn=MagicMock(), backend=backend_mock, events_cte=None)

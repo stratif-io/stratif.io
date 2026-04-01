@@ -2,6 +2,7 @@
 
 import difflib
 import re
+
 from fastapi import APIRouter, HTTPException
 
 from backend.product_db import get_product_db
@@ -171,7 +172,7 @@ def detect_schema(conn_id: str, events_table: str | None = None):
     try:
         backend = get_backend(db_type)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Unsupported db type: {db_type}")
+        raise HTTPException(status_code=400, detail=f"Unsupported db type: {db_type}") from None
 
     try:
         credentials = backend.parse_credentials(creds)

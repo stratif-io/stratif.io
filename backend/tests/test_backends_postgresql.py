@@ -1,10 +1,11 @@
 """Tests for the PostgreSQL database backend (mock-based)."""
 from unittest.mock import MagicMock
+
 import pytest
 
+from backend.backends.base import DatabaseBackend
 from backend.backends.postgresql import PostgreSQLBackend
 from backend.backends.postgresql.credentials import PostgreSQLCredentials
-from backend.backends.base import DatabaseBackend
 
 
 @pytest.fixture

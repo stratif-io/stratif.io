@@ -1,16 +1,15 @@
 # backend/main.py
+import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-
-import traceback
 
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.base import BaseHTTPMiddleware
 from scalar_fastapi import get_scalar_api_reference
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from backend.core.middleware import RequestIdMiddleware
 
@@ -26,10 +25,7 @@ class APITrailingSlashMiddleware(BaseHTTPMiddleware):
             request.scope["path"] += "/"
         return await call_next(request)
 
-from backend.config import settings
-from backend.core.logging import setup_logging
-from backend.product_db import init_product_db
-from backend.api import (
+from backend.api import (  # noqa: E402
     connections_router,
     conversion_router,
     events_router,
@@ -41,6 +37,9 @@ from backend.api import (
     retention_router,
     sessions_router,
 )
+from backend.config import settings  # noqa: E402
+from backend.core.logging import setup_logging  # noqa: E402
+from backend.product_db import init_product_db  # noqa: E402
 
 
 @asynccontextmanager

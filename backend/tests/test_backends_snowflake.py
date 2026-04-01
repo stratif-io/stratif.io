@@ -1,5 +1,6 @@
 """Unit tests for SnowflakeBackend (mock-based)."""
 import pytest
+
 from backend.backends.snowflake.credentials import SnowflakeCredentials
 
 
@@ -28,8 +29,8 @@ class TestSnowflakeCredentials:
         assert c.role == "ANALYST"
 
 
-from backend.backends.snowflake import SnowflakeBackend
-from backend.backends.base import DatabaseBackend
+from backend.backends.base import DatabaseBackend  # noqa: E402
+from backend.backends.snowflake import SnowflakeBackend  # noqa: E402
 
 
 @pytest.fixture

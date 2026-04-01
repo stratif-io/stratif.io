@@ -1,13 +1,13 @@
 """Tests for connection schema config API — resurrection_window_days and power_user_threshold_days."""
 from __future__ import annotations
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from starlette.testclient import TestClient
 
-from backend.main import app
-from backend.product_db import get_product_db
 from backend.api.connections.schema_detect import _suggest_fields
+from backend.main import app
 from backend.product_db.database import SQLiteProductDB
 from backend.product_db.migrations import init_product_db
 
@@ -36,9 +36,8 @@ def schema_client(tmp_path):
         ("conn-1", "Test", "sqlite", "x", "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"),
     )
 
-    with patch("backend.api.connections.crud.get_product_db", return_value=db):
-        with TestClient(app) as client:
-            yield client
+    with patch("backend.api.connections.crud.get_product_db", return_value=db), TestClient(app) as client:
+        yield client
 
 
 class TestSchemaConfigNewFields:

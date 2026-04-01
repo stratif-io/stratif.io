@@ -7,8 +7,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from backend.backends._utils import (
+    _to_named_params,
+    infer_type,
+    pick_events_table,
+    suggest_fields,
+)
 from backend.backends.base import ColumnInfo, SchemaInfo
-from backend.backends._utils import _to_named_params, infer_type, pick_events_table, suggest_fields
 from backend.backends.databricks.credentials import DatabricksCredentials
 
 
@@ -23,11 +28,14 @@ def _parse_struct_fields(sql_type: str, prefix: str = "") -> list[dict]:
     current = ""
     for ch in inner:
         if ch in ("<", "("):
-            depth += 1; current += ch
+            depth += 1
+            current += ch
         elif ch in (">", ")"):
-            depth -= 1; current += ch
+            depth -= 1
+            current += ch
         elif ch == "," and depth == 0:
-            _parse_struct_field(current.strip(), prefix, results); current = ""
+            _parse_struct_field(current.strip(), prefix, results)
+            current = ""
         else:
             current += ch
     if current.strip():

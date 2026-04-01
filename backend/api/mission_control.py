@@ -1,6 +1,7 @@
 """Mission Control API endpoints."""
 
 import json
+from collections import defaultdict as _defaultdict
 from datetime import date, datetime, timedelta
 from typing import Annotated
 
@@ -8,10 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
-from backend.services.views import session_ctes
-from backend.services.validators import interpolate_sql, parse_date
 from backend.services.sql_builder import date_trunc
-from collections import defaultdict as _defaultdict
+from backend.services.validators import interpolate_sql, parse_date
+from backend.services.views import session_ctes
 
 router = APIRouter(prefix="/api", tags=["mission-control"])
 
@@ -43,7 +43,7 @@ def _parse_request_params(
         try:
             filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
         except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+            raise HTTPException(status_code=400, detail="Invalid filters JSON.") from None
 
     return start, end, filter_clauses, filter_params
 
@@ -534,7 +534,7 @@ def get_mission_control_metric(
         try:
             filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
         except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+            raise HTTPException(status_code=400, detail="Invalid filters JSON.") from None
 
     if start_date and end_date:
         start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
@@ -666,7 +666,7 @@ def get_mission_control_trend(
             try:
                 filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
             except json.JSONDecodeError:
-                raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+                raise HTTPException(status_code=400, detail="Invalid filters JSON.") from None
         bounds_where = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
         bounds = db.execute(
             f"SELECT DATE(MIN(timestamp)), DATE(MAX(timestamp)) FROM events {bounds_where}",

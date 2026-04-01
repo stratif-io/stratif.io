@@ -15,15 +15,14 @@ def test_get_analytics_db_accepts_registry_param():
 
 
 
-import duckdb
-import pytest
-from fastapi import HTTPException
+import duckdb  # noqa: E402
+import pytest  # noqa: E402
+from fastapi import HTTPException  # noqa: E402
 
-from backend.backends.duckdb import DuckDBBackend
-from backend.services.connection_executor import (
+from backend.backends.duckdb import DuckDBBackend  # noqa: E402
+from backend.services.connection_executor import (  # noqa: E402
     AnalyticsDatabase,
     _to_named_params,
-    get_analytics_db,
 )
 
 

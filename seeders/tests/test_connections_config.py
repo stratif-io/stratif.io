@@ -2,11 +2,11 @@
 import pytest
 
 from seeders.connections_config import (
-    load_connections_yaml,
-    get_duckdb_credentials,
-    get_sqlite_credentials,
-    get_postgresql_credentials,
     get_clickhouse_credentials,
+    get_duckdb_credentials,
+    get_postgresql_credentials,
+    get_sqlite_credentials,
+    load_connections_yaml,
 )
 
 FIXTURE_YAML = """

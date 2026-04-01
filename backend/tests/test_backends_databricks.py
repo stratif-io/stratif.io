@@ -1,10 +1,11 @@
 """Tests for the Databricks database backend (mock-based)."""
 from unittest.mock import MagicMock
+
 import pytest
 
+from backend.backends.base import DatabaseBackend
 from backend.backends.databricks import DatabricksBackend
 from backend.backends.databricks.credentials import DatabricksCredentials
-from backend.backends.base import DatabaseBackend
 
 
 @pytest.fixture
@@ -122,7 +123,7 @@ class TestDatabricksSQLFragments:
         result = backend.date_trunc("day", "ts")
         assert "DATE_TRUNC" in result.upper() or "TRUNC" in result.upper()
 
-    def test_date_diff_days(self, backend):
+    def test_date_diff_days_with_alias(self, backend):
         result = backend.date_diff_days("a", "b")
         assert "DATEDIFF" in result.upper() or "TIMESTAMPDIFF" in result.upper()
 

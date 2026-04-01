@@ -1,15 +1,19 @@
 """DuckDB database backend."""
 from __future__ import annotations
 
-import contextlib
 import re
 from typing import Any
 
 import duckdb
 from pydantic import BaseModel
 
+from backend.backends._utils import (
+    infer_type,
+    pick_events_table,
+    sample_property_types,
+    suggest_fields,
+)
 from backend.backends.base import ColumnInfo, SchemaInfo
-from backend.backends._utils import infer_type, pick_events_table, sample_property_types, suggest_fields
 from backend.backends.duckdb.credentials import DuckDBCredentials
 
 _DUCKDB_NUMERIC_CAST = "TRY_CAST({expr} AS DOUBLE)"

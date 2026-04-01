@@ -18,7 +18,6 @@ from backend.product_db.deps import get_product_db
 from backend.product_db.migrations import init_product_db
 from backend.services.crypto import decrypt_credentials, encrypt_credentials
 
-
 CONNECTION_NAME = "Sample DuckDB"
 DEFAULT_PATH = "/data/sample.duckdb"
 

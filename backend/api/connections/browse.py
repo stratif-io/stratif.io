@@ -30,7 +30,7 @@ async def browse_connection(
     try:
         backend = get_backend(db_type)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}")
+        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}") from None
 
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
@@ -67,7 +67,7 @@ async def list_tables(conn_id: str):
     try:
         backend = get_backend(db_type)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}")
+        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}") from None
 
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
@@ -129,7 +129,7 @@ async def list_columns(conn_id: str, table: str):
     try:
         backend = get_backend(db_type)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}")
+        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}") from None
 
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])

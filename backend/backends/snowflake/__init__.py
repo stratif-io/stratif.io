@@ -41,14 +41,14 @@ class SnowflakeBackend:
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         import snowflake.connector
         creds = SnowflakeCredentials.model_validate(credentials.model_dump(by_alias=True))
-        kwargs: dict = dict(
-            account=creds.account,
-            user=creds.user,
-            password=creds.password,
-            warehouse=creds.warehouse,
-            database=creds.database,
-            schema=creds.schema_,
-        )
+        kwargs: dict = {
+            "account": creds.account,
+            "user": creds.user,
+            "password": creds.password,
+            "warehouse": creds.warehouse,
+            "database": creds.database,
+            "schema": creds.schema_,
+        }
         if creds.role:
             kwargs["role"] = creds.role
         return snowflake.connector.connect(**kwargs)
