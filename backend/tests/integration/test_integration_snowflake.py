@@ -19,6 +19,7 @@ class TestSnowflakeIntegration:
         from backend.backends.snowflake import SnowflakeBackend
         from backend.backends.snowflake.credentials import SnowflakeCredentials
 
+        assert _CREDS is not None
         creds = SnowflakeCredentials(**_CREDS)
         backend = SnowflakeBackend()
         conn = backend.open(creds, read_only=True)

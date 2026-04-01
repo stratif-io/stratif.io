@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 
 import psycopg2
+import psycopg2.extensions
 import psycopg2.extras
 import structlog
 

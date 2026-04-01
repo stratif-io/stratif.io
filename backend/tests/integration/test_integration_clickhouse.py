@@ -19,6 +19,7 @@ class TestClickHouseIntegration:
         from backend.backends.clickhouse import ClickHouseBackend
         from backend.backends.clickhouse.credentials import ClickHouseCredentials
 
+        assert _CREDS is not None
         creds = ClickHouseCredentials(**_CREDS)
         backend = ClickHouseBackend()
         conn = backend.open(creds, read_only=True)
