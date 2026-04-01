@@ -12,6 +12,7 @@ import { FilterBar } from '@/components/shared/FilterBar'
 import { GlobalFilters, GranularityControl } from '@/components/GlobalFilters'
 import { QueryStatusIndicator } from '@/components/layout/QueryStatusIndicator'
 import { useAppStore } from '@/stores'
+import { DevCard } from '@/components/dev'
 import { subDays } from 'date-fns'
 import type { DateRange } from '@/types'
 
@@ -289,6 +290,32 @@ export function AppComponentsSection() {
               numericDimensions={[{ value: 'revenue', label: 'Revenue' }]}
             />
           </div>
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="DevCard">
+        <div className="flex gap-4 flex-wrap">
+          <DevCard
+            sql="SELECT event_name, count(*) AS total FROM events GROUP BY 1 ORDER BY 2 DESC LIMIT 10"
+            sqlLabels="top events"
+            className="w-48 h-28"
+          >
+            <div className="w-48 h-28 rounded border bg-card flex items-center justify-center text-sm text-muted-foreground">
+              Single query card
+            </div>
+          </DevCard>
+          <DevCard
+            sql={[
+              'SELECT count(*) FROM events WHERE event_name = $1',
+              'SELECT count(DISTINCT user_id) FROM events',
+            ]}
+            sqlLabels={['event count', 'unique users']}
+            className="w-48 h-28"
+          >
+            <div className="w-48 h-28 rounded border bg-card flex items-center justify-center text-sm text-muted-foreground">
+              Multi-query card
+            </div>
+          </DevCard>
         </div>
       </ComponentRow>
 

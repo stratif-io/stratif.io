@@ -406,7 +406,7 @@ function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
     [activeConnectionId]
   )
 
-  // Reset results when collapsed
+  // Reset results when the expanded overlay closes
   useEffect(() => {
     if (!expanded) {
       setQueryResults({})
@@ -415,6 +415,13 @@ function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
       setResultsOpen(false)
     }
   }, [expanded])
+
+  // Reset results panel open state when card flips back to front
+  useEffect(() => {
+    if (!flipped) {
+      setResultsOpen(false)
+    }
+  }, [flipped])
 
   if (!devMode) return <>{children}</>
 
