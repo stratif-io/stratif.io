@@ -185,10 +185,16 @@ html:not(.dark) {
 
 /* ===== Custom Animations & Polish ===== */
 
-/* Smooth transitions — scoped to interactive elements only */
-a,
-button,
-[role='button'],
+/* Smooth transitions — only on devices that support hover */
+@media (hover: hover) {
+  a,
+  button,
+  [role='button'] {
+    @apply transition-colors duration-200;
+  }
+}
+
+/* Always transition form inputs — they need focus transitions on all devices */
 input,
 select,
 textarea {
