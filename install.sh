@@ -129,7 +129,7 @@ info "Installing Python dependencies"
 uv sync --frozen --no-dev --quiet
 success "Python dependencies ready"
 
-# ── Data directory + .env ─────────────────────────────────────────────────────
+# ── Data directory + .env + connections.yaml ──────────────────────────────────
 
 mkdir -p "$DATA_DIR"
 
@@ -142,6 +142,21 @@ if [ ! -f "$INSTALL_DIR/.env" ]; then
   success ".env created"
 else
   warn ".env already exists — skipping key generation"
+fi
+
+if [ ! -f "$INSTALL_DIR/connections.yaml" ]; then
+  info "Creating connections.yaml"
+  cat > "$INSTALL_DIR/connections.yaml" << YAML
+backends:
+  duckdb:
+    enabled: true
+    credentials:
+      file_path: $DATA_DIR/sample.duckdb
+    expected_columns: []
+YAML
+  success "connections.yaml created"
+else
+  warn "connections.yaml already exists — skipping"
 fi
 
 # ── Write start.sh helper ─────────────────────────────────────────────────────
@@ -170,7 +185,7 @@ chmod +x "$INSTALL_DIR/start.sh"
 SAMPLE_DB="$DATA_DIR/sample.duckdb"
 if [ ! -f "$SAMPLE_DB" ]; then
   info "Seeding sample analytics data (first run — ~30 seconds)"
-  DB_PATH_PREFIX="$DATA_DIR/sample" SEED_USERS=5000 SEED_DAYS=90 uv run seed-duckdb
+  SEED_USERS=5000 SEED_DAYS=90 uv run seed-duckdb
 fi
 uv run python -m seeders.bootstrap_connection --path "$SAMPLE_DB"
 
