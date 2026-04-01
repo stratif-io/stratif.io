@@ -95,7 +95,7 @@ cd "$INSTALL_DIR"
 
 # ── Download pre-built frontend ───────────────────────────────────────────────
 
-FRONTEND_DEST="$INSTALL_DIR/apps/web/dist"
+FRONTEND_DEST="$INSTALL_DIR/dist"
 FRONTEND_VERSION_FILE="$INSTALL_DIR/.frontend-version"
 INSTALLED_FRONTEND=$(cat "$FRONTEND_VERSION_FILE" 2>/dev/null || echo "")
 
@@ -116,8 +116,7 @@ else
     fi
   fi
   rm -rf "$FRONTEND_DEST"
-  mkdir -p "$INSTALL_DIR/apps/web"
-  tar -xzf "$TMP" -C "$INSTALL_DIR/apps/web"
+  tar -xzf "$TMP" -C "$INSTALL_DIR"
   rm -f "$TMP"
   echo "$LATEST" > "$FRONTEND_VERSION_FILE"
   success "Frontend ready"
