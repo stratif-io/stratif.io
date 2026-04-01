@@ -163,7 +163,12 @@ class TestPathFunnelJoinSQLStructure:
         query = self._funnel_query("Home,Search,Purchase")
         # Extract all JOIN...ON blocks
         import re
-        on_clauses = re.findall(r"JOIN\s+events\s+e\s+ON\s+([^G]+?)(?=WHERE|GROUP|$)", query, re.IGNORECASE | re.DOTALL)
+
+        on_clauses = re.findall(
+            r"JOIN\s+events\s+e\s+ON\s+([^G]+?)(?=WHERE|GROUP|$)",
+            query,
+            re.IGNORECASE | re.DOTALL,
+        )
         for on_clause in on_clauses:
             # ON may only contain the user_id equality — nothing else
             assert "event_name" not in on_clause, (
@@ -180,9 +185,16 @@ class TestPathFunnelJoinSQLStructure:
             )
 
     def test_join_on_contains_only_user_id_equality_with_date_filter(self):
-        query = self._funnel_query("Home,Search", start_date="2026-01-01", end_date="2026-01-31")
+        query = self._funnel_query(
+            "Home,Search", start_date="2026-01-01", end_date="2026-01-31"
+        )
         import re
-        on_clauses = re.findall(r"JOIN\s+events\s+e\s+ON\s+([^G]+?)(?=WHERE|GROUP|$)", query, re.IGNORECASE | re.DOTALL)
+
+        on_clauses = re.findall(
+            r"JOIN\s+events\s+e\s+ON\s+([^G]+?)(?=WHERE|GROUP|$)",
+            query,
+            re.IGNORECASE | re.DOTALL,
+        )
         for on_clause in on_clauses:
             assert "event_name" not in on_clause
             assert "timestamp" not in on_clause or "= e.user_id" in on_clause

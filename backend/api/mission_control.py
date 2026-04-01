@@ -1,6 +1,7 @@
 """Mission Control API endpoints."""
 
 import json
+from collections import defaultdict as _defaultdict
 from datetime import date, datetime, timedelta
 from typing import Annotated
 
@@ -8,10 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.services import get_analytics_db
 from backend.services.connection_executor import AnalyticsDatabase
-from backend.services.views import session_ctes
-from backend.services.validators import interpolate_sql, parse_date
 from backend.services.sql_builder import date_trunc
-from collections import defaultdict as _defaultdict
+from backend.services.validators import interpolate_sql, parse_date
+from backend.services.views import session_ctes
 
 router = APIRouter(prefix="/api", tags=["mission-control"])
 
@@ -43,7 +43,9 @@ def _parse_request_params(
         try:
             filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
         except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+            raise HTTPException(
+                status_code=400, detail="Invalid filters JSON."
+            ) from None
 
     return start, end, filter_clauses, filter_params
 
@@ -146,25 +148,59 @@ def _fetch_period_metrics(
 
     # --- 5. New metrics (delegated to _fetch_single_metric) ---
     resurrected_users = int(
-        _fetch_single_metric(db, "resurrected_users", period_start, period_end, filter_clauses, filter_params)[0]
+        _fetch_single_metric(
+            db,
+            "resurrected_users",
+            period_start,
+            period_end,
+            filter_clauses,
+            filter_params,
+        )[0]
     )
     returning_users = int(
-        _fetch_single_metric(db, "returning_users", period_start, period_end, filter_clauses, filter_params)[0]
+        _fetch_single_metric(
+            db,
+            "returning_users",
+            period_start,
+            period_end,
+            filter_clauses,
+            filter_params,
+        )[0]
     )
     churned_users = int(
-        _fetch_single_metric(db, "churned_users", period_start, period_end, filter_clauses, filter_params)[0]
+        _fetch_single_metric(
+            db, "churned_users", period_start, period_end, filter_clauses, filter_params
+        )[0]
     )
     retention_rate = float(
-        _fetch_single_metric(db, "retention_rate", period_start, period_end, filter_clauses, filter_params)[0]
+        _fetch_single_metric(
+            db,
+            "retention_rate",
+            period_start,
+            period_end,
+            filter_clauses,
+            filter_params,
+        )[0]
     )
     wau = int(
-        _fetch_single_metric(db, "wau", period_start, period_end, filter_clauses, filter_params)[0]
+        _fetch_single_metric(
+            db, "wau", period_start, period_end, filter_clauses, filter_params
+        )[0]
     )
     avg_active_days = float(
-        _fetch_single_metric(db, "avg_active_days", period_start, period_end, filter_clauses, filter_params)[0]
+        _fetch_single_metric(
+            db,
+            "avg_active_days",
+            period_start,
+            period_end,
+            filter_clauses,
+            filter_params,
+        )[0]
     )
     power_users = int(
-        _fetch_single_metric(db, "power_users", period_start, period_end, filter_clauses, filter_params)[0]
+        _fetch_single_metric(
+            db, "power_users", period_start, period_end, filter_clauses, filter_params
+        )[0]
     )
 
     return {
@@ -212,7 +248,11 @@ def _fetch_single_metric(
         rows = db.execute(sql, ev_params)
         return (rows[0][0] if rows else 0), interpolate_sql(sql, ev_params)
 
-    if metric in ("total_sessions", "avg_session_duration_sec", "avg_events_per_session"):
+    if metric in (
+        "total_sessions",
+        "avg_session_duration_sec",
+        "avg_events_per_session",
+    ):
         sess_where: list[str] = ["ds.start_time >= ?", "ds.start_time <= ?"]
         sess_params: list = [ps, pe]
         if filter_clauses:
@@ -236,7 +276,9 @@ def _fetch_single_metric(
             SELECT {agg} FROM derived_sessions ds {sess_where_sql}
             """
         rows = db.execute(sql, sess_params)
-        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(sql, sess_params)
+        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(
+            sql, sess_params
+        )
 
     if metric == "new_users":
         sql = """
@@ -253,7 +295,9 @@ def _fetch_single_metric(
         return (rows[0][0] if rows else 0), interpolate_sql(sql, params)
 
     if metric in ("returning_users", "resurrected_users"):
-        resurrection_cutoff = period_start - timedelta(days=db.get_resurrection_window_days())
+        resurrection_cutoff = period_start - timedelta(
+            days=db.get_resurrection_window_days()
+        )
         prior_active_subq = (
             "SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id"
         )
@@ -314,7 +358,9 @@ def _fetch_single_metric(
         prev_uniq_where.extend(filter_clauses)
         prev_uniq_params_r.extend(filter_params)
         prev_uniq_where_sql = "WHERE " + " AND ".join(prev_uniq_where)
-        prev_uniq_sql = f"SELECT COUNT(DISTINCT user_id) FROM events {prev_uniq_where_sql}"
+        prev_uniq_sql = (
+            f"SELECT COUNT(DISTINCT user_id) FROM events {prev_uniq_where_sql}"
+        )
         prev_uniq_rows = db.execute(prev_uniq_sql, prev_uniq_params_r)
         prev_unique = prev_uniq_rows[0][0] if prev_uniq_rows else 0
         retained_sql = f"""
@@ -354,7 +400,9 @@ def _fetch_single_metric(
             ) t
             """
         rows = db.execute(sql, ev_params)
-        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(sql, ev_params)
+        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(
+            sql, ev_params
+        )
 
     if metric == "power_users":
         threshold = db.get_power_user_threshold_days()
@@ -395,7 +443,10 @@ def _fetch_single_metric(
     mau_rows = db.execute(mau_sql, mau_params)
     mau = mau_rows[0][0] if mau_rows else 0
     value = round(dau / mau, 4) if mau else 0.0
-    return value, [interpolate_sql(dau_sql, ev_params), interpolate_sql(mau_sql, mau_params)]
+    return value, [
+        interpolate_sql(dau_sql, ev_params),
+        interpolate_sql(mau_sql, mau_params),
+    ]
 
 
 def _fetch_single_metric_all_time(
@@ -417,8 +468,14 @@ def _fetch_single_metric_all_time(
         rows = db.execute(sql, filter_params)
         return (rows[0][0] if rows else 0), interpolate_sql(sql, filter_params)
 
-    if metric in ("total_sessions", "avg_session_duration_sec", "avg_events_per_session"):
-        sess_where_sql = ev_where_sql.replace("WHERE ", "WHERE ds.") if ev_where_sql else ""
+    if metric in (
+        "total_sessions",
+        "avg_session_duration_sec",
+        "avg_events_per_session",
+    ):
+        sess_where_sql = (
+            ev_where_sql.replace("WHERE ", "WHERE ds.") if ev_where_sql else ""
+        )
         timeout = db.get_session_timeout_minutes()
         dialect = db.get_dialect()
         if metric == "total_sessions":
@@ -429,7 +486,9 @@ def _fetch_single_metric_all_time(
             agg = "AVG(ds.event_count)"
         sql = f"WITH {session_ctes(timeout, dialect)} SELECT {agg} FROM derived_sessions ds {sess_where_sql}"
         rows = db.execute(sql, filter_params)
-        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(sql, filter_params)
+        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(
+            sql, filter_params
+        )
 
     if metric == "new_users":
         # All users are "new" in all-time context — return unique users
@@ -445,7 +504,9 @@ def _fetch_single_metric_all_time(
 
     if metric == "wau":
         # All-time: use last 7 days of all available data
-        wau_where_sql = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        wau_where_sql = (
+            ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        )
         bounds = db.execute(
             f"SELECT MAX(DATE(timestamp)) FROM events {wau_where_sql}",
             filter_params,
@@ -453,7 +514,7 @@ def _fetch_single_metric_all_time(
         if not bounds or bounds[0][0] is None:
             return 0, ""
         max_day = bounds[0][0]
-        max_day_dt = datetime.strptime(str(max_day), '%Y-%m-%d').date()
+        max_day_dt = datetime.strptime(str(max_day), "%Y-%m-%d").date()
         wau_start_at = max_day_dt - timedelta(days=6)
         wau_at_where: list[str] = ["DATE(timestamp) >= ?", "DATE(timestamp) <= ?"]
         wau_at_params: list = [str(wau_start_at), str(max_day)]
@@ -466,7 +527,9 @@ def _fetch_single_metric_all_time(
         return (rows[0][0] if rows else 0), interpolate_sql(sql, wau_at_params)
 
     if metric == "avg_active_days":
-        ev_where_sql_at = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        ev_where_sql_at = (
+            ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        )
         sql = f"""
             SELECT AVG(active_days) FROM (
                 SELECT user_id, COUNT(DISTINCT DATE(timestamp)) AS active_days
@@ -475,11 +538,15 @@ def _fetch_single_metric_all_time(
             ) t
             """
         rows = db.execute(sql, filter_params)
-        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(sql, filter_params)
+        return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(
+            sql, filter_params
+        )
 
     if metric == "power_users":
         threshold = db.get_power_user_threshold_days()
-        ev_where_sql_at = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        ev_where_sql_at = (
+            ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        )
         sql = f"""
             SELECT COUNT(*) FROM (
                 SELECT user_id FROM events {ev_where_sql_at}
@@ -534,15 +601,25 @@ def get_mission_control_metric(
         try:
             filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
         except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid filters JSON.")
+            raise HTTPException(
+                status_code=400, detail="Invalid filters JSON."
+            ) from None
 
     if start_date and end_date:
-        start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
+        start, end, filter_clauses, filter_params = _parse_request_params(
+            start_date, end_date, filters, db
+        )
         prev_start, prev_end = _compute_previous_period(start, end)
-        current_value, current_sql = _fetch_single_metric(db, metric, start, end, filter_clauses, filter_params)
-        previous_value, previous_sql = _fetch_single_metric(db, metric, prev_start, prev_end, filter_clauses, filter_params)
+        current_value, current_sql = _fetch_single_metric(
+            db, metric, start, end, filter_clauses, filter_params
+        )
+        previous_value, previous_sql = _fetch_single_metric(
+            db, metric, prev_start, prev_end, filter_clauses, filter_params
+        )
     else:
-        current_value, current_sql = _fetch_single_metric_all_time(db, metric, filter_clauses, filter_params)
+        current_value, current_sql = _fetch_single_metric_all_time(
+            db, metric, filter_clauses, filter_params
+        )
         previous_value = None
         previous_sql = None
 
@@ -586,13 +663,16 @@ def get_mission_control_metric(
             ev_params + prev_uniq_params_b,
         )
         retained_b = retained_rows_b[0][0] if retained_rows_b else 0
-        breakdown = {"retained_count": int(retained_b), "prev_unique_users": int(prev_uniq_b)}
+        breakdown = {
+            "retained_count": int(retained_b),
+            "prev_unique_users": int(prev_uniq_b),
+        }
 
     all_sqls: list[str] = []
-    for s in ([current_sql] if isinstance(current_sql, str) else (current_sql or [])):
+    for s in [current_sql] if isinstance(current_sql, str) else (current_sql or []):
         if s:
             all_sqls.append(s)
-    for s in ([previous_sql] if isinstance(previous_sql, str) else (previous_sql or [])):
+    for s in [previous_sql] if isinstance(previous_sql, str) else (previous_sql or []):
         if s:
             all_sqls.append(s)
 
@@ -607,37 +687,37 @@ def get_mission_control_metric(
 
 def _trunc_to_bucket(d: date, granularity: str) -> date:
     """Truncate a date to the start of the granularity bucket."""
-    if granularity in ('hour', 'day'):
+    if granularity in ("hour", "day"):
         return d
-    if granularity == 'week':
+    if granularity == "week":
         return d - timedelta(days=d.weekday())  # ISO Monday
-    if granularity == 'month':
+    if granularity == "month":
         return d.replace(day=1)
-    if granularity == 'quarter':
+    if granularity == "quarter":
         return d.replace(month=((d.month - 1) // 3) * 3 + 1, day=1)
-    if granularity == 'year':
+    if granularity == "year":
         return d.replace(month=1, day=1)
     return d
 
 
-def _resample(data: list[dict], granularity: str, agg: str = 'sum') -> list[dict]:
+def _resample(data: list[dict], granularity: str, agg: str = "sum") -> list[dict]:
     """Resample daily data to the requested granularity bucket.
 
     agg='sum' for count metrics (new_users, resurrected, etc.)
     agg='avg' for rate/average metrics (retention_rate, dau_mau_ratio, etc.)
     """
-    if granularity == 'day':
+    if granularity == "day":
         return data
     buckets: dict[date, list[float]] = _defaultdict(list)
     for item in data:
-        d = date.fromisoformat(item['date'])
+        d = date.fromisoformat(item["date"])
         bucket = _trunc_to_bucket(d, granularity)
-        buckets[bucket].append(float(item['value']))
+        buckets[bucket].append(float(item["value"]))
     result = []
     for bucket_date in sorted(buckets):
         vals = buckets[bucket_date]
-        value = sum(vals) if agg == 'sum' else (sum(vals) / len(vals) if vals else 0.0)
-        result.append({'date': str(bucket_date), 'value': round(value, 4)})
+        value = sum(vals) if agg == "sum" else (sum(vals) / len(vals) if vals else 0.0)
+        result.append({"date": str(bucket_date), "value": round(value, 4)})
     return result
 
 
@@ -645,7 +725,7 @@ def _resample(data: list[dict], granularity: str, agg: str = 'sum') -> list[dict
 def get_mission_control_trend(
     db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
     metric: str = Query(..., description="Metric name"),
-    granularity: str = Query('day', description="Aggregation granularity"),
+    granularity: str = Query("day", description="Aggregation granularity"),
     start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     filters: str | None = Query(None, description="JSON dict of dimension filters"),
@@ -658,16 +738,24 @@ def get_mission_control_trend(
         )
 
     if start_date and end_date:
-        start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
+        start, end, filter_clauses, filter_params = _parse_request_params(
+            start_date, end_date, filters, db
+        )
     else:
         # All-time: derive date range from the data itself
         filter_clauses, filter_params = [], []
         if filters:
             try:
-                filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+                filter_clauses, filter_params = db.build_filter_clauses(
+                    json.loads(filters)
+                )
             except json.JSONDecodeError:
-                raise HTTPException(status_code=400, detail="Invalid filters JSON.")
-        bounds_where = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+                raise HTTPException(
+                    status_code=400, detail="Invalid filters JSON."
+                ) from None
+        bounds_where = (
+            ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        )
         bounds = db.execute(
             f"SELECT DATE(MIN(timestamp)), DATE(MAX(timestamp)) FROM events {bounds_where}",
             filter_params,
@@ -704,7 +792,11 @@ def get_mission_control_trend(
         data = [{"date": str(r[0]), "value": r[1] or 0} for r in rows]
         sql_val = interpolate_sql(trend_sql, ev_params)
 
-    elif metric in ("total_sessions", "avg_session_duration_sec", "avg_events_per_session"):
+    elif metric in (
+        "total_sessions",
+        "avg_session_duration_sec",
+        "avg_events_per_session",
+    ):
         sess_where: list[str] = ["ds.start_time >= ?", "ds.start_time <= ?"]
         sess_params: list = [ps, pe]
         if filter_clauses:
@@ -753,9 +845,11 @@ def get_mission_control_trend(
         current_day = start
         data = []
         while current_day <= end:
-            data.append({"date": str(current_day), "value": by_day.get(str(current_day), 0)})
+            data.append(
+                {"date": str(current_day), "value": by_day.get(str(current_day), 0)}
+            )
             current_day += timedelta(days=1)
-        data = _resample(data, granularity, agg='sum')
+        data = _resample(data, granularity, agg="sum")
         sql_val = interpolate_sql(trend_sql, new_params)
 
     elif metric == "returning_users":
@@ -786,8 +880,11 @@ def get_mission_control_trend(
             returning = max(0, daily_uniq.get(d, 0) - new_by_day.get(d, 0))
             data.append({"date": d, "value": returning})
             current_day += timedelta(days=1)
-        data = _resample(data, granularity, agg='sum')
-        sql_val = [interpolate_sql(uniq_sql, ev_params), interpolate_sql(new_sql, new_ret_params)]
+        data = _resample(data, granularity, agg="sum")
+        sql_val = [
+            interpolate_sql(uniq_sql, ev_params),
+            interpolate_sql(new_sql, new_ret_params),
+        ]
 
     elif metric == "resurrected_users":
         resurrection_cutoff_days = db.get_resurrection_window_days()
@@ -819,7 +916,7 @@ def get_mission_control_trend(
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
-        data = _resample(data, granularity, agg='sum')
+        data = _resample(data, granularity, agg="sum")
         sql_val = "resurrected_users daily trend"
 
     elif metric == "churned_users":
@@ -843,7 +940,7 @@ def get_mission_control_trend(
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
-        data = _resample(data, granularity, agg='sum')
+        data = _resample(data, granularity, agg="sum")
         sql_val = "churned_users daily trend"
 
     elif metric == "retention_rate":
@@ -874,7 +971,7 @@ def get_mission_control_trend(
             ratio = round(retained / prev_u, 4) if prev_u else 0.0
             data.append({"date": str(current_day), "value": ratio})
             current_day += timedelta(days=1)
-        data = _resample(data, granularity, agg='avg')
+        data = _resample(data, granularity, agg="avg")
         sql_val = "retention_rate daily trend"
 
     elif metric == "wau":
@@ -888,11 +985,12 @@ def get_mission_control_trend(
             wau_params_t.extend(filter_params)
             wau_where_sql_t = "WHERE " + " AND ".join(wau_where_t)
             rows = db.execute(
-                f"SELECT COUNT(DISTINCT user_id) FROM events {wau_where_sql_t}", wau_params_t
+                f"SELECT COUNT(DISTINCT user_id) FROM events {wau_where_sql_t}",
+                wau_params_t,
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
-        data = _resample(data, granularity, agg='avg')
+        data = _resample(data, granularity, agg="avg")
         sql_val = "wau rolling 7-day trend"
 
     elif metric == "avg_active_days":
@@ -919,9 +1017,14 @@ def get_mission_control_trend(
                 """,
                 ev_params + day_params,
             )
-            data.append({"date": str(current_day), "value": round(rows[0][0] or 0.0, 2) if rows else 0.0})
+            data.append(
+                {
+                    "date": str(current_day),
+                    "value": round(rows[0][0] or 0.0, 2) if rows else 0.0,
+                }
+            )
             current_day += timedelta(days=1)
-        data = _resample(data, granularity, agg='avg')
+        data = _resample(data, granularity, agg="avg")
         sql_val = "avg_active_days daily trend"
 
     elif metric == "power_users":
@@ -952,7 +1055,7 @@ def get_mission_control_trend(
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
-        data = _resample(data, granularity, agg='sum')
+        data = _resample(data, granularity, agg="sum")
         sql_val = "power_users daily trend"
 
     else:  # dau_mau_ratio
@@ -972,7 +1075,10 @@ def get_mission_control_trend(
         mau_params_ex.extend(filter_params)
         dau_sql_ex = f"SELECT COUNT(DISTINCT user_id) FROM events WHERE {' AND '.join(dau_where_ex)}"
         mau_sql_ex = f"SELECT COUNT(DISTINCT user_id) FROM events WHERE {' AND '.join(mau_where_ex)}"
-        sql_val = [interpolate_sql(dau_sql_ex, dau_params_ex), interpolate_sql(mau_sql_ex, mau_params_ex)]
+        sql_val = [
+            interpolate_sql(dau_sql_ex, dau_params_ex),
+            interpolate_sql(mau_sql_ex, mau_params_ex),
+        ]
 
         while current_day <= end:
             day_ps = f"{current_day} 00:00:00"
@@ -990,16 +1096,26 @@ def get_mission_control_trend(
             mau_params.extend(filter_params)
             mau_where_sql = "WHERE " + " AND ".join(mau_where)
 
-            dau_r = db.execute(f"SELECT COUNT(DISTINCT user_id) FROM events {dau_where_sql}", dau_params)
-            mau_r = db.execute(f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql}", mau_params)
+            dau_r = db.execute(
+                f"SELECT COUNT(DISTINCT user_id) FROM events {dau_where_sql}",
+                dau_params,
+            )
+            mau_r = db.execute(
+                f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql}",
+                mau_params,
+            )
             dau_val = dau_r[0][0] if dau_r else 0
             mau_val = mau_r[0][0] if mau_r else 0
             ratio = round(dau_val / mau_val, 4) if mau_val else 0.0
             data.append({"date": str(current_day), "value": ratio})
             current_day += timedelta(days=1)
-        data = _resample(data, granularity, agg='avg')
+        data = _resample(data, granularity, agg="avg")
 
-    return {"sql": sql_val, "metric": metric, "data": [{"date": d["date"], "value": float(d["value"])} for d in data]}
+    return {
+        "sql": sql_val,
+        "metric": metric,
+        "data": [{"date": d["date"], "value": float(d["value"])} for d in data],
+    }
 
 
 @router.get("/mission-control")
@@ -1010,12 +1126,16 @@ def get_mission_control(
     filters: str | None = Query(None, description="JSON dict of dimension filters"),
 ) -> dict:
     """Return current and previous period KPI metrics."""
-    start, end, filter_clauses, filter_params = _parse_request_params(start_date, end_date, filters, db)
+    start, end, filter_clauses, filter_params = _parse_request_params(
+        start_date, end_date, filters, db
+    )
 
     prev_start, prev_end = _compute_previous_period(start, end)
 
     current = _fetch_period_metrics(db, start, end, filter_clauses, filter_params)
-    previous = _fetch_period_metrics(db, prev_start, prev_end, filter_clauses, filter_params)
+    previous = _fetch_period_metrics(
+        db, prev_start, prev_end, filter_clauses, filter_params
+    )
 
     return {
         "period": {"start_date": str(start), "end_date": str(end)},

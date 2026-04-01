@@ -1,4 +1,5 @@
 """Credentials model for DuckDB connections."""
+
 from pydantic import BaseModel, model_validator
 
 

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class PostgreSQLCredentials(BaseModel):
     host: str
     port: int = 5432
