@@ -377,6 +377,20 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         assert len(clauses) == 1
         assert params == ["Alice"]
 
+    def test_dotted_path_filter_field_generates_json_extraction(self):
+        """A filter field like 'traits.first_name' not in custom_prop_exprs must resolve
+        to a JSON extraction expression, not a quoted dotted identifier."""
+        schema = self._default_schema()
+        db = self._open_db(
+            schema,
+            [{"field": "traits.first_name", "label": "First Name", "icon": "user"}],
+        )
+        exprs = db.get_filter_exprs()
+        assert "traits.first_name" in exprs
+        # Must not be a plain quoted identifier — must reference traits column
+        assert '"traits.first_name"' not in exprs["traits.first_name"]
+        assert "traits" in exprs["traits.first_name"]
+
     def test_identity_field_with_custom_column_name(self):
         schema = self._default_schema(first_name_field="fname")
         db = self._open_db(

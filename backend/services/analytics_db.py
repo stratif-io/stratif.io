@@ -172,7 +172,8 @@ class AnalyticsDatabase:
                     f"WHERE {expr} IS NOT NULL GROUP BY {expr} ORDER BY n DESC LIMIT 200"
                 )
                 options[field] = [str(row[0]) for row in rows if row[0] is not None]
-            except Exception:
+            except Exception as _exc:
+                log.warning("filter_options_query_failed", field=field, error=str(_exc))
                 options[field] = []
         return options
 
@@ -342,8 +343,9 @@ def open_analytics_db(
                 _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
             )
         else:
-            # Plain column not mapped as a custom prop or standard field — quote it directly.
-            filter_exprs[field] = f"{_iq}{field}{_iq}"
+            # Not a known custom prop or standard field — resolve as a path (handles both
+            # plain columns like "first_name" and dotted paths like "traits.first_name").
+            filter_exprs[field] = _resolve_path_to_sql(field, dialect)
 
     shared_kwargs: dict = {
         "filter_fields": filter_fields,
