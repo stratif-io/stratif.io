@@ -2,46 +2,40 @@
 
 ## [0.13.0](https://github.com/cabichahine/stratif.io/compare/v0.12.0...v0.13.0) (2026-04-01)
 
-
 ### Features
 
-* Develop ([#152](https://github.com/cabichahine/stratif.io/issues/152)) ([4bc1e42](https://github.com/cabichahine/stratif.io/commit/4bc1e427087f13af573dbda4bba75c6b48f8131e))
+- Develop ([#152](https://github.com/cabichahine/stratif.io/issues/152)) ([4bc1e42](https://github.com/cabichahine/stratif.io/commit/4bc1e427087f13af573dbda4bba75c6b48f8131e))
 
 ## [0.12.0](https://github.com/cabichahine/stratif.io/compare/v0.11.0...v0.12.0) (2026-04-01)
 
-
 ### Features
 
-* **pivot:** default state, unified zone bar, two-panel value picker, SQL badge toggle ([#144](https://github.com/cabichahine/stratif.io/issues/144)) ([3001538](https://github.com/cabichahine/stratif.io/commit/30015380ddd5ca43e9610d7e5a6b087bf3e969f8))
-* precise period labels in SQL viewer and metric cards ([#148](https://github.com/cabichahine/stratif.io/issues/148)) ([0e52a28](https://github.com/cabichahine/stratif.io/commit/0e52a28eb5a57550f69337eac24a9794156a20e8))
+- **pivot:** default state, unified zone bar, two-panel value picker, SQL badge toggle ([#144](https://github.com/cabichahine/stratif.io/issues/144)) ([3001538](https://github.com/cabichahine/stratif.io/commit/30015380ddd5ca43e9610d7e5a6b087bf3e969f8))
+- precise period labels in SQL viewer and metric cards ([#148](https://github.com/cabichahine/stratif.io/issues/148)) ([0e52a28](https://github.com/cabichahine/stratif.io/commit/0e52a28eb5a57550f69337eac24a9794156a20e8))
 
 ## [0.11.0](https://github.com/cabichahine/stratif.io/compare/v0.10.0...v0.11.0) (2026-03-31)
 
-
 ### Features
 
-* Develop ([#142](https://github.com/cabichahine/stratif.io/issues/142)) ([382f32c](https://github.com/cabichahine/stratif.io/commit/382f32ca8cb9df2ca6008c2f558a2c09bd102cfc))
+- Develop ([#142](https://github.com/cabichahine/stratif.io/issues/142)) ([382f32c](https://github.com/cabichahine/stratif.io/commit/382f32ca8cb9df2ca6008c2f558a2c09bd102cfc))
 
 ## [0.10.0](https://github.com/cabichahine/stratif.io/compare/v0.9.0...v0.10.0) (2026-03-31)
 
-
 ### Features
 
-* add missing components to design system ([#139](https://github.com/cabichahine/stratif.io/issues/139)) ([3014497](https://github.com/cabichahine/stratif.io/commit/301449784d8acf5586cafa1b1f448094b5ce4065))
+- add missing components to design system ([#139](https://github.com/cabichahine/stratif.io/issues/139)) ([3014497](https://github.com/cabichahine/stratif.io/commit/301449784d8acf5586cafa1b1f448094b5ce4065))
 
 ## [0.9.0](https://github.com/cabichahine/stratif.io/compare/v0.8.0...v0.9.0) (2026-03-31)
 
-
 ### Features
 
-* global granularity control (hour/day/week/month/quarter/year) ([#137](https://github.com/cabichahine/stratif.io/issues/137)) ([c159187](https://github.com/cabichahine/stratif.io/commit/c15918733c18401d5bf4a61f4c6900153c00e871))
+- global granularity control (hour/day/week/month/quarter/year) ([#137](https://github.com/cabichahine/stratif.io/issues/137)) ([c159187](https://github.com/cabichahine/stratif.io/commit/c15918733c18401d5bf4a61f4c6900153c00e871))
 
 ## [0.8.0](https://github.com/cabichahine/stratif.io/compare/v0.7.0...v0.8.0) (2026-03-30)
 
-
 ### Features
 
-* **dashboard:** Mission Control v2 — metrics grid, SQL viewer, theme support ([#129](https://github.com/cabichahine/stratif.io/issues/129)) ([b689b65](https://github.com/cabichahine/stratif.io/commit/b689b6576b2e044289380ff8ace49f9f45e743bb))
+- **dashboard:** Mission Control v2 — metrics grid, SQL viewer, theme support ([#129](https://github.com/cabichahine/stratif.io/issues/129)) ([b689b65](https://github.com/cabichahine/stratif.io/commit/b689b6576b2e044289380ff8ace49f9f45e743bb))
 
 ## [0.7.0](https://github.com/cabichahine/stratif.io/compare/v0.6.0...v0.7.0) (2026-03-30)
 
