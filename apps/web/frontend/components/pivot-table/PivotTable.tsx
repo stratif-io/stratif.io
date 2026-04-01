@@ -78,7 +78,13 @@ export function PivotTable({
 
   useEffect(() => {
     if (!colDefsData || leafCols.length === 0) return
-    if (rowGroups.length > 0 || valueCols.length > 0 || initialValueCols?.length) return
+    if (
+      rowGroups.length > 0 ||
+      valueCols.length > 0 ||
+      initialValueCols?.length ||
+      initialRowGroups?.length
+    )
+      return
 
     const timeDimId = GRANULARITY_TO_DIM[granularity]
     const timeMeta = leafCols.find((c) => c.colId === timeDimId)
