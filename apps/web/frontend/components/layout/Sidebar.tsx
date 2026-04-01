@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   TrendingUp,
   Users,
+  Repeat2,
   Route,
   Activity,
   Settings,
@@ -52,7 +53,7 @@ const navGroups: NavGroup[] = [
       {
         title: 'Retention',
         href: '/retention',
-        icon: Users,
+        icon: Repeat2,
         preload: () => import('@/features/analytics'),
       },
       {
