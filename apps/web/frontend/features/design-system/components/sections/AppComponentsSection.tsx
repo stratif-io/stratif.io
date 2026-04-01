@@ -77,7 +77,7 @@ function TrendMetricPickerDemo({
         setField(f)
         setAgg(a)
       }}
-      onAggChange={() => {}}
+      onAggChange={(a) => setAgg(a)}
     />
   )
 }
