@@ -63,7 +63,7 @@ class ClickHouseBackend:
             password=creds.password,
             secure=creds.secure,
         )
-        client._creds = creds  # carry credentials so execute() can read always_final
+        client._creds = creds  # type: ignore[attr-defined]  # carry credentials so execute() can read always_final
         return client
 
     def pool_key(self, connection_id: str, credentials: BaseModel) -> tuple:
