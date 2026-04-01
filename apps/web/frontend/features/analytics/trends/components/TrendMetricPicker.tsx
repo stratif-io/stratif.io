@@ -1,8 +1,15 @@
-import { useState, useEffect } from 'react'
-import { BarChart2, ChevronDown, ChevronLeft, Sigma } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { BarChart2, ChevronDown, ChevronLeft, Search, X } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
-import type { DimensionOption } from '@/types'
+import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
+import { CategoryIcon } from '@/lib/utils/categoryIcon'
+import categoriesConfig from '@/config/dimension-categories.json'
+import type { DimensionOption, DimensionCategoryConfig } from '@/types'
+
+const CATEGORIES = categoriesConfig as DimensionCategoryConfig[]
+
+const STANDARD_ID = '__standard__'
 
 const AGG_LABELS: Record<string, string> = {
   sum: 'Sum',
@@ -15,14 +22,20 @@ const AGG_LABELS: Record<string, string> = {
 
 const AGG_OPTIONS = ['sum', 'avg', 'min', 'max', 'count', 'countDistinct']
 
-type Category = 'standard' | 'custom'
-
-interface TrendMetricPickerProps {
+export interface TrendMetricPickerProps {
   measureField: string
   aggregation: string
   standardMeasures: DimensionOption[]
   numericDimensions: DimensionOption[]
   onChange: (field: string, agg: string) => void
+}
+
+type CategoryEntry = {
+  id: string
+  label: string
+  iconEl: React.ReactNode
+  items: DimensionOption[]
+  isStandard: boolean
 }
 
 export function TrendMetricPicker({
@@ -33,15 +46,45 @@ export function TrendMetricPicker({
   onChange,
 }: TrendMetricPickerProps) {
   const [open, setOpen] = useState(false)
-  const [activeCategory, setActiveCategory] = useState<Category>('standard')
+  const [activeCategory, setActiveCategory] = useState<string>(STANDARD_ID)
   const [selectedCustom, setSelectedCustom] = useState<DimensionOption | null>(null)
+  const [search, setSearch] = useState('')
 
-  // Close the popover when key props change so callers can reset UI state
-  useEffect(() => {
-    setOpen(false)
-    setSelectedCustom(null)
-    setActiveCategory('standard')
-  }, [measureField, numericDimensions.length])
+  const numericGroups = useMemo(
+    () =>
+      numericDimensions.length > 0 ? groupDimensionsByCategory(numericDimensions, CATEGORIES) : [],
+    [numericDimensions]
+  )
+
+  const allCategories = useMemo<CategoryEntry[]>(
+    () => [
+      {
+        id: STANDARD_ID,
+        label: 'Standard',
+        iconEl: <BarChart2 className="h-3 w-3 shrink-0" />,
+        items: standardMeasures,
+        isStandard: true,
+      },
+      ...numericGroups.map((g) => ({
+        id: g.category.id,
+        label: g.category.label,
+        iconEl: <CategoryIcon name={g.category.icon} className="h-3 w-3 shrink-0" />,
+        items: g.dimensions,
+        isStandard: false,
+      })),
+    ],
+    [standardMeasures, numericGroups]
+  )
+
+  const searchGrouped = useMemo(() => {
+    if (!search) return []
+    return allCategories
+      .map((cat) => ({
+        ...cat,
+        items: cat.items.filter((item) => item.label.toLowerCase().includes(search.toLowerCase())),
+      }))
+      .filter((cat) => cat.items.length > 0)
+  }, [allCategories, search])
 
   const standardMatch = standardMeasures.find((m) => m.value === measureField)
   const chipLabel = standardMatch
@@ -56,18 +99,21 @@ export function TrendMetricPicker({
   function handleOpenChange(next: boolean) {
     setOpen(next)
     if (next) {
-      setActiveCategory('standard')
+      setActiveCategory(STANDARD_ID)
       setSelectedCustom(null)
+      setSearch('')
+    } else {
+      setSearch('')
     }
   }
 
-  function handleStandardSelect(item: DimensionOption) {
-    onChange(item.value, aggregation)
-    setOpen(false)
-  }
-
-  function handleCustomDimSelect(item: DimensionOption) {
-    setSelectedCustom(item)
+  function handleItemClick(item: DimensionOption, isStandard: boolean) {
+    if (isStandard) {
+      onChange(item.value, aggregation)
+      setOpen(false)
+    } else {
+      setSelectedCustom(item)
+    }
   }
 
   function handleAggSelect(agg: string) {
@@ -76,12 +122,15 @@ export function TrendMetricPicker({
     setOpen(false)
   }
 
-  const showCustomCategory = numericDimensions.length > 0
+  const activeEntry = allCategories.find((c) => c.id === activeCategory)
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <button className="inline-flex items-center gap-1.5 rounded-md bg-muted/60 border border-transparent px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted hover:border-border transition-colors">
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 rounded-md bg-muted/60 border border-transparent px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted hover:border-border transition-colors"
+        >
           <BarChart2 className="h-3 w-3 text-muted-foreground" />
           {chipLabel}
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
@@ -89,64 +138,105 @@ export function TrendMetricPicker({
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" align="start">
         {selectedCustom === null ? (
-          <div className="flex max-h-52">
-            {/* Left panel: categories */}
-            <div className="w-32 shrink-0 bg-muted/40 overflow-y-auto border-r">
-              <button
-                type="button"
-                className={cn(
-                  'w-full flex items-center gap-1.5 px-2 py-1.5 text-left text-xs focus-visible:outline-none',
-                  activeCategory === 'standard'
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground hover:bg-muted/60'
-                )}
-                onClick={() => setActiveCategory('standard')}
-              >
-                <BarChart2 className="h-3 w-3 shrink-0" />
-                <span className="truncate flex-1">Standard</span>
-              </button>
-              {showCustomCategory && (
+          <>
+            {/* Search bar */}
+            <div className="flex items-center gap-2 px-3 py-2 border-b">
+              <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <input
+                placeholder="Search metrics…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+                style={{ boxShadow: 'none' }}
+                autoFocus
+              />
+              {search && (
                 <button
                   type="button"
-                  className={cn(
-                    'w-full flex items-center gap-1.5 px-2 py-1.5 text-left text-xs focus-visible:outline-none',
-                    activeCategory === 'custom'
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'text-muted-foreground hover:bg-muted/60'
-                  )}
-                  onClick={() => setActiveCategory('custom')}
+                  aria-label="Clear search"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setSearch('')}
                 >
-                  <Sigma className="h-3 w-3 shrink-0" />
-                  <span className="truncate flex-1">Custom</span>
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Right panel: items */}
-            <div className="flex-1 overflow-y-auto">
-              {activeCategory === 'standard'
-                ? standardMeasures.map((item) => (
-                    <button
-                      key={item.value}
-                      type="button"
-                      className="w-full text-left px-2.5 py-1.5 text-xs hover:bg-accent transition-colors focus:bg-accent focus:outline-none"
-                      onClick={() => handleStandardSelect(item)}
-                    >
-                      {item.label}
-                    </button>
+            {search ? (
+              /* Search results: flat grouped list */
+              <div className="max-h-52 overflow-y-auto">
+                {searchGrouped.length === 0 ? (
+                  <p className="px-3 py-4 text-xs text-muted-foreground text-center">
+                    No metrics match
+                  </p>
+                ) : (
+                  searchGrouped.map((group) => (
+                    <div key={group.id}>
+                      <div className="text-[10px] font-semibold tracking-wide text-muted-foreground px-3 py-1 sticky top-0 bg-popover">
+                        {group.label}
+                      </div>
+                      {group.items.map((item) => (
+                        <button
+                          key={item.value}
+                          type="button"
+                          className="w-full text-left px-2.5 py-1.5 text-xs hover:bg-accent transition-colors focus:bg-accent focus:outline-none"
+                          onClick={() => handleItemClick(item, group.isStandard)}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
                   ))
-                : numericDimensions.map((item) => (
+                )}
+              </div>
+            ) : (
+              /* Two-panel mode */
+              <div className="flex max-h-52">
+                {/* Left panel: categories */}
+                <div className="w-32 shrink-0 bg-muted/40 overflow-y-auto border-r">
+                  {allCategories.map((cat) => (
                     <button
-                      key={item.value}
+                      key={cat.id}
                       type="button"
-                      className="w-full text-left px-2.5 py-1.5 text-xs hover:bg-accent transition-colors focus:bg-accent focus:outline-none"
-                      onClick={() => handleCustomDimSelect(item)}
+                      className={cn(
+                        'w-full flex items-center gap-1.5 px-2 py-1.5 text-left text-xs focus-visible:outline-none',
+                        cat.id === activeCategory
+                          ? 'bg-primary/10 text-primary font-medium'
+                          : 'text-muted-foreground hover:bg-muted/60'
+                      )}
+                      onClick={() => setActiveCategory(cat.id)}
                     >
-                      {item.label}
+                      {cat.iconEl}
+                      <span className="truncate flex-1">{cat.label}</span>
+                      <span className="shrink-0 text-[10px] text-muted-foreground/50 ml-1">
+                        {cat.items.length}
+                      </span>
                     </button>
                   ))}
-            </div>
-          </div>
+                </div>
+
+                {/* Right panel: items */}
+                <div className="flex-1 overflow-y-auto">
+                  {activeEntry?.items.length ? (
+                    activeEntry.items.map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        className="w-full text-left px-2.5 py-1.5 text-xs hover:bg-accent transition-colors focus:bg-accent focus:outline-none"
+                        onClick={() => handleItemClick(item, activeEntry.isStandard)}
+                      >
+                        {item.label}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="px-3 py-4 text-xs text-muted-foreground text-center">
+                      No metrics
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           /* Step 2: aggregation picker */
           <>
