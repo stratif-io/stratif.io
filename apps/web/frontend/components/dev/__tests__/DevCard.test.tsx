@@ -153,8 +153,8 @@ describe('DevCard', () => {
     setDevMode(true)
     renderCard({ sql: ['SELECT 1', 'SELECT 2'], sqlLabels: ['Label A', 'Label B'] })
     fireEvent.click(screen.getByLabelText('Show SQL'))
-    expect(screen.getByText('-- Label A')).toBeInTheDocument()
-    expect(screen.getByText('-- Label B')).toBeInTheDocument()
+    expect(screen.getAllByText('— Label A').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('— Label B').length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders SQL badge even when sql is null', () => {
@@ -167,8 +167,9 @@ describe('DevCard', () => {
     setDevMode(true)
     renderCard({ sql: ['SELECT 1', 'SELECT 2', 'SELECT 3'] })
     fireEvent.click(screen.getByLabelText('Show SQL'))
+    // SqlPanelBody renders in both back face and expanded overlay (both in DOM)
     const buttons = screen.getAllByLabelText('Open in SQL Studio')
-    expect(buttons).toHaveLength(3)
+    expect(buttons).toHaveLength(6) // 3 queries × 2 panels
   })
 
   it('sends the correct query when a per-query SQL Studio button is clicked', () => {
@@ -176,7 +177,8 @@ describe('DevCard', () => {
     renderCard({ sql: ['SELECT 1', 'SELECT 2'] })
     fireEvent.click(screen.getByLabelText('Show SQL'))
     const buttons = screen.getAllByLabelText('Open in SQL Studio')
-    fireEvent.click(buttons[1])
+    // Click the second query's button in the expanded overlay (index 3 = back[0,1] + expanded[0,1])
+    fireEvent.click(buttons[3])
     expect(mockNavigate).toHaveBeenCalledWith('/query-studio')
     expect(useAppStore.getState().pendingQueryStudioSql).toContain('SELECT 2')
   })
@@ -185,9 +187,9 @@ describe('DevCard', () => {
     setDevMode(true)
     renderCard({ sql: ['SELECT 1', 'SELECT 2'] })
     fireEvent.click(screen.getByLabelText('Show SQL'))
-    // Should be exactly 2 — one per query, no extra header button
+    // SqlPanelBody renders in both back face and expanded overlay — 2 queries × 2 panels = 4
     const buttons = screen.getAllByLabelText('Open in SQL Studio')
-    expect(buttons).toHaveLength(2)
+    expect(buttons).toHaveLength(4)
   })
 
   it('hooks are always called — toggling devMode on/off must not throw', () => {
