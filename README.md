@@ -17,7 +17,10 @@
 
 ---
 
-![stratif.io Dashboard](docs/demo.gif)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/mc_dark.png"/>
+  <img src="docs/mc_light.png" alt="stratif.io Dashboard"/>
+</picture>
 
 ---
 
@@ -64,8 +67,6 @@ Open **http://localhost:9999** when it's done.
 ## 🏗️ Architecture
 
 Built on the shoulders of giants — [React](https://react.dev), [FastAPI](https://fastapi.tiangolo.com), [SQLGlot](https://github.com/tobymao/sqlglot), [shadcn/ui](https://ui.shadcn.com), [TanStack Query](https://tanstack.com/query), [Zustand](https://zustand-demo.pmnd.rs), [Recharts](https://recharts.org), [Tailwind CSS](https://tailwindcss.com).
-
----
 
 ---
 
