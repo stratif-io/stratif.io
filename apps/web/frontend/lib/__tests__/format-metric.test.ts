@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatMetricValue, computePctChange } from '../format-metric'
+import { formatMetricValue, computePctChange, formatPeriodRange } from '../format-metric'
 
 describe('formatMetricValue', () => {
   describe('avg_session_duration_sec', () => {
@@ -86,5 +86,23 @@ describe('computePctChange', () => {
 
   it('returns 0 when values are equal', () => {
     expect(computePctChange(100, 100)).toBe(0)
+  })
+})
+
+describe('formatPeriodRange', () => {
+  it('returns formatted range when both dates provided', () => {
+    expect(formatPeriodRange('2025-01-01', '2026-01-01')).toBe('2025-01-01 – 2026-01-01')
+  })
+
+  it('returns undefined when start is missing', () => {
+    expect(formatPeriodRange(undefined, '2026-01-01')).toBeUndefined()
+  })
+
+  it('returns undefined when end is missing', () => {
+    expect(formatPeriodRange('2025-01-01', undefined)).toBeUndefined()
+  })
+
+  it('returns undefined when both are missing', () => {
+    expect(formatPeriodRange()).toBeUndefined()
   })
 })
