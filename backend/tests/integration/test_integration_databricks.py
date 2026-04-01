@@ -19,6 +19,7 @@ class TestDatabricksIntegration:
         from backend.backends.databricks import DatabricksBackend
         from backend.backends.databricks.credentials import DatabricksCredentials
 
+        assert _CREDS is not None
         creds = DatabricksCredentials(**_CREDS)
         backend = DatabricksBackend()
         conn = backend.open(creds, read_only=True)

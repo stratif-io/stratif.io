@@ -103,7 +103,7 @@ class AnalyticsDatabase:
                 log.warning(
                     "stale_pooled_connection", pool_key=self._pool_key, error=str(exc)
                 )
-                if self._pool_factory:
+                if self._pool_factory and self._pool_key is not None:
                     # Evict the dead connection and retry once with a fresh one.
                     _pool_evict(self._pool_key)
                     self._conn = _pool_get(self._pool_key, self._pool_factory)

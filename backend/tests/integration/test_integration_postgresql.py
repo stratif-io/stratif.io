@@ -19,6 +19,7 @@ class TestPostgreSQLIntegration:
         from backend.backends.postgresql import PostgreSQLBackend
         from backend.backends.postgresql.credentials import PostgreSQLCredentials
 
+        assert _CREDS is not None
         creds = PostgreSQLCredentials(**_CREDS)
         backend = PostgreSQLBackend()
         conn = backend.open(creds, read_only=True)
