@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { DateRangePicker } from '@/components/DateRangePicker'
 import { FilterSelect } from '@/components/FilterSelect'
+import { TrendMetricPicker } from '@/features/analytics/trends/components/TrendMetricPicker'
 import { Button } from '@/components/ui/button'
 import { DbLogo } from '@/components/DbLogo'
 import { DB_BRAND_COLORS } from '@/lib/db-colors'
@@ -47,6 +48,34 @@ function FilterSelectDemo() {
       value={value}
       onChange={(v) => setValue(v as string)}
       placeholder="Select event…"
+    />
+  )
+}
+
+function TrendMetricPickerDemo({
+  initialField,
+  initialAgg,
+  numericDimensions,
+}: {
+  initialField: string
+  initialAgg: string
+  numericDimensions: Array<{ value: string; label: string }>
+}) {
+  const [field, setField] = useState(initialField)
+  const [agg, setAgg] = useState(initialAgg)
+  return (
+    <TrendMetricPicker
+      measureField={field}
+      aggregation={agg}
+      standardMeasures={[
+        { value: 'count_events', label: 'Event Count' },
+        { value: 'unique_users', label: 'Unique Users' },
+      ]}
+      numericDimensions={numericDimensions}
+      onChange={(f, a) => {
+        setField(f)
+        setAgg(a)
+      }}
     />
   )
 }
@@ -237,6 +266,27 @@ export function AppComponentsSection() {
 
       <ComponentRow label="QueryStatusIndicator">
         <QueryStatusIndicatorDemo />
+      </ComponentRow>
+
+      <ComponentRow label="TrendMetricPicker">
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Standard metric selected</p>
+            <TrendMetricPickerDemo
+              initialField="count_events"
+              initialAgg="sum"
+              numericDimensions={[]}
+            />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Custom numeric metric selected</p>
+            <TrendMetricPickerDemo
+              initialField="revenue"
+              initialAgg="avg"
+              numericDimensions={[{ value: 'revenue', label: 'Revenue' }]}
+            />
+          </div>
+        </div>
       </ComponentRow>
     </ComponentSection>
   )
