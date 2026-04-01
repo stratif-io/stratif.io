@@ -26,6 +26,7 @@ export interface HeroMetricCardProps {
   loading?: boolean
   description?: string
   changeLabel?: string
+  prevPeriodLabel?: string
   currentMetrics?: MissionControlMetrics
   breakdown?: MetricBreakdown
 }
@@ -90,6 +91,7 @@ export const HeroMetricCard = memo(function HeroMetricCard({
   loading,
   description,
   changeLabel,
+  prevPeriodLabel,
   currentMetrics,
   breakdown,
 }: HeroMetricCardProps) {
@@ -261,7 +263,8 @@ export const HeroMetricCard = memo(function HeroMetricCard({
             </TooltipContent>
           </UITooltip>
           <span className="text-xs text-muted-foreground">
-            prev. period: <span className="font-medium">{previousValue}</span>
+            {prevPeriodLabel ? `prev. (${prevPeriodLabel}):` : 'prev. period:'}{' '}
+            <span className="font-medium">{previousValue}</span>
           </span>
         </div>
       </div>
