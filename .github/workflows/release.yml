@@ -58,11 +58,17 @@ jobs:
 
       - name: Open sync PR (main → develop)
         run: |
-          gh pr create \
+          if ! gh pr create \
             --title "chore: sync main → develop after release" \
             --body "Automated PR to sync version bump and changelog from main back into develop." \
             --base develop \
-            --head main \
-          || echo "Sync PR already exists or branches are in sync — skipping."
+            --head main; then
+            if gh pr list --head main --base develop --json number --jq '.[0].number' | grep -q .; then
+              echo "Sync PR already exists — skipping."
+            else
+              echo "Failed to create sync PR."
+              exit 1
+            fi
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
