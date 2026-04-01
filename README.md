@@ -31,6 +31,20 @@
 
 ---
 
+## 📊 Comparison
+
+| | stratif.io | Amplitude / Mixpanel | PostHog | Warehouse-native SaaS* |
+|---|:---:|:---:|:---:|:---:|
+| Open source | ✅ | ❌ | ✅ | ❌ |
+| Self-hosted | ✅ | ❌ | ✅ | ❌ |
+| Warehouse-native (no ingestion) | ✅ | ❌ | ❌ | ✅ |
+| Free | ✅ | ❌ | ❌ | ❌ |
+| Sample data to learn with | ✅ | ❌ | ❌ | ❌ |
+
+*\* Mitzu, Kubit, NetSpring, Houseware — all closed-source, cloud-only, paid.*
+
+---
+
 ## ⚡ Quick Start
 
 ```bash
