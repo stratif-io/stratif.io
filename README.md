@@ -26,11 +26,19 @@
 
 ## Why stratif.io?
 
-**Your events are already in your warehouse.** Most analytics platforms require you to re-pipe your data into their system. stratif.io connects directly to your existing DuckDB, Postgres, Snowflake, or ClickHouse — no ingestion, no pipelines, no duplicate data.
+**Your events are already in your warehouse. Stop sending them somewhere else.** Every SaaS analytics platform makes you re-pipe your data into their system — creating vendor lock-in, duplicating data, and adding cost. stratif.io connects directly to your existing DuckDB, Postgres, Snowflake, or ClickHouse. No ingestion. No pipelines. No data ever leaves your infrastructure.
 
 **Open source and self-hosted.** No vendor lock-in, no surprise invoices. One install script and you own your analytics stack completely.
 
 **Learn product analytics hands-on.** stratif.io ships with ~5,000 realistic sample events. Explore funnels, retention, and user journeys without needing your own data — no account, no credit card.
+
+---
+
+## 🔄 How it works
+
+1. **Connect** your existing database — DuckDB, Postgres, Snowflake, ClickHouse, and more
+2. **Explore** funnels, retention, journeys, sessions, and SQL directly in the UI
+3. **Done** — no agents, no pipelines, no data ever leaves your infrastructure
 
 ---
 
@@ -61,6 +69,14 @@ curl -fsSL https://stratif.io/install.sh | bash
 ```
 
 Open **http://localhost:9999** when it's done.
+
+> **Docker Compose:**
+> ```bash
+> git clone https://github.com/stratifio/stratifio-oss.git
+> cd stratifio-oss
+> echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+> docker compose up
+> ```
 
 ---
 
@@ -130,7 +146,7 @@ For production: set `STRATIFIO_DEBUG=false` and pin `STRATIFIO_CORS_ORIGINS` to 
 
 ## 🤝 Contributing
 
-Pull requests are welcome. For major changes, open an issue first to discuss what you'd like to change.
+Pull requests are welcome. For major changes, open an issue first to discuss what you'd like to change. Have a question or idea? [Start a discussion](https://github.com/cabichahine/stratif.io/discussions).
 
 ```bash
 # Run the full quality suite before submitting
