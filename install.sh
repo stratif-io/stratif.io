@@ -2,12 +2,15 @@
 set -euo pipefail
 
 # ─────────────────────────────────────────────────────────────────────────────
-# stratif.io — one-line local installer
+# stratif.io — one-line local installer (no Docker required)
 # Usage: curl -fsSL https://stratif.io/install.sh | bash
 # ─────────────────────────────────────────────────────────────────────────────
 
-REPO_URL="https://github.com/stratifio/stratifio-oss"
+REPO="cabichahine/stratif.io"
+REPO_URL="https://github.com/${REPO}"
 INSTALL_DIR="${STRATIFIO_DIR:-$HOME/.stratifio}"
+PORT="${STRATIFIO_PORT:-8000}"
+DATA_DIR="${STRATIFIO_DATA_DIR:-$INSTALL_DIR/data}"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 
@@ -22,70 +25,163 @@ echo ""
 
 # ── Dependency checks ─────────────────────────────────────────────────────────
 
-check_cmd() {
-  command -v "$1" >/dev/null 2>&1 || die "'$1' is required but not installed. See: $2"
-}
+check_cmd() { command -v "$1" >/dev/null 2>&1; }
 
-check_cmd docker  "https://docs.docker.com/get-docker/"
-check_cmd git     "https://git-scm.com/downloads"
+# Python 3.12+
+if ! check_cmd python3; then
+  die "Python 3.12+ is required. Install it from https://python.org/downloads/"
+fi
+PY_MINOR=$(python3 -c 'import sys; print(sys.version_info.minor)')
+PY_MAJOR=$(python3 -c 'import sys; print(sys.version_info.major)')
+if [ "$PY_MAJOR" -lt 3 ] || { [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -lt 12 ]; }; then
+  PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+  die "Python 3.12+ is required (found $PY_VER). Install it from https://python.org/downloads/"
+fi
 
-# Docker must be running
-docker info >/dev/null 2>&1 || die "Docker is not running. Start Docker and try again."
+check_cmd git    || die "'git' is required. See: https://git-scm.com/downloads"
+check_cmd curl   || die "'curl' is required but not found."
+check_cmd openssl || die "'openssl' is required but not found."
 
-success "Dependencies OK"
+success "Python $(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'), git, openssl — OK"
 
-# ── Clone or update ───────────────────────────────────────────────────────────
+# ── Install uv (if not already present) ──────────────────────────────────────
+
+if check_cmd uv; then
+  success "uv already installed"
+else
+  info "Installing uv (Python package manager)"
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+  check_cmd uv || die "uv installation failed. Try manually: curl -LsSf https://astral.sh/uv/install.sh | sh"
+  success "uv installed"
+fi
+
+# ── Resolve latest release tag ────────────────────────────────────────────────
+
+info "Fetching latest release"
+LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+  | grep '"tag_name"' | head -1 \
+  | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+[ -n "$LATEST" ] || die "Could not fetch latest release. Check your internet connection."
+success "Latest release: $LATEST"
+
+# ── Clone or update repo ──────────────────────────────────────────────────────
 
 if [ -d "$INSTALL_DIR/.git" ]; then
-  info "Updating existing install at $INSTALL_DIR"
-  git -C "$INSTALL_DIR" pull --ff-only
+  info "Updating to $LATEST"
+  git -C "$INSTALL_DIR" fetch --tags --quiet
+  git -C "$INSTALL_DIR" checkout --quiet "$LATEST"
 else
   info "Cloning stratif.io to $INSTALL_DIR"
-  git clone --depth 1 "$REPO_URL" "$INSTALL_DIR"
+  git clone --depth 1 --branch "$LATEST" "$REPO_URL" "$INSTALL_DIR"
 fi
 
 cd "$INSTALL_DIR"
 
-# ── Generate .env if missing ──────────────────────────────────────────────────
+# ── Download pre-built frontend ───────────────────────────────────────────────
 
-if [ ! -f .env ]; then
+FRONTEND_DEST="$INSTALL_DIR/apps/web/dist"
+FRONTEND_VERSION_FILE="$INSTALL_DIR/.frontend-version"
+INSTALLED_FRONTEND=$(cat "$FRONTEND_VERSION_FILE" 2>/dev/null || echo "")
+
+if [ "$INSTALLED_FRONTEND" = "$LATEST" ] && [ -d "$FRONTEND_DEST" ]; then
+  success "Frontend $LATEST already present — skipping download"
+else
+  info "Downloading frontend build ($LATEST)"
+  FRONTEND_URL="https://github.com/${REPO}/releases/download/${LATEST}/frontend.tar.gz"
+  TMP=$(mktemp /tmp/stratifio-frontend.XXXXXX.tar.gz)
+  if ! curl -fsSL "$FRONTEND_URL" -o "$TMP"; then
+    rm -f "$TMP"
+    die "Failed to download frontend from GitHub release $LATEST"
+  fi
+  rm -rf "$FRONTEND_DEST"
+  mkdir -p "$INSTALL_DIR/apps/web"
+  tar -xzf "$TMP" -C "$INSTALL_DIR/apps/web"
+  rm -f "$TMP"
+  echo "$LATEST" > "$FRONTEND_VERSION_FILE"
+  success "Frontend downloaded"
+fi
+
+# ── Install Python dependencies ───────────────────────────────────────────────
+
+info "Installing Python dependencies"
+uv sync --frozen --no-dev --quiet
+success "Python dependencies ready"
+
+# ── Data directory + .env ─────────────────────────────────────────────────────
+
+mkdir -p "$DATA_DIR"
+
+if [ ! -f "$INSTALL_DIR/.env" ]; then
   info "Generating encryption key"
   KEY=$(openssl rand -base64 32)
-  cp .env.example .env
-  # Replace placeholder key
-  sed -i.bak "s|STRATIFIO_ENCRYPTION_KEY=.*|STRATIFIO_ENCRYPTION_KEY=${KEY}|" .env
-  rm -f .env.bak
-  success ".env created with fresh encryption key"
+  cp "$INSTALL_DIR/.env.example" "$INSTALL_DIR/.env"
+  sed -i.bak "s|STRATIFIO_ENCRYPTION_KEY=.*|STRATIFIO_ENCRYPTION_KEY=${KEY}|" "$INSTALL_DIR/.env"
+  rm -f "$INSTALL_DIR/.env.bak"
+  success ".env created"
 else
   warn ".env already exists — skipping key generation"
 fi
 
-# ── Start ─────────────────────────────────────────────────────────────────────
+# ── Write start.sh helper ─────────────────────────────────────────────────────
 
-info "Building and starting stratif.io (first run may take ~2 minutes)"
-docker compose up --build -d
+cat > "$INSTALL_DIR/start.sh" << STARTSH
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$INSTALL_DIR"
+export PATH="\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH"
+SAMPLE_DB="$DATA_DIR/sample.duckdb"
+if [ ! -f "\$SAMPLE_DB" ]; then
+  echo "[stratifio] Seeding sample data (first run)…"
+  DB_PATH_PREFIX="$DATA_DIR/sample" SEED_USERS=5000 SEED_DAYS=90 uv run seed-duckdb
+fi
+uv run python -m seeders.bootstrap_connection --path "\$SAMPLE_DB"
+echo ""
+echo "  stratif.io is running at http://localhost:$PORT"
+echo "  Press Ctrl+C to stop."
+echo ""
+exec uv run uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+STARTSH
+chmod +x "$INSTALL_DIR/start.sh"
+
+# ── First run: seed sample data ───────────────────────────────────────────────
+
+SAMPLE_DB="$DATA_DIR/sample.duckdb"
+if [ ! -f "$SAMPLE_DB" ]; then
+  info "Seeding sample analytics data (first run — ~30 seconds)"
+  DB_PATH_PREFIX="$DATA_DIR/sample" SEED_USERS=5000 SEED_DAYS=90 uv run seed-duckdb
+fi
+uv run python -m seeders.bootstrap_connection --path "$SAMPLE_DB"
+
+# ── Start server ──────────────────────────────────────────────────────────────
+
+info "Starting stratif.io"
+uv run uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" &
+SERVER_PID=$!
 
 # ── Wait for health ───────────────────────────────────────────────────────────
 
-info "Waiting for app to be ready"
 ATTEMPTS=0
-MAX_ATTEMPTS=30
-until curl -sf http://localhost:8000/ >/dev/null 2>&1; do
+until curl -sf "http://localhost:${PORT}/" >/dev/null 2>&1; do
   ATTEMPTS=$((ATTEMPTS + 1))
-  if [ "$ATTEMPTS" -ge "$MAX_ATTEMPTS" ]; then
-    die "App did not start in time. Run: docker compose logs app"
+  if [ "$ATTEMPTS" -ge 30 ]; then
+    kill "$SERVER_PID" 2>/dev/null || true
+    die "App did not start. Run '$INSTALL_DIR/start.sh' to try again."
   fi
-  sleep 3
+  sleep 2
 done
 
 echo ""
-success "stratif.io is running at http://localhost:8000"
+success "stratif.io is running at http://localhost:${PORT}"
 echo ""
 echo "  Next steps:"
-echo "  1. Open http://localhost:8000"
-echo "  2. Go to Connections → Add connection"
-echo "  3. Choose DuckDB → path: /data/sample.duckdb  (pre-seeded sample data)"
+echo "  1. Open http://localhost:${PORT}"
+echo "  2. Connections → Add connection"
+echo "  3. DuckDB → path: $DATA_DIR/sample.duckdb  (pre-seeded sample data)"
 echo ""
-echo "  To stop:    docker compose -C $INSTALL_DIR down"
+echo "  To stop:    Ctrl+C  (or kill $SERVER_PID)"
+echo "  To restart: $INSTALL_DIR/start.sh"
 echo "  To update:  curl -fsSL https://stratif.io/install.sh | bash"
 echo ""
+
+wait "$SERVER_PID"
