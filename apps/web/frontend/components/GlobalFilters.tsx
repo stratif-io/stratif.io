@@ -277,7 +277,7 @@ export function GlobalFilters({ granularityDisabled = false }: { granularityDisa
         role="group"
         aria-label="Global filters"
         aria-live="polite"
-        className="flex flex-col sm:flex-row sm:items-center h-11 w-full rounded-lg border bg-background shadow-sm sm:divide-x divide-y sm:divide-y-0 divide-border overflow-x-auto scrollbar-none"
+        className="flex flex-row items-center h-11 w-full rounded-lg border bg-background shadow-sm divide-x divide-border overflow-x-auto scrollbar-none"
       >
         <div className="shrink-0">
           <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
