@@ -135,7 +135,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
     ? `previous period (${previousRange})`
     : 'previous period'
   const changeLabel = previousRange ? `Change vs. ${previousRange}` : 'Change vs. previous period'
-  const prevPeriodLabel = previousRange ?? undefined
+  const prevPeriodLabel = previousRange
 
   const heroWrapperRef = useRef<HTMLDivElement>(null)
   const rightColRef = useRef<HTMLDivElement>(null)
