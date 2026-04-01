@@ -7,26 +7,58 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](package.json)
-[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![ghcr.io](https://img.shields.io/badge/ghcr.io-latest-24292e?logo=github)](https://github.com/cabichahine/stratif.io/pkgs/container/stratif.io)
 
-**🔍 Self-hosted product analytics. Your database, your infrastructure, your rules. 📊**
+**No event pipelines · Open source & self-hosted · Learn product analytics hands-on**
 
-[Quick Start](#-quick-start) · [Features](#-features) · [Databases](#-supported-databases) · [Local Dev](#-local-development)
+[Quick Start](#-quick-start) · [Comparison](#-comparison) · [Databases](#%EF%B8%8F-supported-databases) · [Local Dev](#-local-development)
 
 </div>
 
 ---
 
-![stratif.io Dashboard](docs/demo.gif)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/mc_dark.png"/>
+  <img src="docs/mc.png" alt="stratif.io Dashboard"/>
+</picture>
 
 ---
 
 ## Why stratif.io?
 
-Most analytics platforms force a choice: pay for a SaaS that owns your data, or spend months building custom dashboards from scratch.
+**Your events are already in your warehouse. Stop sending them somewhere else.** Every SaaS analytics platform makes you re-pipe your data into their system — creating vendor lock-in, duplicating data, and adding cost. stratif.io connects directly to your existing DuckDB, Postgres, Snowflake, or ClickHouse. No ingestion. No pipelines. No data ever leaves your infrastructure.
 
-**stratif.io does neither.** Connect it to your existing database — DuckDB, PostgreSQL, Snowflake, or others — and get a full analytics suite running on your own infrastructure in under 10 minutes. No data leaves your environment. No vendor lock-in. No surprise invoices.
+**Open source and self-hosted.** No vendor lock-in, no surprise invoices. One install script and you own your analytics stack completely.
+
+**Learn product analytics hands-on.** stratif.io ships with ~5,000 realistic sample events. Explore funnels, retention, and user journeys without needing your own data — no account, no credit card.
+
+---
+
+## 🔄 How it works
+
+1. **Connect** your existing database — DuckDB, Postgres, Snowflake, ClickHouse, and more
+2. **Explore** funnels, retention, journeys, sessions, and SQL directly in the UI
+3. **Done** — no agents, no pipelines, no data ever leaves your infrastructure
+
+---
+
+## 📊 Comparison
+
+| | stratif.io | Amplitude / Mixpanel | PostHog | Warehouse-native SaaS* |
+|---|:---:|:---:|:---:|:---:|
+| Open source | ✅ | ❌ | ✅ | ❌ |
+| Self-hosted | ✅ | ❌ | ✅ | ❌ |
+| Warehouse-native (no ingestion) | ✅ | ❌ | ❌ | ✅ |
+| Free | ✅ | ❌ | ❌ | ❌ |
+| Sample data to learn with | ✅ | ❌ | ❌ | ❌ |
+
+*\* Mitzu, Kubit, NetSpring, Houseware — all closed-source, cloud-only, paid.*
+
+---
+
+## 🗄️ Supported Databases
+
+DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
 
 ---
 
@@ -36,76 +68,15 @@ Most analytics platforms force a choice: pay for a SaaS that owns your data, or 
 curl -fsSL https://stratif.io/install.sh | bash
 ```
 
-The script checks your dependencies, clones the repo, generates an encryption key, and starts the app. Open **http://localhost:9999** when it's done.
+Open **http://localhost:9999** when it's done.
 
-> **Manual (Docker Compose):**
->
+> **Docker Compose:**
 > ```bash
 > git clone https://github.com/stratifio/stratifio-oss.git
 > cd stratifio-oss
 > echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
 > docker compose up
 > ```
-
-**First run:** Sample analytics data (~5,000 events) is seeded automatically into `/data/sample.duckdb`. Go to **Connections → Add → DuckDB → `/data/sample.duckdb`** to explore it.
-
-> To reseed from scratch: `docker compose down -v && docker compose up`
-> **Warning:** `-v` removes the `analytics_data` volume — this deletes all stored connections and credentials, not just the sample data.
-
----
-
-## ✨ Features
-
-| Feature                      | Description                                                |
-| ---------------------------- | ---------------------------------------------------------- |
-| 📈 **Trends**                | Event counts over time with customizable granularity       |
-| 🔁 **Retention**             | Cohort-based retention tables                              |
-| 🚦 **Funnels**               | Step-by-step conversion analysis                           |
-| 🗺️ **Journey**               | User journey flows with Sankey diagrams                    |
-| 🔀 **Pivot**                 | Drag-and-drop data exploration (Graphic Walker)            |
-| 💻 **SQL Studio**            | Write and run SQL directly against your database           |
-| 🔍 **Sessions**              | Raw session browser with full event timelines              |
-| 🔌 **Multi-database**        | One UI, many backends — DuckDB, Postgres, Snowflake & more |
-| 🔐 **Encrypted credentials** | AES-128-CBC + HMAC-SHA256 via Fernet                       |
-| 🐳 **Docker deploy**         | One `docker compose up` from dev to production             |
-
----
-
-## 🗄️ Supported Databases
-
-| Database       | Notes                                 |
-| -------------- | ------------------------------------- |
-| **DuckDB**     | Local file or S3-backed               |
-| **SQLite**     | Local file                            |
-| **PostgreSQL** | Connection string                     |
-| **BigQuery**   | Coming soon                           |
-| **Redshift**   | Coming soon                           |
-| **Databricks** | SQL warehouse via HTTP path (Beta)    |
-| **Snowflake**  | Account identifier + warehouse (Beta) |
-| **ClickHouse** | Host/port, optional TLS               |
-
----
-
-## 🏗️ Architecture
-
-```
-stratifio-oss/
-├── apps/web/frontend/     # React 18, Vite 6, Tailwind CSS v4, shadcn/ui
-│   ├── features/          # Analytics pages (trends, retention, funnels…)
-│   ├── components/        # Shared UI (charts, tables, layout)
-│   └── stores/            # Zustand client state
-├── backend/               # FastAPI, SQLGlot
-│   ├── api/               # Route handlers
-│   ├── backends/          # Database adapters (DuckDB, PG, Snowflake…)
-│   ├── services/          # Business logic & SQL transpilation
-│   └── product_db/        # SQLite for connection configs
-├── seeders/               # Sample data generators
-├── Dockerfile             # Multi-stage build (Node → Python → Caddy → final)
-└── docker-compose.yml
-```
-
-**Frontend state:** TanStack Query v5 for server state, Zustand for client state.
-**Backend SQL:** SQLGlot transpiles a unified query dialect to each database's native SQL.
 
 ---
 
@@ -169,13 +140,13 @@ bun run test:e2e             # end-to-end tests (Playwright)
 - **Sessions** use HTTP-only, Secure, SameSite=Lax JWT cookies
 - **Rate limiting** on login (10 req/min) and registration (3 req/min)
 
-**For production:** set `STRATIFIO_DEBUG=false` and pin `STRATIFIO_CORS_ORIGINS` to your frontend domain.
+For production: set `STRATIFIO_DEBUG=false` and pin `STRATIFIO_CORS_ORIGINS` to your frontend domain.
 
 ---
 
 ## 🤝 Contributing
 
-Pull requests are welcome. For major changes, open an issue first to discuss what you'd like to change.
+Pull requests are welcome. For major changes, open an issue first to discuss what you'd like to change. Have a question or idea? [Start a discussion](https://github.com/cabichahine/stratif.io/discussions).
 
 ```bash
 # Run the full quality suite before submitting
@@ -187,3 +158,7 @@ bun run lint && bun run build && bun run test:run
 ## 📄 License
 
 MIT © stratif.io Contributors
+
+---
+
+Built on the shoulders of giants — [React](https://react.dev), [FastAPI](https://fastapi.tiangolo.com), [SQLGlot](https://github.com/tobymao/sqlglot), [shadcn/ui](https://ui.shadcn.com), [TanStack Query](https://tanstack.com/query), [Zustand](https://zustand-demo.pmnd.rs), [Recharts](https://recharts.org), [Tailwind CSS](https://tailwindcss.com).
