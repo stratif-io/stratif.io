@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { formatTrendDate, granularityToDim } from '../useTrendData'
+import type { UseTrendDataOptions } from '../useTrendData'
 
 describe('granularityToDim', () => {
   it('maps hour → hour_bucket', () => expect(granularityToDim('hour')).toBe('hour_bucket'))
@@ -31,5 +32,18 @@ describe('formatTrendDate', () => {
     const result = formatTrendDate('2026-03-31T14:00:00', 'hour')
     expect(result).toContain('Mar 31')
     expect(result).toContain('14:00')
+  })
+})
+
+describe('UseTrendDataOptions type', () => {
+  it('does not include selectedEvent', () => {
+    const opts: UseTrendDataOptions = {
+      dateRange: { from: new Date(), to: new Date() },
+      granularity: 'day',
+      measure: 'count_events',
+    }
+    // @ts-expect-error selectedEvent should not exist on this type
+    const _bad = opts.selectedEvent
+    expect(_bad).toBeUndefined()
   })
 })

@@ -44,6 +44,7 @@ export function TrendsPage() {
 
   const { dateRange, activeConnectionId, granularity } = useAppStore()
   const [selectedEvent, setSelectedEvent] = useState<string>('')
+  const events: string[] = []
   const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area')
   const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
   const [measureField, setMeasureField] = useState<string>('count_events')
@@ -83,7 +84,6 @@ export function TrendsPage() {
 
   const {
     trendData,
-    events,
     isLoading,
     isError,
     error,
@@ -95,7 +95,6 @@ export function TrendsPage() {
     sql,
   } = useTrendData({
     dateRange,
-    selectedEvent,
     granularity,
     breakdownDimension,
     measure,
