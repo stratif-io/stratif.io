@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/cabichahine/stratif.io/compare/v0.12.0...v0.13.0) (2026-04-01)
+
+
+### Features
+
+* Develop ([#152](https://github.com/cabichahine/stratif.io/issues/152)) ([4bc1e42](https://github.com/cabichahine/stratif.io/commit/4bc1e427087f13af573dbda4bba75c6b48f8131e))
+
 ## [0.12.0](https://github.com/cabichahine/stratif.io/compare/v0.11.0...v0.12.0) (2026-04-01)
 
 
