@@ -51,21 +51,7 @@
 curl -fsSL https://stratif.io/install.sh | bash
 ```
 
-The script checks your dependencies, clones the repo, generates an encryption key, and starts the app. Open **http://localhost:9999** when it's done.
-
-> **Manual (Docker Compose):**
->
-> ```bash
-> git clone https://github.com/stratifio/stratifio-oss.git
-> cd stratifio-oss
-> echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
-> docker compose up
-> ```
-
-**First run:** Sample analytics data (~5,000 events) is seeded automatically into `/data/sample.duckdb`. Go to **Connections → Add → DuckDB → `/data/sample.duckdb`** to explore it.
-
-> To reseed from scratch: `docker compose down -v && docker compose up`
-> **Warning:** `-v` removes the `analytics_data` volume — this deletes all stored connections and credentials, not just the sample data.
+Open **http://localhost:9999** when it's done.
 
 ---
 
@@ -88,16 +74,7 @@ The script checks your dependencies, clones the repo, generates an encryption ke
 
 ## 🗄️ Supported Databases
 
-| Database       | Notes                                 |
-| -------------- | ------------------------------------- |
-| **DuckDB**     | Local file or S3-backed               |
-| **SQLite**     | Local file                            |
-| **PostgreSQL** | Connection string                     |
-| **BigQuery**   | Coming soon                           |
-| **Redshift**   | Coming soon                           |
-| **Databricks** | SQL warehouse via HTTP path (Beta)    |
-| **Snowflake**  | Account identifier + warehouse (Beta) |
-| **ClickHouse** | Host/port, optional TLS               |
+DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
 
 ---
 
