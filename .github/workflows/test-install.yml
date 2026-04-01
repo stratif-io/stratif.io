@@ -1,0 +1,79 @@
+name: Test install.sh
+
+on:
+  pull_request:
+    paths:
+      - install.sh
+      - .github/workflows/test-install.yml
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest       # Linux x86_64
+          - ubuntu-24.04-arm    # Linux arm64
+          - macos-latest        # macOS arm64 (Apple Silicon)
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Build frontend (architecture-neutral output) ──────────────────────
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install JS dependencies
+        run: bun install
+
+      - name: Build frontend
+        run: bun run build
+        working-directory: apps/web
+
+      - name: Package frontend tarball
+        run: tar -czf /tmp/frontend.tar.gz -C apps/web dist
+
+      # ── Run install.sh against local artifacts ────────────────────────────
+      - name: Run install.sh
+        env:
+          # Pin version so the script skips the GitHub API call
+          STRATIFIO_VERSION: "v0.0.0-ci-test"
+          # Use the already-checked-out repo — skips the git clone entirely
+          STRATIFIO_REPO_DIR: ${{ github.workspace }}
+          # Point at the tarball we just built — skips the GitHub download
+          STRATIFIO_FRONTEND_TARBALL: "/tmp/frontend.tar.gz"
+          # Isolated install dir so tests don't touch $HOME/.stratifio
+          STRATIFIO_DIR: "/tmp/stratifio-test"
+          STRATIFIO_DATA_DIR: "/tmp/stratifio-test-data"
+          # Avoid port conflicts with other services on the runner
+          STRATIFIO_PORT: "18765"
+        # The script ends with `wait $SERVER_PID` — run in background and
+        # give it time to start before the health check step
+        run: |
+          bash install.sh &
+          INSTALL_PID=$!
+          # Wait up to 120s for the server to respond
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:18765/ >/dev/null 2>&1; then
+              echo "Server is up after ${i}x2s"
+              break
+            fi
+            if ! kill -0 $INSTALL_PID 2>/dev/null; then
+              echo "install.sh exited early" && exit 1
+            fi
+            sleep 2
+          done
+          curl -sf http://localhost:18765/ >/dev/null || (echo "Server never responded" && exit 1)
+
+      # ── Verify the API is reachable ───────────────────────────────────────
+      - name: Health check
+        run: |
+          curl -sf http://localhost:18765/ >/dev/null
+          echo "Health check passed on ${{ matrix.os }}"
+
+      # ── Cleanup ───────────────────────────────────────────────────────────
+      - name: Stop server
+        if: always()
+        run: pkill -f "uvicorn backend.main:app" 2>/dev/null || true
