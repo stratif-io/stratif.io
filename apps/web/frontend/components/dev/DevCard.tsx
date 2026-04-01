@@ -336,38 +336,6 @@ function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
     navigate('/query-studio')
   }
 
-  const sqlContent = (fontSize: string, collapseFirst?: () => void) => (
-    <>
-      {queries.length === 0 ? (
-        <p className="text-[10px] italic text-muted-foreground">No SQL available</p>
-      ) : (
-        queries.map((q, i) => (
-          <div key={i}>
-            {multiQuery && (
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-[9px] font-mono text-muted-foreground">-- {getLabel(q, i)}</p>
-                <button
-                  onClick={() => openInStudio(q, collapseFirst)}
-                  aria-label="Open in SQL Studio"
-                  title="Open in SQL Studio"
-                  className={cn(
-                    'flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
-                    'bg-muted text-muted-foreground hover:bg-muted/70'
-                  )}
-                >
-                  <Terminal className="h-3 w-3" />
-                  SQL Editor
-                </button>
-              </div>
-            )}
-            <SqlViewer query={q} dark={dark} fontSize={fontSize} />
-            {i < queries.length - 1 && <hr className="my-2 border-border" />}
-          </div>
-        ))
-      )}
-    </>
-  )
-
   function expand() {
     const rect = cardRef.current?.getBoundingClientRect()
     if (rect)
@@ -433,18 +401,29 @@ function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
             {flipped && (
               <div className="flex items-center justify-end gap-1.5 px-2 py-1.5 shrink-0 border-b border-border">
                 {!multiQuery && firstQuery && (
-                  <button
-                    onClick={() => openInStudio(firstQuery)}
-                    aria-label="Open in SQL Studio"
-                    title="Open in SQL Studio"
-                    className={cn(
-                      'flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
-                      'bg-muted text-muted-foreground hover:bg-muted/70'
-                    )}
-                  >
-                    <Terminal className="h-3 w-3" />
-                    SQL Editor
-                  </button>
+                  <>
+                    <button
+                      onClick={() => runQuery(firstQuery, 0)}
+                      disabled={queryRunning[0]}
+                      aria-label="Run query"
+                      className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                    >
+                      <Play className="h-2.5 w-2.5" />
+                      {queryRunning[0] ? 'Running…' : queryResults[0] ? 'Re-run' : 'Run'}
+                    </button>
+                    <button
+                      onClick={() => openInStudio(firstQuery)}
+                      aria-label="Open in SQL Studio"
+                      title="Open in SQL Studio"
+                      className={cn(
+                        'flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
+                        'bg-muted text-muted-foreground hover:bg-muted/70'
+                      )}
+                    >
+                      <Terminal className="h-3 w-3" />
+                      SQL Editor
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={expand}
@@ -471,7 +450,61 @@ function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
                 </button>
               </div>
             )}
-            <div className="flex-1 overflow-auto p-3">{sqlContent('11px')}</div>
+            <div className="flex flex-col flex-1 min-h-0 divide-y divide-border">
+              <div
+                className={cn(
+                  'overflow-auto p-3',
+                  queryResults[activeResultIndex] != null || queryRunning[activeResultIndex]
+                    ? 'shrink-0 max-h-[45%]'
+                    : 'flex-1'
+                )}
+              >
+                {queries.length === 0 ? (
+                  <p className="text-[10px] italic text-muted-foreground">No SQL available</p>
+                ) : (
+                  queries.map((q, i) => (
+                    <div key={i}>
+                      {multiQuery && (
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-[9px] font-mono text-muted-foreground">
+                            -- {getLabel(q, i)}
+                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => runQuery(q, i)}
+                              disabled={queryRunning[i]}
+                              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                            >
+                              <Play className="h-2.5 w-2.5" />
+                              {queryRunning[i] ? 'Running…' : 'Run'}
+                            </button>
+                            <button
+                              onClick={() => openInStudio(q)}
+                              aria-label="Open in SQL Studio"
+                              title="Open in SQL Studio"
+                              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground hover:bg-muted/70 transition-colors"
+                            >
+                              <Terminal className="h-2.5 w-2.5" />
+                              Editor
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      <SqlViewer query={q} dark={dark} fontSize="11px" />
+                      {i < queries.length - 1 && <hr className="my-2 border-border" />}
+                    </div>
+                  ))
+                )}
+              </div>
+              {(queryResults[activeResultIndex] != null || queryRunning[activeResultIndex]) && (
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <ResultsTable
+                    result={queryResults[activeResultIndex] ?? null}
+                    running={queryRunning[activeResultIndex] ?? false}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
