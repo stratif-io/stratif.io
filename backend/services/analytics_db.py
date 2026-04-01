@@ -286,6 +286,17 @@ def open_analytics_db(
     filter_fields: list[dict] = json.loads(filter_row["filter_fields"]) if filter_row else []
 
     _iq = backend.identifier_quote_char
+
+    # Identity fields (first_name, email, etc.) are plain columns — add them to
+    # custom_prop_exprs so they work as filter fields (autocomplete + WHERE clauses).
+    _identity_field_keys = ("email_field", "first_name_field", "last_name_field",
+                            "date_of_birth_field", "phone_field")
+    if schema_row:
+        for _key in _identity_field_keys:
+            _col = schema_row[_key]
+            if _col:
+                custom_prop_exprs[_col] = f"{_iq}{_col}{_iq}"
+
     filter_exprs: dict[str, str] = {}
     _src_to_std_name = {uid_f: "user_id", ts_f: "timestamp", en_f: "event_name"}
     for ff in filter_fields:
