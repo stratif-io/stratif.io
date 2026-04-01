@@ -251,15 +251,6 @@ textarea {
   animation-delay: calc(var(--stagger-index, 0) * 100ms);
 }
 
-/* Smooth hover scale */
-.hover-scale {
-  @apply transition-transform duration-200;
-}
-
-.hover-scale:hover {
-  transform: scale(1.02);
-}
-
 /* Focus ring enhancement */
 :focus-visible {
   @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
