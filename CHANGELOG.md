@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.17.0](https://github.com/cabichahine/stratif.io/compare/v0.16.0...v0.17.0) (2026-04-01)
+
+
+### Features
+
+* replace Docker installer with curl | sh using uv + GitHub release assets ([6ffa8a2](https://github.com/cabichahine/stratif.io/commit/6ffa8a25a8528f985d43ff69a6031db2900521d1))
+
+
+### Bug Fixes
+
+* **a11y:** hide decorative icon container from screen reader tree in EmptyState ([81ef1f5](https://github.com/cabichahine/stratif.io/commit/81ef1f56e4ece41252815ba68fe50cd86593f244))
+* **a11y:** increase DateRangePicker inline trigger to 44px touch target ([3c59f79](https://github.com/cabichahine/stratif.io/commit/3c59f794307564c1c7302a1874209a6443fc9b0d))
+* **a11y:** increase touch targets to minimum 44px in filters and sidebar nav ([93162c5](https://github.com/cabichahine/stratif.io/commit/93162c5b453522fe4d6d4d45427ffe0caff86aef))
+* **a11y:** make sidebar mobile overlay discoverable to screen readers ([2684bba](https://github.com/cabichahine/stratif.io/commit/2684bba68f293ea645670d4f0819ecbb177d0f5d))
+* **a11y:** move clear button outside PopoverTrigger — nested buttons invalid HTML ([efa8bd3](https://github.com/cabichahine/stratif.io/commit/efa8bd326d930fc5c58bd227a9455e05e21b7c1c))
+* **ci:** skip git clone in test — use checked-out repo via STRATIFIO_REPO_DIR ([f0b6885](https://github.com/cabichahine/stratif.io/commit/f0b6885b65d347644fd7343f8b927b3cd61e49d7))
+* **css:** remove hover-scale — creates stacking context that clips popovers ([4fb645d](https://github.com/cabichahine/stratif.io/commit/4fb645d1413c2ce42d95aef2383be70a287a16fc))
+* disable git credential prompt when running via curl | bash ([62afa86](https://github.com/cabichahine/stratif.io/commit/62afa86744e1bfe6e0488cd915707523767ebc3e))
+* **install:** extract frontend dist to INSTALL_DIR root ([319ccbd](https://github.com/cabichahine/stratif.io/commit/319ccbd41ae7875002bb7a5165155ccde6d83be6))
+* **install:** generate connections.yaml and fix seeder invocation ([20e6f3e](https://github.com/cabichahine/stratif.io/commit/20e6f3ed38b6f1f4dab5ae4362f4a0881fe2c5f6))
+* **mobile:** guard global hover transitions with hover:hover media query ([82771a6](https://github.com/cabichahine/stratif.io/commit/82771a69536054cde97626a5fe66544e3451b0fb))
+* **mobile:** keep filter bar horizontal on all screens — scroll instead of stack ([ea13e30](https://github.com/cabichahine/stratif.io/commit/ea13e303feedda3f640d97fd1af261215e302a2e))
+* **polish:** align MetricCardSkeleton radius with actual cards (rounded-xl) ([42a0689](https://github.com/cabichahine/stratif.io/commit/42a068938da08ea999b2926f8b8a3fa128850486))
+* **polish:** normalize page title style across feature pages ([f5f02ba](https://github.com/cabichahine/stratif.io/commit/f5f02baad4b37779c7a4616d9a535b6516994816))
+* **theme:** differentiate card surface from page background in dark mode ([abca4d3](https://github.com/cabichahine/stratif.io/commit/abca4d3cd6d46bcc9f3322571752862278f9ae80))
+* **theme:** use CSS variable-based heatmap colors that work in dark mode ([5addf5e](https://github.com/cabichahine/stratif.io/commit/5addf5ed864891e6ce6074fe4dace559ac0f6e88))
+* **ux:** make sparklines legible in mini cards — dedicated bottom strip with gradient fill ([01c584b](https://github.com/cabichahine/stratif.io/commit/01c584bf50894399d536941561646db11a58f13a))
+* **ux:** show Monitor icon in theme toggle when system mode is active ([2d9126b](https://github.com/cabichahine/stratif.io/commit/2d9126b63eb610e536a1a165a2ecf931ca3d4be7))
+
 ## [0.16.0](https://github.com/cabichahine/stratif.io/compare/v0.15.0...v0.16.0) (2026-04-01)
 
 
