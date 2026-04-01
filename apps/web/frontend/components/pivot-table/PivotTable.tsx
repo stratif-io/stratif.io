@@ -45,6 +45,8 @@ export function PivotTable({
   activeConnectionId,
   fetchRows,
   fetchFilterValues,
+  initialRowGroups,
+  initialValueCols,
 }: PivotTableProps) {
   const [rowGroups, setRowGroups] = useState<ZoneCol[]>(DEFAULT_ROW_GROUPS)
   const [pivotCols, setPivotCols] = useState<ZoneCol[]>(DEFAULT_PIVOT_COLS)
@@ -75,7 +77,13 @@ export function PivotTable({
 
   useEffect(() => {
     if (!colDefsData || leafCols.length === 0) return
-    if (rowGroups.length > 0 || valueCols.length > 0) return
+    if (
+      rowGroups.length > 0 ||
+      valueCols.length > 0 ||
+      initialValueCols?.length ||
+      initialRowGroups?.length
+    )
+      return
 
     const timeDimId = GRANULARITY_TO_DIM[granularity]
     const timeMeta = leafCols.find((c) => c.colId === timeDimId)
