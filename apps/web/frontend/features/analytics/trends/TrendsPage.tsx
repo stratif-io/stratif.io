@@ -112,6 +112,7 @@ export function TrendsPage() {
                         aggregation={aggregation}
                         standardMeasures={standardMeasures}
                         numericDimensions={numericDimensions}
+                        dimensions={dimensions}
                         onChange={(field, agg) => {
                           setMeasureField(field)
                           setAggregation(agg as typeof aggregation)

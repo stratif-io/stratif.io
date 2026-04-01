@@ -72,6 +72,7 @@ function TrendMetricPickerDemo({
         { value: 'unique_users', label: 'Unique Users' },
       ]}
       numericDimensions={numericDimensions}
+      dimensions={[]}
       onChange={(f, a) => {
         setField(f)
         setAgg(a)
