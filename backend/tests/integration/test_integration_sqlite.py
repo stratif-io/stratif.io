@@ -19,6 +19,7 @@ class TestSQLiteIntegration:
         from backend.backends.sqlite import SQLiteBackend
         from backend.backends.sqlite.credentials import SQLiteCredentials
 
+        assert _CREDS is not None
         creds = SQLiteCredentials(**_CREDS)
         backend = SQLiteBackend()
         conn = backend.open(creds, read_only=True)

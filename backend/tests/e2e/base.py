@@ -190,6 +190,7 @@ class BaseE2ETest:
             pytest.skip("No expected_columns configured for this backend")
 
         schema = type(self).detected_schema
+        assert schema is not None
         detected_names = {c["name"] for c in schema.get("columns", [])}
         detected_names |= {
             p["name"] for p in schema.get("proposed_custom_properties", [])
@@ -209,7 +210,10 @@ class BaseE2ETest:
         self._skip_if_no_connection()
         self._skip_if_no_schema()
         conn_id = type(self).connection_id
-        suggestions = type(self).detected_schema["suggestions"]
+        assert conn_id is not None
+        schema = type(self).detected_schema
+        assert schema is not None
+        suggestions = schema["suggestions"]
         r = client.put(f"/api/connections/{conn_id}/schema", json=suggestions)
         assert r.status_code == 200, r.text
 
@@ -238,6 +242,7 @@ class BaseE2ETest:
     def test_09_queries_with_dates(self, client) -> None:
         self._skip_if_no_connection()
         conn_id = type(self).connection_id
+        assert conn_id is not None
         params = self._date_params(conn_id)
         self._assert_all_analytics(client, params)
 
@@ -248,6 +253,7 @@ class BaseE2ETest:
     def test_10_queries_all_time(self, client) -> None:
         self._skip_if_no_connection()
         conn_id = type(self).connection_id
+        assert conn_id is not None
         params = self._all_time_params(conn_id)
         self._assert_all_analytics(client, params)
         # All-time must return actual data — measures must not be null/zero.

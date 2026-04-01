@@ -19,6 +19,7 @@ class TestDuckDBIntegration:
         from backend.backends.duckdb import DuckDBBackend
         from backend.backends.duckdb.credentials import DuckDBCredentials
 
+        assert _CREDS is not None
         creds = DuckDBCredentials(**_CREDS)
         backend = DuckDBBackend()
         conn = backend.open(creds, read_only=True)

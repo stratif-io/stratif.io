@@ -124,7 +124,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
     # Get the analytics DB (pass connection_id=None explicitly — not via DI)
     try:
-        db_gen = get_analytics_db(connection_id=None)
+        db_gen = get_analytics_db(connection_id=None)  # type: ignore[call-arg]
         db = await db_gen.__anext__()
     except Exception as exc:
         await websocket.send_json({"type": "error", "message": str(exc)})

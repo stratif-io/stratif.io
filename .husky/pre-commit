@@ -1,3 +1,4 @@
+pre-commit run
 bunx lint-staged
 cd apps/web && bunx tsc --noEmit
 bun run lint

@@ -75,7 +75,7 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
     credentials_encrypted = encrypt_credentials({"file_path": db_path})
 
     # Use a direct connection for atomic insertion of all three rows
-    with _sqlite3.connect(db.db_path) as raw_conn:
+    with _sqlite3.connect(db.db_path) as raw_conn:  # type: ignore[union-attr]
         raw_conn.execute("PRAGMA foreign_keys=ON")
         raw_conn.execute(
             """
