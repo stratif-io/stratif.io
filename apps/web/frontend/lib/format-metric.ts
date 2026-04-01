@@ -45,3 +45,12 @@ function formatCompactNumber(n: number): string {
   }
   return String(Math.round(n))
 }
+
+/**
+ * Format a period date range for display labels.
+ * Returns "2025-01-01 – 2026-01-01" (en-dash) or undefined when either date is missing.
+ */
+export function formatPeriodRange(start?: string, end?: string): string | undefined {
+  if (!start || !end) return undefined
+  return `${start} – ${end}`
+}
