@@ -136,7 +136,7 @@ function NavLink({
       onMouseEnter={item.preload}
       onFocus={item.preload}
       className={cn(
-        'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
+        'flex items-center gap-2.5 rounded-md px-2.5 py-2.5 text-sm font-medium transition-colors',
         collapsed ? 'justify-center px-2' : '',
         isActive
           ? 'bg-primary/10 text-primary'
@@ -195,8 +195,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <button
-          aria-hidden="true"
-          tabIndex={-1}
+          aria-label="Close sidebar"
           className="fixed inset-0 z-[var(--z-sidebar-overlay)] bg-background/80 backdrop-blur-sm lg:hidden cursor-default"
           onClick={() => setSidebarOpen(false)}
         />
@@ -284,7 +283,7 @@ export function Sidebar() {
               aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
               aria-expanded={sidebarOpen}
               className={cn(
-                'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors mt-1',
+                'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors mt-1',
                 !sidebarOpen && 'justify-center px-2'
               )}
             >

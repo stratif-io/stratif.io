@@ -39,30 +39,29 @@ export const DONUT_CHART_COLORS = [
   CHART_COLORS.chart[3],
 ]
 
-// Sequential heatmap: low-saturation background → full primary blue.
-// These are intentionally literal values because they need to resolve as
-// concrete SVG fill colors and must form a perceptual gradient.
+// Sequential heatmap: low-opacity primary → full primary.
+// Uses CSS custom properties so both steps resolve correctly in light and dark mode.
 export const HEATMAP_SEQUENTIAL_COLORS = [
-  'hsl(215, 25%, 93%)',
-  'hsl(215, 35%, 82%)',
-  'hsl(215, 50%, 68%)',
-  'hsl(215, 65%, 53%)',
-  'hsl(215, 75%, 43%)',
-  'hsl(215, 83%, 33%)',
-  'hsl(215, 90%, 23%)',
+  'hsl(var(--primary) / 0.08)',
+  'hsl(var(--primary) / 0.18)',
+  'hsl(var(--primary) / 0.32)',
+  'hsl(var(--primary) / 0.48)',
+  'hsl(var(--primary) / 0.65)',
+  'hsl(var(--primary) / 0.82)',
+  'hsl(var(--primary) / 1)',
 ]
 
-// Diverging heatmap: destructive red → neutral → chart-2 teal.
+// Diverging heatmap: destructive → neutral muted → primary.
 export const HEATMAP_DIVERGING_COLORS = [
-  'hsl(0, 72%, 51%)',
-  'hsl(15, 62%, 56%)',
-  'hsl(30, 52%, 61%)',
-  'hsl(50, 38%, 76%)',
-  'hsl(60, 28%, 91%)',
-  'hsl(155, 30%, 82%)',
-  'hsl(163, 42%, 64%)',
-  'hsl(170, 52%, 50%)',
-  'hsl(173, 58%, 39%)',
+  'hsl(var(--destructive) / 0.9)',
+  'hsl(var(--destructive) / 0.6)',
+  'hsl(var(--destructive) / 0.35)',
+  'hsl(var(--muted-foreground) / 0.25)',
+  'hsl(var(--muted-foreground) / 0.12)',
+  'hsl(var(--primary) / 0.3)',
+  'hsl(var(--primary) / 0.5)',
+  'hsl(var(--primary) / 0.75)',
+  'hsl(var(--primary) / 1)',
 ]
 
 export const FUNNEL_CHART_COLORS = DEFAULT_CHART_COLORS

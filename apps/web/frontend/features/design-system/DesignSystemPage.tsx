@@ -1,3 +1,4 @@
+import { TYPOGRAPHY } from '@/lib/constants'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { PrimitivesSection } from './components/sections/PrimitivesSection'
 import { FeedbackSection } from './components/sections/FeedbackSection'
@@ -44,7 +45,7 @@ export function DesignSystemPage() {
         {/* Content */}
         <div className="flex-1 min-w-0 space-y-12 pb-16">
           <div>
-            <h1 className="text-2xl font-bold">Design System</h1>
+            <h1 className={TYPOGRAPHY.pageLabel}>Design System</h1>
             <p className="text-muted-foreground mt-1">
               All UI components rendered in the app theme.
             </p>

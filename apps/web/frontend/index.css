@@ -116,9 +116,9 @@ body {
 .dark {
   --background: 232 17% 8%;
   --foreground: 214 32% 91%;
-  --card: 232 17% 8%;
+  --card: 232 17% 11%;
   --card-foreground: 214 32% 91%;
-  --popover: 232 17% 10%;
+  --popover: 232 17% 13%;
   --popover-foreground: 214 32% 91%;
   --primary: 174 63% 51%;
   --primary-foreground: 178 80% 10%;
@@ -161,28 +161,6 @@ body {
   }
 }
 
-/* Dark mode enhancements */
-.dark {
-  background-color: hsl(var(--background));
-}
-
-.dark body {
-  background-color: hsl(var(--background));
-}
-
-/* Card subtle depth in dark mode */
-.dark .card,
-.dark [class*='card'] {
-  border-color: hsl(var(--border));
-  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.2);
-}
-
-/* Subtle hover effects */
-.dark [class*='card']:hover {
-  border-color: hsl(var(--border));
-  box-shadow: 0 2px 6px hsl(0 0% 0% / 0.25);
-}
-
 /* Better input styling */
 .dark input,
 .dark [class*='input'] {
@@ -207,10 +185,16 @@ html:not(.dark) {
 
 /* ===== Custom Animations & Polish ===== */
 
-/* Smooth transitions — scoped to interactive elements only */
-a,
-button,
-[role='button'],
+/* Smooth transitions — only on devices that support hover */
+@media (hover: hover) {
+  a,
+  button,
+  [role='button'] {
+    @apply transition-colors duration-200;
+  }
+}
+
+/* Always transition form inputs — they need focus transitions on all devices */
 input,
 select,
 textarea {
@@ -271,15 +255,6 @@ textarea {
 /* Stagger animation utility */
 [data-stagger] {
   animation-delay: calc(var(--stagger-index, 0) * 100ms);
-}
-
-/* Smooth hover scale */
-.hover-scale {
-  @apply transition-transform duration-200;
-}
-
-.hover-scale:hover {
-  transform: scale(1.02);
 }
 
 /* Focus ring enhancement */
