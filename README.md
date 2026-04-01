@@ -19,7 +19,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/mc_dark.png"/>
-  <img src="docs/mc_light.png" alt="stratif.io Dashboard"/>
+  <img src="docs/mc.png" alt="stratif.io Dashboard"/>
 </picture>
 
 ---
