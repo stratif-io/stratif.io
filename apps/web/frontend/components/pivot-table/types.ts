@@ -12,6 +12,10 @@ export interface LeafMeta {
   enablePivot: boolean
   enableValue: boolean
   allowedAggFuncs?: string[]
+  /** If set, clicking this item skips the aggregation step and calls onSelect immediately. */
+  fixedAgg?: string
+  /** Category id override for groupDimensionsByCategory (bypasses pattern matching). */
+  category?: string
 }
 
 export interface FilterEntry {

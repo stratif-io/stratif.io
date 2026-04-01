@@ -4,6 +4,7 @@ Used in contract tests to validate connection flow, credential parsing,
 and basic query shapes without a real Databricks workspace.
 See KNOWN_LIMITATIONS.md for what this stub does NOT cover.
 """
+
 from __future__ import annotations
 
 import re
@@ -29,21 +30,23 @@ def _adapt_query(query: str, parameters: dict | list | None) -> tuple[str, list]
     show_tables_re = re.compile(
         r'SHOW\s+TABLES\s+IN\s+"[^"]*"\."([^"]*)"', re.IGNORECASE
     )
+
     def _show_tables_repl(m: re.Match) -> str:
         schema = m.group(1)
         return f"SELECT table_name FROM information_schema.tables WHERE table_schema = '{schema}'"
+
     q = show_tables_re.sub(_show_tables_repl, q)
 
     # Plain SHOW TABLES fallback
     q = re.sub(
-        r'\bSHOW\s+TABLES\b',
+        r"\bSHOW\s+TABLES\b",
         "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main'",
         q,
         flags=re.IGNORECASE,
     )
 
     # * EXCEPT (...) -> * EXCLUDE (...) for DuckDB
-    q = re.sub(r'\*\s+EXCEPT\s*\(', '* EXCLUDE (', q, flags=re.IGNORECASE)
+    q = re.sub(r"\*\s+EXCEPT\s*\(", "* EXCLUDE (", q, flags=re.IGNORECASE)
 
     # Named params :p0, :p1, ... -> positional ?
     if isinstance(parameters, dict) and parameters:

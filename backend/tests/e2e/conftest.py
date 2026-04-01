@@ -12,6 +12,7 @@ Config resolution order:
 Copy connections.yaml.example → connections.yaml at the repo root and fill
 in your credentials to run E2E tests locally.
 """
+
 import os
 import pathlib
 

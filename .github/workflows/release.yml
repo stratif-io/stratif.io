@@ -1,4 +1,4 @@
-name: Release Please
+name: Release
 
 on:
   push:
@@ -45,3 +45,30 @@ jobs:
           tags: |
             ghcr.io/cabichahine/stratif.io:${{ needs.release-please.outputs.tag_name }}
             ghcr.io/cabichahine/stratif.io:latest
+
+  sync-develop:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Open sync PR (main → develop)
+        run: |
+          if ! gh pr create \
+            --title "chore: sync main → develop after release" \
+            --body "Automated PR to sync version bump and changelog from main back into develop." \
+            --base develop \
+            --head main; then
+            if gh pr list --head main --base develop --json number --jq '.[0].number' | grep -q .; then
+              echo "Sync PR already exists — skipping."
+            else
+              echo "Failed to create sync PR."
+              exit 1
+            fi
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

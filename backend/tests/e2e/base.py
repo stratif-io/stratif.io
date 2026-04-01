@@ -21,10 +21,11 @@ State flows through class variables:
 Skip guards: if a required class var is None (prior step didn't complete),
 subsequent steps skip rather than fail, keeping the output clean.
 """
+
 from __future__ import annotations
 
 from datetime import date, timedelta
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 import pytest
 
@@ -33,8 +34,8 @@ from backend.tests.e2e.conftest import E2E_CONFIG
 
 class BaseE2ETest:
     db_type: ClassVar[str] = ""
-    connection_id: ClassVar[Optional[str]] = None
-    detected_schema: ClassVar[Optional[dict]] = None
+    connection_id: ClassVar[str | None] = None
+    detected_schema: ClassVar[dict | None] = None
 
     # ------------------------------------------------------------------
     # Class setup — skip entire class if backend is not enabled
@@ -258,9 +259,7 @@ class BaseE2ETest:
         assert body.get("data") is not None, (
             "data is None in all-time pivot — backend returned null"
         )
-        assert len(body.get("data", [])) > 0, (
-            "all-time pivot returned empty data array"
-        )
+        assert len(body.get("data", [])) > 0, "all-time pivot returned empty data array"
 
     # ------------------------------------------------------------------
     # Step 11 — Cleanup: delete the connection

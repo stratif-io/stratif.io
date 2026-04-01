@@ -1,6 +1,5 @@
 """Unit tests for path analysis and path funnel."""
 
-import re
 import pytest
 
 from backend.api.paths import get_paths
@@ -128,7 +127,9 @@ class TestPathsLimitSQL:
     def test_limit_is_integer_literal_not_parameter(self):
         query = self._paths_query(limit=5)
         # LIMIT must be an inline integer, not a ? placeholder
-        assert "LIMIT ?" not in query, "LIMIT must not be parameterized — ClickHouse rejects LIMIT ?"
+        assert "LIMIT ?" not in query, (
+            "LIMIT must not be parameterized — ClickHouse rejects LIMIT ?"
+        )
         assert "LIMIT 5" in query
 
     def test_limit_value_not_in_params(self):

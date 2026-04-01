@@ -1,13 +1,14 @@
 """Tests for connection schema config API — resurrection_window_days and power_user_threshold_days."""
+
 from __future__ import annotations
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from starlette.testclient import TestClient
 
-from backend.main import app
-from backend.product_db import get_product_db
 from backend.api.connections.schema_detect import _suggest_fields
+from backend.main import app
 from backend.product_db.database import SQLiteProductDB
 from backend.product_db.migrations import init_product_db
 
@@ -33,12 +34,21 @@ def schema_client(tmp_path):
     db.execute(
         "INSERT INTO connections (id, name, db_type, credentials_encrypted, created_at, updated_at) "
         "VALUES (?, ?, ?, ?, ?, ?)",
-        ("conn-1", "Test", "sqlite", "x", "2024-01-01T00:00:00Z", "2024-01-01T00:00:00Z"),
+        (
+            "conn-1",
+            "Test",
+            "sqlite",
+            "x",
+            "2024-01-01T00:00:00Z",
+            "2024-01-01T00:00:00Z",
+        ),
     )
 
-    with patch("backend.api.connections.crud.get_product_db", return_value=db):
-        with TestClient(app) as client:
-            yield client
+    with (
+        patch("backend.api.connections.crud.get_product_db", return_value=db),
+        TestClient(app) as client,
+    ):
+        yield client
 
 
 class TestSchemaConfigNewFields:
@@ -158,7 +168,9 @@ class TestSuggestFieldsUserIdentity:
         return [{"name": n, "type": "TEXT"} for n in names]
 
     def test_suggests_email_field(self):
-        result = _suggest_fields(self._cols(["user_id", "timestamp", "event_name", "email"]))
+        result = _suggest_fields(
+            self._cols(["user_id", "timestamp", "event_name", "email"])
+        )
         assert result.get("email_field") == "email"
 
     def test_suggests_email_from_user_email(self):
@@ -178,7 +190,9 @@ class TestSuggestFieldsUserIdentity:
         assert result.get("last_name_field") == "last_name"
 
     def test_suggests_date_of_birth(self):
-        result = _suggest_fields(self._cols(["user_id", "ts", "event", "date_of_birth"]))
+        result = _suggest_fields(
+            self._cols(["user_id", "ts", "event", "date_of_birth"])
+        )
         assert result.get("date_of_birth_field") == "date_of_birth"
 
     def test_suggests_dob(self):
@@ -215,7 +229,9 @@ class TestSuggestFieldsUserIdentity:
         assert result.get("email_field") == "userEmail"
 
     def test_suggests_email_via_substring(self):
-        result = _suggest_fields(self._cols(["user_id", "ts", "event", "contact_email_address"]))
+        result = _suggest_fields(
+            self._cols(["user_id", "ts", "event", "contact_email_address"])
+        )
         assert result.get("email_field") == "contact_email_address"
 
     def test_suggests_user_id_via_fuzzy(self):
