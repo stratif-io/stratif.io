@@ -1,7 +1,7 @@
 import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchPivot, fetchEvents } from '@/lib/api'
+import { fetchPivot } from '@/lib/api'
 import { formatDateParam } from '@/lib/utils'
 import { useAppStore } from '@/stores'
 import type { DateRange, Granularity } from '@/types'
@@ -14,7 +14,6 @@ export interface TrendDataItem {
 
 export interface UseTrendDataOptions {
   dateRange: DateRange
-  selectedEvent: string
   granularity: Granularity
   breakdownDimension?: string | null
   measure?: string
@@ -60,11 +59,9 @@ export function formatTrendDate(rawDate: string, granularity: Granularity): stri
 
 export interface UseTrendDataReturn {
   trendData: Array<Record<string, unknown>>
-  events: string[]
   isLoading: boolean
   isError: boolean
   error: Error | null
-  eventsLoading: boolean
   totalEvents: number
   averageValue: number
   maxValue: number
@@ -82,7 +79,6 @@ function measureRowKey(measure: string): string {
 
 export function useTrendData({
   dateRange,
-  selectedEvent,
   granularity,
   breakdownDimension = null,
   measure = 'count_events',
@@ -103,13 +99,6 @@ export function useTrendData({
   const dateDim = granularityToDim(granularity)
   const pivotRowDims = breakdownDimension ? [dateDim, breakdownDimension] : [dateDim]
 
-  // ── Events list ───────────────────────────────────────────────────────────
-  const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
-    queryKey: ['events', activeConnectionId],
-    queryFn: () => fetchEvents(activeConnectionId ?? undefined),
-    staleTime: QUERY_STALE_TIME.default,
-  })
-
   // ── Pivot query (always) ──────────────────────────────────────────────────
   const {
     data: pivotResponse,
@@ -122,7 +111,6 @@ export function useTrendData({
       breakdownDimension,
       measure,
       granularity,
-      selectedEvent,
       startDate,
       endDate,
       mergedFilters,
@@ -134,7 +122,6 @@ export function useTrendData({
         measures: [measure],
         start_date: startDate,
         end_date: endDate,
-        event_filter: selectedEvent || undefined,
         filters: mergedFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
@@ -220,11 +207,9 @@ export function useTrendData({
 
   return {
     trendData,
-    events: eventsResponse?.events || [],
     isLoading: pivotLoading,
     isError: pivotIsError,
     error: pivotError as Error | null,
-    eventsLoading,
     totalEvents,
     averageValue,
     maxValue,

@@ -1,5 +1,11 @@
 [
   {
+    "id": "metrics",
+    "label": "Metrics",
+    "icon": "BarChart2",
+    "patterns": []
+  },
+  {
     "id": "time",
     "label": "Time",
     "icon": "Timer",
