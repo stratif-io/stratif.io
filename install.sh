@@ -56,14 +56,20 @@ else
   success "uv installed"
 fi
 
-# ── Resolve latest release tag ────────────────────────────────────────────────
+# ── Resolve release tag ───────────────────────────────────────────────────────
 
-info "Fetching latest release"
-LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-  | grep '"tag_name"' | head -1 \
-  | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
-[ -n "$LATEST" ] || die "Could not fetch latest release. Check your internet connection."
-success "Latest release: $LATEST"
+# STRATIFIO_VERSION can be set to pin a specific tag (used by CI tests)
+if [ -n "${STRATIFIO_VERSION:-}" ]; then
+  LATEST="$STRATIFIO_VERSION"
+  info "Using pinned version: $LATEST"
+else
+  info "Fetching latest release"
+  LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+    | grep '"tag_name"' | head -1 \
+    | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+  [ -n "$LATEST" ] || die "Could not fetch latest release. Check your internet connection."
+  success "Latest release: $LATEST"
+fi
 
 # ── Clone or update repo ──────────────────────────────────────────────────────
 
@@ -87,19 +93,25 @@ INSTALLED_FRONTEND=$(cat "$FRONTEND_VERSION_FILE" 2>/dev/null || echo "")
 if [ "$INSTALLED_FRONTEND" = "$LATEST" ] && [ -d "$FRONTEND_DEST" ]; then
   success "Frontend $LATEST already present — skipping download"
 else
-  info "Downloading frontend build ($LATEST)"
-  FRONTEND_URL="https://github.com/${REPO}/releases/download/${LATEST}/frontend.tar.gz"
   TMP=$(mktemp /tmp/stratifio-frontend.XXXXXX.tar.gz)
-  if ! curl -fsSL "$FRONTEND_URL" -o "$TMP"; then
-    rm -f "$TMP"
-    die "Failed to download frontend from GitHub release $LATEST"
+  # STRATIFIO_FRONTEND_TARBALL can point to a local file (used by CI tests)
+  if [ -n "${STRATIFIO_FRONTEND_TARBALL:-}" ]; then
+    info "Using local frontend tarball"
+    cp "$STRATIFIO_FRONTEND_TARBALL" "$TMP"
+  else
+    info "Downloading frontend build ($LATEST)"
+    FRONTEND_URL="https://github.com/${REPO}/releases/download/${LATEST}/frontend.tar.gz"
+    if ! curl -fsSL "$FRONTEND_URL" -o "$TMP"; then
+      rm -f "$TMP"
+      die "Failed to download frontend from GitHub release $LATEST"
+    fi
   fi
   rm -rf "$FRONTEND_DEST"
   mkdir -p "$INSTALL_DIR/apps/web"
   tar -xzf "$TMP" -C "$INSTALL_DIR/apps/web"
   rm -f "$TMP"
   echo "$LATEST" > "$FRONTEND_VERSION_FILE"
-  success "Frontend downloaded"
+  success "Frontend ready"
 fi
 
 # ── Install Python dependencies ───────────────────────────────────────────────
