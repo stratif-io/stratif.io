@@ -1,16 +1,16 @@
 """Tests for GET /connections/{id}/tables and /connections/{id}/columns endpoints."""
+
 from __future__ import annotations
 
-import duckdb
-import json
-import tempfile
 import os
-import pytest
+import tempfile
 from unittest.mock import MagicMock, patch
+
+import duckdb
+import pytest
 from starlette.testclient import TestClient
 
 from backend.main import app
-from backend.product_db import get_product_db
 
 
 def _make_sqlite_row(data: dict):
@@ -51,6 +51,7 @@ def _make_product_db_mock(conn_row: dict):
 def _make_encrypted_creds(file_path: str) -> str:
     """Create an encrypted credentials blob for a DuckDB file path."""
     from backend.services.crypto import encrypt_credentials
+
     return encrypt_credentials({"file_path": file_path})
 
 
@@ -66,9 +67,11 @@ def browse_client(duckdb_file):
     }
     mock_db = _make_product_db_mock(conn_row)
 
-    with patch("backend.api.connections.browse.get_product_db", return_value=mock_db):
-        with TestClient(app) as client:
-            yield client
+    with (
+        patch("backend.api.connections.browse.get_product_db", return_value=mock_db),
+        TestClient(app) as client,
+    ):
+        yield client
 
 
 class TestListTables:
@@ -100,9 +103,12 @@ class TestListTables:
     def test_tables_returns_404_for_unknown_connection(self, browse_client):
         # browse_client's product_db returns None for unknown ids
         from unittest.mock import patch as _patch
+
         db_mock = MagicMock()
         db_mock.fetchone.return_value = None
-        with _patch("backend.api.connections.browse.get_product_db", return_value=db_mock):
+        with _patch(
+            "backend.api.connections.browse.get_product_db", return_value=db_mock
+        ):
             resp = browse_client.get("/api/connections/unknown-id/tables")
         assert resp.status_code == 404
 
@@ -120,6 +126,8 @@ class TestListColumns:
     def test_columns_returns_404_for_unknown_connection(self, browse_client):
         db_mock = MagicMock()
         db_mock.fetchone.return_value = None
-        with patch("backend.api.connections.browse.get_product_db", return_value=db_mock):
+        with patch(
+            "backend.api.connections.browse.get_product_db", return_value=db_mock
+        ):
             resp = browse_client.get("/api/connections/nope/columns?table=main.events")
         assert resp.status_code == 404

@@ -3,6 +3,7 @@
 OSS mode: optionally verify API key header.
 SaaS override: replace get_current_user via app.dependency_overrides with a JWT verifier.
 """
+
 from fastapi import HTTPException, Request, status
 
 from backend.config import settings

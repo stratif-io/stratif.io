@@ -15,7 +15,9 @@ from backend.services.validators import interpolate_sql, parse_date, to_sql_date
 
 log: BoundLogger = structlog.get_logger(__name__)
 
-router = APIRouter(prefix="/api", tags=["people"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/api", tags=["people"], dependencies=[Depends(get_current_user)]
+)
 
 
 @router.get("/users")
@@ -25,7 +27,9 @@ def list_users(
     end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    filters: str | None = Query(None, description="JSON dict of active dimension filters"),
+    filters: str | None = Query(
+        None, description="JSON dict of active dimension filters"
+    ),
 ) -> dict:
     """List users with event count and first/last seen, filtered by date range and filters."""
     start_date = parse_date(start_date)

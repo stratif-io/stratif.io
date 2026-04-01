@@ -1,8 +1,9 @@
 """Shared fixtures for API integration tests."""
 
+from unittest.mock import patch
+
 import duckdb
 import pytest
-from unittest.mock import patch
 from starlette.testclient import TestClient
 
 from backend.backends.duckdb import DuckDBBackend

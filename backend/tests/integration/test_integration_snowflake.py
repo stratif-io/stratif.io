@@ -3,6 +3,7 @@
 Credentials are read from connections.yaml (``backends.snowflake``).
 Set ``enabled: true`` and fill in account/user/password/database.
 """
+
 import pytest
 
 from backend.tests.integration.conftest import get_backend_config
