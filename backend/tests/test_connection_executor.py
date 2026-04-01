@@ -363,6 +363,20 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         db = self._open_db(schema, [])  # no filter fields configured
         assert "first_name" not in db.get_filter_exprs()
 
+    def test_plain_column_filter_field_without_identity_mapping(self):
+        """A filter field that is a plain column but not configured as an identity field
+        must still land in filter_exprs so autocomplete and filtering work."""
+        schema = self._default_schema()  # first_name_field NOT set
+        db = self._open_db(
+            schema, [{"field": "first_name", "label": "First Name", "icon": "user"}]
+        )
+        assert "first_name" in db.get_filter_exprs(), (
+            "plain column filter field must be in filter_exprs even without identity mapping"
+        )
+        clauses, params = db.build_filter_clauses({"first_name": "Alice"})
+        assert len(clauses) == 1
+        assert params == ["Alice"]
+
     def test_identity_field_with_custom_column_name(self):
         schema = self._default_schema(first_name_field="fname")
         db = self._open_db(

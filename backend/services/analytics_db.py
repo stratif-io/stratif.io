@@ -341,6 +341,9 @@ def open_analytics_db(
             filter_exprs[field] = (
                 _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
             )
+        else:
+            # Plain column not mapped as a custom prop or standard field — quote it directly.
+            filter_exprs[field] = f"{_iq}{field}{_iq}"
 
     shared_kwargs: dict = {
         "filter_fields": filter_fields,
