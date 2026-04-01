@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
@@ -10,6 +11,7 @@ import { TrendingUp } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { fetchPivotOptions } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendMetricPicker } from './components/TrendMetricPicker'
 import { TrendChart } from './components/TrendChart'
@@ -19,6 +21,7 @@ import { SPACING, TYPOGRAPHY, QUERY_STALE_TIME } from '@/lib/constants'
 import type { Granularity } from '@/types'
 import { DevCard } from '@/components/dev'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
+import { buildPivotUrl } from './trendToPivot'
 
 const GRANULARITY_PERIOD_LABELS: Record<Granularity, string> = {
   hour: 'Hourly',
@@ -35,6 +38,7 @@ export function TrendsPage() {
   }, [])
 
   const { dateRange, activeConnectionId, granularity } = useAppStore()
+  const navigate = useNavigate()
   const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area')
   const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
   const [measureField, setMeasureField] = useState<string>('count_events')
@@ -71,6 +75,10 @@ export function TrendsPage() {
   const numericValues = new Set(numericDimensions.map((d) => d.value))
   const isNumericField = isCustomField && numericValues.has(measureField)
   const measure = isCustomField ? `${aggregation}:${measureField}` : measureField
+
+  function handleRunInPivot() {
+    navigate(buildPivotUrl({ measure, breakdownDimension, localFilters }))
+  }
 
   const {
     trendData,
@@ -231,6 +239,13 @@ export function TrendsPage() {
                         seriesKeys={seriesKeys}
                         measureKey={measureKey}
                       />
+                    </div>
+                  )}
+                  {activeConnectionId && (
+                    <div className="flex justify-end pt-3">
+                      <Button variant="outline" size="sm" onClick={handleRunInPivot}>
+                        Run in Pivot Explorer
+                      </Button>
                     </div>
                   )}
                 </CardContent>

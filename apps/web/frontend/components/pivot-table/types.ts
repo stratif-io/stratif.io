@@ -55,6 +55,11 @@ export interface PivotTableProps {
   activeConnectionId?: string | null
   fetchRows: (params: PivotRowsRequest) => Promise<PivotRowsResponse>
   fetchFilterValues: (field: string) => Promise<string[]>
+  // Optional initial state injected from Trend page handoff
+  initialRowGroups?: ZoneCol[]
+  initialPivotCols?: ZoneCol[]
+  initialValueCols?: ZoneCol[]
+  initialPivotFilters?: FilterEntry[]
 }
 
 type ColDefInput = {
