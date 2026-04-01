@@ -1,4 +1,5 @@
 """Unit tests for connections_config.py."""
+
 import pytest
 
 from seeders.connections_config import (

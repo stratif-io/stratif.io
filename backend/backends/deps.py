@@ -1,4 +1,5 @@
 """FastAPI dependency for the backend registry."""
+
 from __future__ import annotations
 
 from typing import Annotated
@@ -14,4 +15,6 @@ def get_backend_registry() -> dict[str, DatabaseBackend]:
     return _REGISTRY
 
 
-BackendRegistryDep = Annotated[dict[str, DatabaseBackend], Depends(get_backend_registry)]
+BackendRegistryDep = Annotated[
+    dict[str, DatabaseBackend], Depends(get_backend_registry)
+]

@@ -3,6 +3,7 @@
 Credentials are read from connections.yaml (``backends.sqlite``).
 Set ``enabled: true`` and provide a ``file_path`` to run this test.
 """
+
 import pytest
 
 from backend.tests.integration.conftest import get_backend_config

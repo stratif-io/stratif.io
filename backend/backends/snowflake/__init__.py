@@ -1,4 +1,5 @@
 """Snowflake database backend."""
+
 from __future__ import annotations
 
 import contextlib
@@ -13,7 +14,6 @@ from backend.backends.snowflake.credentials import SnowflakeCredentials
 
 
 class SnowflakeBackend:
-
     @property
     def dialect_name(self) -> str:
         return "snowflake"
@@ -30,7 +30,9 @@ class SnowflakeBackend:
         return SnowflakeCredentials.model_validate(raw)
 
     def connection_string(self, credentials: BaseModel) -> str | None:
-        creds = SnowflakeCredentials.model_validate(credentials.model_dump(by_alias=True))
+        creds = SnowflakeCredentials.model_validate(
+            credentials.model_dump(by_alias=True)
+        )
         role_part = f"&role={creds.role}" if creds.role else ""
         return (
             f"snowflake://{creds.user}:****@{creds.account}"
@@ -40,7 +42,10 @@ class SnowflakeBackend:
 
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         import snowflake.connector
-        creds = SnowflakeCredentials.model_validate(credentials.model_dump(by_alias=True))
+
+        creds = SnowflakeCredentials.model_validate(
+            credentials.model_dump(by_alias=True)
+        )
         kwargs: dict = {
             "account": creds.account,
             "user": creds.user,
@@ -59,6 +64,7 @@ class SnowflakeBackend:
     def is_connection_error(self, exc: Exception) -> bool:
         try:
             from snowflake.connector.errors import DatabaseError, OperationalError
+
             return isinstance(exc, (DatabaseError, OperationalError))
         except ImportError:
             return False
@@ -100,8 +106,8 @@ class SnowflakeBackend:
         try:
             cursor = conn.cursor()
             try:
-                quoted = '.'.join(f'"{p}"' for p in table.split('.'))
-                cursor.execute(f'SELECT * FROM {quoted} LIMIT 0')
+                quoted = ".".join(f'"{p}"' for p in table.split("."))
+                cursor.execute(f"SELECT * FROM {quoted} LIMIT 0")
                 return [d[0] for d in cursor.description or []]
             finally:
                 with contextlib.suppress(Exception):
@@ -115,10 +121,15 @@ class SnowflakeBackend:
             if schema is None:
                 cursor.execute("SHOW SCHEMAS")
                 rows = cursor.fetchall()
-                return [{"name": r[1], "full_name": r[1], "kind": "schema"} for r in rows]
+                return [
+                    {"name": r[1], "full_name": r[1], "kind": "schema"} for r in rows
+                ]
             cursor.execute(f'SHOW TABLES IN SCHEMA "{schema}"')
             rows = cursor.fetchall()
-            return [{"name": r[1], "full_name": f"{schema}.{r[1]}", "kind": "table"} for r in rows]
+            return [
+                {"name": r[1], "full_name": f"{schema}.{r[1]}", "kind": "table"}
+                for r in rows
+            ]
         finally:
             with contextlib.suppress(Exception):
                 cursor.close()
@@ -127,8 +138,13 @@ class SnowflakeBackend:
         tables = self.get_tables(conn)
         events_table = pick_events_table(tables, events_table_hint)
         if not events_table:
-            return SchemaInfo(tables=tables, events_table="", columns=[], suggestions={},
-                              proposed_custom_properties=[])
+            return SchemaInfo(
+                tables=tables,
+                events_table="",
+                columns=[],
+                suggestions={},
+                proposed_custom_properties=[],
+            )
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -136,7 +152,9 @@ class SnowflakeBackend:
                 "WHERE table_name = %s ORDER BY ordinal_position",
                 (events_table.upper(),),
             )
-            columns = [ColumnInfo(name=r[0].lower(), type=r[1]) for r in cursor.fetchall()]
+            columns = [
+                ColumnInfo(name=r[0].lower(), type=r[1]) for r in cursor.fetchall()
+            ]
         finally:
             with contextlib.suppress(Exception):
                 cursor.close()
@@ -151,10 +169,17 @@ class SnowflakeBackend:
             if "VARIANT" in sql_type or "OBJECT" in sql_type:
                 proposed.append({"name": col.name, "path": col.name, "type": "string"})
             else:
-                proposed.append({"name": col.name, "path": col.name, "type": infer_type(sql_type)})
+                proposed.append(
+                    {"name": col.name, "path": col.name, "type": infer_type(sql_type)}
+                )
 
-        return SchemaInfo(tables=tables, events_table=events_table, columns=columns,
-                          suggestions=suggestions, proposed_custom_properties=proposed)
+        return SchemaInfo(
+            tables=tables,
+            events_table=events_table,
+            columns=columns,
+            suggestions=suggestions,
+            proposed_custom_properties=proposed,
+        )
 
     def execute(self, conn: Any, query: str, params: list | None) -> list[tuple]:
         if params:
@@ -175,7 +200,9 @@ class SnowflakeBackend:
         cursor = conn.cursor()
         try:
             cursor.execute(query, params or None)
-            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            columns = (
+                [desc[0] for desc in cursor.description] if cursor.description else []
+            )
             rows = cursor.fetchall()
             return columns, rows
         finally:
@@ -183,15 +210,24 @@ class SnowflakeBackend:
                 cursor.close()
 
     def build_events_cte(
-        self, source_table: str, uid_field: str, ts_field: str,
-        en_field: str, custom_props: list[dict],
+        self,
+        source_table: str,
+        uid_field: str,
+        ts_field: str,
+        en_field: str,
+        custom_props: list[dict],
     ) -> str:
         q = '"'
         quoted_table = ".".join(f"{q}{p}{q}" for p in source_table.split("."))
-        core = f'{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name'
+        core = f"{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name"
         remapped_src = {uid_field, ts_field, en_field}
-        extra_cols = sorted({p["path"].split(".")[0] for p in custom_props if "path" in p} - remapped_src)
-        extras = (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
+        extra_cols = sorted(
+            {p["path"].split(".")[0] for p in custom_props if "path" in p}
+            - remapped_src
+        )
+        extras = (
+            (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
+        )
         return f"(SELECT {core}{extras} FROM {quoted_table})"
 
     def prepend_events_cte(self, cte_body: str, query: str) -> str:
@@ -199,7 +235,7 @@ class SnowflakeBackend:
         cte_def = f"events AS {cte_body}"
         m = re.match(r"(with\s+)", q, re.IGNORECASE)
         if m:
-            return q[: m.end()] + cte_def + ", " + q[m.end():]
+            return q[: m.end()] + cte_def + ", " + q[m.end() :]
         return f"WITH {cte_def} {q}"
 
     def date_trunc(self, unit: str, col: str) -> str:

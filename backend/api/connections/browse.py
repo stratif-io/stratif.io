@@ -30,19 +30,25 @@ async def browse_connection(
     try:
         backend = get_backend(db_type)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}") from None
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported db_type: {db_type!r}"
+        ) from None
 
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
     except ValueError as exc:
-        raise HTTPException(status_code=500, detail="Failed to decrypt credentials") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to decrypt credentials"
+        ) from exc
 
     credentials = backend.parse_credentials(creds)
 
     try:
         if backend.use_pool:
             pool_key = backend.pool_key(conn_id, credentials)
-            conn = _pool_get(pool_key, lambda: backend.open(credentials, read_only=False))
+            conn = _pool_get(
+                pool_key, lambda: backend.open(credentials, read_only=False)
+            )
             items = backend.browse(conn, catalog=catalog, schema=schema)
         else:
             conn = backend.open(credentials, read_only=True)
@@ -67,12 +73,16 @@ async def list_tables(conn_id: str):
     try:
         backend = get_backend(db_type)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}") from None
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported db_type: {db_type!r}"
+        ) from None
 
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
     except ValueError as exc:
-        raise HTTPException(status_code=500, detail="Failed to decrypt credentials") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to decrypt credentials"
+        ) from exc
 
     credentials = backend.parse_credentials(creds)
 
@@ -87,24 +97,48 @@ async def list_tables(conn_id: str):
             name = item.get("name", "")
             full_name = item.get("full_name") or name
             if kind == "table":
-                tables.append({"catalog": None, "table_schema": None, "name": name, "full_name": full_name})
+                tables.append(
+                    {
+                        "catalog": None,
+                        "table_schema": None,
+                        "name": name,
+                        "full_name": full_name,
+                    }
+                )
             elif kind == "schema":
                 for child in _browse(conn, None, name):
                     if child.get("kind") == "table":
-                        tables.append({"catalog": None, "table_schema": name, "name": child["name"], "full_name": child.get("full_name") or child["name"]})
+                        tables.append(
+                            {
+                                "catalog": None,
+                                "table_schema": name,
+                                "name": child["name"],
+                                "full_name": child.get("full_name") or child["name"],
+                            }
+                        )
             elif kind == "catalog":
                 for schema_item in _browse(conn, name, None):
                     if schema_item.get("kind") == "schema":
                         schema_name = schema_item["name"]
                         for child in _browse(conn, name, schema_name):
                             if child.get("kind") == "table":
-                                tables.append({"catalog": name, "table_schema": schema_name, "name": child["name"], "full_name": child.get("full_name") or child["name"]})
+                                tables.append(
+                                    {
+                                        "catalog": name,
+                                        "table_schema": schema_name,
+                                        "name": child["name"],
+                                        "full_name": child.get("full_name")
+                                        or child["name"],
+                                    }
+                                )
         return tables
 
     try:
         if backend.use_pool:
             pool_key = backend.pool_key(conn_id, credentials)
-            conn = _pool_get(pool_key, lambda: backend.open(credentials, read_only=False))
+            conn = _pool_get(
+                pool_key, lambda: backend.open(credentials, read_only=False)
+            )
             tables = _collect(conn)
         else:
             conn = backend.open(credentials, read_only=True)
@@ -129,19 +163,25 @@ async def list_columns(conn_id: str, table: str):
     try:
         backend = get_backend(db_type)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}") from None
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported db_type: {db_type!r}"
+        ) from None
 
     try:
         creds = decrypt_credentials(row["credentials_encrypted"])
     except ValueError as exc:
-        raise HTTPException(status_code=500, detail="Failed to decrypt credentials") from exc
+        raise HTTPException(
+            status_code=500, detail="Failed to decrypt credentials"
+        ) from exc
 
     credentials = backend.parse_credentials(creds)
 
     try:
         if backend.use_pool:
             pool_key = backend.pool_key(conn_id, credentials)
-            conn = _pool_get(pool_key, lambda: backend.open(credentials, read_only=False))
+            conn = _pool_get(
+                pool_key, lambda: backend.open(credentials, read_only=False)
+            )
             columns = backend.get_columns_for_browse(conn, table)
         else:
             conn = backend.open(credentials, read_only=True)
@@ -152,6 +192,8 @@ async def list_columns(conn_id: str, table: str):
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Column fetch failed: {exc}") from exc
+        raise HTTPException(
+            status_code=400, detail=f"Column fetch failed: {exc}"
+        ) from exc
 
     return {"columns": columns}

@@ -1,4 +1,5 @@
 """Tests for backend.services.connection_executor internals."""
+
 import inspect
 
 from backend.services.connection_executor import get_analytics_db
@@ -12,7 +13,6 @@ def test_get_analytics_db_accepts_product_db_param():
 def test_get_analytics_db_accepts_registry_param():
     sig = inspect.signature(get_analytics_db)
     assert "registry" in sig.parameters
-
 
 
 import duckdb  # noqa: E402
@@ -192,6 +192,7 @@ def test_execute_raises_503_on_stale_databricks_connection():
     dead_conn.cursor.return_value = dead_cursor
 
     from backend.backends.databricks import DatabricksBackend
+
     db = AnalyticsDatabase(
         conn=dead_conn,
         backend=DatabricksBackend(),
@@ -217,10 +218,13 @@ def test_execute_raises_503_on_stale_postgres_connection():
 
     dead_conn = MagicMock()
     dead_cursor = MagicMock()
-    dead_cursor.execute.side_effect = psycopg2.OperationalError("server closed connection")
+    dead_cursor.execute.side_effect = psycopg2.OperationalError(
+        "server closed connection"
+    )
     dead_conn.cursor.return_value = dead_cursor
 
     from backend.backends.postgresql import PostgreSQLBackend
+
     db = AnalyticsDatabase(
         conn=dead_conn,
         backend=PostgreSQLBackend(),
@@ -246,7 +250,9 @@ def test_execute_reconnects_and_retries_on_stale_postgres_connection():
     # First connection: stale — cursor.execute raises OperationalError
     dead_conn = MagicMock()
     dead_cursor = MagicMock()
-    dead_cursor.execute.side_effect = psycopg2.OperationalError("server closed connection")
+    dead_cursor.execute.side_effect = psycopg2.OperationalError(
+        "server closed connection"
+    )
     dead_conn.cursor.return_value = dead_cursor
 
     # Fresh connection returned by the factory — succeeds
@@ -258,13 +264,16 @@ def test_execute_reconnects_and_retries_on_stale_postgres_connection():
     factory = MagicMock(return_value=fresh_conn)
 
     from backend.backends.postgresql import PostgreSQLBackend
+
     db = AnalyticsDatabase(conn=dead_conn, backend=PostgreSQLBackend(), events_cte=None)
     db._pooled = True
     db._pool_key = ("conn-3", "user-3", "postgres")
     db._pool_factory = factory
 
-    with patch("backend.services.analytics_db._pool_evict") as mock_evict, \
-         patch("backend.services.analytics_db._pool_get", return_value=fresh_conn):
+    with (
+        patch("backend.services.analytics_db._pool_evict") as mock_evict,
+        patch("backend.services.analytics_db._pool_get", return_value=fresh_conn),
+    ):
         result = db.execute("SELECT 1")
 
     mock_evict.assert_called_once_with(("conn-3", "user-3", "postgres"))

@@ -1,4 +1,5 @@
 """DuckDB database backend."""
+
 from __future__ import annotations
 
 import re
@@ -89,7 +90,10 @@ class DuckDBBackend:
             "SELECT table_name FROM information_schema.tables WHERE table_schema = ? ORDER BY 1",
             [schema],
         ).fetchall()
-        return [{"name": r[0], "full_name": f"{schema}.{r[0]}", "kind": "table"} for r in rows]
+        return [
+            {"name": r[0], "full_name": f"{schema}.{r[0]}", "kind": "table"}
+            for r in rows
+        ]
 
     def detect_schema(self, conn: Any, events_table_hint: str | None) -> SchemaInfo:
         tables_result = conn.execute(
@@ -100,8 +104,13 @@ class DuckDBBackend:
 
         events_table = pick_events_table(tables, events_table_hint)
         if not events_table:
-            return SchemaInfo(tables=tables, events_table="", columns=[], suggestions={},
-                              proposed_custom_properties=[])
+            return SchemaInfo(
+                tables=tables,
+                events_table="",
+                columns=[],
+                suggestions={},
+                proposed_custom_properties=[],
+            )
 
         columns_result = conn.execute(f'DESCRIBE "{events_table}"').fetchall()
         columns = [ColumnInfo(name=r[0], type=r[1]) for r in columns_result]
@@ -133,16 +142,34 @@ class DuckDBBackend:
                             sub_keys = []
                         if sub_keys:
                             for sub_key in sub_keys:
-                                proposed.append({"name": f"{key}.{sub_key}", "path": f"{col.name}.{key}.{sub_key}", "type": "string"})
+                                proposed.append(
+                                    {
+                                        "name": f"{key}.{sub_key}",
+                                        "path": f"{col.name}.{key}.{sub_key}",
+                                        "type": "string",
+                                    }
+                                )
                         else:
-                            proposed.append({"name": key, "path": f"{col.name}.{key}", "type": "string"})
+                            proposed.append(
+                                {
+                                    "name": key,
+                                    "path": f"{col.name}.{key}",
+                                    "type": "string",
+                                }
+                            )
                 except Exception:
-                    proposed.append({"name": col.name, "path": col.name, "type": "string"})
+                    proposed.append(
+                        {"name": col.name, "path": col.name, "type": "string"}
+                    )
             else:
-                proposed.append({"name": col.name, "path": col.name, "type": infer_type(sql_type)})
+                proposed.append(
+                    {"name": col.name, "path": col.name, "type": infer_type(sql_type)}
+                )
 
         # Upgrade string-typed JSON properties to number where sampling confirms it
-        string_json_props = [p for p in proposed if p["type"] == "string" and "." in p["path"]]
+        string_json_props = [
+            p for p in proposed if p["type"] == "string" and "." in p["path"]
+        ]
         if string_json_props:
             col_name, _ = string_json_props[0]["path"].split(".", 1)
             prop_exprs = {
@@ -159,8 +186,13 @@ class DuckDBBackend:
                 if p["name"] in upgrades:
                     p["type"] = upgrades[p["name"]]
 
-        return SchemaInfo(tables=tables, events_table=events_table, columns=columns,
-                          suggestions=suggestions, proposed_custom_properties=proposed)
+        return SchemaInfo(
+            tables=tables,
+            events_table=events_table,
+            columns=columns,
+            suggestions=suggestions,
+            proposed_custom_properties=proposed,
+        )
 
     def execute(self, conn: Any, query: str, params: list | None) -> list[tuple]:
         if params:
@@ -176,12 +208,16 @@ class DuckDBBackend:
         return columns, rows
 
     def build_events_cte(
-        self, source_table: str, uid_field: str, ts_field: str,
-        en_field: str, custom_props: list[dict],
+        self,
+        source_table: str,
+        uid_field: str,
+        ts_field: str,
+        en_field: str,
+        custom_props: list[dict],
     ) -> str:
         q = '"'
         quoted_table = ".".join(f"{q}{p}{q}" for p in source_table.split("."))
-        core = f'{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name'
+        core = f"{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name"
         remapped_src = {uid_field, ts_field, en_field}
         excl = ", ".join(f"{q}{c}{q}" for c in sorted(remapped_src))
         return f"(SELECT {core}, * EXCLUDE ({excl}) FROM {quoted_table})"
@@ -191,7 +227,7 @@ class DuckDBBackend:
         cte_def = f"events AS {cte_body}"
         m = re.match(r"(with\s+)", q, re.IGNORECASE)
         if m:
-            return q[: m.end()] + cte_def + ", " + q[m.end():]
+            return q[: m.end()] + cte_def + ", " + q[m.end() :]
         return f"WITH {cte_def} {q}"
 
     def date_trunc(self, unit: str, col: str) -> str:
