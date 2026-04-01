@@ -67,4 +67,42 @@ describe('ValuePickerPopover', () => {
     fireEvent.click(await screen.findByRole('button', { name: /back/i }))
     expect(await screen.findByText('Revenue')).toBeInTheDocument()
   })
+
+  it('renders custom trigger instead of default Add button', () => {
+    render(
+      <ValuePickerPopover
+        leafCols={leafCols}
+        onSelect={vi.fn()}
+        trigger={<button>Open picker</button>}
+      />
+    )
+    expect(screen.getByRole('button', { name: /open picker/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /add/i })).not.toBeInTheDocument()
+  })
+
+  it('fixedAgg: calls onSelect immediately without step 2', async () => {
+    const onSelect = vi.fn()
+    const colsWithFixed: LeafMeta[] = [
+      {
+        colId: 'event_count',
+        label: 'Event Count',
+        enableValue: true,
+        enableRowGroup: false,
+        enablePivot: false,
+        fixedAgg: 'none',
+        category: 'metrics',
+      },
+    ]
+    render(
+      <ValuePickerPopover
+        leafCols={colsWithFixed}
+        onSelect={onSelect}
+        trigger={<button>Open picker</button>}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /open picker/i }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Event Count' }))
+    expect(onSelect).toHaveBeenCalledWith('event_count', 'Event Count', 'none')
+    expect(screen.queryByText(/aggregation/i)).not.toBeInTheDocument()
+  })
 })

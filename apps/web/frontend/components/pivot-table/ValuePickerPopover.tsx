@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Plus, ChevronLeft, Search, X } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
@@ -24,9 +24,10 @@ const AGG_LABELS: Record<string, string> = {
 interface ValuePickerPopoverProps {
   leafCols: LeafMeta[]
   onSelect: (colId: string, label: string, aggFunc: string) => void
+  trigger?: React.ReactNode
 }
 
-export function ValuePickerPopover({ leafCols, onSelect }: ValuePickerPopoverProps) {
+export function ValuePickerPopover({ leafCols, onSelect, trigger }: ValuePickerPopoverProps) {
   const [open, setOpen] = useState(false)
   const [selectedCol, setSelectedCol] = useState<LeafMeta | null>(null)
   const [search, setSearch] = useState('')
@@ -35,7 +36,7 @@ export function ValuePickerPopover({ leafCols, onSelect }: ValuePickerPopoverPro
   const eligible = leafCols.filter((c) => c.enableValue)
 
   const groups = groupDimensionsByCategory(
-    eligible.map((c) => ({ value: c.colId, label: c.label })),
+    eligible.map((c) => ({ value: c.colId, label: c.label, category: c.category })),
     CATEGORIES
   )
 
@@ -60,6 +61,11 @@ export function ValuePickerPopover({ leafCols, onSelect }: ValuePickerPopoverPro
   )
 
   function handleDimSelect(col: LeafMeta) {
+    if (col.fixedAgg !== undefined) {
+      onSelect(col.colId, col.label, col.fixedAgg)
+      setOpen(false)
+      return
+    }
     setSelectedCol(col)
   }
 
@@ -85,10 +91,16 @@ export function ValuePickerPopover({ leafCols, onSelect }: ValuePickerPopoverPro
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs text-muted-foreground">
-          <Plus className="h-3 w-3" />
-          Add
-        </Button>
+        {trigger ?? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 gap-1 px-2 text-xs text-muted-foreground"
+          >
+            <Plus className="h-3 w-3" />
+            Add
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" align="start">
         {selectedCol === null ? (
