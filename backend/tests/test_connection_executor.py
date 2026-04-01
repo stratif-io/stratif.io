@@ -122,6 +122,21 @@ class TestBuildFilterClauses:
         assert len(clauses) == 2
         assert len(params) == 2
 
+    def test_standard_field_in_filter_exprs_but_not_custom_prop_exprs(self):
+        """user_id is a standard field — it lives in filter_exprs, not custom_prop_exprs.
+        build_filter_clauses must apply it when it's in filter_exprs."""
+        conn = duckdb.connect(":memory:")
+        db = AnalyticsDatabase(
+            conn=conn,
+            backend=DuckDBBackend(),
+            events_cte=None,
+            custom_prop_exprs={},  # user_id is NOT a custom prop
+            filter_exprs={"user_id": '"user_id"'},  # but IS a configured filter field
+        )
+        clauses, params = db.build_filter_clauses({"user_id": "abc-123"})
+        assert len(clauses) == 1, "user_id filter must generate a WHERE clause"
+        assert params == ["abc-123"]
+
 
 class TestHasColumn:
     def _make_db(self, available_columns=None, custom_props=None, events_cte=None):
@@ -236,6 +251,154 @@ def test_execute_raises_503_on_stale_postgres_connection():
     with pytest.raises(HTTPException) as exc_info:
         db.execute("SELECT 1")
     assert exc_info.value.status_code == 503
+
+
+class TestOpenAnalyticsDbIdentityFieldFilters:
+    """open_analytics_db must include identity fields (first_name, email, etc.) in
+    filter_exprs and custom_prop_exprs so global filters work for non-event properties."""
+
+    def _make_product_db(self, schema_row_data: dict, filter_fields: list[dict]):
+        import json
+        from unittest.mock import MagicMock
+
+        schema_row = MagicMock()
+        schema_row.__getitem__ = lambda s, k: schema_row_data.get(k)
+        schema_row.get = lambda k, default=None: schema_row_data.get(k, default)
+
+        filter_fields_json = json.dumps(filter_fields)
+        filter_row = MagicMock()
+        filter_row.__getitem__ = lambda s, k: (
+            filter_fields_json if k == "filter_fields" else None
+        )
+
+        conn_row = MagicMock()
+        conn_row.__getitem__ = lambda s, k: {
+            "db_type": "duckdb",
+            "credentials_encrypted": "dummy",
+        }.get(k)
+
+        def fetchone(query, params=None):
+            if "connection_schema_configs" in query:
+                return schema_row
+            if "connection_filter_configs" in query:
+                return filter_row
+            if "connections" in query:
+                return conn_row
+            return None
+
+        product_db = MagicMock()
+        product_db.fetchone = fetchone
+        return product_db
+
+    def _open_db(self, schema_row_data: dict, filter_fields: list[dict]):
+        from unittest.mock import patch
+
+        import duckdb
+
+        from backend.backends.duckdb import DuckDBBackend
+        from backend.services.analytics_db import open_analytics_db
+
+        backend = DuckDBBackend()
+        real_conn = duckdb.connect(":memory:")
+        product_db = self._make_product_db(schema_row_data, filter_fields)
+
+        with (
+            patch(
+                "backend.services.crypto.decrypt_credentials",
+                return_value={"file_path": ":memory:"},
+            ),
+            patch.object(backend, "open", return_value=real_conn),
+            patch.object(backend, "get_table_columns", return_value=None),
+        ):
+            return open_analytics_db("conn-1", product_db, {"duckdb": backend})
+
+    def _default_schema(self, **overrides):
+        base = {
+            "user_id_field": "user_id",
+            "timestamp_field": "timestamp",
+            "event_name_field": "event_name",
+            "events_table": "events",
+            "custom_properties": "[]",
+            "session_timeout_minutes": 30,
+            "resurrection_window_days": 30,
+            "power_user_threshold_days": 4,
+            "email_field": None,
+            "first_name_field": None,
+            "last_name_field": None,
+            "date_of_birth_field": None,
+            "phone_field": None,
+        }
+        base.update(overrides)
+        return base
+
+    def test_first_name_identity_field_included_in_filter_exprs(self):
+        schema = self._default_schema(first_name_field="first_name")
+        db = self._open_db(
+            schema, [{"field": "first_name", "label": "First Name", "icon": "user"}]
+        )
+        assert "first_name" in db.get_filter_exprs(), (
+            "first_name should be in filter_exprs so get_filter_options() can return values"
+        )
+
+    def test_first_name_identity_field_filterable_via_build_filter_clauses(self):
+        schema = self._default_schema(first_name_field="first_name")
+        db = self._open_db(
+            schema, [{"field": "first_name", "label": "First Name", "icon": "user"}]
+        )
+        clauses, params = db.build_filter_clauses({"first_name": "Alice"})
+        assert len(clauses) == 1, (
+            "build_filter_clauses must generate a WHERE clause for first_name"
+        )
+        assert params == ["Alice"]
+
+    def test_email_identity_field_included_in_filter_exprs(self):
+        schema = self._default_schema(email_field="user_email")
+        db = self._open_db(
+            schema, [{"field": "user_email", "label": "Email", "icon": "mail"}]
+        )
+        assert "user_email" in db.get_filter_exprs()
+
+    def test_identity_field_not_added_when_not_selected_as_filter_field(self):
+        schema = self._default_schema(first_name_field="first_name")
+        db = self._open_db(schema, [])  # no filter fields configured
+        assert "first_name" not in db.get_filter_exprs()
+
+    def test_plain_column_filter_field_without_identity_mapping(self):
+        """A filter field that is a plain column but not configured as an identity field
+        must still land in filter_exprs so autocomplete and filtering work."""
+        schema = self._default_schema()  # first_name_field NOT set
+        db = self._open_db(
+            schema, [{"field": "first_name", "label": "First Name", "icon": "user"}]
+        )
+        assert "first_name" in db.get_filter_exprs(), (
+            "plain column filter field must be in filter_exprs even without identity mapping"
+        )
+        clauses, params = db.build_filter_clauses({"first_name": "Alice"})
+        assert len(clauses) == 1
+        assert params == ["Alice"]
+
+    def test_dotted_path_filter_field_generates_json_extraction(self):
+        """A filter field like 'traits.first_name' not in custom_prop_exprs must resolve
+        to a JSON extraction expression, not a quoted dotted identifier."""
+        schema = self._default_schema()
+        db = self._open_db(
+            schema,
+            [{"field": "traits.first_name", "label": "First Name", "icon": "user"}],
+        )
+        exprs = db.get_filter_exprs()
+        assert "traits.first_name" in exprs
+        # Must not be a plain quoted identifier — must reference traits column
+        assert '"traits.first_name"' not in exprs["traits.first_name"]
+        assert "traits" in exprs["traits.first_name"]
+
+    def test_identity_field_with_custom_column_name(self):
+        schema = self._default_schema(first_name_field="fname")
+        db = self._open_db(
+            schema, [{"field": "fname", "label": "First Name", "icon": "user"}]
+        )
+        clauses, params = db.build_filter_clauses({"fname": "Bob"})
+        assert len(clauses) == 1
+        assert params == ["Bob"]
 
 
 def test_execute_reconnects_and_retries_on_stale_postgres_connection():

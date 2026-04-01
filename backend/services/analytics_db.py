@@ -137,9 +137,11 @@ class AnalyticsDatabase:
         where_clauses: list[str] = []
         params: list = []
         for field, value in filters.items():
-            if not value or field not in self._custom_prop_exprs:
+            if not value:
                 continue
-            expr = self._custom_prop_exprs[field]
+            expr = self._filter_exprs.get(field) or self._custom_prop_exprs.get(field)
+            if not expr:
+                continue
             values = [v for v in str(value).split("|") if v]
             if len(values) > 1:
                 placeholders = ", ".join("?" * len(values))
@@ -170,7 +172,8 @@ class AnalyticsDatabase:
                     f"WHERE {expr} IS NOT NULL GROUP BY {expr} ORDER BY n DESC LIMIT 200"
                 )
                 options[field] = [str(row[0]) for row in rows if row[0] is not None]
-            except Exception:
+            except Exception as _exc:
+                log.warning("filter_options_query_failed", field=field, error=str(_exc))
                 options[field] = []
         return options
 
@@ -313,6 +316,22 @@ def open_analytics_db(
     )
 
     _iq = backend.identifier_quote_char
+
+    # Identity fields (first_name, email, etc.) are plain columns — add them to
+    # custom_prop_exprs so they work as filter fields (autocomplete + WHERE clauses).
+    _identity_field_keys = (
+        "email_field",
+        "first_name_field",
+        "last_name_field",
+        "date_of_birth_field",
+        "phone_field",
+    )
+    if schema_row:
+        for _key in _identity_field_keys:
+            _col = schema_row[_key]
+            if _col:
+                custom_prop_exprs[_col] = _resolve_path_to_sql(_col, dialect)
+
     filter_exprs: dict[str, str] = {}
     _src_to_std_name = {uid_f: "user_id", ts_f: "timestamp", en_f: "event_name"}
     for ff in filter_fields:
@@ -323,6 +342,10 @@ def open_analytics_db(
             filter_exprs[field] = (
                 _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
             )
+        else:
+            # Not a known custom prop or standard field — resolve as a path (handles both
+            # plain columns like "first_name" and dotted paths like "traits.first_name").
+            filter_exprs[field] = _resolve_path_to_sql(field, dialect)
 
     shared_kwargs: dict = {
         "filter_fields": filter_fields,
