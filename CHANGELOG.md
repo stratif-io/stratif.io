@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/cabichahine/stratif.io/compare/v0.14.0...v0.15.0) (2026-04-01)
+
+
+### Features
+
+* **dev:** add run button to DevCard back face ([#168](https://github.com/cabichahine/stratif.io/issues/168)) ([24506fa](https://github.com/cabichahine/stratif.io/commit/24506fa94365a4a30bd5b487ab55d0981b86ec2c))
+
 ## [0.14.0](https://github.com/cabichahine/stratif.io/compare/v0.13.0...v0.14.0) (2026-04-01)
 
 
