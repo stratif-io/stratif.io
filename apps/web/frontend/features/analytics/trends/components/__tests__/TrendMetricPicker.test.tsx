@@ -260,6 +260,24 @@ describe('TrendMetricPicker', () => {
     expect(onChange).toHaveBeenCalledWith('country', 'count_distinct')
   })
 
+  it('passes countDistinct as-is via onAggChange (no normalization)', () => {
+    const onAggChange = vi.fn()
+    render(
+      <TrendMetricPicker
+        measureField="country"
+        aggregation="count"
+        standardMeasures={standardMeasures}
+        numericDimensions={[]}
+        dimensions={dimensions}
+        onChange={vi.fn()}
+        onAggChange={onAggChange}
+      />
+    )
+    fireEvent.click(screen.getByTitle('Change aggregation'))
+    fireEvent.click(screen.getByText('# Distinct'))
+    expect(onAggChange).toHaveBeenCalledWith('countDistinct')
+  })
+
   it('shows no special Metrics category', () => {
     render(
       <TrendMetricPicker
