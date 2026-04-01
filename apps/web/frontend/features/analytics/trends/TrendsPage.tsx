@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { PageTransition } from '@/components/layout/PageTransition'
@@ -10,6 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { TrendingUp } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { fetchPivotOptions } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { useTrendData } from './hooks/useTrendData'
 import { TrendMetricPicker } from './components/TrendMetricPicker'
 import { TrendChart } from './components/TrendChart'
@@ -121,29 +121,23 @@ export function TrendsPage() {
 
                     {/* Right group: how it's displayed */}
                     <div className="flex flex-wrap gap-2 items-center">
-                      {/* Chart type toggle */}
-                      <div className="flex items-center border rounded-md p-1">
-                        <Button
-                          variant={chartType === 'area' ? 'secondary' : 'ghost'}
-                          size="sm"
-                          onClick={() => setChartType('area')}
-                        >
-                          Area
-                        </Button>
-                        <Button
-                          variant={chartType === 'line' ? 'secondary' : 'ghost'}
-                          size="sm"
-                          onClick={() => setChartType('line')}
-                        >
-                          Line
-                        </Button>
-                        <Button
-                          variant={chartType === 'bar' ? 'secondary' : 'ghost'}
-                          size="sm"
-                          onClick={() => setChartType('bar')}
-                        >
-                          Bar
-                        </Button>
+                      {/* Chart type toggle — h-7 inner-pill */}
+                      <div className="flex items-center bg-muted rounded-md p-0.5 h-7 gap-0.5">
+                        {(['area', 'line', 'bar'] as const).map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setChartType(type)}
+                            className={cn(
+                              'px-2.5 text-xs rounded capitalize transition-colors',
+                              chartType === type
+                                ? 'bg-background shadow-sm font-medium text-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
+                            )}
+                          >
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </button>
+                        ))}
                       </div>
 
                       {/* Breakdown selector */}
@@ -151,6 +145,7 @@ export function TrendsPage() {
                         <div className="w-[min(180px,45vw)] flex gap-1">
                           <div className="flex-1">
                             <FilterSelect
+                              size="sm"
                               mode="single"
                               tree={true}
                               options={dimensions}
@@ -163,7 +158,7 @@ export function TrendsPage() {
                             <button
                               type="button"
                               onClick={() => setBreakdownDimension(null)}
-                              className="h-9 min-w-[44px] px-2 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
+                              className="h-7 min-w-[28px] px-1.5 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
                               aria-label="Clear breakdown"
                               title="Clear breakdown"
                             >
