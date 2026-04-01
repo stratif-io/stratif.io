@@ -100,36 +100,6 @@ export function TrendsPage() {
           <div className={SPACING.section}>
             <h1 className={TYPOGRAPHY.pageLabel}>Trend Analysis</h1>
 
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-              {[
-                {
-                  label: 'Total Events',
-                  value: totalEvents.toLocaleString(),
-                  span: 'col-span-2 lg:col-span-2',
-                },
-                {
-                  label: `${periodLabel} Average`,
-                  value: averageValue.toLocaleString(),
-                  span: 'col-span-1',
-                },
-                {
-                  label: `${periodLabel} Peak`,
-                  value: maxValue.toLocaleString(),
-                  span: 'col-span-1',
-                },
-              ].map(({ label, value, span }) => (
-                <div
-                  key={label}
-                  className={`relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 ${span}`}
-                >
-                  <p className="text-[10px] font-semibold tracking-wider text-muted-foreground mb-1">
-                    {label}
-                  </p>
-                  <p className="text-lg font-bold tracking-tight leading-none">{value}</p>
-                </div>
-              ))}
-            </div>
-
             <DevCard sql={sql}>
               <Card className="relative overflow-hidden">
                 <CardLoadingBar loading={isLoading} />
@@ -202,6 +172,35 @@ export function TrendsPage() {
                           )}
                         </div>
                       )}
+                    </div>
+                  </div>
+                  {/* Inline stats strip */}
+                  <div className="flex items-center gap-3 pt-1">
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        Total
+                      </span>
+                      <span className="ml-1.5 text-sm font-semibold">
+                        {totalEvents.toLocaleString()}
+                      </span>
+                    </div>
+                    <span className="text-muted-foreground/30 select-none">|</span>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        {periodLabel} avg
+                      </span>
+                      <span className="ml-1.5 text-sm font-semibold">
+                        {averageValue.toLocaleString()}
+                      </span>
+                    </div>
+                    <span className="text-muted-foreground/30 select-none">|</span>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        Peak
+                      </span>
+                      <span className="ml-1.5 text-sm font-semibold">
+                        {maxValue.toLocaleString()}
+                      </span>
                     </div>
                   </div>
                 </CardHeader>
