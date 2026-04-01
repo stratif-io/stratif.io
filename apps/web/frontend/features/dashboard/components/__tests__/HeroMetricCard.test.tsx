@@ -65,4 +65,15 @@ describe('HeroMetricCard', () => {
     // Content is opacity-0 but still in DOM; loading bar is rendered
     expect(document.querySelector('.bg-primary\\/50')).toBeTruthy()
   })
+
+  it('renders "prev. period:" label when prevPeriodLabel is not provided', () => {
+    renderWithTooltip(<HeroMetricCard {...baseProps} />)
+    expect(screen.getByText(/prev\. period:/)).toBeInTheDocument()
+  })
+
+  it('renders prevPeriodLabel when provided', () => {
+    renderWithTooltip(<HeroMetricCard {...baseProps} prevPeriodLabel="2025-01-01 – 2025-12-31" />)
+    expect(screen.getByText(/prev\. \(2025-01-01 – 2025-12-31\):/)).toBeInTheDocument()
+    expect(screen.queryByText(/prev\. period:/)).not.toBeInTheDocument()
+  })
 })
