@@ -41,6 +41,8 @@ jobs:
         env:
           # Pin version so the script skips the GitHub API call
           STRATIFIO_VERSION: "v0.0.0-ci-test"
+          # Use the already-checked-out repo — skips the git clone entirely
+          STRATIFIO_REPO_DIR: ${{ github.workspace }}
           # Point at the tarball we just built — skips the GitHub download
           STRATIFIO_FRONTEND_TARBALL: "/tmp/frontend.tar.gz"
           # Isolated install dir so tests don't touch $HOME/.stratifio
