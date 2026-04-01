@@ -71,6 +71,7 @@ export function DashboardPage() {
                 trends={trends}
                 metricLoading={metricLoading}
                 metricSql={metricSql}
+                dateRange={dateRange}
                 togglePin={togglePin}
                 isPinned={isPinned}
                 resetToDefault={resetToDefault}

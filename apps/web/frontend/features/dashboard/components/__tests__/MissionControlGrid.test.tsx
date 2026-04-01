@@ -19,19 +19,47 @@ vi.mock('../MiniMetricCard', () => ({
     label,
     isHero,
     onClick,
+    changeLabel,
   }: {
     label: string
     isHero?: boolean
     onClick?: () => void
+    changeLabel?: string
   }) => (
-    <button onClick={onClick} data-hero={isHero ? 'true' : 'false'} data-testid={`mini-${label}`}>
+    <button
+      onClick={onClick}
+      data-hero={isHero ? 'true' : 'false'}
+      data-testid={`mini-${label}`}
+      data-change-label={changeLabel}
+    >
       {label}
     </button>
   ),
 }))
 
 vi.mock('../HeroMetricCard', () => ({
-  HeroMetricCard: ({ label }: { label: string }) => <div data-testid="hero-card">{label}</div>,
+  HeroMetricCard: ({
+    label,
+    changeLabel,
+    prevPeriodLabel,
+  }: {
+    label: string
+    changeLabel?: string
+    prevPeriodLabel?: string
+  }) => (
+    <div
+      data-testid="hero-card"
+      data-change-label={changeLabel}
+      data-prev-period-label={prevPeriodLabel}
+    >
+      {label}
+    </div>
+  ),
+}))
+
+vi.mock('@/stores', () => ({
+  useAppStore: (selector: (s: { granularity: string }) => unknown) =>
+    selector({ granularity: 'day' }),
 }))
 
 const mockData: MissionControlResponse = {
@@ -103,6 +131,16 @@ const defaultPinProps = {
   resetToDefault: vi.fn(),
 }
 
+const mockDateRange = {
+  from: new Date('2025-01-01'),
+  to: new Date('2026-01-01'),
+}
+
+const mockDateRangeNoEnd = {
+  from: new Date('2025-01-01'),
+  to: null,
+}
+
 describe('MissionControlGrid', () => {
   it('renders the hero card with Total Events by default', () => {
     render(
@@ -110,6 +148,7 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
+        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -122,6 +161,7 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
+        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -146,6 +186,7 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
+        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -183,6 +224,7 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
+        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -198,6 +240,7 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
+        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -218,6 +261,7 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
+        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -231,6 +275,7 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
+        dateRange={mockDateRange}
         {...defaultPinProps}
       />
     )
@@ -240,5 +285,75 @@ describe('MissionControlGrid', () => {
     await userEvent.click(customizeBtn)
     // WAU chip should appear
     expect(screen.getAllByText('WAU').length).toBeGreaterThan(0)
+  })
+})
+
+describe('MissionControlGrid period labels', () => {
+  it('passes changeLabel with prev period dates to HeroMetricCard when data has previous_period', () => {
+    render(
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        dateRange={mockDateRange}
+        {...defaultPinProps}
+      />
+    )
+    expect(screen.getByTestId('hero-card')).toHaveAttribute(
+      'data-change-label',
+      'Change vs. 2024-01-21 – 2024-02-19'
+    )
+  })
+
+  it('passes prevPeriodLabel with prev period dates to HeroMetricCard when data has previous_period', () => {
+    render(
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        dateRange={mockDateRange}
+        {...defaultPinProps}
+      />
+    )
+    expect(screen.getByTestId('hero-card')).toHaveAttribute(
+      'data-prev-period-label',
+      '2024-01-21 – 2024-02-19'
+    )
+  })
+
+  it('passes changeLabel with prev period dates to MiniMetricCard when data has previous_period', () => {
+    render(
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        dateRange={mockDateRange}
+        {...defaultPinProps}
+      />
+    )
+    expect(screen.getByTestId('mini-Unique Users')).toHaveAttribute(
+      'data-change-label',
+      'Change vs. 2024-01-21 – 2024-02-19'
+    )
+  })
+
+  it('passes generic changeLabel when data has no previous_period dates', () => {
+    const dataWithoutPrevPeriod = {
+      ...mockData,
+      previous_period: { start_date: undefined, end_date: undefined },
+    }
+    render(
+      <MissionControlGrid
+        data={dataWithoutPrevPeriod}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        dateRange={mockDateRangeNoEnd}
+        {...defaultPinProps}
+      />
+    )
+    expect(screen.getByTestId('hero-card')).toHaveAttribute(
+      'data-change-label',
+      'Change vs. previous period'
+    )
   })
 })

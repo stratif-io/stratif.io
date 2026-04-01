@@ -4,17 +4,19 @@ import { MiniMetricCard } from './MiniMetricCard'
 import { MetricCardSkeleton } from '@/components/ui/loading-state'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Settings2 } from 'lucide-react'
-import { formatMetricValue, computePctChange } from '@/lib/format-metric'
+import { formatMetricValue, computePctChange, formatPeriodRange } from '@/lib/format-metric'
 import { cn } from '@/lib/utils'
-import type { MissionControlResponse } from '@/types'
+import type { MissionControlResponse, DateRange, Granularity } from '@/types'
 import type { TrendMetric, MetricTrend } from '../hooks/useMissionControlTrends'
 import { DevCard } from '@/components/dev'
+import { useAppStore } from '@/stores'
 
 export interface MissionControlGridProps {
   data: MissionControlResponse | undefined
   trends: Record<TrendMetric, MetricTrend>
   metricLoading: Record<TrendMetric, boolean>
   metricSql?: Record<TrendMetric, string | string[] | null>
+  dateRange: DateRange
   togglePin: (key: string) => void
   isPinned: (key: string) => boolean
   resetToDefault: () => void
@@ -71,28 +73,38 @@ function getConfig(key: TrendMetric) {
 function buildAllSql(
   metricSql: string | string[] | null | undefined,
   trendSql: string | string[] | undefined,
-  label: string
+  label: string,
+  currentPeriodLabel: string,
+  previousPeriodLabel: string,
+  granularity: Granularity
 ): { sql: string | string[] | undefined; sqlLabels: string | string[] | undefined } {
   const parts: string[] = []
   const labelParts: string[] = []
+
   if (metricSql) {
     const qs = Array.isArray(metricSql) ? metricSql : [metricSql]
     parts.push(...qs)
     labelParts.push(
       ...qs.map((_, i) =>
-        qs.length > 1
-          ? `Number of ${label} this period (${i + 1})`
-          : `Number of ${label} this period`
+        i === 0
+          ? `Number of ${label} — ${currentPeriodLabel}`
+          : `Number of ${label} — ${previousPeriodLabel}`
       )
     )
   }
+
   if (trendSql) {
     const qs = Array.isArray(trendSql) ? trendSql : [trendSql]
     parts.push(...qs)
     labelParts.push(
-      ...qs.map((_, i) => (qs.length > 1 ? `${label} per day (${i + 1})` : `${label} per day`))
+      ...qs.map((_, i) =>
+        i === 0
+          ? `${label} per ${granularity} — ${currentPeriodLabel}`
+          : `${label} per ${granularity} — ${previousPeriodLabel}`
+      )
     )
   }
+
   if (parts.length === 0) return { sql: undefined, sqlLabels: undefined }
   if (parts.length === 1) return { sql: parts[0], sqlLabels: labelParts[0] }
   return { sql: parts, sqlLabels: labelParts }
@@ -103,11 +115,29 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   trends,
   metricLoading,
   metricSql,
+  dateRange: _dateRange,
   togglePin,
   isPinned,
   resetToDefault,
 }: MissionControlGridProps) {
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
+
+  const granularity = useAppStore((s) => s.granularity)
+
+  const prevStart = data?.previous_period?.start_date
+  const prevEnd = data?.previous_period?.end_date
+  const curStart = data?.period?.start_date
+  const curEnd = data?.period?.end_date
+
+  const currentRange = formatPeriodRange(curStart, curEnd)
+  const previousRange = formatPeriodRange(prevStart, prevEnd)
+
+  const currentPeriodLabel = currentRange ? `this period (${currentRange})` : 'this period'
+  const previousPeriodLabel = previousRange
+    ? `previous period (${previousRange})`
+    : 'previous period'
+  const changeLabel = previousRange ? `Change vs. ${previousRange}` : 'Change vs. previous period'
+  const prevPeriodLabel = previousRange ?? undefined
 
   const heroWrapperRef = useRef<HTMLDivElement>(null)
   const rightColRef = useRef<HTMLDivElement>(null)
@@ -170,11 +200,20 @@ export const MissionControlGrid = memo(function MissionControlGrid({
       {/* LEFT: Hero card — height synced to right column via ResizeObserver */}
       <div ref={heroWrapperRef}>
         <DevCard
-          {...buildAllSql(metricSql?.[heroMetric], trends[heroMetric]?.sql, heroConfig.label)}
+          {...buildAllSql(
+            metricSql?.[heroMetric],
+            trends[heroMetric]?.sql,
+            heroConfig.label,
+            currentPeriodLabel,
+            previousPeriodLabel,
+            granularity
+          )}
           className="h-full"
         >
           <HeroMetricCard
             label={heroConfig.label}
+            changeLabel={changeLabel}
+            prevPeriodLabel={prevPeriodLabel}
             metricKey={heroMetric}
             value={formatMetricValue(heroMetric, heroCurrentValue)}
             rawValue={heroCurrentValue}
@@ -224,7 +263,14 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                   return (
                     <DevCard
                       key={metricKey}
-                      {...buildAllSql(metricSql?.[metricKey], trends[metricKey]?.sql, cfg.label)}
+                      {...buildAllSql(
+                        metricSql?.[metricKey],
+                        trends[metricKey]?.sql,
+                        cfg.label,
+                        currentPeriodLabel,
+                        previousPeriodLabel,
+                        granularity
+                      )}
                       className={isFullWidth ? 'col-span-2' : undefined}
                     >
                       <MiniMetricCard
@@ -238,6 +284,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                         color={cfg.color}
                         isHero={heroMetric === metricKey}
                         onClick={() => setHeroMetric(metricKey)}
+                        changeLabel={changeLabel}
                         loading={cardLoading}
                         fullWidth={isFullWidth}
                         currentMetrics={data?.current}
