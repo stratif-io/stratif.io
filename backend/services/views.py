@@ -48,7 +48,11 @@ def session_ctes(session_timeout_minutes: int = 30, dialect: str = "duckdb") -> 
     session_num_cast = cast_to_text("session_number", dialect)
     session_id_expr = string_concat("user_id", "'-'", session_num_cast, dialect=dialect)
     lag_ts = lag_expr("timestamp", 1, dialect)
-    lag_frame = " ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING" if dialect == "clickhouse" else ""
+    lag_frame = (
+        " ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING"
+        if dialect == "clickhouse"
+        else ""
+    )
 
     return f"""
 events_with_lag AS (
@@ -145,7 +149,11 @@ def path_analysis_ctes(
     lag_en1 = lag_expr("event_name", 1, dialect)
     lag_en2 = lag_expr("event_name", 2, dialect)
     lag_en3 = lag_expr("event_name", 3, dialect)
-    lag_frame = " ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING" if dialect == "clickhouse" else ""
+    lag_frame = (
+        " ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING"
+        if dialect == "clickhouse"
+        else ""
+    )
 
     return f"""
 events_with_lag AS (

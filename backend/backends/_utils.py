@@ -1,4 +1,5 @@
 """Shared helpers for backend schema detection."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -20,7 +21,15 @@ def _to_named_params(query: str, params: list[Any]) -> tuple[str, dict[str, Any]
 
 
 _KNOWN_USER_ID = ("user_id", "userid", "user", "account_id", "customer_id", "uid")
-_KNOWN_TIMESTAMP = ("timestamp", "ts", "created_at", "event_time", "time", "datetime", "date")
+_KNOWN_TIMESTAMP = (
+    "timestamp",
+    "ts",
+    "created_at",
+    "event_time",
+    "time",
+    "datetime",
+    "date",
+)
 _KNOWN_EVENT_NAME = ("event_name", "event", "action", "event_type", "name", "type")
 
 
@@ -53,8 +62,21 @@ def suggest_fields(columns: list[ColumnInfo]) -> dict:
 
 def infer_type(sql_type: str) -> str:
     t = sql_type.upper()
-    if any(x in t for x in ("INT", "FLOAT", "DOUBLE", "DECIMAL", "NUMERIC", "REAL",
-                             "HUGEINT", "BIGINT", "SMALLINT", "TINYINT")):
+    if any(
+        x in t
+        for x in (
+            "INT",
+            "FLOAT",
+            "DOUBLE",
+            "DECIMAL",
+            "NUMERIC",
+            "REAL",
+            "HUGEINT",
+            "BIGINT",
+            "SMALLINT",
+            "TINYINT",
+        )
+    ):
         return "number"
     if "BOOL" in t:
         return "boolean"
@@ -85,7 +107,7 @@ def sample_property_types(
     try:
         names = list(prop_exprs.keys())
         cast_cols = ", ".join(
-            f'MAX({numeric_cast.format(expr=prop_exprs[name])}) AS col_{i}'
+            f"MAX({numeric_cast.format(expr=prop_exprs[name])}) AS col_{i}"
             for i, name in enumerate(names)
         )
         sql = f'SELECT {cast_cols} FROM (SELECT * FROM "{table}" LIMIT 500)'

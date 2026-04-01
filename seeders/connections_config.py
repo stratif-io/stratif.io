@@ -51,8 +51,8 @@ def get_clickhouse_credentials(cfg: dict) -> dict:
 def _get_credentials(cfg: dict, backend: str) -> dict:
     try:
         return cfg["backends"][backend]["credentials"]
-    except KeyError:
+    except KeyError as err:
         raise KeyError(
             f"Backend '{backend}' not found in connections.yaml. "
             f"Available backends: {list(cfg.get('backends', {}).keys())}"
-        )
+        ) from err

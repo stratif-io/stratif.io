@@ -1,13 +1,18 @@
 """ClickHouse database backend."""
+
 from __future__ import annotations
 
-import contextlib
 import re
 from typing import Any
 
 from pydantic import BaseModel
 
-from backend.backends._utils import infer_type, pick_events_table, sample_property_types, suggest_fields
+from backend.backends._utils import (
+    infer_type,
+    pick_events_table,
+    sample_property_types,
+    suggest_fields,
+)
 from backend.backends.base import ColumnInfo, SchemaInfo
 from backend.backends.clickhouse.credentials import ClickHouseCredentials
 
@@ -24,7 +29,6 @@ _FROM_TABLE_RE = re.compile(r"\bFROM\s+(`[^`]+`|\S+)", re.IGNORECASE)
 
 
 class ClickHouseBackend:
-
     @property
     def dialect_name(self) -> str:
         return "clickhouse"
@@ -43,10 +47,13 @@ class ClickHouseBackend:
     def connection_string(self, credentials: BaseModel) -> str | None:
         creds = ClickHouseCredentials.model_validate(credentials.model_dump())
         scheme = "clickhouses" if creds.secure else "clickhouse"
-        return f"{scheme}://{creds.user}:****@{creds.host}:{creds.port}/{creds.database}"
+        return (
+            f"{scheme}://{creds.user}:****@{creds.host}:{creds.port}/{creds.database}"
+        )
 
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         import clickhouse_connect
+
         creds = ClickHouseCredentials.model_validate(credentials.model_dump())
         client = clickhouse_connect.get_client(
             host=creds.host,
@@ -65,6 +72,7 @@ class ClickHouseBackend:
     def is_connection_error(self, exc: Exception) -> bool:
         try:
             from clickhouse_connect.driver.exceptions import OperationalError
+
             return isinstance(exc, OperationalError)
         except ImportError:
             return False
@@ -72,7 +80,9 @@ class ClickHouseBackend:
     def get_table_columns(self, conn: Any, table_expr: str) -> frozenset[str]:
         try:
             result = conn.query(f"SELECT * FROM {table_expr} LIMIT 0")
-            return frozenset(result.column_names) if result.column_names else frozenset()
+            return (
+                frozenset(result.column_names) if result.column_names else frozenset()
+            )
         except Exception:
             return frozenset()
 
@@ -89,7 +99,7 @@ class ClickHouseBackend:
 
     def get_columns_for_browse(self, conn: Any, table: str) -> list[str]:
         try:
-            quoted = '.'.join(f'`{p}`' for p in table.split('.'))
+            quoted = ".".join(f"`{p}`" for p in table.split("."))
             result = conn.query(f"SELECT * FROM {quoted} LIMIT 0")
             return list(result.column_names) if result.column_names else []
         except Exception:
@@ -98,9 +108,15 @@ class ClickHouseBackend:
     def browse(self, conn: Any, catalog: str | None, schema: str | None) -> list[dict]:
         if schema is None:
             result = conn.query("SHOW DATABASES")
-            return [{"name": r[0], "full_name": r[0], "kind": "schema"} for r in result.result_rows]
+            return [
+                {"name": r[0], "full_name": r[0], "kind": "schema"}
+                for r in result.result_rows
+            ]
         result = conn.query(f"SHOW TABLES FROM `{schema}`")
-        return [{"name": r[0], "full_name": f"{schema}.{r[0]}", "kind": "table"} for r in result.result_rows]
+        return [
+            {"name": r[0], "full_name": f"{schema}.{r[0]}", "kind": "table"}
+            for r in result.result_rows
+        ]
 
     _CH_NUMERIC_CAST = "multiIf(isNull(toFloat64OrNull(toString({expr}))), NULL, 1.0)"
 
@@ -108,8 +124,13 @@ class ClickHouseBackend:
         tables = self.get_tables(conn)
         events_table = pick_events_table(tables, events_table_hint)
         if not events_table:
-            return SchemaInfo(tables=tables, events_table="", columns=[], suggestions={},
-                              proposed_custom_properties=[])
+            return SchemaInfo(
+                tables=tables,
+                events_table="",
+                columns=[],
+                suggestions={},
+                proposed_custom_properties=[],
+            )
 
         result = conn.query(f"DESCRIBE TABLE `{events_table}`")
         all_rows = [(r[0], r[1]) for r in result.result_rows]
@@ -151,7 +172,7 @@ class ClickHouseBackend:
 
         def _ch_execute(sql: str):
             try:
-                r = conn.query(sql.replace(f'"{events_table}"', f'`{events_table}`'))
+                r = conn.query(sql.replace(f'"{events_table}"', f"`{events_table}`"))
                 return [tuple(row) for row in r.result_rows]
             except Exception:
                 return None
@@ -185,9 +206,17 @@ class ClickHouseBackend:
                             sub_keys = []
                         if sub_keys:
                             for sk in sub_keys:
-                                string_props.append({"name": f"{k}.{sk}", "path": f"{col.name}.{k}.{sk}", "type": "string"})
+                                string_props.append(
+                                    {
+                                        "name": f"{k}.{sk}",
+                                        "path": f"{col.name}.{k}.{sk}",
+                                        "type": "string",
+                                    }
+                                )
                         else:
-                            string_props.append({"name": k, "path": f"{col.name}.{k}", "type": "string"})
+                            string_props.append(
+                                {"name": k, "path": f"{col.name}.{k}", "type": "string"}
+                            )
                     prop_exprs = {
                         p["name"]: self.json_extract_string(col.name, p["name"])
                         for p in string_props
@@ -203,10 +232,17 @@ class ClickHouseBackend:
                     continue
 
             # Not JSON or no keys found — propose the column directly.
-            proposed.append({"name": col.name, "path": col.name, "type": infer_type(typ_upper)})
+            proposed.append(
+                {"name": col.name, "path": col.name, "type": infer_type(typ_upper)}
+            )
 
-        return SchemaInfo(tables=tables, events_table=events_table, columns=columns,
-                          suggestions=suggestions, proposed_custom_properties=proposed)
+        return SchemaInfo(
+            tables=tables,
+            events_table=events_table,
+            columns=columns,
+            suggestions=suggestions,
+            proposed_custom_properties=proposed,
+        )
 
     def execute(self, conn: Any, query: str, params: list | None) -> list[tuple]:
         if params:
@@ -215,10 +251,7 @@ class ClickHouseBackend:
         always_final = getattr(creds, "always_final", False)
         if always_final:
             query = _FROM_TABLE_RE.sub(lambda m: m.group(0) + " FINAL", query, count=1)
-        if params:
-            result = conn.query(query, parameters=params)
-        else:
-            result = conn.query(query)
+        result = conn.query(query, parameters=params) if params else conn.query(query)
         return [tuple(row) for row in result.result_rows]
 
     def execute_with_columns(
@@ -236,15 +269,24 @@ class ClickHouseBackend:
         return columns, rows
 
     def build_events_cte(
-        self, source_table: str, uid_field: str, ts_field: str,
-        en_field: str, custom_props: list[dict],
+        self,
+        source_table: str,
+        uid_field: str,
+        ts_field: str,
+        en_field: str,
+        custom_props: list[dict],
     ) -> str:
         q = "`"
         quoted_table = ".".join(f"{q}{p}{q}" for p in source_table.split("."))
         core = f"{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name"
         remapped_src = {uid_field, ts_field, en_field}
-        extra_cols = sorted({p["path"].split(".")[0] for p in custom_props if "path" in p} - remapped_src)
-        extras = (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
+        extra_cols = sorted(
+            {p["path"].split(".")[0] for p in custom_props if "path" in p}
+            - remapped_src
+        )
+        extras = (
+            (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
+        )
         return f"(SELECT {core}{extras} FROM {quoted_table})"
 
     def prepend_events_cte(self, cte_body: str, query: str) -> str:
@@ -252,7 +294,7 @@ class ClickHouseBackend:
         cte_def = f"events AS {cte_body}"
         m = re.match(r"(with\s+)", q, re.IGNORECASE)
         if m:
-            return q[: m.end()] + cte_def + ", " + q[m.end():]
+            return q[: m.end()] + cte_def + ", " + q[m.end() :]
         return f"WITH {cte_def} {q}"
 
     def date_trunc(self, unit: str, col: str) -> str:

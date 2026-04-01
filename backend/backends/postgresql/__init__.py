@@ -1,4 +1,5 @@
 """PostgreSQL database backend."""
+
 from __future__ import annotations
 
 import contextlib
@@ -7,15 +8,21 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from backend.backends._utils import (
+    infer_type,
+    pick_events_table,
+    sample_property_types,
+    suggest_fields,
+)
 from backend.backends.base import ColumnInfo, SchemaInfo
-from backend.backends._utils import infer_type, pick_events_table, suggest_fields, sample_property_types
 from backend.backends.postgresql.credentials import PostgreSQLCredentials
 
-_PG_NUMERIC_CAST = r"(CASE WHEN {expr} ~ '^-?[0-9]+(\.[0-9]+)?$' THEN 1.0 ELSE NULL END)"
+_PG_NUMERIC_CAST = (
+    r"(CASE WHEN {expr} ~ '^-?[0-9]+(\.[0-9]+)?$' THEN 1.0 ELSE NULL END)"
+)
 
 
 class PostgreSQLBackend:
-
     @property
     def dialect_name(self) -> str:
         return "postgres"
@@ -38,9 +45,15 @@ class PostgreSQLBackend:
 
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         import psycopg2
+
         creds = PostgreSQLCredentials.model_validate(credentials.model_dump())
-        kwargs: dict = dict(host=creds.host, port=creds.port, dbname=creds.database,
-                            user=creds.user, password=creds.password)
+        kwargs: dict = {
+            "host": creds.host,
+            "port": creds.port,
+            "dbname": creds.database,
+            "user": creds.user,
+            "password": creds.password,
+        }
         if creds.sslmode:
             kwargs["sslmode"] = creds.sslmode
         conn = psycopg2.connect(**kwargs)
@@ -53,6 +66,7 @@ class PostgreSQLBackend:
     def is_connection_error(self, exc: Exception) -> bool:
         try:
             import psycopg2
+
             return isinstance(exc, (psycopg2.OperationalError, psycopg2.InterfaceError))
         except ImportError:
             return False
@@ -97,8 +111,8 @@ class PostgreSQLBackend:
         try:
             cursor = conn.cursor()
             try:
-                quoted = '.'.join(f'"{p}"' for p in table.split('.'))
-                cursor.execute(f'SELECT * FROM {quoted} LIMIT 0')
+                quoted = ".".join(f'"{p}"' for p in table.split("."))
+                cursor.execute(f"SELECT * FROM {quoted} LIMIT 0")
                 return [d[0] for d in cursor.description or []]
             finally:
                 with contextlib.suppress(Exception):
@@ -115,13 +129,18 @@ class PostgreSQLBackend:
                     "WHERE schema_name NOT IN ('pg_catalog','information_schema') ORDER BY 1"
                 )
                 rows = cursor.fetchall()
-                return [{"name": r[0], "full_name": r[0], "kind": "schema"} for r in rows]
+                return [
+                    {"name": r[0], "full_name": r[0], "kind": "schema"} for r in rows
+                ]
             cursor.execute(
                 "SELECT table_name FROM information_schema.tables WHERE table_schema = %s ORDER BY 1",
                 [schema],
             )
             rows = cursor.fetchall()
-            return [{"name": r[0], "full_name": f"{schema}.{r[0]}", "kind": "table"} for r in rows]
+            return [
+                {"name": r[0], "full_name": f"{schema}.{r[0]}", "kind": "table"}
+                for r in rows
+            ]
         finally:
             with contextlib.suppress(Exception):
                 cursor.close()
@@ -140,8 +159,13 @@ class PostgreSQLBackend:
 
         events_table = pick_events_table(tables, events_table_hint)
         if not events_table:
-            return SchemaInfo(tables=tables, events_table="", columns=[], suggestions={},
-                              proposed_custom_properties=[])
+            return SchemaInfo(
+                tables=tables,
+                events_table="",
+                columns=[],
+                suggestions={},
+                proposed_custom_properties=[],
+            )
 
         cur2 = conn.cursor()
         try:
@@ -179,9 +203,9 @@ class PostgreSQLBackend:
                             cur_sub = conn.cursor()
                             try:
                                 cur_sub.execute(
-                                    f'SELECT DISTINCT jsonb_object_keys(("{col.name}"::jsonb)->\'{key}\') '
+                                    f"SELECT DISTINCT jsonb_object_keys((\"{col.name}\"::jsonb)->'{key}') "
                                     f'FROM "{events_table}" '
-                                    f'WHERE jsonb_typeof(("{col.name}"::jsonb)->\'{key}\') = \'object\' LIMIT 2000'
+                                    f"WHERE jsonb_typeof((\"{col.name}\"::jsonb)->'{key}') = 'object' LIMIT 2000"
                                 )
                                 sub_keys = [r[0] for r in cur_sub.fetchall() if r[0]]
                             finally:
@@ -191,16 +215,34 @@ class PostgreSQLBackend:
                             sub_keys = []
                         if sub_keys:
                             for sub_key in sub_keys:
-                                proposed.append({"name": f"{key}.{sub_key}", "path": f"{col.name}.{key}.{sub_key}", "type": "string"})
+                                proposed.append(
+                                    {
+                                        "name": f"{key}.{sub_key}",
+                                        "path": f"{col.name}.{key}.{sub_key}",
+                                        "type": "string",
+                                    }
+                                )
                         else:
-                            proposed.append({"name": key, "path": f"{col.name}.{key}", "type": "string"})
+                            proposed.append(
+                                {
+                                    "name": key,
+                                    "path": f"{col.name}.{key}",
+                                    "type": "string",
+                                }
+                            )
                 except Exception:
-                    proposed.append({"name": col.name, "path": col.name, "type": "string"})
+                    proposed.append(
+                        {"name": col.name, "path": col.name, "type": "string"}
+                    )
             else:
-                proposed.append({"name": col.name, "path": col.name, "type": infer_type(sql_type)})
+                proposed.append(
+                    {"name": col.name, "path": col.name, "type": infer_type(sql_type)}
+                )
 
         # Upgrade string-typed JSON properties to number where sampling confirms it
-        string_json_props = [p for p in proposed if p["type"] == "string" and "." in p["path"]]
+        string_json_props = [
+            p for p in proposed if p["type"] == "string" and "." in p["path"]
+        ]
         if string_json_props:
             col_name, _ = string_json_props[0]["path"].split(".", 1)
             prop_exprs = {
@@ -219,13 +261,20 @@ class PostgreSQLBackend:
                     with contextlib.suppress(Exception):
                         cur.close()
 
-            upgrades = sample_property_types(_pg_execute, events_table, prop_exprs, _PG_NUMERIC_CAST)
+            upgrades = sample_property_types(
+                _pg_execute, events_table, prop_exprs, _PG_NUMERIC_CAST
+            )
             for p in proposed:
                 if p["name"] in upgrades:
                     p["type"] = upgrades[p["name"]]
 
-        return SchemaInfo(tables=tables, events_table=events_table, columns=columns,
-                          suggestions=suggestions, proposed_custom_properties=proposed)
+        return SchemaInfo(
+            tables=tables,
+            events_table=events_table,
+            columns=columns,
+            suggestions=suggestions,
+            proposed_custom_properties=proposed,
+        )
 
     def execute(self, conn: Any, query: str, params: list | None) -> list[tuple]:
         if params:
@@ -246,7 +295,9 @@ class PostgreSQLBackend:
         cursor = conn.cursor()
         try:
             cursor.execute(query, params or None)
-            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            columns = (
+                [desc[0] for desc in cursor.description] if cursor.description else []
+            )
             rows = cursor.fetchall()
             return columns, rows
         finally:
@@ -254,15 +305,24 @@ class PostgreSQLBackend:
                 cursor.close()
 
     def build_events_cte(
-        self, source_table: str, uid_field: str, ts_field: str,
-        en_field: str, custom_props: list[dict],
+        self,
+        source_table: str,
+        uid_field: str,
+        ts_field: str,
+        en_field: str,
+        custom_props: list[dict],
     ) -> str:
         q = '"'
         quoted_table = ".".join(f"{q}{p}{q}" for p in source_table.split("."))
-        core = f'{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name'
+        core = f"{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name"
         remapped_src = {uid_field, ts_field, en_field}
-        extra_cols = sorted({p["path"].split(".")[0] for p in custom_props if "path" in p} - remapped_src)
-        extras = (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
+        extra_cols = sorted(
+            {p["path"].split(".")[0] for p in custom_props if "path" in p}
+            - remapped_src
+        )
+        extras = (
+            (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
+        )
         return f"(SELECT {core}{extras} FROM {quoted_table})"
 
     def prepend_events_cte(self, cte_body: str, query: str) -> str:
@@ -270,7 +330,7 @@ class PostgreSQLBackend:
         cte_def = f"events AS {cte_body}"
         m = re.match(r"(with\s+)", q, re.IGNORECASE)
         if m:
-            return q[: m.end()] + cte_def + ", " + q[m.end():]
+            return q[: m.end()] + cte_def + ", " + q[m.end() :]
         return f"WITH {cte_def} {q}"
 
     def date_trunc(self, unit: str, col: str) -> str:

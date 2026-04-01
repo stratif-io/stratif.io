@@ -1,4 +1,5 @@
 """SQLite database backend."""
+
 from __future__ import annotations
 
 import re
@@ -7,8 +8,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from backend.backends._utils import (
+    infer_type,
+    pick_events_table,
+    sample_property_types,
+    suggest_fields,
+)
 from backend.backends.base import ColumnInfo, SchemaInfo
-from backend.backends._utils import infer_type, pick_events_table, sample_property_types, suggest_fields
 from backend.backends.sqlite.credentials import SQLiteCredentials
 
 _EVENTS_REF_RE = re.compile(r"\b(FROM|JOIN)\s+events\b", re.IGNORECASE)
@@ -23,7 +29,6 @@ _SQLITE_NUMERIC_CAST = (
 
 
 class SQLiteBackend:
-
     @property
     def dialect_name(self) -> str:
         return "sqlite"
@@ -75,8 +80,8 @@ class SQLiteBackend:
 
     def get_columns_for_browse(self, conn: Any, table: str) -> list[str]:
         try:
-            quoted = '.'.join(f'"{p}"' for p in table.split('.'))
-            cursor = conn.execute(f'SELECT * FROM {quoted} LIMIT 0')
+            quoted = ".".join(f'"{p}"' for p in table.split("."))
+            cursor = conn.execute(f"SELECT * FROM {quoted} LIMIT 0")
             return [d[0] for d in cursor.description or []]
         except Exception:
             return []
@@ -94,8 +99,13 @@ class SQLiteBackend:
         tables = [r[0] for r in tables_result]
         events_table = pick_events_table(tables, events_table_hint)
         if not events_table:
-            return SchemaInfo(tables=tables, events_table="", columns=[], suggestions={},
-                              proposed_custom_properties=[])
+            return SchemaInfo(
+                tables=tables,
+                events_table="",
+                columns=[],
+                suggestions={},
+                proposed_custom_properties=[],
+            )
 
         columns_result = conn.execute(f'PRAGMA table_info("{events_table}")').fetchall()
         columns = [ColumnInfo(name=r[1], type=r[2] or "TEXT") for r in columns_result]
@@ -113,7 +123,11 @@ class SQLiteBackend:
                     f'SELECT "{col.name}" FROM "{events_table}" '
                     f'WHERE "{col.name}" IS NOT NULL AND "{col.name}" != \'\' LIMIT 1'
                 ).fetchone()
-                if sample and isinstance(sample[0], str) and sample[0].lstrip().startswith("{"):
+                if (
+                    sample
+                    and isinstance(sample[0], str)
+                    and sample[0].lstrip().startswith("{")
+                ):
                     is_json = True
             if is_json:
                 try:
@@ -126,24 +140,42 @@ class SQLiteBackend:
                         try:
                             sub_result = conn.execute(
                                 f'SELECT DISTINCT j.key FROM "{events_table}", '
-                                f'json_each(json_extract("{col.name}", \'$.{key}\')) AS j '
-                                f'WHERE json_type("{col.name}", \'$.{key}\') = \'object\' LIMIT 2000'
+                                f"json_each(json_extract(\"{col.name}\", '$.{key}')) AS j "
+                                f"WHERE json_type(\"{col.name}\", '$.{key}') = 'object' LIMIT 2000"
                             ).fetchall()
                             sub_keys = [r[0] for r in sub_result if r[0]]
                         except Exception:
                             sub_keys = []
                         if sub_keys:
                             for sub_key in sub_keys:
-                                proposed.append({"name": f"{key}.{sub_key}", "path": f"{col.name}.{key}.{sub_key}", "type": "string"})
+                                proposed.append(
+                                    {
+                                        "name": f"{key}.{sub_key}",
+                                        "path": f"{col.name}.{key}.{sub_key}",
+                                        "type": "string",
+                                    }
+                                )
                         else:
-                            proposed.append({"name": key, "path": f"{col.name}.{key}", "type": "string"})
+                            proposed.append(
+                                {
+                                    "name": key,
+                                    "path": f"{col.name}.{key}",
+                                    "type": "string",
+                                }
+                            )
                 except Exception:
-                    proposed.append({"name": col.name, "path": col.name, "type": "string"})
+                    proposed.append(
+                        {"name": col.name, "path": col.name, "type": "string"}
+                    )
             else:
-                proposed.append({"name": col.name, "path": col.name, "type": infer_type(sql_type)})
+                proposed.append(
+                    {"name": col.name, "path": col.name, "type": infer_type(sql_type)}
+                )
 
         # Upgrade string-typed JSON properties to number where sampling confirms it
-        string_json_props = [p for p in proposed if p["type"] == "string" and "." in p["path"]]
+        string_json_props = [
+            p for p in proposed if p["type"] == "string" and "." in p["path"]
+        ]
         if string_json_props:
             col_name, _ = string_json_props[0]["path"].split(".", 1)
             prop_exprs = {
@@ -160,8 +192,13 @@ class SQLiteBackend:
                 if p["name"] in upgrades:
                     p["type"] = upgrades[p["name"]]
 
-        return SchemaInfo(tables=tables, events_table=events_table, columns=columns,
-                          suggestions=suggestions, proposed_custom_properties=proposed)
+        return SchemaInfo(
+            tables=tables,
+            events_table=events_table,
+            columns=columns,
+            suggestions=suggestions,
+            proposed_custom_properties=proposed,
+        )
 
     def execute(self, conn: Any, query: str, params: list | None) -> list[tuple]:
         return list(conn.execute(query, params or []).fetchall())
@@ -175,14 +212,23 @@ class SQLiteBackend:
         return columns, rows
 
     def build_events_cte(
-        self, source_table: str, uid_field: str, ts_field: str,
-        en_field: str, custom_props: list[dict],
+        self,
+        source_table: str,
+        uid_field: str,
+        ts_field: str,
+        en_field: str,
+        custom_props: list[dict],
     ) -> str:
         q = '"'
-        core = f'{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name'
+        core = f"{q}{uid_field}{q} AS user_id, {q}{ts_field}{q} AS timestamp, {q}{en_field}{q} AS event_name"
         remapped_src = {uid_field, ts_field, en_field}
-        extra_cols = sorted({p["path"].split(".")[0] for p in custom_props if "path" in p} - remapped_src)
-        extras = (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
+        extra_cols = sorted(
+            {p["path"].split(".")[0] for p in custom_props if "path" in p}
+            - remapped_src
+        )
+        extras = (
+            (", " + ", ".join(f"{q}{c}{q}" for c in extra_cols)) if extra_cols else ""
+        )
         return f'(SELECT {core}{extras} FROM "{source_table}")'
 
     def prepend_events_cte(self, cte_body: str, query: str) -> str:
