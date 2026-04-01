@@ -8,18 +8,11 @@ import { CategoryIcon } from '@/lib/utils/categoryIcon'
 import categoriesConfig from '@/config/dimension-categories.json'
 import type { LeafMeta } from './pivot-table/types'
 import type { DimensionCategoryConfig } from '@/types'
+import { AGG_LABELS } from '@/components/agg-badge-config'
 
 const CATEGORIES = categoriesConfig as DimensionCategoryConfig[]
 
 const DEFAULT_AGG_CYCLE = ['sum', 'count', 'avg', 'min', 'max', 'countDistinct']
-const AGG_LABELS: Record<string, string> = {
-  sum: 'Σ Sum',
-  count: 'n Count',
-  avg: 'avg Avg',
-  min: 'min Min',
-  max: 'max Max',
-  countDistinct: '# Distinct',
-}
 
 interface ValuePickerPopoverProps {
   leafCols: LeafMeta[]
