@@ -5,7 +5,8 @@ import re
 
 from fastapi import APIRouter, HTTPException
 
-from backend.product_db import get_product_db
+from backend.product_db.deps import DBSession
+from backend.product_db.models import Connection
 from backend.services.crypto import decrypt_credentials
 
 router = APIRouter()
@@ -179,18 +180,17 @@ def _parse_struct_field(field_def: str, prefix: str, results: list) -> None:
 
 
 @router.get("/{conn_id}/schema/detect")
-def detect_schema(conn_id: str, events_table: str | None = None):
+async def detect_schema(conn_id: str, session: DBSession, events_table: str | None = None):
     """Detect columns from the target database and suggest field mappings."""
     from backend.backends import get_backend
 
-    db = get_product_db()
-    row = db.fetchone("SELECT * FROM connections WHERE id = ?", (conn_id,))
-    if not row:
+    conn = await session.get(Connection, conn_id)
+    if not conn:
         raise HTTPException(status_code=404, detail="Connection not found")
 
-    db_type: str = row["db_type"]
+    db_type: str = conn.db_type
     try:
-        creds = decrypt_credentials(row["credentials_encrypted"])
+        creds = decrypt_credentials(conn.credentials_encrypted)
     except ValueError as exc:
         raise HTTPException(
             status_code=500, detail="Failed to decrypt credentials"

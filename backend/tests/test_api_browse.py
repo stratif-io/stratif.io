@@ -4,25 +4,12 @@ from __future__ import annotations
 
 import os
 import tempfile
-from unittest.mock import MagicMock, patch
 
 import duckdb
 import pytest
 from starlette.testclient import TestClient
 
 from backend.main import app
-
-
-def _make_sqlite_row(data: dict):
-    """Create a mock dict-like row that supports row['key'] access."""
-    row = MagicMock()
-    row.__getitem__ = lambda self, k: data[k]
-    row.get = lambda k, default=None: data.get(k, default)
-    # Support dict-like iteration
-    row.keys = lambda: data.keys()
-    for key, val in data.items():
-        setattr(row, key, val)
-    return row
 
 
 @pytest.fixture()
@@ -41,13 +28,6 @@ def duckdb_file():
         yield path
 
 
-def _make_product_db_mock(conn_row: dict):
-    """Mock product DB that returns a single connection row."""
-    db = MagicMock()
-    db.fetchone.return_value = _make_sqlite_row(conn_row)
-    return db
-
-
 def _make_encrypted_creds(file_path: str) -> str:
     """Create an encrypted credentials blob for a DuckDB file path."""
     from backend.services.crypto import encrypt_credentials
@@ -57,21 +37,54 @@ def _make_encrypted_creds(file_path: str) -> str:
 
 @pytest.fixture()
 def browse_client(duckdb_file):
-    """TestClient with a product DB that returns a DuckDB file connection."""
-    encrypted = _make_encrypted_creds(duckdb_file)
-    conn_row = {
-        "id": "conn-1",
-        "db_type": "duckdb",
-        "credentials_encrypted": encrypted,
-        "name": "Test DuckDB",
-    }
-    mock_db = _make_product_db_mock(conn_row)
+    """TestClient with a product DB seeded with a DuckDB file connection."""
+    import asyncio
+    import tempfile
+    import os
+    from datetime import UTC, datetime
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    from backend.product_db.base import Base
+    from backend.product_db.deps import get_db
+    from backend.product_db.models import Connection
 
-    with (
-        patch("backend.api.connections.browse.get_product_db", return_value=mock_db),
-        TestClient(app) as client,
-    ):
+    encrypted = _make_encrypted_creds(duckdb_file)
+    tmp = tempfile.mktemp(suffix=".db")
+
+    async def setup():
+        engine = create_async_engine(f"sqlite+aiosqlite:///{tmp}")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        async with factory() as session:
+            now = datetime.now(UTC).replace(tzinfo=None)
+            session.add(Connection(
+                id="conn-1",
+                name="Test DuckDB",
+                db_type="duckdb",
+                credentials_encrypted=encrypted,
+                created_at=now,
+                updated_at=now,
+            ))
+            await session.commit()
+        await engine.dispose()
+
+    asyncio.run(setup())
+
+    test_engine = create_async_engine(f"sqlite+aiosqlite:///{tmp}")
+    test_factory = async_sessionmaker(test_engine, expire_on_commit=False)
+
+    async def override_get_db():
+        async with test_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as client:
         yield client
+    app.dependency_overrides.clear()
+    try:
+        os.unlink(tmp)
+    except FileNotFoundError:
+        pass
 
 
 class TestListTables:
@@ -101,15 +114,7 @@ class TestListTables:
         assert events["table_schema"] == "main"
 
     def test_tables_returns_404_for_unknown_connection(self, browse_client):
-        # browse_client's product_db returns None for unknown ids
-        from unittest.mock import patch as _patch
-
-        db_mock = MagicMock()
-        db_mock.fetchone.return_value = None
-        with _patch(
-            "backend.api.connections.browse.get_product_db", return_value=db_mock
-        ):
-            resp = browse_client.get("/api/connections/unknown-id/tables")
+        resp = browse_client.get("/api/connections/unknown-id/tables")
         assert resp.status_code == 404
 
 
@@ -124,10 +129,5 @@ class TestListColumns:
         assert "event_name" in body["columns"]
 
     def test_columns_returns_404_for_unknown_connection(self, browse_client):
-        db_mock = MagicMock()
-        db_mock.fetchone.return_value = None
-        with patch(
-            "backend.api.connections.browse.get_product_db", return_value=db_mock
-        ):
-            resp = browse_client.get("/api/connections/nope/columns?table=main.events")
+        resp = browse_client.get("/api/connections/nope/columns?table=main.events")
         assert resp.status_code == 404
