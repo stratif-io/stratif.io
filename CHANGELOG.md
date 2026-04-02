@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1](https://github.com/cabichahine/stratif.io/compare/v0.17.0...v0.17.1) (2026-04-02)
+
+
+### Bug Fixes
+
+* trigger release-please ([fb9d6ab](https://github.com/cabichahine/stratif.io/commit/fb9d6ab77bf8572d8bca1ab76c986a544d88ce46))
+
 ## [0.17.0](https://github.com/cabichahine/stratif.io/compare/v0.16.0...v0.17.0) (2026-04-01)
 
 

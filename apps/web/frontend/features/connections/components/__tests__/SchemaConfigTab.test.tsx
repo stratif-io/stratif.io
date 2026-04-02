@@ -467,6 +467,52 @@ describe('SchemaConfigTab — detect review panel', () => {
   })
 })
 
+describe('SchemaConfigTab — detect auto-expands sections', () => {
+  it('auto-expands the User Identity section when detect returns identity field suggestions', () => {
+    const detectResult = {
+      suggestions: {
+        user_id_field: null,
+        event_name_field: null,
+        timestamp_field: null,
+        email_field: 'user_email',
+        first_name_field: null,
+        last_name_field: null,
+        date_of_birth_field: null,
+        phone_field: null,
+      },
+      proposed_custom_properties: [],
+      events_table: 'events',
+      columns: [],
+    }
+
+    vi.mocked(hooks.useDetectSchema).mockReturnValue({
+      mutate: (_table: unknown, opts: { onSuccess: (r: typeof detectResult) => void }) => {
+        opts.onSuccess(detectResult)
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<(typeof hooks)[keyof typeof hooks]>)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={qc}>
+        <SchemaConfigTab connId="conn-detect-identity-expand" />
+      </QueryClientProvider>
+    )
+
+    // Identity section is collapsed by default — Email label should not be visible
+    expect(screen.queryByText('Email')).not.toBeInTheDocument()
+
+    act(() => {
+      screen.getByRole('button', { name: /detect from schema/i }).click()
+    })
+
+    // After detect returns an identity suggestion, the section must be expanded
+    expect(screen.getByText('Email')).toBeInTheDocument()
+  })
+})
+
 describe('SchemaConfigTab — auto-save with null schema (new connection)', () => {
   afterEach(() => {
     // Restore standard mock so subsequent tests don't inherit the null-schema state
