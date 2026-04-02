@@ -13,17 +13,15 @@ class Settings(BaseSettings):
     # API key auth (optional for dev, required for production)
     api_key: str = ""
 
-    # Product DB (SQLite — stores connections and configs)
-    product_db_path: str = "./stratifio_product.sqlite"
-    product_db_url: str = (
-        ""  # e.g. "sqlite:///./stratifio.sqlite" or "postgresql://..."
-    )
+    # Product DB — SQLite for local dev, PostgreSQL for production
+    # Override with STRATIFIO_PRODUCT_DB_URL=postgresql+asyncpg://user:pass@host/db
+    product_db_url: str = "sqlite+aiosqlite:///./stratifio_product.db"
 
     # Encryption key for credentials (required to store connections)
     encryption_key: str = ""
 
     # Auth
-    auth_enabled: bool = False  # set True in production to enforce API key check
+    auth_enabled: bool = False
 
     # Server
     cors_origins: str = "http://localhost:5173"
