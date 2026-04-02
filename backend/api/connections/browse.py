@@ -1,7 +1,6 @@
 """Browse endpoint for the Connections API (catalog → schema → table hierarchy)."""
 
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import select
 
 from backend.backends import get_backend
 from backend.product_db.deps import DBSession

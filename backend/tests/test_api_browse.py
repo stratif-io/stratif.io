@@ -39,10 +39,12 @@ def _make_encrypted_creds(file_path: str) -> str:
 def browse_client(duckdb_file):
     """TestClient with a product DB seeded with a DuckDB file connection."""
     import asyncio
-    import tempfile
     import os
+    import tempfile
     from datetime import UTC, datetime
+
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
     from backend.product_db.base import Base
     from backend.product_db.deps import get_db
     from backend.product_db.models import Connection
@@ -81,10 +83,9 @@ def browse_client(duckdb_file):
     with TestClient(app) as client:
         yield client
     app.dependency_overrides.clear()
-    try:
+    import contextlib
+    with contextlib.suppress(FileNotFoundError):
         os.unlink(tmp)
-    except FileNotFoundError:
-        pass
 
 
 class TestListTables:
