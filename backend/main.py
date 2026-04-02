@@ -47,7 +47,7 @@ from backend.product_db import init_product_db  # noqa: E402
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(settings.log_level, settings.log_format)
-    init_product_db()
+    await init_product_db()
     yield
 
 

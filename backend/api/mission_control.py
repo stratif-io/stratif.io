@@ -473,9 +473,6 @@ def _fetch_single_metric_all_time(
         "avg_session_duration_sec",
         "avg_events_per_session",
     ):
-        sess_where_sql = (
-            ev_where_sql.replace("WHERE ", "WHERE ds.") if ev_where_sql else ""
-        )
         timeout = db.get_session_timeout_minutes()
         dialect = db.get_dialect()
         if metric == "total_sessions":
@@ -484,6 +481,10 @@ def _fetch_single_metric_all_time(
             agg = "AVG(ds.duration_sec)"
         else:
             agg = "AVG(ds.event_count)"
+        if ev_where_sql:
+            sess_where_sql = f"WHERE ds.user_id IN (SELECT DISTINCT user_id FROM events {ev_where_sql})"
+        else:
+            sess_where_sql = ""
         sql = f"WITH {session_ctes(timeout, dialect)} SELECT {agg} FROM derived_sessions ds {sess_where_sql}"
         rows = db.execute(sql, filter_params)
         return (round(rows[0][0] or 0.0, 2) if rows else 0.0), interpolate_sql(
