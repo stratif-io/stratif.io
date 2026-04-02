@@ -12,7 +12,6 @@ from backend.product_db.models import (
     ConnectionCustomProperty,
     ConnectionFilterConfig,
     ConnectionFilterField,
-    ConnectionPinnedMetric,
     ConnectionSchemaConfig,
 )
 
