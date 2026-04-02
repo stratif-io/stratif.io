@@ -8,20 +8,6 @@ from .models import (
     ConnectionPinnedMetric,
     ConnectionSchemaConfig,
 )
-from .protocol import ProductDB
-
-# Compatibility exports for old sync interface (to be removed in Tasks 5-8)
-def get_product_db() -> ProductDB:
-    """Deprecated: old sync interface. Use DBSession (async) instead."""
-    raise NotImplementedError(
-        "get_product_db() is deprecated. Use DBSession dependency for async sessions."
-    )
-
-
-from typing import Annotated
-from fastapi import Depends
-
-ProductDBDep = Annotated[ProductDB, Depends(get_product_db)]
 
 __all__ = [
     "get_db",
@@ -33,8 +19,4 @@ __all__ = [
     "ConnectionCustomProperty",
     "ConnectionPinnedMetric",
     "ConnectionFilterField",
-    # Backward compat (deprecated)
-    "get_product_db",
-    "ProductDBDep",
-    "ProductDB",
 ]

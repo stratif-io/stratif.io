@@ -20,9 +20,3 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 DBSession = Annotated[AsyncSession, Depends(get_db)]
 
 
-# Backward compatibility stubs for tests (to be removed in Tasks 5-8)
-def get_product_db():
-    """Deprecated: old sync interface stub for tests. To be removed."""
-    raise NotImplementedError(
-        "get_product_db() is deprecated. Use DBSession dependency for async sessions."
-    )

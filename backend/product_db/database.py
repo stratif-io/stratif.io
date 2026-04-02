@@ -42,12 +42,3 @@ async def init_product_db() -> None:
     async with _get_engine().begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-
-# Backward compatibility stub for tests (to be removed in Tasks 5-8)
-class SQLiteProductDB:
-    """Deprecated: old sync SQLite product DB implementation. To be removed."""
-
-    def __init__(self, path: str):
-        raise NotImplementedError(
-            "SQLiteProductDB is deprecated. Use async DBSession instead."
-        )
