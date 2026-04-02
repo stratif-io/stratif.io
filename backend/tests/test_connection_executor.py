@@ -5,9 +5,9 @@ import inspect
 from backend.services.connection_executor import get_analytics_db
 
 
-def test_get_analytics_db_accepts_product_db_param():
+def test_get_analytics_db_accepts_session_param():
     sig = inspect.signature(get_analytics_db)
-    assert "product_db" in sig.parameters
+    assert "session" in sig.parameters
 
 
 def test_get_analytics_db_accepts_registry_param():
@@ -257,40 +257,67 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
     """open_analytics_db must include identity fields (first_name, email, etc.) in
     filter_exprs and custom_prop_exprs so global filters work for non-event properties."""
 
-    def _make_product_db(self, schema_row_data: dict, filter_fields: list[dict]):
-        import json
-        from unittest.mock import MagicMock
+    def _make_session(self, schema_data: dict, filter_fields: list[dict]):
+        """Build a mock AsyncSession that returns ORM-like objects."""
+        from unittest.mock import AsyncMock, MagicMock
 
-        schema_row = MagicMock()
-        schema_row.__getitem__ = lambda s, k: schema_row_data.get(k)
-        schema_row.get = lambda k, default=None: schema_row_data.get(k, default)
+        # Build mock custom_property objects
+        custom_props_objs = []
+        for i, cp in enumerate(schema_data.get("custom_properties", [])):
+            obj = MagicMock()
+            obj.name = cp.get("name", "")
+            obj.path = cp.get("path", "")
+            obj.type = cp.get("type", "string")
+            obj.category = cp.get("category", "")
+            obj.sort_order = i
+            custom_props_objs.append(obj)
 
-        filter_fields_json = json.dumps(filter_fields)
-        filter_row = MagicMock()
-        filter_row.__getitem__ = lambda s, k: (
-            filter_fields_json if k == "filter_fields" else None
-        )
+        # Build mock filter_field objects
+        filter_field_objs = []
+        for i, ff in enumerate(filter_fields):
+            obj = MagicMock()
+            obj.field = ff.get("field", "")
+            obj.label = ff.get("label", "")
+            obj.icon = ff.get("icon", "")
+            obj.sort_order = i
+            filter_field_objs.append(obj)
 
-        conn_row = MagicMock()
-        conn_row.__getitem__ = lambda s, k: {
-            "db_type": "duckdb",
-            "credentials_encrypted": "dummy",
-        }.get(k)
+        # Build mock schema_config
+        if schema_data.get("has_schema", True):
+            schema_config = MagicMock()
+            schema_config.user_id_field = schema_data.get("user_id_field", "user_id")
+            schema_config.timestamp_field = schema_data.get("timestamp_field", "timestamp")
+            schema_config.event_name_field = schema_data.get("event_name_field", "event_name")
+            schema_config.events_table = schema_data.get("events_table", "events")
+            schema_config.custom_properties = custom_props_objs
+            schema_config.session_timeout_minutes = schema_data.get("session_timeout_minutes", 30)
+            schema_config.resurrection_window_days = schema_data.get("resurrection_window_days", 30)
+            schema_config.power_user_threshold_days = schema_data.get("power_user_threshold_days", 4)
+            schema_config.email_field = schema_data.get("email_field")
+            schema_config.first_name_field = schema_data.get("first_name_field")
+            schema_config.last_name_field = schema_data.get("last_name_field")
+            schema_config.date_of_birth_field = schema_data.get("date_of_birth_field")
+            schema_config.phone_field = schema_data.get("phone_field")
+        else:
+            schema_config = None
 
-        def fetchone(query, params=None):
-            if "connection_schema_configs" in query:
-                return schema_row
-            if "connection_filter_configs" in query:
-                return filter_row
-            if "connections" in query:
-                return conn_row
-            return None
+        filter_config = MagicMock()
+        filter_config.filter_fields = filter_field_objs
 
-        product_db = MagicMock()
-        product_db.fetchone = fetchone
-        return product_db
+        conn_obj = MagicMock()
+        conn_obj.db_type = "duckdb"
+        conn_obj.credentials_encrypted = "dummy"
+        conn_obj.schema_config = schema_config
+        conn_obj.filter_config = filter_config
 
-    def _open_db(self, schema_row_data: dict, filter_fields: list[dict]):
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = conn_obj
+
+        session = AsyncMock()
+        session.execute = AsyncMock(return_value=mock_result)
+        return session
+
+    async def _open_db(self, schema_data: dict, filter_fields: list[dict]):
         from unittest.mock import patch
 
         import duckdb
@@ -300,7 +327,7 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
 
         backend = DuckDBBackend()
         real_conn = duckdb.connect(":memory:")
-        product_db = self._make_product_db(schema_row_data, filter_fields)
+        session = self._make_session(schema_data, filter_fields)
 
         with (
             patch(
@@ -310,7 +337,7 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
             patch.object(backend, "open", return_value=real_conn),
             patch.object(backend, "get_table_columns", return_value=None),
         ):
-            return open_analytics_db("conn-1", product_db, {"duckdb": backend})
+            return await open_analytics_db("conn-1", session, {"duckdb": backend})
 
     def _default_schema(self, **overrides):
         base = {
@@ -318,7 +345,7 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
             "timestamp_field": "timestamp",
             "event_name_field": "event_name",
             "events_table": "events",
-            "custom_properties": "[]",
+            "custom_properties": [],
             "session_timeout_minutes": 30,
             "resurrection_window_days": 30,
             "power_user_threshold_days": 4,
@@ -327,22 +354,23 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
             "last_name_field": None,
             "date_of_birth_field": None,
             "phone_field": None,
+            "has_schema": True,
         }
         base.update(overrides)
         return base
 
-    def test_first_name_identity_field_included_in_filter_exprs(self):
+    async def test_first_name_identity_field_included_in_filter_exprs(self):
         schema = self._default_schema(first_name_field="first_name")
-        db = self._open_db(
+        db = await self._open_db(
             schema, [{"field": "first_name", "label": "First Name", "icon": "user"}]
         )
         assert "first_name" in db.get_filter_exprs(), (
             "first_name should be in filter_exprs so get_filter_options() can return values"
         )
 
-    def test_first_name_identity_field_filterable_via_build_filter_clauses(self):
+    async def test_first_name_identity_field_filterable_via_build_filter_clauses(self):
         schema = self._default_schema(first_name_field="first_name")
-        db = self._open_db(
+        db = await self._open_db(
             schema, [{"field": "first_name", "label": "First Name", "icon": "user"}]
         )
         clauses, params = db.build_filter_clauses({"first_name": "Alice"})
@@ -351,23 +379,23 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         )
         assert params == ["Alice"]
 
-    def test_email_identity_field_included_in_filter_exprs(self):
+    async def test_email_identity_field_included_in_filter_exprs(self):
         schema = self._default_schema(email_field="user_email")
-        db = self._open_db(
+        db = await self._open_db(
             schema, [{"field": "user_email", "label": "Email", "icon": "mail"}]
         )
         assert "user_email" in db.get_filter_exprs()
 
-    def test_identity_field_not_added_when_not_selected_as_filter_field(self):
+    async def test_identity_field_not_added_when_not_selected_as_filter_field(self):
         schema = self._default_schema(first_name_field="first_name")
-        db = self._open_db(schema, [])  # no filter fields configured
+        db = await self._open_db(schema, [])  # no filter fields configured
         assert "first_name" not in db.get_filter_exprs()
 
-    def test_plain_column_filter_field_without_identity_mapping(self):
+    async def test_plain_column_filter_field_without_identity_mapping(self):
         """A filter field that is a plain column but not configured as an identity field
         must still land in filter_exprs so autocomplete and filtering work."""
         schema = self._default_schema()  # first_name_field NOT set
-        db = self._open_db(
+        db = await self._open_db(
             schema, [{"field": "first_name", "label": "First Name", "icon": "user"}]
         )
         assert "first_name" in db.get_filter_exprs(), (
@@ -377,11 +405,11 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         assert len(clauses) == 1
         assert params == ["Alice"]
 
-    def test_dotted_path_filter_field_generates_json_extraction(self):
+    async def test_dotted_path_filter_field_generates_json_extraction(self):
         """A filter field like 'traits.first_name' not in custom_prop_exprs must resolve
         to a JSON extraction expression, not a quoted dotted identifier."""
         schema = self._default_schema()
-        db = self._open_db(
+        db = await self._open_db(
             schema,
             [{"field": "traits.first_name", "label": "First Name", "icon": "user"}],
         )
@@ -391,9 +419,9 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         assert '"traits.first_name"' not in exprs["traits.first_name"]
         assert "traits" in exprs["traits.first_name"]
 
-    def test_identity_field_with_custom_column_name(self):
+    async def test_identity_field_with_custom_column_name(self):
         schema = self._default_schema(first_name_field="fname")
-        db = self._open_db(
+        db = await self._open_db(
             schema, [{"field": "fname", "label": "First Name", "icon": "user"}]
         )
         clauses, params = db.build_filter_clauses({"fname": "Bob"})
