@@ -1,13 +1,21 @@
 """CRUD endpoints for the Connections API."""
 
-import json
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import delete, select
+from sqlalchemy.orm import selectinload
 
-from backend.product_db import get_product_db
+from backend.product_db.deps import DBSession
+from backend.product_db.models import (
+    Connection,
+    ConnectionCustomProperty,
+    ConnectionFilterConfig,
+    ConnectionFilterField,
+    ConnectionSchemaConfig,
+)
 from backend.services.crypto import decrypt_credentials, encrypt_credentials
-from backend.utils import utcnow_str as _now
 
 from .models import (
     ConnectionCreate,
@@ -22,12 +30,19 @@ from .models import (
 router = APIRouter()
 
 
-def _get_connection_or_404(conn_id: str):
-    db = get_product_db()
-    row = db.fetchone("SELECT * FROM connections WHERE id = ?", (conn_id,))
-    if not row:
+def _now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
+def _fmt(dt: datetime) -> str:
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+async def _get_connection_or_404(conn_id: str, session) -> Connection:
+    conn = await session.get(Connection, conn_id)
+    if not conn:
         raise HTTPException(status_code=404, detail="Connection not found")
-    return row
+    return conn
 
 
 # ---------------------------------------------------------------------------
@@ -36,111 +51,113 @@ def _get_connection_or_404(conn_id: str):
 
 
 @router.get("/", response_model=list[ConnectionResponse])
-async def list_connections():
-    db = get_product_db()
-    rows = db.fetchall(
-        "SELECT id, name, db_type, created_at, updated_at FROM connections ORDER BY created_at DESC"
+async def list_connections(session: DBSession):
+    result = await session.execute(
+        select(Connection).order_by(Connection.created_at.desc())
     )
-    return [dict(r) for r in rows]
+    return [
+        {
+            "id": c.id,
+            "name": c.name,
+            "db_type": c.db_type,
+            "created_at": _fmt(c.created_at),
+            "updated_at": _fmt(c.updated_at),
+        }
+        for c in result.scalars().all()
+    ]
 
 
-@router.post(
-    "/", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED
-)
-async def create_connection(body: ConnectionCreate):
-    db = get_product_db()
-    conn_id = str(uuid.uuid4())
+@router.post("/", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)
+async def create_connection(body: ConnectionCreate, session: DBSession):
     now = _now()
     encrypted = encrypt_credentials(body.credentials)
-    db.execute(
-        "INSERT INTO connections (id, name, db_type, credentials_encrypted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-        (conn_id, body.name, body.db_type, encrypted, now, now),
+    conn = Connection(
+        id=str(uuid.uuid4()),
+        name=body.name,
+        db_type=body.db_type,
+        credentials_encrypted=encrypted,
+        created_at=now,
+        updated_at=now,
     )
+    session.add(conn)
+    await session.commit()
     return {
-        "id": conn_id,
-        "name": body.name,
-        "db_type": body.db_type,
-        "created_at": now,
-        "updated_at": now,
+        "id": conn.id,
+        "name": conn.name,
+        "db_type": conn.db_type,
+        "created_at": _fmt(conn.created_at),
+        "updated_at": _fmt(conn.updated_at),
     }
 
 
 @router.get("/{conn_id}", response_model=ConnectionResponse)
-async def get_connection(conn_id: str):
-    row = _get_connection_or_404(conn_id)
+async def get_connection(conn_id: str, session: DBSession):
+    conn = await _get_connection_or_404(conn_id, session)
     return {
-        "id": row["id"],
-        "name": row["name"],
-        "db_type": row["db_type"],
-        "created_at": row["created_at"],
-        "updated_at": row["updated_at"],
+        "id": conn.id,
+        "name": conn.name,
+        "db_type": conn.db_type,
+        "created_at": _fmt(conn.created_at),
+        "updated_at": _fmt(conn.updated_at),
     }
 
 
 @router.patch("/{conn_id}", response_model=ConnectionResponse)
-async def update_connection(conn_id: str, body: ConnectionUpdate):
-    row = _get_connection_or_404(conn_id)
-    db = get_product_db()
-    now = _now()
-    name = body.name if body.name is not None else row["name"]
+async def update_connection(conn_id: str, body: ConnectionUpdate, session: DBSession):
+    conn = await _get_connection_or_404(conn_id, session)
+    if body.name is not None:
+        conn.name = body.name
     if body.credentials is not None:
-        # Merge partial credentials with existing ones so omitted fields (e.g. passwords) are preserved.
-        existing = decrypt_credentials(row["credentials_encrypted"])
+        existing = decrypt_credentials(conn.credentials_encrypted)
         merged = {**existing, **body.credentials}
-        encrypted = encrypt_credentials(merged)
-    else:
-        encrypted = row["credentials_encrypted"]
-    db.execute(
-        "UPDATE connections SET name = ?, credentials_encrypted = ?, updated_at = ? WHERE id = ?",
-        (name, encrypted, now, conn_id),
-    )
+        conn.credentials_encrypted = encrypt_credentials(merged)
+    conn.updated_at = _now()
+    await session.commit()
     return {
-        "id": conn_id,
-        "name": name,
-        "db_type": row["db_type"],
-        "created_at": row["created_at"],
-        "updated_at": now,
+        "id": conn.id,
+        "name": conn.name,
+        "db_type": conn.db_type,
+        "created_at": _fmt(conn.created_at),
+        "updated_at": _fmt(conn.updated_at),
     }
 
 
 @router.delete("/{conn_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_connection(conn_id: str):
-    _get_connection_or_404(conn_id)
-    get_product_db().execute("DELETE FROM connections WHERE id = ?", (conn_id,))
+async def delete_connection(conn_id: str, session: DBSession):
+    conn = await _get_connection_or_404(conn_id, session)
+    await session.delete(conn)
+    await session.commit()
 
 
 @router.post("/{conn_id}/test")
-async def test_connection(conn_id: str):
+async def test_connection(conn_id: str, session: DBSession):
     import asyncio
     from concurrent.futures import ThreadPoolExecutor
 
     from backend.backends import get_backend
-    from backend.services.crypto import decrypt_credentials
 
-    row = _get_connection_or_404(conn_id)
+    conn = await _get_connection_or_404(conn_id, session)
 
     def _do_test():
-        backend = get_backend(row["db_type"])
-        creds = decrypt_credentials(row["credentials_encrypted"])
+        backend = get_backend(conn.db_type)
+        creds = decrypt_credentials(conn.credentials_encrypted)
         credentials = backend.parse_credentials(creds)
-        conn = backend.open(credentials, read_only=True)
-        backend.execute(conn, "SELECT 1", None)
-        conn.close()
+        c = backend.open(credentials, read_only=True)
+        backend.execute(c, "SELECT 1", None)
+        c.close()
 
     try:
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor(max_workers=1) as pool:
             await asyncio.wait_for(loop.run_in_executor(pool, _do_test), timeout=10)
-        return {"ok": True, "db_type": row["db_type"]}
+        return {"ok": True, "db_type": conn.db_type}
     except TimeoutError:
         raise HTTPException(
             status_code=status.HTTP_408_REQUEST_TIMEOUT,
             detail="Connection timed out after 10 seconds",
         ) from None
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -149,72 +166,72 @@ async def test_connection(conn_id: str):
 
 
 @router.get("/{conn_id}/schema", response_model=SchemaConfigResponse | None)
-async def get_schema_config(conn_id: str):
-    _get_connection_or_404(conn_id)
-    row = get_product_db().fetchone(
-        "SELECT * FROM connection_schema_configs WHERE connection_id = ?", (conn_id,)
+async def get_schema_config(conn_id: str, session: DBSession):
+    await _get_connection_or_404(conn_id, session)
+    result = await session.execute(
+        select(ConnectionSchemaConfig)
+        .options(selectinload(ConnectionSchemaConfig.custom_properties))
+        .where(ConnectionSchemaConfig.connection_id == conn_id)
     )
-    if not row:
+    config = result.scalar_one_or_none()
+    if not config:
         return None
-    result = dict(row)
-    result["custom_properties"] = json.loads(result["custom_properties"])
-    return result
+    return _schema_config_response(config)
 
 
 @router.put("/{conn_id}/schema", response_model=SchemaConfigResponse)
-async def upsert_schema_config(conn_id: str, body: SchemaConfigBody):
-    _get_connection_or_404(conn_id)
-    db = get_product_db()
-    now = _now()
-    config_id = str(uuid.uuid4())
-    custom_props_json = json.dumps([p.model_dump() for p in body.custom_properties])
-    db.execute(
-        """INSERT INTO connection_schema_configs
-           (id, connection_id, user_id_field, timestamp_field, event_name_field,
-            events_table, custom_properties, session_timeout_minutes,
-            resurrection_window_days, power_user_threshold_days,
-            email_field, first_name_field, last_name_field,
-            date_of_birth_field, phone_field, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON CONFLICT(connection_id) DO UPDATE SET
-             user_id_field = excluded.user_id_field,
-             timestamp_field = excluded.timestamp_field,
-             event_name_field = excluded.event_name_field,
-             events_table = excluded.events_table,
-             custom_properties = excluded.custom_properties,
-             session_timeout_minutes = excluded.session_timeout_minutes,
-             resurrection_window_days = excluded.resurrection_window_days,
-             power_user_threshold_days = excluded.power_user_threshold_days,
-             email_field = excluded.email_field,
-             first_name_field = excluded.first_name_field,
-             last_name_field = excluded.last_name_field,
-             date_of_birth_field = excluded.date_of_birth_field,
-             phone_field = excluded.phone_field,
-             updated_at = excluded.updated_at""",
-        (
-            config_id,
-            conn_id,
-            body.user_id_field,
-            body.timestamp_field,
-            body.event_name_field,
-            body.events_table,
-            custom_props_json,
-            body.session_timeout_minutes,
-            body.resurrection_window_days,
-            body.power_user_threshold_days,
-            body.email_field,
-            body.first_name_field,
-            body.last_name_field,
-            body.date_of_birth_field,
-            body.phone_field,
-            now,
-        ),
+async def upsert_schema_config(conn_id: str, body: SchemaConfigBody, session: DBSession):
+    await _get_connection_or_404(conn_id, session)
+
+    result = await session.execute(
+        select(ConnectionSchemaConfig).where(ConnectionSchemaConfig.connection_id == conn_id)
     )
+    config = result.scalar_one_or_none()
+    now = _now()
+
+    if config is None:
+        config = ConnectionSchemaConfig(id=str(uuid.uuid4()), connection_id=conn_id)
+        session.add(config)
+
+    config.user_id_field = body.user_id_field
+    config.timestamp_field = body.timestamp_field
+    config.event_name_field = body.event_name_field
+    config.events_table = body.events_table
+    config.session_timeout_minutes = body.session_timeout_minutes
+    config.resurrection_window_days = body.resurrection_window_days
+    config.power_user_threshold_days = body.power_user_threshold_days
+    config.email_field = body.email_field
+    config.first_name_field = body.first_name_field
+    config.last_name_field = body.last_name_field
+    config.date_of_birth_field = body.date_of_birth_field
+    config.phone_field = body.phone_field
+    config.updated_at = now
+
+    await session.flush()
+
+    await session.execute(
+        delete(ConnectionCustomProperty).where(
+            ConnectionCustomProperty.schema_config_id == config.id
+        )
+    )
+    for i, prop in enumerate(body.custom_properties):
+        session.add(ConnectionCustomProperty(
+            id=str(uuid.uuid4()),
+            schema_config_id=config.id,
+            name=prop.name,
+            path=prop.path,
+            type=prop.type,
+            category=prop.category,
+            sort_order=i,
+        ))
+
+    await session.commit()
+
     return {
         **body.model_dump(),
-        "id": config_id,
-        "connection_id": conn_id,
-        "updated_at": now,
+        "id": config.id,
+        "connection_id": config.connection_id,
+        "updated_at": _fmt(config.updated_at),
         "custom_properties": [p.model_dump() for p in body.custom_properties],
     }
 
@@ -225,38 +242,67 @@ async def upsert_schema_config(conn_id: str, body: SchemaConfigBody):
 
 
 @router.get("/{conn_id}/filters", response_model=FilterConfigResponse | None)
-async def get_filter_config(conn_id: str):
-    _get_connection_or_404(conn_id)
-    row = get_product_db().fetchone(
-        "SELECT * FROM connection_filter_configs WHERE connection_id = ?", (conn_id,)
+async def get_filter_config(conn_id: str, session: DBSession):
+    await _get_connection_or_404(conn_id, session)
+    result = await session.execute(
+        select(ConnectionFilterConfig)
+        .options(selectinload(ConnectionFilterConfig.filter_fields))
+        .where(ConnectionFilterConfig.connection_id == conn_id)
     )
-    if not row:
+    config = result.scalar_one_or_none()
+    if not config:
         return None
-    result = dict(row)
-    result["filter_fields"] = json.loads(result["filter_fields"])
-    return result
+    return {
+        "id": config.id,
+        "connection_id": config.connection_id,
+        "filter_fields": [
+            {"field": f.field, "label": f.label, "icon": f.icon}
+            for f in sorted(config.filter_fields, key=lambda x: x.sort_order)
+        ],
+        "updated_at": _fmt(config.updated_at),
+    }
 
 
 @router.put("/{conn_id}/filters", response_model=FilterConfigResponse)
-async def upsert_filter_config(conn_id: str, body: FilterConfigBody):
-    _get_connection_or_404(conn_id)
-    db = get_product_db()
-    now = _now()
-    config_id = str(uuid.uuid4())
-    fields_json = json.dumps([f.model_dump() for f in body.filter_fields])
-    db.execute(
-        """INSERT INTO connection_filter_configs (id, connection_id, filter_fields, updated_at)
-           VALUES (?, ?, ?, ?)
-           ON CONFLICT(connection_id) DO UPDATE SET
-             filter_fields = excluded.filter_fields,
-             updated_at = excluded.updated_at""",
-        (config_id, conn_id, fields_json, now),
+async def upsert_filter_config(conn_id: str, body: FilterConfigBody, session: DBSession):
+    await _get_connection_or_404(conn_id, session)
+
+    result = await session.execute(
+        select(ConnectionFilterConfig).where(ConnectionFilterConfig.connection_id == conn_id)
     )
+    config = result.scalar_one_or_none()
+    now = _now()
+
+    if config is None:
+        config = ConnectionFilterConfig(id=str(uuid.uuid4()), connection_id=conn_id)
+        session.add(config)
+
+    config.updated_at = now
+
+    await session.flush()
+
+    await session.execute(
+        delete(ConnectionFilterField).where(
+            ConnectionFilterField.filter_config_id == config.id
+        )
+    )
+    for i, field in enumerate(body.filter_fields):
+        session.add(ConnectionFilterField(
+            id=str(uuid.uuid4()),
+            filter_config_id=config.id,
+            field=field.field,
+            label=field.label,
+            icon=field.icon,
+            sort_order=i,
+        ))
+
+    await session.commit()
+
     return {
-        "id": config_id,
-        "connection_id": conn_id,
+        "id": config.id,
+        "connection_id": config.connection_id,
         "filter_fields": [f.model_dump() for f in body.filter_fields],
-        "updated_at": now,
+        "updated_at": _fmt(config.updated_at),
     }
 
 
@@ -266,12 +312,12 @@ async def upsert_filter_config(conn_id: str, body: FilterConfigBody):
 
 
 @router.get("/{conn_id}/filter-options")
-async def get_filter_options(conn_id: str):
+async def get_filter_options(conn_id: str, session: DBSession):
     from backend.backends import _REGISTRY
     from backend.services.analytics_db import open_analytics_db
 
-    _get_connection_or_404(conn_id)
-    db = open_analytics_db(conn_id, get_product_db(), _REGISTRY)
+    await _get_connection_or_404(conn_id, session)
+    db = await open_analytics_db(conn_id, session, _REGISTRY)
     try:
         return db.get_filter_options()
     finally:
@@ -279,12 +325,12 @@ async def get_filter_options(conn_id: str):
 
 
 @router.get("/{conn_id}/field-options")
-async def get_field_options(conn_id: str, field: str):
+async def get_field_options(conn_id: str, field: str, session: DBSession):
     from backend.backends import _REGISTRY
     from backend.services.analytics_db import open_analytics_db
 
-    _get_connection_or_404(conn_id)
-    db = open_analytics_db(conn_id, get_product_db(), _REGISTRY)
+    await _get_connection_or_404(conn_id, session)
+    db = await open_analytics_db(conn_id, session, _REGISTRY)
     try:
         return {"field": field, "values": db.get_field_options(field)}
     finally:
@@ -297,15 +343,15 @@ async def get_field_options(conn_id: str, field: str):
 
 
 @router.get("/{conn_id}/string")
-async def get_connection_string(conn_id: str):
+async def get_connection_string(conn_id: str, session: DBSession):
     from backend.backends import get_backend
 
-    row = _get_connection_or_404(conn_id)
+    conn = await _get_connection_or_404(conn_id, session)
     try:
-        creds = decrypt_credentials(row["credentials_encrypted"])
+        creds = decrypt_credentials(conn.credentials_encrypted)
     except ValueError:
         raise HTTPException(500, "Failed to decrypt credentials") from None
-    backend = get_backend(row["db_type"])
+    backend = get_backend(conn.db_type)
     credentials = backend.parse_credentials(creds)
     return {"connection_string": backend.connection_string(credentials)}
 
@@ -316,10 +362,10 @@ async def get_connection_string(conn_id: str):
 
 
 @router.get("/{conn_id}/credentials")
-async def get_connection_credentials(conn_id: str):
-    row = _get_connection_or_404(conn_id)
+async def get_connection_credentials(conn_id: str, session: DBSession):
+    conn = await _get_connection_or_404(conn_id, session)
     try:
-        creds = decrypt_credentials(row["credentials_encrypted"])
+        creds = decrypt_credentials(conn.credentials_encrypted)
         return {
             "fields": {
                 k: (
@@ -334,3 +380,32 @@ async def get_connection_credentials(conn_id: str):
         }
     except ValueError:
         raise HTTPException(500, "Failed to decrypt credentials") from None
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+
+def _schema_config_response(config: ConnectionSchemaConfig) -> dict:
+    return {
+        "id": config.id,
+        "connection_id": config.connection_id,
+        "user_id_field": config.user_id_field,
+        "timestamp_field": config.timestamp_field,
+        "event_name_field": config.event_name_field,
+        "events_table": config.events_table,
+        "session_timeout_minutes": config.session_timeout_minutes,
+        "resurrection_window_days": config.resurrection_window_days,
+        "power_user_threshold_days": config.power_user_threshold_days,
+        "email_field": config.email_field,
+        "first_name_field": config.first_name_field,
+        "last_name_field": config.last_name_field,
+        "date_of_birth_field": config.date_of_birth_field,
+        "phone_field": config.phone_field,
+        "custom_properties": [
+            {"name": p.name, "path": p.path, "type": p.type, "category": p.category}
+            for p in sorted(config.custom_properties, key=lambda x: x.sort_order)
+        ],
+        "updated_at": _fmt(config.updated_at),
+    }
