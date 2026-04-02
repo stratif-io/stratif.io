@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.18.0](https://github.com/cabichahine/stratif.io/compare/v0.17.1...v0.18.0) (2026-04-02)
+
+
+### Features
+
+* add SQLAlchemy ORM models for product DB ([6b764fb](https://github.com/cabichahine/stratif.io/commit/6b764fbafe22c8b519472239e3798f3fe6634354))
+* add sqlalchemy[asyncio], aiosqlite, asyncpg, pytest-asyncio deps ([0b248d6](https://github.com/cabichahine/stratif.io/commit/0b248d606c35ab169e9d00e548bdf86250d77881))
+* async get_db() dependency + create_all schema init ([8f49447](https://github.com/cabichahine/stratif.io/commit/8f49447a6fb62f770b6f89c23bb6e73fdddce498))
+* async SQLAlchemy engine + updated product_db_url default ([c43601b](https://github.com/cabichahine/stratif.io/commit/c43601bea5206dbb2a0a85c04d43fccc9e1249b6))
+* complete SQLAlchemy async ORM migration — all tests passing ([5cea98f](https://github.com/cabichahine/stratif.io/commit/5cea98fb7403cbb15f6fb1679b25ffa5e87d29b1))
+* make open_analytics_db async, use AsyncSession ([6d3a514](https://github.com/cabichahine/stratif.io/commit/6d3a514e1302815f9771cc27df49699e8e3293bb))
+* rewrite connections crud.py with SQLAlchemy async ORM ([3f14e87](https://github.com/cabichahine/stratif.io/commit/3f14e87b327e961d6a147d748cbe6f63978c7745))
+* update browse, schema_detect, auth to use DBSession ([df55056](https://github.com/cabichahine/stratif.io/commit/df550560f6610fd8ac96e96e99ef856c640535c7))
+* update e2e conftest to use async SQLAlchemy product DB setup ([b1176df](https://github.com/cabichahine/stratif.io/commit/b1176df55af8ac3e84b5dab0e69efe4016bc3a51))
+
+
+### Bug Fixes
+
+* resolve ruff linting errors ([aa7e841](https://github.com/cabichahine/stratif.io/commit/aa7e841552a3862e94a5be7ebe78fbc23240c185))
+* rewrite bootstrap_connection seeder and tests for async ORM ([cbd936a](https://github.com/cabichahine/stratif.io/commit/cbd936a7802468f21f8caef2372de51672e03184))
+
 ## [0.17.1](https://github.com/cabichahine/stratif.io/compare/v0.17.0...v0.17.1) (2026-04-02)
 
 
