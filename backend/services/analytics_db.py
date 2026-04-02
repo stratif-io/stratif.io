@@ -283,7 +283,9 @@ async def open_analytics_db(
     ts_f = schema_config.timestamp_field if schema_config else "timestamp"
     en_f = schema_config.event_name_field if schema_config else "event_name"
     events_table = (
-        schema_config.events_table if schema_config and schema_config.events_table else "events"
+        schema_config.events_table
+        if schema_config and schema_config.events_table
+        else "events"
     )
     custom_props: list[dict] = (
         [
@@ -293,9 +295,15 @@ async def open_analytics_db(
         if schema_config
         else []
     )
-    session_timeout_minutes: int = schema_config.session_timeout_minutes if schema_config else 30
-    resurrection_window_days: int = schema_config.resurrection_window_days if schema_config else 30
-    power_user_threshold_days: int = schema_config.power_user_threshold_days if schema_config else 4
+    session_timeout_minutes: int = (
+        schema_config.session_timeout_minutes if schema_config else 30
+    )
+    resurrection_window_days: int = (
+        schema_config.resurrection_window_days if schema_config else 30
+    )
+    power_user_threshold_days: int = (
+        schema_config.power_user_threshold_days if schema_config else 4
+    )
 
     dialect = backend.dialect_name
     needs_remap = (

@@ -28,14 +28,16 @@ def schema_client(tmp_path):
         factory = async_sessionmaker(engine, expire_on_commit=False)
         async with factory() as session:
             now = datetime.now(UTC).replace(tzinfo=None)
-            session.add(Connection(
-                id="conn-1",
-                name="Test",
-                db_type="sqlite",
-                credentials_encrypted="x",
-                created_at=now,
-                updated_at=now,
-            ))
+            session.add(
+                Connection(
+                    id="conn-1",
+                    name="Test",
+                    db_type="sqlite",
+                    credentials_encrypted="x",
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
             await session.commit()
         await engine.dispose()
 

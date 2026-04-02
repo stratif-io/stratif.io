@@ -67,7 +67,9 @@ async def list_connections(session: DBSession):
     ]
 
 
-@router.post("/", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_connection(body: ConnectionCreate, session: DBSession):
     now = _now()
     encrypted = encrypt_credentials(body.credentials)
@@ -157,7 +159,9 @@ async def test_connection(conn_id: str, session: DBSession):
             detail="Connection timed out after 10 seconds",
         ) from None
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -180,11 +184,15 @@ async def get_schema_config(conn_id: str, session: DBSession):
 
 
 @router.put("/{conn_id}/schema", response_model=SchemaConfigResponse)
-async def upsert_schema_config(conn_id: str, body: SchemaConfigBody, session: DBSession):
+async def upsert_schema_config(
+    conn_id: str, body: SchemaConfigBody, session: DBSession
+):
     await _get_connection_or_404(conn_id, session)
 
     result = await session.execute(
-        select(ConnectionSchemaConfig).where(ConnectionSchemaConfig.connection_id == conn_id)
+        select(ConnectionSchemaConfig).where(
+            ConnectionSchemaConfig.connection_id == conn_id
+        )
     )
     config = result.scalar_one_or_none()
     now = _now()
@@ -215,15 +223,17 @@ async def upsert_schema_config(conn_id: str, body: SchemaConfigBody, session: DB
         )
     )
     for i, prop in enumerate(body.custom_properties):
-        session.add(ConnectionCustomProperty(
-            id=str(uuid.uuid4()),
-            schema_config_id=config.id,
-            name=prop.name,
-            path=prop.path,
-            type=prop.type,
-            category=prop.category,
-            sort_order=i,
-        ))
+        session.add(
+            ConnectionCustomProperty(
+                id=str(uuid.uuid4()),
+                schema_config_id=config.id,
+                name=prop.name,
+                path=prop.path,
+                type=prop.type,
+                category=prop.category,
+                sort_order=i,
+            )
+        )
 
     await session.commit()
 
@@ -264,11 +274,15 @@ async def get_filter_config(conn_id: str, session: DBSession):
 
 
 @router.put("/{conn_id}/filters", response_model=FilterConfigResponse)
-async def upsert_filter_config(conn_id: str, body: FilterConfigBody, session: DBSession):
+async def upsert_filter_config(
+    conn_id: str, body: FilterConfigBody, session: DBSession
+):
     await _get_connection_or_404(conn_id, session)
 
     result = await session.execute(
-        select(ConnectionFilterConfig).where(ConnectionFilterConfig.connection_id == conn_id)
+        select(ConnectionFilterConfig).where(
+            ConnectionFilterConfig.connection_id == conn_id
+        )
     )
     config = result.scalar_one_or_none()
     now = _now()
@@ -287,14 +301,16 @@ async def upsert_filter_config(conn_id: str, body: FilterConfigBody, session: DB
         )
     )
     for i, field in enumerate(body.filter_fields):
-        session.add(ConnectionFilterField(
-            id=str(uuid.uuid4()),
-            filter_config_id=config.id,
-            field=field.field,
-            label=field.label,
-            icon=field.icon,
-            sort_order=i,
-        ))
+        session.add(
+            ConnectionFilterField(
+                id=str(uuid.uuid4()),
+                filter_config_id=config.id,
+                field=field.field,
+                label=field.label,
+                icon=field.icon,
+                sort_order=i,
+            )
+        )
 
     await session.commit()
 

@@ -39,13 +39,25 @@ class ConnectionSchemaConfig(Base):
     connection_id: Mapped[str] = mapped_column(
         String, ForeignKey("connections.id", ondelete="CASCADE"), unique=True
     )
-    user_id_field: Mapped[str] = mapped_column(String, nullable=False, default="user_id")
-    timestamp_field: Mapped[str] = mapped_column(String, nullable=False, default="timestamp")
-    event_name_field: Mapped[str] = mapped_column(String, nullable=False, default="event_name")
+    user_id_field: Mapped[str] = mapped_column(
+        String, nullable=False, default="user_id"
+    )
+    timestamp_field: Mapped[str] = mapped_column(
+        String, nullable=False, default="timestamp"
+    )
+    event_name_field: Mapped[str] = mapped_column(
+        String, nullable=False, default="event_name"
+    )
     events_table: Mapped[str] = mapped_column(String, nullable=False, default="events")
-    session_timeout_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
-    resurrection_window_days: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
-    power_user_threshold_days: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
+    session_timeout_minutes: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=30
+    )
+    resurrection_window_days: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=30
+    )
+    power_user_threshold_days: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=4
+    )
     email_field: Mapped[str | None] = mapped_column(String, nullable=True)
     first_name_field: Mapped[str | None] = mapped_column(String, nullable=True)
     last_name_field: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -96,7 +108,9 @@ class ConnectionCustomProperty(Base):
     category: Mapped[str | None] = mapped_column(String, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    schema_config: Mapped[ConnectionSchemaConfig] = relationship(back_populates="custom_properties")
+    schema_config: Mapped[ConnectionSchemaConfig] = relationship(
+        back_populates="custom_properties"
+    )
 
 
 class ConnectionPinnedMetric(Base):
@@ -109,7 +123,9 @@ class ConnectionPinnedMetric(Base):
     metric_key: Mapped[str] = mapped_column(String, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    schema_config: Mapped[ConnectionSchemaConfig] = relationship(back_populates="pinned_metrics")
+    schema_config: Mapped[ConnectionSchemaConfig] = relationship(
+        back_populates="pinned_metrics"
+    )
 
 
 class ConnectionFilterField(Base):
@@ -124,4 +140,6 @@ class ConnectionFilterField(Base):
     icon: Mapped[str] = mapped_column(String, nullable=False, default="filter")
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    filter_config: Mapped[ConnectionFilterConfig] = relationship(back_populates="filter_fields")
+    filter_config: Mapped[ConnectionFilterConfig] = relationship(
+        back_populates="filter_fields"
+    )

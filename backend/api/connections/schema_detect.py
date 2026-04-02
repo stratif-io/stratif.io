@@ -180,7 +180,9 @@ def _parse_struct_field(field_def: str, prefix: str, results: list) -> None:
 
 
 @router.get("/{conn_id}/schema/detect")
-async def detect_schema(conn_id: str, session: DBSession, events_table: str | None = None):
+async def detect_schema(
+    conn_id: str, session: DBSession, events_table: str | None = None
+):
     """Detect columns from the target database and suggest field mappings."""
     from backend.backends import get_backend
 

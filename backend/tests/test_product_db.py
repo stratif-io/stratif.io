@@ -98,15 +98,17 @@ class TestConnectionModel:
             updated_at=datetime.now(UTC).replace(tzinfo=None),
         )
         session.add(config)
-        session.add(ConnectionCustomProperty(
-            id=str(uuid.uuid4()),
-            schema_config_id=config_id,
-            name="plan",
-            path="properties.plan",
-            type="string",
-            category=None,
-            sort_order=0,
-        ))
+        session.add(
+            ConnectionCustomProperty(
+                id=str(uuid.uuid4()),
+                schema_config_id=config_id,
+                name="plan",
+                path="properties.plan",
+                type="string",
+                category=None,
+                sort_order=0,
+            )
+        )
         await session.commit()
 
         result = await session.execute(
@@ -126,19 +128,23 @@ class TestConnectionModel:
         session.add(conn)
         await session.flush()
         fc_id = str(uuid.uuid4())
-        session.add(ConnectionFilterConfig(
-            id=fc_id,
-            connection_id="c1",
-            updated_at=datetime.now(UTC).replace(tzinfo=None),
-        ))
-        session.add(ConnectionFilterField(
-            id=str(uuid.uuid4()),
-            filter_config_id=fc_id,
-            field="plan",
-            label="Plan",
-            icon="filter",
-            sort_order=0,
-        ))
+        session.add(
+            ConnectionFilterConfig(
+                id=fc_id,
+                connection_id="c1",
+                updated_at=datetime.now(UTC).replace(tzinfo=None),
+            )
+        )
+        session.add(
+            ConnectionFilterField(
+                id=str(uuid.uuid4()),
+                filter_config_id=fc_id,
+                field="plan",
+                label="Plan",
+                icon="filter",
+                sort_order=0,
+            )
+        )
         await session.commit()
 
         result = await session.execute(
