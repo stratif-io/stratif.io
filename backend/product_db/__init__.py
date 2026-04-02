@@ -1,4 +1,4 @@
-from .base import ProductDB
+from .protocol import ProductDB
 from .database import SQLiteProductDB
 from .deps import ProductDBDep, get_product_db
 from .migrations import init_product_db
