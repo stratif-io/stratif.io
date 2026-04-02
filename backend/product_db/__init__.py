@@ -1,12 +1,22 @@
-from .base import ProductDB
-from .database import SQLiteProductDB
-from .deps import ProductDBDep, get_product_db
-from .migrations import init_product_db
+from .database import init_product_db
+from .deps import DBSession, get_db
+from .models import (
+    Connection,
+    ConnectionCustomProperty,
+    ConnectionFilterConfig,
+    ConnectionFilterField,
+    ConnectionPinnedMetric,
+    ConnectionSchemaConfig,
+)
 
 __all__ = [
-    "ProductDB",
-    "SQLiteProductDB",
-    "get_product_db",
-    "ProductDBDep",
+    "get_db",
+    "DBSession",
     "init_product_db",
+    "Connection",
+    "ConnectionSchemaConfig",
+    "ConnectionFilterConfig",
+    "ConnectionCustomProperty",
+    "ConnectionPinnedMetric",
+    "ConnectionFilterField",
 ]

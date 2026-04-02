@@ -8,20 +8,6 @@ repos:
         files: ^(pyproject\.toml|uv\.lock)$
         pass_filenames: false
 
-      - id: ruff-lint
-        name: ruff (lint)
-        entry: uv run ruff check .
-        language: system
-        types: [python]
-        pass_filenames: false
-
-      - id: ruff-format
-        name: ruff (format)
-        entry: uv run ruff format --check .
-        language: system
-        types: [python]
-        pass_filenames: false 
-
       - id: ty
         name: ty (type check)
         entry: uv run ty check .
@@ -35,3 +21,12 @@ repos:
         language: system
         files: ^frontend/
         pass_filenames: false
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.2
+    hooks:
+      - id: ruff
+        name: ruff (lint + fix)
+        args: [--fix]
+      - id: ruff-format
+        name: ruff (format)

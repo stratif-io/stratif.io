@@ -13,6 +13,7 @@ Copy connections.yaml.example → connections.yaml at the repo root and fill
 in your credentials to run E2E tests locally.
 """
 
+import asyncio
 import os
 import pathlib
 
@@ -22,8 +23,8 @@ from starlette.testclient import TestClient
 
 from backend.config import settings
 from backend.main import app
-from backend.product_db.deps import get_product_db
-from backend.product_db.migrations import init_product_db
+from backend.product_db.database import init_product_db, reset_engine
+from backend.product_db.deps import get_db
 
 # ---------------------------------------------------------------------------
 # Module-level config — parsed at import time so setup_class can access it
@@ -73,25 +74,29 @@ _E2E_ENCRYPTION_KEY = "e2e-test-encryption-key-32-chars!!"
 
 @pytest.fixture(scope="session")
 def client(tmp_path_factory):
-    """Return a TestClient backed by a temp-file SQLite product DB.
-
-    Why a named file (not :memory:): SQLiteProductDB opens a new
-    sqlite3.connect() per operation. :memory: creates a separate isolated
-    DB on each call. A named file ensures all callers — both Depends() and
-    direct get_product_db() calls in routers — see the same data.
-
-    Why cache_clear() before AND after: clears any stale cached instance
-    from a prior run before setup, and prevents the temp-file path from
-    leaking beyond this session after teardown.
-    """
+    """Return a TestClient backed by a temp-file SQLite product DB."""
     db_path = tmp_path_factory.mktemp("product_db") / "product.db"
+    db_url = f"sqlite+aiosqlite:///{db_path}"
 
-    settings.product_db_path = str(db_path)
+    settings.product_db_url = db_url
     settings.encryption_key = _E2E_ENCRYPTION_KEY
-    get_product_db.cache_clear()
-    init_product_db()
+    reset_engine()
+    asyncio.run(init_product_db())
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    test_engine = create_async_engine(db_url)
+    test_factory = async_sessionmaker(test_engine, expire_on_commit=False)
+
+    async def override_get_db():
+        async with test_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_get_db
 
     with TestClient(app, raise_server_exceptions=True) as c:
         yield c
 
-    get_product_db.cache_clear()
+    app.dependency_overrides.pop(get_db, None)
+    asyncio.run(test_engine.dispose())
+    reset_engine()
