@@ -3,29 +3,30 @@
 from fastapi import APIRouter, HTTPException
 
 from backend.backends import get_backend
-from backend.product_db import get_product_db
+from backend.product_db.deps import DBSession
+from backend.product_db.models import Connection
 from backend.services.crypto import decrypt_credentials
 from backend.services.pool import _pool_get
 
 router = APIRouter()
 
 
-def _get_connection_or_404(conn_id: str):
-    db = get_product_db()
-    row = db.fetchone("SELECT * FROM connections WHERE id = ?", (conn_id,))
-    if not row:
+async def _get_connection_or_404(conn_id: str, session) -> Connection:
+    conn = await session.get(Connection, conn_id)
+    if not conn:
         raise HTTPException(status_code=404, detail="Connection not found")
-    return row
+    return conn
 
 
 @router.get("/{conn_id}/browse")
 async def browse_connection(
     conn_id: str,
+    session: DBSession,
     catalog: str | None = None,
     schema: str | None = None,
 ):
-    row = _get_connection_or_404(conn_id)
-    db_type: str = row["db_type"]
+    conn = await _get_connection_or_404(conn_id, session)
+    db_type: str = conn.db_type
 
     try:
         backend = get_backend(db_type)
@@ -35,7 +36,7 @@ async def browse_connection(
         ) from None
 
     try:
-        creds = decrypt_credentials(row["credentials_encrypted"])
+        creds = decrypt_credentials(conn.credentials_encrypted)
     except ValueError as exc:
         raise HTTPException(
             status_code=500, detail="Failed to decrypt credentials"
@@ -46,16 +47,16 @@ async def browse_connection(
     try:
         if backend.use_pool:
             pool_key = backend.pool_key(conn_id, credentials)
-            conn = _pool_get(
+            db_conn = _pool_get(
                 pool_key, lambda: backend.open(credentials, read_only=False)
             )
-            items = backend.browse(conn, catalog=catalog, schema=schema)
+            items = backend.browse(db_conn, catalog=catalog, schema=schema)
         else:
-            conn = backend.open(credentials, read_only=True)
+            db_conn = backend.open(credentials, read_only=True)
             try:
-                items = backend.browse(conn, catalog=catalog, schema=schema)
+                items = backend.browse(db_conn, catalog=catalog, schema=schema)
             finally:
-                conn.close()
+                db_conn.close()
     except HTTPException:
         raise
     except Exception as exc:
@@ -65,10 +66,10 @@ async def browse_connection(
 
 
 @router.get("/{conn_id}/tables")
-async def list_tables(conn_id: str):
+async def list_tables(conn_id: str, session: DBSession):
     """Return a flat list of all tables for the Query Studio catalog."""
-    row = _get_connection_or_404(conn_id)
-    db_type: str = row["db_type"]
+    conn = await _get_connection_or_404(conn_id, session)
+    db_type: str = conn.db_type
 
     try:
         backend = get_backend(db_type)
@@ -78,7 +79,7 @@ async def list_tables(conn_id: str):
         ) from None
 
     try:
-        creds = decrypt_credentials(row["credentials_encrypted"])
+        creds = decrypt_credentials(conn.credentials_encrypted)
     except ValueError as exc:
         raise HTTPException(
             status_code=500, detail="Failed to decrypt credentials"
@@ -86,12 +87,12 @@ async def list_tables(conn_id: str):
 
     credentials = backend.parse_credentials(creds)
 
-    def _browse(conn, catalog, schema):
-        return backend.browse(conn, catalog=catalog, schema=schema)
+    def _browse(db_conn, catalog, schema):
+        return backend.browse(db_conn, catalog=catalog, schema=schema)
 
-    def _collect(conn) -> list[dict]:
+    def _collect(db_conn) -> list[dict]:
         tables = []
-        top = _browse(conn, None, None)
+        top = _browse(db_conn, None, None)
         for item in top:
             kind = item.get("kind")
             name = item.get("name", "")
@@ -106,7 +107,7 @@ async def list_tables(conn_id: str):
                     }
                 )
             elif kind == "schema":
-                for child in _browse(conn, None, name):
+                for child in _browse(db_conn, None, name):
                     if child.get("kind") == "table":
                         tables.append(
                             {
@@ -117,10 +118,10 @@ async def list_tables(conn_id: str):
                             }
                         )
             elif kind == "catalog":
-                for schema_item in _browse(conn, name, None):
+                for schema_item in _browse(db_conn, name, None):
                     if schema_item.get("kind") == "schema":
                         schema_name = schema_item["name"]
-                        for child in _browse(conn, name, schema_name):
+                        for child in _browse(db_conn, name, schema_name):
                             if child.get("kind") == "table":
                                 tables.append(
                                     {
@@ -136,16 +137,16 @@ async def list_tables(conn_id: str):
     try:
         if backend.use_pool:
             pool_key = backend.pool_key(conn_id, credentials)
-            conn = _pool_get(
+            db_conn = _pool_get(
                 pool_key, lambda: backend.open(credentials, read_only=False)
             )
-            tables = _collect(conn)
+            tables = _collect(db_conn)
         else:
-            conn = backend.open(credentials, read_only=True)
+            db_conn = backend.open(credentials, read_only=True)
             try:
-                tables = _collect(conn)
+                tables = _collect(db_conn)
             finally:
-                conn.close()
+                db_conn.close()
     except HTTPException:
         raise
     except Exception as exc:
@@ -155,10 +156,10 @@ async def list_tables(conn_id: str):
 
 
 @router.get("/{conn_id}/columns")
-async def list_columns(conn_id: str, table: str):
+async def list_columns(conn_id: str, session: DBSession, table: str):
     """Return column names for a given table (full_name), for the Query Studio catalog."""
-    row = _get_connection_or_404(conn_id)
-    db_type: str = row["db_type"]
+    conn = await _get_connection_or_404(conn_id, session)
+    db_type: str = conn.db_type
 
     try:
         backend = get_backend(db_type)
@@ -168,7 +169,7 @@ async def list_columns(conn_id: str, table: str):
         ) from None
 
     try:
-        creds = decrypt_credentials(row["credentials_encrypted"])
+        creds = decrypt_credentials(conn.credentials_encrypted)
     except ValueError as exc:
         raise HTTPException(
             status_code=500, detail="Failed to decrypt credentials"
@@ -179,16 +180,16 @@ async def list_columns(conn_id: str, table: str):
     try:
         if backend.use_pool:
             pool_key = backend.pool_key(conn_id, credentials)
-            conn = _pool_get(
+            db_conn = _pool_get(
                 pool_key, lambda: backend.open(credentials, read_only=False)
             )
-            columns = backend.get_columns_for_browse(conn, table)
+            columns = backend.get_columns_for_browse(db_conn, table)
         else:
-            conn = backend.open(credentials, read_only=True)
+            db_conn = backend.open(credentials, read_only=True)
             try:
-                columns = backend.get_columns_for_browse(conn, table)
+                columns = backend.get_columns_for_browse(db_conn, table)
             finally:
-                conn.close()
+                db_conn.close()
     except HTTPException:
         raise
     except Exception as exc:

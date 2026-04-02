@@ -14,7 +14,7 @@ from backend.services.sql_builder import json_extract_string
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from backend.product_db import ProductDB
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 log = structlog.get_logger(__name__)
 
@@ -238,59 +238,71 @@ class AnalyticsDatabase:
         return self._power_user_threshold_days
 
 
-def open_analytics_db(
+async def open_analytics_db(
     connection_id: str,
-    product_db: "ProductDB",
+    session: "AsyncSession",
     registry: "dict[str, DatabaseBackend]",
 ) -> AnalyticsDatabase:
     """Open a schema-mapped analytics DB for the given connection ID."""
-    import json
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
 
+    from backend.product_db.models import (
+        Connection,
+        ConnectionFilterConfig,
+        ConnectionSchemaConfig,
+    )
     from backend.services.crypto import decrypt_credentials
 
-    row = product_db.fetchone(
-        "SELECT * FROM connections WHERE id = ?", (connection_id,)
+    result = await session.execute(
+        select(Connection)
+        .options(
+            selectinload(Connection.schema_config).selectinload(
+                ConnectionSchemaConfig.custom_properties
+            ),
+            selectinload(Connection.filter_config).selectinload(
+                ConnectionFilterConfig.filter_fields
+            ),
+        )
+        .where(Connection.id == connection_id)
     )
-    if not row:
+    conn_obj = result.scalar_one_or_none()
+    if not conn_obj:
         raise HTTPException(status_code=404, detail="Connection not found")
 
-    db_type: str = row["db_type"]
+    db_type: str = conn_obj.db_type
     if db_type not in registry:
         raise HTTPException(status_code=400, detail=f"Unsupported db_type: {db_type!r}")
     backend = registry[db_type]
 
-    creds = decrypt_credentials(row["credentials_encrypted"])
+    creds = decrypt_credentials(conn_obj.credentials_encrypted)
     credentials = backend.parse_credentials(creds)
 
-    schema_row = product_db.fetchone(
-        "SELECT * FROM connection_schema_configs WHERE connection_id = ?",
-        (connection_id,),
-    )
-    uid_f = schema_row["user_id_field"] if schema_row else "user_id"
-    ts_f = schema_row["timestamp_field"] if schema_row else "timestamp"
-    en_f = schema_row["event_name_field"] if schema_row else "event_name"
+    schema_config = conn_obj.schema_config
+    uid_f = schema_config.user_id_field if schema_config else "user_id"
+    ts_f = schema_config.timestamp_field if schema_config else "timestamp"
+    en_f = schema_config.event_name_field if schema_config else "event_name"
     events_table = (
-        schema_row["events_table"]
-        if schema_row and schema_row["events_table"]
+        schema_config.events_table
+        if schema_config and schema_config.events_table
         else "events"
     )
     custom_props: list[dict] = (
-        json.loads(schema_row["custom_properties"]) if schema_row else []
+        [
+            {"name": p.name, "path": p.path, "type": p.type, "category": p.category}
+            for p in sorted(schema_config.custom_properties, key=lambda x: x.sort_order)
+        ]
+        if schema_config
+        else []
     )
     session_timeout_minutes: int = (
-        schema_row["session_timeout_minutes"]
-        if schema_row and schema_row["session_timeout_minutes"] is not None
-        else 30
+        schema_config.session_timeout_minutes if schema_config else 30
     )
     resurrection_window_days: int = (
-        schema_row["resurrection_window_days"]
-        if schema_row and schema_row["resurrection_window_days"] is not None
-        else 30
+        schema_config.resurrection_window_days if schema_config else 30
     )
     power_user_threshold_days: int = (
-        schema_row["power_user_threshold_days"]
-        if schema_row and schema_row["power_user_threshold_days"] is not None
-        else 4
+        schema_config.power_user_threshold_days if schema_config else 4
     )
 
     dialect = backend.dialect_name
@@ -307,18 +319,18 @@ def open_analytics_db(
         if "name" in p and "path" in p
     }
 
-    filter_row = product_db.fetchone(
-        "SELECT * FROM connection_filter_configs WHERE connection_id = ?",
-        (connection_id,),
-    )
+    filter_config = conn_obj.filter_config
     filter_fields: list[dict] = (
-        json.loads(filter_row["filter_fields"]) if filter_row else []
+        [
+            {"field": f.field, "label": f.label, "icon": f.icon}
+            for f in sorted(filter_config.filter_fields, key=lambda x: x.sort_order)
+        ]
+        if filter_config
+        else []
     )
 
     _iq = backend.identifier_quote_char
 
-    # Identity fields (first_name, email, etc.) are plain columns — add them to
-    # custom_prop_exprs so they work as filter fields (autocomplete + WHERE clauses).
     _identity_field_keys = (
         "email_field",
         "first_name_field",
@@ -326,9 +338,9 @@ def open_analytics_db(
         "date_of_birth_field",
         "phone_field",
     )
-    if schema_row:
+    if schema_config:
         for _key in _identity_field_keys:
-            _col = schema_row[_key]
+            _col = getattr(schema_config, _key, None)
             if _col:
                 custom_prop_exprs[_col] = _resolve_path_to_sql(_col, dialect)
 
@@ -343,8 +355,6 @@ def open_analytics_db(
                 _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
             )
         else:
-            # Not a known custom prop or standard field — resolve as a path (handles both
-            # plain columns like "first_name" and dotted paths like "traits.first_name").
             filter_exprs[field] = _resolve_path_to_sql(field, dialect)
 
     shared_kwargs: dict = {
