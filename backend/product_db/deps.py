@@ -8,7 +8,7 @@ from typing import Annotated
 from fastapi import Depends
 
 from backend.config import settings
-from backend.product_db.base import ProductDB
+from backend.product_db.protocol import ProductDB
 
 
 @lru_cache
