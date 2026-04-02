@@ -286,13 +286,23 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         if schema_data.get("has_schema", True):
             schema_config = MagicMock()
             schema_config.user_id_field = schema_data.get("user_id_field", "user_id")
-            schema_config.timestamp_field = schema_data.get("timestamp_field", "timestamp")
-            schema_config.event_name_field = schema_data.get("event_name_field", "event_name")
+            schema_config.timestamp_field = schema_data.get(
+                "timestamp_field", "timestamp"
+            )
+            schema_config.event_name_field = schema_data.get(
+                "event_name_field", "event_name"
+            )
             schema_config.events_table = schema_data.get("events_table", "events")
             schema_config.custom_properties = custom_props_objs
-            schema_config.session_timeout_minutes = schema_data.get("session_timeout_minutes", 30)
-            schema_config.resurrection_window_days = schema_data.get("resurrection_window_days", 30)
-            schema_config.power_user_threshold_days = schema_data.get("power_user_threshold_days", 4)
+            schema_config.session_timeout_minutes = schema_data.get(
+                "session_timeout_minutes", 30
+            )
+            schema_config.resurrection_window_days = schema_data.get(
+                "resurrection_window_days", 30
+            )
+            schema_config.power_user_threshold_days = schema_data.get(
+                "power_user_threshold_days", 4
+            )
             schema_config.email_field = schema_data.get("email_field")
             schema_config.first_name_field = schema_data.get("first_name_field")
             schema_config.last_name_field = schema_data.get("last_name_field")

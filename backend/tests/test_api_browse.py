@@ -59,14 +59,16 @@ def browse_client(duckdb_file):
         factory = async_sessionmaker(engine, expire_on_commit=False)
         async with factory() as session:
             now = datetime.now(UTC).replace(tzinfo=None)
-            session.add(Connection(
-                id="conn-1",
-                name="Test DuckDB",
-                db_type="duckdb",
-                credentials_encrypted=encrypted,
-                created_at=now,
-                updated_at=now,
-            ))
+            session.add(
+                Connection(
+                    id="conn-1",
+                    name="Test DuckDB",
+                    db_type="duckdb",
+                    credentials_encrypted=encrypted,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
             await session.commit()
         await engine.dispose()
 
@@ -84,6 +86,7 @@ def browse_client(duckdb_file):
         yield client
     app.dependency_overrides.clear()
     import contextlib
+
     with contextlib.suppress(FileNotFoundError):
         os.unlink(tmp)
 
