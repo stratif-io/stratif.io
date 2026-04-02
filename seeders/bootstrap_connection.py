@@ -1,4 +1,4 @@
-"""Bootstrap a sample DuckDB connection into the product SQLite DB.
+"""Bootstrap a sample DuckDB connection into the product DB.
 
 Run after seed-duckdb on first Docker startup. Idempotent — safe to call
 multiple times; skips insertion if "Sample DuckDB" already exists.
@@ -9,13 +9,21 @@ Usage:
 """
 
 import argparse
-import json
-import sqlite3 as _sqlite3
+import asyncio
 import uuid
 from datetime import UTC, datetime
 
-from backend.product_db.deps import get_product_db
-from backend.product_db.migrations import init_product_db
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.product_db.database import get_session_factory, init_product_db
+from backend.product_db.models import (
+    Connection,
+    ConnectionCustomProperty,
+    ConnectionFilterConfig,
+    ConnectionFilterField,
+    ConnectionSchemaConfig,
+)
 from backend.services.crypto import decrypt_credentials, encrypt_credentials
 
 CONNECTION_NAME = "Sample DuckDB"
@@ -38,23 +46,22 @@ FILTER_FIELDS = [
 ]
 
 
-def _now() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+async def _bootstrap(db_path: str) -> None:
+    await init_product_db()
+    factory = get_session_factory()
+    async with factory() as session:
+        await _upsert_connection(session, db_path)
 
 
-def bootstrap(db_path: str = DEFAULT_PATH) -> None:
-    """Insert the sample DuckDB connection if it doesn't already exist."""
-    init_product_db()
-    db = get_product_db()
-
-    existing = db.fetchone(
-        "SELECT id, credentials_encrypted FROM connections WHERE name = ?",
-        (CONNECTION_NAME,),
+async def _upsert_connection(session: AsyncSession, db_path: str) -> None:
+    result = await session.execute(
+        select(Connection).where(Connection.name == CONNECTION_NAME)
     )
+    existing = result.scalar_one_or_none()
+
     if existing:
-        # Validate credentials have the correct key; fix silently if stale.
         try:
-            creds = decrypt_credentials(existing["credentials_encrypted"])
+            creds = decrypt_credentials(existing.credentials_encrypted)
         except Exception:
             creds = {}
         if creds.get("file_path") == db_path:
@@ -62,46 +69,69 @@ def bootstrap(db_path: str = DEFAULT_PATH) -> None:
                 f"[stratifio] Connection '{CONNECTION_NAME}' already exists — skipping."
             )
             return
-        # Credentials are stale (e.g. wrong key from an older bootstrap run) — update them.
-        db.execute(
-            "UPDATE connections SET credentials_encrypted = ?, updated_at = ? WHERE id = ?",
-            (encrypt_credentials({"file_path": db_path}), _now(), existing["id"]),
-        )
+        existing.credentials_encrypted = encrypt_credentials({"file_path": db_path})
+        await session.commit()
         print(f"[stratifio] Updated credentials for '{CONNECTION_NAME}' → {db_path}")
         return
 
     conn_id = str(uuid.uuid4())
-    now = _now()
-    credentials_encrypted = encrypt_credentials({"file_path": db_path})
+    schema_id = str(uuid.uuid4())
+    filter_id = str(uuid.uuid4())
+    now = datetime.now(UTC).replace(tzinfo=None)
 
-    # Use a direct connection for atomic insertion of all three rows
-    with _sqlite3.connect(db.db_path) as raw_conn:  # type: ignore[union-attr]
-        raw_conn.execute("PRAGMA foreign_keys=ON")
-        raw_conn.execute(
-            """
-            INSERT INTO connections (id, name, db_type, credentials_encrypted, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (conn_id, CONNECTION_NAME, "duckdb", credentials_encrypted, now, now),
-        )
-        raw_conn.execute(
-            """
-            INSERT INTO connection_schema_configs
-                (id, connection_id, custom_properties, updated_at)
-            VALUES (?, ?, ?, ?)
-            """,
-            (str(uuid.uuid4()), conn_id, json.dumps(CUSTOM_PROPERTIES), now),
-        )
-        raw_conn.execute(
-            """
-            INSERT INTO connection_filter_configs
-                (id, connection_id, filter_fields, updated_at)
-            VALUES (?, ?, ?, ?)
-            """,
-            (str(uuid.uuid4()), conn_id, json.dumps(FILTER_FIELDS), now),
-        )
+    connection = Connection(
+        id=conn_id,
+        name=CONNECTION_NAME,
+        db_type="duckdb",
+        credentials_encrypted=encrypt_credentials({"file_path": db_path}),
+        created_at=now,
+        updated_at=now,
+    )
+    schema_config = ConnectionSchemaConfig(
+        id=schema_id,
+        connection_id=conn_id,
+        updated_at=now,
+        custom_properties=[
+            ConnectionCustomProperty(
+                id=str(uuid.uuid4()),
+                schema_config_id=schema_id,
+                name=p["name"],
+                path=p["path"],
+                type=p["type"],
+                sort_order=i,
+            )
+            for i, p in enumerate(CUSTOM_PROPERTIES)
+        ],
+    )
+    filter_config = ConnectionFilterConfig(
+        id=filter_id,
+        connection_id=conn_id,
+        updated_at=now,
+        filter_fields=[
+            ConnectionFilterField(
+                id=str(uuid.uuid4()),
+                filter_config_id=filter_id,
+                field=f["field"],
+                label=f["label"],
+                icon=f["icon"],
+                sort_order=i,
+            )
+            for i, f in enumerate(FILTER_FIELDS)
+        ],
+    )
+    # Add pinned metrics (empty by default)
+    schema_config.pinned_metrics = []
 
+    session.add(connection)
+    session.add(schema_config)
+    session.add(filter_config)
+    await session.commit()
     print(f"[stratifio] Bootstrapped connection '{CONNECTION_NAME}' → {db_path}")
+
+
+def bootstrap(db_path: str = DEFAULT_PATH) -> None:
+    """Insert the sample DuckDB connection if it doesn't already exist."""
+    asyncio.run(_bootstrap(db_path))
 
 
 def main() -> None:

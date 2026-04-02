@@ -2,53 +2,58 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+import asyncio
+from datetime import UTC, datetime
 
 import pytest
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from starlette.testclient import TestClient
 
 from backend.api.connections.schema_detect import _suggest_fields
 from backend.main import app
-from backend.product_db.database import SQLiteProductDB
-from backend.product_db.migrations import init_product_db
-
-
-def _make_sqlite_row(data: dict):
-    row = MagicMock()
-    row.__getitem__ = lambda self, k: data[k]
-    row.get = lambda k, default=None: data.get(k, default)
-    row.keys = lambda: data.keys()
-    for key, val in data.items():
-        setattr(row, key, val)
-    return row
+from backend.product_db.base import Base
+from backend.product_db.deps import get_db
+from backend.product_db.models import Connection
 
 
 @pytest.fixture()
 def schema_client(tmp_path):
-    """TestClient backed by a real SQLite product DB with migrations applied."""
-    db_path = str(tmp_path / "product.db")
-    db = SQLiteProductDB(db_path)
-    init_product_db(db)
+    """TestClient backed by a real async SQLite product DB."""
+    db_url = f"sqlite+aiosqlite:///{tmp_path / 'product.db'}"
 
-    # Seed a connection row
-    db.execute(
-        "INSERT INTO connections (id, name, db_type, credentials_encrypted, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (
-            "conn-1",
-            "Test",
-            "sqlite",
-            "x",
-            "2024-01-01T00:00:00Z",
-            "2024-01-01T00:00:00Z",
-        ),
-    )
+    async def setup():
+        engine = create_async_engine(db_url)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        async with factory() as session:
+            now = datetime.now(UTC).replace(tzinfo=None)
+            session.add(
+                Connection(
+                    id="conn-1",
+                    name="Test",
+                    db_type="sqlite",
+                    credentials_encrypted="x",
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+            await session.commit()
+        await engine.dispose()
 
-    with (
-        patch("backend.api.connections.crud.get_product_db", return_value=db),
-        TestClient(app) as client,
-    ):
+    asyncio.run(setup())
+
+    test_engine = create_async_engine(db_url)
+    test_factory = async_sessionmaker(test_engine, expire_on_commit=False)
+
+    async def override_get_db():
+        async with test_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as client:
         yield client
+    app.dependency_overrides.clear()
 
 
 class TestSchemaConfigNewFields:
