@@ -595,6 +595,9 @@ export function SchemaConfigTab({ connId }: Props) {
           const value = suggestions[key as keyof typeof suggestions] as string | null | undefined
           if (value) pending.push({ fieldKey: key, label, proposedColumn: value })
         }
+        const identityKeys = new Set(USER_IDENTITY_FIELDS.map((f) => f.key as string))
+        const hasIdentityDetection = pending.some((d) => identityKeys.has(d.fieldKey))
+        if (hasIdentityDetection) setOpenSections((prev) => ({ ...prev, identity: true }))
         setPendingDetections(pending)
 
         const columnNames = columns.map((c: { name: string }) => c.name)
