@@ -65,7 +65,9 @@ async def _upsert_connection(session: AsyncSession, db_path: str) -> None:
         except Exception:
             creds = {}
         if creds.get("file_path") == db_path:
-            print(f"[stratifio] Connection '{CONNECTION_NAME}' already exists — skipping.")
+            print(
+                f"[stratifio] Connection '{CONNECTION_NAME}' already exists — skipping."
+            )
             return
         existing.credentials_encrypted = encrypt_credentials({"file_path": db_path})
         await session.commit()

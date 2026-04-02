@@ -73,31 +73,38 @@ def test_bootstrap_inserts_all_rows(tmp_path):
             assert connections[0].db_type == "duckdb"
 
             schema_configs = (
-                await session.execute(
-                    select(ConnectionSchemaConfig).where(
-                        ConnectionSchemaConfig.connection_id == connections[0].id
+                (
+                    await session.execute(
+                        select(ConnectionSchemaConfig).where(
+                            ConnectionSchemaConfig.connection_id == connections[0].id
+                        )
                     )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             assert len(schema_configs) == 1
 
             props = (
-                await session.execute(
-                    select(ConnectionCustomProperty).where(
-                        ConnectionCustomProperty.schema_config_id == schema_configs[0].id
+                (
+                    await session.execute(
+                        select(ConnectionCustomProperty).where(
+                            ConnectionCustomProperty.schema_config_id
+                            == schema_configs[0].id
+                        )
                     )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             prop_names = [p.name for p in props]
             assert "country" in prop_names
             assert "city" in prop_names
             assert all(p.path.startswith("properties.") for p in props)
 
             filter_fields = (
-                await session.execute(
-                    select(ConnectionFilterField)
-                )
-            ).scalars().all()
+                (await session.execute(select(ConnectionFilterField))).scalars().all()
+            )
             field_names = [f.field for f in filter_fields]
             assert "country" in field_names
             assert "city" in field_names
