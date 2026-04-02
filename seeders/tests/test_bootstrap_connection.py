@@ -1,94 +1,136 @@
 """Tests for seeders.bootstrap_connection."""
 
-import json
-import sqlite3
+import asyncio
 from contextlib import contextmanager
 from unittest.mock import patch
 
+import pytest
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+from backend.product_db.base import Base
+from backend.product_db.database import reset_engine
+from backend.product_db.models import (
+    Connection,
+    ConnectionCustomProperty,
+    ConnectionFilterField,
+    ConnectionSchemaConfig,
+)
+from backend.services.crypto import encrypt_credentials
+
 
 @contextmanager
-def _patch_settings(db_path, enc_key):
-    """Patch settings in all modules that reference it directly."""
-    from backend.product_db.deps import get_product_db
-
-    get_product_db.cache_clear()
+def _patch_db_url(db_url: str, enc_key: str):
+    """Redirect product_db to a temp SQLite file and reset cached engine."""
+    reset_engine()
     with (
-        patch("backend.product_db.deps.settings") as db_s,
+        patch("backend.product_db.database.settings") as db_s,
         patch("backend.services.crypto.settings") as crypto_s,
     ):
-        db_s.product_db_path = db_path
-        db_s.product_db_url = ""
+        db_s.product_db_url = db_url
+        db_s.log_sql = False
         crypto_s.encryption_key = enc_key
-        yield db_s, crypto_s
-    get_product_db.cache_clear()
+        yield
+    reset_engine()
+
+
+def _make_url(tmp_path) -> str:
+    return f"sqlite+aiosqlite:///{tmp_path}/test_product.sqlite"
 
 
 def _setup_db(tmp_path, enc_key="test-encryption-key-for-testing-only"):
-    """Initialise a temp product DB and return its path."""
-    db_path = str(tmp_path / "test_product.sqlite")
-    with _patch_settings(db_path, enc_key):
-        from backend.product_db.migrations import init_product_db
+    """Initialise a temp product DB and return its URL."""
+    url = _make_url(tmp_path)
+    with _patch_db_url(url, enc_key):
+        asyncio.run(_create_schema(url))
+    return url
 
-        init_product_db()
-    return db_path
+
+async def _create_schema(url: str) -> None:
+    engine = create_async_engine(url)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    await engine.dispose()
 
 
 def test_bootstrap_inserts_all_rows(tmp_path):
-    """First call inserts connection, schema config, and filter config."""
+    """First call inserts connection, schema config, filter config, and custom properties."""
     enc_key = "test-encryption-key-for-testing-only"
-    db_path = _setup_db(tmp_path, enc_key)
+    url = _setup_db(tmp_path, enc_key)
 
-    with _patch_settings(db_path, enc_key):
+    with _patch_db_url(url, enc_key):
         from seeders.bootstrap_connection import bootstrap
 
         bootstrap("/data/sample.duckdb")
 
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    connections = conn.execute("SELECT * FROM connections").fetchall()
-    schema_configs = conn.execute("SELECT * FROM connection_schema_configs").fetchall()
-    filter_configs = conn.execute("SELECT * FROM connection_filter_configs").fetchall()
-    conn.close()
+    async def _check():
+        engine = create_async_engine(url)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        async with factory() as session:
+            connections = (await session.execute(select(Connection))).scalars().all()
+            assert len(connections) == 1
+            assert connections[0].name == "Sample DuckDB"
+            assert connections[0].db_type == "duckdb"
 
-    assert len(connections) == 1
-    assert connections[0]["name"] == "Sample DuckDB"
-    assert connections[0]["db_type"] == "duckdb"
+            schema_configs = (
+                await session.execute(
+                    select(ConnectionSchemaConfig).where(
+                        ConnectionSchemaConfig.connection_id == connections[0].id
+                    )
+                )
+            ).scalars().all()
+            assert len(schema_configs) == 1
 
-    assert len(schema_configs) == 1
-    assert schema_configs[0]["connection_id"] == connections[0]["id"]
-    custom_props = json.loads(schema_configs[0]["custom_properties"])
-    prop_names = [p["name"] for p in custom_props]
-    assert "country" in prop_names
-    assert "city" in prop_names
-    assert all(p["path"].startswith("properties.") for p in custom_props)
+            props = (
+                await session.execute(
+                    select(ConnectionCustomProperty).where(
+                        ConnectionCustomProperty.schema_config_id == schema_configs[0].id
+                    )
+                )
+            ).scalars().all()
+            prop_names = [p.name for p in props]
+            assert "country" in prop_names
+            assert "city" in prop_names
+            assert all(p.path.startswith("properties.") for p in props)
 
-    assert len(filter_configs) == 1
-    assert filter_configs[0]["connection_id"] == connections[0]["id"]
-    filter_fields = json.loads(filter_configs[0]["filter_fields"])
-    field_names = [f["field"] for f in filter_fields]
-    assert "country" in field_names
-    assert "city" in field_names
+            filter_fields = (
+                await session.execute(
+                    select(ConnectionFilterField)
+                )
+            ).scalars().all()
+            field_names = [f.field for f in filter_fields]
+            assert "country" in field_names
+            assert "city" in field_names
+        await engine.dispose()
+
+    asyncio.run(_check())
 
 
 def test_bootstrap_credentials_decrypt_correctly(tmp_path):
     """Stored credentials decrypt to the correct path."""
     enc_key = "test-encryption-key-for-testing-only"
-    db_path = _setup_db(tmp_path, enc_key)
+    url = _setup_db(tmp_path, enc_key)
 
-    with _patch_settings(db_path, enc_key):
+    with _patch_db_url(url, enc_key):
         from seeders.bootstrap_connection import bootstrap
 
         bootstrap("/data/sample.duckdb")
 
-    conn = sqlite3.connect(db_path)
-    row = conn.execute("SELECT credentials_encrypted FROM connections").fetchone()
-    conn.close()
+    async def _check():
+        engine = create_async_engine(url)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        async with factory() as session:
+            conn = (await session.execute(select(Connection))).scalar_one()
+            return conn.credentials_encrypted
+        await engine.dispose()
+
+    creds_enc = asyncio.run(_check())
 
     with patch("backend.services.crypto.settings") as s:
         s.encryption_key = enc_key
         from backend.services.crypto import decrypt_credentials
 
-        creds = decrypt_credentials(row[0])
+        creds = decrypt_credentials(creds_enc)
 
     assert creds == {"file_path": "/data/sample.duckdb"}
 
@@ -96,40 +138,51 @@ def test_bootstrap_credentials_decrypt_correctly(tmp_path):
 def test_bootstrap_is_idempotent(tmp_path):
     """Calling bootstrap twice does not create duplicate connections."""
     enc_key = "test-encryption-key-for-testing-only"
-    db_path = _setup_db(tmp_path, enc_key)
+    url = _setup_db(tmp_path, enc_key)
 
-    with _patch_settings(db_path, enc_key):
+    with _patch_db_url(url, enc_key):
         from seeders.bootstrap_connection import bootstrap
 
         bootstrap("/data/sample.duckdb")
-        bootstrap("/data/sample.duckdb")  # second call
+        bootstrap("/data/sample.duckdb")
 
-    conn = sqlite3.connect(db_path)
-    count = conn.execute("SELECT COUNT(*) FROM connections").fetchone()[0]
-    conn.close()
-    assert count == 1
+    async def _check():
+        engine = create_async_engine(url)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        async with factory() as session:
+            count = len((await session.execute(select(Connection))).scalars().all())
+        await engine.dispose()
+        return count
+
+    assert asyncio.run(_check()) == 1
 
 
 def test_bootstrap_custom_path(tmp_path):
     """Custom path is stored in encrypted credentials."""
     enc_key = "test-encryption-key-for-testing-only"
-    db_path = _setup_db(tmp_path, enc_key)
+    url = _setup_db(tmp_path, enc_key)
     custom_path = "/custom/analytics.duckdb"
 
-    with _patch_settings(db_path, enc_key):
+    with _patch_db_url(url, enc_key):
         from seeders.bootstrap_connection import bootstrap
 
         bootstrap(custom_path)
 
-    conn = sqlite3.connect(db_path)
-    row = conn.execute("SELECT credentials_encrypted FROM connections").fetchone()
-    conn.close()
+    async def _check():
+        engine = create_async_engine(url)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        async with factory() as session:
+            conn = (await session.execute(select(Connection))).scalar_one()
+            return conn.credentials_encrypted
+        await engine.dispose()
+
+    creds_enc = asyncio.run(_check())
 
     with patch("backend.services.crypto.settings") as s:
         s.encryption_key = enc_key
         from backend.services.crypto import decrypt_credentials
 
-        creds = decrypt_credentials(row[0])
+        creds = decrypt_credentials(creds_enc)
 
     assert creds == {"file_path": custom_path}
 
@@ -137,49 +190,78 @@ def test_bootstrap_custom_path(tmp_path):
 def test_bootstrap_fixes_stale_credentials(tmp_path):
     """If an existing connection has wrong credential key, bootstrap updates it."""
     enc_key = "test-encryption-key-for-testing-only"
-    db_path = _setup_db(tmp_path, enc_key)
+    url = _setup_db(tmp_path, enc_key)
 
-    # Insert a connection with the old wrong key {"path": ...}
-    with _patch_settings(db_path, enc_key):
-        from backend.product_db.deps import get_product_db
-        from backend.services.crypto import encrypt_credentials
-
-        db = get_product_db()
+    # Insert a connection with stale credentials (wrong key name)
+    async def _seed_stale():
         import uuid
         from datetime import UTC, datetime
 
-        now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-        conn_id = str(uuid.uuid4())
-        db.execute(
-            "INSERT INTO connections (id, name, db_type, credentials_encrypted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (
-                conn_id,
-                "Sample DuckDB",
-                "duckdb",
-                encrypt_credentials({"path": "/data/sample.duckdb"}),
-                now,
-                now,
-            ),
-        )
+        engine = create_async_engine(url)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        async with factory() as session:
+            with patch("backend.services.crypto.settings") as s:
+                s.encryption_key = enc_key
+                stale_creds = encrypt_credentials({"path": "/data/sample.duckdb"})
+            now = datetime.now(UTC).replace(tzinfo=None)
+            session.add(
+                Connection(
+                    id=str(uuid.uuid4()),
+                    name="Sample DuckDB",
+                    db_type="duckdb",
+                    credentials_encrypted=stale_creds,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+            await session.commit()
+        await engine.dispose()
 
-    # Now run bootstrap — it should detect stale creds and fix them
-    with _patch_settings(db_path, enc_key):
+    asyncio.run(_seed_stale())
+
+    with _patch_db_url(url, enc_key):
         from seeders.bootstrap_connection import bootstrap
 
         bootstrap("/data/sample.duckdb")
 
-    conn = sqlite3.connect(db_path)
-    row = conn.execute(
-        "SELECT credentials_encrypted FROM connections WHERE name = 'Sample DuckDB'"
-    ).fetchone()
-    count = conn.execute("SELECT COUNT(*) FROM connections").fetchone()[0]
-    conn.close()
+    async def _check():
+        engine = create_async_engine(url)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        async with factory() as session:
+            connections = (await session.execute(select(Connection))).scalars().all()
+            assert len(connections) == 1
+            return connections[0].credentials_encrypted
+        await engine.dispose()
+
+    creds_enc = asyncio.run(_check())
 
     with patch("backend.services.crypto.settings") as s:
         s.encryption_key = enc_key
         from backend.services.crypto import decrypt_credentials
 
-        creds = decrypt_credentials(row[0])
+        creds = decrypt_credentials(creds_enc)
 
-    assert count == 1  # no duplicate created
-    assert creds == {"file_path": "/data/sample.duckdb"}  # credentials fixed
+    assert creds == {"file_path": "/data/sample.duckdb"}
+
+
+@pytest.mark.parametrize("call_count", [1, 2, 3])
+def test_bootstrap_multiple_calls_remain_idempotent(tmp_path, call_count):
+    """N calls to bootstrap always result in exactly one connection row."""
+    enc_key = "test-encryption-key-for-testing-only"
+    url = _setup_db(tmp_path, enc_key)
+
+    with _patch_db_url(url, enc_key):
+        from seeders.bootstrap_connection import bootstrap
+
+        for _ in range(call_count):
+            bootstrap("/data/sample.duckdb")
+
+    async def _check():
+        engine = create_async_engine(url)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        async with factory() as session:
+            count = len((await session.execute(select(Connection))).scalars().all())
+        await engine.dispose()
+        return count
+
+    assert asyncio.run(_check()) == 1
