@@ -1,29 +1,20 @@
-"""FastAPI dependency for the product database."""
+"""FastAPI dependency for the product database async session."""
 
 from __future__ import annotations
 
-from functools import lru_cache
+from collections.abc import AsyncGenerator
 from typing import Annotated
 
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.config import settings
-from backend.product_db.base import ProductDB
-
-
-@lru_cache
-def get_product_db() -> ProductDB:
-    """Return the configured product DB implementation.
-
-    Uses @lru_cache so a single instance is shared per process.
-    In tests, override via: app.dependency_overrides[get_product_db] = lambda: FakeProductDB()
-    Never call get_product_db() directly in tests — use dependency_overrides.
-    """
-    from backend.product_db.database import SQLiteProductDB
-
-    if not settings.product_db_url or settings.product_db_url.startswith("sqlite"):
-        return SQLiteProductDB(settings.product_db_path)
-    raise ValueError(f"Unsupported product_db_url: {settings.product_db_url!r}")
+from backend.product_db.database import get_session_factory
 
 
-ProductDBDep = Annotated[ProductDB, Depends(get_product_db)]
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Yield an AsyncSession. Use as a FastAPI dependency via DBSession."""
+    async with get_session_factory()() as session:
+        yield session
+
+
+DBSession = Annotated[AsyncSession, Depends(get_db)]
