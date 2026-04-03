@@ -1,5 +1,4 @@
-@import '@fontsource-variable/plus-jakarta-sans';
-@import '@fontsource/jetbrains-mono';
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -69,10 +68,8 @@
   --z-modal: 50;
   --z-tooltip: 60;
 
-  --font-sans:
-    'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system,
-    sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
 }
 
 html,
@@ -111,6 +108,8 @@ body {
   --warning-foreground: 240 39% 14%;
   --success: 142 72% 29%;
   --success-foreground: 138 76% 97%;
+  --color-surface: 210 17% 97%;
+  --color-danger-light: 0 86% 95%;
 }
 
 .dark {
@@ -142,6 +141,8 @@ body {
   --warning-foreground: 240 39% 14%;
   --success: 142 71% 45%;
   --success-foreground: 138 76% 97%;
+  --color-surface: 230 18% 7%;
+  --color-danger-light: 0 63% 18%;
 }
 
 @layer base {
