@@ -1484,7 +1484,7 @@ wheels = [
 
 [[package]]
 name = "stratifio-core"
-version = "0.18.0"
+version = "0.18.2"
 source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
