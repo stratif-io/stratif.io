@@ -15,6 +15,8 @@ import { usePathExplorer } from './hooks/usePathExplorer'
 import { PathFunnelDialog } from './components/PathFunnelDialog'
 import { Badge } from '@/components/ui/badge'
 import { PageTransition } from '@/components/layout/PageTransition'
+import { Header } from '@/components/layout/Header'
+import { SummaryPanel } from '@/components/layout/SummaryPanel'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -166,7 +168,7 @@ function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
 }
 
 export function PathsExplorerPage() {
-  const { dateRange } = useAppStore()
+  const { dateRange, dashboardView } = useAppStore()
   const [searchParams, setSearchParams] = useSearchParams()
 
   // All filter state derived from URL search params
@@ -240,11 +242,41 @@ export function PathsExplorerPage() {
 
   const maxCount = pathData[0]?.occurrence_count ?? 1
 
+  const topPath = pathData[0]
+  const summaryInsight =
+    topPath != null
+      ? `Top path covers ${topPath.percentage_of_total}% of all journeys.`
+      : 'No path data available for the current filters.'
+
+  const summaryTotals =
+    pathData.length > 0
+      ? [
+          {
+            label: 'Unique paths',
+            value: totalPaths.toLocaleString(),
+            color: 'hsl(var(--chart-1))',
+          },
+          {
+            label: 'Top path',
+            value: `${topPath?.percentage_of_total ?? 0}%`,
+            color: 'hsl(var(--chart-2))',
+          },
+          {
+            label: 'Top users',
+            value: (topPath?.unique_users ?? 0).toLocaleString(),
+            color: 'hsl(var(--chart-3))',
+          },
+        ]
+      : []
+
   return (
     <PageTransition>
       <NoConnectionGuard>
         <div className="flex h-full flex-col">
-          {/* Toolbar */}
+          {/* Zone 1: Header */}
+          <Header title="Paths" subtitle="User journey explorer" showShare />
+
+          {/* Toolbar (serves as Zone 2 config bar) */}
           <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b shrink-0">
             <div className="flex items-center rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border">
               {/* Start event */}
@@ -483,59 +515,66 @@ export function PathsExplorerPage() {
             )}
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            <DevCard sql={sql}>
-              {isLoading || eventsLoading ? (
-                <LoadingState message="Analyzing paths…" />
-              ) : isError ? (
-                <QueryError error={error} />
-              ) : pathData.length === 0 ? (
-                <EmptyState
-                  icon={GitFork}
-                  title="No paths found"
-                  description="Try broadening your filters — relax path length, remove start/end events, or expand the date range."
-                />
-              ) : (
-                <div className="space-y-2 p-3">
-                  <div className="flex items-center justify-between px-1">
-                    <p className="text-sm text-muted-foreground">
-                      Showing{' '}
-                      <span className="font-semibold text-foreground">{pathData.length}</span> of{' '}
-                      <span className="font-semibold text-foreground">{totalPaths}</span> paths —
-                      click a path to view its conversion funnel
-                    </p>
-                    <div className="flex gap-1.5">
-                      {startEvent && (
-                        <Badge variant="secondary" className="text-xs">
-                          From: {startEvent}
-                        </Badge>
-                      )}
-                      {endEvent && (
-                        <Badge variant="secondary" className="text-xs">
-                          To: {endEvent}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+          {/* Zone 3: Content */}
+          <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex gap-3">
+              <div className="flex-1 min-w-0">
+                <DevCard sql={sql}>
+                  {isLoading || eventsLoading ? (
+                    <LoadingState message="Analyzing paths…" />
+                  ) : isError ? (
+                    <QueryError error={error} />
+                  ) : pathData.length === 0 ? (
+                    <EmptyState
+                      icon={GitFork}
+                      title="No paths found"
+                      description="Try broadening your filters — relax path length, remove start/end events, or expand the date range."
+                    />
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between px-1">
+                        <p className="text-sm text-muted-foreground">
+                          Showing{' '}
+                          <span className="font-semibold text-foreground">{pathData.length}</span>{' '}
+                          of <span className="font-semibold text-foreground">{totalPaths}</span>{' '}
+                          paths — click a path to view its conversion funnel
+                        </p>
+                        <div className="flex gap-1.5">
+                          {startEvent && (
+                            <Badge variant="secondary" className="text-xs">
+                              From: {startEvent}
+                            </Badge>
+                          )}
+                          {endEvent && (
+                            <Badge variant="secondary" className="text-xs">
+                              To: {endEvent}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
 
-                  <div className="space-y-2">
-                    {pathData.map((path, idx) => (
-                      <PathCard
-                        key={idx}
-                        path={path}
-                        rank={idx + 1}
-                        maxCount={maxCount}
-                        onClick={() => {
-                          setSelectedPath(path)
-                          setDialogOpen(true)
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
+                      <div className="space-y-2">
+                        {pathData.map((path, idx) => (
+                          <PathCard
+                            key={idx}
+                            path={path}
+                            rank={idx + 1}
+                            maxCount={maxCount}
+                            onClick={() => {
+                              setSelectedPath(path)
+                              setDialogOpen(true)
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </DevCard>
+              </div>
+              {dashboardView === 'summary' && summaryTotals.length > 0 && (
+                <SummaryPanel insight={summaryInsight} totals={summaryTotals} />
               )}
-            </DevCard>
+            </div>
           </div>
 
           <PathFunnelDialog
