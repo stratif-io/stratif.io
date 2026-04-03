@@ -469,3 +469,31 @@ export interface QueryStudioResponse {
   execution_time_ms: number
   error?: string | null
 }
+
+// Reports
+
+export interface Report {
+  shortcode: string
+  name: string
+  page: string
+  params: Record<string, unknown>
+  access: 'public' | 'authenticated' | 'private'
+  snapshot: boolean
+  snapshot_data: unknown | null
+  created_at: string
+  created_by_username: string
+}
+
+// Reports
+
+export interface Report {
+  shortcode: string
+  name: string
+  page: string
+  params: Record<string, unknown>
+  access: 'public' | 'authenticated' | 'private'
+  snapshot: boolean
+  snapshot_data: unknown | null
+  created_at: string
+  created_by_username: string
+}

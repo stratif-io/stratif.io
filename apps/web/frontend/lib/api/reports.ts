@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Report } from '@/types'
 import { fetchWithSemaphore } from './semaphore'
-import { QUERY_STALE_TIME } from '@/lib/constants'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -8,17 +8,18 @@ const headers: HeadersInit = {
   'Content-Type': 'application/json',
 }
 
+interface ApiError extends Error {
+  status?: number
+}
+
 async function fetchApi<T>(
   endpoint: string,
-  options?: RequestInit & { returnNullOn404?: boolean }
+  options?: RequestInit & { expect404?: boolean }
 ): Promise<T> {
-  const returnNullOn404 = options?.returnNullOn404 ?? false
-  const { returnNullOn404: _, ...requestOptions } = options ?? {}
-
   const response = await fetchWithSemaphore(`${API_URL}${endpoint}`, {
-    ...requestOptions,
+    ...options,
     credentials: 'include',
-    headers: { ...headers, ...requestOptions?.headers },
+    headers: { ...headers, ...options?.headers },
   })
 
   if (response.status === 503) {
@@ -26,13 +27,11 @@ async function fetchApi<T>(
     throw new Error(body.detail ?? 'Connection lost — please retry.')
   }
 
-  if (response.status === 404 && returnNullOn404) {
-    return null as T
-  }
-
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'An error occurred' }))
-    throw new Error(error.detail || `HTTP ${response.status}`)
+    const errorObj: ApiError = new Error(error.detail || `HTTP ${response.status}`)
+    errorObj.status = response.status
+    throw errorObj
   }
 
   if (response.status === 204 || response.headers.get('content-length') === '0') {
@@ -42,59 +41,57 @@ async function fetchApi<T>(
   return response.json()
 }
 
-export interface CreateReportPayload {
+export const createReport = (payload: {
   name: string
   page: string
   params: Record<string, unknown>
-  access: 'public' | 'authenticated'
+  access: 'public' | 'authenticated' | 'private'
   snapshot: boolean
-  snapshot_data?: Record<string, unknown> | null
-  created_by_username?: string
-}
-
-export interface ReportData {
-  shortcode: string
-  name: string
-  page: string
-  params: Record<string, unknown>
-  access: 'public' | 'authenticated'
-  snapshot: boolean
-  snapshot_data: Record<string, unknown> | null
-  created_at: string
-  created_by_username: string
-}
-
-export async function createReport(
-  payload: CreateReportPayload
-): Promise<{ shortcode: string; id: string }> {
-  return fetchApi<{ shortcode: string; id: string }>('/api/reports', {
+}) =>
+  fetchApi<{ shortcode: string; id: string }>('/api/reports', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
+
+export const getReport = async (shortcode: string): Promise<Report | null> => {
+  try {
+    return await fetchApi<Report>(`/api/reports/${encodeURIComponent(shortcode)}`)
+  } catch (error) {
+    if (error instanceof Error && (error as ApiError).status === 404) {
+      return null
+    }
+    throw error
+  }
 }
 
-export async function getReport(shortcode: string): Promise<ReportData | null> {
-  return fetchApi<ReportData>(`/api/reports/${encodeURIComponent(shortcode)}`, {
-    returnNullOn404: true,
-  })
-}
-
-export function useReport(shortcode: string | undefined) {
-  return useQuery({
-    queryKey: ['reports', shortcode],
-    queryFn: () => getReport(shortcode!),
+export const useReport = (shortcode: string) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['report', shortcode],
+    queryFn: () => getReport(shortcode),
     enabled: !!shortcode,
-    staleTime: QUERY_STALE_TIME.default,
+    retry: false,
   })
+
+  return {
+    data,
+    isLoading,
+    error,
+  }
 }
 
-export function useCreateReport() {
-  const qc = useQueryClient()
+export const useCreateReport = () => {
+  const queryClient = useQueryClient()
+
   return useMutation({
-    mutationFn: (payload: CreateReportPayload) => createReport(payload),
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['reports'] })
-      qc.setQueryData(['reports', data.shortcode], { shortcode: data.shortcode })
+    mutationFn: (payload: {
+      name: string
+      page: string
+      params: Record<string, unknown>
+      access: 'public' | 'authenticated' | 'private'
+      snapshot: boolean
+    }) => createReport(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['report'] })
     },
   })
 }
