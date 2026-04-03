@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { DateRange, Granularity } from '@/types'
 import { initSemaphore } from '@/lib/api/semaphore'
+import { useQueryStore } from './query-store'
 
 function suggestGranularity(range: DateRange): Granularity | null {
   if (!range.from || !range.to) return null
@@ -50,12 +51,6 @@ interface AppState {
 
   dashboardView: 'summary' | 'detail'
   setDashboardView: (view: 'summary' | 'detail') => void
-
-  // Query concurrency tracking — ephemeral, not persisted
-  runningQueries: number
-  queuedQueries: number
-  queryEverActive: boolean
-  setQueryCounts: (running: number, queued: number) => void
 
   /** SQL to pre-populate Query Studio with — ephemeral, cleared after consumption. */
   pendingQueryStudioSql: string | null
@@ -113,16 +108,6 @@ export const useAppStore = create<AppState>()(
       dashboardView: 'summary',
       setDashboardView: (dashboardView) => set({ dashboardView }),
 
-      runningQueries: 0,
-      queuedQueries: 0,
-      queryEverActive: false,
-      setQueryCounts: (running, queued) =>
-        set((state) => ({
-          runningQueries: running,
-          queuedQueries: queued,
-          queryEverActive: state.queryEverActive || running > 0 || queued > 0,
-        })),
-
       pendingQueryStudioSql: null,
       setPendingQueryStudioSql: (sql) => set({ pendingQueryStudioSql: sql }),
     }),
@@ -152,8 +137,9 @@ export const useAppStore = create<AppState>()(
   )
 )
 
-// Initialize the global query semaphore, wired to the Zustand store.
-// Must run after store creation to avoid circular dependency.
+// Initialize the global query semaphore, wired to the query store.
+// Intentionally separate from useAppStore to avoid cascading re-renders
+// across all business components whenever query counts change.
 initSemaphore((running, queued) => {
-  useAppStore.getState().setQueryCounts(running, queued)
+  useQueryStore.getState().setQueryCounts(running, queued)
 })

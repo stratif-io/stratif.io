@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAppStore } from '@/stores'
+import { useQueryStore } from '@/stores/query-store'
 import { IDLE_DISMISS_DELAY_MS } from '@/lib/api/semaphore'
 import { cn } from '@/lib/utils'
 
 export function QueryStatusIndicator() {
-  const runningQueries = useAppStore((s) => s.runningQueries)
-  const queuedQueries = useAppStore((s) => s.queuedQueries)
-  const queryEverActive = useAppStore((s) => s.queryEverActive)
+  const runningQueries = useQueryStore((s) => s.runningQueries)
+  const queuedQueries = useQueryStore((s) => s.queuedQueries)
+  const queryEverActive = useQueryStore((s) => s.queryEverActive)
 
   const isActive = runningQueries > 0 || queuedQueries > 0
   const isDone = queryEverActive && !isActive

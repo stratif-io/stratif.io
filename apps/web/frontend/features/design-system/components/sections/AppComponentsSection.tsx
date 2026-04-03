@@ -11,7 +11,7 @@ import { DB_BRAND_COLORS } from '@/lib/db-colors'
 import { FilterBar } from '@/components/shared/FilterBar'
 import { GlobalFilters, GranularityControl } from '@/components/GlobalFilters'
 import { QueryStatusIndicator } from '@/components/layout/QueryStatusIndicator'
-import { useAppStore } from '@/stores'
+import { useQueryStore } from '@/stores/query-store'
 import { DevCard } from '@/components/dev'
 import { subDays } from 'date-fns'
 import type { DateRange } from '@/types'
@@ -85,7 +85,7 @@ function TrendMetricPickerDemo({
 }
 
 function QueryStatusIndicatorDemo() {
-  const setQueryCounts = useAppStore((s) => s.setQueryCounts)
+  const setQueryCounts = useQueryStore((s) => s.setQueryCounts)
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
