@@ -64,10 +64,9 @@ describe('DashboardPage greeting and toggle', () => {
     expect(screen.getByText(/Good (morning|afternoon|evening)/i)).toBeInTheDocument()
   })
 
-  it('shows Summary/Detail toggle buttons', () => {
+  it('renders Mission Control grid', () => {
     renderPage()
-    expect(screen.getByRole('button', { name: /summary/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /detail/i })).toBeInTheDocument()
+    expect(screen.getByTestId('mission-control-grid')).toBeInTheDocument()
   })
 })
 

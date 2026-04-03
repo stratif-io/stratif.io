@@ -3,7 +3,6 @@ import { useAppStore } from '@/stores'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { Header } from '@/components/layout/Header'
 import { MissionControlGrid } from './components/MissionControlGrid'
-import { SummaryDashboard } from './components/SummaryDashboard'
 import { TopEvents } from './components/TopEvents'
 import { useMissionControl } from './hooks/useMissionControl'
 import { useMissionControlTrends } from './hooks/useMissionControlTrends'
@@ -13,8 +12,6 @@ import { DevCard } from '@/components/dev'
 import { NoConnectionScreen } from '@/components/ui/no-connection-guard'
 import { EmptyState } from '@/components/ui/empty-state'
 import { TrendingUp } from 'lucide-react'
-import { cn } from '@/lib/utils'
-
 function getGreeting(): string {
   const h = new Date().getHours()
   if (h < 12) return 'Good morning'
@@ -27,8 +24,7 @@ export function DashboardPage() {
     document.title = 'Mission Control — stratif.io'
   }, [])
 
-  const { dateRange, activeConnectionId, setActiveConnectionId, dashboardView, setDashboardView } =
-    useAppStore()
+  const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()
   const { pinned, togglePin, isPinned, resetToDefault } = usePinnedMetrics(
     activeConnectionId ?? null
   )
@@ -63,25 +59,7 @@ export function DashboardPage() {
   return (
     <PageTransition>
       <div className="flex flex-col h-full">
-        <Header title={`${getGreeting()}, you`} subtitle="Mission Control">
-          <div className="flex bg-muted/60 border border-border rounded-lg p-0.5 gap-0.5">
-            {(['summary', 'detail'] as const).map((view) => (
-              <button
-                key={view}
-                aria-label={view}
-                onClick={() => setDashboardView(view)}
-                className={cn(
-                  'px-3 py-1 rounded-md text-[10px] font-semibold capitalize transition-colors',
-                  dashboardView === view
-                    ? 'bg-[hsl(var(--primary))] text-white shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {view}
-              </button>
-            ))}
-          </div>
-        </Header>
+        <Header title={`${getGreeting()}, you`} subtitle="Mission Control" />
 
         <div className="flex-1 overflow-y-auto p-5">
           {isError ? (
@@ -92,8 +70,6 @@ export function DashboardPage() {
               title="No events yet"
               description="Your dashboard will populate once events start flowing in. Try expanding the date range if you expect data."
             />
-          ) : dashboardView === 'summary' ? (
-            <SummaryDashboard />
           ) : (
             <div data-testid="mission-control-grid">
               <MissionControlGrid
