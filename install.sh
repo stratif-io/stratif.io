@@ -6,7 +6,7 @@ set -euo pipefail
 # Usage: curl -fsSL https://stratif.io/install.sh | bash
 # ─────────────────────────────────────────────────────────────────────────────
 
-REPO="cabichahine/stratif.io"
+REPO="stratif-io/stratif.io"
 REPO_URL="https://github.com/${REPO}"
 INSTALL_DIR="${STRATIFIO_DIR:-$HOME/.stratifio}"
 PORT="${STRATIFIO_PORT:-8000}"
