@@ -1,112 +1,116 @@
 # Changelog
 
-## [0.18.0](https://github.com/cabichahine/stratif.io/compare/v0.17.1...v0.18.0) (2026-04-02)
-
-
-### Features
-
-* add SQLAlchemy ORM models for product DB ([6b764fb](https://github.com/cabichahine/stratif.io/commit/6b764fbafe22c8b519472239e3798f3fe6634354))
-* add sqlalchemy[asyncio], aiosqlite, asyncpg, pytest-asyncio deps ([0b248d6](https://github.com/cabichahine/stratif.io/commit/0b248d606c35ab169e9d00e548bdf86250d77881))
-* async get_db() dependency + create_all schema init ([8f49447](https://github.com/cabichahine/stratif.io/commit/8f49447a6fb62f770b6f89c23bb6e73fdddce498))
-* async SQLAlchemy engine + updated product_db_url default ([c43601b](https://github.com/cabichahine/stratif.io/commit/c43601bea5206dbb2a0a85c04d43fccc9e1249b6))
-* complete SQLAlchemy async ORM migration — all tests passing ([5cea98f](https://github.com/cabichahine/stratif.io/commit/5cea98fb7403cbb15f6fb1679b25ffa5e87d29b1))
-* make open_analytics_db async, use AsyncSession ([6d3a514](https://github.com/cabichahine/stratif.io/commit/6d3a514e1302815f9771cc27df49699e8e3293bb))
-* rewrite connections crud.py with SQLAlchemy async ORM ([3f14e87](https://github.com/cabichahine/stratif.io/commit/3f14e87b327e961d6a147d748cbe6f63978c7745))
-* update browse, schema_detect, auth to use DBSession ([df55056](https://github.com/cabichahine/stratif.io/commit/df550560f6610fd8ac96e96e99ef856c640535c7))
-* update e2e conftest to use async SQLAlchemy product DB setup ([b1176df](https://github.com/cabichahine/stratif.io/commit/b1176df55af8ac3e84b5dab0e69efe4016bc3a51))
-
+## [0.18.2](https://github.com/stratif-io/stratif.io/compare/v0.18.1...v0.18.2) (2026-04-03)
 
 ### Bug Fixes
 
-* resolve ruff linting errors ([aa7e841](https://github.com/cabichahine/stratif.io/commit/aa7e841552a3862e94a5be7ebe78fbc23240c185))
-* rewrite bootstrap_connection seeder and tests for async ORM ([cbd936a](https://github.com/cabichahine/stratif.io/commit/cbd936a7802468f21f8caef2372de51672e03184))
+- exclude .venv from copy, use venv binaries directly, fix mktemp suffix ([e7302e4](https://github.com/stratif-io/stratif.io/commit/e7302e4dfdeb6d5870f0545969fc278b730eb8c4))
+- remove .tar.gz suffix from mktemp template (breaks on macOS) ([b09fc13](https://github.com/stratif-io/stratif.io/commit/b09fc1343d4b5b788eb525bbbfd225ed3f07438d))
+
+## [0.18.1](https://github.com/stratif-io/stratif.io/compare/v0.18.0...v0.18.1) (2026-04-03)
+
+### Bug Fixes
+
+- correct REPO to stratif-io/stratif.io in install.sh ([b473aa2](https://github.com/stratif-io/stratif.io/commit/b473aa2844a0cc2a96ecabcfa22731d1b063bc2d))
+- improve install.sh UX — step labels, spinner, fix cp excluding .git ([26852a3](https://github.com/stratif-io/stratif.io/commit/26852a3efc1370c62a4ba721ff88a25cbae7619d))
+
+## [0.18.0](https://github.com/cabichahine/stratif.io/compare/v0.17.1...v0.18.0) (2026-04-02)
+
+### Features
+
+- add SQLAlchemy ORM models for product DB ([6b764fb](https://github.com/cabichahine/stratif.io/commit/6b764fbafe22c8b519472239e3798f3fe6634354))
+- add sqlalchemy[asyncio], aiosqlite, asyncpg, pytest-asyncio deps ([0b248d6](https://github.com/cabichahine/stratif.io/commit/0b248d606c35ab169e9d00e548bdf86250d77881))
+- async get_db() dependency + create_all schema init ([8f49447](https://github.com/cabichahine/stratif.io/commit/8f49447a6fb62f770b6f89c23bb6e73fdddce498))
+- async SQLAlchemy engine + updated product_db_url default ([c43601b](https://github.com/cabichahine/stratif.io/commit/c43601bea5206dbb2a0a85c04d43fccc9e1249b6))
+- complete SQLAlchemy async ORM migration — all tests passing ([5cea98f](https://github.com/cabichahine/stratif.io/commit/5cea98fb7403cbb15f6fb1679b25ffa5e87d29b1))
+- make open_analytics_db async, use AsyncSession ([6d3a514](https://github.com/cabichahine/stratif.io/commit/6d3a514e1302815f9771cc27df49699e8e3293bb))
+- rewrite connections crud.py with SQLAlchemy async ORM ([3f14e87](https://github.com/cabichahine/stratif.io/commit/3f14e87b327e961d6a147d748cbe6f63978c7745))
+- update browse, schema_detect, auth to use DBSession ([df55056](https://github.com/cabichahine/stratif.io/commit/df550560f6610fd8ac96e96e99ef856c640535c7))
+- update e2e conftest to use async SQLAlchemy product DB setup ([b1176df](https://github.com/cabichahine/stratif.io/commit/b1176df55af8ac3e84b5dab0e69efe4016bc3a51))
+
+### Bug Fixes
+
+- resolve ruff linting errors ([aa7e841](https://github.com/cabichahine/stratif.io/commit/aa7e841552a3862e94a5be7ebe78fbc23240c185))
+- rewrite bootstrap_connection seeder and tests for async ORM ([cbd936a](https://github.com/cabichahine/stratif.io/commit/cbd936a7802468f21f8caef2372de51672e03184))
 
 ## [0.17.1](https://github.com/cabichahine/stratif.io/compare/v0.17.0...v0.17.1) (2026-04-02)
 
-
 ### Bug Fixes
 
-* trigger release-please ([fb9d6ab](https://github.com/cabichahine/stratif.io/commit/fb9d6ab77bf8572d8bca1ab76c986a544d88ce46))
+- trigger release-please ([fb9d6ab](https://github.com/cabichahine/stratif.io/commit/fb9d6ab77bf8572d8bca1ab76c986a544d88ce46))
 
 ## [0.17.0](https://github.com/cabichahine/stratif.io/compare/v0.16.0...v0.17.0) (2026-04-01)
 
-
 ### Features
 
-* replace Docker installer with curl | sh using uv + GitHub release assets ([6ffa8a2](https://github.com/cabichahine/stratif.io/commit/6ffa8a25a8528f985d43ff69a6031db2900521d1))
-
+- replace Docker installer with curl | sh using uv + GitHub release assets ([6ffa8a2](https://github.com/cabichahine/stratif.io/commit/6ffa8a25a8528f985d43ff69a6031db2900521d1))
 
 ### Bug Fixes
 
-* **a11y:** hide decorative icon container from screen reader tree in EmptyState ([81ef1f5](https://github.com/cabichahine/stratif.io/commit/81ef1f56e4ece41252815ba68fe50cd86593f244))
-* **a11y:** increase DateRangePicker inline trigger to 44px touch target ([3c59f79](https://github.com/cabichahine/stratif.io/commit/3c59f794307564c1c7302a1874209a6443fc9b0d))
-* **a11y:** increase touch targets to minimum 44px in filters and sidebar nav ([93162c5](https://github.com/cabichahine/stratif.io/commit/93162c5b453522fe4d6d4d45427ffe0caff86aef))
-* **a11y:** make sidebar mobile overlay discoverable to screen readers ([2684bba](https://github.com/cabichahine/stratif.io/commit/2684bba68f293ea645670d4f0819ecbb177d0f5d))
-* **a11y:** move clear button outside PopoverTrigger — nested buttons invalid HTML ([efa8bd3](https://github.com/cabichahine/stratif.io/commit/efa8bd326d930fc5c58bd227a9455e05e21b7c1c))
-* **ci:** skip git clone in test — use checked-out repo via STRATIFIO_REPO_DIR ([f0b6885](https://github.com/cabichahine/stratif.io/commit/f0b6885b65d347644fd7343f8b927b3cd61e49d7))
-* **css:** remove hover-scale — creates stacking context that clips popovers ([4fb645d](https://github.com/cabichahine/stratif.io/commit/4fb645d1413c2ce42d95aef2383be70a287a16fc))
-* disable git credential prompt when running via curl | bash ([62afa86](https://github.com/cabichahine/stratif.io/commit/62afa86744e1bfe6e0488cd915707523767ebc3e))
-* **install:** extract frontend dist to INSTALL_DIR root ([319ccbd](https://github.com/cabichahine/stratif.io/commit/319ccbd41ae7875002bb7a5165155ccde6d83be6))
-* **install:** generate connections.yaml and fix seeder invocation ([20e6f3e](https://github.com/cabichahine/stratif.io/commit/20e6f3ed38b6f1f4dab5ae4362f4a0881fe2c5f6))
-* **mobile:** guard global hover transitions with hover:hover media query ([82771a6](https://github.com/cabichahine/stratif.io/commit/82771a69536054cde97626a5fe66544e3451b0fb))
-* **mobile:** keep filter bar horizontal on all screens — scroll instead of stack ([ea13e30](https://github.com/cabichahine/stratif.io/commit/ea13e303feedda3f640d97fd1af261215e302a2e))
-* **polish:** align MetricCardSkeleton radius with actual cards (rounded-xl) ([42a0689](https://github.com/cabichahine/stratif.io/commit/42a068938da08ea999b2926f8b8a3fa128850486))
-* **polish:** normalize page title style across feature pages ([f5f02ba](https://github.com/cabichahine/stratif.io/commit/f5f02baad4b37779c7a4616d9a535b6516994816))
-* **theme:** differentiate card surface from page background in dark mode ([abca4d3](https://github.com/cabichahine/stratif.io/commit/abca4d3cd6d46bcc9f3322571752862278f9ae80))
-* **theme:** use CSS variable-based heatmap colors that work in dark mode ([5addf5e](https://github.com/cabichahine/stratif.io/commit/5addf5ed864891e6ce6074fe4dace559ac0f6e88))
-* **ux:** make sparklines legible in mini cards — dedicated bottom strip with gradient fill ([01c584b](https://github.com/cabichahine/stratif.io/commit/01c584bf50894399d536941561646db11a58f13a))
-* **ux:** show Monitor icon in theme toggle when system mode is active ([2d9126b](https://github.com/cabichahine/stratif.io/commit/2d9126b63eb610e536a1a165a2ecf931ca3d4be7))
+- **a11y:** hide decorative icon container from screen reader tree in EmptyState ([81ef1f5](https://github.com/cabichahine/stratif.io/commit/81ef1f56e4ece41252815ba68fe50cd86593f244))
+- **a11y:** increase DateRangePicker inline trigger to 44px touch target ([3c59f79](https://github.com/cabichahine/stratif.io/commit/3c59f794307564c1c7302a1874209a6443fc9b0d))
+- **a11y:** increase touch targets to minimum 44px in filters and sidebar nav ([93162c5](https://github.com/cabichahine/stratif.io/commit/93162c5b453522fe4d6d4d45427ffe0caff86aef))
+- **a11y:** make sidebar mobile overlay discoverable to screen readers ([2684bba](https://github.com/cabichahine/stratif.io/commit/2684bba68f293ea645670d4f0819ecbb177d0f5d))
+- **a11y:** move clear button outside PopoverTrigger — nested buttons invalid HTML ([efa8bd3](https://github.com/cabichahine/stratif.io/commit/efa8bd326d930fc5c58bd227a9455e05e21b7c1c))
+- **ci:** skip git clone in test — use checked-out repo via STRATIFIO_REPO_DIR ([f0b6885](https://github.com/cabichahine/stratif.io/commit/f0b6885b65d347644fd7343f8b927b3cd61e49d7))
+- **css:** remove hover-scale — creates stacking context that clips popovers ([4fb645d](https://github.com/cabichahine/stratif.io/commit/4fb645d1413c2ce42d95aef2383be70a287a16fc))
+- disable git credential prompt when running via curl | bash ([62afa86](https://github.com/cabichahine/stratif.io/commit/62afa86744e1bfe6e0488cd915707523767ebc3e))
+- **install:** extract frontend dist to INSTALL_DIR root ([319ccbd](https://github.com/cabichahine/stratif.io/commit/319ccbd41ae7875002bb7a5165155ccde6d83be6))
+- **install:** generate connections.yaml and fix seeder invocation ([20e6f3e](https://github.com/cabichahine/stratif.io/commit/20e6f3ed38b6f1f4dab5ae4362f4a0881fe2c5f6))
+- **mobile:** guard global hover transitions with hover:hover media query ([82771a6](https://github.com/cabichahine/stratif.io/commit/82771a69536054cde97626a5fe66544e3451b0fb))
+- **mobile:** keep filter bar horizontal on all screens — scroll instead of stack ([ea13e30](https://github.com/cabichahine/stratif.io/commit/ea13e303feedda3f640d97fd1af261215e302a2e))
+- **polish:** align MetricCardSkeleton radius with actual cards (rounded-xl) ([42a0689](https://github.com/cabichahine/stratif.io/commit/42a068938da08ea999b2926f8b8a3fa128850486))
+- **polish:** normalize page title style across feature pages ([f5f02ba](https://github.com/cabichahine/stratif.io/commit/f5f02baad4b37779c7a4616d9a535b6516994816))
+- **theme:** differentiate card surface from page background in dark mode ([abca4d3](https://github.com/cabichahine/stratif.io/commit/abca4d3cd6d46bcc9f3322571752862278f9ae80))
+- **theme:** use CSS variable-based heatmap colors that work in dark mode ([5addf5e](https://github.com/cabichahine/stratif.io/commit/5addf5ed864891e6ce6074fe4dace559ac0f6e88))
+- **ux:** make sparklines legible in mini cards — dedicated bottom strip with gradient fill ([01c584b](https://github.com/cabichahine/stratif.io/commit/01c584bf50894399d536941561646db11a58f13a))
+- **ux:** show Monitor icon in theme toggle when system mode is active ([2d9126b](https://github.com/cabichahine/stratif.io/commit/2d9126b63eb610e536a1a165a2ecf931ca3d4be7))
 
 ## [0.16.0](https://github.com/cabichahine/stratif.io/compare/v0.15.0...v0.16.0) (2026-04-01)
 
-
 ### Features
 
-* breakdown goes to pivot columns, date stays as row group ([01b2ff4](https://github.com/cabichahine/stratif.io/commit/01b2ff42c1af39c0143e8ef9dea60e768f46553d))
-
+- breakdown goes to pivot columns, date stays as row group ([01b2ff4](https://github.com/cabichahine/stratif.io/commit/01b2ff42c1af39c0143e8ef9dea60e768f46553d))
 
 ### Bug Fixes
 
-* add ([5bddeea](https://github.com/cabichahine/stratif.io/commit/5bddeea1be9324f53ca86bf592cd6cf6eedaeff3))
-* run pre-commit from Husky and resolve all ty type errors ([758b144](https://github.com/cabichahine/stratif.io/commit/758b14429a1b70c9c9e498ca1327a0b19ffe71ca))
-* seed time dimension into rows even when initialValueCols is provided ([19a218a](https://github.com/cabichahine/stratif.io/commit/19a218a2b304ec987573cf33edf93cbf48b6e96b))
+- add ([5bddeea](https://github.com/cabichahine/stratif.io/commit/5bddeea1be9324f53ca86bf592cd6cf6eedaeff3))
+- run pre-commit from Husky and resolve all ty type errors ([758b144](https://github.com/cabichahine/stratif.io/commit/758b14429a1b70c9c9e498ca1327a0b19ffe71ca))
+- seed time dimension into rows even when initialValueCols is provided ([19a218a](https://github.com/cabichahine/stratif.io/commit/19a218a2b304ec987573cf33edf93cbf48b6e96b))
 
 ## [0.15.0](https://github.com/cabichahine/stratif.io/compare/v0.14.0...v0.15.0) (2026-04-01)
 
-
 ### Features
 
-* **dev:** add run button to DevCard back face ([#168](https://github.com/cabichahine/stratif.io/issues/168)) ([24506fa](https://github.com/cabichahine/stratif.io/commit/24506fa94365a4a30bd5b487ab55d0981b86ec2c))
+- **dev:** add run button to DevCard back face ([#168](https://github.com/cabichahine/stratif.io/issues/168)) ([24506fa](https://github.com/cabichahine/stratif.io/commit/24506fa94365a4a30bd5b487ab55d0981b86ec2c))
 
 ## [0.14.0](https://github.com/cabichahine/stratif.io/compare/v0.13.0...v0.14.0) (2026-04-01)
 
-
 ### Features
 
-* add Metrics category to dimension-categories config ([889e2aa](https://github.com/cabichahine/stratif.io/commit/889e2aa46cebaf537f77e8b82f16e48c7bbe9402))
-* add shared AggBadge component with popover agg picker ([434eba2](https://github.com/cabichahine/stratif.io/commit/434eba22c0d9804e704fe0bb23c3be6f5bc92eb9))
-* extend LeafMeta and ValuePickerPopover with trigger, fixedAgg, category ([99816b6](https://github.com/cabichahine/stratif.io/commit/99816b6c6485f8caa69b134a8704a2c9f36d85ec))
-* move ValuePickerPopover to shared components; add all dimensions to Trends picker ([2de5e73](https://github.com/cabichahine/stratif.io/commit/2de5e73280d3904ee49ed741fa52795d02678171))
-* replace cycle button with AggBadge in pivot ValueChip ([c0e9ca3](https://github.com/cabichahine/stratif.io/commit/c0e9ca3817ab3d5002d0239150238beee121ad81))
-* rewrite TrendMetricPicker as thin adapter over ValuePickerPopover ([bfc60cd](https://github.com/cabichahine/stratif.io/commit/bfc60cd3152d1e9d78515023f011088a87a17cad))
-* **trends:** integrate AggBadge into TrendMetricPicker chip ([758fa25](https://github.com/cabichahine/stratif.io/commit/758fa25e5cb7b09ebac8a75bddcc40a8136d8dcb))
-* unify trends toolbar controls to h-7 chip/inner-pill style ([f38afef](https://github.com/cabichahine/stratif.io/commit/f38afef8a12269a9fa2799454f94c38d74d9b7e0))
-
+- add Metrics category to dimension-categories config ([889e2aa](https://github.com/cabichahine/stratif.io/commit/889e2aa46cebaf537f77e8b82f16e48c7bbe9402))
+- add shared AggBadge component with popover agg picker ([434eba2](https://github.com/cabichahine/stratif.io/commit/434eba22c0d9804e704fe0bb23c3be6f5bc92eb9))
+- extend LeafMeta and ValuePickerPopover with trigger, fixedAgg, category ([99816b6](https://github.com/cabichahine/stratif.io/commit/99816b6c6485f8caa69b134a8704a2c9f36d85ec))
+- move ValuePickerPopover to shared components; add all dimensions to Trends picker ([2de5e73](https://github.com/cabichahine/stratif.io/commit/2de5e73280d3904ee49ed741fa52795d02678171))
+- replace cycle button with AggBadge in pivot ValueChip ([c0e9ca3](https://github.com/cabichahine/stratif.io/commit/c0e9ca3817ab3d5002d0239150238beee121ad81))
+- rewrite TrendMetricPicker as thin adapter over ValuePickerPopover ([bfc60cd](https://github.com/cabichahine/stratif.io/commit/bfc60cd3152d1e9d78515023f011088a87a17cad))
+- **trends:** integrate AggBadge into TrendMetricPicker chip ([758fa25](https://github.com/cabichahine/stratif.io/commit/758fa25e5cb7b09ebac8a75bddcc40a8136d8dcb))
+- unify trends toolbar controls to h-7 chip/inner-pill style ([f38afef](https://github.com/cabichahine/stratif.io/commit/f38afef8a12269a9fa2799454f94c38d74d9b7e0))
 
 ### Bug Fixes
 
-* allow count/count_distinct on standard dimensions (user_id, country, etc.) ([5c0c56f](https://github.com/cabichahine/stratif.io/commit/5c0c56fdb688921027daf2d226dfed5316652157))
-* build_filter_clauses must check filter_exprs not only custom_prop_exprs ([09fbaf1](https://github.com/cabichahine/stratif.io/commit/09fbaf1787a49fa178cc06210ae7ace2283f5ff5))
-* dotted path filter fields resolve to JSON extraction not quoted identifier ([8f8bcc5](https://github.com/cabichahine/stratif.io/commit/8f8bcc5e9d58729424d1808f0e1e5587d60ca354))
-* identity field expressions use _resolve_path_to_sql to support dotted paths ([a084e46](https://github.com/cabichahine/stratif.io/commit/a084e4675f7bb65a9a70855be0d0355202c8021f))
-* include identity fields in filter_exprs so global filters work ([88b795b](https://github.com/cabichahine/stratif.io/commit/88b795b721de803cfd6e508dba074dc38a1e23d2))
-* plain column filter fields work without identity field mapping ([17bf6fc](https://github.com/cabichahine/stratif.io/commit/17bf6fccc7f9cd3e93fd909912f8f984fc821e3e))
-* remove special Metrics category from TrendMetricPicker — use natural categories like Pivot ([14e0407](https://github.com/cabichahine/stratif.io/commit/14e0407d90329fab1f141a81ab6f55a8ce13a184))
-* resolve all ruff violations (B904, B905, E702, F401, C408, SIM108, SIM117, E402, B008, F811, B017) ([01bd536](https://github.com/cabichahine/stratif.io/commit/01bd536bb908ffe27ab22117725d52b38098c2bf))
-* run ruff format + add pull-requests:write for pr-title job ([066a4fd](https://github.com/cabichahine/stratif.io/commit/066a4fdea62ebdf8c37b1616971e10aa3649dda8))
-* sort imports in test file (ruff I001) ([ec1ba07](https://github.com/cabichahine/stratif.io/commit/ec1ba07cbefae08566415d63432f1b412f9b4a53))
-* update uv.lock (stratifio-core 0.12.0 → 0.13.0) ([#158](https://github.com/cabichahine/stratif.io/issues/158)) ([ed7ae4f](https://github.com/cabichahine/stratif.io/commit/ed7ae4f4ed691d6f61683c11bcef25fe843482c3))
-* wire onAggChange in design system demo; test countDistinct badge passthrough ([105b607](https://github.com/cabichahine/stratif.io/commit/105b6072de5d1c12a38debc55bc7966f20063a9a))
+- allow count/count_distinct on standard dimensions (user_id, country, etc.) ([5c0c56f](https://github.com/cabichahine/stratif.io/commit/5c0c56fdb688921027daf2d226dfed5316652157))
+- build_filter_clauses must check filter_exprs not only custom_prop_exprs ([09fbaf1](https://github.com/cabichahine/stratif.io/commit/09fbaf1787a49fa178cc06210ae7ace2283f5ff5))
+- dotted path filter fields resolve to JSON extraction not quoted identifier ([8f8bcc5](https://github.com/cabichahine/stratif.io/commit/8f8bcc5e9d58729424d1808f0e1e5587d60ca354))
+- identity field expressions use \_resolve_path_to_sql to support dotted paths ([a084e46](https://github.com/cabichahine/stratif.io/commit/a084e4675f7bb65a9a70855be0d0355202c8021f))
+- include identity fields in filter_exprs so global filters work ([88b795b](https://github.com/cabichahine/stratif.io/commit/88b795b721de803cfd6e508dba074dc38a1e23d2))
+- plain column filter fields work without identity field mapping ([17bf6fc](https://github.com/cabichahine/stratif.io/commit/17bf6fccc7f9cd3e93fd909912f8f984fc821e3e))
+- remove special Metrics category from TrendMetricPicker — use natural categories like Pivot ([14e0407](https://github.com/cabichahine/stratif.io/commit/14e0407d90329fab1f141a81ab6f55a8ce13a184))
+- resolve all ruff violations (B904, B905, E702, F401, C408, SIM108, SIM117, E402, B008, F811, B017) ([01bd536](https://github.com/cabichahine/stratif.io/commit/01bd536bb908ffe27ab22117725d52b38098c2bf))
+- run ruff format + add pull-requests:write for pr-title job ([066a4fd](https://github.com/cabichahine/stratif.io/commit/066a4fdea62ebdf8c37b1616971e10aa3649dda8))
+- sort imports in test file (ruff I001) ([ec1ba07](https://github.com/cabichahine/stratif.io/commit/ec1ba07cbefae08566415d63432f1b412f9b4a53))
+- update uv.lock (stratifio-core 0.12.0 → 0.13.0) ([#158](https://github.com/cabichahine/stratif.io/issues/158)) ([ed7ae4f](https://github.com/cabichahine/stratif.io/commit/ed7ae4f4ed691d6f61683c11bcef25fe843482c3))
+- wire onAggChange in design system demo; test countDistinct badge passthrough ([105b607](https://github.com/cabichahine/stratif.io/commit/105b6072de5d1c12a38debc55bc7966f20063a9a))
 
 ## [0.13.0](https://github.com/cabichahine/stratif.io/compare/v0.12.0...v0.13.0) (2026-04-01)
 
