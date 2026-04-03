@@ -1,14 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import {
-  ArrowLeft,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Copy,
-  Plus,
-  TrendingDown,
-  X,
-} from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronRight, Plus, TrendingDown, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import {
@@ -20,15 +11,17 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageTransition } from '@/components/layout/PageTransition'
+import { Header } from '@/components/layout/Header'
+import { PageConfigBar } from '@/components/layout/PageConfigBar'
+import { SummaryPanel } from '@/components/layout/SummaryPanel'
 import { EmptyState } from '@/components/ui/empty-state'
 import { FunnelSteps } from './components/FunnelSteps'
 import { fetchPathFunnel, fetchEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
-import { SPACING, TYPOGRAPHY, FILTER_TRIGGER_CLASS } from '@/lib/constants'
+import { FILTER_TRIGGER_CLASS } from '@/lib/constants'
 import { DevCard } from '@/components/dev'
 import { cn, formatDateParam } from '@/lib/utils'
 
@@ -41,7 +34,6 @@ export function FunnelDetailPage() {
   const navigate = useNavigate()
   const { dateRange, setDateRange, activeFilters, activeConnectionId } = useAppStore()
   const [methodologyOpen, setMethodologyOpen] = useState(false)
-  const [copied, setCopied] = useState(false)
 
   const eventsParam = searchParams.get('events') || ''
   const initialEvents = eventsParam.split(',').filter(Boolean)
@@ -154,8 +146,6 @@ export function FunnelDetailPage() {
 
   const copyPermalink = async () => {
     await navigator.clipboard.writeText(window.location.href)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
   }
 
   // Derived summary metrics
@@ -167,50 +157,56 @@ export function FunnelDetailPage() {
       (typeof steps)[0] | null
     >((worst, s) => (worst === null || s.step_conversion_rate < worst.step_conversion_rate ? s : worst), null)
 
+  const summaryInsight =
+    worstStep && steps.length > 0
+      ? `Biggest drop-off: ${worstStep.event} at ${worstStep.step_conversion_rate}% conversion.`
+      : steps.length > 0
+        ? `${lastStep?.overall_conversion_rate ?? 0}% overall conversion across ${steps.length} steps.`
+        : 'Configure funnel steps to see conversion data.'
+
+  const summaryTotals =
+    steps.length > 0
+      ? [
+          {
+            label: 'Started',
+            value: (firstStep?.users ?? 0).toLocaleString(),
+            color: 'hsl(var(--chart-1))',
+          },
+          {
+            label: 'Completed',
+            value: (lastStep?.users ?? 0).toLocaleString(),
+            color: 'hsl(var(--chart-2))',
+          },
+          {
+            label: 'Conversion',
+            value: `${lastStep?.overall_conversion_rate ?? 0}%`,
+            color: 'hsl(var(--chart-3))',
+          },
+        ]
+      : []
+
   return (
     <PageTransition>
-      <div className={SPACING.page}>
-        <div className={SPACING.section}>
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Go back"
-                onClick={() => navigate('/paths')}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className={TYPOGRAPHY.pageLabel}>Conversion Funnel</h1>
-                <p className="text-muted-foreground mt-1 text-sm font-mono">
-                  {events.length >= 2 ? events.join(' → ') : 'Configure steps below'}
-                </p>
-              </div>
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Copy permalink"
-                  onClick={copyPermalink}
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-success" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{copied ? 'Copied!' : 'Copy permalink'}</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
+      <div className="flex flex-col h-full">
+        {/* Zone 1: Header */}
+        <Header
+          title="Funnels"
+          subtitle="Step conversion analysis"
+          showShare
+          onShare={copyPermalink}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Go back"
+            onClick={() => navigate('/paths')}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Header>
 
-          {/* Filter bar */}
+        {/* Zone 2: Config bar (funnel step builder) */}
+        <PageConfigBar>
           <div className="flex items-center rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border">
             {/* Dynamic funnel steps */}
             {funnelSteps.map((step, index) => (
@@ -269,131 +265,143 @@ export function FunnelDetailPage() {
               </button>
             )}
           </div>
+        </PageConfigBar>
 
-          {events.length < 2 ? (
-            <EmptyState
-              icon={TrendingDown}
-              title="Configure your funnel"
-              description="Select at least 2 events above to analyze your conversion funnel."
-            />
-          ) : (
-            <>
-              {/* Summary cards */}
-              {!isLoading && steps.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
-                      Started
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {firstStep?.users.toLocaleString() ?? '—'}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      people did &quot;{events[0]}&quot;
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
-                      Completed all steps
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {lastStep?.users.toLocaleString() ?? '—'}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {lastStep?.overall_conversion_rate}% of people who started
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
-                      Biggest drop
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {worstStep ? worstStep.dropoff_users.toLocaleString() : '—'}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {worstStep
-                        ? `people left at "${worstStep.event}" (${worstStep.dropoff_rate}%)`
-                        : 'No drop-offs'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Funnel visualization */}
-              <DevCard sql={funnelData?.sql}>
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <TrendingDown className="h-5 w-5 text-primary" />
-                      <div>
-                        <CardTitle>Step-by-Step Breakdown</CardTitle>
-                        <CardDescription>
-                          How users progress (or drop off) through each step
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {isLoading ? (
-                      <div className="space-y-3">
-                        {events.map((_, i) => (
-                          <div key={i} className="space-y-2 p-4 rounded-xl border">
-                            <Skeleton className="h-5 w-40" />
-                            <Skeleton className="h-5 w-full" />
-                          </div>
-                        ))}
-                      </div>
-                    ) : error ? (
-                      <EmptyState
-                        icon={TrendingDown}
-                        title="Error loading funnel data"
-                        description="There was a problem fetching funnel data. Try refreshing the page."
-                      />
-                    ) : steps.length > 0 ? (
-                      <FunnelSteps steps={steps} />
-                    ) : (
-                      <EmptyState
-                        icon={TrendingDown}
-                        title="No funnel data"
-                        description="No users completed the first step in this date range."
-                      />
-                    )}
-
-                    <Collapsible open={methodologyOpen} onOpenChange={setMethodologyOpen}>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="w-full justify-between">
-                          <span className="text-sm font-medium">How this is calculated</span>
-                          <ChevronDown
-                            className={`h-4 w-4 transition-transform ${methodologyOpen ? 'rotate-180' : ''}`}
-                          />
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="text-sm text-muted-foreground p-3 rounded-lg bg-muted/50 mt-1">
-                          <ul className="list-disc list-inside space-y-1.5">
-                            <li>
-                              Each step shows people who did <em>every prior step first</em>, in
-                              order
-                            </li>
-                            <li>Other events between steps are fine — no direct jump required</li>
-                            <li>
-                              &quot;% of starters&quot; = people at this step ÷ people at step 1
-                            </li>
-                            <li>
-                              &quot;People left here&quot; = those who never continued to the next
-                              step
-                            </li>
-                          </ul>
+        {/* Zone 3: Content */}
+        <div className="flex-1 overflow-y-auto p-5">
+          <div className="flex gap-3">
+            <div className="flex-1 min-w-0 space-y-4">
+              {events.length < 2 ? (
+                <EmptyState
+                  icon={TrendingDown}
+                  title="Configure your funnel"
+                  description="Select at least 2 events above to analyze your conversion funnel."
+                />
+              ) : (
+                <>
+                  {/* Summary cards */}
+                  {!isLoading && steps.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="rounded-xl border border-border bg-card p-4">
+                        <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
+                          Started
                         </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </CardContent>
-                </Card>
-              </DevCard>
-            </>
-          )}
+                        <div className="text-2xl font-bold">
+                          {firstStep?.users.toLocaleString() ?? '—'}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          people did &quot;{events[0]}&quot;
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl border border-border bg-card p-4">
+                        <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
+                          Completed all steps
+                        </div>
+                        <div className="text-2xl font-bold">
+                          {lastStep?.users.toLocaleString() ?? '—'}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {lastStep?.overall_conversion_rate}% of people who started
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl border border-border bg-card p-4">
+                        <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
+                          Biggest drop
+                        </div>
+                        <div className="text-2xl font-bold">
+                          {worstStep ? worstStep.dropoff_users.toLocaleString() : '—'}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {worstStep
+                            ? `people left at "${worstStep.event}" (${worstStep.dropoff_rate}%)`
+                            : 'No drop-offs'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Funnel visualization */}
+                  <DevCard sql={funnelData?.sql}>
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center gap-2">
+                          <TrendingDown className="h-5 w-5 text-primary" />
+                          <div>
+                            <CardTitle>Step-by-Step Breakdown</CardTitle>
+                            <CardDescription>
+                              How users progress (or drop off) through each step
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {isLoading ? (
+                          <div className="space-y-3">
+                            {events.map((_, i) => (
+                              <div key={i} className="space-y-2 p-4 rounded-xl border">
+                                <Skeleton className="h-5 w-40" />
+                                <Skeleton className="h-5 w-full" />
+                              </div>
+                            ))}
+                          </div>
+                        ) : error ? (
+                          <EmptyState
+                            icon={TrendingDown}
+                            title="Error loading funnel data"
+                            description="There was a problem fetching funnel data. Try refreshing the page."
+                          />
+                        ) : steps.length > 0 ? (
+                          <FunnelSteps steps={steps} />
+                        ) : (
+                          <EmptyState
+                            icon={TrendingDown}
+                            title="No funnel data"
+                            description="No users completed the first step in this date range."
+                          />
+                        )}
+
+                        <Collapsible open={methodologyOpen} onOpenChange={setMethodologyOpen}>
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="w-full justify-between">
+                              <span className="text-sm font-medium">How this is calculated</span>
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform ${methodologyOpen ? 'rotate-180' : ''}`}
+                              />
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="text-sm text-muted-foreground p-3 rounded-lg bg-muted/50 mt-1">
+                              <ul className="list-disc list-inside space-y-1.5">
+                                <li>
+                                  Each step shows people who did <em>every prior step first</em>, in
+                                  order
+                                </li>
+                                <li>
+                                  Other events between steps are fine — no direct jump required
+                                </li>
+                                <li>
+                                  &quot;% of starters&quot; = people at this step ÷ people at step 1
+                                </li>
+                                <li>
+                                  &quot;People left here&quot; = those who never continued to the
+                                  next step
+                                </li>
+                              </ul>
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      </CardContent>
+                    </Card>
+                  </DevCard>
+                </>
+              )}
+            </div>
+            {summaryTotals.length > 0 && (
+              <SummaryPanel insight={summaryInsight} totals={summaryTotals} />
+            )}
+          </div>
         </div>
       </div>
     </PageTransition>
