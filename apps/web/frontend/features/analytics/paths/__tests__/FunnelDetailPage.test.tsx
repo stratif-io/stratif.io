@@ -10,6 +10,19 @@ import type { PathFunnelResponse, EventsResponse } from '@/types'
 
 vi.mock('@/lib/api')
 
+// Prevent infinite re-render loops caused by setSearchParams in jsdom
+const mockSetSearchParams = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return {
+    ...actual,
+    useSearchParams: () => [
+      new URLSearchParams('events=page_view,button_click,form_submit'),
+      mockSetSearchParams,
+    ],
+  }
+})
+
 const mockFunnelData = {
   data: [
     {
@@ -62,6 +75,7 @@ function renderPage() {
 describe('FunnelDetailPage summary cards', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockSetSearchParams.mockImplementation(() => {})
     useAppStore.setState({
       dateRange: { from: new Date('2026-01-01'), to: new Date('2026-01-31') },
       activeConnectionId: 'conn-1',
