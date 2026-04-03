@@ -48,6 +48,9 @@ interface AppState {
   devMode: boolean
   setDevMode: (enabled: boolean) => void
 
+  dashboardView: 'summary' | 'detail'
+  setDashboardView: (view: 'summary' | 'detail') => void
+
   // Query concurrency tracking — ephemeral, not persisted
   runningQueries: number
   queuedQueries: number
@@ -107,6 +110,9 @@ export const useAppStore = create<AppState>()(
       devMode: false,
       setDevMode: (devMode) => set({ devMode }),
 
+      dashboardView: 'summary',
+      setDashboardView: (dashboardView) => set({ dashboardView }),
+
       runningQueries: 0,
       queuedQueries: 0,
       queryEverActive: false,
@@ -131,6 +137,7 @@ export const useAppStore = create<AppState>()(
         activeConnectionId: state.activeConnectionId,
         activeFilters: state.activeFilters,
         devMode: state.devMode,
+        dashboardView: state.dashboardView,
       }),
       // JSON serialization turns Date objects into strings — revive them on load.
       onRehydrateStorage: () => (state) => {
