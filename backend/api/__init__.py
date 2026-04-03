@@ -9,6 +9,7 @@ from .paths import router as paths_router
 from .people import router as people_router
 from .pivot import router as pivot_router
 from .query_studio import router as query_studio_router
+from .reports import router as reports_router
 from .retention import router as retention_router
 from .sessions import router as sessions_router
 
@@ -24,4 +25,5 @@ __all__ = [
     "mission_control_router",
     "query_studio_router",
     "people_router",
+    "reports_router",
 ]
