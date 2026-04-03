@@ -33,4 +33,16 @@ describe('HeroKpiCard', () => {
     const delta = screen.getByText(/2\.1%/)
     expect(delta.closest('[data-testid="delta-badge"]')).toHaveClass('bg-red-100')
   })
+
+  it('renders correct number of sparkline bars', () => {
+    const sparklineData = [10, 20, 30, 40, 50, 60, 70]
+    const { container } = render(
+      <HeroKpiCard label="Active Users" value="24,891" delta={12.4} sparkline={sparklineData} />
+    )
+    // Find the sparkline container (flex items-end) and count its direct div children
+    const sparklineContainer = container.querySelector('.flex.items-end.gap-\\[2px\\]')
+    expect(sparklineContainer).toBeInTheDocument()
+    const bars = sparklineContainer?.querySelectorAll(':scope > div')
+    expect(bars?.length).toBe(sparklineData.length)
+  })
 })
