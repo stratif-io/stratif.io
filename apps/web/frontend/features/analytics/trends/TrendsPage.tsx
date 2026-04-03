@@ -176,6 +176,12 @@ export function TrendsPage() {
                 )}
               </div>
             )}
+            <TrendFilters
+              dimensions={[...dimensions, ...numericDimensions]}
+              filters={localFilters}
+              connectionId={activeConnectionId ?? undefined}
+              onChange={setLocalFilters}
+            />
           </PageConfigBar>
 
           {/* Zone 3: Content */}
@@ -217,14 +223,6 @@ export function TrendsPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div className="pb-4">
-                        <TrendFilters
-                          dimensions={[...dimensions, ...numericDimensions]}
-                          filters={localFilters}
-                          connectionId={activeConnectionId ?? undefined}
-                          onChange={setLocalFilters}
-                        />
-                      </div>
                       {isError ? (
                         <QueryError error={error} className="h-[300px] sm:h-[380px] lg:h-[450px]" />
                       ) : isLoading ? (
