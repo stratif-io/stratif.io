@@ -112,7 +112,7 @@ export function TrendFilters({
   // ── Compact mode: chips + inline expand ───────────────────────────────────
   if (compact) {
     return (
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="relative flex flex-wrap items-center gap-1.5">
         {rows
           .filter((r) => r.values.length > 0)
           .map((row) => {

@@ -79,7 +79,7 @@ describe('FunnelDetailPage summary cards', () => {
     useAppStore.setState({
       dateRange: { from: new Date('2026-01-01'), to: new Date('2026-01-31') },
       activeConnectionId: 'conn-1',
-      activeFilters: [],
+      activeFilters: {},
     })
     vi.mocked(apiModule.fetchPathFunnel).mockResolvedValue(mockFunnelData as PathFunnelResponse)
     vi.mocked(apiModule.fetchEvents).mockResolvedValue({
