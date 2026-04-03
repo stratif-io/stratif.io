@@ -16,6 +16,7 @@ import { PathFunnelDialog } from './components/PathFunnelDialog'
 import { Badge } from '@/components/ui/badge'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { Header } from '@/components/layout/Header'
+import { PageConfigBar } from '@/components/layout/PageConfigBar'
 import { SummaryPanel } from '@/components/layout/SummaryPanel'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { LoadingState } from '@/components/ui/loading-state'
@@ -276,8 +277,18 @@ export function PathsExplorerPage() {
           {/* Zone 1: Header */}
           <Header title="Paths" subtitle="User journey explorer" showShare />
 
-          {/* Toolbar (serves as Zone 2 config bar) */}
-          <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b shrink-0">
+          {/* Zone 2: Config Bar */}
+          <PageConfigBar
+            right={
+              totalPaths > 0 && (
+                <div className="shrink-0 flex items-center gap-1.5 text-sm">
+                  <GitFork className="h-3.5 w-3.5 text-primary" />
+                  <span className="font-semibold text-primary">{totalPaths.toLocaleString()}</span>
+                  <span className="text-muted-foreground">unique paths</span>
+                </div>
+              )
+            }
+          >
             <div className="flex items-center rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border">
               {/* Start event */}
               <Select
@@ -494,7 +505,7 @@ export function PathsExplorerPage() {
               </Popover>
             </div>
 
-            {/* Reset — outside container, appears only when dirty */}
+            {/* Reset — appears only when dirty */}
             {hasActiveFilters && (
               <button
                 onClick={handleReset}
@@ -504,18 +515,9 @@ export function PathsExplorerPage() {
                 Reset
               </button>
             )}
+          </PageConfigBar>
 
-            {/* Unique paths badge */}
-            {totalPaths > 0 && (
-              <div className="ml-auto shrink-0 flex items-center gap-1.5 text-sm">
-                <GitFork className="h-3.5 w-3.5 text-primary" />
-                <span className="font-semibold text-primary">{totalPaths.toLocaleString()}</span>
-                <span className="text-muted-foreground">unique paths</span>
-              </div>
-            )}
-          </div>
-
-          {/* Zone 3: Content */}
+          {/* Zone 3: Content Area */}
           <div className="flex-1 overflow-y-auto p-5">
             <div className="flex gap-3">
               <div className="flex-1 min-w-0">
