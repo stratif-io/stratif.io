@@ -4,6 +4,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { PageTransition } from '@/components/layout/PageTransition'
+import { Header } from '@/components/layout/Header'
+import { PageConfigBar } from '@/components/layout/PageConfigBar'
+import { SummaryPanel } from '@/components/layout/SummaryPanel'
 import { ChartSkeleton } from '@/components/ui/loading-state'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -17,7 +20,7 @@ import { TrendMetricPicker } from './components/TrendMetricPicker'
 import { TrendChart } from './components/TrendChart'
 import { TrendFilters } from './components/TrendFilters'
 import { FilterSelect } from '@/components/FilterSelect'
-import { SPACING, TYPOGRAPHY, QUERY_STALE_TIME } from '@/lib/constants'
+import { QUERY_STALE_TIME } from '@/lib/constants'
 import type { Granularity } from '@/types'
 import { DevCard } from '@/components/dev'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
@@ -37,7 +40,7 @@ export function TrendsPage() {
     document.title = 'Trends — stratif.io'
   }, [])
 
-  const { dateRange, activeConnectionId, granularity } = useAppStore()
+  const { dateRange, activeConnectionId, granularity, dashboardView } = useAppStore()
   const navigate = useNavigate()
   const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area')
   const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
@@ -101,156 +104,184 @@ export function TrendsPage() {
 
   const periodLabel = GRANULARITY_PERIOD_LABELS[granularity]
 
+  const summaryInsight =
+    totalEvents > 0
+      ? `${totalEvents.toLocaleString()} total events · ${periodLabel} avg ${averageValue.toLocaleString()} · peak ${maxValue.toLocaleString()}`
+      : 'No events recorded in this date range.'
+
   return (
     <PageTransition>
       <NoConnectionGuard>
-        <div className={SPACING.page}>
-          <div className={SPACING.section}>
-            <h1 className={TYPOGRAPHY.pageLabel}>Trend Analysis</h1>
+        <div className="flex flex-col h-full">
+          {/* Zone 1: Header */}
+          <Header title="Trends" subtitle="Event counts over time" showShare />
 
-            <DevCard sql={sql}>
-              <Card className="relative overflow-hidden">
-                <CardLoadingBar loading={isLoading} />
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    {/* Left group: what you're measuring */}
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <TrendMetricPicker
-                        measureField={measureField}
-                        aggregation={aggregation}
-                        standardMeasures={standardMeasures}
-                        numericDimensions={numericDimensions}
-                        dimensions={dimensions}
-                        onChange={(field, agg) => {
-                          setMeasureField(field)
-                          setAggregation(agg as typeof aggregation)
-                        }}
-                        onAggChange={(agg) => setAggregation(agg as typeof aggregation)}
-                      />
-                    </div>
+          {/* Zone 2: Config bar */}
+          <PageConfigBar
+            right={
+              <div className="flex items-center bg-muted rounded-md p-0.5 h-7 gap-0.5">
+                {(['area', 'line', 'bar'] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setChartType(type)}
+                    className={cn(
+                      'px-2.5 text-xs rounded capitalize transition-colors',
+                      chartType === type
+                        ? 'bg-background shadow-sm font-medium text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+              </div>
+            }
+          >
+            <TrendMetricPicker
+              measureField={measureField}
+              aggregation={aggregation}
+              standardMeasures={standardMeasures}
+              numericDimensions={numericDimensions}
+              dimensions={dimensions}
+              onChange={(field, agg) => {
+                setMeasureField(field)
+                setAggregation(agg as typeof aggregation)
+              }}
+              onAggChange={(agg) => setAggregation(agg as typeof aggregation)}
+            />
+            {dimensions.length > 0 && (
+              <div className="w-[min(180px,45vw)] flex gap-1">
+                <div className="flex-1">
+                  <FilterSelect
+                    size="sm"
+                    mode="single"
+                    tree={true}
+                    options={dimensions}
+                    value={breakdownDimension}
+                    onChange={(val) => setBreakdownDimension(val as string)}
+                    placeholder="Break down by…"
+                  />
+                </div>
+                {breakdownDimension && (
+                  <button
+                    type="button"
+                    onClick={() => setBreakdownDimension(null)}
+                    className="h-7 min-w-[28px] px-1.5 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
+                    aria-label="Clear breakdown"
+                    title="Clear breakdown"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            )}
+          </PageConfigBar>
 
-                    {/* Right group: how it's displayed */}
-                    <div className="flex flex-wrap gap-2 items-center">
-                      {/* Chart type toggle — h-7 inner-pill */}
-                      <div className="flex items-center bg-muted rounded-md p-0.5 h-7 gap-0.5">
-                        {(['area', 'line', 'bar'] as const).map((type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() => setChartType(type)}
-                            className={cn(
-                              'px-2.5 text-xs rounded capitalize transition-colors',
-                              chartType === type
-                                ? 'bg-background shadow-sm font-medium text-foreground'
-                                : 'text-muted-foreground hover:text-foreground'
-                            )}
-                          >
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                          </button>
-                        ))}
+          {/* Zone 3: Content */}
+          <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex gap-3">
+              <div className="flex-1 min-w-0">
+                <DevCard sql={sql}>
+                  <Card className="relative overflow-hidden">
+                    <CardLoadingBar loading={isLoading} />
+                    <CardHeader className="pb-3">
+                      {/* Inline stats strip */}
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            Total
+                          </span>
+                          <span className="ml-1.5 text-sm font-semibold">
+                            {totalEvents.toLocaleString()}
+                          </span>
+                        </div>
+                        <span className="text-muted-foreground/30 select-none">|</span>
+                        <div>
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            {periodLabel} avg
+                          </span>
+                          <span className="ml-1.5 text-sm font-semibold">
+                            {averageValue.toLocaleString()}
+                          </span>
+                        </div>
+                        <span className="text-muted-foreground/30 select-none">|</span>
+                        <div>
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            Peak
+                          </span>
+                          <span className="ml-1.5 text-sm font-semibold">
+                            {maxValue.toLocaleString()}
+                          </span>
+                        </div>
                       </div>
-
-                      {/* Breakdown selector */}
-                      {dimensions.length > 0 && (
-                        <div className="w-[min(180px,45vw)] flex gap-1">
-                          <div className="flex-1">
-                            <FilterSelect
-                              size="sm"
-                              mode="single"
-                              tree={true}
-                              options={dimensions}
-                              value={breakdownDimension}
-                              onChange={(val) => setBreakdownDimension(val as string)}
-                              placeholder="Break down by…"
-                            />
-                          </div>
-                          {breakdownDimension && (
-                            <button
-                              type="button"
-                              onClick={() => setBreakdownDimension(null)}
-                              className="h-7 min-w-[28px] px-1.5 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
-                              aria-label="Clear breakdown"
-                              title="Clear breakdown"
-                            >
-                              ✕
-                            </button>
-                          )}
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="pb-4">
+                        <TrendFilters
+                          dimensions={[...dimensions, ...numericDimensions]}
+                          filters={localFilters}
+                          connectionId={activeConnectionId ?? undefined}
+                          onChange={setLocalFilters}
+                        />
+                      </div>
+                      {isError ? (
+                        <QueryError error={error} className="h-[300px] sm:h-[380px] lg:h-[450px]" />
+                      ) : isLoading ? (
+                        <ChartSkeleton height="h-[300px] sm:h-[380px] lg:h-[450px]" />
+                      ) : trendData.length === 0 ? (
+                        <EmptyState
+                          icon={TrendingUp}
+                          title="No trend data available"
+                          description="No events were recorded in this date range. Try widening the range or selecting a different event."
+                          className="h-[300px] sm:h-[380px] lg:h-[450px]"
+                        />
+                      ) : (
+                        <div className="h-[300px] sm:h-[380px] lg:h-[450px]">
+                          <TrendChart
+                            data={trendData}
+                            chartType={chartType}
+                            averageValue={averageValue}
+                            eventName="All Events"
+                            seriesKeys={seriesKeys}
+                            measureKey={measureKey}
+                          />
                         </div>
                       )}
-                    </div>
-                  </div>
-                  {/* Inline stats strip */}
-                  <div className="flex items-center gap-3 pt-1">
-                    <div>
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        Total
-                      </span>
-                      <span className="ml-1.5 text-sm font-semibold">
-                        {totalEvents.toLocaleString()}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground/30 select-none">|</span>
-                    <div>
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        {periodLabel} avg
-                      </span>
-                      <span className="ml-1.5 text-sm font-semibold">
-                        {averageValue.toLocaleString()}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground/30 select-none">|</span>
-                    <div>
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        Peak
-                      </span>
-                      <span className="ml-1.5 text-sm font-semibold">
-                        {maxValue.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="pb-4">
-                    <TrendFilters
-                      dimensions={[...dimensions, ...numericDimensions]}
-                      filters={localFilters}
-                      connectionId={activeConnectionId ?? undefined}
-                      onChange={setLocalFilters}
-                    />
-                  </div>
-                  {isError ? (
-                    <QueryError error={error} className="h-[300px] sm:h-[380px] lg:h-[450px]" />
-                  ) : isLoading ? (
-                    <ChartSkeleton height="h-[300px] sm:h-[380px] lg:h-[450px]" />
-                  ) : trendData.length === 0 ? (
-                    <EmptyState
-                      icon={TrendingUp}
-                      title="No trend data available"
-                      description="No events were recorded in this date range. Try widening the range or selecting a different event."
-                      className="h-[300px] sm:h-[380px] lg:h-[450px]"
-                    />
-                  ) : (
-                    <div className="h-[300px] sm:h-[380px] lg:h-[450px]">
-                      <TrendChart
-                        data={trendData}
-                        chartType={chartType}
-                        averageValue={averageValue}
-                        eventName="All Events"
-                        seriesKeys={seriesKeys}
-                        measureKey={measureKey}
-                      />
-                    </div>
-                  )}
-                  {activeConnectionId && (
-                    <div className="flex justify-end pt-3">
-                      <Button variant="outline" size="sm" onClick={handleRunInPivot}>
-                        Run in Pivot Explorer
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </DevCard>
+                      {activeConnectionId && (
+                        <div className="flex justify-end pt-3">
+                          <Button variant="outline" size="sm" onClick={handleRunInPivot}>
+                            Run in Pivot Explorer
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </DevCard>
+              </div>
+              {dashboardView === 'summary' && (
+                <SummaryPanel
+                  insight={summaryInsight}
+                  totals={[
+                    {
+                      label: 'Total',
+                      value: totalEvents.toLocaleString(),
+                      color: 'hsl(var(--chart-1))',
+                    },
+                    {
+                      label: `${periodLabel} avg`,
+                      value: averageValue.toLocaleString(),
+                      color: 'hsl(var(--chart-2))',
+                    },
+                    {
+                      label: 'Peak',
+                      value: maxValue.toLocaleString(),
+                      color: 'hsl(var(--chart-3))',
+                    },
+                  ]}
+                />
+              )}
+            </div>
           </div>
         </div>
       </NoConnectionGuard>
