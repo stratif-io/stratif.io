@@ -2,6 +2,7 @@ import { Suspense, lazy, useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout'
 import { SPACING } from '@/lib/constants'
+import { OnboardingGuard } from './features/onboarding/OnboardingGuard'
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard').then((m) => ({ default: m.DashboardPage }))
@@ -34,6 +35,10 @@ const QueryStudioPage = lazy(() =>
   import('@/features/query-studio/QueryStudioPage').then((m) => ({
     default: m.QueryStudioPage,
   }))
+)
+
+const OnboardingPage = lazy(() =>
+  import('./features/onboarding/OnboardingPage').then((m) => ({ default: m.OnboardingPage }))
 )
 
 const DesignSystemPage = import.meta.env.DEV
@@ -104,22 +109,32 @@ function App() {
       <Routes>
         <Route element={<DashboardLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/trends" element={<TrendsPage />} />
-          <Route path="/retention" element={<RetentionPage />} />
-          <Route path="/paths" element={<PathsPage />} />
-          <Route path="/people" element={<PeoplePage />} />
-          <Route path="/funnel" element={<FunnelDetailPage />} />
-          <Route path="/pivot" element={<PivotPage />} />
-          <Route path="/events" element={<EventsPage />} />
           <Route path="/connections" element={<ConnectionsPage />} />
           <Route path="/connections/:id/:tab?" element={<ConnectionDetailPage />} />
-          <Route path="/query-studio" element={<QueryStudioPage />} />
-          {import.meta.env.DEV && DesignSystemPage && (
-            <Route path="/design-system" element={<DesignSystemPage />} />
-          )}
           <Route path="/settings" element={<Navigate to="/connections" replace />} />
+          <Route element={<OnboardingGuard />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/trends" element={<TrendsPage />} />
+            <Route path="/retention" element={<RetentionPage />} />
+            <Route path="/paths" element={<PathsPage />} />
+            <Route path="/people" element={<PeoplePage />} />
+            <Route path="/funnel" element={<FunnelDetailPage />} />
+            <Route path="/pivot" element={<PivotPage />} />
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/query-studio" element={<QueryStudioPage />} />
+            {import.meta.env.DEV && DesignSystemPage && (
+              <Route path="/design-system" element={<DesignSystemPage />} />
+            )}
+          </Route>
         </Route>
+        <Route
+          path="/onboarding"
+          element={
+            <Suspense fallback={<PageSkeleton />}>
+              <OnboardingPage />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>
