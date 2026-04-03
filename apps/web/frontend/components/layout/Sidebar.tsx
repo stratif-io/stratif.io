@@ -10,8 +10,6 @@ import {
   ActivityIcon,
   TerminalIcon,
   SettingsIcon,
-  PanelLeftCloseIcon,
-  PanelLeftOpenIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
@@ -91,25 +89,18 @@ export function Sidebar() {
     >
       {/* Logo + collapse toggle */}
       <div className="px-2 py-3 flex items-center gap-2 border-b border-border/50 min-h-[48px]">
-        <div className="w-[26px] h-[26px] rounded-md bg-[hsl(var(--primary))] flex items-center justify-center shrink-0">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          className="shrink-0 w-[26px] h-[26px] rounded-md bg-[hsl(var(--primary))] flex items-center justify-center hover:opacity-80 transition-opacity"
+        >
           <span className="text-[10px] font-black text-white leading-none">S</span>
-        </div>
+        </button>
         {sidebarOpen && (
           <span className="flex-1 text-[13px] font-bold text-foreground tracking-tight truncate">
             {'<stratif.io>'}
           </span>
         )}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-          className="shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-muted/60 text-muted-foreground transition-colors"
-        >
-          {sidebarOpen ? (
-            <PanelLeftCloseIcon className="w-3.5 h-3.5" />
-          ) : (
-            <PanelLeftOpenIcon className="w-3.5 h-3.5" />
-          )}
-        </button>
       </div>
 
       {/* Connection indicator */}
