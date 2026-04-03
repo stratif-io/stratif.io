@@ -33,40 +33,34 @@ const DATA_NAV = [
 
 const SETTINGS_NAV = [{ to: '/connections', label: 'Connections', icon: SettingsIcon }]
 
+const ALL_NAV = [...ANALYTICS_NAV, ...DATA_NAV, ...SETTINGS_NAV]
+
 interface NavSectionProps {
   label: string
   items: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }[]
-  expanded: boolean
 }
 
-function NavSection({ label, items, expanded }: NavSectionProps) {
+function NavSection({ label, items }: NavSectionProps) {
   return (
     <div className="mb-2">
-      <p
-        className={cn(
-          'px-3 mb-1 text-[9px] font-bold uppercase tracking-[0.07em] text-muted-foreground/60 select-none transition-opacity duration-200',
-          expanded ? 'opacity-100' : 'opacity-0'
-        )}
-      >
+      <p className="px-3 mb-1 text-[9px] font-bold uppercase tracking-[0.07em] text-muted-foreground/60 select-none">
         {label}
       </p>
       {items.map(({ to, label: itemLabel, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
-          title={!expanded ? itemLabel : undefined}
           className={({ isActive }) =>
             cn(
               'flex items-center gap-2 mx-1 px-2 py-1.5 rounded-lg text-[12px] transition-colors',
               isActive
                 ? 'bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))] font-semibold'
-                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium',
-              !expanded && 'justify-center px-0'
+                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium'
             )
           }
         >
           <Icon className="w-3.5 h-3.5 shrink-0" />
-          {expanded && <span className="truncate">{itemLabel}</span>}
+          <span className="truncate">{itemLabel}</span>
         </NavLink>
       ))}
     </div>
@@ -87,23 +81,54 @@ export function Sidebar() {
         sidebarOpen ? 'w-[200px]' : 'w-[52px]'
       )}
     >
-      {/* Logo + collapse toggle */}
-      <div className="px-2 py-3 flex items-center gap-2 border-b border-border/50 min-h-[48px]">
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-          className="shrink-0 w-[26px] h-[26px] rounded-md bg-[hsl(var(--primary))] flex items-center justify-center hover:opacity-80 transition-opacity"
-        >
-          <span className="text-[10px] font-black text-white leading-none">S</span>
-        </button>
-        {sidebarOpen && (
-          <span className="flex-1 text-[13px] font-bold text-foreground tracking-tight truncate">
-            {'<stratif.io>'}
-          </span>
+      {/* Header: logo + title when expanded; logo + icon strip when collapsed */}
+      <div
+        className={cn(
+          'border-b border-border/50 transition-all duration-300',
+          sidebarOpen ? 'px-2 py-3' : 'px-2 pt-3 pb-2'
+        )}
+      >
+        {/* Logo row */}
+        <div className="flex items-center gap-2 min-h-[26px]">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            className="shrink-0 w-[26px] h-[26px] rounded-md bg-[hsl(var(--primary))] flex items-center justify-center hover:opacity-80 transition-opacity"
+          >
+            <span className="text-[10px] font-black text-white leading-none">S</span>
+          </button>
+          {sidebarOpen && (
+            <span className="flex-1 text-[13px] font-bold text-foreground tracking-tight truncate">
+              {'<stratif.io>'}
+            </span>
+          )}
+        </div>
+
+        {/* Collapsed icon strip */}
+        {!sidebarOpen && (
+          <div className="flex flex-col gap-0.5 mt-2">
+            {ALL_NAV.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                title={label}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center justify-center p-2 rounded-lg transition-colors',
+                    isActive
+                      ? 'bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]'
+                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                  )
+                }
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+              </NavLink>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Connection indicator */}
+      {/* Connection indicator (expanded only) */}
       <div
         className={cn(
           'border-b border-border/50 overflow-hidden transition-all duration-300',
@@ -116,12 +141,14 @@ export function Sidebar() {
         />
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-1 py-3">
-        <NavSection label="Analytics" items={ANALYTICS_NAV} expanded={sidebarOpen} />
-        <NavSection label="Data" items={DATA_NAV} expanded={sidebarOpen} />
-        <NavSection label="Settings" items={SETTINGS_NAV} expanded={sidebarOpen} />
-      </nav>
+      {/* Nav (expanded only) */}
+      {sidebarOpen && (
+        <nav className="flex-1 overflow-y-auto px-1 py-3">
+          <NavSection label="Analytics" items={ANALYTICS_NAV} />
+          <NavSection label="Data" items={DATA_NAV} />
+          <NavSection label="Settings" items={SETTINGS_NAV} />
+        </nav>
+      )}
     </aside>
   )
 }
