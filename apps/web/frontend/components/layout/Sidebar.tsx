@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import faviconColor from '@/assets/favicon-color.svg'
 import {
   LayoutDashboardIcon,
@@ -14,8 +14,6 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
-import { useConnections } from '@/features/connections/hooks/useConnectionsData'
-import { ConnectionIndicator } from './ConnectionIndicator'
 
 const ANALYTICS_NAV = [
   { to: '/dashboard', label: 'Mission Control', icon: LayoutDashboardIcon },
@@ -69,11 +67,7 @@ function NavSection({ label, items }: NavSectionProps) {
 }
 
 export function Sidebar() {
-  const navigate = useNavigate()
-  const { activeConnectionId, sidebarOpen, setSidebarOpen } = useAppStore()
-  const { data: connections } = useConnections()
-
-  const activeConnection = connections?.find((c) => c.id === activeConnectionId)
+  const { sidebarOpen, setSidebarOpen } = useAppStore()
 
   return (
     <aside
@@ -127,19 +121,6 @@ export function Sidebar() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Connection indicator (expanded only) */}
-      <div
-        className={cn(
-          'border-b border-border/50 overflow-hidden transition-all duration-300',
-          sidebarOpen ? 'px-2 py-2 max-h-[48px] opacity-100' : 'max-h-0 opacity-0 py-0 px-2'
-        )}
-      >
-        <ConnectionIndicator
-          connectionName={activeConnection?.name ?? null}
-          onClick={() => navigate('/connections')}
-        />
       </div>
 
       {/* Nav (expanded only) */}
