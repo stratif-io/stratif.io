@@ -17,7 +17,6 @@ import { LoadingState } from '@/components/ui/loading-state'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
-import { DevCard } from '@/components/dev'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 
 export function PathsPage() {
@@ -29,7 +28,7 @@ export function PathsPage() {
   const [deviceType, setDeviceType] = useState<string>('')
   const [targetEvent, setTargetEvent] = useState<string>(selectedEvent || 'Purchase')
 
-  const { pathData, events, isLoading, isError, error, eventsLoading, totalOccurrences, sql } =
+  const { pathData, events, isLoading, isError, error, eventsLoading, totalOccurrences } =
     usePathsData({
       dateRange,
       targetEvent,
@@ -48,69 +47,67 @@ export function PathsPage() {
           <div className={SPACING.section}>
             <h1 className={TYPOGRAPHY.pageLabel}>Path Analysis</h1>
 
-            <DevCard sql={sql}>
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between flex-wrap gap-3">
-                    <div className="flex items-center gap-2">
-                      <CardTitle>Reverse Path Analysis</CardTitle>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Select
-                        value={deviceType || 'all'}
-                        onValueChange={(val) => setDeviceType(val === 'all' ? '' : val)}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue placeholder="All Devices" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Devices</SelectItem>
-                          <SelectItem value="Mobile">Mobile</SelectItem>
-                          <SelectItem value="Desktop">Desktop</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select value={targetEvent} onValueChange={handleTargetEventChange}>
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Select target event" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {events.map((event) => (
-                            <SelectItem key={event} value={event}>
-                              {event}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Reverse Path Analysis</CardTitle>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {isError ? (
-                    <QueryError error={error} />
-                  ) : isLoading || eventsLoading ? (
-                    <LoadingState message="Analyzing paths…" />
-                  ) : pathData.length === 0 ? (
-                    <EmptyState
-                      icon={Route}
-                      title="No paths found"
-                      description={`No paths lead to "${targetEvent}" in the selected date range. Try a different event or date range.`}
-                    />
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="text-sm text-muted-foreground">
-                        <span className="font-semibold text-foreground">
-                          {totalOccurrences.toLocaleString()}
-                        </span>{' '}
-                        total occurrences leading to{' '}
-                        <span className="font-semibold text-foreground">{targetEvent}</span>
-                      </div>
-                      <PathsChart data={pathData} targetEvent={targetEvent} />
-                      <PathsTable data={pathData} />
+                  <div className="flex items-center gap-3">
+                    <Select
+                      value={deviceType || 'all'}
+                      onValueChange={(val) => setDeviceType(val === 'all' ? '' : val)}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="All Devices" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Devices</SelectItem>
+                        <SelectItem value="Mobile">Mobile</SelectItem>
+                        <SelectItem value="Desktop">Desktop</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={targetEvent} onValueChange={handleTargetEventChange}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select target event" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {events.map((event) => (
+                          <SelectItem key={event} value={event}>
+                            {event}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isError ? (
+                  <QueryError error={error} />
+                ) : isLoading || eventsLoading ? (
+                  <LoadingState message="Analyzing paths…" />
+                ) : pathData.length === 0 ? (
+                  <EmptyState
+                    icon={Route}
+                    title="No paths found"
+                    description={`No paths lead to "${targetEvent}" in the selected date range. Try a different event or date range.`}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                      <span className="font-semibold text-foreground">
+                        {totalOccurrences.toLocaleString()}
+                      </span>{' '}
+                      total occurrences leading to{' '}
+                      <span className="font-semibold text-foreground">{targetEvent}</span>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </DevCard>
+                    <PathsChart data={pathData} targetEvent={targetEvent} />
+                    <PathsTable data={pathData} />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </NoConnectionGuard>

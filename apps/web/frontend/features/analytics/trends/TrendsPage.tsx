@@ -19,7 +19,6 @@ import { TrendFilters } from './components/TrendFilters'
 import { FilterSelect } from '@/components/FilterSelect'
 import { SPACING, TYPOGRAPHY, QUERY_STALE_TIME } from '@/lib/constants'
 import type { Granularity } from '@/types'
-import { DevCard } from '@/components/dev'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { buildPivotUrl } from './trendToPivot'
 
@@ -90,7 +89,6 @@ export function TrendsPage() {
     maxValue,
     seriesKeys,
     measureKey,
-    sql,
   } = useTrendData({
     dateRange,
     granularity,
@@ -108,149 +106,147 @@ export function TrendsPage() {
           <div className={SPACING.section}>
             <h1 className={TYPOGRAPHY.pageLabel}>Trend Analysis</h1>
 
-            <DevCard sql={sql}>
-              <Card className="relative overflow-hidden">
-                <CardLoadingBar loading={isLoading} />
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    {/* Left group: what you're measuring */}
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <TrendMetricPicker
-                        measureField={measureField}
-                        aggregation={aggregation}
-                        standardMeasures={standardMeasures}
-                        numericDimensions={numericDimensions}
-                        dimensions={dimensions}
-                        onChange={(field, agg) => {
-                          setMeasureField(field)
-                          setAggregation(agg as typeof aggregation)
-                        }}
-                        onAggChange={(agg) => setAggregation(agg as typeof aggregation)}
-                      />
-                    </div>
+            <Card className="relative overflow-hidden">
+              <CardLoadingBar loading={isLoading} />
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  {/* Left group: what you're measuring */}
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <TrendMetricPicker
+                      measureField={measureField}
+                      aggregation={aggregation}
+                      standardMeasures={standardMeasures}
+                      numericDimensions={numericDimensions}
+                      dimensions={dimensions}
+                      onChange={(field, agg) => {
+                        setMeasureField(field)
+                        setAggregation(agg as typeof aggregation)
+                      }}
+                      onAggChange={(agg) => setAggregation(agg as typeof aggregation)}
+                    />
+                  </div>
 
-                    {/* Right group: how it's displayed */}
-                    <div className="flex flex-wrap gap-2 items-center">
-                      {/* Chart type toggle — h-7 inner-pill */}
-                      <div className="flex items-center bg-muted rounded-md p-0.5 h-7 gap-0.5">
-                        {(['area', 'line', 'bar'] as const).map((type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() => setChartType(type)}
-                            className={cn(
-                              'px-2.5 text-xs rounded capitalize transition-colors',
-                              chartType === type
-                                ? 'bg-background shadow-sm font-medium text-foreground'
-                                : 'text-muted-foreground hover:text-foreground'
-                            )}
-                          >
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Breakdown selector */}
-                      {dimensions.length > 0 && (
-                        <div className="w-[min(180px,45vw)] flex gap-1">
-                          <div className="flex-1">
-                            <FilterSelect
-                              size="sm"
-                              mode="single"
-                              tree={true}
-                              options={dimensions}
-                              value={breakdownDimension}
-                              onChange={(val) => setBreakdownDimension(val as string)}
-                              placeholder="Break down by…"
-                            />
-                          </div>
-                          {breakdownDimension && (
-                            <button
-                              type="button"
-                              onClick={() => setBreakdownDimension(null)}
-                              className="h-7 min-w-[28px] px-1.5 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
-                              aria-label="Clear breakdown"
-                              title="Clear breakdown"
-                            >
-                              ✕
-                            </button>
+                  {/* Right group: how it's displayed */}
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {/* Chart type toggle — h-7 inner-pill */}
+                    <div className="flex items-center bg-muted rounded-md p-0.5 h-7 gap-0.5">
+                      {(['area', 'line', 'bar'] as const).map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setChartType(type)}
+                          className={cn(
+                            'px-2.5 text-xs rounded capitalize transition-colors',
+                            chartType === type
+                              ? 'bg-background shadow-sm font-medium text-foreground'
+                              : 'text-muted-foreground hover:text-foreground'
                           )}
+                        >
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Breakdown selector */}
+                    {dimensions.length > 0 && (
+                      <div className="w-[min(180px,45vw)] flex gap-1">
+                        <div className="flex-1">
+                          <FilterSelect
+                            size="sm"
+                            mode="single"
+                            tree={true}
+                            options={dimensions}
+                            value={breakdownDimension}
+                            onChange={(val) => setBreakdownDimension(val as string)}
+                            placeholder="Break down by…"
+                          />
                         </div>
-                      )}
-                    </div>
+                        {breakdownDimension && (
+                          <button
+                            type="button"
+                            onClick={() => setBreakdownDimension(null)}
+                            className="h-7 min-w-[28px] px-1.5 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
+                            aria-label="Clear breakdown"
+                            title="Clear breakdown"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {/* Inline stats strip */}
-                  <div className="flex items-center gap-3 pt-1">
-                    <div>
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        Total
-                      </span>
-                      <span className="ml-1.5 text-sm font-semibold">
-                        {totalEvents.toLocaleString()}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground/30 select-none">|</span>
-                    <div>
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        {periodLabel} avg
-                      </span>
-                      <span className="ml-1.5 text-sm font-semibold">
-                        {averageValue.toLocaleString()}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground/30 select-none">|</span>
-                    <div>
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        Peak
-                      </span>
-                      <span className="ml-1.5 text-sm font-semibold">
-                        {maxValue.toLocaleString()}
-                      </span>
-                    </div>
+                </div>
+                {/* Inline stats strip */}
+                <div className="flex items-center gap-3 pt-1">
+                  <div>
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Total
+                    </span>
+                    <span className="ml-1.5 text-sm font-semibold">
+                      {totalEvents.toLocaleString()}
+                    </span>
                   </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="pb-4">
-                    <TrendFilters
-                      dimensions={[...dimensions, ...numericDimensions]}
-                      filters={localFilters}
-                      connectionId={activeConnectionId ?? undefined}
-                      onChange={setLocalFilters}
+                  <span className="text-muted-foreground/30 select-none">|</span>
+                  <div>
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      {periodLabel} avg
+                    </span>
+                    <span className="ml-1.5 text-sm font-semibold">
+                      {averageValue.toLocaleString()}
+                    </span>
+                  </div>
+                  <span className="text-muted-foreground/30 select-none">|</span>
+                  <div>
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Peak
+                    </span>
+                    <span className="ml-1.5 text-sm font-semibold">
+                      {maxValue.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="pb-4">
+                  <TrendFilters
+                    dimensions={[...dimensions, ...numericDimensions]}
+                    filters={localFilters}
+                    connectionId={activeConnectionId ?? undefined}
+                    onChange={setLocalFilters}
+                  />
+                </div>
+                {isError ? (
+                  <QueryError error={error} className="h-[300px] sm:h-[380px] lg:h-[450px]" />
+                ) : isLoading ? (
+                  <ChartSkeleton height="h-[300px] sm:h-[380px] lg:h-[450px]" />
+                ) : trendData.length === 0 ? (
+                  <EmptyState
+                    icon={TrendingUp}
+                    title="No trend data available"
+                    description="No events were recorded in this date range. Try widening the range or selecting a different event."
+                    className="h-[300px] sm:h-[380px] lg:h-[450px]"
+                  />
+                ) : (
+                  <div className="h-[300px] sm:h-[380px] lg:h-[450px]">
+                    <TrendChart
+                      data={trendData}
+                      chartType={chartType}
+                      averageValue={averageValue}
+                      eventName="All Events"
+                      seriesKeys={seriesKeys}
+                      measureKey={measureKey}
                     />
                   </div>
-                  {isError ? (
-                    <QueryError error={error} className="h-[300px] sm:h-[380px] lg:h-[450px]" />
-                  ) : isLoading ? (
-                    <ChartSkeleton height="h-[300px] sm:h-[380px] lg:h-[450px]" />
-                  ) : trendData.length === 0 ? (
-                    <EmptyState
-                      icon={TrendingUp}
-                      title="No trend data available"
-                      description="No events were recorded in this date range. Try widening the range or selecting a different event."
-                      className="h-[300px] sm:h-[380px] lg:h-[450px]"
-                    />
-                  ) : (
-                    <div className="h-[300px] sm:h-[380px] lg:h-[450px]">
-                      <TrendChart
-                        data={trendData}
-                        chartType={chartType}
-                        averageValue={averageValue}
-                        eventName="All Events"
-                        seriesKeys={seriesKeys}
-                        measureKey={measureKey}
-                      />
-                    </div>
-                  )}
-                  {activeConnectionId && (
-                    <div className="flex justify-end pt-3">
-                      <Button variant="outline" size="sm" onClick={handleRunInPivot}>
-                        Run in Pivot Explorer
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </DevCard>
+                )}
+                {activeConnectionId && (
+                  <div className="flex justify-end pt-3">
+                    <Button variant="outline" size="sm" onClick={handleRunInPivot}>
+                      Run in Pivot Explorer
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </NoConnectionGuard>
