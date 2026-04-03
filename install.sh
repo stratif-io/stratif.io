@@ -91,7 +91,9 @@ if [ -n "${STRATIFIO_VERSION:-}" ]; then
   LATEST="$STRATIFIO_VERSION"
 else
   info "Fetching latest version"
-  LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+  GH_AUTH_ARGS=()
+  [ -n "${GITHUB_TOKEN:-}" ] && GH_AUTH_ARGS=(-H "Authorization: token $GITHUB_TOKEN")
+  LATEST=$(curl -fsSL "${GH_AUTH_ARGS[@]}" "https://api.github.com/repos/${REPO}/releases/latest" \
     | grep '"tag_name"' | head -1 \
     | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
   [ -n "$LATEST" ] || die "Could not fetch latest release. Check your internet connection."
