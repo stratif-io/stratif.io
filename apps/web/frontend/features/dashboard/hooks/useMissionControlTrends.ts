@@ -1,4 +1,5 @@
 import { useQueries } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { subDays, differenceInDays } from 'date-fns'
 import { fetchMissionControlTrend } from '@/lib/api'
 import { useAppStore } from '@/stores'
@@ -47,7 +48,9 @@ export function useMissionControlTrends({
 }): UseMissionControlTrendsReturn {
   const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
-  const { activeFilters, activeConnectionId, granularity } = useAppStore()
+  const activeFilters = useAppStore((s) => s.activeFilters)
+  const activeConnectionId = useAppStore((s) => s.activeConnectionId)
+  const granularity = useAppStore((s) => s.granularity)
 
   // Calculate the previous period (same length, immediately before)
   const periodDays =
@@ -119,21 +122,27 @@ export function useMissionControlTrends({
   })
 
   const n = METRICS.length
-  const trends = Object.fromEntries(
-    METRICS.map((metric, i) => [
-      metric,
-      {
-        values: results[i].data?.data.map((d) => d.value) ?? [],
-        dates: results[i].data?.data.map((d) => d.date) ?? [],
-        previousValues: results[n + i].data?.data.map((d) => d.value) ?? [],
-        previousDates: results[n + i].data?.data.map((d) => d.date) ?? [],
-        loading: results[i].isLoading,
-        sql: [results[i].data?.sql, results[n + i].data?.sql]
-          .flatMap((s) => (Array.isArray(s) ? s : s ? [s] : []))
-          .filter(Boolean) as string[],
-      },
-    ])
-  ) as Record<TrendMetric, MetricTrend>
+  const trendKey = results.map((r) => `${r.dataUpdatedAt}:${r.isLoading}`).join(',')
+  const trends = useMemo(
+    () =>
+      Object.fromEntries(
+        METRICS.map((metric, i) => [
+          metric,
+          {
+            values: results[i].data?.data.map((d) => d.value) ?? [],
+            dates: results[i].data?.data.map((d) => d.date) ?? [],
+            previousValues: results[n + i].data?.data.map((d) => d.value) ?? [],
+            previousDates: results[n + i].data?.data.map((d) => d.date) ?? [],
+            loading: results[i].isLoading,
+            sql: [results[i].data?.sql, results[n + i].data?.sql]
+              .flatMap((s) => (Array.isArray(s) ? s : s ? [s] : []))
+              .filter(Boolean) as string[],
+          },
+        ])
+      ) as Record<TrendMetric, MetricTrend>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [trendKey]
+  )
 
   return { trends }
 }

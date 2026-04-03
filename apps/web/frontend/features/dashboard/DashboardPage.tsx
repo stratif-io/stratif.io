@@ -24,7 +24,9 @@ export function DashboardPage() {
     document.title = 'Mission Control — stratif.io'
   }, [])
 
-  const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()
+  const dateRange = useAppStore((s) => s.dateRange)
+  const activeConnectionId = useAppStore((s) => s.activeConnectionId)
+  const setActiveConnectionId = useAppStore((s) => s.setActiveConnectionId)
   const { pinned, togglePin, isPinned, resetToDefault } = usePinnedMetrics(
     activeConnectionId ?? null
   )

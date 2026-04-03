@@ -1,4 +1,5 @@
 import { useQuery, useQueries } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { subDays, differenceInDays } from 'date-fns'
 import { fetchMissionControlMetric, fetchTopEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
@@ -46,7 +47,8 @@ export function useMissionControl({
 }: UseMissionControlOptions): UseMissionControlReturn {
   const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
-  const { activeFilters, activeConnectionId } = useAppStore()
+  const activeFilters = useAppStore((s) => s.activeFilters)
+  const activeConnectionId = useAppStore((s) => s.activeConnectionId)
 
   // Queries are enabled whenever a connection is selected, with or without dates.
   // When no date range is set (all-time), start_date/end_date are omitted from
@@ -104,33 +106,44 @@ export function useMissionControl({
   const isError = metricResults.some((r) => r.isError)
   const error = (metricResults.find((r) => r.error)?.error as Error | null) ?? null
 
-  // Per-metric loading map — each card uses its own flag
-  const metricLoading = Object.fromEntries(
-    METRICS.map((metric, i) => [metric, metricResults[i].isLoading])
-  ) as Record<MetricKey, boolean>
+  const loadingKey = metricResults.map((r) => r.isLoading).join(',')
+  const dataKey = metricResults.map((r) => r.dataUpdatedAt).join(',')
 
-  // Per-metric SQL map — exposes the SQL for the "number" query on each card
-  const metricSql = Object.fromEntries(
-    METRICS.map((metric, i) => [metric, metricResults[i].data?.sql ?? null])
-  ) as Record<MetricKey, string | string[] | null>
+  const metricLoading = useMemo(
+    () =>
+      Object.fromEntries(
+        METRICS.map((metric, i) => [metric, metricResults[i].isLoading])
+      ) as Record<MetricKey, boolean>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [loadingKey]
+  )
 
-  // Build data progressively: populate resolved metrics immediately, use 0 for still-loading ones.
-  // data is undefined only when queries are disabled (no connection).
-  const data: MissionControlResponse | undefined = enabled
-    ? {
-        period: { start_date: startDate, end_date: endDate },
-        previous_period: {
-          start_date: prevStartDate,
-          end_date: prevEndDate,
-        },
-        current: Object.fromEntries(
-          METRICS.map((metric, i) => [metric, metricResults[i].data?.current ?? 0])
-        ) as Record<MetricKey, number>,
-        previous: Object.fromEntries(
-          METRICS.map((metric, i) => [metric, metricResults[i].data?.previous ?? null])
-        ) as Record<MetricKey, number | null>,
-      }
-    : undefined
+  const metricSql = useMemo(
+    () =>
+      Object.fromEntries(
+        METRICS.map((metric, i) => [metric, metricResults[i].data?.sql ?? null])
+      ) as Record<MetricKey, string | string[] | null>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dataKey]
+  )
+
+  const data: MissionControlResponse | undefined = useMemo(
+    () =>
+      enabled
+        ? {
+            period: { start_date: startDate, end_date: endDate },
+            previous_period: { start_date: prevStartDate, end_date: prevEndDate },
+            current: Object.fromEntries(
+              METRICS.map((metric, i) => [metric, metricResults[i].data?.current ?? 0])
+            ) as Record<MetricKey, number>,
+            previous: Object.fromEntries(
+              METRICS.map((metric, i) => [metric, metricResults[i].data?.previous ?? null])
+            ) as Record<MetricKey, number | null>,
+          }
+        : undefined,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [enabled, startDate, endDate, prevStartDate, prevEndDate, dataKey]
+  )
 
   return {
     data,

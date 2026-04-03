@@ -10,10 +10,10 @@ vi.mock('@/lib/api', () => ({
 }))
 
 vi.mock('@/stores', () => ({
-  useAppStore: vi.fn(() => ({
-    activeFilters: {},
-    activeConnectionId: 'conn-1',
-  })),
+  useAppStore: vi.fn((selector?: (s: unknown) => unknown) => {
+    const state = { activeFilters: {}, activeConnectionId: 'conn-1' }
+    return selector ? selector(state) : state
+  }),
 }))
 
 import { fetchMissionControlMetric, fetchTopEvents } from '@/lib/api'
@@ -47,12 +47,21 @@ const METRICS = [
 ] as const
 
 describe('useMissionControl', () => {
+  function mockStore(
+    overrides: {
+      activeFilters?: Record<string, string | null>
+      activeConnectionId?: string | null
+    } = {}
+  ) {
+    const state = { activeFilters: {}, activeConnectionId: 'conn-1', ...overrides }
+    vi.mocked(useAppStore).mockImplementation((selector?: (s: unknown) => unknown) =>
+      selector ? selector(state) : (state as ReturnType<typeof useAppStore>)
+    )
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(useAppStore).mockReturnValue({
-      activeFilters: {},
-      activeConnectionId: 'conn-1',
-    } as ReturnType<typeof useAppStore>)
+    mockStore()
     vi.mocked(fetchMissionControlMetric).mockImplementation(({ metric }) =>
       Promise.resolve({ metric, current: 42, previous: 30 })
     )
@@ -112,10 +121,7 @@ describe('useMissionControl', () => {
   })
 
   it('does not fire queries when activeConnectionId is missing', () => {
-    vi.mocked(useAppStore).mockReturnValue({
-      activeFilters: {},
-      activeConnectionId: null,
-    } as ReturnType<typeof useAppStore>)
+    mockStore({ activeConnectionId: null })
 
     renderHook(() => useMissionControl({ dateRange }), { wrapper: makeWrapper() })
     expect(fetchMissionControlMetric).not.toHaveBeenCalled()
@@ -135,10 +141,7 @@ describe('useMissionControl', () => {
   })
 
   it('does not fire queries when activeConnectionId is missing and dates are also null', () => {
-    vi.mocked(useAppStore).mockReturnValue({
-      activeFilters: {},
-      activeConnectionId: null,
-    } as ReturnType<typeof useAppStore>)
+    mockStore({ activeConnectionId: null })
 
     renderHook(() => useMissionControl({ dateRange: { from: null, to: null } }), {
       wrapper: makeWrapper(),
