@@ -12,8 +12,7 @@ INSTALL_DIR="${STRATIFIO_DIR:-$HOME/.stratifio}"
 PORT="${STRATIFIO_PORT:-8000}"
 DATA_DIR="${STRATIFIO_DATA_DIR:-$INSTALL_DIR/data}"
 
-GH_AUTH_ARGS=()
-[ -n "${GITHUB_TOKEN:-}" ] && GH_AUTH_ARGS=(-H "Authorization: token $GITHUB_TOKEN")
+gh_curl() { curl ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"} "$@"; }
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
@@ -94,7 +93,7 @@ if [ -n "${STRATIFIO_VERSION:-}" ]; then
   LATEST="$STRATIFIO_VERSION"
 else
   info "Fetching latest version"
-  LATEST=$(curl -fsSL "${GH_AUTH_ARGS[@]}" "https://api.github.com/repos/${REPO}/releases/latest" \
+  LATEST=$(gh_curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
     | grep '"tag_name"' | head -1 \
     | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
   [ -n "$LATEST" ] || die "Could not fetch latest release. Check your internet connection."
@@ -138,13 +137,13 @@ else
       sh -c "rm -rf '$FRONTEND_DEST' && tar -xzf '$STRATIFIO_FRONTEND_TARBALL' -C '$INSTALL_DIR'"
   else
     TMP=$(mktemp /tmp/stratifio-frontend.XXXXXX)
-    ASSET_URL=$(curl -fsSL "${GH_AUTH_ARGS[@]}" \
+    ASSET_URL=$(gh_curl -fsSL \
       "https://api.github.com/repos/${REPO}/releases/tags/${LATEST}" \
       | grep -o '"url": *"https://api[^"]*/releases/assets/[0-9]*"' \
       | head -1 | sed 's/.*"url": *"\([^"]*\)".*/\1/')
     [ -n "$ASSET_URL" ] || die "Could not find frontend asset in release $LATEST"
     run_with_spinner "Downloading frontend ($LATEST)" \
-      curl -fsSL "${GH_AUTH_ARGS[@]}" -H "Accept: application/octet-stream" "$ASSET_URL" -o "$TMP"
+      gh_curl -fsSL -H "Accept: application/octet-stream" "$ASSET_URL" -o "$TMP"
     run_with_spinner "Extracting frontend" \
       sh -c "rm -rf '$FRONTEND_DEST' && tar -xzf '$TMP' -C '$INSTALL_DIR' && rm -f '$TMP'"
   fi
