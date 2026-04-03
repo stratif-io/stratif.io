@@ -14,9 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
 import { useConnections } from '@/features/connections/hooks/useConnectionsData'
-import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { ConnectionIndicator } from './ConnectionIndicator'
-import { UserMenu } from './UserMenu'
 
 const ANALYTICS_NAV = [
   { to: '/dashboard', label: 'Mission Control', icon: LayoutDashboardIcon },
@@ -69,16 +67,10 @@ function NavSection({ label, items }: NavSectionProps) {
 
 export function Sidebar() {
   const navigate = useNavigate()
-  const { activeConnectionId, theme, setTheme, sidebarOpen, setSidebarOpen } = useAppStore()
+  const { activeConnectionId, sidebarOpen, setSidebarOpen } = useAppStore()
   const { data: connections } = useConnections()
 
   const activeConnection = connections?.find((c) => c.id === activeConnectionId)
-  const { data: currentUser } = useCurrentUser()
-  const username = currentUser?.username ?? 'you'
-
-  function handleSignOut() {
-    navigate('/sign-out')
-  }
 
   return (
     <aside
@@ -143,29 +135,6 @@ export function Sidebar() {
           </div>
         )}
       </nav>
-
-      {/* User footer */}
-      <div className="px-2 py-2 border-t border-border/50">
-        {sidebarOpen ? (
-          <UserMenu
-            username={username}
-            currentTheme={theme}
-            onThemeChange={setTheme}
-            onSignOut={handleSignOut}
-          />
-        ) : (
-          <button
-            title={username}
-            className="w-full flex items-center justify-center p-1 rounded-lg hover:bg-muted/60 transition-colors"
-          >
-            <div className="w-6 h-6 rounded-full bg-[hsl(var(--primary))] flex items-center justify-center">
-              <span className="text-[9px] font-bold text-white">
-                {username.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
-          </button>
-        )}
-      </div>
     </aside>
   )
 }
