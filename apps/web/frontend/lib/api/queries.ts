@@ -512,3 +512,11 @@ export const executeQueryStudio = (params: { sql: string; connection_id?: string
     body: JSON.stringify({ sql: params.sql }),
   })
 }
+
+// Auth
+
+export interface CurrentUser {
+  username: string
+}
+
+export const fetchCurrentUser = () => fetchApi<CurrentUser>('/api/auth/me')

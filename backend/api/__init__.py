@@ -1,5 +1,6 @@
 """API package for stratif.io Analytics."""
 
+from .auth import router as auth_router
 from .connections import router as connections_router
 from .conversion import router as conversion_router
 from .events import router as events_router
@@ -12,6 +13,7 @@ from .retention import router as retention_router
 from .sessions import router as sessions_router
 
 __all__ = [
+    "auth_router",
     "events_router",
     "retention_router",
     "paths_router",

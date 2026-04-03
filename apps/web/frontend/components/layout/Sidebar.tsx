@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
 import { useConnections } from '@/features/connections/hooks/useConnectionsData'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { ConnectionIndicator } from './ConnectionIndicator'
 import { UserMenu } from './UserMenu'
 
@@ -72,8 +73,8 @@ export function Sidebar() {
   const { data: connections } = useConnections()
 
   const activeConnection = connections?.find((c) => c.id === activeConnectionId)
-  // user is not in the store; fall back to a placeholder
-  const username = 'you'
+  const { data: currentUser } = useCurrentUser()
+  const username = currentUser?.username ?? 'you'
 
   function handleSignOut() {
     navigate('/sign-out')

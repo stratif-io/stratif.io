@@ -22,6 +22,10 @@ vi.mock('@/features/connections/hooks/useConnectionsData', () => ({
   useConnections: () => ({ data: [{ id: 'conn-1', name: 'production.duckdb' }] }),
 }))
 
+vi.mock('@/hooks/useCurrentUser', () => ({
+  useCurrentUser: () => ({ data: { username: 'alice' } }),
+}))
+
 describe('Sidebar', () => {
   it('renders ANALYTICS section label', () => {
     render(

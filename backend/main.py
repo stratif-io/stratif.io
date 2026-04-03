@@ -28,6 +28,7 @@ class APITrailingSlashMiddleware(BaseHTTPMiddleware):
 
 
 from backend.api import (  # noqa: E402
+    auth_router,
     connections_router,
     conversion_router,
     events_router,
@@ -84,6 +85,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(retention_router)
 app.include_router(events_router)
 app.include_router(paths_router)
