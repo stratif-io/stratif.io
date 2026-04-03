@@ -1484,7 +1484,7 @@ wheels = [
 
 [[package]]
 name = "stratifio-core"
-version = "0.18.3"
+version = "0.18.4"
 source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
@@ -1496,9 +1496,7 @@ dependencies = [
     { name = "faker" },
     { name = "fastapi" },
     { name = "httpx" },
-    { name = "pandas" },
     { name = "psycopg2-binary" },
-    { name = "pyarrow" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-multipart" },
@@ -1542,9 +1540,7 @@ requires-dist = [
     { name = "faker", specifier = ">=20.0.0" },
     { name = "fastapi", specifier = ">=0.104.0" },
     { name = "httpx", specifier = ">=0.27.0" },
-    { name = "pandas", specifier = ">=2.0.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
-    { name = "pyarrow", specifier = ">=14.0.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pydantic-settings", specifier = ">=2.0.0" },
     { name = "python-multipart", specifier = ">=0.0.6" },
