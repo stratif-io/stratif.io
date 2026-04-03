@@ -280,11 +280,11 @@ export function FunnelDetailPage() {
               {/* Summary cards */}
               {!isLoading && steps.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
+                  <div className="rounded-xl bg-primary/10 p-4">
+                    <div className="text-xs font-semibold text-primary tracking-wide mb-2">
                       Started
                     </div>
-                    <div className="text-2xl font-bold">
+                    <div className="text-2xl font-bold text-primary">
                       {firstStep?.users.toLocaleString() ?? '—'}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -292,11 +292,11 @@ export function FunnelDetailPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
+                  <div className="rounded-xl bg-success/10 p-4">
+                    <div className="text-xs font-semibold text-success tracking-wide mb-2">
                       Completed all steps
                     </div>
-                    <div className="text-2xl font-bold">
+                    <div className="text-2xl font-bold text-success">
                       {lastStep?.users.toLocaleString() ?? '—'}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -304,11 +304,11 @@ export function FunnelDetailPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <div className="text-xs font-medium text-muted-foreground tracking-wide mb-2">
+                  <div className="rounded-xl bg-destructive/10 p-4">
+                    <div className="text-xs font-semibold text-destructive tracking-wide mb-2">
                       Biggest drop
                     </div>
-                    <div className="text-2xl font-bold">
+                    <div className="text-2xl font-bold text-destructive">
                       {worstStep ? worstStep.dropoff_users.toLocaleString() : '—'}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
