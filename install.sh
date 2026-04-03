@@ -104,7 +104,7 @@ if [ -n "${STRATIFIO_REPO_DIR:-}" ]; then
   if [ "$STRATIFIO_REPO_DIR" != "$INSTALL_DIR" ]; then
     mkdir -p "$INSTALL_DIR"
     run_with_spinner "Copying files to $INSTALL_DIR" \
-      sh -c "tar -c -C '$STRATIFIO_REPO_DIR' --exclude='.git' --exclude='node_modules' --exclude='.worktrees' --exclude='dist' . | tar -x -C '$INSTALL_DIR'"
+      sh -c "tar -c -C '$STRATIFIO_REPO_DIR' --exclude='.git' --exclude='.venv' --exclude='node_modules' --exclude='.worktrees' --exclude='dist' . | tar -x -C '$INSTALL_DIR'"
   else
     success "Using $INSTALL_DIR"
   fi
@@ -185,14 +185,14 @@ export PATH="\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH"
 SAMPLE_DB="$DATA_DIR/sample.duckdb"
 if [ ! -f "\$SAMPLE_DB" ]; then
   echo "[stratifio] Seeding sample data (first run)…"
-  DB_PATH_PREFIX="$DATA_DIR/sample" SEED_USERS=5000 SEED_DAYS=90 uv run seed-duckdb
+  DB_PATH_PREFIX="$DATA_DIR/sample" SEED_USERS=5000 SEED_DAYS=90 "$INSTALL_DIR/.venv/bin/seed-duckdb"
 fi
-uv run python -m seeders.bootstrap_connection --path "\$SAMPLE_DB"
+"$INSTALL_DIR/.venv/bin/python" -m seeders.bootstrap_connection --path "\$SAMPLE_DB"
 echo ""
 echo "  stratif.io is running at http://localhost:$PORT"
 echo "  Press Ctrl+C to stop."
 echo ""
-exec uv run uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+exec "$INSTALL_DIR/.venv/bin/uvicorn" backend.main:app --host 0.0.0.0 --port $PORT
 STARTSH
 chmod +x "$INSTALL_DIR/start.sh"
 
@@ -203,12 +203,12 @@ step 5 5 "Starting"
 SAMPLE_DB="$DATA_DIR/sample.duckdb"
 if [ ! -f "$SAMPLE_DB" ]; then
   run_with_spinner "Seeding sample data — takes about 30 seconds" \
-    sh -c "DB_PATH_PREFIX='$DATA_DIR/sample' SEED_USERS=5000 SEED_DAYS=90 uv run seed-duckdb"
+    sh -c "DB_PATH_PREFIX='$DATA_DIR/sample' SEED_USERS=5000 SEED_DAYS=90 '$INSTALL_DIR/.venv/bin/seed-duckdb'"
 fi
-uv run python -m seeders.bootstrap_connection --path "$SAMPLE_DB" >/dev/null 2>&1
+"$INSTALL_DIR/.venv/bin/python" -m seeders.bootstrap_connection --path "$SAMPLE_DB" >/dev/null 2>&1
 
 info "Starting server on port $PORT"
-uv run uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" &
+"$INSTALL_DIR/.venv/bin/uvicorn" backend.main:app --host 0.0.0.0 --port "$PORT" &
 SERVER_PID=$!
 
 ATTEMPTS=0
