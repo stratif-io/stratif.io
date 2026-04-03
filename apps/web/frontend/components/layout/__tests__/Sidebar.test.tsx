@@ -18,6 +18,14 @@ vi.mock('@/stores/app-store', () => ({
   },
 }))
 
+vi.mock('@/features/connections/hooks/useConnectionsData', () => ({
+  useConnections: () => ({ data: [{ id: 'conn-1', name: 'production.duckdb' }] }),
+}))
+
+vi.mock('@/hooks/useCurrentUser', () => ({
+  useCurrentUser: () => ({ data: { username: 'alice' } }),
+}))
+
 describe('Sidebar', () => {
   it('renders ANALYTICS section label', () => {
     render(
@@ -44,5 +52,14 @@ describe('Sidebar', () => {
       </MemoryRouter>
     )
     expect(screen.getByText('Settings')).toBeInTheDocument()
+  })
+
+  it('renders ConnectionIndicator', () => {
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>
+    )
+    expect(screen.getByText('production.duckdb')).toBeInTheDocument()
   })
 })
