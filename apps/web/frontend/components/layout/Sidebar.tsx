@@ -93,9 +93,33 @@ export function Sidebar() {
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            className="shrink-0 w-[26px] h-[26px] rounded-md bg-[hsl(var(--primary))] flex items-center justify-center hover:opacity-80 transition-opacity"
+            className="shrink-0 w-[26px] h-[26px] hover:opacity-80 transition-opacity"
           >
-            <span className="text-[10px] font-black text-white leading-none">S</span>
+            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              <rect width="64" height="64" rx="14" fill="#0d9488" />
+              <rect x="6" y="44" width="8" height="5" rx="1.5" fill="#fff" opacity="0.1" />
+              <rect x="6" y="38" width="8" height="5" rx="1.5" fill="#fff" opacity="0.17" />
+              <rect x="6" y="32" width="8" height="5" rx="1.5" fill="#fff" opacity="0.24" />
+              <rect x="17" y="44" width="8" height="5" rx="1.5" fill="#fff" opacity="0.1" />
+              <rect x="17" y="38" width="8" height="5" rx="1.5" fill="#fff" opacity="0.17" />
+              <rect x="17" y="32" width="8" height="5" rx="1.5" fill="#fff" opacity="0.24" />
+              <rect x="17" y="26" width="8" height="5" rx="1.5" fill="#fff" opacity="0.31" />
+              <rect x="28" y="44" width="8" height="5" rx="1.5" fill="#fff" opacity="0.1" />
+              <rect x="28" y="38" width="8" height="5" rx="1.5" fill="#fff" opacity="0.17" />
+              <rect x="28" y="32" width="8" height="5" rx="1.5" fill="#fff" opacity="0.24" />
+              <rect x="28" y="26" width="8" height="5" rx="1.5" fill="#fff" opacity="0.31" />
+              <rect x="28" y="20" width="8" height="5" rx="1.5" fill="#fff" opacity="0.38" />
+              <rect x="39" y="44" width="8" height="5" rx="1.5" fill="#fff" opacity="0.15" />
+              <rect x="39" y="38" width="8" height="5" rx="1.5" fill="#fff" opacity="0.31" />
+              <rect x="39" y="32" width="8" height="5" rx="1.5" fill="#fff" opacity="0.47" />
+              <rect x="39" y="26" width="8" height="5" rx="1.5" fill="#fff" opacity="0.63" />
+              <rect x="39" y="20" width="8" height="5" rx="1.5" fill="#fff" opacity="0.79" />
+              <rect x="39" y="14" width="8" height="5" rx="1.5" fill="#fff" opacity="0.95" />
+              <rect x="50" y="44" width="8" height="5" rx="1.5" fill="#fff" opacity="0.1" />
+              <rect x="50" y="38" width="8" height="5" rx="1.5" fill="#fff" opacity="0.17" />
+              <rect x="50" y="32" width="8" height="5" rx="1.5" fill="#fff" opacity="0.24" />
+              <rect x="50" y="26" width="8" height="5" rx="1.5" fill="#fff" opacity="0.31" />
+            </svg>
           </button>
           {sidebarOpen && (
             <span className="flex-1 text-[13px] font-bold text-foreground tracking-tight truncate">
