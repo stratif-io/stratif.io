@@ -104,7 +104,7 @@ if [ -n "${STRATIFIO_REPO_DIR:-}" ]; then
   if [ "$STRATIFIO_REPO_DIR" != "$INSTALL_DIR" ]; then
     mkdir -p "$INSTALL_DIR"
     run_with_spinner "Copying files to $INSTALL_DIR" \
-      sh -c "tar -c -C '$STRATIFIO_REPO_DIR' --exclude='.git' --exclude='node_modules' --exclude='.worktrees' --exclude='dist' . | tar -x -C '$INSTALL_DIR'"
+      sh -c "tar -c -C '$STRATIFIO_REPO_DIR' --exclude='.git' --exclude='.venv' --exclude='node_modules' --exclude='.worktrees' --exclude='dist' . | tar -x -C '$INSTALL_DIR'"
   else
     success "Using $INSTALL_DIR"
   fi
