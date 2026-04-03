@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.18.4](https://github.com/stratif-io/stratif.io/compare/v0.18.3...v0.18.4) (2026-04-03)
+
+
+### Bug Fixes
+
+* **ci:** auto-regenerate uv.lock at pre-commit time instead of just checking ([e3ff024](https://github.com/stratif-io/stratif.io/commit/e3ff024cadd54d69b526f81178bafa2d009ddf4f))
+* **ci:** push Docker image to ghcr.io/stratif-io instead of cabichahine ([fa4265e](https://github.com/stratif-io/stratif.io/commit/fa4265e23e3582a9fec2a7557a8ffeba4b9b7114))
+* **install:** replace bash array GH_AUTH_ARGS with gh_curl helper ([1a0bcd0](https://github.com/stratif-io/stratif.io/commit/1a0bcd0d3c9f7187c47308cd5ec3989dc2dfaefa))
+
 ## [0.18.3](https://github.com/stratif-io/stratif.io/compare/v0.18.2...v0.18.3) (2026-04-03)
 
 
