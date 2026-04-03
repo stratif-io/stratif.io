@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -12,7 +12,7 @@ import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { TrendingUp } from 'lucide-react'
 import { useAppStore } from '@/stores'
-import { fetchPivotOptions } from '@/lib/api'
+import { fetchPivotOptions, fetchPivotGridFilterValues } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useTrendData } from './hooks/useTrendData'
@@ -48,14 +48,40 @@ export function TrendsPage() {
   const [aggregation, setAggregation] = useState<
     'sum' | 'avg' | 'min' | 'max' | 'count' | 'count_distinct'
   >('sum')
+  const [selectedEvent, setSelectedEvent] = useState<string | null>(null)
   const [localFilters, setLocalFilters] = useState<Record<string, string[]>>({})
 
   useEffect(() => {
     setBreakdownDimension(null)
     setMeasureField('count_events')
     setAggregation('sum')
+    setSelectedEvent(null)
     setLocalFilters({})
   }, [activeConnectionId])
+
+  const { data: eventNamesData } = useQuery({
+    queryKey: ['trend-event-names', activeConnectionId],
+    queryFn: () =>
+      fetchPivotGridFilterValues({
+        field: 'event_name',
+        connection_id: activeConnectionId ?? undefined,
+      }),
+    staleTime: QUERY_STALE_TIME.default,
+    enabled: !!activeConnectionId,
+  })
+  const eventOptions = useMemo(
+    () =>
+      (eventNamesData?.values ?? [])
+        .map(String)
+        .filter(Boolean)
+        .map((v) => ({ value: v, label: v })),
+    [eventNamesData]
+  )
+
+  const effectiveFilters = useMemo(() => {
+    if (!selectedEvent) return localFilters
+    return { ...localFilters, event_name: [selectedEvent] }
+  }, [selectedEvent, localFilters])
 
   // When switching to a non-numeric field, reset aggregation to 'count'
   useEffect(() => {
@@ -99,7 +125,7 @@ export function TrendsPage() {
     granularity,
     breakdownDimension,
     measure,
-    localFilters,
+    localFilters: effectiveFilters,
   })
 
   const periodLabel = GRANULARITY_PERIOD_LABELS[granularity]
@@ -138,6 +164,19 @@ export function TrendsPage() {
               </div>
             }
           >
+            {eventOptions.length > 0 && (
+              <div className="w-[min(160px,40vw)]">
+                <FilterSelect
+                  size="sm"
+                  mode="single"
+                  options={eventOptions}
+                  value={selectedEvent}
+                  onChange={(val) => setSelectedEvent((val as string) || null)}
+                  placeholder="All events"
+                  searchable
+                />
+              </div>
+            )}
             <TrendMetricPicker
               measureField={measureField}
               aggregation={aggregation}
@@ -242,7 +281,7 @@ export function TrendsPage() {
                             data={trendData}
                             chartType={chartType}
                             averageValue={averageValue}
-                            eventName="All Events"
+                            eventName={selectedEvent ?? 'All Events'}
                             seriesKeys={seriesKeys}
                             measureKey={measureKey}
                           />
