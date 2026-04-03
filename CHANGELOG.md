@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.5](https://github.com/stratif-io/stratif.io/compare/v0.18.4...v0.18.5) (2026-04-03)
+
+
+### Bug Fixes
+
+* **install:** detect sh and print clear error directing user to use bash ([78d68bf](https://github.com/stratif-io/stratif.io/commit/78d68bfc5dc45f4bc3ca2b97f6dee367b19c84aa))
+* **install:** rewrite as POSIX sh — works with both sh and bash ([ab1669f](https://github.com/stratif-io/stratif.io/commit/ab1669fe40f86482183d44736d113b6b658364d8))
+
 ## [0.18.4](https://github.com/stratif-io/stratif.io/compare/v0.18.3...v0.18.4) (2026-04-03)
 
 
