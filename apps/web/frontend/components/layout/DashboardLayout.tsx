@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { Sidebar } from './Sidebar'
+import { ConnectionSelector } from './ConnectionSelector'
 import { GlobalFilters } from '@/components/GlobalFilters'
 import { QueryStatusIndicator } from './QueryStatusIndicator'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -29,6 +30,7 @@ export function DashboardLayout() {
         <div className="flex flex-col flex-1 min-w-0">
           <header className="sticky top-0 z-[var(--z-header)] w-full border-b bg-background">
             <div className="flex h-12 items-center gap-3 px-4">
+              <ConnectionSelector />
               <div className="flex-1 min-w-0">
                 <GlobalFilters granularityDisabled={granularityDisabled} />
               </div>
