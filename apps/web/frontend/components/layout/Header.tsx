@@ -12,14 +12,12 @@ import { Moon, Sun, Menu, Monitor } from 'lucide-react'
 import { useTheme } from '@/hooks'
 import { GlobalFilters } from '@/components/GlobalFilters'
 import { QueryStatusIndicator } from './QueryStatusIndicator'
-import { cn } from '@/lib/utils'
 
 const GRANULARITY_ROUTES = new Set(['/trends', '/retention', '/dashboard'])
 
 export function Header() {
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
-  const devMode = useAppStore((s) => s.devMode)
   const { theme, setTheme } = useTheme()
   const { pathname } = useLocation()
   const granularityDisabled = !GRANULARITY_ROUTES.has(pathname)
@@ -48,16 +46,6 @@ export function Header() {
         {/* Right actions */}
         <div className="flex items-center gap-2 shrink-0">
           <QueryStatusIndicator />
-          <span
-            aria-hidden={!devMode}
-            className={cn(
-              'flex items-center gap-1.5 text-xs text-muted-foreground/60 transition-opacity duration-200',
-              devMode ? 'opacity-100' : 'invisible opacity-0'
-            )}
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400/60" />
-            Dev
-          </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Change theme">

@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Switch } from '@/components/ui/switch'
 import {
   ChevronLeft,
   ChevronRight,
@@ -177,14 +176,9 @@ function NavLink({
 export function Sidebar() {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
-  const devMode = useAppStore((s) => s.devMode)
-  const setDevMode = useAppStore((s) => s.setDevMode)
   const location = useLocation()
 
-  const visibleNavGroups = navGroups.map((group) => ({
-    ...group,
-    items: group.items.filter((item) => item.href !== '/query-studio' || devMode),
-  }))
+  const visibleNavGroups = navGroups
 
   const handleMobileNavClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false)
@@ -256,24 +250,6 @@ export function Sidebar() {
             </div>
           ))}
         </nav>
-
-        {/* Dev mode toggle — above the border */}
-        <div
-          className={cn(
-            'shrink-0 px-2 py-2',
-            sidebarOpen ? 'flex items-center justify-between' : 'flex justify-center'
-          )}
-        >
-          {sidebarOpen && (
-            <span className="text-[11px] font-semibold text-muted-foreground">Dev Mode</span>
-          )}
-          <Switch
-            checked={devMode}
-            onCheckedChange={setDevMode}
-            aria-label="Toggle Dev Mode"
-            className={cn(devMode && 'data-[state=checked]:bg-warning')}
-          />
-        </div>
 
         {/* Bottom section */}
         <div className="shrink-0 border-t px-2 py-2 space-y-0.5">
