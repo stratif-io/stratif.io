@@ -1,112 +1,46 @@
-import { useAppStore } from '@/stores'
-import { useLocation } from 'react-router-dom'
-import { ConnectionSelector } from './ConnectionSelector'
+import { ShareIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Moon, Sun, Menu, Monitor } from 'lucide-react'
-import { useTheme } from '@/hooks'
-import { GlobalFilters } from '@/components/GlobalFilters'
-import { QueryStatusIndicator } from './QueryStatusIndicator'
 import { cn } from '@/lib/utils'
 
-const GRANULARITY_ROUTES = new Set(['/trends', '/retention', '/dashboard'])
+interface HeaderProps {
+  title: string
+  subtitle?: string
+  showShare?: boolean
+  onShare?: () => void
+  children?: React.ReactNode
+  className?: string
+}
 
-export function Header() {
-  const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
-  const sidebarOpen = useAppStore((state) => state.sidebarOpen)
-  const devMode = useAppStore((s) => s.devMode)
-  const { theme, setTheme } = useTheme()
-  const { pathname } = useLocation()
-  const granularityDisabled = !GRANULARITY_ROUTES.has(pathname)
+export function Header({ title, subtitle, showShare, onShare, children, className }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-[var(--z-header)] w-full border-b bg-background">
-      <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
-        {/* Mobile hamburger */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="lg:hidden shrink-0"
-          aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          <Menu className="h-4 w-4" />
-        </Button>
+    <header
+      className={cn(
+        'flex items-center gap-3 px-5 py-3 bg-background border-b border-border shrink-0',
+        className
+      )}
+    >
+      <div className="min-w-0">
+        <h1 className="text-[15px] font-bold tracking-[-0.3px] text-foreground leading-none">
+          {title}
+        </h1>
+        {subtitle && (
+          <p className="mt-0.5 text-[10px] text-muted-foreground/70 leading-none">{subtitle}</p>
+        )}
+      </div>
 
-        {/* Connection selector */}
-        <ConnectionSelector />
-
-        {/* Filters — takes remaining space */}
-        <div className="flex-1 min-w-0">
-          <GlobalFilters granularityDisabled={granularityDisabled} />
-        </div>
-
-        {/* Right actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          <QueryStatusIndicator />
-          <span
-            aria-hidden={!devMode}
-            className={cn(
-              'flex items-center gap-1.5 text-xs text-muted-foreground/60 transition-opacity duration-200',
-              devMode ? 'opacity-100' : 'invisible opacity-0'
-            )}
+      <div className="ml-auto flex items-center gap-2">
+        {children}
+        {showShare && (
+          <Button
+            size="sm"
+            onClick={onShare}
+            className="h-7 px-3 text-[11px] font-semibold gap-1.5"
+            aria-label="Share"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400/60" />
-            Dev
-          </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Change theme">
-                {theme === 'system' ? (
-                  <Monitor className="h-4 w-4" />
-                ) : theme === 'dark' ? (
-                  <Moon className="h-4 w-4" />
-                ) : (
-                  <Sun className="h-4 w-4" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                role="menuitemradio"
-                aria-checked={theme === 'light'}
-                onClick={() => setTheme('light')}
-              >
-                <Sun className="mr-2 h-4 w-4" />
-                Light
-                {theme === 'light' && (
-                  <span className="ml-auto text-xs text-muted-foreground">✓</span>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                role="menuitemradio"
-                aria-checked={theme === 'dark'}
-                onClick={() => setTheme('dark')}
-              >
-                <Moon className="mr-2 h-4 w-4" />
-                Dark
-                {theme === 'dark' && (
-                  <span className="ml-auto text-xs text-muted-foreground">✓</span>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                role="menuitemradio"
-                aria-checked={theme === 'system'}
-                onClick={() => setTheme('system')}
-              >
-                <Monitor className="mr-2 h-4 w-4" />
-                System
-                {theme === 'system' && (
-                  <span className="ml-auto text-xs text-muted-foreground">✓</span>
-                )}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            <ShareIcon className="w-3 h-3" />
+            Share
+          </Button>
+        )}
       </div>
     </header>
   )

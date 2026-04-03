@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { PageTransition } from '@/components/layout/PageTransition'
+import { Header } from '@/components/layout/Header'
 import { ConnectionSelector } from '@/components/layout/ConnectionSelector'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -58,30 +59,20 @@ export function LayoutSection() {
       </ComponentRow>
 
       <ComponentRow label="Header">
-        <div
-          className={cn(
-            'border rounded-md overflow-hidden w-full max-w-xl',
-            '[&_header]:static [&_header]:z-auto'
-          )}
-        >
-          {/* Rendered inline — position:sticky is neutralised by overflow:hidden */}
-          <div className="relative overflow-hidden rounded-md border">
-            <div className="flex h-14 items-center gap-3 px-4 bg-background border-b">
-              <div className="h-8 w-32 rounded border flex items-center gap-1.5 px-2">
-                <div className="h-3.5 w-3.5 rounded bg-muted" />
-                <div className="flex-1 h-2 rounded bg-muted" />
-              </div>
-              <div className="flex-1 min-w-0 h-8 rounded border bg-muted/20" />
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="h-7 w-7 rounded border bg-muted/20" />
-                <div className="h-7 w-7 rounded border bg-muted/20" />
-              </div>
-            </div>
+        <div className="flex flex-col gap-3 w-full max-w-xl">
+          <div className="border rounded-md overflow-hidden">
+            <Header title="Dashboard" />
           </div>
-          <p className="text-xs text-muted-foreground px-3 py-2">
-            Shown above as a structural preview. The live Header renders in the app shell at the top
-            of every page.
-          </p>
+          <div className="border rounded-md overflow-hidden">
+            <Header title="Trends" subtitle="Event counts over time" showShare />
+          </div>
+          <div className="border rounded-md overflow-hidden">
+            <Header title="Retention">
+              <div className="h-7 w-28 rounded border bg-muted/20 text-xs flex items-center px-2 text-muted-foreground">
+                Date picker
+              </div>
+            </Header>
+          </div>
         </div>
       </ComponentRow>
 

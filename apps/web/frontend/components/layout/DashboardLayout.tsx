@@ -1,7 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { Sidebar } from './Sidebar'
-import { Header } from './Header'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useUrlSync } from '@/hooks'
@@ -25,7 +24,6 @@ export function DashboardLayout() {
             sidebarOpen ? 'lg:pl-[var(--sidebar-expanded)]' : 'lg:pl-[var(--sidebar-collapsed)]'
           )}
         >
-          <Header />
           <main
             id="main-content"
             className={cn(
