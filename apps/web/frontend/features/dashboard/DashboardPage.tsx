@@ -81,9 +81,11 @@ export function DashboardPage() {
                 isPinned={isPinned}
                 resetToDefault={resetToDefault}
               />
-              <DevCard sql={topEventsSql}>
-                <TopEvents events={topEvents} loading={eventsLoading} />
-              </DevCard>
+              <div className="mt-8">
+                <DevCard sql={topEventsSql}>
+                  <TopEvents events={topEvents} loading={eventsLoading} />
+                </DevCard>
+              </div>
             </div>
           )}
         </div>
