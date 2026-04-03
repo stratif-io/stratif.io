@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { ShareModal } from '@/features/reports/ShareModal'
 import { ArrowLeft, ChevronDown, ChevronRight, Plus, TrendingDown, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
@@ -31,7 +30,6 @@ const MAX_STEPS = 10
 const segTrigger = FILTER_TRIGGER_CLASS
 
 export function FunnelDetailPage() {
-  const [shareOpen, setShareOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const { dateRange, setDateRange, activeFilters, activeConnectionId } = useAppStore()
@@ -146,6 +144,10 @@ export function FunnelDetailPage() {
 
   const steps = funnelData?.data || []
 
+  const copyPermalink = async () => {
+    await navigator.clipboard.writeText(window.location.href)
+  }
+
   // Derived summary metrics
   const firstStep = steps[0]
   const lastStep = steps[steps.length - 1]
@@ -191,7 +193,7 @@ export function FunnelDetailPage() {
           title="Funnels"
           subtitle="Step conversion analysis"
           showShare
-          onShare={() => setShareOpen(true)}
+          onShare={copyPermalink}
         >
           <Button
             variant="ghost"
@@ -402,13 +404,6 @@ export function FunnelDetailPage() {
           </div>
         </div>
       </div>
-      <ShareModal
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        page="funnel"
-        pageLabel="Funnels"
-        params={{ dateRange, activeFilters }}
-      />
     </PageTransition>
   )
 }

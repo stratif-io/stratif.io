@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react'
-import { ShareModal } from '@/features/reports/ShareModal'
 import type { Granularity } from '@/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
@@ -111,8 +110,7 @@ export function RetentionPage() {
     document.title = 'Retention — stratif.io'
   }, [])
 
-  const [shareOpen, setShareOpen] = useState(false)
-  const { dateRange, activeFilters, granularity: globalGranularity, dashboardView } = useAppStore()
+  const { dateRange, granularity: globalGranularity, dashboardView } = useAppStore()
   const granularity = toRetentionGranularity(globalGranularity)
   const [cohortLimit, setCohortLimit] = useState(10)
 
@@ -170,12 +168,7 @@ export function RetentionPage() {
       <NoConnectionGuard>
         <div className="flex flex-col h-full">
           {/* Zone 1: Header */}
-          <Header
-            title="Retention"
-            subtitle="Cohort analysis"
-            showShare
-            onShare={() => setShareOpen(true)}
-          />
+          <Header title="Retention" subtitle="Cohort analysis" showShare />
 
           {/* Zone 2: Config bar */}
           <PageConfigBar>
@@ -263,13 +256,6 @@ export function RetentionPage() {
           </div>
         </div>
       </NoConnectionGuard>
-      <ShareModal
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        page="retention"
-        pageLabel="Retention"
-        params={{ dateRange, activeFilters }}
-      />
     </PageTransition>
   )
 }

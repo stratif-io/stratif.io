@@ -2,19 +2,12 @@
 
 from __future__ import annotations
 
-import secrets
-import string
-from datetime import UTC, datetime
+from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.product_db.base import Base
-
-
-def _generate_shortcode(length: int = 6) -> str:
-    alphabet = string.ascii_letters + string.digits
-    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 class Connection(Base):
@@ -150,37 +143,3 @@ class ConnectionFilterField(Base):
     filter_config: Mapped[ConnectionFilterConfig] = relationship(
         back_populates="filter_fields"
     )
-
-
-class Report(Base):
-    __tablename__ = "reports"
-
-    id: Mapped[str] = mapped_column(
-        String, primary_key=True, default=lambda: secrets.token_hex(16)
-    )
-    shortcode: Mapped[str] = mapped_column(
-        String(8), unique=True, nullable=False, default=_generate_shortcode
-    )
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_by_username: Mapped[str] = mapped_column(
-        String(255), nullable=False, default=""
-    )
-    page: Mapped[str] = mapped_column(String(64), nullable=False)
-    params: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
-    access: Mapped[str] = mapped_column(String(16), nullable=False, default="public")
-    snapshot: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    snapshot_data: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=lambda: datetime.now(UTC).replace(tzinfo=None)
-    )
-
-    def __init__(self, **kwargs: object) -> None:
-        kwargs.setdefault("id", secrets.token_hex(16))
-        kwargs.setdefault("shortcode", _generate_shortcode())
-        kwargs.setdefault("created_by_username", "")
-        kwargs.setdefault("params", "{}")
-        kwargs.setdefault("access", "public")
-        kwargs.setdefault("snapshot", False)
-        kwargs.setdefault("snapshot_data", None)
-        kwargs.setdefault("created_at", datetime.now(UTC).replace(tzinfo=None))
-        super().__init__(**kwargs)

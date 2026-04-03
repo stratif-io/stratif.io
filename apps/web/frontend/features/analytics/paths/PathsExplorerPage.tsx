@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { ShareModal } from '@/features/reports/ShareModal'
 import { useSearchParams } from 'react-router-dom'
 import {
   Select,
@@ -170,8 +169,7 @@ function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
 }
 
 export function PathsExplorerPage() {
-  const [shareOpen, setShareOpen] = useState(false)
-  const { dateRange, activeFilters, dashboardView } = useAppStore()
+  const { dateRange, dashboardView } = useAppStore()
   const [searchParams, setSearchParams] = useSearchParams()
 
   // All filter state derived from URL search params
@@ -277,12 +275,7 @@ export function PathsExplorerPage() {
       <NoConnectionGuard>
         <div className="flex h-full flex-col">
           {/* Zone 1: Header */}
-          <Header
-            title="Paths"
-            subtitle="User journey explorer"
-            showShare
-            onShare={() => setShareOpen(true)}
-          />
+          <Header title="Paths" subtitle="User journey explorer" showShare />
 
           {/* Zone 2: Config Bar */}
           <PageConfigBar
@@ -594,13 +587,6 @@ export function PathsExplorerPage() {
           />
         </div>
       </NoConnectionGuard>
-      <ShareModal
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        page="paths"
-        pageLabel="Paths"
-        params={{ dateRange, activeFilters }}
-      />
     </PageTransition>
   )
 }

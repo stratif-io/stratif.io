@@ -41,10 +41,6 @@ const OnboardingPage = lazy(() =>
   import('./features/onboarding/OnboardingPage').then((m) => ({ default: m.OnboardingPage }))
 )
 
-const ReportPage = lazy(() =>
-  import('./features/reports/ReportPage').then((m) => ({ default: m.ReportPage }))
-)
-
 const DesignSystemPage = import.meta.env.DEV
   ? lazy(() =>
       import('@/features/design-system/DesignSystemPage').then((m) => ({
@@ -131,14 +127,6 @@ function App() {
             )}
           </Route>
         </Route>
-        <Route
-          path="/r/:shortcode"
-          element={
-            <Suspense fallback={<div />}>
-              <ReportPage />
-            </Suspense>
-          }
-        />
         <Route
           path="/onboarding"
           element={

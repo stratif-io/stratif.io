@@ -11,15 +11,12 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
   return {
     ...actual,
     useQuery: () => ({ data: undefined, isLoading: false, isError: false }),
-    useQueryClient: () => ({}),
-    useMutation: () => ({ mutate: vi.fn(), isPending: false }),
   }
 })
 
 vi.mock('@/stores', () => ({
   useAppStore: () => ({
     dateRange: { from: new Date('2024-01-01'), to: new Date('2024-01-31') },
-    activeFilters: {},
     activeConnectionId: null,
     granularity: 'day',
     dashboardView: 'summary',
