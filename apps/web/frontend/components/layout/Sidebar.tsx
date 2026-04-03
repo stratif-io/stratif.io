@@ -18,6 +18,25 @@ import {
   Terminal,
 } from 'lucide-react'
 
+function FunnelIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      className={className}
+    >
+      <line x1="1" y1="4" x2="15" y2="4" />
+      <line x1="3" y1="8" x2="13" y2="8" />
+      <line x1="5" y1="12" x2="11" y2="12" />
+    </svg>
+  )
+}
+
 interface NavItem {
   title: string
   href: string
@@ -60,6 +79,11 @@ const navGroups: NavGroup[] = [
         href: '/paths',
         icon: Route,
         preload: () => import('@/features/analytics'),
+      },
+      {
+        title: 'Funnel',
+        href: '/funnel',
+        icon: FunnelIcon,
       },
       {
         title: 'People',
