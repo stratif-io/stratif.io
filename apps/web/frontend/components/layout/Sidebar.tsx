@@ -99,38 +99,44 @@ export function Sidebar() {
           )}
         </div>
 
-        {/* Collapsed icon strip */}
-        {!sidebarOpen && (
-          <div className="flex flex-col gap-0.5 mt-2">
-            {ALL_NAV.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                title={label}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center justify-center p-2 rounded-lg transition-colors',
-                    isActive
-                      ? 'bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]'
-                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-                  )
-                }
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-              </NavLink>
-            ))}
-          </div>
-        )}
+        {/* Collapsed icon strip — always in DOM, hidden when expanded */}
+        <div
+          className={cn(
+            'flex flex-col gap-0.5 mt-2 transition-opacity duration-200',
+            sidebarOpen ? 'opacity-0 pointer-events-none h-0 overflow-hidden' : 'opacity-100'
+          )}
+        >
+          {ALL_NAV.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              title={label}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center justify-center p-2 rounded-lg transition-colors',
+                  isActive
+                    ? 'bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]'
+                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                )
+              }
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+            </NavLink>
+          ))}
+        </div>
       </div>
 
-      {/* Nav (expanded only) */}
-      {sidebarOpen && (
-        <nav className="flex-1 overflow-y-auto px-1 py-3">
-          <NavSection label="Analytics" items={ANALYTICS_NAV} />
-          <NavSection label="Data" items={DATA_NAV} />
-          <NavSection label="Settings" items={SETTINGS_NAV} />
-        </nav>
-      )}
+      {/* Nav — always in DOM, hidden when collapsed */}
+      <nav
+        className={cn(
+          'flex-1 overflow-y-auto px-1 py-3 transition-opacity duration-200',
+          sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        )}
+      >
+        <NavSection label="Analytics" items={ANALYTICS_NAV} />
+        <NavSection label="Data" items={DATA_NAV} />
+        <NavSection label="Settings" items={SETTINGS_NAV} />
+      </nav>
     </aside>
   )
 }

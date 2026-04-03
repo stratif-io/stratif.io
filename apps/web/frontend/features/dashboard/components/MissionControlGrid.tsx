@@ -196,7 +196,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] lg:items-start gap-4">
       {/* LEFT: Hero card — height synced to right column via ResizeObserver */}
-      <div ref={heroWrapperRef} className="transition-[height] duration-300 ease-in-out">
+      <div ref={heroWrapperRef}>
         <DevCard
           {...buildAllSql(
             metricSql?.[heroMetric],
