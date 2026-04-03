@@ -68,8 +68,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/cabichahine/stratif.io:${{ needs.release-please.outputs.tag_name }}
-            ghcr.io/cabichahine/stratif.io:latest
+            ghcr.io/stratif-io/stratif.io:${{ needs.release-please.outputs.tag_name }}
+            ghcr.io/stratif-io/stratif.io:latest
 
   sync-develop:
     needs: release-please
