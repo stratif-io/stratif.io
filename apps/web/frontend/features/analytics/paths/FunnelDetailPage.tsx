@@ -83,13 +83,12 @@ export function FunnelDetailPage() {
     }
   }, [dateRange, setSearchParams])
 
-  // Sync step and device state back to URL
+  // Sync step state back to URL
   useEffect(() => {
     const eventsValue = events.length >= 2 ? events.join(',') : null
     setSearchParams((prev) => {
       const next: Record<string, string> = { ...Object.fromEntries(prev) }
       if (eventsValue) next['events'] = eventsValue
-      delete next['device_type']
       return next
     })
   }, [funnelSteps, events, setSearchParams])
