@@ -1,11 +1,11 @@
 repos:
   - repo: local
     hooks:
-      - id: uv-lock-check
+      - id: uv-lock
         name: uv.lock up to date
-        entry: uv lock --check
+        entry: uv lock
         language: system
-        files: ^(pyproject\.toml|uv\.lock)$
+        files: ^pyproject\.toml$
         pass_filenames: false
 
       - id: ty
