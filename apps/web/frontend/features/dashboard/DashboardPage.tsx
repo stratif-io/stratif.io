@@ -8,7 +8,6 @@ import { useMissionControlTrends } from './hooks/useMissionControlTrends'
 import { usePinnedMetrics } from './hooks/usePinnedMetrics'
 import { QueryError } from '@/components/ui/query-error'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
-import { DevCard } from '@/components/dev'
 import { NoConnectionScreen } from '@/components/ui/no-connection-guard'
 import { EmptyState } from '@/components/ui/empty-state'
 import { TrendingUp } from 'lucide-react'
@@ -22,10 +21,9 @@ export function DashboardPage() {
   const { pinned, togglePin, isPinned, resetToDefault } = usePinnedMetrics(
     activeConnectionId ?? null
   )
-  const { data, metricLoading, metricSql, isError, error, topEvents, eventsLoading, topEventsSql } =
-    useMissionControl({
-      dateRange,
-    })
+  const { data, metricLoading, isError, error, topEvents, eventsLoading } = useMissionControl({
+    dateRange,
+  })
   const { trends } = useMissionControlTrends({ dateRange, visibleMetrics: pinned })
 
   const isConnectionNotFound =
@@ -70,14 +68,11 @@ export function DashboardPage() {
                 data={data}
                 trends={trends}
                 metricLoading={metricLoading}
-                metricSql={metricSql}
                 togglePin={togglePin}
                 isPinned={isPinned}
                 resetToDefault={resetToDefault}
               />
-              <DevCard sql={topEventsSql}>
-                <TopEvents events={topEvents} loading={eventsLoading} />
-              </DevCard>
+              <TopEvents events={topEvents} loading={eventsLoading} />
             </>
           )}
         </div>

@@ -15,7 +15,6 @@ import * as XLSX from 'xlsx'
 import { rowsToCsv, downloadCsv } from './csvExport'
 import type { ZoneCol, FilterEntry, PivotTableProps } from './types'
 import { buildLeafMeta } from './types'
-import { DevCard } from '@/components/dev'
 import { EmptyState } from '@/components/ui/empty-state'
 import { QueryError } from '@/components/ui/query-error'
 import { BarChart2 } from 'lucide-react'
@@ -58,7 +57,6 @@ export function PivotTable({
   const [headers, setHeaders] = useState<string[]>([])
   const [isQuerying, setIsQuerying] = useState(false)
   const [queryError, setQueryError] = useState<Error | null>(null)
-  const [lastSql, setLastSql] = useState<string | string[] | undefined>()
   const [filterField, setFilterField] = useState<string | null>(null)
   const [filterOptions, setFilterOptions] = useState<string[]>([])
 
@@ -167,7 +165,6 @@ export function PivotTable({
         : rowGroups.map((c) => c.colId).concat(valueCols.map((c) => c.colId))
       setHeaders(cols)
       setRows(res.rows)
-      setLastSql(res.sql)
     } catch (err) {
       if (id === fetchIdRef.current)
         setQueryError(err instanceof Error ? err : new Error('Query failed'))
@@ -318,7 +315,7 @@ export function PivotTable({
         </div>
       )}
 
-      <DevCard sql={lastSql} className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0">
         <div ref={parentRef} className="h-full overflow-auto">
           {queryError ? (
             <div className="flex items-center justify-center h-full">
@@ -391,7 +388,7 @@ export function PivotTable({
             </table>
           )}
         </div>
-      </DevCard>
+      </div>
     </div>
   )
 }
