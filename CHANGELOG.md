@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.3](https://github.com/stratif-io/stratif.io/compare/v0.18.2...v0.18.3) (2026-04-03)
+
+
+### Bug Fixes
+
+* exclude .venv from copy, use GITHUB_TOKEN for private repo testing ([2fae36c](https://github.com/stratif-io/stratif.io/commit/2fae36c4dac1d50077c51c37a2155d69aa30a257))
+* **install:** use GitHub API to fetch release asset, support private repo with GITHUB_TOKEN ([434d156](https://github.com/stratif-io/stratif.io/commit/434d15663c403572f530e7483d70d2d5be2cbb70))
+
 ## [0.18.2](https://github.com/stratif-io/stratif.io/compare/v0.18.1...v0.18.2) (2026-04-03)
 
 
