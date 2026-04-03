@@ -36,6 +36,41 @@ function renderPage() {
   )
 }
 
+describe('DashboardPage greeting and toggle', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useAppStore.setState({
+      dateRange: { from: new Date('2026-01-01'), to: new Date('2026-01-31') },
+      activeConnectionId: 'conn-1',
+      dashboardView: 'summary',
+    })
+    vi.mocked(trendsHook.useMissionControlTrends).mockReturnValue({ trends: {} } as ReturnType<
+      typeof trendsHook.useMissionControlTrends
+    >)
+    vi.mocked(missionControlHook.useMissionControl).mockReturnValue({
+      data: undefined,
+      metricLoading: metricLoadingAllFalse,
+      isError: false,
+      error: null,
+      topEvents: [{ name: 'page_view', count: 100 }],
+      eventsLoading: false,
+      topEventsSql: undefined,
+      isLoading: false,
+    } as UseMissionControlReturn)
+  })
+
+  it('shows greeting with username', () => {
+    renderPage()
+    expect(screen.getByText(/Good (morning|afternoon|evening)/i)).toBeInTheDocument()
+  })
+
+  it('shows Summary/Detail toggle buttons', () => {
+    renderPage()
+    expect(screen.getByRole('button', { name: /summary/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /detail/i })).toBeInTheDocument()
+  })
+})
+
 describe('DashboardPage empty state', () => {
   beforeEach(() => {
     vi.clearAllMocks()
