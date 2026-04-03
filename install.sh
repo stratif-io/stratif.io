@@ -1,14 +1,9 @@
-#!/usr/bin/env bash
-# Require bash — sh lacks arrays and pipefail
-if [ -z "${BASH_VERSION:-}" ]; then
-  printf "\033[0;31m  ✗  This script requires bash. Run: curl -fsSL https://stratif.io/install.sh | bash\033[0m\n" >&2
-  exit 1
-fi
-set -euo pipefail
+#!/usr/bin/env sh
+set -eu
 
 # ─────────────────────────────────────────────────────────────────────────────
 # stratif.io — one-line local installer (no Docker required)
-# Usage: curl -fsSL https://stratif.io/install.sh | bash
+# Usage: curl -fsSL https://stratif.io/install.sh | sh
 # ─────────────────────────────────────────────────────────────────────────────
 
 REPO="stratif-io/stratif.io"
@@ -25,35 +20,36 @@ info()    { printf "${CYAN}  →  %s${NC}\n" "$*"; }
 success() { printf "${GREEN}  ✓  %s${NC}\n" "$*"; }
 warn()    { printf "${YELLOW}  ⚠  %s${NC}\n" "$*"; }
 die()     { printf "${RED}  ✗  %s${NC}\n" "$*" >&2; exit 1; }
-step()    { local n=$1 total=$2; shift 2; printf "\n${BOLD}  [$n/$total] %s${NC}\n" "$*"; }
+step()    { _n=$1 _total=$2; shift 2; printf "\n${BOLD}  [%s/%s] %s${NC}\n" "$_n" "$_total" "$*"; }
 
 # Spinner: run a command, show animated progress, wait for completion.
 # Usage: run_with_spinner "message" cmd args...
 run_with_spinner() {
-  local msg=$1; shift
-  local frames='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-  local i=0
+  _msg=$1; shift
+  _frames='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+  _i=0
 
   "$@" >"$_SPINNER_LOG" 2>&1 &
-  local pid=$!
+  _pid=$!
 
   if [ -t 1 ]; then
     tput civis 2>/dev/null || true
-    while kill -0 "$pid" 2>/dev/null; do
-      printf "\r  ${CYAN}%s  %s${NC}  " "${frames:$((i % 10)):1}" "$msg"
-      i=$((i + 1))
+    while kill -0 "$_pid" 2>/dev/null; do
+      _char=$(printf '%s' "$_frames" | cut -c$(( (_i % 10) + 1 )))
+      printf "\r  ${CYAN}%s  %s${NC}  " "$_char" "$_msg"
+      _i=$((_i + 1))
       sleep 0.08
     done
     tput cnorm 2>/dev/null || true
     printf "\r\033[K"
   fi
 
-  if wait "$pid"; then
-    success "$msg"
+  if wait "$_pid"; then
+    success "$_msg"
   else
     printf "\n"
     cat "$_SPINNER_LOG" >&2
-    die "$msg — failed (see output above)"
+    die "$_msg — failed (see output above)"
   fi
 }
 
@@ -72,14 +68,14 @@ check_cmd python3 || die "Python 3.12+ is required. Install from https://python.
 PY_MAJOR=$(python3 -c 'import sys; print(sys.version_info.major)')
 PY_MINOR=$(python3 -c 'import sys; print(sys.version_info.minor)')
 if [ "$PY_MAJOR" -lt 3 ] || { [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -lt 12 ]; }; then
-  PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+  PY_VER=$(python3 -c 'import sys; print(str(sys.version_info.major) + "." + str(sys.version_info.minor))')
   die "Python 3.12+ is required (found $PY_VER). Install from https://python.org/downloads/"
 fi
 check_cmd git    || die "'git' is required. See: https://git-scm.com/downloads"
 check_cmd curl   || die "'curl' is required but not found."
 check_cmd openssl || die "'openssl' is required but not found."
 
-success "Python $(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'), git, openssl — OK"
+success "Python $(python3 -c 'import sys; print(str(sys.version_info.major) + "." + str(sys.version_info.minor))'), git, openssl — OK"
 
 if check_cmd uv; then
   success "uv already installed"
@@ -189,8 +185,8 @@ else
 fi
 
 cat > "$INSTALL_DIR/start.sh" << STARTSH
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env sh
+set -eu
 cd "$INSTALL_DIR"
 export PATH="\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH"
 SAMPLE_DB="$DATA_DIR/sample.duckdb"
@@ -238,7 +234,7 @@ printf "  Sample data: Connections → DuckDB → $DATA_DIR/sample.duckdb\n"
 printf "\n"
 printf "  To stop:    Ctrl+C\n"
 printf "  To restart: $INSTALL_DIR/start.sh\n"
-printf "  To update:  curl -fsSL https://stratif.io/install.sh | bash\n"
+printf "  To update:  curl -fsSL https://stratif.io/install.sh | sh\n"
 printf "\n"
 
 wait "$SERVER_PID"
