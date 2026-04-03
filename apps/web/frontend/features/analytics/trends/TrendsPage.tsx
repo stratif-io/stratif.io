@@ -106,78 +106,96 @@ export function TrendsPage() {
           <div className={SPACING.section}>
             <h1 className={TYPOGRAPHY.pageLabel}>Trend Analysis</h1>
 
-            <Card className="relative overflow-hidden">
-              <CardLoadingBar loading={isLoading} />
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  {/* Left group: what you're measuring */}
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <TrendMetricPicker
-                      measureField={measureField}
-                      aggregation={aggregation}
-                      standardMeasures={standardMeasures}
-                      numericDimensions={numericDimensions}
-                      dimensions={dimensions}
-                      onChange={(field, agg) => {
-                        setMeasureField(field)
-                        setAggregation(agg as typeof aggregation)
-                      }}
-                      onAggChange={(agg) => setAggregation(agg as typeof aggregation)}
-                    />
-                  </div>
+            {/* Toolbar above card */}
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+              {/* Left: metric picker + filter chips */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div data-testid="trend-metric-picker">
+                  <TrendMetricPicker
+                    measureField={measureField}
+                    aggregation={aggregation}
+                    standardMeasures={standardMeasures}
+                    numericDimensions={numericDimensions}
+                    dimensions={dimensions}
+                    onChange={(field, agg) => {
+                      setMeasureField(field)
+                      setAggregation(agg as typeof aggregation)
+                    }}
+                    onAggChange={(agg) => setAggregation(agg as typeof aggregation)}
+                  />
+                </div>
+                <TrendFilters
+                  dimensions={[...dimensions, ...numericDimensions]}
+                  filters={localFilters}
+                  connectionId={activeConnectionId ?? undefined}
+                  onChange={setLocalFilters}
+                  compact
+                />
+              </div>
 
-                  {/* Right group: how it's displayed */}
-                  <div className="flex flex-wrap gap-2 items-center">
-                    {/* Chart type toggle — h-7 inner-pill */}
-                    <div className="flex items-center bg-muted rounded-md p-0.5 h-7 gap-0.5">
-                      {(['area', 'line', 'bar'] as const).map((type) => (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => setChartType(type)}
-                          className={cn(
-                            'px-2.5 text-xs rounded capitalize transition-colors',
-                            chartType === type
-                              ? 'bg-background shadow-sm font-medium text-foreground'
-                              : 'text-muted-foreground hover:text-foreground'
-                          )}
-                        >
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </button>
-                      ))}
+              {/* Right: chart type toggle, breakdown, pivot button */}
+              <div className="flex flex-wrap gap-2 items-center">
+                {/* Chart type toggle */}
+                <div className="flex items-center bg-muted rounded-md p-0.5 h-7 gap-0.5">
+                  {(['area', 'line', 'bar'] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setChartType(type)}
+                      className={cn(
+                        'px-2.5 text-xs rounded capitalize transition-colors',
+                        chartType === type
+                          ? 'bg-background shadow-sm font-medium text-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Breakdown selector */}
+                {dimensions.length > 0 && (
+                  <div className="w-[min(180px,45vw)] flex gap-1">
+                    <div className="flex-1">
+                      <FilterSelect
+                        size="sm"
+                        mode="single"
+                        tree={true}
+                        options={dimensions}
+                        value={breakdownDimension}
+                        onChange={(val) => setBreakdownDimension(val as string)}
+                        placeholder="Break down by…"
+                      />
                     </div>
-
-                    {/* Breakdown selector */}
-                    {dimensions.length > 0 && (
-                      <div className="w-[min(180px,45vw)] flex gap-1">
-                        <div className="flex-1">
-                          <FilterSelect
-                            size="sm"
-                            mode="single"
-                            tree={true}
-                            options={dimensions}
-                            value={breakdownDimension}
-                            onChange={(val) => setBreakdownDimension(val as string)}
-                            placeholder="Break down by…"
-                          />
-                        </div>
-                        {breakdownDimension && (
-                          <button
-                            type="button"
-                            onClick={() => setBreakdownDimension(null)}
-                            className="h-7 min-w-[28px] px-1.5 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
-                            aria-label="Clear breakdown"
-                            title="Clear breakdown"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
+                    {breakdownDimension && (
+                      <button
+                        type="button"
+                        onClick={() => setBreakdownDimension(null)}
+                        className="h-7 min-w-[28px] px-1.5 rounded-md border border-input text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors text-xs"
+                        aria-label="Clear breakdown"
+                        title="Clear breakdown"
+                      >
+                        ✕
+                      </button>
                     )}
                   </div>
-                </div>
-                {/* Inline stats strip */}
-                <div className="flex items-center gap-3 pt-1">
+                )}
+
+                {/* Run in Pivot Explorer */}
+                {activeConnectionId && (
+                  <Button variant="outline" size="sm" onClick={handleRunInPivot}>
+                    Run in Pivot Explorer
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <Card className="relative overflow-hidden" data-card>
+              <CardLoadingBar loading={isLoading} />
+              <CardHeader className="pb-3">
+                {/* Stats strip */}
+                <div className="flex items-center gap-3">
                   <div>
                     <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                       Total
@@ -207,14 +225,6 @@ export function TrendsPage() {
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="pb-4">
-                  <TrendFilters
-                    dimensions={[...dimensions, ...numericDimensions]}
-                    filters={localFilters}
-                    connectionId={activeConnectionId ?? undefined}
-                    onChange={setLocalFilters}
-                  />
-                </div>
                 {isError ? (
                   <QueryError error={error} className="h-[300px] sm:h-[380px] lg:h-[450px]" />
                 ) : isLoading ? (
@@ -236,13 +246,6 @@ export function TrendsPage() {
                       seriesKeys={seriesKeys}
                       measureKey={measureKey}
                     />
-                  </div>
-                )}
-                {activeConnectionId && (
-                  <div className="flex justify-end pt-3">
-                    <Button variant="outline" size="sm" onClick={handleRunInPivot}>
-                      Run in Pivot Explorer
-                    </Button>
                   </div>
                 )}
               </CardContent>
