@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.2](https://github.com/stratif-io/stratif.io/compare/v0.18.1...v0.18.2) (2026-04-03)
+
+
+### Bug Fixes
+
+* exclude .venv from copy, use venv binaries directly, fix mktemp suffix ([e7302e4](https://github.com/stratif-io/stratif.io/commit/e7302e4dfdeb6d5870f0545969fc278b730eb8c4))
+* remove .tar.gz suffix from mktemp template (breaks on macOS) ([b09fc13](https://github.com/stratif-io/stratif.io/commit/b09fc1343d4b5b788eb525bbbfd225ed3f07438d))
+
 ## [0.18.1](https://github.com/stratif-io/stratif.io/compare/v0.18.0...v0.18.1) (2026-04-03)
 
 
