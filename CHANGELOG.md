@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.1](https://github.com/stratif-io/stratif.io/compare/v0.18.0...v0.18.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* correct REPO to stratif-io/stratif.io in install.sh ([b473aa2](https://github.com/stratif-io/stratif.io/commit/b473aa2844a0cc2a96ecabcfa22731d1b063bc2d))
+* improve install.sh UX — step labels, spinner, fix cp excluding .git ([26852a3](https://github.com/stratif-io/stratif.io/commit/26852a3efc1370c62a4ba721ff88a25cbae7619d))
+
 ## [0.18.0](https://github.com/cabichahine/stratif.io/compare/v0.17.1...v0.18.0) (2026-04-02)
 
 
