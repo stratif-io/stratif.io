@@ -1,11 +1,14 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { Sidebar } from './Sidebar'
+import { GlobalFilters } from '@/components/GlobalFilters'
+import { QueryStatusIndicator } from './QueryStatusIndicator'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useUrlSync } from '@/hooks'
 
 const FULL_BLEED_ROUTES = ['/query-studio', '/people']
+const GRANULARITY_ROUTES = new Set(['/trends', '/retention', '/dashboard'])
 
 export function DashboardLayout() {
   useUrlSync()
@@ -13,6 +16,7 @@ export function DashboardLayout() {
   const activeConnectionId = useAppStore((state) => state.activeConnectionId)
   const location = useLocation()
   const fullBleed = FULL_BLEED_ROUTES.includes(location.pathname) && !!activeConnectionId
+  const granularityDisabled = !GRANULARITY_ROUTES.has(location.pathname)
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -24,6 +28,14 @@ export function DashboardLayout() {
             sidebarOpen ? 'lg:pl-[var(--sidebar-expanded)]' : 'lg:pl-[var(--sidebar-collapsed)]'
           )}
         >
+          <header className="sticky top-0 z-[var(--z-header)] w-full border-b bg-background">
+            <div className="flex h-12 items-center gap-3 px-4">
+              <div className="flex-1 min-w-0">
+                <GlobalFilters granularityDisabled={granularityDisabled} />
+              </div>
+              <QueryStatusIndicator />
+            </div>
+          </header>
           <main
             id="main-content"
             className={cn(
