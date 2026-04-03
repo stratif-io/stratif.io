@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Require bash — sh lacks arrays and pipefail
+if [ -z "${BASH_VERSION:-}" ]; then
+  printf "\033[0;31m  ✗  This script requires bash. Run: curl -fsSL https://stratif.io/install.sh | bash\033[0m\n" >&2
+  exit 1
+fi
 set -euo pipefail
 
 # ─────────────────────────────────────────────────────────────────────────────
