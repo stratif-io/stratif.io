@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore } from '@/stores'
+import { ShareModal } from '@/features/reports/ShareModal'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { Header } from '@/components/layout/Header'
 import { MissionControlGrid } from './components/MissionControlGrid'
@@ -24,7 +25,8 @@ export function DashboardPage() {
     document.title = 'Mission Control — stratif.io'
   }, [])
 
-  const { dateRange, activeConnectionId, setActiveConnectionId } = useAppStore()
+  const [shareOpen, setShareOpen] = useState(false)
+  const { dateRange, activeFilters, activeConnectionId, setActiveConnectionId } = useAppStore()
   const { pinned, togglePin, isPinned, resetToDefault } = usePinnedMetrics(
     activeConnectionId ?? null
   )
@@ -59,7 +61,12 @@ export function DashboardPage() {
   return (
     <PageTransition>
       <div className="flex flex-col h-full">
-        <Header title={`${getGreeting()}, you`} subtitle="Mission Control" />
+        <Header
+          title={`${getGreeting()}, you`}
+          subtitle="Mission Control"
+          showShare
+          onShare={() => setShareOpen(true)}
+        />
 
         <div className="flex-1 overflow-y-auto p-5">
           {isError ? (
@@ -90,6 +97,13 @@ export function DashboardPage() {
           )}
         </div>
       </div>
+      <ShareModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        page="dashboard"
+        pageLabel="Dashboard"
+        params={{ dateRange, activeFilters }}
+      />
     </PageTransition>
   )
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { ShareModal } from '@/features/reports/ShareModal'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -40,7 +41,8 @@ export function TrendsPage() {
     document.title = 'Trends — stratif.io'
   }, [])
 
-  const { dateRange, activeConnectionId, granularity, dashboardView } = useAppStore()
+  const [shareOpen, setShareOpen] = useState(false)
+  const { dateRange, activeFilters, activeConnectionId, granularity, dashboardView } = useAppStore()
   const navigate = useNavigate()
   const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area')
   const [breakdownDimension, setBreakdownDimension] = useState<string | null>(null)
@@ -114,7 +116,12 @@ export function TrendsPage() {
       <NoConnectionGuard>
         <div className="flex flex-col h-full">
           {/* Zone 1: Header */}
-          <Header title="Trends" subtitle="Event counts over time" showShare />
+          <Header
+            title="Trends"
+            subtitle="Event counts over time"
+            showShare
+            onShare={() => setShareOpen(true)}
+          />
 
           {/* Zone 2: Config bar */}
           <PageConfigBar
@@ -283,6 +290,13 @@ export function TrendsPage() {
           </div>
         </div>
       </NoConnectionGuard>
+      <ShareModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        page="trends"
+        pageLabel="Trends"
+        params={{ dateRange, activeFilters }}
+      />
     </PageTransition>
   )
 }
