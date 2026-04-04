@@ -380,4 +380,12 @@ describe('useAppStore', () => {
       expect(result.current).toBe('dark')
     })
   })
+
+  describe('devMode removal', () => {
+    it('does not expose devMode', () => {
+      const state = useAppStore.getState()
+      expect('devMode' in state).toBe(false)
+      expect('setDevMode' in state).toBe(false)
+    })
+  })
 })

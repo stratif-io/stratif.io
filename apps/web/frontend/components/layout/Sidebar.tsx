@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Switch } from '@/components/ui/switch'
 import {
   ChevronLeft,
   ChevronRight,
@@ -18,6 +17,25 @@ import {
   Palette,
   Terminal,
 } from 'lucide-react'
+
+function FunnelIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      className={className}
+    >
+      <line x1="1" y1="4" x2="15" y2="4" />
+      <line x1="3" y1="8" x2="13" y2="8" />
+      <line x1="5" y1="12" x2="11" y2="12" />
+    </svg>
+  )
+}
 
 interface NavItem {
   title: string
@@ -61,6 +79,11 @@ const navGroups: NavGroup[] = [
         href: '/paths',
         icon: Route,
         preload: () => import('@/features/analytics'),
+      },
+      {
+        title: 'Funnel',
+        href: '/funnel',
+        icon: FunnelIcon,
       },
       {
         title: 'People',
@@ -177,14 +200,7 @@ function NavLink({
 export function Sidebar() {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
-  const devMode = useAppStore((s) => s.devMode)
-  const setDevMode = useAppStore((s) => s.setDevMode)
   const location = useLocation()
-
-  const visibleNavGroups = navGroups.map((group) => ({
-    ...group,
-    items: group.items.filter((item) => item.href !== '/query-studio' || devMode),
-  }))
 
   const handleMobileNavClick = () => {
     if (window.innerWidth < 1024) setSidebarOpen(false)
@@ -230,7 +246,7 @@ export function Sidebar() {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
-          {visibleNavGroups.map((group, gi) => (
+          {navGroups.map((group, gi) => (
             <div
               key={group.title}
               className={cn('space-y-0.5', gi > 0 && 'pt-3 mt-3 border-t border-border/40')}
@@ -256,24 +272,6 @@ export function Sidebar() {
             </div>
           ))}
         </nav>
-
-        {/* Dev mode toggle — above the border */}
-        <div
-          className={cn(
-            'shrink-0 px-2 py-2',
-            sidebarOpen ? 'flex items-center justify-between' : 'flex justify-center'
-          )}
-        >
-          {sidebarOpen && (
-            <span className="text-[11px] font-semibold text-muted-foreground">Dev Mode</span>
-          )}
-          <Switch
-            checked={devMode}
-            onCheckedChange={setDevMode}
-            aria-label="Toggle Dev Mode"
-            className={cn(devMode && 'data-[state=checked]:bg-warning')}
-          />
-        </div>
 
         {/* Bottom section */}
         <div className="shrink-0 border-t px-2 py-2 space-y-0.5">
