@@ -18,8 +18,8 @@ function AllProviders({ children }: { children: React.ReactNode }) {
 }
 
 describe('AppComponentsSection', () => {
-  it('does not render a DevCard section', () => {
+  it('renders a DevCard section', () => {
     render(<AppComponentsSection />, { wrapper: AllProviders })
-    expect(screen.queryByText(/DevCard/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/DevCard/i)).toBeInTheDocument()
   })
 })

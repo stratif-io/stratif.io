@@ -15,6 +15,7 @@ import { useRetentionData, type RetentionGranularity } from './hooks/useRetentio
 import { RetentionTable } from './components/RetentionTable'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
+import { DevCard } from '@/components/dev'
 import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 
@@ -120,6 +121,7 @@ export function RetentionPage() {
     refetch,
     avgMilestones: _avgMilestones,
     totalAvailable,
+    sql,
   } = useRetentionData({
     dateRange,
     granularity,
@@ -195,34 +197,36 @@ export function RetentionPage() {
             )}
 
             {/* Cohort heatmap with sparklines */}
-            <Card className="relative overflow-hidden">
-              <CardLoadingBar loading={isLoading} />
-              <CardContent className="p-0 pb-0">
-                {isError ? (
-                  <div className="p-6">
-                    <QueryError error={error} onRetry={refetch} />
-                  </div>
-                ) : isLoading ? (
-                  <div className="p-6">
-                    <TableSkeleton />
-                  </div>
-                ) : isEmpty ? (
-                  <div className="p-6">
-                    <EmptyState
-                      icon={Users}
-                      title="No cohorts to show"
-                      description="No new users were found in this date range. Try widening it to see retention cohorts."
+            <DevCard sql={sql}>
+              <Card className="relative overflow-hidden">
+                <CardLoadingBar loading={isLoading} />
+                <CardContent className="p-0 pb-0">
+                  {isError ? (
+                    <div className="p-6">
+                      <QueryError error={error} onRetry={refetch} />
+                    </div>
+                  ) : isLoading ? (
+                    <div className="p-6">
+                      <TableSkeleton />
+                    </div>
+                  ) : isEmpty ? (
+                    <div className="p-6">
+                      <EmptyState
+                        icon={Users}
+                        title="No cohorts to show"
+                        description="No new users were found in this date range. Try widening it to see retention cohorts."
+                      />
+                    </div>
+                  ) : (
+                    <RetentionTable
+                      data={visibleData}
+                      granularity={granularity}
+                      milestones={milestones}
                     />
-                  </div>
-                ) : (
-                  <RetentionTable
-                    data={visibleData}
-                    granularity={granularity}
-                    milestones={milestones}
-                  />
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            </DevCard>
           </div>
         </div>
       </NoConnectionGuard>

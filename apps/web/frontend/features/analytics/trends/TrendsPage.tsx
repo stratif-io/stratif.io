@@ -19,6 +19,7 @@ import { TrendFilters } from './components/TrendFilters'
 import { FilterSelect } from '@/components/FilterSelect'
 import { SPACING, TYPOGRAPHY, QUERY_STALE_TIME } from '@/lib/constants'
 import type { Granularity } from '@/types'
+import { DevCard } from '@/components/dev'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { buildPivotUrl } from './trendToPivot'
 
@@ -89,6 +90,7 @@ export function TrendsPage() {
     maxValue,
     seriesKeys,
     measureKey,
+    sql,
   } = useTrendData({
     dateRange,
     granularity,
@@ -191,65 +193,67 @@ export function TrendsPage() {
               </div>
             </div>
 
-            <Card className="relative overflow-hidden" data-card>
-              <CardLoadingBar loading={isLoading} />
-              <CardHeader className="pb-3">
-                {/* Stats strip */}
-                <div className="flex items-center gap-3">
-                  <div>
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Total
-                    </span>
-                    <span className="ml-1.5 text-sm font-semibold">
-                      {totalEvents.toLocaleString()}
-                    </span>
+            <DevCard sql={sql}>
+              <Card className="relative overflow-hidden" data-card>
+                <CardLoadingBar loading={isLoading} />
+                <CardHeader className="pb-3">
+                  {/* Stats strip */}
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        Total
+                      </span>
+                      <span className="ml-1.5 text-sm font-semibold">
+                        {totalEvents.toLocaleString()}
+                      </span>
+                    </div>
+                    <span className="text-muted-foreground/30 select-none">|</span>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        {periodLabel} avg
+                      </span>
+                      <span className="ml-1.5 text-sm font-semibold">
+                        {averageValue.toLocaleString()}
+                      </span>
+                    </div>
+                    <span className="text-muted-foreground/30 select-none">|</span>
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        Peak
+                      </span>
+                      <span className="ml-1.5 text-sm font-semibold">
+                        {maxValue.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-muted-foreground/30 select-none">|</span>
-                  <div>
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      {periodLabel} avg
-                    </span>
-                    <span className="ml-1.5 text-sm font-semibold">
-                      {averageValue.toLocaleString()}
-                    </span>
-                  </div>
-                  <span className="text-muted-foreground/30 select-none">|</span>
-                  <div>
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Peak
-                    </span>
-                    <span className="ml-1.5 text-sm font-semibold">
-                      {maxValue.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {isError ? (
-                  <QueryError error={error} className="h-[300px] sm:h-[380px] lg:h-[450px]" />
-                ) : isLoading ? (
-                  <ChartSkeleton height="h-[300px] sm:h-[380px] lg:h-[450px]" />
-                ) : trendData.length === 0 ? (
-                  <EmptyState
-                    icon={TrendingUp}
-                    title="No trend data available"
-                    description="No events were recorded in this date range. Try widening the range or selecting a different event."
-                    className="h-[300px] sm:h-[380px] lg:h-[450px]"
-                  />
-                ) : (
-                  <div className="h-[300px] sm:h-[380px] lg:h-[450px]">
-                    <TrendChart
-                      data={trendData}
-                      chartType={chartType}
-                      averageValue={averageValue}
-                      eventName="All Events"
-                      seriesKeys={seriesKeys}
-                      measureKey={measureKey}
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {isError ? (
+                    <QueryError error={error} className="h-[300px] sm:h-[380px] lg:h-[450px]" />
+                  ) : isLoading ? (
+                    <ChartSkeleton height="h-[300px] sm:h-[380px] lg:h-[450px]" />
+                  ) : trendData.length === 0 ? (
+                    <EmptyState
+                      icon={TrendingUp}
+                      title="No trend data available"
+                      description="No events were recorded in this date range. Try widening the range or selecting a different event."
+                      className="h-[300px] sm:h-[380px] lg:h-[450px]"
                     />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  ) : (
+                    <div className="h-[300px] sm:h-[380px] lg:h-[450px]">
+                      <TrendChart
+                        data={trendData}
+                        chartType={chartType}
+                        averageValue={averageValue}
+                        eventName="All Events"
+                        seriesKeys={seriesKeys}
+                        measureKey={measureKey}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </DevCard>
           </div>
         </div>
       </NoConnectionGuard>
