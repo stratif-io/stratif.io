@@ -39,7 +39,7 @@ const segTrigger = FILTER_TRIGGER_CLASS
 export function FunnelDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { dateRange, setDateRange, activeFilters, activeConnectionId } = useAppStore()
+  const { dateRange, activeFilters, activeConnectionId } = useAppStore()
   const [methodologyOpen, setMethodologyOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -53,45 +53,23 @@ export function FunnelDetailPage() {
   // Non-empty steps used for the API call
   const events = funnelSteps.filter(Boolean)
 
-  const startDateParam = searchParams.get('start_date')
-  const endDateParam = searchParams.get('end_date')
-
   const { data: eventsResponse } = useQuery({
     queryKey: ['events', activeConnectionId],
     queryFn: () => fetchEvents(activeConnectionId ?? undefined),
   })
   const availableEvents = eventsResponse?.events || []
 
-  useEffect(() => {
-    if (startDateParam && endDateParam) {
-      const from = new Date(startDateParam)
-      const to = new Date(endDateParam)
-      if (!isNaN(from.getTime()) && !isNaN(to.getTime())) {
-        setDateRange({ from, to })
-      }
-    }
-  }, [startDateParam, endDateParam, setDateRange])
-
-  useEffect(() => {
-    if (dateRange.from && dateRange.to) {
-      const from = formatDateParam(dateRange.from)
-      const to = formatDateParam(dateRange.to)
-      setSearchParams((prev) => ({
-        ...Object.fromEntries(prev),
-        start_date: from,
-        end_date: to,
-      }))
-    }
-  }, [dateRange, setSearchParams])
-
   // Sync step state back to URL
   useEffect(() => {
     const eventsValue = events.length >= 2 ? events.join(',') : null
-    setSearchParams((prev) => {
-      const next: Record<string, string> = { ...Object.fromEntries(prev) }
-      if (eventsValue) next['events'] = eventsValue
-      return next
-    })
+    setSearchParams(
+      (prev) => {
+        const next: Record<string, string> = { ...Object.fromEntries(prev) }
+        if (eventsValue) next['events'] = eventsValue
+        return next
+      },
+      { replace: true }
+    )
   }, [funnelSteps, events, setSearchParams])
 
   const addStep = () => {
