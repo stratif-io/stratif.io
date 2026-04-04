@@ -514,18 +514,6 @@ wheels = [
 ]
 
 [[package]]
-name = "faker"
-version = "40.4.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "tzdata", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/7e/dccb7013c9f3d66f2e379383600629fec75e4da2698548bdbf2041ea4b51/faker-40.4.0.tar.gz", hash = "sha256:76f8e74a3df28c3e2ec2caafa956e19e37a132fdc7ea067bc41783affcfee364", size = 1952221, upload-time = "2026-02-06T23:30:15.515Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ac/63/58efa67c10fb27810d34351b7a10f85f109a7f7e2a07dc3773952459c47b/faker-40.4.0-py3-none-any.whl", hash = "sha256:486d43c67ebbb136bc932406418744f9a0bdf2c07f77703ea78b58b77e9aa443", size = 1987060, upload-time = "2026-02-06T23:30:13.44Z" },
-]
-
-[[package]]
 name = "fakesnow"
 version = "0.11.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1214,15 +1202,6 @@ wheels = [
 ]
 
 [[package]]
-name = "python-multipart"
-version = "0.0.22"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/94/01/979e98d542a70714b0cb2b6728ed0b7c46792b695e3eaec3e20711271ca3/python_multipart-0.0.22.tar.gz", hash = "sha256:7340bef99a7e0032613f56dc36027b959fd3b30a787ed62d310e951f7c3a3a58", size = 37612, upload-time = "2026-01-25T10:15:56.219Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/d0/397f9626e711ff749a95d96b7af99b9c566a9bb5129b8e4c10fc4d100304/python_multipart-0.0.22-py3-none-any.whl", hash = "sha256:2b2cd894c83d21bf49d702499531c7bafd057d730c201782048f7945d82de155", size = 24579, upload-time = "2026-01-25T10:15:54.811Z" },
-]
-
-[[package]]
 name = "pytz"
 version = "2026.1.post1"
 source = { registry = "https://pypi.org/simple" }
@@ -1484,7 +1463,7 @@ wheels = [
 
 [[package]]
 name = "stratifio-core"
-version = "0.18.4"
+version = "0.18.5"
 source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
@@ -1493,15 +1472,11 @@ dependencies = [
     { name = "cryptography" },
     { name = "databricks-sql-connector" },
     { name = "duckdb" },
-    { name = "faker" },
     { name = "fastapi" },
     { name = "httpx" },
-    { name = "pandas" },
     { name = "psycopg2-binary" },
-    { name = "pyarrow" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
-    { name = "python-multipart" },
     { name = "scalar-fastapi" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "sqlglot" },
@@ -1539,15 +1514,11 @@ requires-dist = [
     { name = "cryptography", specifier = ">=41.0.0" },
     { name = "databricks-sql-connector", specifier = ">=4.2.5" },
     { name = "duckdb", specifier = ">=0.9.0" },
-    { name = "faker", specifier = ">=20.0.0" },
     { name = "fastapi", specifier = ">=0.104.0" },
     { name = "httpx", specifier = ">=0.27.0" },
-    { name = "pandas", specifier = ">=2.0.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
-    { name = "pyarrow", specifier = ">=14.0.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pydantic-settings", specifier = ">=2.0.0" },
-    { name = "python-multipart", specifier = ">=0.0.6" },
     { name = "scalar-fastapi", specifier = ">=1.8.1" },
     { name = "snowflake-connector-python", marker = "extra == 'snowflake'", specifier = ">=3.0.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.0" },
