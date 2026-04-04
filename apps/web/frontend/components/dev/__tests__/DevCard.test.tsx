@@ -91,10 +91,10 @@ beforeEach(() => {
 })
 
 describe('DevCard', () => {
-  it('renders children with no SQL badge when devMode is off', () => {
+  it('renders children and always shows SQL badge regardless of devMode', () => {
     renderCard()
     expect(screen.getByText('content')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Show SQL')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Show SQL')).toBeInTheDocument()
   })
 
   it('renders SQL badge when devMode is on', () => {
