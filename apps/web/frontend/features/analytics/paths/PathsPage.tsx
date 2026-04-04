@@ -17,8 +17,8 @@ import { LoadingState } from '@/components/ui/loading-state'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
-import { DevCard } from '@/components/dev'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
+import { DevCard } from '@/components/dev'
 
 export function PathsPage() {
   useEffect(() => {

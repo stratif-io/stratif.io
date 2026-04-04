@@ -62,9 +62,16 @@ interface TrendFiltersProps {
   filters: Record<string, string[]>
   connectionId: string | undefined
   onChange: (filters: Record<string, string[]>) => void
+  compact?: boolean
 }
 
-export function TrendFilters({ dimensions, filters, connectionId, onChange }: TrendFiltersProps) {
+export function TrendFilters({
+  dimensions,
+  filters,
+  connectionId,
+  onChange,
+  compact = false,
+}: TrendFiltersProps) {
   const [open, setOpen] = useState(false)
 
   const rows: FilterRow[] = Object.entries(filters).map(([field, values]) => ({ field, values }))
@@ -101,6 +108,89 @@ export function TrendFilters({ dimensions, filters, connectionId, onChange }: Tr
   }
 
   if (dimensions.length === 0) return null
+
+  // ── Compact mode: chips + inline expand ───────────────────────────────────
+  if (compact) {
+    return (
+      <div className="relative flex flex-wrap items-center gap-1.5">
+        {rows
+          .filter((r) => r.values.length > 0)
+          .map((row) => {
+            const label = dimensions.find((d) => d.value === row.field)?.label ?? row.field
+            return (
+              <span
+                key={row.field}
+                className="inline-flex items-center gap-1 rounded-full border border-input bg-background px-2 py-0.5 text-xs"
+              >
+                <span className="text-muted-foreground">{label}:</span>
+                <span className="font-medium">{row.values.join(', ')}</span>
+                <button
+                  type="button"
+                  className="ml-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => removeRow(row.field)}
+                  aria-label={`Remove ${label} filter`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )
+          })}
+        <Collapsible open={open} onOpenChange={handleOpenChange}>
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 rounded-full border border-dashed border-input px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+              aria-label="+ Filter"
+            >
+              <Plus className="h-3 w-3" />
+              Filter
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="absolute z-10 mt-1 rounded-md border border-input bg-background p-2 shadow-md flex flex-col gap-2">
+              {rows.map((row) => (
+                <div key={row.field} className="flex items-center gap-2">
+                  <FilterSelect
+                    mode="single"
+                    tree={true}
+                    size="sm"
+                    value={row.field}
+                    onChange={(v) => changeField(row.field, v as string)}
+                    options={dimensions
+                      .filter((d) => d.value === row.field || !usedFields.includes(d.value))
+                      .map((d) => ({ value: d.value, label: d.label }))}
+                    className="w-40 rounded-l-md rounded-r-none"
+                  />
+                  <FilterRowValueSelect
+                    field={row.field}
+                    connectionId={connectionId}
+                    selected={row.values}
+                    onChange={(values) => updateValues(row.field, values)}
+                  />
+                  <button
+                    className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => removeRow(row.field)}
+                    aria-label="Remove filter"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              {dimensions.length > usedFields.length && (
+                <button
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit"
+                  onClick={addRow}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add filter
+                </button>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+    )
+  }
 
   return (
     <Collapsible open={open} onOpenChange={handleOpenChange}>

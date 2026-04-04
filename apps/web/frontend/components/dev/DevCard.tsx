@@ -356,7 +356,6 @@ function SqlPanelBody({
 }
 
 function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
-  const devMode = useAppStore((s) => s.devMode)
   const setPendingQueryStudioSql = useAppStore((s) => s.setPendingQueryStudioSql)
   const activeConnectionId = useAppStore((s) => s.activeConnectionId)
   const navigate = useNavigate()
@@ -422,8 +421,6 @@ function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
       setResultsOpen(false)
     }
   }, [flipped])
-
-  if (!devMode) return <>{children}</>
 
   const queries = sql ? (Array.isArray(sql) ? sql : [sql]) : []
   const labels = sqlLabels ? (Array.isArray(sqlLabels) ? sqlLabels : [sqlLabels]) : []
@@ -508,6 +505,7 @@ function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
               transform: 'rotateY(180deg)',
               position: 'absolute',
               inset: 0,
+              pointerEvents: flipped ? 'auto' : 'none',
             }}
             className={cn('rounded-[inherit] border flex flex-col', sqlBg)}
           >
