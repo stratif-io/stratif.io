@@ -307,9 +307,9 @@ export function EventsPage() {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-hidden relative">
-            <CardLoadingBar loading={isFetching} />
-            <DevCard sql={rawEventsData?.sql}>
+          <DevCard sql={rawEventsData?.sql}>
+            <div className="flex-1 overflow-hidden relative">
+              <CardLoadingBar loading={isFetching} />
               {isError ? (
                 <QueryError error={error} className="py-16" />
               ) : !isLoading && events.length === 0 ? (
@@ -348,8 +348,8 @@ export function EventsPage() {
                   onColumnVisibilityChange={setColVisibility}
                 />
               )}
-            </DevCard>
-          </div>
+            </div>
+          </DevCard>
         </div>
 
         <UserTimelineModal

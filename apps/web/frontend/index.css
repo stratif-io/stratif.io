@@ -47,6 +47,11 @@
   --color-chart-3: hsl(var(--chart-3));
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
+  --color-chart-6: hsl(var(--chart-6));
+  --color-chart-7: hsl(var(--chart-7));
+  --color-chart-8: hsl(var(--chart-8));
+  --color-chart-9: hsl(var(--chart-9));
+  --color-chart-10: hsl(var(--chart-10));
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -107,6 +112,11 @@ body {
   --chart-3: 38 92% 50%;
   --chart-4: 280 65% 60%;
   --chart-5: 12 76% 61%;
+  --chart-6: 215 75% 52%;
+  --chart-7: 345 72% 55%;
+  --chart-8: 160 65% 35%;
+  --chart-9: 250 65% 62%;
+  --chart-10: 25 85% 52%;
   --warning: 38 92% 50%;
   --warning-foreground: 240 39% 14%;
   --success: 142 72% 29%;
@@ -138,6 +148,11 @@ body {
   --chart-3: 38 92% 58%;
   --chart-4: 280 65% 60%;
   --chart-5: 12 76% 65%;
+  --chart-6: 215 75% 58%;
+  --chart-7: 345 72% 62%;
+  --chart-8: 160 65% 42%;
+  --chart-9: 250 65% 68%;
+  --chart-10: 25 85% 58%;
   --warning: 38 92% 58%;
   --warning-foreground: 240 39% 14%;
   --success: 142 71% 45%;
