@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.19.0](https://github.com/stratif-io/stratif.io/compare/v0.18.5...v0.19.0) (2026-04-04)
+
+
+### Features
+
+* add Funnel nav item to sidebar ([882b69c](https://github.com/stratif-io/stratif.io/commit/882b69c51293f48ca3a991eb23f6b68617917863))
+* apply semantic color variety to FunnelDetailPage summary cards ([50bef55](https://github.com/stratif-io/stratif.io/commit/50bef55b32266722d56038a66641f72ee6b8c463))
+* expand event color palette to 10 distinct colors (add chart-6..10) ([a8291df](https://github.com/stratif-io/stratif.io/commit/a8291df0790d4427f62cebc7b10162a05af6ab27))
+* move trend controls to toolbar above card, add TrendFilters compact mode ([0f59d60](https://github.com/stratif-io/stratif.io/commit/0f59d6097e2aa182c691445e3f0a8aa5f1562382))
+* redesign FunnelSteps — color-coded circles, rounded bars, new connectors ([a022174](https://github.com/stratif-io/stratif.io/commit/a022174091a09d934485390b735f036fc7835625))
+* redesign PathFunnelDialog — remove device filter, path chips, colored cards ([6d899ce](https://github.com/stratif-io/stratif.io/commit/6d899ce93e871fa5dcd887c6ccd0261a135c8896))
+* remove DevCard component and all usages ([c83fe34](https://github.com/stratif-io/stratif.io/commit/c83fe3472b8175b005125342f116555e8d313e63))
+* remove devMode state from app-store ([984b4ef](https://github.com/stratif-io/stratif.io/commit/984b4efc2388a6f0e96852fb57c2a2138aab91f8))
+* use per-event colors in PathFunnelDialog chips — matches path list color coding ([c8c2654](https://github.com/stratif-io/stratif.io/commit/c8c2654c0417fb04af9e04971b38fbd80db97834))
+
+
+### Bug Fixes
+
+* address code review feedback — dead alias, stale comment, positioning, type fix ([ad21d0c](https://github.com/stratif-io/stratif.io/commit/ad21d0c278ee3b7d81e69472142e96d740f68e5f))
+* disable pointer events on DevCard back face when not flipped ([bedde3a](https://github.com/stratif-io/stratif.io/commit/bedde3a591e440eff32b9b410bcb35ee2778008a))
+* mock useSearchParams in FunnelDetailPage test to prevent infinite re-render loop ([bdec652](https://github.com/stratif-io/stratif.io/commit/bdec6527c0c624ff68dd82e36fc4f19cc6110e1d))
+* remove redundant date sync effects from FunnelDetailPage — useUrlSync handles this ([1693428](https://github.com/stratif-io/stratif.io/commit/1693428226b28e2772aff4d99d3922636858ea8f))
+* restore DevCard component and re-add to all call sites ([2dc74a9](https://github.com/stratif-io/stratif.io/commit/2dc74a95b6c3cd86c8e0294ae2facff401f9a966))
+
 ## [0.18.5](https://github.com/stratif-io/stratif.io/compare/v0.18.4...v0.18.5) (2026-04-03)
 
 
