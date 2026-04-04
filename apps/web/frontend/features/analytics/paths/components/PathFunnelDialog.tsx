@@ -12,6 +12,7 @@ import { FunnelSteps } from './FunnelSteps'
 import { fetchPathFunnel } from '@/lib/api'
 import type { DateRange, PathAnalysisData } from '@/types'
 import { formatDateParam } from '@/lib/utils'
+import { getEventColor } from '../utils/eventColors'
 
 interface PathFunnelDialogProps {
   path: PathAnalysisData | null
@@ -129,7 +130,9 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
           <div className="flex flex-wrap items-center gap-1.5">
             {events.map((event, i) => (
               <Fragment key={i}>
-                <span className="text-xs font-semibold bg-primary/10 text-primary px-2.5 py-1 rounded-full">
+                <span
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-full ${getEventColor(event)}`}
+                >
                   {event}
                 </span>
                 {i < events.length - 1 && (
