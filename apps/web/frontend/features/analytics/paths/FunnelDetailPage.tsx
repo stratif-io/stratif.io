@@ -30,6 +30,7 @@ import { fetchPathFunnel, fetchEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import { SPACING, TYPOGRAPHY, FILTER_TRIGGER_CLASS } from '@/lib/constants'
 import { cn, formatDateParam } from '@/lib/utils'
+import { DevCard } from '@/components/dev'
 
 const MAX_STEPS = 10
 
@@ -320,73 +321,76 @@ export function FunnelDetailPage() {
               )}
 
               {/* Funnel visualization */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <TrendingDown className="h-5 w-5 text-primary" />
-                    <div>
-                      <CardTitle>Step-by-Step Breakdown</CardTitle>
-                      <CardDescription>
-                        How users progress (or drop off) through each step
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {isLoading ? (
-                    <div className="space-y-3">
-                      {events.map((_, i) => (
-                        <div key={i} className="space-y-2 p-4 rounded-xl border">
-                          <Skeleton className="h-5 w-40" />
-                          <Skeleton className="h-5 w-full" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : error ? (
-                    <EmptyState
-                      icon={TrendingDown}
-                      title="Error loading funnel data"
-                      description="There was a problem fetching funnel data. Try refreshing the page."
-                    />
-                  ) : steps.length > 0 ? (
-                    <FunnelSteps steps={steps} />
-                  ) : (
-                    <EmptyState
-                      icon={TrendingDown}
-                      title="No funnel data"
-                      description="No users completed the first step in this date range."
-                    />
-                  )}
-
-                  <Collapsible open={methodologyOpen} onOpenChange={setMethodologyOpen}>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="w-full justify-between">
-                        <span className="text-sm font-medium">How this is calculated</span>
-                        <ChevronDown
-                          className={`h-4 w-4 transition-transform ${methodologyOpen ? 'rotate-180' : ''}`}
-                        />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="text-sm text-muted-foreground p-3 rounded-lg bg-muted/50 mt-1">
-                        <ul className="list-disc list-inside space-y-1.5">
-                          <li>
-                            Each step shows people who did <em>every prior step first</em>, in order
-                          </li>
-                          <li>Other events between steps are fine — no direct jump required</li>
-                          <li>
-                            &quot;% of starters&quot; = people at this step ÷ people at step 1
-                          </li>
-                          <li>
-                            &quot;People left here&quot; = those who never continued to the next
-                            step
-                          </li>
-                        </ul>
+              <DevCard sql={funnelData?.sql}>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <TrendingDown className="h-5 w-5 text-primary" />
+                      <div>
+                        <CardTitle>Step-by-Step Breakdown</CardTitle>
+                        <CardDescription>
+                          How users progress (or drop off) through each step
+                        </CardDescription>
                       </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </CardContent>
-              </Card>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {isLoading ? (
+                      <div className="space-y-3">
+                        {events.map((_, i) => (
+                          <div key={i} className="space-y-2 p-4 rounded-xl border">
+                            <Skeleton className="h-5 w-40" />
+                            <Skeleton className="h-5 w-full" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : error ? (
+                      <EmptyState
+                        icon={TrendingDown}
+                        title="Error loading funnel data"
+                        description="There was a problem fetching funnel data. Try refreshing the page."
+                      />
+                    ) : steps.length > 0 ? (
+                      <FunnelSteps steps={steps} />
+                    ) : (
+                      <EmptyState
+                        icon={TrendingDown}
+                        title="No funnel data"
+                        description="No users completed the first step in this date range."
+                      />
+                    )}
+
+                    <Collapsible open={methodologyOpen} onOpenChange={setMethodologyOpen}>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="w-full justify-between">
+                          <span className="text-sm font-medium">How this is calculated</span>
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${methodologyOpen ? 'rotate-180' : ''}`}
+                          />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="text-sm text-muted-foreground p-3 rounded-lg bg-muted/50 mt-1">
+                          <ul className="list-disc list-inside space-y-1.5">
+                            <li>
+                              Each step shows people who did <em>every prior step first</em>, in
+                              order
+                            </li>
+                            <li>Other events between steps are fine — no direct jump required</li>
+                            <li>
+                              &quot;% of starters&quot; = people at this step ÷ people at step 1
+                            </li>
+                            <li>
+                              &quot;People left here&quot; = those who never continued to the next
+                              step
+                            </li>
+                          </ul>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </CardContent>
+                </Card>
+              </DevCard>
             </>
           )}
         </div>

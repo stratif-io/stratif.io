@@ -22,6 +22,7 @@ import { QueryError } from '@/components/ui/query-error'
 import type { PathAnalysisData } from '@/types'
 import { cn } from '@/lib/utils'
 import { FILTER_TRIGGER_CLASS } from '@/lib/constants'
+import { DevCard } from '@/components/dev'
 
 const TIME_UNITS = [
   { value: 'seconds', label: 'Seconds' },
@@ -219,7 +220,7 @@ export function PathsExplorerPage() {
     )
   }
 
-  const { pathData, events, isLoading, isError, error, eventsLoading, totalPaths } =
+  const { pathData, events, isLoading, isError, error, eventsLoading, totalPaths, sql } =
     usePathExplorer({
       dateRange,
       startEvent: startEvent || null,
@@ -483,56 +484,59 @@ export function PathsExplorerPage() {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            {isLoading || eventsLoading ? (
-              <LoadingState message="Analyzing paths…" />
-            ) : isError ? (
-              <QueryError error={error} />
-            ) : pathData.length === 0 ? (
-              <EmptyState
-                icon={GitFork}
-                title="No paths found"
-                description="Try broadening your filters — relax path length, remove start/end events, or expand the date range."
-              />
-            ) : (
-              <div className="space-y-2 p-3">
-                <div className="flex items-center justify-between px-1">
-                  <p className="text-sm text-muted-foreground">
-                    Showing <span className="font-semibold text-foreground">{pathData.length}</span>{' '}
-                    of <span className="font-semibold text-foreground">{totalPaths}</span> paths —
-                    click a path to view its conversion funnel
-                  </p>
-                  <div className="flex gap-1.5">
-                    {startEvent && (
-                      <Badge variant="secondary" className="text-xs">
-                        From: {startEvent}
-                      </Badge>
-                    )}
-                    {endEvent && (
-                      <Badge variant="secondary" className="text-xs">
-                        To: {endEvent}
-                      </Badge>
-                    )}
+          <DevCard sql={sql}>
+            <div className="flex-1 overflow-y-auto">
+              {isLoading || eventsLoading ? (
+                <LoadingState message="Analyzing paths…" />
+              ) : isError ? (
+                <QueryError error={error} />
+              ) : pathData.length === 0 ? (
+                <EmptyState
+                  icon={GitFork}
+                  title="No paths found"
+                  description="Try broadening your filters — relax path length, remove start/end events, or expand the date range."
+                />
+              ) : (
+                <div className="space-y-2 p-3">
+                  <div className="flex items-center justify-between px-1">
+                    <p className="text-sm text-muted-foreground">
+                      Showing{' '}
+                      <span className="font-semibold text-foreground">{pathData.length}</span> of{' '}
+                      <span className="font-semibold text-foreground">{totalPaths}</span> paths —
+                      click a path to view its conversion funnel
+                    </p>
+                    <div className="flex gap-1.5">
+                      {startEvent && (
+                        <Badge variant="secondary" className="text-xs">
+                          From: {startEvent}
+                        </Badge>
+                      )}
+                      {endEvent && (
+                        <Badge variant="secondary" className="text-xs">
+                          To: {endEvent}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {pathData.map((path, idx) => (
+                      <PathCard
+                        key={idx}
+                        path={path}
+                        rank={idx + 1}
+                        maxCount={maxCount}
+                        onClick={() => {
+                          setSelectedPath(path)
+                          setDialogOpen(true)
+                        }}
+                      />
+                    ))}
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  {pathData.map((path, idx) => (
-                    <PathCard
-                      key={idx}
-                      path={path}
-                      rank={idx + 1}
-                      maxCount={maxCount}
-                      onClick={() => {
-                        setSelectedPath(path)
-                        setDialogOpen(true)
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </DevCard>
 
           <PathFunnelDialog
             path={selectedPath}

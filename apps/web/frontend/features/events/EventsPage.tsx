@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { QUERY_STALE_TIME } from '@/lib/constants'
+import { DevCard } from '@/components/dev'
 import { EventsTable, buildDimCols, defaultVisibility } from '@/components/events-table/EventsTable'
 import { FilterSelect } from '@/components/FilterSelect'
 import { UserTimelineModal } from './components/UserTimelineModal'
@@ -306,47 +307,49 @@ export function EventsPage() {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-hidden relative">
-            <CardLoadingBar loading={isFetching} />
-            {isError ? (
-              <QueryError error={error} className="py-16" />
-            ) : !isLoading && events.length === 0 ? (
-              <EmptyState
-                icon={Activity}
-                title="No events found"
-                description="Try expanding the date range or selecting a different event."
-                className="py-16"
-              />
-            ) : (
-              <EventsTable
-                data={events}
-                total={rawEventsData?.total ?? 0}
-                page={page}
-                pageSize={limit}
-                loading={isLoading}
-                isFetching={isFetching}
-                sortField={sortField}
-                sortOrder={sortOrder}
-                onSortChange={handleSortChange}
-                eventNameFilter={eventNameFilter}
-                onEventNameFilterChange={handleEventNameFilterChange}
-                userIdFilter={userIdFilter}
-                onUserIdFilterChange={handleUserIdFilterChange}
-                columnFilters={columnFilters}
-                onColumnFilterChange={handleColumnFilterChange}
-                onColumnFilterClear={handleColumnFilterClear}
-                filterFields={filterFields}
-                customProperties={customProperties}
-                filterOptions={mergedFilterOptions}
-                allEventNames={allEventNames}
-                onPageChange={setPage}
-                onUserClick={setTimelineUserId}
-                connectionId={activeConnectionId}
-                colVisibility={colVisibility}
-                onColumnVisibilityChange={setColVisibility}
-              />
-            )}
-          </div>
+          <DevCard sql={rawEventsData?.sql}>
+            <div className="flex-1 overflow-hidden relative">
+              <CardLoadingBar loading={isFetching} />
+              {isError ? (
+                <QueryError error={error} className="py-16" />
+              ) : !isLoading && events.length === 0 ? (
+                <EmptyState
+                  icon={Activity}
+                  title="No events found"
+                  description="Try expanding the date range or selecting a different event."
+                  className="py-16"
+                />
+              ) : (
+                <EventsTable
+                  data={events}
+                  total={rawEventsData?.total ?? 0}
+                  page={page}
+                  pageSize={limit}
+                  loading={isLoading}
+                  isFetching={isFetching}
+                  sortField={sortField}
+                  sortOrder={sortOrder}
+                  onSortChange={handleSortChange}
+                  eventNameFilter={eventNameFilter}
+                  onEventNameFilterChange={handleEventNameFilterChange}
+                  userIdFilter={userIdFilter}
+                  onUserIdFilterChange={handleUserIdFilterChange}
+                  columnFilters={columnFilters}
+                  onColumnFilterChange={handleColumnFilterChange}
+                  onColumnFilterClear={handleColumnFilterClear}
+                  filterFields={filterFields}
+                  customProperties={customProperties}
+                  filterOptions={mergedFilterOptions}
+                  allEventNames={allEventNames}
+                  onPageChange={setPage}
+                  onUserClick={setTimelineUserId}
+                  connectionId={activeConnectionId}
+                  colVisibility={colVisibility}
+                  onColumnVisibilityChange={setColVisibility}
+                />
+              )}
+            </div>
+          </DevCard>
         </div>
 
         <UserTimelineModal
