@@ -505,6 +505,7 @@ function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
               transform: 'rotateY(180deg)',
               position: 'absolute',
               inset: 0,
+              pointerEvents: flipped ? 'auto' : 'none',
             }}
             className={cn('rounded-[inherit] border flex flex-col', sqlBg)}
           >
