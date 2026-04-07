@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.20.1](https://github.com/stratif-io/stratif.io/compare/v0.20.0...v0.20.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* **ci:** write .npmrc auth token before bun publish ([8c38a8f](https://github.com/stratif-io/stratif.io/commit/8c38a8f85fea74f22e410082c2b5f59e2a40bfe1))
+
+## [0.20.0](https://github.com/stratif-io/stratif.io/compare/v0.19.1...v0.20.0) (2026-04-07)
+
+
+### Features
+
+* publish @stratif-io/web to GitHub Packages on release ([05dbb2d](https://github.com/stratif-io/stratif.io/commit/05dbb2dce1fe2193a0e9ddcccc186dac0f7682ac))
+
 ## [0.19.1](https://github.com/stratif-io/stratif.io/compare/v0.19.0...v0.19.1) (2026-04-07)
 
 
