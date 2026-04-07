@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.2](https://github.com/stratif-io/stratif.io/compare/v0.20.1...v0.20.2) (2026-04-07)
+
+
+### Reverts
+
+* remove E2E job from CI (deferred) ([69b3ad6](https://github.com/stratif-io/stratif.io/commit/69b3ad6479278d5589966b6ce84239ec1b7fe30a))
+
 ## [0.20.1](https://github.com/stratif-io/stratif.io/compare/v0.20.0...v0.20.1) (2026-04-07)
 
 
