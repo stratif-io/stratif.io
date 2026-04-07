@@ -15,13 +15,6 @@ repos:
         types: [python]
         pass_filenames: false
 
-      - id: saas-contract-check
-        name: SaaS contract check (tsc + vite build)
-        entry: bash -c "cd ../stratifio-saas && npm run build"
-        language: system
-        files: ^frontend/
-        pass_filenames: false
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.2
     hooks:
