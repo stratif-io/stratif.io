@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.0](https://github.com/stratif-io/stratif.io/compare/v0.19.1...v0.20.0) (2026-04-07)
+
+
+### Features
+
+* publish @stratif-io/web to GitHub Packages on release ([05dbb2d](https://github.com/stratif-io/stratif.io/commit/05dbb2dce1fe2193a0e9ddcccc186dac0f7682ac))
+
 ## [0.19.1](https://github.com/stratif-io/stratif.io/compare/v0.19.0...v0.19.1) (2026-04-07)
 
 
