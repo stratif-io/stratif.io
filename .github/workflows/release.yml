@@ -85,10 +85,13 @@ jobs:
         working-directory: apps/web
 
       - name: Publish to GitHub Packages
-        run: bun publish --access public
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc
+          echo "@stratif-io:registry=https://npm.pkg.github.com" >> .npmrc
+          bun publish --access public
         working-directory: apps/web
         env:
-          BUN_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   sync-develop:
     needs: release-please
