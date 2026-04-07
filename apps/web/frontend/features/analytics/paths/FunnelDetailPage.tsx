@@ -61,7 +61,8 @@ export function FunnelDetailPage() {
 
   // Sync step state back to URL
   useEffect(() => {
-    const eventsValue = events.length >= 2 ? events.join(',') : null
+    const filled = funnelSteps.filter(Boolean)
+    const eventsValue = filled.length >= 2 ? filled.join(',') : null
     setSearchParams(
       (prev) => {
         const next: Record<string, string> = { ...Object.fromEntries(prev) }
@@ -70,7 +71,8 @@ export function FunnelDetailPage() {
       },
       { replace: true }
     )
-  }, [funnelSteps, events, setSearchParams])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [funnelSteps])
 
   const addStep = () => {
     if (funnelSteps.length < MAX_STEPS) {

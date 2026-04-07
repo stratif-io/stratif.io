@@ -66,6 +66,11 @@ export function useUrlSync() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
+  // Serialize dates to strings — Date objects change identity on every setDateRange call,
+  // which would cause an infinite loop (read URL → setDateRange → new Date ref → effect fires → setSearchParams → …).
+  const dateFromKey = dateRange.from?.toISOString().slice(0, 10)
+  const dateToKey = dateRange.to?.toISOString().slice(0, 10)
+
   // Store → URL: whenever store values change, push to URL (replace)
   useEffect(() => {
     if (!isData) return
@@ -74,11 +79,9 @@ export function useUrlSync() {
 
     if (activeConnectionId) params.set('conn', activeConnectionId)
 
-    const from = dateRange.from ? new Date(dateRange.from) : null
-    const to = dateRange.to ? new Date(dateRange.to) : null
-    if (from && to && !isNaN(from.getTime()) && !isNaN(to.getTime())) {
-      params.set('from', from.toISOString().slice(0, 10))
-      params.set('to', to.toISOString().slice(0, 10))
+    if (dateFromKey && dateToKey) {
+      params.set('from', dateFromKey)
+      params.set('to', dateToKey)
     }
 
     Object.entries(activeFilters).forEach(([field, value]) => {
@@ -87,5 +90,5 @@ export function useUrlSync() {
 
     setSearchParams(params, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isData, activeConnectionId, dateRange, activeFilters])
+  }, [isData, activeConnectionId, dateFromKey, dateToKey, activeFilters])
 }
