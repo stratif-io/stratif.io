@@ -1,5 +1,5 @@
 {
-  "name": "@stratifio/web",
+  "name": "@stratif-io/web",
   "version": "0.19.1",
   "description": "stratif.io Analytics — open source analytics dashboard",
   "main": "./frontend/index.ts",
