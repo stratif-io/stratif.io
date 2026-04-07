@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.1](https://github.com/stratif-io/stratif.io/compare/v0.19.0...v0.19.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* prevent infinite loop when navigating away from funnel page ([d043d84](https://github.com/stratif-io/stratif.io/commit/d043d84263a897d1ca892ceb3a2869ef14f6d25f))
+
 ## [0.19.0](https://github.com/stratif-io/stratif.io/compare/v0.18.5...v0.19.0) (2026-04-04)
 
 
