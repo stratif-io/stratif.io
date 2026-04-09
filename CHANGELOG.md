@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.9](https://github.com/stratif-io/stratif.io/compare/v0.21.8...v0.21.9) (2026-04-09)
+
+
+### Bug Fixes
+
+* write auth to ~/.npmrc to avoid workspace config warning ([e3839e7](https://github.com/stratif-io/stratif.io/commit/e3839e7ffcef4315d4caf279ddf0c766baa5818b))
+
 ## [0.21.8](https://github.com/stratif-io/stratif.io/compare/v0.21.7...v0.21.8) (2026-04-09)
 
 ### Bug Fixes
