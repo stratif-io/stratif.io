@@ -21,6 +21,7 @@ import { QueryError } from '@/components/ui/query-error'
 import { BarChart2 } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import type { Granularity } from '@/types'
+import { useAnalytics } from '@/lib/analytics'
 // FilterEntry used for pivotFilters state
 
 const DEFAULT_ROW_GROUPS: ZoneCol[] = []
@@ -50,6 +51,7 @@ export function PivotTable({
   initialValueCols,
   initialPivotFilters,
 }: PivotTableProps) {
+  const { track } = useAnalytics()
   const [rowGroups, setRowGroups] = useState<ZoneCol[]>(initialRowGroups ?? DEFAULT_ROW_GROUPS)
   const [pivotCols, setPivotCols] = useState<ZoneCol[]>(initialPivotCols ?? DEFAULT_PIVOT_COLS)
   const [valueCols, setValueCols] = useState<ZoneCol[]>(initialValueCols ?? DEFAULT_VALUE_COLS)
@@ -199,6 +201,7 @@ export function PivotTable({
   }
 
   function handleExportCsv() {
+    track('export_triggered', { format: 'csv' })
     const csv = rowsToCsv(headers, rows)
     downloadCsv('pivot-export.csv', csv)
   }
