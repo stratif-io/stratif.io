@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.3](https://github.com/stratif-io/stratif.io/compare/v0.21.2...v0.21.3) (2026-04-09)
+
+
+### Bug Fixes
+
+* configure bun publish via .bunfig.toml [publish] section ([3e7156a](https://github.com/stratif-io/stratif.io/commit/3e7156afcd3d26800128b6f0e1bd28dc417e7590))
+
 ## [0.21.2](https://github.com/stratif-io/stratif.io/compare/v0.21.1...v0.21.2) (2026-04-09)
 
 
