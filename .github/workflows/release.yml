@@ -78,12 +78,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@stratif-io'
-
       - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
@@ -91,10 +85,12 @@ jobs:
         working-directory: apps/web
 
       - name: Publish to GitHub Packages
-        run: npm publish --access public
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${STRATIFIO_OSS_TOKEN}" >> ~/.npmrc
+          npm publish --access public
         working-directory: apps/web
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
+          STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
 
   sync-develop:
     needs: release-please
