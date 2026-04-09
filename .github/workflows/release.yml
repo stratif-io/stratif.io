@@ -86,8 +86,7 @@ jobs:
 
       - name: Publish to GitHub Packages
         run: |
-          echo "//npm.pkg.github.com/:_authToken=${STRATIFIO_OSS_TOKEN}" > .npmrc
-          echo "@stratif-io:registry=https://npm.pkg.github.com/" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${STRATIFIO_OSS_TOKEN}" >> ~/.npmrc
           npm publish --access public
         working-directory: apps/web
         env:
