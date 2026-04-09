@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.10](https://github.com/stratif-io/stratif.io/compare/v0.21.9...v0.21.10) (2026-04-09)
+
+
+### Bug Fixes
+
+* test STRATIFIO_OSS_TOKEN secret ([ac836c2](https://github.com/stratif-io/stratif.io/commit/ac836c26f3486e9498ebe1b5386be72745a633cb))
+
 ## [0.21.9](https://github.com/stratif-io/stratif.io/compare/v0.21.8...v0.21.9) (2026-04-09)
 
 
