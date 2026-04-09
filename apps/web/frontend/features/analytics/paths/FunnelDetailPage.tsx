@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useAnalytics } from '@/lib/analytics'
 import {
   Select,
   SelectContent,
@@ -37,6 +38,13 @@ const MAX_STEPS = 10
 const segTrigger = FILTER_TRIGGER_CLASS
 
 export function FunnelDetailPage() {
+  const { track } = useAnalytics()
+
+  useEffect(() => {
+    track('chart_viewed', { chart_type: 'funnel' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const { dateRange, activeFilters, activeConnectionId } = useAppStore()
