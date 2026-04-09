@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.1](https://github.com/stratif-io/stratif.io/compare/v0.21.0...v0.21.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* use npm publish instead of bun publish for GitHub Packages auth ([a2e9d59](https://github.com/stratif-io/stratif.io/commit/a2e9d59762ed0e57b9e3cfa9b62eeebe3a00a660))
+
 ## [0.21.0](https://github.com/stratif-io/stratif.io/compare/v0.20.2...v0.21.0) (2026-04-09)
 
 
