@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.12](https://github.com/stratif-io/stratif.io/compare/v0.21.11...v0.21.12) (2026-04-09)
+
+
+### Bug Fixes
+
+* trigger publish with STRATIFIO_OSS_TOKEN now set ([a992ce9](https://github.com/stratif-io/stratif.io/commit/a992ce95f4cee8f7f7e111d89d463261c5c1d887))
+
 ## [0.21.11](https://github.com/stratif-io/stratif.io/compare/v0.21.10...v0.21.11) (2026-04-09)
 
 
