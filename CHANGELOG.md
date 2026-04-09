@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.8](https://github.com/stratif-io/stratif.io/compare/v0.21.7...v0.21.8) (2026-04-09)
+
+
+### Bug Fixes
+
+* write .npmrc directly with STRATIFIO_OSS_TOKEN for npm publish ([69a4bf9](https://github.com/stratif-io/stratif.io/commit/69a4bf9c759739de3e36b45863645f68f2c9fee5))
+
 ## [0.21.7](https://github.com/stratif-io/stratif.io/compare/v0.21.6...v0.21.7) (2026-04-09)
 
 
