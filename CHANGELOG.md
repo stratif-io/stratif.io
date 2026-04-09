@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.4](https://github.com/stratif-io/stratif.io/compare/v0.21.3...v0.21.4) (2026-04-09)
+
+
+### Bug Fixes
+
+* use setup-node + npm publish for GitHub Packages ([cd159f5](https://github.com/stratif-io/stratif.io/commit/cd159f5ece0f0cdfcab418c126a376538c5da40b))
+
 ## [0.21.3](https://github.com/stratif-io/stratif.io/compare/v0.21.2...v0.21.3) (2026-04-09)
 
 
