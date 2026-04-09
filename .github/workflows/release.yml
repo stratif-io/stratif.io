@@ -90,12 +90,21 @@ jobs:
         run: bun install
         working-directory: apps/web
 
+      - name: Debug token
+        run: |
+          if [ -z "${STRATIFIO_OSS_TOKEN}" ]; then
+            echo "TOKEN IS EMPTY"
+          else
+            echo "TOKEN IS SET (length: ${#STRATIFIO_OSS_TOKEN})"
+          fi
+        env:
+          STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
+
       - name: Publish to GitHub Packages
         run: npm publish --access public
         working-directory: apps/web
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
   sync-develop:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
