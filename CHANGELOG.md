@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.6](https://github.com/stratif-io/stratif.io/compare/v0.21.5...v0.21.6) (2026-04-09)
+
+
+### Bug Fixes
+
+* use STRATIFIO_OSS_TOKEN for npm publish auth ([173a020](https://github.com/stratif-io/stratif.io/commit/173a0204b1226a0d84accdad6a82d6edc78645f9))
+
 ## [0.21.5](https://github.com/stratif-io/stratif.io/compare/v0.21.4...v0.21.5) (2026-04-09)
 
 
