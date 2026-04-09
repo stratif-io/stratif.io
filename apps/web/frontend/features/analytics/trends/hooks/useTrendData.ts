@@ -1,6 +1,7 @@
 import { QUERY_STALE_TIME } from '@/lib/constants'
-import { useMemo } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useAnalytics } from '@/lib/analytics'
 import { fetchPivot } from '@/lib/api'
 import { formatDateParam } from '@/lib/utils'
 import { useAppStore } from '@/stores'
@@ -96,16 +97,14 @@ export function useTrendData({
   }
   const mergedFilters = localFilters ? { ...activeFilters, ...serializedLocal } : activeFilters
 
+  const { track } = useAnalytics()
+  const startRef = useRef<number | null>(null)
+
   const dateDim = granularityToDim(granularity)
   const pivotRowDims = breakdownDimension ? [dateDim, breakdownDimension] : [dateDim]
 
   // ── Pivot query (always) ──────────────────────────────────────────────────
-  const {
-    data: pivotResponse,
-    isLoading: pivotLoading,
-    isError: pivotIsError,
-    error: pivotError,
-  } = useQuery({
+  const query = useQuery({
     queryKey: [
       'trend-pivot',
       breakdownDimension,
@@ -116,17 +115,36 @@ export function useTrendData({
       mergedFilters,
       activeConnectionId,
     ],
-    queryFn: () =>
-      fetchPivot({
+    queryFn: async () => {
+      startRef.current = Date.now()
+      return fetchPivot({
         row_dimensions: pivotRowDims,
         measures: [measure],
         start_date: startDate,
         end_date: endDate,
         filters: mergedFilters,
         connection_id: activeConnectionId ?? undefined,
-      }),
+      })
+    },
     staleTime: QUERY_STALE_TIME.default,
   })
+
+  const {
+    data: pivotResponse,
+    isLoading: pivotLoading,
+    isError: pivotIsError,
+    error: pivotError,
+  } = query
+
+  useEffect(() => {
+    if (query.isSuccess && startRef.current !== null) {
+      track('query_executed', {
+        chart_type: 'trend',
+        duration_ms: Date.now() - startRef.current,
+      })
+      startRef.current = null
+    }
+  }, [query.isSuccess, query.dataUpdatedAt]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Transform pivot rows ──────────────────────────────────────────────────
   const { trendData, seriesKeys } = useMemo(() => {
