@@ -14,6 +14,7 @@ import {
 import { PivotTable } from '@/components/pivot-table/PivotTable'
 import type { PivotRowsRequest, PivotRowsResponse } from '@/components/pivot-table/types'
 import { parseTrendParams } from './parseTrendParams'
+import { useAnalytics } from '@/lib/analytics'
 
 // ── Helper: map PivotRowsRequest ZoneCol → fetchPivotGridRows shape ─────────
 
@@ -26,6 +27,13 @@ function toGridCol(c: { colId: string; label: string; aggFunc?: string }): GridC
 // ─── Main page ─────────────────────────────────────────────────────────────
 
 export function NewPivotPage() {
+  const { track } = useAnalytics()
+
+  useEffect(() => {
+    track('chart_viewed', { chart_type: 'pivot' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useEffect(() => {
     document.title = 'Pivot — stratif.io'
   }, [])

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Select,
@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { FILTER_TRIGGER_CLASS } from '@/lib/constants'
 import { DevCard } from '@/components/dev'
 import { getEventColor } from './utils/eventColors'
+import { useAnalytics } from '@/lib/analytics'
 
 const TIME_UNITS = [
   { value: 'seconds', label: 'Seconds' },
@@ -146,6 +147,13 @@ function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
 }
 
 export function PathsExplorerPage() {
+  const { track } = useAnalytics()
+
+  useEffect(() => {
+    track('chart_viewed', { chart_type: 'paths' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const { dateRange } = useAppStore()
   const [searchParams, setSearchParams] = useSearchParams()
 

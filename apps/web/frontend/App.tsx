@@ -1,7 +1,17 @@
 import { Suspense, lazy, useState, useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout'
 import { SPACING } from '@/lib/constants'
+import { useAnalytics } from '@/lib/analytics'
+
+function PageTracker() {
+  const { page } = useAnalytics()
+  const location = useLocation()
+  useEffect(() => {
+    page(location.pathname)
+  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+  return null
+}
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard').then((m) => ({ default: m.DashboardPage }))
@@ -95,6 +105,7 @@ function App() {
   usePreloadRoutes()
   return (
     <Suspense fallback={<PageSkeleton />}>
+      <PageTracker />
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:rounded-md focus:ring-2 focus:ring-ring focus:outline-none"
