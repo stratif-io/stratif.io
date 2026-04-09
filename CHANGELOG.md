@@ -2,31 +2,27 @@
 
 ## [0.21.12](https://github.com/stratif-io/stratif.io/compare/v0.21.11...v0.21.12) (2026-04-09)
 
-
 ### Bug Fixes
 
-* trigger publish with STRATIFIO_OSS_TOKEN now set ([a992ce9](https://github.com/stratif-io/stratif.io/commit/a992ce95f4cee8f7f7e111d89d463261c5c1d887))
+- trigger publish with STRATIFIO_OSS_TOKEN now set ([a992ce9](https://github.com/stratif-io/stratif.io/commit/a992ce95f4cee8f7f7e111d89d463261c5c1d887))
 
 ## [0.21.11](https://github.com/stratif-io/stratif.io/compare/v0.21.10...v0.21.11) (2026-04-09)
 
-
 ### Bug Fixes
 
-* debug STRATIFIO_OSS_TOKEN availability in publish-npm job ([a97822f](https://github.com/stratif-io/stratif.io/commit/a97822f424d26bedf47d1c4340de552954a068c6))
+- debug STRATIFIO_OSS_TOKEN availability in publish-npm job ([a97822f](https://github.com/stratif-io/stratif.io/commit/a97822f424d26bedf47d1c4340de552954a068c6))
 
 ## [0.21.10](https://github.com/stratif-io/stratif.io/compare/v0.21.9...v0.21.10) (2026-04-09)
 
-
 ### Bug Fixes
 
-* test STRATIFIO_OSS_TOKEN secret ([ac836c2](https://github.com/stratif-io/stratif.io/commit/ac836c26f3486e9498ebe1b5386be72745a633cb))
+- test STRATIFIO_OSS_TOKEN secret ([ac836c2](https://github.com/stratif-io/stratif.io/commit/ac836c26f3486e9498ebe1b5386be72745a633cb))
 
 ## [0.21.9](https://github.com/stratif-io/stratif.io/compare/v0.21.8...v0.21.9) (2026-04-09)
 
-
 ### Bug Fixes
 
-* write auth to ~/.npmrc to avoid workspace config warning ([e3839e7](https://github.com/stratif-io/stratif.io/commit/e3839e7ffcef4315d4caf279ddf0c766baa5818b))
+- write auth to ~/.npmrc to avoid workspace config warning ([e3839e7](https://github.com/stratif-io/stratif.io/commit/e3839e7ffcef4315d4caf279ddf0c766baa5818b))
 
 ## [0.21.8](https://github.com/stratif-io/stratif.io/compare/v0.21.7...v0.21.8) (2026-04-09)
 
