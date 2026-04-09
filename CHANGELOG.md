@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.7](https://github.com/stratif-io/stratif.io/compare/v0.21.6...v0.21.7) (2026-04-09)
+
+
+### Bug Fixes
+
+* trigger npm publish after STRATIFIO_OSS_TOKEN was set ([52bbb57](https://github.com/stratif-io/stratif.io/commit/52bbb57eb530f9b3bcaa9118fd2a1cd21693783c))
+
 ## [0.21.6](https://github.com/stratif-io/stratif.io/compare/v0.21.5...v0.21.6) (2026-04-09)
 
 
