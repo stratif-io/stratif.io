@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useAnalytics } from '@/lib/analytics'
 import {
   Plus,
   Trash2,
@@ -410,6 +411,12 @@ interface Props {
 }
 
 export function SchemaConfigTab({ connId }: Props) {
+  const { track } = useAnalytics()
+  useEffect(() => {
+    track('schema_tab_opened')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const { data, isLoading, isError } = useSchemaConfig(connId)
   const upsert = useUpsertSchemaConfig(connId)
   const detect = useDetectSchema(connId)

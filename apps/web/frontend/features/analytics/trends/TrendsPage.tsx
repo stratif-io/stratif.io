@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -22,6 +22,7 @@ import type { Granularity } from '@/types'
 import { DevCard } from '@/components/dev'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { buildPivotUrl } from './trendToPivot'
+import { useAnalytics } from '@/lib/analytics'
 
 const GRANULARITY_PERIOD_LABELS: Record<Granularity, string> = {
   hour: 'Hourly',
@@ -33,6 +34,13 @@ const GRANULARITY_PERIOD_LABELS: Record<Granularity, string> = {
 }
 
 export function TrendsPage() {
+  const { track } = useAnalytics()
+
+  useEffect(() => {
+    track('chart_viewed', { chart_type: 'trend' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useEffect(() => {
     document.title = 'Trends — stratif.io'
   }, [])
@@ -53,6 +61,20 @@ export function TrendsPage() {
     setAggregation('sum')
     setLocalFilters({})
   }, [activeConnectionId])
+
+  const dateRangeMounted = useRef(false)
+  useEffect(() => {
+    if (!dateRangeMounted.current) {
+      dateRangeMounted.current = true
+      return
+    }
+    track('date_range_changed', { range: `${dateRange.from}_${dateRange.to}` })
+  }, [dateRange]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!breakdownDimension) return
+    track('breakdown_applied', { dimension: breakdownDimension })
+  }, [breakdownDimension]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // When switching to a non-numeric field, reset aggregation to 'count'
   useEffect(() => {
