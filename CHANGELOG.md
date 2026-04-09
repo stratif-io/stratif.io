@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.21.0](https://github.com/stratif-io/stratif.io/compare/v0.20.2...v0.21.0) (2026-04-09)
+
+
+### Features
+
+* add analytics abstraction layer (no-op context + hook) ([3fe1acd](https://github.com/stratif-io/stratif.io/commit/3fe1acdd8ed5aab7b709fe1e408589aef83222df))
+* add logging adapter for local analytics debugging ([8e2297c](https://github.com/stratif-io/stratif.io/commit/8e2297c738e4549cb1cb5734bf04ec767e8ab556))
+* add PageTracker to OSS app for route change analytics ([bb23e86](https://github.com/stratif-io/stratif.io/commit/bb23e86c570acf9da93ea3eb74226b1c6ab28de6))
+* export AnalyticsProvider and useAnalytics from OSS package ([c3b9d16](https://github.com/stratif-io/stratif.io/commit/c3b9d16959dbfa5a7e382035c2695d732f8cb232))
+* track chart_viewed on analytics page mount ([a82ac75](https://github.com/stratif-io/stratif.io/commit/a82ac750949ae45d05dee58e8b00ebd153940c5f))
+* track connection_created with db_type ([ce5783b](https://github.com/stratif-io/stratif.io/commit/ce5783b27aa8d12e58dfffa847036466135bae6a))
+* track date_range_changed and breakdown_applied ([8816fc0](https://github.com/stratif-io/stratif.io/commit/8816fc09228004631b7ee303585c239d7dc476da))
+* track export_triggered on CSV download ([56d4b09](https://github.com/stratif-io/stratif.io/commit/56d4b09c4fec637bc0b7fa21fd55db7b5116b036))
+* track funnel_step_selected on step event change ([dd75add](https://github.com/stratif-io/stratif.io/commit/dd75add11298cf391a359fa560df62834103da7c))
+* track query_executed with duration in trend hook ([be2f434](https://github.com/stratif-io/stratif.io/commit/be2f434c078d4a5f58cedd40675a364cfcb960a5))
+* track schema_tab_opened ([f1a4fdd](https://github.com/stratif-io/stratif.io/commit/f1a4fdd5926fb9eed6f6d01525ae74613d13f8ac))
+* track sql_studio_opened ([c9e900d](https://github.com/stratif-io/stratif.io/commit/c9e900d41d7e34d0268459b2499f4516a3890cb2))
+* wrap OSS app with AnalyticsProvider (no-op) ([cfe23f3](https://github.com/stratif-io/stratif.io/commit/cfe23f3909d55ebac4bb28bb1a0ceba6a2d89fe9))
+
+
+### Bug Fixes
+
+* consolidate AnalyticsProvider into context.tsx per spec ([93161ef](https://github.com/stratif-io/stratif.io/commit/93161efffacffdc688564afe335c6276ba77d7bb))
+
 ## [0.20.2](https://github.com/stratif-io/stratif.io/compare/v0.20.1...v0.20.2) (2026-04-07)
 
 
