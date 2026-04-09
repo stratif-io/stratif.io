@@ -14,6 +14,7 @@ import { DbLogo } from '@/components/DbLogo'
 import { useCreateConnection, useUpdateConnection } from '../hooks/useConnectionsData'
 import { toast } from '@/components/ui/toast-provider'
 import type { Connection, DbType } from '@/types'
+import { useAnalytics } from '@/lib/analytics'
 
 interface Props {
   open: boolean
@@ -266,6 +267,7 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
   const [name, setName] = useState('')
   const [dbType, setDbType] = useState<DbType>('duckdb')
 
+  const { track } = useAnalytics()
   const create = useCreateConnection()
   const update = useUpdateConnection(connection?.id ?? '')
 
@@ -309,6 +311,7 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
         { name, db_type: dbType, credentials },
         {
           onSuccess: () => {
+            track('connection_created', { db_type: dbType })
             toast.success('Connection created')
             onOpenChange(false)
           },
