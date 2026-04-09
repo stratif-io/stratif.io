@@ -94,7 +94,7 @@ jobs:
         run: npm publish --access public
         working-directory: apps/web
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
 
   sync-develop:
     needs: release-please
