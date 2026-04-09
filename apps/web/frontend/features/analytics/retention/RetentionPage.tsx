@@ -18,6 +18,7 @@ import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { DevCard } from '@/components/dev'
 import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
+import { useAnalytics } from '@/lib/analytics'
 
 function toRetentionGranularity(g: Granularity): RetentionGranularity {
   if (g === 'hour') return 'day'
@@ -104,6 +105,13 @@ function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
 }
 
 export function RetentionPage() {
+  const { track } = useAnalytics()
+
+  useEffect(() => {
+    track('chart_viewed', { chart_type: 'retention' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useEffect(() => {
     document.title = 'Retention — stratif.io'
   }, [])
