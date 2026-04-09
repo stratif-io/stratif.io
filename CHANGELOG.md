@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.11](https://github.com/stratif-io/stratif.io/compare/v0.21.10...v0.21.11) (2026-04-09)
+
+
+### Bug Fixes
+
+* debug STRATIFIO_OSS_TOKEN availability in publish-npm job ([a97822f](https://github.com/stratif-io/stratif.io/commit/a97822f424d26bedf47d1c4340de552954a068c6))
+
 ## [0.21.10](https://github.com/stratif-io/stratif.io/compare/v0.21.9...v0.21.10) (2026-04-09)
 
 
