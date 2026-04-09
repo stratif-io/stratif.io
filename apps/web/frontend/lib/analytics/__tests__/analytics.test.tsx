@@ -35,4 +35,12 @@ describe('useAnalytics', () => {
     result.current.page('/trends')
     expect(adapter.page).toHaveBeenCalledWith('/trends')
   })
+
+  it('uses no-op adapter when AnalyticsProvider has no adapter prop', () => {
+    const { result } = renderHook(() => useAnalytics(), {
+      wrapper: ({ children }) => <AnalyticsProvider>{children}</AnalyticsProvider>,
+    })
+    expect(() => result.current.track('test_event')).not.toThrow()
+    expect(() => result.current.page('/test')).not.toThrow()
+  })
 })
