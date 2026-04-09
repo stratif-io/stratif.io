@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.2](https://github.com/stratif-io/stratif.io/compare/v0.21.1...v0.21.2) (2026-04-09)
+
+
+### Bug Fixes
+
+* add BUN_AUTH_TOKEN for GitHub Packages auth in bun publish ([e86ea2e](https://github.com/stratif-io/stratif.io/commit/e86ea2ee09fb3b2cacb8b1ff550e6e060565876b))
+
 ## [0.21.1](https://github.com/stratif-io/stratif.io/compare/v0.21.0...v0.21.1) (2026-04-09)
 
 
