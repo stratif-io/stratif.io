@@ -84,6 +84,16 @@ jobs:
         run: bun install
         working-directory: apps/web
 
+      - name: Debug token
+        run: |
+          if [ -z "${STRATIFIO_OSS_TOKEN}" ]; then
+            echo "TOKEN IS EMPTY"
+          else
+            echo "TOKEN IS SET (length: ${#STRATIFIO_OSS_TOKEN})"
+          fi
+        env:
+          STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
+
       - name: Publish to GitHub Packages
         run: |
           echo "//npm.pkg.github.com/:_authToken=${STRATIFIO_OSS_TOKEN}" >> ~/.npmrc
