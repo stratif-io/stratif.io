@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.5](https://github.com/stratif-io/stratif.io/compare/v0.21.4...v0.21.5) (2026-04-09)
+
+
+### Bug Fixes
+
+* restore package name to @stratif-io/web and use setup-node for publish ([6b11658](https://github.com/stratif-io/stratif.io/commit/6b11658885d8bba12445b3fe4c8a248cd81f7501))
+
 ## [0.21.4](https://github.com/stratif-io/stratif.io/compare/v0.21.3...v0.21.4) (2026-04-09)
 
 
