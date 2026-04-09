@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
+import { useAnalytics } from '@/lib/analytics'
 import { useQueryStudio } from './hooks/useQueryStudio'
 import { CatalogBrowser } from './components/CatalogBrowser'
 import { QueryEditor } from './components/QueryEditor'
@@ -9,6 +10,12 @@ const MIN_EDITOR_HEIGHT = 80
 const MIN_RESULTS_HEIGHT = 60
 
 export function QueryStudioPage() {
+  const { track } = useAnalytics()
+  useEffect(() => {
+    track('sql_studio_opened')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const { sql, setSql, result, isRunning, history, execute, restoreFromHistory } = useQueryStudio()
   const [editorHeight, setEditorHeight] = useState(380)
   const [limitEnabled, setLimitEnabled] = useState(true)
