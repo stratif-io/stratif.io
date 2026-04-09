@@ -95,6 +95,7 @@ export function FunnelDetailPage() {
   }
 
   const updateStep = (index: number, value: string) => {
+    track('funnel_step_selected', { step: index })
     setFunnelSteps((prev) => prev.map((s, i) => (i === index ? value : s)))
   }
 
