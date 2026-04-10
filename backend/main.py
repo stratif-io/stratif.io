@@ -68,7 +68,7 @@ app = FastAPI(
 
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 
 @app.exception_handler(Exception)
@@ -86,7 +86,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 
 app.add_middleware(AccessLogMiddleware)  # type: ignore[arg-type]  # outermost — logs all responses including 429s
-app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(SlowAPIMiddleware)  # type: ignore[arg-type]
 app.add_middleware(APITrailingSlashMiddleware)  # type: ignore[arg-type]
 app.add_middleware(RequestIdMiddleware)  # type: ignore[arg-type]
 app.add_middleware(

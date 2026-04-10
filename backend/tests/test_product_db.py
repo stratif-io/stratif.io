@@ -184,9 +184,11 @@ async def test_close_product_db_clears_globals_even_if_dispose_raises():
 
     mock_engine = AsyncMock()
     mock_engine.dispose.side_effect = RuntimeError("connection already closed")
-    with patch("backend.product_db.database._engine", mock_engine):
-        with pytest.raises(RuntimeError):
-            await close_product_db()
+    with (
+        patch("backend.product_db.database._engine", mock_engine),
+        pytest.raises(RuntimeError),
+    ):
+        await close_product_db()
     assert db_module._engine is None
     assert db_module._session_factory is None
 
@@ -194,8 +196,7 @@ async def test_close_product_db_clears_globals_even_if_dispose_raises():
 @pytest.mark.asyncio
 async def test_lifespan_calls_close_product_db():
     """Lifespan teardown must call close_product_db."""
-    from backend.main import lifespan
-    from backend.main import app
+    from backend.main import app, lifespan
 
     with (
         patch("backend.main.init_product_db", new_callable=AsyncMock) as mock_init,
