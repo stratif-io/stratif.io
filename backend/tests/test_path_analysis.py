@@ -183,6 +183,21 @@ class TestPathsLimitSQL:
         with pytest.raises(PathAnalyzerError, match="Invalid counting_mode"):
             generate_path_analysis_query(table_name="events", counting_mode="fuzzy")
 
+    def test_contains_mode_has_cross_join_and_bool_or(self):
+        query = generate_path_analysis_query(
+            table_name="events",
+            counting_mode="contains",
+        )
+        assert "CROSS JOIN" in query
+        assert "bool_or" in query
+
+    def test_contains_mode_has_generate_series(self):
+        query = generate_path_analysis_query(
+            table_name="events",
+            counting_mode="contains",
+        )
+        assert "generate_series" in query
+
     def test_non_duckdb_dialect_falls_back_to_exact(self):
         exact_query = generate_path_analysis_query(
             table_name="events",

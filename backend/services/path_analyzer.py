@@ -405,8 +405,7 @@ exact_counts AS (
 contains_matches AS (
     SELECT
         ec.path,
-        us.user_id,
-        us.session_ids[1] AS session_id
+        us.user_id
     FROM exact_counts ec
     CROSS JOIN user_sequences us
     WHERE (
@@ -424,7 +423,7 @@ SELECT
     ARRAY_LENGTH(path)                                      AS path_length,
     COUNT(*)                                                AS occurrence_count,
     COUNT(DISTINCT user_id)                                 AS unique_users,
-    COUNT(DISTINCT session_id)                              AS unique_sessions,
+    COUNT(DISTINCT user_id)                                 AS unique_sessions,
     ROUND(100.0 * COUNT(*) / (
         SELECT COUNT(DISTINCT user_id) FROM user_sequences
     ), 2)                                                   AS percentage_of_total,
