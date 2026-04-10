@@ -25,7 +25,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
   const [methodologyOpen, setMethodologyOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const navigate = useNavigate()
-  const { activeFilters } = useAppStore()
+  const { activeFilters, activeConnectionId } = useAppStore()
   const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
 
@@ -36,13 +36,21 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['path-funnel', events.join(','), startDate, endDate, activeFilters],
+    queryKey: [
+      'path-funnel',
+      events.join(','),
+      startDate,
+      endDate,
+      activeFilters,
+      activeConnectionId,
+    ],
     queryFn: () =>
       fetchPathFunnel({
         events,
         start_date: startDate,
         end_date: endDate,
         filters: activeFilters,
+        connection_id: activeConnectionId ?? undefined,
       }),
     enabled: open && events.length >= 2,
   })
