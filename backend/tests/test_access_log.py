@@ -1,7 +1,5 @@
 """Tests for AccessLogMiddleware."""
 
-import pytest
-import structlog
 from unittest.mock import patch
 from starlette.testclient import TestClient
 from fastapi import FastAPI
@@ -21,7 +19,7 @@ def _make_app() -> FastAPI:
 
 
 def test_access_log_emits_expected_keys(caplog):
-    """AccessLogMiddleware must log method, path, status_code, duration_ms, request_id."""
+    """AccessLogMiddleware must log method, path, status_code, and duration_ms."""
     app = _make_app()
 
     with patch("backend.core.middleware.log") as mock_log:
