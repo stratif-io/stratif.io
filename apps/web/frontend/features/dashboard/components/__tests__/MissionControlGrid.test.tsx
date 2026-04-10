@@ -221,11 +221,15 @@ describe('MissionControlGrid', () => {
   })
 
   it('promotes a mini card to hero when clicked', () => {
+    // heroMetric is now controlled externally — verify onHeroChange is called with the right key
+    const onHeroChange = vi.fn()
     render(
       <MissionControlGrid
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
+        heroMetric="total_events"
+        onHeroChange={onHeroChange}
         {...defaultPinProps}
       />
     )
@@ -236,8 +240,8 @@ describe('MissionControlGrid', () => {
     // Click Unique Users mini card
     fireEvent.click(screen.getByTestId('mini-Unique Users'))
 
-    // Hero should now be Unique Users
-    expect(screen.getByTestId('hero-card')).toHaveTextContent('Unique Users')
+    // onHeroChange should be called with unique_users
+    expect(onHeroChange).toHaveBeenCalledWith('unique_users')
   })
 
   it('marks the promoted mini card with isHero', () => {
@@ -246,10 +250,10 @@ describe('MissionControlGrid', () => {
         data={mockData}
         trends={emptyTrends}
         metricLoading={noMetricLoading}
+        heroMetric="total_sessions"
         {...defaultPinProps}
       />
     )
-    fireEvent.click(screen.getByTestId('mini-Sessions'))
     expect(screen.getByTestId('mini-Sessions')).toHaveAttribute('data-hero', 'true')
   })
 
