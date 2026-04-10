@@ -1,6 +1,6 @@
 [project]
 name = "stratifio-core"
-version = "0.21.12"
+version = "0.21.13"
 description = "stratif.io Analytics — open source self-hostable analytics dashboard backend"
 readme = "README.md"
 requires-python = ">=3.12"
