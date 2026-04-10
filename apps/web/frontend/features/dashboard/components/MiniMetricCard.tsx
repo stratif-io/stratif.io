@@ -2,15 +2,11 @@ import { memo, useMemo } from 'react'
 import { AreaChart, Area, ResponsiveContainer } from 'recharts'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCountUp, useFormattedCountUp } from '@/hooks/useCountUp'
-import { MetricPopover } from './MetricPopover'
-import type { MissionControlMetrics, MetricBreakdown } from '@/types'
 
 export interface MiniMetricCardProps {
   label: string
-  metricKey?: keyof MissionControlMetrics
   value: string // pre-formatted fallback
   rawValue?: number // raw number for count-up animation
   pctChange: number | null // null → show "—"
@@ -20,18 +16,14 @@ export interface MiniMetricCardProps {
   onClick?: () => void
   loading?: boolean
   fullWidth?: boolean // true for DAU/MAU which spans 2 cols
-  description?: string
   changeLabel?: string
   sparklineFormatter?: (value: number) => string
   decimalsOverride?: number
   staggerIndex?: number
-  currentMetrics?: MissionControlMetrics
-  breakdown?: MetricBreakdown
 }
 
 export const MiniMetricCard = memo(function MiniMetricCard({
   label,
-  metricKey,
   value,
   rawValue,
   pctChange,
@@ -41,13 +33,10 @@ export const MiniMetricCard = memo(function MiniMetricCard({
   onClick,
   loading,
   fullWidth,
-  description,
   changeLabel,
   sparklineFormatter,
   decimalsOverride = 0,
   staggerIndex = 0,
-  currentMetrics,
-  breakdown,
 }: MiniMetricCardProps) {
   const sparklineData = useMemo(
     () => (sparklineValues ?? []).map((v) => ({ v })),
@@ -110,22 +99,6 @@ export const MiniMetricCard = memo(function MiniMetricCard({
         <div className="text-[10px] font-semibold tracking-widest text-muted-foreground">
           {label}
         </div>
-        {currentMetrics && metricKey ? (
-          <MetricPopover
-            metricKey={metricKey}
-            currentMetrics={currentMetrics}
-            breakdown={breakdown}
-          />
-        ) : description ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-2.5 w-2.5 text-muted-foreground/50 cursor-help flex-shrink-0" />
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[180px] text-xs">
-              {description}
-            </TooltipContent>
-          </Tooltip>
-        ) : null}
       </div>
 
       <div
