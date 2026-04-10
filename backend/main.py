@@ -11,7 +11,12 @@ from fastapi.staticfiles import StaticFiles
 from scalar_fastapi import get_scalar_api_reference
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from backend.core.middleware import RequestIdMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+from backend.core.middleware import AccessLogMiddleware, RequestIdMiddleware
+from backend.core.rate_limit import limiter
 
 log = structlog.get_logger(__name__)
 
@@ -63,6 +68,10 @@ app = FastAPI(
 )
 
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     log.error(
@@ -77,8 +86,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(APITrailingSlashMiddleware)  # type: ignore[arg-type]
-app.add_middleware(RequestIdMiddleware)  # type: ignore[arg-type]
+app.add_middleware(AccessLogMiddleware)         # type: ignore[arg-type]
+app.add_middleware(RequestIdMiddleware)         # type: ignore[arg-type]
 app.add_middleware(
     CORSMiddleware,  # type: ignore[arg-type]
     allow_origins=settings.cors_list,
