@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading-state'
 import { Separator } from '@/components/ui/separator'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
-import { PageHeader } from '@/components/ui/page-header'
 import { cn } from '@/lib/utils'
 import { useConnection, useTestConnection } from './hooks/useConnectionsData'
 import { useAppStore } from '@/stores'
@@ -85,7 +84,7 @@ export function ConnectionDetailPage() {
             <Database className="h-5 w-5 text-muted-foreground" />
           </div>
           <div>
-            <PageHeader title={connection.name} />
+            <h1 className={TYPOGRAPHY.pageLabel}>{connection.name}</h1>
             <p className={TYPOGRAPHY.muted}>
               {DB_TYPE_LABELS[connection.db_type] ?? connection.db_type}
             </p>
