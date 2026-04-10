@@ -152,3 +152,45 @@ class TestPathsLimitSQL:
         for limit in [1, 5, 10, 20]:
             query = self._paths_query(limit=limit)
             assert f"LIMIT {limit}" in query
+
+    def test_contains_mode_produces_exact_counts_cte(self):
+        query = generate_path_analysis_query(
+            table_name="events",
+            counting_mode="contains",
+        )
+        assert "exact_counts" in query
+        assert "contains_matches" in query
+
+    def test_contains_mode_still_has_user_sequences(self):
+        query = generate_path_analysis_query(
+            table_name="events",
+            counting_mode="contains",
+        )
+        assert "user_sequences" in query
+
+    def test_contains_mode_null_timing(self):
+        query = generate_path_analysis_query(
+            table_name="events",
+            counting_mode="contains",
+        )
+        assert "NULL" in query  # avg/median are NULL in contains mode
+
+    def test_exact_mode_unchanged_by_default(self):
+        exact = generate_path_analysis_query(table_name="events")
+        assert "exact_counts" not in exact
+
+    def test_invalid_counting_mode_raises(self):
+        with pytest.raises(PathAnalyzerError, match="Invalid counting_mode"):
+            generate_path_analysis_query(table_name="events", counting_mode="fuzzy")
+
+    def test_non_duckdb_dialect_falls_back_to_exact(self):
+        exact_query = generate_path_analysis_query(
+            table_name="events",
+            sql_dialect="bigquery",
+        )
+        contains_query = generate_path_analysis_query(
+            table_name="events",
+            sql_dialect="bigquery",
+            counting_mode="contains",
+        )
+        assert exact_query == contains_query
