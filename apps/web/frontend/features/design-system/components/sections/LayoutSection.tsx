@@ -4,6 +4,7 @@ import { PageTransition } from '@/components/layout/PageTransition'
 import { ConnectionSelector } from '@/components/layout/ConnectionSelector'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { TYPOGRAPHY } from '@/lib/constants'
 
 function PageTransitionDemo() {
   const [key, setKey] = useState(0)
@@ -116,6 +117,33 @@ export function LayoutSection() {
 
       <ComponentRow label="ConnectionSelector">
         <ConnectionSelector />
+      </ComponentRow>
+
+      <ComponentRow label="Table Typography">
+        <div className="flex flex-col gap-2 w-full max-w-lg">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className={`text-left px-3 py-2 ${TYPOGRAPHY.tableHeader}`}>tableHeader</th>
+                <th className={`text-left px-3 py-2 ${TYPOGRAPHY.tableHeader}`}>Column B</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-border/50">
+                <td className={`px-3 py-2 ${TYPOGRAPHY.tableCell}`}>tableCell — dimension label</td>
+                <td className={`px-3 py-2 ${TYPOGRAPHY.tableCellNumeric}`}>1,204</td>
+              </tr>
+              <tr className="border-b border-border/50">
+                <td className={`px-3 py-2 ${TYPOGRAPHY.tableCellMono}`}>
+                  tableCellMono — usr_a1b2c3
+                </td>
+                <td className={`px-3 py-2 ${TYPOGRAPHY.tableCellMuted}`}>
+                  tableCellMuted — 2026-04-10 18:42
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </ComponentRow>
     </ComponentSection>
   )
