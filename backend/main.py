@@ -41,14 +41,17 @@ from backend.api import (  # noqa: E402
 )
 from backend.config import settings  # noqa: E402
 from backend.core.logging import setup_logging  # noqa: E402
-from backend.product_db import init_product_db  # noqa: E402
+from backend.product_db import close_product_db, init_product_db  # noqa: E402
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(settings.log_level, settings.log_format)
     await init_product_db()
-    yield
+    try:
+        yield
+    finally:
+        await close_product_db()
 
 
 app = FastAPI(

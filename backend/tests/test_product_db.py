@@ -189,3 +189,20 @@ async def test_close_product_db_clears_globals_even_if_dispose_raises():
             await close_product_db()
     assert db_module._engine is None
     assert db_module._session_factory is None
+
+
+@pytest.mark.asyncio
+async def test_lifespan_calls_close_product_db():
+    """Lifespan teardown must call close_product_db."""
+    from backend.main import lifespan
+    from backend.main import app
+
+    with (
+        patch("backend.main.init_product_db", new_callable=AsyncMock) as mock_init,
+        patch("backend.main.close_product_db", new_callable=AsyncMock) as mock_close,
+        patch("backend.main.setup_logging"),
+    ):
+        async with lifespan(app):
+            pass
+        mock_init.assert_awaited_once()
+        mock_close.assert_awaited_once()
