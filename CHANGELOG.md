@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.14](https://github.com/stratif-io/stratif.io/compare/v0.21.13...v0.21.14) (2026-04-10)
+
+
+### Bug Fixes
+
+* render funnel dialog tooltips below buttons ([d710e43](https://github.com/stratif-io/stratif.io/commit/d710e43612370f1f2c764581110d134fa0108c1c))
+
 ## [0.21.13](https://github.com/stratif-io/stratif.io/compare/v0.21.12...v0.21.13) (2026-04-10)
 
 
