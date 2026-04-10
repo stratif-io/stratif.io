@@ -465,6 +465,8 @@ export function PathsExplorerPage() {
               </button>
             )}
 
+            <div className="flex-1" />
+
             {/* Counting mode toggle */}
             <TooltipProvider>
               <Tooltip>
@@ -518,7 +520,7 @@ export function PathsExplorerPage() {
 
             {/* Unique paths badge */}
             {totalPaths > 0 && (
-              <div className="ml-auto shrink-0 flex items-center gap-1.5 text-sm">
+              <div className="shrink-0 flex items-center gap-1.5 text-sm">
                 <GitFork className="h-3.5 w-3.5 text-primary" />
                 <span className="font-semibold text-primary">{totalPaths.toLocaleString()}</span>
                 <span className="text-muted-foreground">unique paths</span>
