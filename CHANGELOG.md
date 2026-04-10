@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.13](https://github.com/stratif-io/stratif.io/compare/v0.21.12...v0.21.13) (2026-04-10)
+
+
+### Bug Fixes
+
+* correct workspace filter from @stratifio/web to @stratif-io/web ([6740b18](https://github.com/stratif-io/stratif.io/commit/6740b182fef0f70eb90e3a195b651814c95868a8))
+
 ## [0.21.12](https://github.com/stratif-io/stratif.io/compare/v0.21.11...v0.21.12) (2026-04-09)
 
 ### Bug Fixes
