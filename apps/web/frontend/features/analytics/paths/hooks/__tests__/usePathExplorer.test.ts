@@ -13,6 +13,17 @@ vi.mock('@/stores', () => ({
   useAppStore: vi.fn(() => ({ activeConnectionId: 'conn-1', activeFilters: {} })),
 }))
 
+const mockSearchParams = new URLSearchParams()
+const mockSetSearchParams = vi.fn()
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return {
+    ...actual,
+    useSearchParams: () => [mockSearchParams, mockSetSearchParams],
+  }
+})
+
 import { fetchPathAnalysis, fetchEvents } from '@/lib/api'
 
 const createWrapper = () => {
@@ -39,6 +50,7 @@ const defaultOptions = {
 describe('usePathExplorer', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockSearchParams.delete('mode')
   })
 
   it('returns empty data when dateRange is missing', () => {
@@ -266,7 +278,7 @@ describe('usePathExplorer', () => {
     )
   })
 
-  it('defaults counting_mode to exact when countingMode is not provided', async () => {
+  it('defaults counting_mode to exact when mode param is absent from URL', async () => {
     vi.mocked(fetchPathAnalysis).mockResolvedValue({
       start_event: null,
       end_event: null,
@@ -292,7 +304,9 @@ describe('usePathExplorer', () => {
     )
   })
 
-  it('passes counting_mode contains to API when countingMode is contains', async () => {
+  it('passes counting_mode contains to API when mode=contains is in the URL', async () => {
+    mockSearchParams.set('mode', 'contains')
+
     vi.mocked(fetchPathAnalysis).mockResolvedValue({
       start_event: null,
       end_event: null,
@@ -309,14 +323,7 @@ describe('usePathExplorer', () => {
 
     vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
 
-    renderHook(
-      () =>
-        usePathExplorer({
-          ...defaultOptions,
-          countingMode: 'contains',
-        }),
-      { wrapper: createWrapper() }
-    )
+    renderHook(() => usePathExplorer(defaultOptions), { wrapper: createWrapper() })
 
     await waitFor(() =>
       expect(fetchPathAnalysis).toHaveBeenCalledWith(
