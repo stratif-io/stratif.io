@@ -18,7 +18,11 @@ class InterceptHandler(logging.Handler):
             level: int | str = structlog.stdlib.NAME_TO_LEVEL[record.levelname.lower()]
         except KeyError:
             level = record.levelno
-        structlog.get_logger(record.name).log(level, record.getMessage())
+        logger = structlog.get_logger(record.name)
+        if record.exc_info:
+            logger.log(level, record.getMessage(), exc_info=record.exc_info)
+        else:
+            logger.log(level, record.getMessage())
 
 
 def setup_logging(log_level: str = "INFO", log_format: str = "console") -> None:
