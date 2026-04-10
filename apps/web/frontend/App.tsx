@@ -46,6 +46,10 @@ const QueryStudioPage = lazy(() =>
   }))
 )
 
+const NotFoundPage = lazy(() =>
+  import('@/features/design-system/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
+)
+
 const DesignSystemPage = import.meta.env.DEV
   ? lazy(() =>
       import('@/features/design-system/DesignSystemPage').then((m) => ({
@@ -131,7 +135,7 @@ function App() {
           )}
           <Route path="/settings" element={<Navigate to="/connections" replace />} />
         </Route>
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   )
