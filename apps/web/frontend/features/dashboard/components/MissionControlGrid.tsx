@@ -1,9 +1,9 @@
-import { memo, useState, useRef, useEffect } from 'react'
+import { memo, useRef, useEffect } from 'react'
 import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
 import { MetricCardSkeleton } from '@/components/ui/loading-state'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Settings2 } from 'lucide-react'
+import { Settings2, BookOpen } from 'lucide-react'
 import { formatMetricValue, computePctChange, formatPeriodRange } from '@/lib/format-metric'
 import { cn } from '@/lib/utils'
 import type { MissionControlResponse, Granularity } from '@/types'
@@ -19,6 +19,10 @@ export interface MissionControlGridProps {
   togglePin: (key: string) => void
   isPinned: (key: string) => boolean
   resetToDefault: () => void
+  heroMetric?: TrendMetric
+  onHeroChange?: (metric: TrendMetric) => void
+  learnOpen?: boolean
+  onLearnToggle?: () => void
 }
 
 // Per-metric display config
@@ -117,9 +121,11 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   togglePin,
   isPinned,
   resetToDefault,
+  heroMetric = 'total_events',
+  onHeroChange: setHeroMetric = () => {},
+  learnOpen = false,
+  onLearnToggle = () => {},
 }: MissionControlGridProps) {
-  const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
-
   const granularity = useAppStore((s) => s.granularity)
 
   const prevStart = data?.previous_period?.start_date
@@ -225,13 +231,28 @@ export const MissionControlGrid = memo(function MissionControlGrid({
             sparklinePreviousDates={trends[heroMetric]?.previousDates}
             color={heroConfig.color}
             loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
-            currentMetrics={data?.current}
           />
         </DevCard>
       </div>
 
       {/* RIGHT: Categorized mini-grid */}
       <div ref={rightColRef} className="flex flex-col gap-5">
+        {/* Learn toggle */}
+        <div className="flex justify-end -mb-2">
+          <button
+            onClick={onLearnToggle}
+            aria-pressed={learnOpen}
+            className={cn(
+              'flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all',
+              learnOpen
+                ? 'border-primary bg-primary/10 text-primary font-medium'
+                : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+            )}
+          >
+            <BookOpen className="h-3 w-3" />
+            Learn
+          </button>
+        </div>
         {CATEGORIES.map(({ label, metrics }) => {
           const visibleMetrics = metrics.filter((k) => isPinned(k))
           if (visibleMetrics.length === 0) return null
@@ -274,7 +295,6 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                       <MiniMetricCard
                         staggerIndex={staggerIndex}
                         label={cfg.label}
-                        metricKey={metricKey}
                         value={formatMetricValue(metricKey, current)}
                         rawValue={current}
                         pctChange={computePctChange(current, previous)}
@@ -285,7 +305,6 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                         changeLabel={changeLabel}
                         loading={cardLoading}
                         fullWidth={isFullWidth}
-                        currentMetrics={data?.current}
                         sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
                         decimalsOverride={decimalsOverride}
                       />
