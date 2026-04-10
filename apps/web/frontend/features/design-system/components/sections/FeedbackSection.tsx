@@ -7,6 +7,7 @@ import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { UnderConstruction } from '@/components/UnderConstruction'
 import { NoConnectionScreen } from '@/components/ui/no-connection-guard'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { NotFoundPage } from '../../NotFoundPage'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast-provider'
 
@@ -95,6 +96,12 @@ export function FeedbackSection() {
           >
             Warning
           </Button>
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="NotFoundPage">
+        <div className="border rounded-md w-full overflow-hidden max-w-4xl max-h-96 overflow-y-auto">
+          <NotFoundPage />
         </div>
       </ComponentRow>
     </ComponentSection>
