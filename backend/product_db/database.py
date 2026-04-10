@@ -54,6 +54,15 @@ def reset_engine() -> None:
     _session_factory = None
 
 
+async def close_product_db() -> None:
+    """Dispose the async engine. Call during application shutdown."""
+    global _engine, _session_factory
+    if _engine is not None:
+        await _engine.dispose()
+    _engine = None
+    _session_factory = None
+
+
 async def init_product_db() -> None:
     """Create all tables. Safe to call on every startup (CREATE TABLE IF NOT EXISTS)."""
     engine = _get_engine()
