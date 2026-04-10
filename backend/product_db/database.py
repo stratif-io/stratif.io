@@ -34,7 +34,9 @@ def _get_engine() -> AsyncEngine:
             connect_args = {"server_settings": {"search_path": "app"}}
         else:
             connect_args = {}
-        _engine = create_async_engine(url, echo=settings.log_sql, connect_args=connect_args)
+        _engine = create_async_engine(
+            url, echo=settings.log_sql, connect_args=connect_args
+        )
     return _engine
 
 
@@ -61,7 +63,8 @@ async def init_product_db() -> None:
             await conn.execute(text("CREATE SCHEMA IF NOT EXISTS app"))
             # Migrate existing tables from public → app on stg/prod (idempotent)
             for table in _PRODUCT_DB_TABLES:
-                await conn.execute(text(f"""
+                await conn.execute(
+                    text(f"""
                     DO $$ BEGIN
                         IF EXISTS (
                             SELECT 1 FROM information_schema.tables
@@ -70,5 +73,6 @@ async def init_product_db() -> None:
                             EXECUTE 'ALTER TABLE public.{table} SET SCHEMA app';
                         END IF;
                     END $$;
-                """))
+                """)
+                )
         await conn.run_sync(Base.metadata.create_all)
