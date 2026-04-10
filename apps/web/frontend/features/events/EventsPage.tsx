@@ -22,6 +22,7 @@ import { DevCard } from '@/components/dev'
 import { EventsTable, buildDimCols, defaultVisibility } from '@/components/events-table/EventsTable'
 import { FilterSelect } from '@/components/FilterSelect'
 import { UserTimelineModal } from './components/UserTimelineModal'
+import { PageHeader } from '@/components/ui/page-header'
 import type { RawEvent } from '@/components/events-table/types'
 import type { VisibilityState } from '@tanstack/react-table'
 
@@ -279,6 +280,7 @@ export function EventsPage() {
     <PageTransition>
       <NoConnectionGuard>
         <div className="flex h-full flex-col">
+          <PageHeader title="Events" />
           {/* Toolbar */}
           <div className="flex items-center gap-2 px-3 py-2 border-b shrink-0">
             <div className="flex items-center gap-1.5">

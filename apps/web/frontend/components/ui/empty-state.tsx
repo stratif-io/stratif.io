@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { LucideIcon } from 'lucide-react'
 import { ReactNode } from 'react'
+import { TYPOGRAPHY } from '@/lib/constants'
 
 interface EmptyStateProps {
   icon?: LucideIcon
@@ -36,7 +37,7 @@ export function EmptyState({
       </div>
 
       {/* Title */}
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <h3 className={`${TYPOGRAPHY.cardTitle} mb-2`}>{title}</h3>
 
       {/* Description */}
       {description && <p className="text-sm text-muted-foreground max-w-md mb-6">{description}</p>}
