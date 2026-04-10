@@ -25,6 +25,7 @@ import { FILTER_TRIGGER_CLASS } from '@/lib/constants'
 import { DevCard } from '@/components/dev'
 import { getEventColor } from './utils/eventColors'
 import { useAnalytics } from '@/lib/analytics'
+import { PageHeader } from '@/components/ui/page-header'
 
 const TIME_UNITS = [
   { value: 'seconds', label: 'Seconds' },
@@ -232,6 +233,7 @@ export function PathsExplorerPage() {
     <PageTransition>
       <NoConnectionGuard>
         <div className="flex h-full flex-col">
+          <PageHeader title="Paths" />
           {/* Toolbar */}
           <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b shrink-0">
             <div className="flex items-center rounded-lg border bg-background shadow-sm overflow-hidden divide-x divide-border">

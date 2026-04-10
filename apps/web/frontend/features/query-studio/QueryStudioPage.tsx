@@ -5,6 +5,7 @@ import { useQueryStudio } from './hooks/useQueryStudio'
 import { CatalogBrowser } from './components/CatalogBrowser'
 import { QueryEditor } from './components/QueryEditor'
 import { ResultsPanel } from './components/ResultsPanel'
+import { PageHeader } from '@/components/ui/page-header'
 
 const MIN_EDITOR_HEIGHT = 80
 const MIN_RESULTS_HEIGHT = 60
@@ -59,6 +60,7 @@ export function QueryStudioPage() {
   return (
     <NoConnectionGuard>
       <div className="flex h-full flex-col">
+        <PageHeader title="Query Studio" />
         <div className="flex flex-1 overflow-hidden">
           {/* Catalog — fixed width */}
           <div className="w-52 shrink-0 h-full">

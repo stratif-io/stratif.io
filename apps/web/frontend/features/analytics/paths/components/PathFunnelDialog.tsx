@@ -13,6 +13,7 @@ import { fetchPathFunnel } from '@/lib/api'
 import type { DateRange, PathAnalysisData } from '@/types'
 import { formatDateParam } from '@/lib/utils'
 import { getEventColor } from '../utils/eventColors'
+import { TYPOGRAPHY } from '@/lib/constants'
 
 interface PathFunnelDialogProps {
   path: PathAnalysisData | null
@@ -182,7 +183,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
 
           {/* Funnel steps */}
           <div>
-            <h4 className="text-sm font-semibold mb-3">Funnel Steps</h4>
+            <h4 className={`${TYPOGRAPHY.label} mb-3`}>Funnel Steps</h4>
             {isLoading ? (
               <div className="space-y-2">
                 {events.map((_, i) => (
