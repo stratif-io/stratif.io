@@ -5,17 +5,17 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "bun run --filter @stratifio/web dev",
-    "build": "bun run --filter @stratifio/web build",
-    "preview": "bun run --filter @stratifio/web preview",
-    "lint": "bun run --filter @stratifio/web lint",
-    "format": "bun run --filter @stratifio/web format",
-    "format:check": "bun run --filter @stratifio/web format:check",
-    "test": "bun run --filter @stratifio/web test",
-    "test:run": "bun run --filter @stratifio/web test:run",
-    "test:coverage": "bun run --filter @stratifio/web test:coverage",
-    "test:e2e": "bun run --filter @stratifio/web test:e2e",
-    "test:e2e:ui": "bun run --filter @stratifio/web test:e2e:ui",
+    "dev": "bun run --filter @stratif-io/web dev",
+    "build": "bun run --filter @stratif-io/web build",
+    "preview": "bun run --filter @stratif-io/web preview",
+    "lint": "bun run --filter @stratif-io/web lint",
+    "format": "bun run --filter @stratif-io/web format",
+    "format:check": "bun run --filter @stratif-io/web format:check",
+    "test": "bun run --filter @stratif-io/web test",
+    "test:run": "bun run --filter @stratif-io/web test:run",
+    "test:coverage": "bun run --filter @stratif-io/web test:coverage",
+    "test:e2e": "bun run --filter @stratif-io/web test:e2e",
+    "test:e2e:ui": "bun run --filter @stratif-io/web test:e2e:ui",
     "prepare": "husky"
   },
   "devDependencies": {
