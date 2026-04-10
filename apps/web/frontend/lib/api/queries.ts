@@ -208,6 +208,7 @@ export const fetchPathAnalysis = (params: {
   filters?: Record<string, string | null>
   event_filters?: Record<string, Record<string, unknown>>
   connection_id?: string
+  counting_mode?: 'exact' | 'contains'
 }) => {
   const searchParams = new URLSearchParams()
   if (params.start_event) searchParams.set('start_event', params.start_event)
@@ -225,6 +226,7 @@ export const fetchPathAnalysis = (params: {
   if (f) searchParams.set('filters', f)
   if (params.event_filters) searchParams.set('event_filters', JSON.stringify(params.event_filters))
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
+  if (params.counting_mode) searchParams.set('counting_mode', params.counting_mode)
 
   return fetchApi<PathAnalysisResponse>(`/api/path-analysis?${searchParams}`)
 }
