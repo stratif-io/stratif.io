@@ -31,12 +31,12 @@ DEFAULT_PATH = "/data/sample.duckdb"
 
 # Custom properties extracted from the seeded events' properties JSON column
 CUSTOM_PROPERTIES = [
-    {"name": "country", "path": "properties.country", "type": "string"},
-    {"name": "city", "path": "properties.city", "type": "string"},
-    {"name": "device_type", "path": "properties.device_type", "type": "string"},
-    {"name": "browser", "path": "properties.browser", "type": "string"},
-    {"name": "os", "path": "properties.os", "type": "string"},
-    {"name": "referrer", "path": "properties.referrer", "type": "string"},
+    {"name": "country", "path": "context.country", "type": "string"},
+    {"name": "city", "path": "context.city", "type": "string"},
+    {"name": "device_type", "path": "context.device_type", "type": "string"},
+    {"name": "browser", "path": "context.browser", "type": "string"},
+    {"name": "os", "path": "context.os", "type": "string"},
+    {"name": "referrer", "path": "context.referrer", "type": "string"},
 ]
 
 # Filter dimensions shown in the global filter bar
