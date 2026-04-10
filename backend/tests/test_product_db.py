@@ -2,11 +2,14 @@
 
 import uuid
 from datetime import UTC, datetime
+from unittest.mock import AsyncMock, patch
 
+import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from backend.product_db.base import Base
+from backend.product_db.database import close_product_db, reset_engine
 from backend.product_db.models import (
     Connection,
     ConnectionCustomProperty,
@@ -155,3 +158,52 @@ class TestConnectionModel:
         loaded = result.scalar_one()
         assert len(loaded.filter_fields) == 1
         assert loaded.filter_fields[0].field == "plan"
+
+
+@pytest.mark.asyncio
+async def test_close_product_db_disposes_engine():
+    """close_product_db should dispose the engine and reset cached state."""
+    mock_engine = AsyncMock()
+    with patch("backend.product_db.database._engine", mock_engine):
+        await close_product_db()
+    mock_engine.dispose.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_close_product_db_when_no_engine():
+    """close_product_db should be a no-op when engine was never initialised."""
+    reset_engine()
+    # Should not raise
+    await close_product_db()
+
+
+@pytest.mark.asyncio
+async def test_close_product_db_clears_globals_even_if_dispose_raises():
+    """Globals must be reset even when dispose() raises."""
+    from backend.product_db import database as db_module
+
+    mock_engine = AsyncMock()
+    mock_engine.dispose.side_effect = RuntimeError("connection already closed")
+    with (
+        patch("backend.product_db.database._engine", mock_engine),
+        pytest.raises(RuntimeError),
+    ):
+        await close_product_db()
+    assert db_module._engine is None
+    assert db_module._session_factory is None
+
+
+@pytest.mark.asyncio
+async def test_lifespan_calls_close_product_db():
+    """Lifespan teardown must call close_product_db."""
+    from backend.main import app, lifespan
+
+    with (
+        patch("backend.main.init_product_db", new_callable=AsyncMock) as mock_init,
+        patch("backend.main.close_product_db", new_callable=AsyncMock) as mock_close,
+        patch("backend.main.setup_logging"),
+    ):
+        async with lifespan(app):
+            pass
+        mock_init.assert_awaited_once()
+        mock_close.assert_awaited_once()
