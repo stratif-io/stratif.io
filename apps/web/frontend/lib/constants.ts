@@ -66,6 +66,13 @@ export const TYPOGRAPHY = {
   metric: 'text-xl sm:text-2xl font-bold',
   metricLg: 'text-2xl sm:text-3xl font-bold',
   metricSm: 'text-lg sm:text-xl font-bold',
+
+  // Table typography
+  tableHeader: 'text-sm font-medium text-muted-foreground',
+  tableCell: 'text-sm text-foreground',
+  tableCellMono: 'text-sm font-mono',
+  tableCellMuted: 'text-sm text-muted-foreground tabular-nums',
+  tableCellNumeric: 'text-sm tabular-nums font-medium',
 } as const
 
 // Elevation/Shadow System
