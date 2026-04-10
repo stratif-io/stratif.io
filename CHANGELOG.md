@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.22.0](https://github.com/stratif-io/stratif.io/compare/v0.21.14...v0.22.0) (2026-04-10)
+
+
+### Features
+
+* add NotFoundPage component to design system ([a23fdda](https://github.com/stratif-io/stratif.io/commit/a23fdda3eebfc3abc24038905e14fd2bd176a63a))
+* add slowapi rate limiting (200 req/min per IP) and wire AccessLogMiddleware ([032a26c](https://github.com/stratif-io/stratif.io/commit/032a26ca5b96e6e4bdef05a71553893e843e5553))
+* register NotFoundPage in design system FeedbackSection ([e8a6429](https://github.com/stratif-io/stratif.io/commit/e8a64292cb1376f342a65a78bc74166ea8e56d1b))
+* wire NotFoundPage as catch-all route, replacing redirect to dashboard ([af99791](https://github.com/stratif-io/stratif.io/commit/af99791aa39aa2b73d6f49895b2c46cbee19bef6))
+
+
+### Bug Fixes
+
+* add type: ignore for slowapi and combine nested with in test ([0db671f](https://github.com/stratif-io/stratif.io/commit/0db671f1731045e6ede8e779bbcb0404abc88d98))
+* assert rate-limit headers in test_rate_limit_headers_present ([312ee1d](https://github.com/stratif-io/stratif.io/commit/312ee1d61371323cb734eab2f5e9d42f1adc46e1))
+* bootstrap_connection reads context.* not properties.* for custom props ([ddff4b3](https://github.com/stratif-io/stratif.io/commit/ddff4b35f2cfa7e2674e07385cc1a571f7c61623))
+* log on exceptions in AccessLogMiddleware and fix middleware order for 429 logging ([9c584be](https://github.com/stratif-io/stratif.io/commit/9c584beefa4943c7d66a3cc9c8ca41e6145a34c2))
+* pass connection_id to path-funnel query in PathFunnelDialog ([f7c8545](https://github.com/stratif-io/stratif.io/commit/f7c8545be3171045899d5836d56fe6d23515865a))
+* set log level to error in install.sh server invocations ([5dd82ba](https://github.com/stratif-io/stratif.io/commit/5dd82ba918eb43127a7ab2f3eb8124b7aca08895))
+* use regex URL match in e2e test to allow query params ([5ced3c2](https://github.com/stratif-io/stratif.io/commit/5ced3c2a065e52ecac44a1207dc1df1f37251bf9))
+
 ## [0.21.14](https://github.com/stratif-io/stratif.io/compare/v0.21.13...v0.21.14) (2026-04-10)
 
 
