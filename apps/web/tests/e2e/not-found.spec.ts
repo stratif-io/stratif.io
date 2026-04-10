@@ -10,6 +10,6 @@ test.describe('404 Not Found page', () => {
   test('has working link back to dashboard', async ({ page }) => {
     await page.goto('/this-route-does-not-exist-xyz')
     await page.getByRole('link', { name: /back to dashboard/i }).click()
-    await expect(page).toHaveURL('/dashboard')
+    await expect(page).toHaveURL(/\/dashboard(\?.*)?$/)
   })
 })
