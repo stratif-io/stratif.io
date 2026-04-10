@@ -1,6 +1,5 @@
 """Tests for rate limiting 429 handler."""
 
-import pytest
 from fastapi import FastAPI, Request, Response
 from fastapi.testclient import TestClient
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -14,12 +13,14 @@ def _make_limited_app() -> FastAPI:
     _limiter = Limiter(key_func=get_remote_address, headers_enabled=True)
     app = FastAPI()
     app.state.limiter = _limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-    app.add_middleware(SlowAPIMiddleware)
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+    app.add_middleware(SlowAPIMiddleware)  # type: ignore[arg-type]
 
     @app.get("/limited")
     @_limiter.limit("2/minute")
-    async def limited_endpoint(request: Request, response: Response):  # response param required by slowapi headers
+    async def limited_endpoint(
+        request: Request, response: Response
+    ):  # response param required by slowapi headers
         return {"ok": True}
 
     return app
@@ -38,7 +39,9 @@ def test_rate_limit_429_returns_json():
     response = client.get("/limited")
     assert response.status_code == 429
     body = response.json()
-    assert "error" in body or "detail" in body  # slowapi default returns {"error": "..."}
+    assert (
+        "error" in body or "detail" in body
+    )  # slowapi default returns {"error": "..."}
 
 
 def test_rate_limit_headers_present():
