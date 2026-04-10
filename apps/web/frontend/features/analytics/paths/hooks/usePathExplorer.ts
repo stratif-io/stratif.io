@@ -16,6 +16,7 @@ export interface UsePathExplorerOptions {
   timeUnit: 'seconds' | 'minutes' | 'hours' | 'days'
   groupBy: 'user_id' | 'session_id'
   topN: number
+  countingMode?: 'exact' | 'contains'
 }
 
 export interface UsePathExplorerReturn {
@@ -39,6 +40,7 @@ export function usePathExplorer({
   timeUnit,
   groupBy,
   topN,
+  countingMode = 'exact',
 }: UsePathExplorerOptions): UsePathExplorerReturn {
   const startDate = dateRange.from ? formatDateParam(dateRange.from) : ''
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : ''
@@ -71,6 +73,7 @@ export function usePathExplorer({
       endDate,
       activeFilters,
       activeConnectionId,
+      countingMode,
     ],
     queryFn: () =>
       fetchPathAnalysis({
@@ -86,6 +89,7 @@ export function usePathExplorer({
         end_date: endDate,
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
+        counting_mode: countingMode,
       }),
     enabled: !!activeConnectionId,
     staleTime: QUERY_STALE_TIME.default,
