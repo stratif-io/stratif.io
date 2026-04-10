@@ -9,11 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from scalar_fastapi import get_scalar_api_reference
-from starlette.middleware.base import BaseHTTPMiddleware
-
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from backend.core.middleware import AccessLogMiddleware, RequestIdMiddleware
 from backend.core.rate_limit import limiter
@@ -86,10 +85,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
+app.add_middleware(AccessLogMiddleware)  # type: ignore[arg-type]  # outermost — logs all responses including 429s
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(APITrailingSlashMiddleware)  # type: ignore[arg-type]
-app.add_middleware(AccessLogMiddleware)         # type: ignore[arg-type]
-app.add_middleware(RequestIdMiddleware)         # type: ignore[arg-type]
+app.add_middleware(RequestIdMiddleware)  # type: ignore[arg-type]
 app.add_middleware(
     CORSMiddleware,  # type: ignore[arg-type]
     allow_origins=settings.cors_list,
