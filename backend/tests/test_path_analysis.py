@@ -209,3 +209,73 @@ class TestPathsLimitSQL:
             counting_mode="contains",
         )
         assert exact_query == contains_query
+
+
+class TestPathAnalysisCountingModeAPI:
+    def test_default_counting_mode_is_exact(self):
+        db = CapturingDB()
+        from backend.api.paths import get_path_analysis
+
+        get_path_analysis(
+            db=db,
+            start_event=None,
+            end_event=None,
+            min_path_length=2,
+            max_path_length=5,
+            max_time_between_events=None,
+            time_unit="seconds",
+            top_n=10,
+            group_by="user_id",
+            start_date=None,
+            end_date=None,
+            filters=None,
+            event_filters=None,
+            counting_mode="exact",
+        )
+        query = db.calls[0][0]
+        assert "exact_counts" not in query
+
+    def test_contains_mode_param_produces_contains_query(self):
+        db = CapturingDB()
+        from backend.api.paths import get_path_analysis
+
+        get_path_analysis(
+            db=db,
+            start_event=None,
+            end_event=None,
+            min_path_length=2,
+            max_path_length=5,
+            max_time_between_events=None,
+            time_unit="seconds",
+            top_n=10,
+            group_by="user_id",
+            start_date=None,
+            end_date=None,
+            filters=None,
+            event_filters=None,
+            counting_mode="contains",
+        )
+        query = db.calls[0][0]
+        assert "contains_matches" in query
+
+    def test_invalid_counting_mode_returns_error(self):
+        db = CapturingDB()
+        from backend.api.paths import get_path_analysis
+
+        result = get_path_analysis(
+            db=db,
+            start_event=None,
+            end_event=None,
+            min_path_length=2,
+            max_path_length=5,
+            max_time_between_events=None,
+            time_unit="seconds",
+            top_n=10,
+            group_by="user_id",
+            start_date=None,
+            end_date=None,
+            filters=None,
+            event_filters=None,
+            counting_mode="fuzzy",
+        )
+        assert "error" in result
