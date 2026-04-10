@@ -11,6 +11,7 @@ import {
 import type { Connection, DbType } from '@/types'
 import { CheckCircle, XCircle, Loader2, Copy, Check, Eye, EyeOff } from 'lucide-react'
 import { SaveStatus } from '@/components/ui/save-status'
+import { TYPOGRAPHY } from '@/lib/constants'
 
 interface Props {
   connection: Connection
@@ -381,7 +382,7 @@ function ConnectionStringDisplay({ connId }: { connId: string }) {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold">Connection String</h3>
+      <h3 className={TYPOGRAPHY.label}>Connection String</h3>
       <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
         <code className="flex-1 text-xs font-mono text-muted-foreground break-all">{value}</code>
         <button
@@ -524,7 +525,7 @@ export function ConnectionConfigTab({ connection }: Props) {
       {/* Name */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Connection Name</h3>
+          <h3 className={TYPOGRAPHY.label}>Connection Name</h3>
           <SaveStatus
             status={
               update.isPending
@@ -553,7 +554,7 @@ export function ConnectionConfigTab({ connection }: Props) {
       {/* Credentials */}
       <div className="space-y-3">
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold">Credentials</h3>
+          <h3 className={TYPOGRAPHY.label}>Credentials</h3>
           <p className="text-xs text-muted-foreground">
             Sensitive fields are masked. Leave them unchanged to keep existing values.
           </p>

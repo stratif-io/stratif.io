@@ -84,7 +84,7 @@ export function ConnectionDetailPage() {
             <Database className="h-5 w-5 text-muted-foreground" />
           </div>
           <div>
-            <h1 className={TYPOGRAPHY.sectionTitle}>{connection.name}</h1>
+            <h1 className={TYPOGRAPHY.pageLabel}>{connection.name}</h1>
             <p className={TYPOGRAPHY.muted}>
               {DB_TYPE_LABELS[connection.db_type] ?? connection.db_type}
             </p>

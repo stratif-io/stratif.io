@@ -9,7 +9,7 @@ import { ConnectionFormDialog } from './ConnectionFormDialog'
 import { DbLogo } from '@/components/DbLogo'
 import type { Connection } from '@/types'
 import { cn } from '@/lib/utils'
-import { TYPOGRAPHY } from '@/lib/constants'
+import { SectionHeader } from '@/components/ui/section-header'
 
 const DB_TYPE_LABELS: Record<string, string> = {
   duckdb: 'DuckDB',
@@ -126,8 +126,7 @@ export function ConnectionList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className={TYPOGRAPHY.sectionTitle}>Connections</h1>
-          <p className={`${TYPOGRAPHY.muted} mt-0.5`}>Manage your event database connections</p>
+          <SectionHeader title="Connections" subtitle="Manage your event database connections" />
         </div>
         {data && data.length > 0 && (
           <Button size="sm" onClick={() => setCreateOpen(true)}>

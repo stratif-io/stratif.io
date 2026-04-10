@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { ConnectionSelector } from '@/components/layout/ConnectionSelector'
+import { PageHeader } from '@/components/ui/page-header'
+import { SectionHeader } from '@/components/ui/section-header'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -116,6 +118,14 @@ export function LayoutSection() {
 
       <ComponentRow label="ConnectionSelector">
         <ConnectionSelector />
+      </ComponentRow>
+      <ComponentRow label="PageHeader — page-level h1 title">
+        <PageHeader title="Analytics" />
+        <PageHeader title="People" subtitle="All tracked users" />
+      </ComponentRow>
+      <ComponentRow label="SectionHeader — section-level h2 heading">
+        <SectionHeader title="Configuration" />
+        <SectionHeader title="Schema" subtitle="Define your event fields" />
       </ComponentRow>
     </ComponentSection>
   )
