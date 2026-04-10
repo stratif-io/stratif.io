@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 
 import structlog
@@ -27,4 +28,27 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
         structlog.contextvars.bind_contextvars(request_id=request_id)
         response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
+        return response
+
+
+class AccessLogMiddleware(BaseHTTPMiddleware):
+    """Log method, path, status code, and duration for every request."""
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        start = time.perf_counter()
+        status_code = 500
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+        except Exception:
+            raise
+        finally:
+            duration_ms = round((time.perf_counter() - start) * 1000, 2)
+            log.info(
+                "request",
+                method=request.method,
+                path=request.url.path,
+                status_code=status_code,
+                duration_ms=duration_ms,
+            )
         return response

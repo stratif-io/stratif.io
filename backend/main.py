@@ -9,9 +9,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from scalar_fastapi import get_scalar_api_reference
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from backend.core.middleware import RequestIdMiddleware
+from backend.core.middleware import AccessLogMiddleware, RequestIdMiddleware
+from backend.core.rate_limit import limiter
 
 log = structlog.get_logger(__name__)
 
@@ -41,14 +45,17 @@ from backend.api import (  # noqa: E402
 )
 from backend.config import settings  # noqa: E402
 from backend.core.logging import setup_logging  # noqa: E402
-from backend.product_db import init_product_db  # noqa: E402
+from backend.product_db import close_product_db, init_product_db  # noqa: E402
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(settings.log_level, settings.log_format)
     await init_product_db()
-    yield
+    try:
+        yield
+    finally:
+        await close_product_db()
 
 
 app = FastAPI(
@@ -58,6 +65,10 @@ app = FastAPI(
     openapi_url="/openapi.json",  # always available — OSS product, spec is public
     lifespan=lifespan,
 )
+
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 
 @app.exception_handler(Exception)
@@ -74,6 +85,8 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
+app.add_middleware(AccessLogMiddleware)  # type: ignore[arg-type]  # outermost — logs all responses including 429s
+app.add_middleware(SlowAPIMiddleware)  # type: ignore[arg-type]
 app.add_middleware(APITrailingSlashMiddleware)  # type: ignore[arg-type]
 app.add_middleware(RequestIdMiddleware)  # type: ignore[arg-type]
 app.add_middleware(
