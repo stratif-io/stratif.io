@@ -100,7 +100,7 @@ def test_bootstrap_inserts_all_rows(tmp_path):
             prop_names = [p.name for p in props]
             assert "country" in prop_names
             assert "city" in prop_names
-            assert all(p.path.startswith("properties.") for p in props)
+            assert all(p.path.startswith("context.") for p in props)
 
             filter_fields = (
                 (await session.execute(select(ConnectionFilterField))).scalars().all()
