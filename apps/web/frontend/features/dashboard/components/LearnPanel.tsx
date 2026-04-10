@@ -499,26 +499,24 @@ function buildLearnContent(
 }
 
 interface LearnPanelProps {
-  isOpen: boolean
-  onClose: () => void
   metricKey: TrendMetric
   label: string
   currentMetrics: MissionControlMetrics | undefined
   previousMetrics: MissionControlMetricsNullable | undefined
   pctChange: number | null
+  onClose: () => void
   breakdown?: MetricBreakdown
   currentRange?: string
   previousRange?: string
 }
 
 export const LearnPanel = memo(function LearnPanel({
-  isOpen,
-  onClose,
   metricKey,
   label,
   currentMetrics,
   previousMetrics,
   pctChange,
+  onClose,
   breakdown,
   currentRange,
   previousRange,
@@ -539,98 +537,77 @@ export const LearnPanel = memo(function LearnPanel({
   const down = pctChange !== null && pctChange < 0
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className={cn(
-          'fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] transition-opacity duration-300',
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        )}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Panel */}
-      <div
-        role="complementary"
-        aria-label={`Learn about ${label}`}
-        className={cn(
-          'fixed top-0 right-0 z-50 h-full w-80 bg-card border-l border-border shadow-2xl',
-          'flex flex-col transition-transform duration-300 ease-out',
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold">{content.title}</span>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Close learn panel"
-            className="text-muted-foreground hover:text-foreground transition-colors rounded-md p-1 hover:bg-muted"
-          >
-            <X className="h-4 w-4" />
-          </button>
+    <div role="complementary" aria-label={`Learn about ${label}`} className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <BookOpen className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold">{content.title}</span>
         </div>
-
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          {/* What it is */}
-          <p className="text-xs text-muted-foreground leading-relaxed">{content.what}</p>
-
-          {/* Your numbers */}
-          {content.snapshot.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-                Your numbers
-              </p>
-              <div className="bg-muted/40 rounded-xl p-3 space-y-3">
-                {content.snapshot.map((item, i) => (
-                  <div key={i} className={cn(i > 0 && 'border-t border-border/50 pt-3')}>
-                    <div className="text-[10px] text-muted-foreground mb-0.5">{item.label}</div>
-                    <div className="text-base font-bold tracking-tight">{item.value}</div>
-                    {item.sub && (
-                      <div className="text-[10px] text-muted-foreground/70 mt-0.5">{item.sub}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Trend indicator */}
-          {pctChange !== null && (
-            <div
-              className={cn(
-                'flex items-start gap-2.5 rounded-xl p-3 text-xs',
-                up && 'bg-success/10 text-success',
-                down && 'bg-destructive/10 text-destructive',
-                !up && !down && 'bg-muted/40 text-muted-foreground'
-              )}
-            >
-              <div className="mt-0.5 flex-shrink-0">
-                {up ? (
-                  <TrendingUp className="h-3.5 w-3.5" />
-                ) : down ? (
-                  <TrendingDown className="h-3.5 w-3.5" />
-                ) : (
-                  <Minus className="h-3.5 w-3.5" />
-                )}
-              </div>
-              <p className="leading-relaxed">{content.insight}</p>
-            </div>
-          )}
-
-          {/* Benchmark */}
-          {content.benchmark && (
-            <p className="text-[10px] text-muted-foreground/60 italic leading-relaxed">
-              {content.benchmark}
-            </p>
-          )}
-        </div>
+        <button
+          onClick={onClose}
+          aria-label="Close learn panel"
+          className="text-muted-foreground hover:text-foreground transition-colors rounded-md p-1 hover:bg-muted"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
-    </>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        {/* What it is */}
+        <p className="text-xs text-muted-foreground leading-relaxed">{content.what}</p>
+
+        {/* Your numbers */}
+        {content.snapshot.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+              Your numbers
+            </p>
+            <div className="bg-muted/40 rounded-xl p-3 space-y-3">
+              {content.snapshot.map((item, i) => (
+                <div key={i} className={cn(i > 0 && 'border-t border-border/50 pt-3')}>
+                  <div className="text-[10px] text-muted-foreground mb-0.5">{item.label}</div>
+                  <div className="text-base font-bold tracking-tight">{item.value}</div>
+                  {item.sub && (
+                    <div className="text-[10px] text-muted-foreground/70 mt-0.5">{item.sub}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Trend indicator */}
+        {pctChange !== null && (
+          <div
+            className={cn(
+              'flex items-start gap-2.5 rounded-xl p-3 text-xs',
+              up && 'bg-success/10 text-success',
+              down && 'bg-destructive/10 text-destructive',
+              !up && !down && 'bg-muted/40 text-muted-foreground'
+            )}
+          >
+            <div className="mt-0.5 flex-shrink-0">
+              {up ? (
+                <TrendingUp className="h-3.5 w-3.5" />
+              ) : down ? (
+                <TrendingDown className="h-3.5 w-3.5" />
+              ) : (
+                <Minus className="h-3.5 w-3.5" />
+              )}
+            </div>
+            <p className="leading-relaxed">{content.insight}</p>
+          </div>
+        )}
+
+        {/* Benchmark */}
+        {content.benchmark && (
+          <p className="text-[10px] text-muted-foreground/60 italic leading-relaxed">
+            {content.benchmark}
+          </p>
+        )}
+      </div>
+    </div>
   )
 })
