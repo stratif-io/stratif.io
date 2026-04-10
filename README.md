@@ -36,9 +36,27 @@
 
 ## 🔄 How it works
 
-1. **Connect** your existing database — DuckDB, Postgres, Snowflake, ClickHouse, and more
-2. **Explore** funnels, retention, journeys, sessions, and SQL directly in the UI
-3. **Done** — no agents, no pipelines, no data ever leaves your infrastructure
+1. **Point stratif.io at your database** — DuckDB, Postgres, Snowflake, ClickHouse, and more
+2. **Select your events table** — one row per event, with a timestamp, a user ID, and an event name
+3. **Explore** funnels, retention, journeys, sessions, and SQL directly in the UI
+
+No agents, no pipelines, no data ever leaves your infrastructure.
+
+---
+
+## 📋 What your data needs to look like
+
+stratif.io works with any table where **each row is a single event**. The only requirements are three columns:
+
+| Column     | Description                                     |
+| ---------- | ----------------------------------------------- |
+| timestamp  | When the event happened                         |
+| user_id    | Who performed it                                |
+| event_name | What happened (e.g. `page_viewed`, `signed_up`) |
+
+Any additional columns — simple values or nested JSON — are picked up automatically as event properties you can filter and group by.
+
+Most teams already have this. If your events live in a raw table, a log export, or a dbt model, you're ready. A one-time `SELECT` that aliases those three columns is all the preparation needed — something any analyst or engineer can put together in minutes.
 
 ---
 
@@ -73,8 +91,8 @@ Open **http://localhost:9999** when it's done.
 > **Docker Compose:**
 >
 > ```bash
-> git clone https://github.com/stratifio/stratifio-oss.git
-> cd stratifio-oss
+> git clone https://github.com/stratif-io/stratif.io.git
+> cd stratif.io
 > echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
 > docker compose up
 > ```
@@ -106,8 +124,8 @@ cp .env.example .env
 **Prerequisites:** [Bun](https://bun.sh), Python 3.12+, [uv](https://docs.astral.sh/uv/)
 
 ```bash
-git clone https://github.com/stratifio/stratifio-oss.git
-cd stratifio-oss
+git clone https://github.com/stratif-io/stratif.io.git
+cd stratif.io
 
 bun install
 uv sync
