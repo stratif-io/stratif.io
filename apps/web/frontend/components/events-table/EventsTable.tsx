@@ -7,6 +7,7 @@ import { FilterSelect } from '@/components/FilterSelect'
 import { Pagination } from '@/components/shared/Pagination'
 import { DataTable } from '@/components/data-table/DataTable'
 import type { EventsTableProps, FilterField, CustomProperty } from './types'
+import { TYPOGRAPHY } from '@/lib/constants'
 
 // ── ColumnTextFilter ─────────────────────────────────────────────────────────
 
@@ -260,7 +261,7 @@ export function EventsTable({
               className="flex items-center gap-1.5 h-full cursor-pointer"
               onClick={() => handleUserClick(v)}
             >
-              <span className="font-mono text-xs">{v}</span>
+              <span className={TYPOGRAPHY.tableCellMono}>{v}</span>
               <User size={11} className="opacity-40 shrink-0" />
             </div>
           )
@@ -289,7 +290,7 @@ export function EventsTable({
           const name = String(getValue() ?? '')
           return (
             <span
-              className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary cursor-pointer"
+              className="text-sm font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary cursor-pointer"
               onClick={() => handleEventNameFilter(name)}
             >
               {name}
@@ -336,11 +337,11 @@ export function EventsTable({
           enableSorting: false,
           cell: ({ getValue }: { getValue: () => unknown }) => {
             const v = getValue()
-            if (v == null || v === '') return <span className="opacity-30 text-xs">—</span>
+            if (v == null || v === '') return <span className="opacity-30 text-sm">—</span>
             const str = String(v)
             return (
               <span
-                className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground cursor-pointer"
+                className="text-sm px-2 py-0.5 rounded-full bg-accent text-accent-foreground cursor-pointer"
                 onClick={() => handleDimFilter(col.id, str)}
               >
                 {str}
@@ -358,7 +359,7 @@ export function EventsTable({
         cell: ({ getValue }) => {
           const v = getValue() as string
           return (
-            <span className="text-xs text-muted-foreground tabular-nums">
+            <span className={TYPOGRAPHY.tableCellMuted}>
               {v ? format(new Date(v), 'MMM d, yyyy HH:mm:ss') : '—'}
             </span>
           )
