@@ -134,6 +134,9 @@ def get_path_analysis(
         None, description="JSON dict of active dimension filters"
     ),
     event_filters: str | None = Query(None, description="JSON string of event filters"),
+    counting_mode: str = Query(
+        "exact", description="Counting mode: 'exact' or 'contains'"
+    ),
 ) -> dict[str, Any]:
     """Analyze user paths through events.
 
@@ -152,6 +155,8 @@ def get_path_analysis(
             "error": "time_unit must be one of: seconds, minutes, hours, days",
             "data": [],
         }
+    if counting_mode not in ("exact", "contains"):
+        return {"error": "counting_mode must be 'exact' or 'contains'", "data": []}
 
     date_range: tuple[str, str] | None = None
     if start_date and end_date:
@@ -191,6 +196,7 @@ def get_path_analysis(
         return_type="string",
         extra_where_conditions=extra_clauses or None,
         session_timeout_minutes=db.get_session_timeout_minutes(),
+        counting_mode=counting_mode,
     )
 
     query_str = str(query) if query is not None else ""
