@@ -105,7 +105,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Copy permalink</TooltipContent>
+                  <TooltipContent side="bottom">Copy permalink</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -118,7 +118,7 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
                       <ExternalLink className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Open full page</TooltipContent>
+                  <TooltipContent side="bottom">Open full page</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
