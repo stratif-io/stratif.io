@@ -2,14 +2,11 @@ import { memo, useMemo } from 'react'
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { useReducedMotion } from '@/hooks'
 import { formatMetricValue } from '@/lib/format-metric'
 import { useCountUp, useFormattedCountUp } from '@/hooks/useCountUp'
-import { MetricPopover } from './MetricPopover'
-import type { MissionControlMetrics, MetricBreakdown } from '@/types'
 
 export interface HeroMetricCardProps {
   label: string
@@ -24,11 +21,8 @@ export interface HeroMetricCardProps {
   sparklinePreviousDates?: string[]
   color: string
   loading?: boolean
-  description?: string
   changeLabel?: string
   prevPeriodLabel?: string
-  currentMetrics?: MissionControlMetrics
-  breakdown?: MetricBreakdown
 }
 
 function formatAxisDate(dateStr: string): string {
@@ -89,11 +83,8 @@ export const HeroMetricCard = memo(function HeroMetricCard({
   sparklinePreviousDates,
   color,
   loading,
-  description,
   changeLabel,
   prevPeriodLabel,
-  currentMetrics,
-  breakdown,
 }: HeroMetricCardProps) {
   const reducedMotion = useReducedMotion()
   const tooltipContent = useMemo(
@@ -213,22 +204,6 @@ export const HeroMetricCard = memo(function HeroMetricCard({
           <div className="text-[10px] font-semibold tracking-widest text-muted-foreground">
             {label}
           </div>
-          {currentMetrics ? (
-            <MetricPopover
-              metricKey={metricKey as keyof MissionControlMetrics}
-              currentMetrics={currentMetrics}
-              breakdown={breakdown}
-            />
-          ) : description ? (
-            <UITooltip>
-              <TooltipTrigger asChild className="pointer-events-auto">
-                <Info className="h-3 w-3 text-muted-foreground/60 cursor-help flex-shrink-0" />
-              </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-[200px] text-xs">
-                {description}
-              </TooltipContent>
-            </UITooltip>
-          ) : null}
         </div>
 
         {/* Value */}

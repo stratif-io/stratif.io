@@ -1,9 +1,10 @@
 import { memo, useState, useRef, useEffect } from 'react'
 import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
+import { LearnPanel } from './LearnPanel'
 import { MetricCardSkeleton } from '@/components/ui/loading-state'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Settings2 } from 'lucide-react'
+import { Settings2, BookOpen } from 'lucide-react'
 import { formatMetricValue, computePctChange, formatPeriodRange } from '@/lib/format-metric'
 import { cn } from '@/lib/utils'
 import type { MissionControlResponse, Granularity } from '@/types'
@@ -119,6 +120,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   resetToDefault,
 }: MissionControlGridProps) {
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
+  const [learnOpen, setLearnOpen] = useState(false)
 
   const granularity = useAppStore((s) => s.granularity)
 
@@ -190,144 +192,174 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   const heroConfig = getConfig(heroMetric)
   const heroCurrentValue = data?.current[heroMetric as keyof typeof data.current] ?? 0
   const heroPreviousValue = data?.previous[heroMetric as keyof typeof data.previous] ?? null
+  const heroPctChange = computePctChange(heroCurrentValue, heroPreviousValue)
 
   const flatMetrics = CATEGORIES.flatMap((c) => c.metrics)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] lg:items-start gap-4">
-      {/* LEFT: Hero card — height synced to right column via ResizeObserver */}
-      <div ref={heroWrapperRef}>
-        <DevCard
-          {...buildAllSql(
-            metricSql?.[heroMetric],
-            trends[heroMetric]?.sql,
-            heroConfig.label,
-            currentPeriodLabel,
-            previousPeriodLabel,
-            granularity
-          )}
-          className="h-full"
-        >
-          <HeroMetricCard
-            label={heroConfig.label}
-            changeLabel={changeLabel}
-            prevPeriodLabel={prevPeriodLabel}
-            metricKey={heroMetric}
-            value={formatMetricValue(heroMetric, heroCurrentValue)}
-            rawValue={heroCurrentValue}
-            pctChange={computePctChange(heroCurrentValue, heroPreviousValue)}
-            previousValue={
-              heroPreviousValue !== null ? formatMetricValue(heroMetric, heroPreviousValue) : '—'
-            }
-            sparklineValues={trends[heroMetric]?.values ?? []}
-            sparklineDates={trends[heroMetric]?.dates}
-            sparklinePreviousValues={trends[heroMetric]?.previousValues}
-            sparklinePreviousDates={trends[heroMetric]?.previousDates}
-            color={heroConfig.color}
-            loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
-            currentMetrics={data?.current}
-          />
-        </DevCard>
-      </div>
+    <>
+      <LearnPanel
+        isOpen={learnOpen}
+        onClose={() => setLearnOpen(false)}
+        metricKey={heroMetric}
+        label={heroConfig.label}
+        currentMetrics={data?.current}
+        previousMetrics={data?.previous}
+        pctChange={heroPctChange}
+        currentRange={currentRange ?? undefined}
+        previousRange={previousRange ?? undefined}
+      />
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] lg:items-start gap-4">
+        {/* LEFT: Hero card — height synced to right column via ResizeObserver */}
+        <div ref={heroWrapperRef}>
+          <DevCard
+            {...buildAllSql(
+              metricSql?.[heroMetric],
+              trends[heroMetric]?.sql,
+              heroConfig.label,
+              currentPeriodLabel,
+              previousPeriodLabel,
+              granularity
+            )}
+            className="h-full"
+          >
+            <HeroMetricCard
+              label={heroConfig.label}
+              changeLabel={changeLabel}
+              prevPeriodLabel={prevPeriodLabel}
+              metricKey={heroMetric}
+              value={formatMetricValue(heroMetric, heroCurrentValue)}
+              rawValue={heroCurrentValue}
+              pctChange={computePctChange(heroCurrentValue, heroPreviousValue)}
+              previousValue={
+                heroPreviousValue !== null ? formatMetricValue(heroMetric, heroPreviousValue) : '—'
+              }
+              sparklineValues={trends[heroMetric]?.values ?? []}
+              sparklineDates={trends[heroMetric]?.dates}
+              sparklinePreviousValues={trends[heroMetric]?.previousValues}
+              sparklinePreviousDates={trends[heroMetric]?.previousDates}
+              color={heroConfig.color}
+              loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
+            />
+          </DevCard>
+        </div>
 
-      {/* RIGHT: Categorized mini-grid */}
-      <div ref={rightColRef} className="flex flex-col gap-5">
-        {CATEGORIES.map(({ label, metrics }) => {
-          const visibleMetrics = metrics.filter((k) => isPinned(k))
-          if (visibleMetrics.length === 0) return null
-          return (
-            <div key={label}>
-              <div className="text-[11px] font-semibold tracking-widest text-muted-foreground mb-2">
-                {label}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {visibleMetrics.map((metricKey) => {
-                  const cfg = getConfig(metricKey)
-                  const current = data?.current[metricKey as keyof typeof data.current] ?? 0
-                  const previous = data?.previous[metricKey as keyof typeof data.previous] ?? null
-                  const isFullWidth =
-                    metricKey === 'dau_mau_ratio' || metricKey === 'retention_rate'
-                  const cardLoading =
-                    (metricLoading[metricKey] ?? true) || (trends[metricKey]?.loading ?? true)
-                  // Float metrics need 2 decimal places during count-up animation
-                  const decimalsOverride =
-                    metricKey === 'dau_mau_ratio' ||
-                    metricKey === 'avg_events_per_session' ||
-                    metricKey === 'retention_rate' ||
-                    metricKey === 'avg_active_days'
-                      ? 2
-                      : 0
-                  const staggerIndex = flatMetrics.indexOf(metricKey)
-                  return (
-                    <DevCard
-                      key={metricKey}
-                      {...buildAllSql(
-                        metricSql?.[metricKey],
-                        trends[metricKey]?.sql,
-                        cfg.label,
-                        currentPeriodLabel,
-                        previousPeriodLabel,
-                        granularity
-                      )}
-                      className={isFullWidth ? 'col-span-2' : undefined}
-                    >
-                      <MiniMetricCard
-                        staggerIndex={staggerIndex}
-                        label={cfg.label}
-                        metricKey={metricKey}
-                        value={formatMetricValue(metricKey, current)}
-                        rawValue={current}
-                        pctChange={computePctChange(current, previous)}
-                        sparklineValues={trends[metricKey]?.values ?? []}
-                        color={cfg.color}
-                        isHero={heroMetric === metricKey}
-                        onClick={() => setHeroMetric(metricKey)}
-                        changeLabel={changeLabel}
-                        loading={cardLoading}
-                        fullWidth={isFullWidth}
-                        currentMetrics={data?.current}
-                        sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
-                        decimalsOverride={decimalsOverride}
-                      />
-                    </DevCard>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
-        <Collapsible>
-          <CollapsibleTrigger asChild>
-            <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mt-3">
-              <Settings2 className="h-3 w-3" /> Customize metrics
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {METRIC_CONFIG.map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => togglePin(key)}
-                  className={cn(
-                    'text-xs px-2 py-1 rounded-md border transition-colors',
-                    isPinned(key)
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border text-muted-foreground hover:border-primary/50'
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+        {/* RIGHT: Categorized mini-grid */}
+        <div ref={rightColRef} className="flex flex-col gap-5">
+          {/* Learn toggle */}
+          <div className="flex justify-end -mb-2">
             <button
-              onClick={resetToDefault}
-              className="text-xs text-muted-foreground hover:text-foreground mt-2"
+              onClick={() => setLearnOpen((v) => !v)}
+              aria-pressed={learnOpen}
+              className={cn(
+                'flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all',
+                learnOpen
+                  ? 'border-primary bg-primary/10 text-primary font-medium'
+                  : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+              )}
             >
-              Reset to defaults
+              <BookOpen className="h-3 w-3" />
+              Learn
             </button>
-          </CollapsibleContent>
-        </Collapsible>
+          </div>
+          {CATEGORIES.map(({ label, metrics }) => {
+            const visibleMetrics = metrics.filter((k) => isPinned(k))
+            if (visibleMetrics.length === 0) return null
+            return (
+              <div key={label}>
+                <div className="text-[11px] font-semibold tracking-widest text-muted-foreground mb-2">
+                  {label}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {visibleMetrics.map((metricKey) => {
+                    const cfg = getConfig(metricKey)
+                    const current = data?.current[metricKey as keyof typeof data.current] ?? 0
+                    const previous = data?.previous[metricKey as keyof typeof data.previous] ?? null
+                    const isFullWidth =
+                      metricKey === 'dau_mau_ratio' || metricKey === 'retention_rate'
+                    const cardLoading =
+                      (metricLoading[metricKey] ?? true) || (trends[metricKey]?.loading ?? true)
+                    // Float metrics need 2 decimal places during count-up animation
+                    const decimalsOverride =
+                      metricKey === 'dau_mau_ratio' ||
+                      metricKey === 'avg_events_per_session' ||
+                      metricKey === 'retention_rate' ||
+                      metricKey === 'avg_active_days'
+                        ? 2
+                        : 0
+                    const staggerIndex = flatMetrics.indexOf(metricKey)
+                    return (
+                      <DevCard
+                        key={metricKey}
+                        {...buildAllSql(
+                          metricSql?.[metricKey],
+                          trends[metricKey]?.sql,
+                          cfg.label,
+                          currentPeriodLabel,
+                          previousPeriodLabel,
+                          granularity
+                        )}
+                        className={isFullWidth ? 'col-span-2' : undefined}
+                      >
+                        <MiniMetricCard
+                          staggerIndex={staggerIndex}
+                          label={cfg.label}
+                          value={formatMetricValue(metricKey, current)}
+                          rawValue={current}
+                          pctChange={computePctChange(current, previous)}
+                          sparklineValues={trends[metricKey]?.values ?? []}
+                          color={cfg.color}
+                          isHero={heroMetric === metricKey}
+                          onClick={() => {
+                            setHeroMetric(metricKey)
+                            if (learnOpen) setLearnOpen(true)
+                          }}
+                          changeLabel={changeLabel}
+                          loading={cardLoading}
+                          fullWidth={isFullWidth}
+                          sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
+                          decimalsOverride={decimalsOverride}
+                        />
+                      </DevCard>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mt-3">
+                <Settings2 className="h-3 w-3" /> Customize metrics
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {METRIC_CONFIG.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => togglePin(key)}
+                    className={cn(
+                      'text-xs px-2 py-1 rounded-md border transition-colors',
+                      isPinned(key)
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:border-primary/50'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={resetToDefault}
+                className="text-xs text-muted-foreground hover:text-foreground mt-2"
+              >
+                Reset to defaults
+              </button>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
       </div>
-    </div>
+    </>
   )
 })
