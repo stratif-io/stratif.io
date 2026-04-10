@@ -480,10 +480,13 @@ export function PathsExplorerPage() {
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                       onClick={() =>
-                        setSearchParams((p) => {
-                          p.set('mode', 'exact')
-                          return p
-                        })
+                        setSearchParams(
+                          (p) => {
+                            p.set('mode', 'exact')
+                            return p
+                          },
+                          { replace: true }
+                        )
                       }
                     >
                       Exact
@@ -496,10 +499,13 @@ export function PathsExplorerPage() {
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                       onClick={() =>
-                        setSearchParams((p) => {
-                          p.set('mode', 'contains')
-                          return p
-                        })
+                        setSearchParams(
+                          (p) => {
+                            p.set('mode', 'contains')
+                            return p
+                          },
+                          { replace: true }
+                        )
                       }
                     >
                       Contains
