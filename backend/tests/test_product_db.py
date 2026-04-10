@@ -175,3 +175,17 @@ async def test_close_product_db_when_no_engine():
     reset_engine()
     # Should not raise
     await close_product_db()
+
+
+@pytest.mark.asyncio
+async def test_close_product_db_clears_globals_even_if_dispose_raises():
+    """Globals must be reset even when dispose() raises."""
+    from backend.product_db import database as db_module
+
+    mock_engine = AsyncMock()
+    mock_engine.dispose.side_effect = RuntimeError("connection already closed")
+    with patch("backend.product_db.database._engine", mock_engine):
+        with pytest.raises(RuntimeError):
+            await close_product_db()
+    assert db_module._engine is None
+    assert db_module._session_factory is None
