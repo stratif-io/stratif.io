@@ -265,4 +265,63 @@ describe('usePathExplorer', () => {
       )
     )
   })
+
+  it('defaults counting_mode to exact when countingMode is not provided', async () => {
+    vi.mocked(fetchPathAnalysis).mockResolvedValue({
+      start_event: null,
+      end_event: null,
+      min_path_length: 2,
+      max_path_length: 5,
+      max_time_between_events: null,
+      time_unit: 'seconds',
+      group_by: 'user_id',
+      date_range: null,
+      event_filters: null,
+      total_paths: 0,
+      data: [],
+    })
+
+    vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
+
+    renderHook(() => usePathExplorer(defaultOptions), { wrapper: createWrapper() })
+
+    await waitFor(() =>
+      expect(fetchPathAnalysis).toHaveBeenCalledWith(
+        expect.objectContaining({ counting_mode: 'exact' })
+      )
+    )
+  })
+
+  it('passes counting_mode contains to API when countingMode is contains', async () => {
+    vi.mocked(fetchPathAnalysis).mockResolvedValue({
+      start_event: null,
+      end_event: null,
+      min_path_length: 2,
+      max_path_length: 5,
+      max_time_between_events: null,
+      time_unit: 'seconds',
+      group_by: 'user_id',
+      date_range: null,
+      event_filters: null,
+      total_paths: 0,
+      data: [],
+    })
+
+    vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
+
+    renderHook(
+      () =>
+        usePathExplorer({
+          ...defaultOptions,
+          countingMode: 'contains',
+        }),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() =>
+      expect(fetchPathAnalysis).toHaveBeenCalledWith(
+        expect.objectContaining({ counting_mode: 'contains' })
+      )
+    )
+  })
 })
