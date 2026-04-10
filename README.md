@@ -83,7 +83,7 @@ DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
 ## ⚡ Quick Start
 
 ```bash
-curl -fsSL https://stratif.io/install.sh | bash
+curl -fsSL https://stratif.io/install.sh | sh
 ```
 
 Open **http://localhost:9999** when it's done.
