@@ -20,6 +20,7 @@ dependencies = [
     "psycopg2-binary>=2.9.11",
     "clickhouse-connect>=0.14.1",
     "scalar-fastapi>=1.8.1",
+    "slowapi>=0.1.9",
     "sqlalchemy[asyncio]>=2.0.0",
     "aiosqlite>=0.20.0",
     "asyncpg>=0.29.0",
