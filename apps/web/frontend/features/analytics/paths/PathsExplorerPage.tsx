@@ -26,6 +26,7 @@ import { DevCard } from '@/components/dev'
 import { getEventColor } from './utils/eventColors'
 import { useAnalytics } from '@/lib/analytics'
 import { PageHeader } from '@/components/ui/page-header'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 const TIME_UNITS = [
   { value: 'seconds', label: 'Seconds' },
@@ -177,6 +178,7 @@ export function PathsExplorerPage() {
   const topN = searchParams.has('top')
     ? Math.min(100, Math.max(1, parseInt(searchParams.get('top')!) || 20))
     : 20
+  const countingMode = (searchParams.get('mode') ?? 'exact') as 'exact' | 'contains'
 
   const [selectedPath, setSelectedPath] = useState<PathAnalysisData | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -462,6 +464,57 @@ export function PathsExplorerPage() {
                 Reset
               </button>
             )}
+
+            {/* Counting mode toggle */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center border border-border rounded-md overflow-hidden shrink-0">
+                    <button
+                      className={cn(
+                        'px-3 py-1.5 text-xs font-medium transition-colors',
+                        countingMode === 'exact'
+                          ? 'bg-foreground text-background'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                      onClick={() =>
+                        setSearchParams((p) => {
+                          p.set('mode', 'exact')
+                          return p
+                        })
+                      }
+                    >
+                      Exact
+                    </button>
+                    <button
+                      className={cn(
+                        'px-3 py-1.5 text-xs font-medium transition-colors',
+                        countingMode === 'contains'
+                          ? 'bg-foreground text-background'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                      onClick={() =>
+                        setSearchParams((p) => {
+                          p.set('mode', 'contains')
+                          return p
+                        })
+                      }
+                    >
+                      Contains
+                    </button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p>
+                    <strong>Exact</strong> — sessions where this is the user&apos;s complete path.
+                  </p>
+                  <p className="mt-1">
+                    <strong>Contains</strong> — sessions where this sequence appears anywhere in the
+                    journey.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
             {/* Unique paths badge */}
             {totalPaths > 0 && (
