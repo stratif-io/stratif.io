@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.1](https://github.com/stratif-io/stratif.io/compare/v0.22.0...v0.22.1) (2026-04-10)
+
+
+### Bug Fixes
+
+* add .npmrc to wire STRATIFIO_OSS_TOKEN for GitHub Packages publish ([21a0609](https://github.com/stratif-io/stratif.io/commit/21a0609612c8438d7dced11d49b0517803a0563b))
+
 ## [0.22.0](https://github.com/stratif-io/stratif.io/compare/v0.21.14...v0.22.0) (2026-04-10)
 
 
