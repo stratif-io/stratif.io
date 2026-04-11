@@ -28,7 +28,7 @@ def test_rounds_floats_to_4dp():
 def test_strips_sql_key():
     resp = {"sql": "SELECT ...", "events": ["page_view"]}
     result = normalize("events", resp)
-    assert "sql" in result  # sql key is kept (golden files include it for debugging)
+    assert "sql" not in result  # sql key is stripped before comparison
 
 
 def test_normalizes_none_to_null_string():
