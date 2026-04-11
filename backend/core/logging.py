@@ -39,7 +39,6 @@ def setup_logging(log_level: str = "INFO", log_format: str = "console") -> None:
 
     shared_processors: list[Any] = [
         structlog.contextvars.merge_contextvars,
-        structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
         structlog.stdlib.PositionalArgumentsFormatter(),
         structlog.processors.TimeStamper(fmt="iso"),
@@ -57,11 +56,13 @@ def setup_logging(log_level: str = "INFO", log_format: str = "console") -> None:
             structlog.dev.ConsoleRenderer(),
         ]
 
+    # PrintLoggerFactory writes directly to stdout — no stdlib logging involved.
+    # This prevents infinite recursion: InterceptHandler → structlog → stdlib → InterceptHandler.
     structlog.configure(
         processors=processors,
-        wrapper_class=structlog.stdlib.BoundLogger,
+        wrapper_class=structlog.make_filtering_bound_logger(level),
         context_class=dict,
-        logger_factory=structlog.stdlib.LoggerFactory(),
+        logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
