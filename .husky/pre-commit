@@ -1,5 +1,14 @@
-pre-commit run
+#!/usr/bin/env sh
+
+# Python: uv.lock sync, ruff lint+format, ty type-check (via .pre-commit-config.yaml)
+pre-commit run --hook-stage pre-commit
+
+# If uv lock updated uv.lock, auto-stage it so the commit includes it
+if ! git diff --quiet uv.lock 2>/dev/null; then
+  git add uv.lock
+  echo "  ✓ uv.lock refreshed and staged automatically"
+fi
+
+# TypeScript / frontend: fix staged files, then verify whole project compiles
 bunx lint-staged
 cd apps/web && bunx tsc --noEmit
-bun run lint
-bun run format:check
