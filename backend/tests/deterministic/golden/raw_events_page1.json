@@ -1,10 +1,6 @@
 {
-  "sql": [
-    "SELECT COUNT(*) FROM events WHERE timestamp >= '2023-01-01 00:00:00' AND timestamp <= '2024-12-31 23:59:59'",
-    "\n        SELECT user_id, event_name, timestamp, properties, json_extract_string(\"properties\", '$.country'), json_extract_string(\"properties\", '$.city'), json_extract_string(\"properties\", '$.device_type')\n        FROM events\n        WHERE timestamp >= '2023-01-01 00:00:00' AND timestamp <= '2024-12-31 23:59:59'\n        ORDER BY timestamp ASC\n        LIMIT 20 OFFSET 0\n        "
-  ],
   "total": 2448,
-  "limit": 20,
+  "limit": 19,
   "offset": 0,
   "data": [
     {
@@ -195,16 +191,6 @@
         "country": "FR",
         "city": "Paris",
         "device_type": "Mobile"
-      }
-    },
-    {
-      "user_id": "user_001",
-      "event_name": "add_to_cart",
-      "timestamp": "2023-01-01T10:10:00",
-      "properties": {
-        "country": "US",
-        "city": "New York",
-        "device_type": "Desktop"
       }
     }
   ]

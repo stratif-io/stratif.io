@@ -14,9 +14,15 @@ import json
 import re
 from typing import Any
 
-# Matches "YYYY-MM-DD HH:MM:SS" (space separator) — SQLite returns this format
-# instead of the ISO-8601 "T" separator that DuckDB returns.
+# Matches "YYYY-MM-DD HH:MM:SS" (space separator) — SQLite/PostgreSQL return this
+# format instead of the ISO-8601 "T" separator that DuckDB returns.
 _SPACE_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})$")
+
+# Matches "YYYY-MM-DDTHH:MM:SS" after the space→T normalisation step above.
+# When the time portion is midnight we strip it so date-bucket fields like
+# trend dates compare equal across dialects (DuckDB returns "YYYY-MM-DD",
+# PostgreSQL returns "YYYY-MM-DD 00:00:00").
+_MIDNIGHT_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})T00:00:00$")
 
 # Sort key functions per endpoint key
 _SORT_KEYS: dict[str, list[str]] = {
@@ -61,16 +67,30 @@ def normalize(endpoint_key: str, response: dict) -> dict:
     return result
 
 
+_NUMERIC_STR_RE = re.compile(r"^-?\d+\.\d+$")
+
+
 def _deep_copy_normalize(obj: Any) -> Any:
     """Recursively copy *obj*, rounding floats and normalizing timestamps."""
     if isinstance(obj, float):
         return round(obj, 4)
     if isinstance(obj, str):
+        # Normalize numeric strings like "300.00" → 300.0 so that backends
+        # returning NUMERIC/DECIMAL as strings (e.g. PostgreSQL via psycopg2)
+        # compare equal to backends returning native floats.
+        if _NUMERIC_STR_RE.match(obj):
+            return round(float(obj), 4)
         # Normalize "YYYY-MM-DD HH:MM:SS" → "YYYY-MM-DDTHH:MM:SS" so that
-        # SQLite's space-separated timestamps compare equal to DuckDB's ISO-8601.
+        # SQLite's/PostgreSQL's space-separated timestamps compare equal to
+        # DuckDB's ISO-8601.
         m = _SPACE_TS_RE.match(obj)
         if m:
-            return f"{m.group(1)}T{m.group(2)}"
+            obj = f"{m.group(1)}T{m.group(2)}"
+        # Strip midnight time component so date-bucket fields (trend dates,
+        # cohort dates, etc.) are "YYYY-MM-DD" regardless of dialect.
+        m2 = _MIDNIGHT_TS_RE.match(obj)
+        if m2:
+            return m2.group(1)
         return obj
     if isinstance(obj, dict):
         return {k: _deep_copy_normalize(v) for k, v in obj.items()}
