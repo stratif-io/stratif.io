@@ -48,7 +48,8 @@ function RetentionMiniBar({
 // ── Formatting helpers ─────────────────────────────────────────────────────────
 
 function formatDate(d: string, granularity: RetentionGranularity) {
-  const date = new Date(d)
+  const [y, m, day] = d.split('T')[0].split('-').map(Number)
+  const date = new Date(y, m - 1, day)
   if (granularity === 'month') {
     return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
   }
