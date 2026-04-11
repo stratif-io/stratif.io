@@ -190,7 +190,7 @@ class TestPathsLimitSQL:
         )
         assert "CROSS JOIN" in query
         assert "match_count" in query
-        assert "QUALIFY" in query
+        assert "WHERE match_count > 0" in query
         assert "SUM(match_count)" in query
 
     def test_contains_mode_has_generate_series(self):

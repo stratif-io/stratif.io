@@ -403,20 +403,23 @@ exact_counts AS (
     LIMIT {top_n}
 ),
 contains_matches AS (
-    SELECT
-        ec.path,
-        us.user_id,
-        (
-            SELECT COUNT(*)
-            FROM generate_series(
-                1,
-                GREATEST(1, ARRAY_LENGTH(us.events) - ARRAY_LENGTH(ec.path) + 1)
-            ) t(i)
-            WHERE us.events[i : i + ARRAY_LENGTH(ec.path) - 1] = ec.path
-        ) AS match_count
-    FROM exact_counts ec
-    CROSS JOIN user_sequences us
-    QUALIFY match_count > 0
+    SELECT path, user_id, match_count
+    FROM (
+        SELECT
+            ec.path,
+            us.user_id,
+            (
+                SELECT COUNT(*)
+                FROM generate_series(
+                    1,
+                    GREATEST(1, ARRAY_LENGTH(us.events) - ARRAY_LENGTH(ec.path) + 1)
+                ) t(i)
+                WHERE us.events[i : i + ARRAY_LENGTH(ec.path) - 1] = ec.path
+            ) AS match_count
+        FROM exact_counts ec
+        CROSS JOIN user_sequences us
+    ) sub
+    WHERE match_count > 0
 )
 SELECT
     ARRAY_TO_STRING(path, ' -> ')                          AS path,
