@@ -149,8 +149,10 @@ jobs:
           fi
 
           # Merge to develop and push develop→main.
+          # Wait for GitHub to compute mergeability after the uv.lock push.
           # This push is always fast-forward: nothing else commits to main between
           # the initial develop→main push and this step.
+          sleep 10
           gh pr merge "$PR_NUMBER" --merge --admin
           git fetch origin develop
           git push origin origin/develop:main
