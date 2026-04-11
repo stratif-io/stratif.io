@@ -28,7 +28,11 @@ function ColumnTextFilter({
   }, [value])
 
   return (
-    <div className="relative flex items-center w-full" onClick={(e) => e.stopPropagation()}>
+    <div
+      role="presentation"
+      className="relative flex items-center w-full"
+      onClick={(e) => e.stopPropagation()}
+    >
       <input
         type="text"
         placeholder={placeholder}
@@ -44,6 +48,7 @@ function ColumnTextFilter({
       />
       {local && (
         <button
+          aria-label="Clear search"
           className="absolute right-0 text-muted-foreground hover:text-foreground"
           onClick={(e) => {
             e.stopPropagation()
@@ -271,7 +276,7 @@ export function EventsTable({
         id: 'event_name',
         accessorKey: 'event_name',
         header: () => (
-          <div onClick={(e) => e.stopPropagation()}>
+          <div role="presentation" onClick={(e) => e.stopPropagation()}>
             <FilterSelect
               mode="multi"
               searchable
@@ -289,12 +294,14 @@ export function EventsTable({
         cell: ({ getValue }) => {
           const name = String(getValue() ?? '')
           return (
-            <span
-              className="text-sm font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary cursor-pointer"
+            <button
+              type="button"
+              className="text-sm font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary cursor-pointer hover:bg-primary/20 transition-colors"
               onClick={() => handleEventNameFilter(name)}
+              aria-label={`Filter by event: ${name}`}
             >
               {name}
-            </span>
+            </button>
           )
         },
       },
@@ -306,7 +313,7 @@ export function EventsTable({
           accessorKey: col.id,
           header: () =>
             isLowCardinality ? (
-              <div onClick={(e) => e.stopPropagation()}>
+              <div role="presentation" onClick={(e) => e.stopPropagation()}>
                 <FilterSelect
                   mode="multi"
                   searchable={suggestions.length > 8}
