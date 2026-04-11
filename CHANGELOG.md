@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.2](https://github.com/stratif-io/stratif.io/compare/v0.23.1...v0.23.2) (2026-04-11)
+
+
+### Bug Fixes
+
+* write npm auth to ~/.npmrc to bypass workspace .npmrc suppression ([62a09af](https://github.com/stratif-io/stratif.io/commit/62a09afb00b2133205d90800d2cc8f36fa82553f))
+* write npm auth to ~/.npmrc to bypass workspace .npmrc suppression ([c2b96e7](https://github.com/stratif-io/stratif.io/commit/c2b96e7c685a511c8d4c963b047df617d5894c23))
+
 ## [0.23.1](https://github.com/stratif-io/stratif.io/compare/v0.23.0...v0.23.1) (2026-04-11)
 
 
