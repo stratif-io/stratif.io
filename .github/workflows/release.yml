@@ -9,6 +9,9 @@ permissions:
   pull-requests: write
   packages: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
@@ -16,7 +19,7 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -78,33 +81,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@stratif-io'
-
       - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
         run: bun install
         working-directory: apps/web
 
-      - name: Debug token
-        run: |
-          if [ -z "${STRATIFIO_OSS_TOKEN}" ]; then
-            echo "TOKEN IS EMPTY"
-          else
-            echo "TOKEN IS SET (length: ${#STRATIFIO_OSS_TOKEN})"
-          fi
-        env:
-          STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
-
+      # apps/web/.npmrc configures //npm.pkg.github.com/:_authToken=${STRATIFIO_OSS_TOKEN}.
+      # Do NOT use actions/setup-node with registry-url here — it creates a userconfig
+      # .npmrc that overrides the project .npmrc and replaces STRATIFIO_OSS_TOKEN with
+      # NODE_AUTH_TOKEN (GITHUB_TOKEN), causing a 401.
       - name: Publish to GitHub Packages
         run: npm publish --access public
         working-directory: apps/web
         env:
           STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
+
   sync-develop:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
