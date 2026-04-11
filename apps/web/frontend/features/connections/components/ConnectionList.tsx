@@ -9,7 +9,7 @@ import { ConnectionFormDialog } from './ConnectionFormDialog'
 import { DbLogo } from '@/components/DbLogo'
 import type { Connection } from '@/types'
 import { cn } from '@/lib/utils'
-import { TYPOGRAPHY } from '@/lib/constants'
+import { SectionHeader } from '@/components/ui/section-header'
 
 const DB_TYPE_LABELS: Record<string, string> = {
   duckdb: 'DuckDB',
@@ -24,15 +24,15 @@ const DB_TYPE_LABELS: Record<string, string> = {
 }
 
 const DB_TYPE_COLORS: Record<string, string> = {
-  duckdb: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  postgresql: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  databricks: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  snowflake: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
-  clickhouse: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  bigquery: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  redshift: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  mysql: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  sqlite: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  duckdb: 'bg-chart-3/10 text-chart-3',
+  postgresql: 'bg-chart-6/10 text-chart-6',
+  databricks: 'bg-destructive/10 text-destructive',
+  snowflake: 'bg-chart-9/10 text-chart-9',
+  clickhouse: 'bg-chart-3/10 text-chart-3',
+  bigquery: 'bg-chart-6/10 text-chart-6',
+  redshift: 'bg-chart-4/10 text-chart-4',
+  mysql: 'bg-chart-10/10 text-chart-10',
+  sqlite: 'bg-chart-8/10 text-chart-8',
 }
 
 function ConnectionRow({ connection }: { connection: Connection }) {
@@ -126,8 +126,7 @@ export function ConnectionList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className={TYPOGRAPHY.sectionTitle}>Connections</h1>
-          <p className={`${TYPOGRAPHY.muted} mt-0.5`}>Manage your event database connections</p>
+          <SectionHeader title="Connections" subtitle="Manage your event database connections" />
         </div>
         {data && data.length > 0 && (
           <Button size="sm" onClick={() => setCreateOpen(true)}>

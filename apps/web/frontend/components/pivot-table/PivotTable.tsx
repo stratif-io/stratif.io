@@ -22,6 +22,7 @@ import { BarChart2 } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import type { Granularity } from '@/types'
 import { useAnalytics } from '@/lib/analytics'
+import { TYPOGRAPHY } from '@/lib/constants'
 // FilterEntry used for pivotFilters state
 
 const DEFAULT_ROW_GROUPS: ZoneCol[] = []
@@ -243,7 +244,7 @@ export function PivotTable({
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 36,
+    estimateSize: () => 44,
     overscan: 10,
   })
 
@@ -350,12 +351,12 @@ export function PivotTable({
                   <col key={h} style={{ width: `${100 / headers.length}%` }} />
                 ))}
               </colgroup>
-              <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
+              <thead className="sticky top-0 z-10 bg-muted">
                 <tr>
                   {headers.map((h) => (
                     <th
                       key={h}
-                      className="px-3 py-2 text-left font-medium text-xs text-muted-foreground border-b border-border whitespace-nowrap overflow-hidden text-ellipsis"
+                      className={`h-12 px-4 text-left ${TYPOGRAPHY.tableHeader} border-b border-border whitespace-nowrap overflow-hidden text-ellipsis`}
                     >
                       {h}
                     </th>
@@ -381,7 +382,7 @@ export function PivotTable({
                       {headers.map((h) => (
                         <td
                           key={h}
-                          className="px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis"
+                          className={`px-4 py-3 ${valueCols.some((c) => c.colId === h) ? TYPOGRAPHY.tableCellNumeric : TYPOGRAPHY.tableCell} whitespace-nowrap overflow-hidden text-ellipsis`}
                           style={{ width: `${100 / headers.length}%`, flexShrink: 0 }}
                         >
                           {row[h] == null ? '' : String(row[h])}

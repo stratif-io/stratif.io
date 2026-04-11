@@ -581,7 +581,7 @@ function DevCardInner({ sql, sqlLabels, children, className }: DevCardProps) {
               initial={{ ...collapsed, borderRadius: 8 }}
               animate={{ ...expandedRect, borderRadius: 12 }}
               exit={{ ...collapsed, borderRadius: 8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-border shrink-0">

@@ -16,9 +16,9 @@ interface PathsTableProps {
 }
 
 function getRankColor(idx: number): string {
-  if (idx === 0) return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
+  if (idx === 0) return 'bg-warning/10 text-warning border-warning/20'
   if (idx === 1) return 'bg-muted text-muted-foreground border-border'
-  if (idx === 2) return 'bg-orange-700/10 text-orange-700 border-orange-700/20'
+  if (idx === 2) return 'bg-chart-5/10 text-chart-5 border-chart-5/20'
   return 'bg-muted text-muted-foreground'
 }
 

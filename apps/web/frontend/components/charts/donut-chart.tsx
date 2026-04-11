@@ -76,8 +76,8 @@ export function DonutChart({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center animate-pulse" style={{ height }}>
-        <div className="w-32 h-32 rounded-full bg-muted/50" />
+      <div className="flex items-center justify-center" style={{ height }}>
+        <div className="w-32 h-32 rounded-full bg-muted/50 animate-pulse" />
       </div>
     )
   }

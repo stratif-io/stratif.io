@@ -17,6 +17,11 @@ Standard SQL (portable path)
 
 Output columns are identical for both strategies (``median_time_to_complete``
 is NULL for the standard strategy since SQL MEDIAN is not portable).
+
+Counting semantics (always "contains"):
+    occurrence_count = total number of times the sequence appeared in order
+                       during the period (SUM of per-user match counts).
+    unique_users     = COUNT(DISTINCT user_id) of users who did the sequence.
 """
 
 from typing import Any
@@ -77,6 +82,11 @@ class PathAnalyzer:
         For DuckDB connections the fast array-based strategy is used.
         All other dialects use the portable self-join strategy.
 
+        Always uses contains semantics:
+            occurrence_count = SUM of per-user match counts (how many times the
+                               sequence appeared in order during the period).
+            unique_users     = COUNT(DISTINCT user_id).
+
         Args:
             table_name:               Events table name.
             start_event:              Paths must begin with this event.
@@ -101,7 +111,11 @@ class PathAnalyzer:
             SQL string or SQLGlot AST depending on *return_type*.
         """
         self._validate_params(
-            min_path_length, max_path_length, time_unit, group_by, return_type
+            min_path_length,
+            max_path_length,
+            time_unit,
+            group_by,
+            return_type,
         )
         effective_max = max_path_length or min(10, min_path_length + 5)
         effective_dialect = sql_dialect or self.dialect
@@ -249,7 +263,7 @@ class PathAnalyzer:
         return ""
 
     # ------------------------------------------------------------------
-    # Strategy 1: DuckDB — fast array-based approach (unchanged)
+    # Strategy 1: DuckDB — fast array-based approach (contains semantics)
     # ------------------------------------------------------------------
 
     def _build_duckdb_query(
@@ -275,15 +289,14 @@ class PathAnalyzer:
             ("WHERE " + " AND ".join(where_conditions)) if where_conditions else ""
         )
 
-        time_validation = self._duckdb_time_validation(
-            max_time_between_events, time_unit
-        )
         start_end_conditions = self._duckdb_start_end_conditions(start_event, end_event)
         session_cte = self._duckdb_session_cte(session_timeout_minutes)
         sequences_group_by = (
             "session_id, user_id" if group_by == "session_id" else "user_id"
         )
-        subsequence_cte = self._duckdb_subsequence_cte(min_path_length, max_path_length)
+        subsequence_cte = self._duckdb_subsequence_cte_notimed(
+            min_path_length, max_path_length
+        )
 
         return f"""
 WITH filtered_events AS (
@@ -296,32 +309,58 @@ user_sequences AS (
     SELECT
         user_id,
         LIST(event_name ORDER BY timestamp, event_name) AS events,
-        LIST(timestamp ORDER BY timestamp, event_name) AS timestamps,
         LIST(session_id ORDER BY timestamp, event_name) AS session_ids
     FROM events_sessionized
     GROUP BY {sequences_group_by}
 ),
 {subsequence_cte},
 valid_paths AS (
-    SELECT user_id, path, path_timestamps, path_session_ids, start_ts, end_ts
+    SELECT user_id, path, path_session_ids
     FROM all_subsequences
     WHERE ARRAY_LENGTH(path) >= {min_path_length}
       AND ARRAY_LENGTH(path) <= {max_path_length}
     {start_end_conditions}
-    {time_validation}
+),
+exact_counts AS (
+    SELECT path, COUNT(*) AS exact_count
+    FROM valid_paths
+    GROUP BY path
+    ORDER BY exact_count DESC
+    LIMIT {top_n}
+),
+contains_matches AS (
+    SELECT path, user_id, match_count
+    FROM (
+        SELECT
+            ec.path,
+            us.user_id,
+            (
+                SELECT COUNT(*)
+                FROM generate_series(
+                    1,
+                    GREATEST(1, ARRAY_LENGTH(us.events) - ARRAY_LENGTH(ec.path) + 1)
+                ) t(i)
+                WHERE us.events[i : i + ARRAY_LENGTH(ec.path) - 1] = ec.path
+            ) AS match_count
+        FROM exact_counts ec
+        CROSS JOIN user_sequences us
+    ) sub
+    WHERE match_count > 0
 )
 SELECT
-    ARRAY_TO_STRING(path, ' -> ')                                           AS path,
-    ARRAY_LENGTH(path)                                                       AS path_length,
-    COUNT(*)                                                                 AS occurrence_count,
-    COUNT(DISTINCT user_id)                                                  AS unique_users,
-    ARRAY_LENGTH(LIST_DISTINCT(FLATTEN(LIST(path_session_ids))))             AS unique_sessions,
-    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2)                       AS percentage_of_total,
-    AVG(EPOCH(end_ts - start_ts))                                            AS avg_time_to_complete,
-    MEDIAN(EPOCH(end_ts - start_ts))                                         AS median_time_to_complete
-FROM valid_paths
-GROUP BY path, ARRAY_LENGTH(path)
-ORDER BY unique_users DESC
+    ARRAY_TO_STRING(path, ' -> ')                          AS path,
+    ARRAY_LENGTH(path)                                      AS path_length,
+    SUM(match_count)                                        AS occurrence_count,
+    COUNT(DISTINCT user_id)                                 AS unique_users,
+    COUNT(DISTINCT user_id)                                 AS unique_sessions,
+    ROUND(100.0 * COUNT(DISTINCT user_id) / (
+        SELECT COUNT(DISTINCT user_id) FROM user_sequences
+    ), 2)                                                   AS percentage_of_total,
+    NULL::DOUBLE                                            AS avg_time_to_complete,
+    NULL::DOUBLE                                            AS median_time_to_complete
+FROM contains_matches
+GROUP BY path
+ORDER BY occurrence_count DESC
 LIMIT {top_n}
 """.strip()
 
@@ -346,18 +385,16 @@ events_sessionized AS (
     FROM events_with_prev
 )"""
 
-    def _duckdb_subsequence_cte(self, min_length: int, max_length: int) -> str:
+    def _duckdb_subsequence_cte_notimed(self, min_length: int, max_length: int) -> str:
+        """Subsequence CTE without timestamp columns (for contains mode)."""
         return f"""all_subsequences AS (
     SELECT
         user_id,
         events[i:j]           AS path,
-        timestamps[i:j]       AS path_timestamps,
-        session_ids[i:j]      AS path_session_ids,
-        timestamps[i]         AS start_ts,
-        timestamps[j]         AS end_ts
+        session_ids[i:j]      AS path_session_ids
     FROM user_sequences,
     LATERAL (SELECT UNNEST(range(1, ARRAY_LENGTH(events) + 1)) AS i),
-    LATERAL (SELECT UNNEST(range(i + 1, LEAST(ARRAY_LENGTH(events) + 1, i + {max_length}) + 1)) AS j)
+    LATERAL (SELECT UNNEST(range(i + 1, LEAST(ARRAY_LENGTH(events) + 1, i + {max_length}))) AS j)
     WHERE j - i >= {min_length}
       AND j - i <= {max_length}
 )"""
