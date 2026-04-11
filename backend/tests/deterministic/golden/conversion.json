@@ -1,0 +1,12 @@
+{
+  "sql": "\n        WITH entry_times AS (\n            SELECT user_id, MIN(timestamp) AS first_entry\n            FROM events\n            WHERE event_name = 'page_view' AND timestamp >= '2023-01-01 00:00:00' AND timestamp <= '2024-12-31 23:59:59'\n            GROUP BY user_id\n        ),\n        converted_users AS (\n            SELECT DISTINCT e.user_id\n            FROM events e\n            JOIN entry_times et ON e.user_id = et.user_id\n            WHERE e.event_name = 'purchase' AND timestamp >= '2023-01-01 00:00:00' AND timestamp <= '2024-12-31 23:59:59'\n            AND e.timestamp > et.first_entry\n        )\n        SELECT\n            (SELECT COUNT(*) FROM entry_times)     AS total_users,\n            (SELECT COUNT(*) FROM converted_users) AS converted_users\n    ",
+  "entry_event": "page_view",
+  "goal_event": "purchase",
+  "data": [
+    {
+      "total_users": 10,
+      "converted_users": 4,
+      "conversion_rate_percent": 40.0
+    }
+  ]
+}
