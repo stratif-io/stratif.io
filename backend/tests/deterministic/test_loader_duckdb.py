@@ -18,6 +18,8 @@ from backend.tests.deterministic.loader import (
 
 @pytest.fixture(scope="module")
 def duckdb_write_conn():
+    if DET_CONFIG is None:
+        pytest.skip("connections.yaml not found")
     cfg = DET_CONFIG.get("duckdb", {})
     if not cfg.get("enabled", False):
         pytest.skip("duckdb not enabled in connections.yaml")
