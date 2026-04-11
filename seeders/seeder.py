@@ -15,7 +15,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -28,11 +28,12 @@ class SeedConfig(BaseSettings):
     seed_users: int | None = None
     seed_days: int | None = None
 
-    class Config:
-        env_prefix = ""
-        env_file = str(Path(__file__).parent / ".env")
-        env_file_encoding = "utf-8"
-        extra = "ignore"
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        env_file=str(Path(__file__).parent / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 # ---------------------------------------------------------------------------
