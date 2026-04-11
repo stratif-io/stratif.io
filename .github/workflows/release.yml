@@ -116,7 +116,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
 
       - name: Refresh lock file
         run: uv lock
@@ -127,7 +127,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if ! git diff --quiet uv.lock; then
             git add uv.lock
-            git commit -m "chore: refresh uv.lock after release"
+            git commit -m "chore: refresh uv.lock after release [skip ci]"
             git push origin main
           fi
 
