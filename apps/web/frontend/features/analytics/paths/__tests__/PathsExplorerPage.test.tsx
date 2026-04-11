@@ -1,8 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { TooltipProvider } from '@/components/ui/tooltip'
 import { PathsExplorerPage } from '../PathsExplorerPage'
 import { useAppStore } from '@/stores'
 
@@ -40,15 +39,13 @@ function renderPage() {
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
-        <TooltipProvider>
-          <PathsExplorerPage />
-        </TooltipProvider>
+        <PathsExplorerPage />
       </MemoryRouter>
     </QueryClientProvider>
   )
 }
 
-describe('PathsExplorerPage counting mode toggle', () => {
+describe('PathsExplorerPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockSetSearchParams.mockImplementation(() => {})
@@ -60,57 +57,14 @@ describe('PathsExplorerPage counting mode toggle', () => {
     })
   })
 
-  it('renders Exact and Contains toggle buttons', () => {
+  it('renders without the Exact/Contains toggle', () => {
     renderPage()
-    expect(screen.getByRole('button', { name: 'Exact' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Contains' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Exact' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Contains' })).not.toBeInTheDocument()
   })
 
-  it('Exact button has active styling (bg-foreground) by default (no mode param)', () => {
-    mockSearchParams = new URLSearchParams('')
+  it('renders the paths page title', () => {
     renderPage()
-    const exactBtn = screen.getByRole('button', { name: 'Exact' })
-    expect(exactBtn.className).toContain('bg-foreground')
-    const containsBtn = screen.getByRole('button', { name: 'Contains' })
-    expect(containsBtn.className).not.toContain('bg-foreground')
-  })
-
-  it('Exact button has active styling when mode=exact', () => {
-    mockSearchParams = new URLSearchParams('mode=exact')
-    renderPage()
-    const exactBtn = screen.getByRole('button', { name: 'Exact' })
-    expect(exactBtn.className).toContain('bg-foreground')
-    const containsBtn = screen.getByRole('button', { name: 'Contains' })
-    expect(containsBtn.className).not.toContain('bg-foreground')
-  })
-
-  it('Contains button has active styling when mode=contains', () => {
-    mockSearchParams = new URLSearchParams('mode=contains')
-    renderPage()
-    const containsBtn = screen.getByRole('button', { name: 'Contains' })
-    expect(containsBtn.className).toContain('bg-foreground')
-    const exactBtn = screen.getByRole('button', { name: 'Exact' })
-    expect(exactBtn.className).not.toContain('bg-foreground')
-  })
-
-  it('clicking Contains calls setSearchParams with { replace: true }', () => {
-    mockSearchParams = new URLSearchParams('')
-    renderPage()
-    const containsBtn = screen.getByRole('button', { name: 'Contains' })
-    fireEvent.click(containsBtn)
-    expect(mockSetSearchParams).toHaveBeenCalledOnce()
-    // Second argument should be { replace: true }
-    const [, options] = mockSetSearchParams.mock.calls[0]
-    expect(options).toEqual({ replace: true })
-  })
-
-  it('clicking Exact calls setSearchParams with { replace: true }', () => {
-    mockSearchParams = new URLSearchParams('mode=contains')
-    renderPage()
-    const exactBtn = screen.getByRole('button', { name: 'Exact' })
-    fireEvent.click(exactBtn)
-    expect(mockSetSearchParams).toHaveBeenCalledOnce()
-    const [, options] = mockSetSearchParams.mock.calls[0]
-    expect(options).toEqual({ replace: true })
+    expect(screen.getByText('Paths')).toBeInTheDocument()
   })
 })

@@ -97,10 +97,12 @@ class TestPathAnalyzerQuery:
         assert "'Purchase'" in query
 
     def test_query_with_time_constraint(self):
+        # Standard SQL (non-DuckDB) path applies time constraints inline
         query = generate_path_analysis_query(
             table_name="events",
             max_time_between_events=60,
             time_unit="minutes",
+            sql_dialect="sqlite",
         )
         assert "3600" in query  # 60 minutes = 3600 seconds
 
@@ -155,68 +157,33 @@ class TestPathsLimitSQL:
             query = self._paths_query(limit=limit)
             assert f"LIMIT {limit}" in query
 
-    def test_contains_mode_produces_exact_counts_cte(self):
-        query = generate_path_analysis_query(
-            table_name="events",
-            counting_mode="contains",
-        )
+    def test_produces_exact_counts_cte(self):
+        query = generate_path_analysis_query(table_name="events")
         assert "exact_counts" in query
         assert "contains_matches" in query
 
-    def test_contains_mode_still_has_user_sequences(self):
-        query = generate_path_analysis_query(
-            table_name="events",
-            counting_mode="contains",
-        )
+    def test_has_user_sequences(self):
+        query = generate_path_analysis_query(table_name="events")
         assert "user_sequences" in query
 
-    def test_contains_mode_null_timing(self):
-        query = generate_path_analysis_query(
-            table_name="events",
-            counting_mode="contains",
-        )
+    def test_null_timing(self):
+        query = generate_path_analysis_query(table_name="events")
         assert "NULL" in query  # avg/median are NULL in contains mode
 
-    def test_exact_mode_unchanged_by_default(self):
-        exact = generate_path_analysis_query(table_name="events")
-        assert "exact_counts" not in exact
-
-    def test_invalid_counting_mode_raises(self):
-        with pytest.raises(PathAnalyzerError, match="Invalid counting_mode"):
-            generate_path_analysis_query(table_name="events", counting_mode="fuzzy")
-
-    def test_contains_mode_has_cross_join_and_match_count(self):
-        query = generate_path_analysis_query(
-            table_name="events",
-            counting_mode="contains",
-        )
+    def test_has_cross_join_and_match_count(self):
+        query = generate_path_analysis_query(table_name="events")
         assert "CROSS JOIN" in query
         assert "match_count" in query
         assert "WHERE match_count > 0" in query
         assert "SUM(match_count)" in query
 
-    def test_contains_mode_has_generate_series(self):
-        query = generate_path_analysis_query(
-            table_name="events",
-            counting_mode="contains",
-        )
+    def test_has_generate_series(self):
+        query = generate_path_analysis_query(table_name="events")
         assert "generate_series" in query
-
-    def test_non_duckdb_dialect_falls_back_to_exact(self):
-        exact_query = generate_path_analysis_query(
-            table_name="events",
-            sql_dialect="bigquery",
-        )
-        contains_query = generate_path_analysis_query(
-            table_name="events",
-            sql_dialect="bigquery",
-            counting_mode="contains",
-        )
-        assert exact_query == contains_query
 
 
 class TestPathAnalysisCountingModeAPI:
-    def test_default_counting_mode_is_exact(self):
+    def test_api_produces_contains_query(self):
         db = CapturingDB()
         from backend.api.paths import get_path_analysis
 
@@ -234,55 +201,9 @@ class TestPathAnalysisCountingModeAPI:
             end_date=None,
             filters=None,
             event_filters=None,
-            counting_mode="exact",
-        )
-        query = db.calls[0][0]
-        assert "exact_counts" not in query
-
-    def test_contains_mode_param_produces_contains_query(self):
-        db = CapturingDB()
-        from backend.api.paths import get_path_analysis
-
-        get_path_analysis(
-            db=db,
-            start_event=None,
-            end_event=None,
-            min_path_length=2,
-            max_path_length=5,
-            max_time_between_events=None,
-            time_unit="seconds",
-            top_n=10,
-            group_by="user_id",
-            start_date=None,
-            end_date=None,
-            filters=None,
-            event_filters=None,
-            counting_mode="contains",
         )
         query = db.calls[0][0]
         assert "contains_matches" in query
-
-    def test_invalid_counting_mode_returns_error(self):
-        db = CapturingDB()
-        from backend.api.paths import get_path_analysis
-
-        result = get_path_analysis(
-            db=db,
-            start_event=None,
-            end_event=None,
-            min_path_length=2,
-            max_path_length=5,
-            max_time_between_events=None,
-            time_unit="seconds",
-            top_n=10,
-            group_by="user_id",
-            start_date=None,
-            end_date=None,
-            filters=None,
-            event_filters=None,
-            counting_mode="fuzzy",
-        )
-        assert "error" in result
 
 
 class TestPathCountingModeCounts:
@@ -323,52 +244,35 @@ class TestPathCountingModeCounts:
         """)
         return c
 
-    def _run(self, conn, counting_mode):
+    def _run(self, conn):
         pa = PathAnalyzer(dialect="duckdb")
         q = pa.generate_path_analysis_query(
             "events",
             min_path_length=2,
             max_path_length=5,
             top_n=20,
-            counting_mode=counting_mode,
         )
         rows = conn.execute(q).fetchall()
         # columns: path, path_length, occurrence_count, unique_users, ...
         return {r[0]: {"occ": r[2], "users": r[3]} for r in rows}
 
-    def test_exact_no_duplicate_counts(self, conn):
-        """Exact mode must not inflate counts due to out-of-bounds array slices.
+    def test_no_duplicate_counts(self, conn):
+        """Contains mode must not inflate counts due to out-of-bounds array slices.
 
         u1 has 5 events; max_path_length=5. The longest path for u1 starts at
         i=1 and ends at j=5. The old bug generated j=6 as well, which DuckDB
         silently truncated to the same 5-element slice — doubling the count for
         every max-length path.
         """
-        exact = self._run(conn, "exact")
+        result = self._run(conn)
 
         # Home→Search→ProductView appears exactly once per user = 2 total.
-        assert exact["Home -> Search -> ProductView"]["occ"] == 2
+        assert result["Home -> Search -> ProductView"]["occ"] == 2
 
         # The full 5-event path for u1 appears exactly once, not twice.
-        assert exact["Home -> Search -> ProductView -> Home -> Search"]["occ"] == 1
+        assert result["Home -> Search -> ProductView -> Home -> Search"]["occ"] == 1
 
-    def test_contains_gte_exact_for_all_paths(self, conn):
-        """Contains occurrence count must be >= exact for every path.
-
-        This is the fundamental semantic invariant: if a path was counted as a
-        distinct consecutive subsequence (exact), it must also be counted under
-        'appears anywhere' (contains).
-        """
-        exact = self._run(conn, "exact")
-        contains = self._run(conn, "contains")
-
-        for path, e in exact.items():
-            c = contains.get(path, {"occ": 0})
-            assert c["occ"] >= e["occ"], (
-                f"contains ({c['occ']}) < exact ({e['occ']}) for path '{path}'"
-            )
-
-    def test_contains_shorter_path_gte_longer_extension(self, conn):
+    def test_shorter_path_gte_longer_extension(self, conn):
         """A shorter path must have contains count >= any longer path that extends it.
 
         Home→Search→ProductView (3 events) appears in every session that also
@@ -379,13 +283,13 @@ class TestPathCountingModeCounts:
         subsequence CTE uses `j - i >= min_path_length` where length = j-i+1,
         so 2-event paths are not emitted when min_path_length=2.
         """
-        contains = self._run(conn, "contains")
+        result = self._run(conn)
 
-        three_step = contains["Home -> Search -> ProductView"]["occ"]
-        four_step = contains["Home -> Search -> ProductView -> Home"]["occ"]
+        three_step = result["Home -> Search -> ProductView"]["occ"]
+        four_step = result["Home -> Search -> ProductView -> Home"]["occ"]
         assert three_step >= four_step
 
-    def test_exact_unique_users_correct(self, conn):
+    def test_unique_users_correct(self, conn):
         """unique_users for Home→Search→ProductView should be 2 (both users)."""
-        exact = self._run(conn, "exact")
-        assert exact["Home -> Search -> ProductView"]["users"] == 2
+        result = self._run(conn)
+        assert result["Home -> Search -> ProductView"]["users"] == 2

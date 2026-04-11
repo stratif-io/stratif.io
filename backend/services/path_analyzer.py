@@ -17,6 +17,11 @@ Standard SQL (portable path)
 
 Output columns are identical for both strategies (``median_time_to_complete``
 is NULL for the standard strategy since SQL MEDIAN is not portable).
+
+Counting semantics (always "contains"):
+    occurrence_count = total number of times the sequence appeared in order
+                       during the period (SUM of per-user match counts).
+    unique_users     = COUNT(DISTINCT user_id) of users who did the sequence.
 """
 
 from typing import Any
@@ -44,7 +49,6 @@ class PathAnalyzer:
     VALID_TIME_UNITS = {"seconds", "minutes", "hours", "days"}
     VALID_GROUP_BY = {"user_id", "session_id"}
     VALID_RETURN_TYPES = {"string", "ast"}
-    VALID_COUNTING_MODES = {"exact", "contains"}
 
     _TIME_UNIT_SECONDS = {"seconds": 1, "minutes": 60, "hours": 3600, "days": 86400}
 
@@ -72,12 +76,16 @@ class PathAnalyzer:
         return_type: str = "string",
         extra_where_conditions: list[str] | None = None,
         session_timeout_minutes: int = 30,
-        counting_mode: str = "exact",
     ) -> str | exp.Expression:
         """Generate a SQL query that identifies the most common event paths.
 
         For DuckDB connections the fast array-based strategy is used.
         All other dialects use the portable self-join strategy.
+
+        Always uses contains semantics:
+            occurrence_count = SUM of per-user match counts (how many times the
+                               sequence appeared in order during the period).
+            unique_users     = COUNT(DISTINCT user_id).
 
         Args:
             table_name:               Events table name.
@@ -108,7 +116,6 @@ class PathAnalyzer:
             time_unit,
             group_by,
             return_type,
-            counting_mode,
         )
         effective_max = max_path_length or min(10, min_path_length + 5)
         effective_dialect = sql_dialect or self.dialect
@@ -129,12 +136,7 @@ class PathAnalyzer:
         }
 
         if effective_dialect == "duckdb":
-            if counting_mode == "contains":
-                query = self._build_duckdb_query_contains(
-                    group_by=group_by, **common_kwargs
-                )
-            else:
-                query = self._build_duckdb_query(group_by=group_by, **common_kwargs)
+            query = self._build_duckdb_query(group_by=group_by, **common_kwargs)
         else:
             query = self._build_standard_query(
                 dialect=effective_dialect, **common_kwargs
@@ -155,7 +157,6 @@ class PathAnalyzer:
         time_unit: str,
         group_by: str,
         return_type: str,
-        counting_mode: str = "exact",
     ) -> None:
         if min_path_length < 2:
             raise PathAnalyzerError("min_path_length must be at least 2")
@@ -167,8 +168,6 @@ class PathAnalyzer:
             raise PathAnalyzerError(f"Invalid group_by: {group_by}")
         if return_type not in self.VALID_RETURN_TYPES:
             raise PathAnalyzerError(f"Invalid return_type: {return_type}")
-        if counting_mode not in self.VALID_COUNTING_MODES:
-            raise PathAnalyzerError(f"Invalid counting_mode: {counting_mode}")
 
     def _build_where_conditions(
         self,
@@ -264,83 +263,10 @@ class PathAnalyzer:
         return ""
 
     # ------------------------------------------------------------------
-    # Strategy 1: DuckDB — fast array-based approach (unchanged)
+    # Strategy 1: DuckDB — fast array-based approach (contains semantics)
     # ------------------------------------------------------------------
 
     def _build_duckdb_query(
-        self,
-        table_name: str,
-        start_event: str | None,
-        end_event: str | None,
-        event_filters: dict[str, dict[str, Any]] | None,
-        max_time_between_events: int | None,
-        time_unit: str,
-        min_path_length: int,
-        max_path_length: int,
-        top_n: int,
-        group_by: str,
-        date_range: tuple[str, str] | None,
-        extra_where_conditions: list[str] | None,
-        session_timeout_minutes: int,
-    ) -> str:
-        where_conditions = self._build_where_conditions(
-            date_range, event_filters, table_name, extra_where_conditions, "duckdb"
-        )
-        where_clause = (
-            ("WHERE " + " AND ".join(where_conditions)) if where_conditions else ""
-        )
-
-        time_validation = self._duckdb_time_validation(
-            max_time_between_events, time_unit
-        )
-        start_end_conditions = self._duckdb_start_end_conditions(start_event, end_event)
-        session_cte = self._duckdb_session_cte(session_timeout_minutes)
-        sequences_group_by = (
-            "session_id, user_id" if group_by == "session_id" else "user_id"
-        )
-        subsequence_cte = self._duckdb_subsequence_cte(min_path_length, max_path_length)
-
-        return f"""
-WITH filtered_events AS (
-    SELECT *
-    FROM {table_name}
-    {where_clause}
-),
-{session_cte},
-user_sequences AS (
-    SELECT
-        user_id,
-        LIST(event_name ORDER BY timestamp, event_name) AS events,
-        LIST(timestamp ORDER BY timestamp, event_name) AS timestamps,
-        LIST(session_id ORDER BY timestamp, event_name) AS session_ids
-    FROM events_sessionized
-    GROUP BY {sequences_group_by}
-),
-{subsequence_cte},
-valid_paths AS (
-    SELECT user_id, path, path_timestamps, path_session_ids, start_ts, end_ts
-    FROM all_subsequences
-    WHERE ARRAY_LENGTH(path) >= {min_path_length}
-      AND ARRAY_LENGTH(path) <= {max_path_length}
-    {start_end_conditions}
-    {time_validation}
-)
-SELECT
-    ARRAY_TO_STRING(path, ' -> ')                                           AS path,
-    ARRAY_LENGTH(path)                                                       AS path_length,
-    COUNT(*)                                                                 AS occurrence_count,
-    COUNT(DISTINCT user_id)                                                  AS unique_users,
-    ARRAY_LENGTH(LIST_DISTINCT(FLATTEN(LIST(path_session_ids))))             AS unique_sessions,
-    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2)                       AS percentage_of_total,
-    AVG(EPOCH(end_ts - start_ts))                                            AS avg_time_to_complete,
-    MEDIAN(EPOCH(end_ts - start_ts))                                         AS median_time_to_complete
-FROM valid_paths
-GROUP BY path, ARRAY_LENGTH(path)
-ORDER BY unique_users DESC
-LIMIT {top_n}
-""".strip()
-
-    def _build_duckdb_query_contains(
         self,
         table_name: str,
         start_event: str | None,
@@ -466,22 +392,6 @@ events_sessionized AS (
         user_id,
         events[i:j]           AS path,
         session_ids[i:j]      AS path_session_ids
-    FROM user_sequences,
-    LATERAL (SELECT UNNEST(range(1, ARRAY_LENGTH(events) + 1)) AS i),
-    LATERAL (SELECT UNNEST(range(i + 1, LEAST(ARRAY_LENGTH(events) + 1, i + {max_length}))) AS j)
-    WHERE j - i >= {min_length}
-      AND j - i <= {max_length}
-)"""
-
-    def _duckdb_subsequence_cte(self, min_length: int, max_length: int) -> str:
-        return f"""all_subsequences AS (
-    SELECT
-        user_id,
-        events[i:j]           AS path,
-        timestamps[i:j]       AS path_timestamps,
-        session_ids[i:j]      AS path_session_ids,
-        timestamps[i]         AS start_ts,
-        timestamps[j]         AS end_ts
     FROM user_sequences,
     LATERAL (SELECT UNNEST(range(1, ARRAY_LENGTH(events) + 1)) AS i),
     LATERAL (SELECT UNNEST(range(i + 1, LEAST(ARRAY_LENGTH(events) + 1, i + {max_length}))) AS j)
@@ -720,7 +630,6 @@ def generate_path_analysis_query(
     return_type: str = "string",
     extra_where_conditions: list[str] | None = None,
     session_timeout_minutes: int = 30,
-    counting_mode: str = "exact",
 ) -> str | exp.Expression:
     """Convenience wrapper around :class:`PathAnalyzer`."""
     return PathAnalyzer(dialect=sql_dialect).generate_path_analysis_query(
@@ -739,5 +648,4 @@ def generate_path_analysis_query(
         return_type=return_type,
         extra_where_conditions=extra_where_conditions,
         session_timeout_minutes=session_timeout_minutes,
-        counting_mode=counting_mode,
     )

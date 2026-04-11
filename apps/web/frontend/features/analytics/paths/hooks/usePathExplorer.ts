@@ -1,7 +1,6 @@
 import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useSearchParams } from 'react-router-dom'
 import { fetchPathAnalysis, fetchEvents } from '@/lib/api'
 import { formatDateParam } from '@/lib/utils'
 import { useAppStore } from '@/stores'
@@ -41,8 +40,6 @@ export function usePathExplorer({
   groupBy,
   topN,
 }: UsePathExplorerOptions): UsePathExplorerReturn {
-  const [searchParams] = useSearchParams()
-  const countingMode = (searchParams.get('mode') ?? 'exact') as 'exact' | 'contains'
   const startDate = dateRange.from ? formatDateParam(dateRange.from) : ''
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : ''
   const { activeFilters, activeConnectionId } = useAppStore()
@@ -74,7 +71,6 @@ export function usePathExplorer({
       endDate,
       activeFilters,
       activeConnectionId,
-      countingMode,
     ],
     queryFn: () =>
       fetchPathAnalysis({
@@ -90,7 +86,6 @@ export function usePathExplorer({
         end_date: endDate,
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
-        counting_mode: countingMode,
       }),
     enabled: !!activeConnectionId,
     staleTime: QUERY_STALE_TIME.default,
