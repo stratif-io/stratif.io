@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.23.3](https://github.com/stratif-io/stratif.io/compare/v0.23.2...v0.23.3) (2026-04-11)
+
+
+### Bug Fixes
+
+* retention cohorts only include truly new users ([ae48428](https://github.com/stratif-io/stratif.io/commit/ae484289a5434a196e88be4486e2ce51c3392ac6))
+* suppress uvicorn INFO logs in install.sh ([648018a](https://github.com/stratif-io/stratif.io/commit/648018a628270aa46ee02ef0feeb25c0aa9db6b5))
+* suppress uvicorn INFO logs in install.sh ([316b79d](https://github.com/stratif-io/stratif.io/commit/316b79d2bf460c2635e5d9da34fe9b816e39dec1))
+
 ## [0.23.2](https://github.com/stratif-io/stratif.io/compare/v0.23.1...v0.23.2) (2026-04-11)
 
 
