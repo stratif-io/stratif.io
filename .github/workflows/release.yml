@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -148,14 +149,18 @@ jobs:
             git push origin "$PR_BRANCH"
           fi
 
-          # Merge to develop and push develop→main.
-          # Wait for GitHub to compute mergeability after the uv.lock push.
-          # This push is always fast-forward: nothing else commits to main between
-          # the initial develop→main push and this step.
+          # Merge to develop. Wait for GitHub to compute mergeability first.
           sleep 10
           gh pr merge "$PR_NUMBER" --merge --admin
+
+          # Push develop→main so main has the version bump.
+          # NOTE: GITHUB_TOKEN pushes do NOT trigger new workflow runs (GitHub
+          # suppresses push events from GITHUB_TOKEN to prevent infinite loops).
+          # After pushing, we trigger the release workflow explicitly via
+          # workflow_dispatch, which GITHUB_TOKEN IS allowed to fire.
           git fetch origin develop
           git push origin origin/develop:main
+          gh workflow run release.yml --ref main
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
