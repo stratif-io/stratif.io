@@ -133,3 +133,191 @@ class TestRetentionEndpoint:
         assert day1_pct == 100.0, (
             f"user-retained returned on Day 1, expected 100% Day-1 retention, got {day1_pct}%"
         )
+
+
+def _make_db_bracket() -> AnalyticsDatabase:
+    """DB designed to distinguish bracket from exact-day semantics.
+
+    Cohort: user-a and user-b both sign up on 2024-01-01.
+    user-a: returns on day 3 only (within D7 bracket, NOT on day 7 exactly)
+    user-b: returns on day 8 only (outside D7 bracket, within D30 bracket)
+    user-c: never returns
+
+    Expected bracket D7 (days 1–7): 1/3 = 33.3% (user-a hit it)
+    Expected bracket D30 (days 1–30): 2/3 = 66.7% (user-a + user-b hit it)
+    """
+    conn = duckdb.connect(":memory:")
+    conn.execute("""
+        CREATE TABLE events (
+            user_id VARCHAR,
+            timestamp TIMESTAMP,
+            event_name VARCHAR,
+            properties VARCHAR
+        )
+    """)
+    conn.execute("""
+        INSERT INTO events VALUES
+            ('user-a', '2024-01-01 08:00:00', 'signup', '{}'),
+            ('user-a', '2024-01-04 08:00:00', 'pageview', '{}'),
+            ('user-b', '2024-01-01 09:00:00', 'signup', '{}'),
+            ('user-b', '2024-01-09 09:00:00', 'pageview', '{}'),
+            ('user-c', '2024-01-01 10:00:00', 'signup', '{}')
+    """)
+    return AnalyticsDatabase(conn=conn, backend=DuckDBBackend(), events_cte=None)
+
+
+@pytest.fixture()
+def client_bracket():
+    test_db = _make_db_bracket()
+
+    async def override_db():
+        yield test_db
+
+    app.dependency_overrides[get_analytics_db] = override_db
+    from starlette.testclient import TestClient
+
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
+def _make_db_today_cohort() -> AnalyticsDatabase:
+    """DB with a user who just signed up today. D7/D30/D90 milestones are unreached."""
+    from datetime import date
+
+    today_str = date.today().isoformat()
+    conn = duckdb.connect(":memory:")
+    conn.execute("""
+        CREATE TABLE events (
+            user_id VARCHAR,
+            timestamp TIMESTAMP,
+            event_name VARCHAR,
+            properties VARCHAR
+        )
+    """)
+    conn.execute(f"""
+        INSERT INTO events VALUES
+            ('user-today', '{today_str} 08:00:00', 'signup', '{{}}')
+    """)
+    return AnalyticsDatabase(conn=conn, backend=DuckDBBackend(), events_cte=None)
+
+
+@pytest.fixture()
+def client_today_cohort():
+    test_db = _make_db_today_cohort()
+
+    async def override_db():
+        yield test_db
+
+    app.dependency_overrides[get_analytics_db] = override_db
+    from starlette.testclient import TestClient
+
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
+class TestBracketRetention:
+    def test_user_returning_within_bracket_counts_for_d7(self, client_bracket):
+        """user-a returned on day 3 — must count for D7 bracket (days 1–7)."""
+        response = client_bracket.get(
+            "/api/retention",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-01",
+                "granularity": "day",
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        cohort = body["data"][0]
+        milestones = body["milestones"]
+        d7_idx = milestones.index(7)
+        d7_pct = cohort["milestone_values"][d7_idx]
+        assert d7_pct == pytest.approx(33.3, abs=0.2), (
+            f"user-a returned on day 3 → should count for D7 bracket. Got {d7_pct}%"
+        )
+
+    def test_user_returning_after_bracket_does_not_count_for_d7(self, client_bracket):
+        """user-b returned on day 8 — must NOT count for D7 bracket."""
+        response = client_bracket.get(
+            "/api/retention",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-01",
+                "granularity": "day",
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        cohort = body["data"][0]
+        milestones = body["milestones"]
+        d7_idx = milestones.index(7)
+        d7_pct = cohort["milestone_values"][d7_idx]
+        assert d7_pct == pytest.approx(33.3, abs=0.2), (
+            f"D7 bracket should count only user-a (33.3%), not user-b. Got {d7_pct}%"
+        )
+
+    def test_user_returning_on_day_8_counts_for_d30(self, client_bracket):
+        """user-b returned on day 8 — must count for D30 bracket (days 1–30)."""
+        response = client_bracket.get(
+            "/api/retention",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-01",
+                "granularity": "day",
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        cohort = body["data"][0]
+        milestones = body["milestones"]
+        d30_idx = milestones.index(30)
+        d30_pct = cohort["milestone_values"][d30_idx]
+        assert d30_pct == pytest.approx(66.7, abs=0.2), (
+            f"user-a + user-b both hit D30 bracket → 66.7%. Got {d30_pct}%"
+        )
+
+    def test_unreached_milestone_returns_null(self, client_bracket):
+        """milestone_values must contain only floats or None — never other types.
+
+        Note: the null-for-unreached behavior is date-dependent and verified
+        by the frontend type system. This test verifies structural correctness.
+        """
+        response = client_bracket.get(
+            "/api/retention",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-01",
+                "granularity": "day",
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        cohort = body["data"][0]
+        assert len(cohort["milestone_values"]) == len(body["milestones"])
+        for v in cohort["milestone_values"]:
+            assert v is None or isinstance(v, (int, float))
+
+    def test_unreached_milestones_are_null_for_today_cohort(self, client_today_cohort):
+        """A cohort from today has not reached D7/D30/D90 — those must be None."""
+        from datetime import date
+
+        today = date.today().isoformat()
+        response = client_today_cohort.get(
+            "/api/retention",
+            params={"start_date": today, "end_date": today, "granularity": "day"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["data"]) == 1
+        cohort = body["data"][0]
+        milestones = body["milestones"]
+
+        # D1 may or may not be None depending on exact timing (day 0 vs day 1),
+        # but D7, D30, D90 are definitely unreached for a cohort from today.
+        for m, v in zip(milestones, cohort["milestone_values"], strict=False):
+            if m >= 7:
+                assert v is None, (
+                    f"Milestone D{m} should be None for today's cohort, got {v}"
+                )

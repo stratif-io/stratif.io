@@ -1,22 +1,20 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import type { Granularity } from '@/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
-
 import { Slider } from '@/components/ui/slider'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { TableSkeleton } from '@/components/ui/loading-state'
 import { QueryError } from '@/components/ui/query-error'
 import { EmptyState } from '@/components/ui/empty-state'
-import { Info, Users } from 'lucide-react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { BookOpen, Users } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { useRetentionData, type RetentionGranularity } from './hooks/useRetentionData'
 import { RetentionTable } from './components/RetentionTable'
+import { RetentionLearnPanel } from './components/RetentionLearnPanel'
 import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
 import { DevCard } from '@/components/dev'
-import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 import { useAnalytics } from '@/lib/analytics'
 
@@ -25,87 +23,9 @@ function toRetentionGranularity(g: Granularity): RetentionGranularity {
   return g
 }
 
-// Benchmark thresholds per granularity+milestone
-// Keyed as `${granularity}_${milestone}` → { good, ok }
-const BENCHMARKS: Record<string, { good: number; ok: number }> = {
-  day_1: { good: 25, ok: 10 },
-  day_7: { good: 15, ok: 5 },
-  day_14: { good: 10, ok: 3 },
-  day_30: { good: 8, ok: 2 },
-  day_90: { good: 5, ok: 1 },
-  week_1: { good: 40, ok: 20 },
-  week_2: { good: 25, ok: 10 },
-  week_3: { good: 20, ok: 8 },
-  week_4: { good: 15, ok: 5 },
-  week_12: { good: 8, ok: 2 },
-  month_1: { good: 35, ok: 15 },
-  month_2: { good: 25, ok: 10 },
-  month_3: { good: 20, ok: 8 },
-  month_4: { good: 15, ok: 5 },
-  month_5: { good: 12, ok: 3 },
-  month_6: { good: 10, ok: 2 },
-  quarter_1: { good: 30, ok: 12 },
-  quarter_2: { good: 20, ok: 8 },
-  quarter_3: { good: 15, ok: 5 },
-  quarter_4: { good: 10, ok: 3 },
-  year_1: { good: 25, ok: 10 },
-  year_2: { good: 15, ok: 5 },
-  year_3: { good: 10, ok: 3 },
-}
-
-function getRetentionLabel(value: number, granularity: RetentionGranularity, milestone: number) {
-  const key = `${granularity}_${milestone}`
-  const b = BENCHMARKS[key] ?? { good: 20, ok: 5 }
-  if (value >= b.good) return { label: 'Good', color: 'text-success' }
-  if (value >= b.ok) return { label: 'Average', color: 'text-[hsl(var(--warning))]' }
-  return { label: 'Low', color: 'text-destructive' }
-}
-
-function milestoneTitle(granularity: RetentionGranularity, unit: number): string {
-  if (granularity === 'week') return `Week ${unit} Retention`
-  if (granularity === 'month') return `Month ${unit} Retention`
-  if (granularity === 'quarter') return `Quarter ${unit} Retention`
-  if (granularity === 'year') return `Year ${unit} Retention`
-  return `Day ${unit} Retention`
-}
-
-interface MetricCardProps {
-  title: string
-  value: number
-  granularity: RetentionGranularity
-  milestone: number
-}
-
-function MetricCard({ title, value, granularity, milestone }: MetricCardProps) {
-  const { label, color } = getRetentionLabel(value, granularity, milestone)
-  const animatedValue = useCountUp(value, { decimals: 1 })
-  const key = `${granularity}_${milestone}`
-  const b = BENCHMARKS[key] ?? { good: 20, ok: 5 }
-  const unit = granularity === 'week' ? 'week' : granularity === 'month' ? 'month' : 'day'
-  const tooltipText = `Good ≥ ${b.good}% · Average ≥ ${b.ok}% · based on industry benchmarks for ${unit} ${milestone} retention`
-  return (
-    <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm p-3 transition-colors hover:border-primary/50">
-      <div className="flex items-center gap-1 mb-1">
-        <p className="text-[10px] font-semibold tracking-wider text-muted-foreground">{title}</p>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info className="h-2.5 w-2.5 text-muted-foreground/50 cursor-help shrink-0" />
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[200px] text-xs">
-            {tooltipText}
-          </TooltipContent>
-        </Tooltip>
-      </div>
-      <div className="flex items-end gap-2">
-        <p className="text-lg font-bold tracking-tight leading-none">{animatedValue.toFixed(1)}%</p>
-        <span className={cn('text-xs font-medium pb-0.5', color)}>{label}</span>
-      </div>
-    </div>
-  )
-}
-
 export function RetentionPage() {
   const { track } = useAnalytics()
+  const [learnOpen, setLearnOpen] = useState(false)
 
   useEffect(() => {
     track('chart_viewed', { chart_type: 'retention' })
@@ -120,49 +40,22 @@ export function RetentionPage() {
   const granularity = toRetentionGranularity(globalGranularity)
   const [cohortLimit, setCohortLimit] = useState(10)
 
-  const {
-    retentionData,
-    milestones,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    avgMilestones: _avgMilestones,
-    totalAvailable,
-    sql,
-  } = useRetentionData({
-    dateRange,
-    granularity,
-  })
+  const { retentionData, milestones, isLoading, isError, error, refetch, totalAvailable, sql } =
+    useRetentionData({ dateRange, granularity })
 
-  // Clamp limit to what's actually available
   const effectiveLimit = totalAvailable > 0 ? Math.min(cohortLimit, totalAvailable) : cohortLimit
-  const visibleData = useMemo(
-    () => retentionData.slice(0, effectiveLimit),
-    [retentionData, effectiveLimit]
-  )
-
-  // Recompute averages over visible cohorts only
-  const visibleAvgMilestones = useMemo(() => {
-    if (visibleData.length === 0) return milestones.map(() => 0)
-    return milestones.map(
-      (_, i) =>
-        visibleData.reduce((acc, r) => acc + (r.milestone_values[i] ?? 0), 0) / visibleData.length
-    )
-  }, [visibleData, milestones])
-
+  const visibleData = retentionData.slice(0, effectiveLimit)
   const isEmpty = !isLoading && retentionData.length === 0
 
   return (
     <PageTransition>
       <NoConnectionGuard>
-        <div className={SPACING.page}>
-          <div className={SPACING.section}>
+        <div className={cn(SPACING.page, 'flex flex-col h-full')}>
+          <div className={cn(SPACING.section, 'flex flex-col flex-1 min-h-0')}>
             {/* Header */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <h1 className={TYPOGRAPHY.pageLabel}>Retention</h1>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                {/* Cohort count slider */}
                 {totalAvailable > 1 && (
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground whitespace-nowrap">
@@ -178,63 +71,69 @@ export function RetentionPage() {
                     />
                   </div>
                 )}
+                {/* Learn */}
+                <button
+                  onClick={() => setLearnOpen((v) => !v)}
+                  aria-pressed={learnOpen}
+                  className={cn(
+                    'flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all',
+                    learnOpen
+                      ? 'border-primary bg-primary/10 text-primary font-medium'
+                      : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                  )}
+                >
+                  <BookOpen className="h-3 w-3" />
+                  Learn
+                </button>
               </div>
             </div>
 
-            {/* Milestone metric cards */}
-            {milestones.length > 0 && (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                  {milestones.map((unit, i) => (
-                    <MetricCard
-                      key={unit}
-                      title={milestoneTitle(granularity, unit)}
-                      value={visibleAvgMilestones[i] ?? 0}
-                      granularity={granularity}
-                      milestone={unit}
-                    />
-                  ))}
-                </div>
-                {visibleAvgMilestones.length > 0 && visibleAvgMilestones.every((v) => v === 0) && (
-                  <p className="text-sm text-muted-foreground text-center py-2">
-                    Not enough return visits in this date range — try widening the date range or
-                    removing filters.
-                  </p>
-                )}
-              </>
-            )}
-
-            {/* Cohort heatmap with sparklines */}
-            <DevCard sql={sql}>
-              <Card className="relative overflow-hidden">
-                <CardLoadingBar loading={isLoading} />
-                <CardContent className="p-0 pb-0">
-                  {isError ? (
-                    <div className="p-6">
-                      <QueryError error={error} onRetry={refetch} />
-                    </div>
-                  ) : isLoading ? (
-                    <div className="p-6">
-                      <TableSkeleton />
-                    </div>
-                  ) : isEmpty ? (
-                    <div className="p-6">
-                      <EmptyState
-                        icon={Users}
-                        title="No cohorts to show"
-                        description="No new users were found in this date range. Try widening it to see retention cohorts."
+            {/* Cohort table + Learn panel */}
+            <div className="flex flex-1 overflow-hidden">
+              <DevCard sql={sql} className="flex-1 min-w-0">
+                <Card className="relative overflow-hidden h-full">
+                  <CardLoadingBar loading={isLoading} />
+                  <CardContent className="p-0 pb-0 h-full">
+                    {isError ? (
+                      <div className="p-6">
+                        <QueryError error={error} onRetry={refetch} />
+                      </div>
+                    ) : isLoading ? (
+                      <div className="p-6">
+                        <TableSkeleton />
+                      </div>
+                    ) : isEmpty ? (
+                      <div className="p-6">
+                        <EmptyState
+                          icon={Users}
+                          title="No cohorts to show"
+                          description="No new users were found in this date range. Try widening it to see retention cohorts."
+                        />
+                      </div>
+                    ) : (
+                      <RetentionTable
+                        data={visibleData}
+                        granularity={granularity}
+                        milestones={milestones}
                       />
-                    </div>
-                  ) : (
-                    <RetentionTable
-                      data={visibleData}
-                      granularity={granularity}
-                      milestones={milestones}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </DevCard>
+                    )}
+                  </CardContent>
+                </Card>
+              </DevCard>
+
+              {/* Learn panel */}
+              <div
+                className={cn(
+                  'shrink-0 border-l border-border bg-card overflow-hidden',
+                  'transition-[width] duration-300 ease-out',
+                  learnOpen ? 'w-80' : 'w-0'
+                )}
+              >
+                <div className="w-80 h-full">
+                  <RetentionLearnPanel onClose={() => setLearnOpen(false)} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </NoConnectionGuard>

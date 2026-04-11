@@ -95,7 +95,7 @@ export interface RetentionCohort {
   cohort_date: string
   cohort_size: number
   retention_series: number[]
-  milestone_values: number[]
+  milestone_values: (number | null)[]
 }
 
 export interface RetentionResponse {

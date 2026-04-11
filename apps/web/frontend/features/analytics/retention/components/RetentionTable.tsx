@@ -6,39 +6,50 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import type { RetentionCohort } from '@/types'
 import type { RetentionGranularity } from '../hooks/useRetentionData'
+import { getCellClass, BENCHMARKS, milestoneTooltip } from '../retention-benchmarks'
 
-function RetentionMiniBar({ values }: { values: number[] }) {
-  const max = Math.max(...values, 1)
+// ── Sparkline ──────────────────────────────────────────────────────────────────
+
+function RetentionMiniBar({
+  values,
+  granularity,
+  milestones,
+}: {
+  values: (number | null)[]
+  granularity: RetentionGranularity
+  milestones: number[]
+}) {
+  const max = Math.max(...values.filter((v): v is number => v !== null), 1)
   return (
-    <div className="flex items-end gap-0.5 h-6 w-18">
-      {values.map((v, i) => (
-        <div
-          key={i}
-          className={cn('flex-1 rounded-sm', v > 0 ? 'bg-primary/60' : 'bg-muted/40')}
-          style={{ height: `${Math.max((v / max) * 100, v > 0 ? 15 : 8)}%` }}
-        />
-      ))}
+    <div className="flex items-end gap-0.5 h-5 w-24">
+      {values.map((v, i) => {
+        const { container } = getCellClass(v, granularity, milestones[i])
+        const heightPct = v === null ? 8 : Math.max((v / max) * 100, v > 0 ? 15 : 8)
+        return (
+          <div
+            key={i}
+            className={cn(
+              'flex-1 rounded-sm',
+              v !== null && v > 0 ? container || 'bg-primary/60' : 'bg-muted/40'
+            )}
+            style={{ height: `${heightPct}%` }}
+          />
+        )
+      })}
     </div>
   )
 }
 
-interface RetentionTableProps {
-  data: RetentionCohort[]
-  granularity: RetentionGranularity
-  milestones: number[]
-}
-
-function getCellStyle(percent: number): React.CSSProperties {
-  const opacity = 0.06 + (percent / 100) * 0.44
-  return { backgroundColor: `hsl(var(--chart-2) / ${opacity})` }
-}
+// ── Formatting helpers ─────────────────────────────────────────────────────────
 
 function formatDate(d: string, granularity: RetentionGranularity) {
-  const date = new Date(d)
+  const [y, m, day] = d.split('T')[0].split('-').map(Number)
+  const date = new Date(y, m - 1, day)
   if (granularity === 'month') {
     return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
   }
@@ -50,28 +61,78 @@ function formatDate(d: string, granularity: RetentionGranularity) {
     return String(date.getFullYear())
   }
   if (granularity === 'week') {
-    return `Wk ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function milestoneLabel(unit: number, granularity: RetentionGranularity): string {
-  if (granularity === 'week') return `Wk ${unit}`
-  if (granularity === 'month') return `Mo ${unit}`
+  if (granularity === 'week') return `W${unit}`
+  if (granularity === 'month') return `M${unit}`
   if (granularity === 'quarter') return `Q${unit}`
-  if (granularity === 'year') return `Yr ${unit}`
-  return `Day ${unit}`
+  if (granularity === 'year') return `Y${unit}`
+  return `D${unit}`
+}
+
+// ── Delta helpers ──────────────────────────────────────────────────────────────
+
+function deltaMilestoneIdx(milestones: number[]): number {
+  return milestones.length > 1 ? 1 : 0
+}
+
+function computeDelta(
+  current: (number | null)[],
+  previous: (number | null)[],
+  idx: number
+): number | null {
+  const cur = current[idx]
+  const prev = previous[idx]
+  if (cur === null || prev === null) return null
+  return cur - prev
+}
+
+function formatDelta(delta: number | null): { text: string; className: string } {
+  if (delta === null) return { text: '—', className: 'text-muted-foreground/50' }
+  const sign = delta >= 0 ? '+' : '−'
+  const abs = Math.abs(delta).toFixed(1)
+  return {
+    text: `${sign}${abs}%`,
+    className:
+      delta > 0
+        ? 'text-success font-medium'
+        : delta < 0
+          ? 'text-destructive font-medium'
+          : 'text-muted-foreground',
+  }
+}
+
+// ── Component ──────────────────────────────────────────────────────────────────
+
+interface RetentionTableProps {
+  data: RetentionCohort[]
+  granularity: RetentionGranularity
+  milestones: number[]
 }
 
 export function RetentionTable({ data, granularity, milestones }: RetentionTableProps) {
+  const orderedData = useMemo(
+    () => [...data].sort((a, b) => a.cohort_date.localeCompare(b.cohort_date)),
+    [data]
+  )
+
+  const deltaIdx = deltaMilestoneIdx(milestones)
+  const deltaLabel =
+    milestones.length > 0 ? `Δ ${milestoneLabel(milestones[deltaIdx], granularity)}` : 'Δ'
+
   const avgMilestoneValues = useMemo(
     () =>
-      milestones.map((_, i) =>
-        data.length > 0
-          ? data.reduce((s, r) => s + (r.milestone_values[i] ?? 0), 0) / data.length
-          : 0
-      ),
-    [data, milestones]
+      milestones.map((_, i) => {
+        const valid = orderedData
+          .map((r) => r.milestone_values[i])
+          .filter((v): v is number => v !== null && v !== undefined)
+        return valid.length > 0 ? valid.reduce((a, b) => a + b, 0) / valid.length : null
+      }),
+    [orderedData, milestones]
   )
 
   return (
@@ -92,20 +153,43 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
               Trend
             </TableHead>
             {milestones.map((unit) => (
-              <TableHead
-                key={unit}
-                scope="col"
-                className="font-semibold text-foreground text-center whitespace-nowrap"
-              >
-                {milestoneLabel(unit, granularity)}
-              </TableHead>
+              <Tooltip key={unit}>
+                <TooltipTrigger asChild>
+                  <TableHead
+                    scope="col"
+                    className="font-semibold text-foreground text-center whitespace-nowrap cursor-help"
+                  >
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span>{milestoneLabel(unit, granularity)}</span>
+                      <span className="text-[9px] font-normal text-muted-foreground">
+                        ≥{BENCHMARKS[`${granularity}_${unit}`]?.good ?? 20}% good
+                      </span>
+                    </div>
+                  </TableHead>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-xs">
+                  {milestoneTooltip(granularity, unit)}
+                </TooltipContent>
+              </Tooltip>
             ))}
+            <TableHead
+              scope="col"
+              className="font-semibold text-foreground text-right whitespace-nowrap"
+            >
+              {deltaLabel}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((row, idx) => {
+          {orderedData.map((row, idx) => {
+            const prevRow = idx > 0 ? orderedData[idx - 1] : null
+            const delta = prevRow
+              ? computeDelta(row.milestone_values, prevRow.milestone_values, deltaIdx)
+              : null
+            const { text: deltaText, className: deltaClass } = formatDelta(idx === 0 ? null : delta)
+
             return (
-              <TableRow key={idx} className="hover:bg-muted/20 transition-colors">
+              <TableRow key={row.cohort_date} className="hover:bg-muted/20 transition-colors">
                 <TableHead scope="row" className="font-medium whitespace-nowrap">
                   {formatDate(row.cohort_date, granularity)}
                 </TableHead>
@@ -113,51 +197,73 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                   {row.cohort_size.toLocaleString()}
                 </TableCell>
                 <TableCell className="py-1.5 pr-4">
-                  <RetentionMiniBar values={row.milestone_values} />
+                  <RetentionMiniBar
+                    values={row.milestone_values}
+                    granularity={granularity}
+                    milestones={milestones}
+                  />
                 </TableCell>
                 {milestones.map((unit, i) => {
-                  const pct = row.milestone_values[i] ?? 0
+                  const pct = row.milestone_values[i]
+                  const { container, text } = getCellClass(pct, granularity, unit)
                   return (
                     <TableCell key={unit} className="text-center p-1.5">
-                      <div
-                        className={cn(
-                          'rounded-md px-2 py-1 text-sm tabular-nums font-medium transition-colors mx-auto w-fit',
-                          pct >= 20 ? 'text-success' : 'text-foreground'
-                        )}
-                        style={getCellStyle(pct)}
-                      >
-                        {pct.toFixed(1)}%
-                      </div>
+                      {pct === null ? (
+                        <span className="text-xs text-muted-foreground/40 italic">soon</span>
+                      ) : (
+                        <div
+                          className={cn(
+                            'rounded-md px-2 py-1 text-sm tabular-nums font-medium transition-colors mx-auto w-fit',
+                            container,
+                            text
+                          )}
+                        >
+                          {pct.toFixed(1)}%
+                        </div>
+                      )}
                     </TableCell>
                   )
                 })}
+                <TableCell className={cn('text-right text-sm tabular-nums pr-4', deltaClass)}>
+                  {deltaText}
+                </TableCell>
               </TableRow>
             )
           })}
 
           {/* Average row */}
-          {data.length > 1 && (
+          {orderedData.length > 1 && (
             <TableRow className="border-t-2 bg-muted/30 font-semibold">
-              <TableCell className="text-muted-foreground text-sm">Average</TableCell>
+              <TableHead scope="row" className="text-muted-foreground text-sm font-semibold">
+                Average
+              </TableHead>
               <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
                 {Math.round(
-                  data.reduce((s, r) => s + r.cohort_size, 0) / data.length
+                  orderedData.reduce((s, r) => s + r.cohort_size, 0) / orderedData.length
                 ).toLocaleString()}
               </TableCell>
               <TableCell />
-              {avgMilestoneValues.map((pct, i) => (
-                <TableCell key={milestones[i]} className="text-center p-1.5">
-                  <div
-                    className={cn(
-                      'rounded-md px-2 py-1 text-sm tabular-nums font-semibold mx-auto w-fit',
-                      pct >= 20 ? 'text-success' : 'text-foreground'
+              {avgMilestoneValues.map((pct, i) => {
+                const { container, text } = getCellClass(pct, granularity, milestones[i])
+                return (
+                  <TableCell key={milestones[i]} className="text-center p-1.5">
+                    {pct === null ? (
+                      <span className="text-xs text-muted-foreground/40 italic">—</span>
+                    ) : (
+                      <div
+                        className={cn(
+                          'rounded-md px-2 py-1 text-sm tabular-nums font-semibold mx-auto w-fit',
+                          container,
+                          text
+                        )}
+                      >
+                        {pct.toFixed(1)}%
+                      </div>
                     )}
-                    style={getCellStyle(pct)}
-                  >
-                    {pct.toFixed(1)}%
-                  </div>
-                </TableCell>
-              ))}
+                  </TableCell>
+                )
+              })}
+              <TableCell />
             </TableRow>
           )}
         </TableBody>
