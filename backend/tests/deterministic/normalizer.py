@@ -1,0 +1,80 @@
+"""Normalize API responses before golden-file comparison.
+
+Applied to both the live response and the loaded golden file so that
+dialect-specific formatting differences (float precision, timestamp
+format, list ordering) do not cause false negatives.
+
+Usage:
+    normalized = normalize(endpoint_key, response_dict)
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+
+# Sort key functions per endpoint key
+_SORT_KEYS: dict[str, list[str]] = {
+    "events": ["event_name"],  # events list sorted in-place
+    "events_top": ["name"],
+    "trend_daily": ["date"],
+    "trend_weekly": ["date"],
+    "trend_monthly": ["date"],
+    "retention": ["cohort_date"],
+    "conversion": [],  # single-row list
+    "paths": ["path"],
+    "pivot_by_event": ["dimension_value"],
+    "pivot_by_country": ["dimension_value"],
+    "pivot_by_device": ["dimension_value"],
+    "sessions_summary": [],  # single-row list
+    "raw_events_page1": ["timestamp", "user_id", "event_name"],
+    "raw_sessions_page1": ["session_start", "user_id"],
+}
+
+
+def normalize(endpoint_key: str, response: dict) -> dict:
+    """Return a normalized copy of *response* for *endpoint_key*."""
+    result = _deep_copy_normalize(response)
+    sort_keys = _SORT_KEYS.get(endpoint_key, [])
+
+    # Special case: events list is a flat list of strings
+    if endpoint_key == "events" and "events" in result:
+        result["events"] = sorted(result["events"])
+        return result
+
+    if "data" in result and isinstance(result["data"], list) and sort_keys:
+        result["data"] = sorted(
+            result["data"],
+            key=lambda row: tuple(str(row.get(k, "")) for k in sort_keys),
+        )
+
+    return result
+
+
+def _deep_copy_normalize(obj: Any) -> Any:
+    """Recursively copy *obj*, rounding floats to 4 decimal places."""
+    if isinstance(obj, float):
+        return round(obj, 4)
+    if isinstance(obj, dict):
+        return {k: _deep_copy_normalize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_deep_copy_normalize(item) for item in obj]
+    return obj
+
+
+def load_golden(golden_dir: str, endpoint_key: str) -> dict:
+    """Load and normalize a committed golden file."""
+    import pathlib
+
+    path = pathlib.Path(golden_dir) / f"{endpoint_key}.json"
+    raw = json.loads(path.read_text())
+    return normalize(endpoint_key, raw)
+
+
+def save_golden(golden_dir: str, endpoint_key: str, response: dict) -> None:
+    """Normalize *response* and write it to the golden file."""
+    import pathlib
+
+    normalized = normalize(endpoint_key, response)
+    path = pathlib.Path(golden_dir) / f"{endpoint_key}.json"
+    path.write_text(json.dumps(normalized, indent=2, default=str) + "\n")
