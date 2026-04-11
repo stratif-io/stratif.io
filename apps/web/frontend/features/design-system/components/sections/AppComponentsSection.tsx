@@ -13,6 +13,7 @@ import { GlobalFilters, GranularityControl } from '@/components/GlobalFilters'
 import { QueryStatusIndicator } from '@/components/layout/QueryStatusIndicator'
 import { useAppStore } from '@/stores'
 import { DevCard } from '@/components/dev'
+import { RetentionLearnPanel } from '@/features/analytics/retention/components/RetentionLearnPanel'
 import { subDays } from 'date-fns'
 import type { DateRange } from '@/types'
 
@@ -316,6 +317,12 @@ export function AppComponentsSection() {
               Multi-query card
             </div>
           </DevCard>
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="RetentionLearnPanel">
+        <div className="border rounded-lg overflow-hidden" style={{ maxWidth: 320, height: 500 }}>
+          <RetentionLearnPanel onClose={() => {}} />
         </div>
       </ComponentRow>
 
