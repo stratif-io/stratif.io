@@ -29,11 +29,7 @@ describe('useRetentionData', () => {
     vi.clearAllMocks()
   })
 
-  it('avgMilestones skips null values when computing average', async () => {
-    // cohort 1: milestone_values [30, null, null]  (only D1 reached)
-    // cohort 2: milestone_values [20, 40, null]    (D1 and D7 reached)
-    // expected avgMilestones: [25, 40, null]
-
+  it('returns retentionData with nullable milestone_values', async () => {
     const mockResponse = {
       sql: undefined,
       granularity: 'day',
@@ -70,17 +66,14 @@ describe('useRetentionData', () => {
       { wrapper: createWrapper() }
     )
 
-    // Wait for the hook to settle
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    // avgMilestones should be:
-    // - milestone 0 (D1): (30 + 20) / 2 = 25
-    // - milestone 1 (D7): 40 / 1 = 40 (skip null from cohort 1)
-    // - milestone 2 (D30): null (all values are null)
-    expect(result.current.avgMilestones).toEqual([25, 40, null])
+    expect(result.current.retentionData).toHaveLength(2)
+    expect(result.current.retentionData[0].milestone_values).toEqual([30, null, null])
+    expect(result.current.retentionData[1].milestone_values).toEqual([20, 40, null])
   })
 
-  it('returns all nulls when no cohorts', async () => {
+  it('returns empty array when no cohorts', async () => {
     const mockResponse = {
       sql: undefined,
       granularity: 'day',
@@ -106,6 +99,8 @@ describe('useRetentionData', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.avgMilestones).toEqual([null, null, null])
+    expect(result.current.retentionData).toHaveLength(0)
+    expect(result.current.milestones).toEqual([1, 7, 30])
+    expect(result.current.totalAvailable).toBe(0)
   })
 })
