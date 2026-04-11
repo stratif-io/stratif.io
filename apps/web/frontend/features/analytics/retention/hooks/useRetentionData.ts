@@ -20,7 +20,7 @@ export interface UseRetentionDataReturn {
   isError: boolean
   error: Error | null
   refetch: () => void
-  avgMilestones: number[]
+  avgMilestones: (number | null)[]
   totalAvailable: number
   sql: string | string[] | undefined
 }
@@ -58,12 +58,14 @@ export function useRetentionData({
   const totalAvailable = retentionResponse?.total_available_cohorts ?? 0
 
   const avgMilestones = useMemo(() => {
-    if (retentionData.length === 0) return milestones.map(() => 0)
-    return milestones.map(
-      (_, i) =>
-        retentionData.reduce((acc, r) => acc + (r.milestone_values[i] ?? 0), 0) /
-        retentionData.length
-    )
+    if (retentionData.length === 0) return milestones.map(() => null)
+    return milestones.map((_, idx) => {
+      const vals = retentionData
+        .map((c) => c.milestone_values[idx])
+        .filter((v): v is number => v !== null && v !== undefined)
+      if (vals.length === 0) return null
+      return vals.reduce((a, b) => a + b, 0) / vals.length
+    })
   }, [retentionData, milestones])
 
   return {
