@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.2](https://github.com/stratif-io/stratif.io/compare/v0.25.1...v0.25.2) (2026-04-11)
+
+
+### Bug Fixes
+
+* final end-to-end automated release loop validation ([26d5be5](https://github.com/stratif-io/stratif.io/commit/26d5be5a3fe1df5d17a349cc5a7d3fd889808aca))
+* final end-to-end automated release loop validation ([997cb43](https://github.com/stratif-io/stratif.io/commit/997cb436b709d526077fe11b32b4666fc4d7e486))
+
 ## [0.25.1](https://github.com/stratif-io/stratif.io/compare/v0.25.0...v0.25.1) (2026-04-11)
 
 
