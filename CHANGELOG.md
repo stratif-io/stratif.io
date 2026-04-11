@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.1](https://github.com/stratif-io/stratif.io/compare/v0.23.0...v0.23.1) (2026-04-11)
+
+
+### Bug Fixes
+
+* migrate SeedConfig to pydantic-settings v2 SettingsConfigDict ([4cd44d7](https://github.com/stratif-io/stratif.io/commit/4cd44d7fa5da10dc0c12553836458a656b0a2b49))
+* migrate SeedConfig to pydantic-settings v2 SettingsConfigDict ([4e49e69](https://github.com/stratif-io/stratif.io/commit/4e49e693c5108eb6eb9482c173cbc6d1023df71d))
+
 ## [0.23.0](https://github.com/stratif-io/stratif.io/compare/v0.22.1...v0.23.0) (2026-04-11)
 
 
