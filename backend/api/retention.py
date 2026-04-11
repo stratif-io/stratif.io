@@ -1,6 +1,7 @@
 """Retention API endpoints."""
 
 import json
+from datetime import date as date_type
 from datetime import datetime
 from typing import Annotated
 
@@ -21,27 +22,27 @@ router = APIRouter(
 # ──────────────────────────────────────────────────────────────────────────────
 RETENTION_CONFIG: dict[str, dict] = {
     "day": {
-        "milestones": [1, 7, 14, 30, 90],  # days after cohort start
-        "max_units": 90,  # build series through day 90
+        "milestones": [1, 7, 30, 90],  # dropped D14
+        "max_units": 90,
         "unit_divisor": 1,
     },
     "week": {
-        "milestones": [1, 2, 3, 4, 12],  # weeks after cohort start
+        "milestones": [1, 2, 4, 12],  # dropped W3
         "max_units": 12,
         "unit_divisor": 7,
     },
     "month": {
-        "milestones": [1, 2, 3, 4, 5, 6],  # months after cohort start (30-day approx)
+        "milestones": [1, 2, 3, 6],  # dropped M4, M5
         "max_units": 6,
         "unit_divisor": 30,
     },
     "quarter": {
-        "milestones": [1, 2, 3, 4],  # quarters after cohort start (91-day approx)
+        "milestones": [1, 2, 3, 4],  # unchanged
         "max_units": 4,
         "unit_divisor": 91,
     },
     "year": {
-        "milestones": [1, 2, 3],  # years after cohort start (365-day approx)
+        "milestones": [1, 2, 3],  # unchanged
         "max_units": 3,
         "unit_divisor": 365,
     },
@@ -119,10 +120,9 @@ def get_retention(
     # params order: filter (for first_seen subquery) + filter (for activity) + date range
     params = filter_params + filter_params + date_params
 
-    query = f"""
+    # ── Series query (per-unit counts for sparkline) ──────────────────────────
+    series_query = f"""
         WITH first_seen AS (
-            -- Global first event per user (respects dimension filters but no date range).
-            -- This ensures only truly new users within the range enter cohorts.
             SELECT
                 user_id,
                 MIN({day_col}) AS first_seen
@@ -131,7 +131,6 @@ def get_retention(
             GROUP BY user_id
         ),
         signups AS (
-            -- Restrict to users whose very first event falls within the date range.
             SELECT user_id, first_seen AS cohort_date
             FROM first_seen
             {cohort_date_where}
@@ -165,7 +164,6 @@ def get_retention(
                 ca.unit_since_signup,
                 COUNT(DISTINCT ca.user_id) AS returning_users
             FROM cohort_activity ca
-            JOIN cohort_sizes cs ON ca.cohort_date = cs.cohort_date
             GROUP BY ca.cohort_date, ca.unit_since_signup
         )
         SELECT
@@ -178,11 +176,75 @@ def get_retention(
         ORDER BY cs.cohort_date DESC, rc.unit_since_signup ASC
     """
 
-    rows = db.execute(query, params)
+    # ── Bracket milestone query (cumulative per-milestone counts) ─────────────
+    # Generates: MAX(CASE WHEN unit_since_signup BETWEEN 1 AND m THEN 1 ELSE 0 END) AS hit_m
+    case_exprs = ",\n            ".join(
+        f"MAX(CASE WHEN ca.unit_since_signup BETWEEN 1 AND {m} THEN 1 ELSE 0 END) AS hit_{m}"
+        for m in milestones
+    )
+    sum_exprs = ", ".join(f"SUM(hit_{m}) AS cnt_{m}" for m in milestones)
 
-    # ── Aggregate into per-cohort dicts (insertion order = DESC from SQL) ──────
+    bracket_query = f"""
+        WITH first_seen AS (
+            SELECT
+                user_id,
+                MIN({day_col}) AS first_seen
+            FROM events
+            {filter_where}
+            GROUP BY user_id
+        ),
+        signups AS (
+            SELECT user_id, first_seen AS cohort_date
+            FROM first_seen
+            {cohort_date_where}
+        ),
+        user_activity AS (
+            SELECT DISTINCT
+                user_id,
+                {date_trunc("day", "timestamp", dialect)} AS activity_date
+            FROM events
+            {filter_where}
+        ),
+        cohort_activity AS (
+            SELECT
+                s.user_id,
+                s.cohort_date,
+                {unit_expr} AS unit_since_signup
+            FROM signups s
+            LEFT JOIN user_activity a ON s.user_id = a.user_id
+            WHERE a.activity_date >= s.cohort_date
+        ),
+        milestone_flags AS (
+            SELECT
+                s.cohort_date,
+                s.user_id,
+                {case_exprs}
+            FROM signups s
+            LEFT JOIN cohort_activity ca
+                ON s.user_id = ca.user_id AND s.cohort_date = ca.cohort_date
+            GROUP BY s.cohort_date, s.user_id
+        )
+        SELECT cohort_date, {sum_exprs}
+        FROM milestone_flags
+        GROUP BY cohort_date
+        ORDER BY cohort_date DESC
+    """
+
+    series_rows = db.execute(series_query, params)
+    bracket_rows = db.execute(bracket_query, params)
+
+    # ── Build bracket lookup: cohort_date → {milestone: count} ───────────────
+    bracket_lookup: dict[str, dict[int, int]] = {}
+    for brow in bracket_rows:
+        raw_date = brow[0]
+        key = raw_date.isoformat() if isinstance(raw_date, datetime) else str(raw_date)
+        bracket_lookup[key] = {
+            m: int(brow[i + 1] or 0) for i, m in enumerate(milestones)
+        }
+
+    # ── Aggregate series rows into per-cohort dicts ───────────────────────────
     cohorts: dict = {}
-    for row in rows:
+    for row in series_rows:
         raw_date, cohort_size, unit, count = row
         key = raw_date.isoformat() if isinstance(raw_date, datetime) else str(raw_date)
         if key not in cohorts:
@@ -193,21 +255,44 @@ def get_retention(
     def safe_pct(count: int, total: int) -> float:
         return round((count / total) * 100, 1) if total > 0 else 0.0
 
+    today = date_type.today()
+
+    def is_reached(cohort_date_str: str, milestone: int) -> bool:
+        """True if enough time has passed for this cohort to have reached the milestone."""
+        d = date_type.fromisoformat(cohort_date_str[:10])
+        if gran in ("month", "quarter", "year"):
+            # Use calendar months to match SQL's date_diff_months arithmetic
+            month_diff = (today.year - d.year) * 12 + (today.month - d.month)
+            if gran == "month":
+                return month_diff >= milestone
+            elif gran == "quarter":
+                return month_diff >= milestone * 3
+            else:  # year
+                return month_diff >= milestone * 12
+        else:
+            # day/week: floor division matches SQL's FLOOR(days / unit_divisor)
+            return (today - d).days >= milestone * unit_divisor
+
     data = []
     for cohort_date_str, info in cohorts.items():
         cohort_size = info["cohort_size"]
         units_data = info["units"]
+        bracket_data = bracket_lookup.get(cohort_date_str, {})
 
-        # Unit 0 defaults to cohort_size (user was active in their signup unit)
-        def unit_pct(u: int, _units_data=units_data, _cohort_size=cohort_size) -> float:
+        def unit_pct(
+            u: int, _units_data: dict = units_data, _cohort_size: int = cohort_size
+        ) -> float:
             count = _units_data.get(u, _cohort_size if u == 0 else 0)
             return safe_pct(count, _cohort_size)
 
-        # Always return the full series up to max_units — frontend decides what to show
-        retention_series = [
-            unit_pct(u, units_data, cohort_size) for u in range(max_units + 1)
-        ]
-        milestone_values = [unit_pct(m, units_data, cohort_size) for m in milestones]
+        retention_series = [unit_pct(u) for u in range(max_units + 1)]
+
+        milestone_values: list[float | None] = []
+        for m in milestones:
+            if not is_reached(cohort_date_str, m):
+                milestone_values.append(None)
+            else:
+                milestone_values.append(safe_pct(bracket_data.get(m, 0), cohort_size))
 
         data.append(
             {
@@ -219,7 +304,7 @@ def get_retention(
         )
 
     return {
-        "sql": interpolate_sql(query, params),
+        "sql": interpolate_sql(series_query, params),
         "granularity": gran,
         "milestones": milestones,
         "total_available_cohorts": len(data),
