@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getCellClass } from '../retention-benchmarks'
+import { getCellClass, milestoneTooltip } from '../retention-benchmarks'
 
 describe('getCellClass', () => {
   it('returns success class when value meets good threshold', () => {
@@ -47,5 +47,27 @@ describe('getCellClass', () => {
     // month_6 good=40 ok=15 — value 41 should be success
     const result = getCellClass(41, 'month', 6)
     expect(result.container).toContain('success')
+  })
+})
+
+describe('milestoneTooltip', () => {
+  it('uses singular form for milestone 1', () => {
+    const tip = milestoneTooltip('day', 1)
+    expect(tip).toBe('Returned in day 1 after signup. Good ≥ 25% · Average ≥ 10%')
+  })
+
+  it('uses plural form for milestone > 1', () => {
+    const tip = milestoneTooltip('day', 7)
+    expect(tip).toBe('Returned at least once in the first 7 days. Good ≥ 45% · Average ≥ 20%')
+  })
+
+  it('uses correct unit for week granularity', () => {
+    const tip = milestoneTooltip('week', 1)
+    expect(tip).toBe('Returned in week 1 after signup. Good ≥ 40% · Average ≥ 20%')
+  })
+
+  it('uses correct unit for month granularity', () => {
+    const tip = milestoneTooltip('month', 3)
+    expect(tip).toBe('Returned at least once in the first 3 months. Good ≥ 50% · Average ≥ 22%')
   })
 })
