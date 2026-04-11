@@ -233,7 +233,9 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
           {/* Average row */}
           {orderedData.length > 1 && (
             <TableRow className="border-t-2 bg-muted/30 font-semibold">
-              <TableCell className="text-muted-foreground text-sm font-semibold">Average</TableCell>
+              <TableHead scope="row" className="text-muted-foreground text-sm font-semibold">
+                Average
+              </TableHead>
               <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
                 {Math.round(
                   orderedData.reduce((s, r) => s + r.cohort_size, 0) / orderedData.length
