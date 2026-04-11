@@ -5,6 +5,7 @@ Requires DuckDB to be enabled in connections.yaml.
 
 import pytest
 
+from backend.tests.deterministic.conftest import DET_CONFIG
 from backend.tests.deterministic.dataset import EVENTS, TABLE_NAME
 from backend.tests.deterministic.loader import (
     close_connection,
@@ -13,12 +14,11 @@ from backend.tests.deterministic.loader import (
     insert_rows,
     open_write_connection,
 )
-from backend.tests.e2e.conftest import E2E_CONFIG
 
 
 @pytest.fixture(scope="module")
 def duckdb_write_conn():
-    cfg = E2E_CONFIG.get("duckdb", {})
+    cfg = DET_CONFIG.get("duckdb", {})
     if not cfg.get("enabled", False):
         pytest.skip("duckdb not enabled in connections.yaml")
     backend, conn = open_write_connection("duckdb", cfg["credentials"])

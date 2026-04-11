@@ -173,9 +173,11 @@ def deterministic_setup(client, request):
     # --- Teardown ---
     # Reopen a write connection to drop the table.
     with contextlib.suppress(Exception):
-        _, teardown_conn = open_write_connection(db_type, cfg["credentials"])
-        drop_table(backend_obj, teardown_conn)
-        close_connection(backend_obj, teardown_conn)
+        teardown_backend, teardown_conn = open_write_connection(
+            db_type, cfg["credentials"]
+        )
+        drop_table(teardown_backend, teardown_conn)
+        close_connection(teardown_backend, teardown_conn)
     client.delete(f"/api/connections/{connection_id}")
     cls.connection_id = None
 
