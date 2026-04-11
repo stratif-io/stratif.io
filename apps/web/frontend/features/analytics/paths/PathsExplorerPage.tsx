@@ -9,10 +9,21 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ArrowRight, Clock, GitFork, Layers, RotateCcw, Settings2, Users, Zap } from 'lucide-react'
+import {
+  ArrowRight,
+  BookOpen,
+  Clock,
+  GitFork,
+  Layers,
+  RotateCcw,
+  Settings2,
+  Users,
+  Zap,
+} from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { usePathExplorer } from './hooks/usePathExplorer'
 import { PathFunnelDialog } from './components/PathFunnelDialog'
+import { PathsLearnPanel } from './components/PathsLearnPanel'
 import { Badge } from '@/components/ui/badge'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { NoConnectionGuard } from '@/components/ui/no-connection-guard'
@@ -179,6 +190,7 @@ export function PathsExplorerPage() {
     : 20
   const [selectedPath, setSelectedPath] = useState<PathAnalysisData | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [learnOpen, setLearnOpen] = useState(false)
 
   const pathLengthActive = minPathLength !== null || maxPathLength !== null
   const effectiveMin = minPathLength ?? 2
@@ -463,62 +475,92 @@ export function PathsExplorerPage() {
             )}
 
             <div className="flex-1" />
+
+            {/* Learn */}
+            <button
+              onClick={() => setLearnOpen((v) => !v)}
+              aria-pressed={learnOpen}
+              className={cn(
+                'flex items-center gap-1.5 h-10 px-3 rounded-lg border shadow-sm text-sm font-medium transition-colors',
+                learnOpen
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-muted-foreground hover:bg-accent hover:text-foreground'
+              )}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Learn
+            </button>
           </div>
 
-          {/* Content */}
-          <DevCard sql={sql}>
-            <div className="flex-1 overflow-y-auto">
-              {isLoading || eventsLoading ? (
-                <LoadingState message="Analyzing paths…" />
-              ) : isError ? (
-                <QueryError error={error} />
-              ) : pathData.length === 0 ? (
-                <EmptyState
-                  icon={GitFork}
-                  title="No paths found"
-                  description="Try broadening your filters — relax path length, remove start/end events, or expand the date range."
-                />
-              ) : (
-                <div className="space-y-2 p-3">
-                  <div className="flex items-center justify-between px-1">
-                    <p className="text-sm text-muted-foreground">
-                      Showing{' '}
-                      <span className="font-semibold text-foreground">{pathData.length}</span> of{' '}
-                      <span className="font-semibold text-foreground">{totalPaths}</span> paths —
-                      click a path to view its conversion funnel
-                    </p>
-                    <div className="flex gap-1.5">
-                      {startEvent && (
-                        <Badge variant="secondary" className="text-xs">
-                          From: {startEvent}
-                        </Badge>
-                      )}
-                      {endEvent && (
-                        <Badge variant="secondary" className="text-xs">
-                          To: {endEvent}
-                        </Badge>
-                      )}
+          {/* Content + Learn panel */}
+          <div className="flex flex-1 overflow-hidden">
+            <DevCard sql={sql} className="flex-1 min-w-0">
+              <div className="flex-1 overflow-y-auto">
+                {isLoading || eventsLoading ? (
+                  <LoadingState message="Analyzing paths…" />
+                ) : isError ? (
+                  <QueryError error={error} />
+                ) : pathData.length === 0 ? (
+                  <EmptyState
+                    icon={GitFork}
+                    title="No paths found"
+                    description="Try broadening your filters — relax path length, remove start/end events, or expand the date range."
+                  />
+                ) : (
+                  <div className="space-y-2 p-3">
+                    <div className="flex items-center justify-between px-1">
+                      <p className="text-sm text-muted-foreground">
+                        Showing{' '}
+                        <span className="font-semibold text-foreground">{pathData.length}</span> of{' '}
+                        <span className="font-semibold text-foreground">{totalPaths}</span> paths —
+                        click a path to view its conversion funnel
+                      </p>
+                      <div className="flex gap-1.5">
+                        {startEvent && (
+                          <Badge variant="secondary" className="text-xs">
+                            From: {startEvent}
+                          </Badge>
+                        )}
+                        {endEvent && (
+                          <Badge variant="secondary" className="text-xs">
+                            To: {endEvent}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {pathData.map((path, idx) => (
+                        <PathCard
+                          key={idx}
+                          path={path}
+                          rank={idx + 1}
+                          maxCount={maxCount}
+                          onClick={() => {
+                            setSelectedPath(path)
+                            setDialogOpen(true)
+                          }}
+                        />
+                      ))}
                     </div>
                   </div>
+                )}
+              </div>
+            </DevCard>
 
-                  <div className="space-y-2">
-                    {pathData.map((path, idx) => (
-                      <PathCard
-                        key={idx}
-                        path={path}
-                        rank={idx + 1}
-                        maxCount={maxCount}
-                        onClick={() => {
-                          setSelectedPath(path)
-                          setDialogOpen(true)
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
+            {/* Learn panel — slides in from the right */}
+            <div
+              className={cn(
+                'shrink-0 border-l border-border bg-card overflow-hidden',
+                'transition-[width] duration-300 ease-out',
+                learnOpen ? 'w-80' : 'w-0'
               )}
+            >
+              <div className="w-80 h-full">
+                <PathsLearnPanel onClose={() => setLearnOpen(false)} />
+              </div>
             </div>
-          </DevCard>
+          </div>
 
           <PathFunnelDialog
             path={selectedPath}
