@@ -11,7 +11,12 @@ Usage:
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
+
+# Matches "YYYY-MM-DD HH:MM:SS" (space separator) — SQLite returns this format
+# instead of the ISO-8601 "T" separator that DuckDB returns.
+_SPACE_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})$")
 
 # Sort key functions per endpoint key
 _SORT_KEYS: dict[str, list[str]] = {
@@ -22,7 +27,7 @@ _SORT_KEYS: dict[str, list[str]] = {
     "trend_monthly": ["date"],
     "retention": ["cohort_date"],
     "conversion": [],  # single-row list
-    "paths": ["path"],
+    "paths": ["path", "device_type", "count"],
     "pivot_by_event": ["dimension_value"],
     "pivot_by_country": ["dimension_value"],
     "pivot_by_device": ["dimension_value"],
@@ -33,8 +38,13 @@ _SORT_KEYS: dict[str, list[str]] = {
 
 
 def normalize(endpoint_key: str, response: dict) -> dict:
-    """Return a normalized copy of *response* for *endpoint_key*."""
+    """Return a normalized copy of *response* for *endpoint_key*.
+
+    The ``sql`` key is always stripped — it is dialect-specific and not
+    meaningful for cross-dialect correctness comparison.
+    """
     result = _deep_copy_normalize(response)
+    result.pop("sql", None)
     sort_keys = _SORT_KEYS.get(endpoint_key, [])
 
     # Special case: events list is a flat list of strings
@@ -52,9 +62,16 @@ def normalize(endpoint_key: str, response: dict) -> dict:
 
 
 def _deep_copy_normalize(obj: Any) -> Any:
-    """Recursively copy *obj*, rounding floats to 4 decimal places."""
+    """Recursively copy *obj*, rounding floats and normalizing timestamps."""
     if isinstance(obj, float):
         return round(obj, 4)
+    if isinstance(obj, str):
+        # Normalize "YYYY-MM-DD HH:MM:SS" → "YYYY-MM-DDTHH:MM:SS" so that
+        # SQLite's space-separated timestamps compare equal to DuckDB's ISO-8601.
+        m = _SPACE_TS_RE.match(obj)
+        if m:
+            return f"{m.group(1)}T{m.group(2)}"
+        return obj
     if isinstance(obj, dict):
         return {k: _deep_copy_normalize(v) for k, v in obj.items()}
     if isinstance(obj, list):
