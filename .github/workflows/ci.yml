@@ -46,8 +46,12 @@ jobs:
     name: Backend
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
@@ -56,8 +60,24 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      # On PRs: hard fail if developer forgot to run `uv lock`.
       - name: Check uv.lock is up to date
+        if: github.event_name == 'pull_request'
         run: uv lock --check
+
+      # On push to develop: auto-refresh uv.lock when release-please bumps
+      # pyproject.toml without regenerating the lockfile (known release flow gap).
+      - name: Refresh uv.lock if stale
+        if: github.event_name == 'push'
+        run: |
+          uv lock
+          if ! git diff --quiet uv.lock; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add uv.lock
+            git commit -m "chore: refresh uv.lock after version bump [skip ci]"
+            git push
+          fi
 
       - name: Install dependencies
         run: uv sync
