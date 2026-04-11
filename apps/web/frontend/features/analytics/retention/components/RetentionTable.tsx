@@ -11,15 +11,16 @@ import { cn } from '@/lib/utils'
 import type { RetentionCohort } from '@/types'
 import type { RetentionGranularity } from '../hooks/useRetentionData'
 
-function RetentionMiniBar({ values }: { values: number[] }) {
-  const max = Math.max(...values, 1)
+function RetentionMiniBar({ values }: { values: (number | null)[] }) {
+  const numericValues = values.filter((v): v is number => v !== null)
+  const max = numericValues.length > 0 ? Math.max(...numericValues, 1) : 1
   return (
     <div className="flex items-end gap-0.5 h-6 w-18">
       {values.map((v, i) => (
         <div
           key={i}
-          className={cn('flex-1 rounded-sm', v > 0 ? 'bg-primary/60' : 'bg-muted/40')}
-          style={{ height: `${Math.max((v / max) * 100, v > 0 ? 15 : 8)}%` }}
+          className={cn('flex-1 rounded-sm', v && v > 0 ? 'bg-primary/60' : 'bg-muted/40')}
+          style={{ height: `${v ? Math.max((v / max) * 100, 15) : 8}%` }}
         />
       ))}
     </div>
@@ -66,11 +67,13 @@ function milestoneLabel(unit: number, granularity: RetentionGranularity): string
 export function RetentionTable({ data, granularity, milestones }: RetentionTableProps) {
   const avgMilestoneValues = useMemo(
     () =>
-      milestones.map((_, i) =>
-        data.length > 0
-          ? data.reduce((s, r) => s + (r.milestone_values[i] ?? 0), 0) / data.length
-          : 0
-      ),
+      milestones.map((_, i) => {
+        const vals = data
+          .map((r) => r.milestone_values[i])
+          .filter((v): v is number => v !== null && v !== undefined)
+        if (vals.length === 0) return 0
+        return vals.reduce((s, v) => s + v, 0) / vals.length
+      }),
     [data, milestones]
   )
 
@@ -116,18 +119,22 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
                   <RetentionMiniBar values={row.milestone_values} />
                 </TableCell>
                 {milestones.map((unit, i) => {
-                  const pct = row.milestone_values[i] ?? 0
+                  const pct = row.milestone_values[i]
                   return (
                     <TableCell key={unit} className="text-center p-1.5">
-                      <div
-                        className={cn(
-                          'rounded-md px-2 py-1 text-sm tabular-nums font-medium transition-colors mx-auto w-fit',
-                          pct >= 20 ? 'text-success' : 'text-foreground'
-                        )}
-                        style={getCellStyle(pct)}
-                      >
-                        {pct.toFixed(1)}%
-                      </div>
+                      {pct === null ? (
+                        <div className="text-xs text-muted-foreground">—</div>
+                      ) : (
+                        <div
+                          className={cn(
+                            'rounded-md px-2 py-1 text-sm tabular-nums font-medium transition-colors mx-auto w-fit',
+                            pct >= 20 ? 'text-success' : 'text-foreground'
+                          )}
+                          style={getCellStyle(pct)}
+                        >
+                          {pct.toFixed(1)}%
+                        </div>
+                      )}
                     </TableCell>
                   )
                 })}
