@@ -199,7 +199,7 @@ echo ""
 echo "  stratif.io is running at http://localhost:$PORT"
 echo "  Press Ctrl+C to stop."
 echo ""
-exec STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" backend.main:app --host 0.0.0.0 --port $PORT
+exec STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" backend.main:app --host 0.0.0.0 --port $PORT --log-level error
 STARTSH
 chmod +x "$INSTALL_DIR/start.sh"
 
@@ -215,7 +215,7 @@ fi
 "$INSTALL_DIR/.venv/bin/python" -m seeders.bootstrap_connection --path "$SAMPLE_DB" >/dev/null 2>&1
 
 info "Starting server on port $PORT"
-STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" backend.main:app --host 0.0.0.0 --port "$PORT" &
+STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" backend.main:app --host 0.0.0.0 --port "$PORT" --log-level error &
 SERVER_PID=$!
 
 ATTEMPTS=0
