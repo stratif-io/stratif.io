@@ -23,6 +23,7 @@ jobs:
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          target-branch: main
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
@@ -113,49 +114,40 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # When release_created=false, release-please has only created/updated the
-      # version-bump PR on develop but not yet merged it. We auto-merge that PR
-      # and push develop→main to trigger the actual release on the next run.
-      - name: Auto-merge release-please develop PR (if no release yet)
+      # When release_created=false: release-please created/updated a version bump
+      # PR targeting main. Auto-merge it — the resulting push to main triggers a
+      # new workflow run where release-please will see the bumped version and set
+      # release_created=true, firing the actual release.
+      - name: Auto-merge release-please PR into main
         if: ${{ needs.release-please.outputs.release_created != 'true' }}
         run: |
           PR_NUMBER=$(gh pr list \
-            --base develop \
+            --base main \
             --label "autorelease: pending" \
             --json number,headRefName \
             --jq '[.[] | select(.headRefName | startswith("release-please--"))] | .[0].number // empty')
 
           if [ -z "$PR_NUMBER" ]; then
-            echo "No pending release-please PR found on develop — nothing to do."
+            echo "No pending release-please PR on main — no unreleased feat/fix commits. Done."
             exit 0
           fi
 
-          echo "Merging release-please PR #${PR_NUMBER} into develop…"
+          echo "Merging release-please PR #${PR_NUMBER} into main…"
           gh pr merge "$PR_NUMBER" --merge --admin
-
-          echo "Pushing develop → main to trigger release…"
-          git fetch origin develop
-          # Use --force-with-lease: main may have diverged from develop due to
-          # merge commits created by sync PRs or uv.lock refresh commits.
-          # All meaningful content is already in develop; force is safe here.
-          git push --force-with-lease origin origin/develop:main
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # When release_created=true, the GitHub release is live. Refresh uv.lock
-      # on main (release-please bumped pyproject.toml without regenerating it)
-      # and open a sync PR so the version bump flows back into develop.
+      # When release_created=true: the GitHub release is live. Refresh uv.lock on
+      # main (release-please bumps pyproject.toml without regenerating it), then
+      # open a sync PR so the version bump flows back into develop.
       - name: Install uv
         if: ${{ needs.release-please.outputs.release_created == 'true' }}
         uses: astral-sh/setup-uv@v5
 
-      - name: Refresh lock file
-        if: ${{ needs.release-please.outputs.release_created == 'true' }}
-        run: uv lock
-
-      - name: Commit updated lock file (if changed)
+      - name: Refresh uv.lock (if pyproject.toml was bumped)
         if: ${{ needs.release-please.outputs.release_created == 'true' }}
         run: |
+          uv lock
           if ! git diff --quiet uv.lock; then
             git add uv.lock
             git commit -m "chore: refresh uv.lock after release [skip ci]"
@@ -176,7 +168,6 @@ jobs:
               echo "Sync PR already exists — skipping."
             else
               echo "$OUTPUT"
-              echo "Failed to create sync PR."
               exit 1
             fi
           }
