@@ -65,6 +65,6 @@ describe('PathsExplorerPage', () => {
 
   it('renders the paths page title', () => {
     renderPage()
-    expect(screen.getByText('Paths')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Paths' })).toBeInTheDocument()
   })
 })
