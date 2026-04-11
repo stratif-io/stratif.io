@@ -44,7 +44,7 @@ def date_trunc(unit: str, col_expr: str, dialect: str = "duckdb") -> str:
         _sqlite_map: dict[str, str] = {
             "hour": f"STRFTIME('%Y-%m-%d %H:00:00', {col_expr})",
             "day": f"DATE({col_expr})",
-            "week": f"DATE({col_expr}, 'weekday 1', '-6 days')",  # ISO Mon
+            "week": f"DATE({col_expr}, 'weekday 0', '-6 days')",  # ISO Mon
             "month": f"STRFTIME('%Y-%m-01', {col_expr})",
             "quarter": (
                 f"STRFTIME('%Y-', {col_expr}) || "
