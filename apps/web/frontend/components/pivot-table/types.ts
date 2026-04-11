@@ -29,6 +29,11 @@ export interface PivotColDefsResponse {
   columnDefs: any[]
 }
 
+export interface SortItem {
+  colId: string
+  sort: 'asc' | 'desc'
+}
+
 export interface PivotRowsRequest {
   startDate?: string
   endDate?: string
@@ -38,6 +43,7 @@ export interface PivotRowsRequest {
   rowGroups: ZoneCol[]
   pivotCols: ZoneCol[]
   valueCols: ZoneCol[]
+  sortModel?: SortItem[]
 }
 
 export interface PivotRowsResponse {
