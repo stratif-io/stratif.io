@@ -3,7 +3,7 @@ import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
 import { MetricCardSkeleton } from '@/components/ui/loading-state'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Settings2, BookOpen } from 'lucide-react'
+import { Settings2 } from 'lucide-react'
 import { formatMetricValue, computePctChange, formatPeriodRange } from '@/lib/format-metric'
 import { cn } from '@/lib/utils'
 import type { MissionControlResponse, Granularity } from '@/types'
@@ -21,8 +21,6 @@ export interface MissionControlGridProps {
   resetToDefault: () => void
   heroMetric?: TrendMetric
   onHeroChange?: (metric: TrendMetric) => void
-  learnOpen?: boolean
-  onLearnToggle?: () => void
 }
 
 // Per-metric display config
@@ -123,8 +121,6 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   resetToDefault,
   heroMetric = 'total_events',
   onHeroChange: setHeroMetric = () => {},
-  learnOpen = false,
-  onLearnToggle = () => {},
 }: MissionControlGridProps) {
   const granularity = useAppStore((s) => s.granularity)
 
@@ -237,22 +233,6 @@ export const MissionControlGrid = memo(function MissionControlGrid({
 
       {/* RIGHT: Categorized mini-grid */}
       <div ref={rightColRef} className="flex flex-col gap-5">
-        {/* Learn toggle */}
-        <div className="flex justify-end -mb-2">
-          <button
-            onClick={onLearnToggle}
-            aria-pressed={learnOpen}
-            className={cn(
-              'flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all',
-              learnOpen
-                ? 'border-primary bg-primary/10 text-primary font-medium'
-                : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
-            )}
-          >
-            <BookOpen className="h-3 w-3" />
-            Learn
-          </button>
-        </div>
         {CATEGORIES.map(({ label, metrics }) => {
           const visibleMetrics = metrics.filter((k) => isPinned(k))
           if (visibleMetrics.length === 0) return null
