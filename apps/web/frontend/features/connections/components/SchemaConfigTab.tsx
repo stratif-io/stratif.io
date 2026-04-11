@@ -287,20 +287,20 @@ function PendingDetectionRow({
 }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="flex-1 h-8 font-mono text-sm px-3 rounded-md border border-amber-400/60 bg-amber-50 dark:bg-amber-950/20 text-foreground truncate flex items-center">
+      <span className="flex-1 h-8 font-mono text-sm px-3 rounded-md border border-warning/60 bg-warning/5 text-foreground truncate flex items-center">
         {pending.proposedColumn}
       </span>
       <button
         aria-label={`Accept ${pending.label}`}
         onClick={onAccept}
-        className="h-6 w-6 flex items-center justify-center rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
+        className="h-8 w-8 flex items-center justify-center rounded text-success hover:bg-success/10"
       >
         <Check className="h-3.5 w-3.5" />
       </button>
       <button
         aria-label={`Reject ${pending.label}`}
         onClick={onReject}
-        className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        className="h-8 w-8 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
       >
         <X className="h-3.5 w-3.5" />
       </button>
@@ -331,9 +331,7 @@ function FilterToggle({
       <span
         className={cn(
           'text-[9px] font-medium transition-colors',
-          enabled
-            ? 'text-teal-600 dark:text-teal-400'
-            : 'text-muted-foreground/40 group-hover:text-muted-foreground/70'
+          enabled ? 'text-primary' : 'text-muted-foreground/40 group-hover:text-muted-foreground/70'
         )}
       >
         filter
@@ -341,14 +339,12 @@ function FilterToggle({
       <span
         className={cn(
           'relative inline-flex w-6 h-3.5 rounded-full transition-colors shrink-0',
-          enabled
-            ? 'bg-teal-600 dark:bg-teal-500'
-            : 'bg-muted-foreground/20 group-hover:bg-muted-foreground/30'
+          enabled ? 'bg-primary' : 'bg-muted-foreground/20 group-hover:bg-muted-foreground/30'
         )}
       >
         <span
           className={cn(
-            'absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow-sm transition-transform',
+            'absolute top-0.5 w-2.5 h-2.5 rounded-full bg-primary-foreground shadow-sm transition-transform',
             enabled ? 'translate-x-[11px]' : 'translate-x-0.5'
           )}
         />
@@ -376,22 +372,20 @@ function SectionHeader({
       onClick={onToggle}
       className={cn(
         'w-full flex items-center gap-2 px-3 py-2 transition-colors text-left',
-        open
-          ? 'bg-teal-50 dark:bg-teal-950/20 hover:bg-teal-100/60 dark:hover:bg-teal-950/30'
-          : 'bg-muted/20 hover:bg-muted/30'
+        open ? 'bg-primary/5 hover:bg-primary/10' : 'bg-muted/20 hover:bg-muted/30'
       )}
     >
       <ChevronDown
         className={cn(
           'h-3.5 w-3.5 shrink-0 transition-transform duration-150',
-          open ? 'text-teal-700 dark:text-teal-400' : 'text-muted-foreground',
+          open ? 'text-primary' : 'text-muted-foreground',
           !open && '-rotate-90'
         )}
       />
       <span
         className={cn(
           'text-xs font-semibold flex-1',
-          open ? 'text-teal-900 dark:text-teal-200' : 'text-muted-foreground'
+          open ? 'text-foreground' : 'text-muted-foreground'
         )}
       >
         {title}
