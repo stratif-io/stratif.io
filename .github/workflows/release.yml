@@ -164,17 +164,20 @@ jobs:
       - name: Open sync PR (main → develop)
         if: ${{ needs.release-please.outputs.release_created == 'true' }}
         run: |
-          if ! gh pr create \
+          OUTPUT=$(gh pr create \
             --title "chore: sync main → develop after release" \
             --body "Automated PR to sync version bump and changelog from main back into develop." \
             --base develop \
-            --head main; then
-            if gh pr list --head main --base develop --json number --jq '.[0].number' | grep -q .; then
+            --head main 2>&1) && echo "$OUTPUT" || {
+            if echo "$OUTPUT" | grep -q "No commits between"; then
+              echo "develop and main are identical — no sync PR needed."
+            elif echo "$OUTPUT" | grep -qiE "already exists|A pull request for"; then
               echo "Sync PR already exists — skipping."
             else
+              echo "$OUTPUT"
               echo "Failed to create sync PR."
               exit 1
             fi
-          fi
+          }
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
