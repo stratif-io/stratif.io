@@ -481,13 +481,13 @@ export function PathsExplorerPage() {
               onClick={() => setLearnOpen((v) => !v)}
               aria-pressed={learnOpen}
               className={cn(
-                'flex items-center gap-1.5 h-10 px-3 rounded-lg border shadow-sm text-sm font-medium transition-colors',
+                'flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all',
                 learnOpen
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-muted-foreground hover:bg-accent hover:text-foreground'
+                  ? 'border-primary bg-primary/10 text-primary font-medium'
+                  : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
               )}
             >
-              <BookOpen className="h-3.5 w-3.5" />
+              <BookOpen className="h-3 w-3" />
               Learn
             </button>
           </div>

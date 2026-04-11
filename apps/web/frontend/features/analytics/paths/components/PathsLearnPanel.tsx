@@ -31,6 +31,16 @@ export function PathsLearnPanel({ onClose }: PathsLearnPanelProps) {
           it occurred.
         </p>
 
+        {/* No-gap callout */}
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5">
+          <p className="text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+            <span className="font-semibold">Events must be consecutive.</span> A → B → C only counts
+            if B happened immediately after A and C immediately after B, with no other event in
+            between. There are no gaps allowed — the sequence must appear as an unbroken subsequence
+            in the user's event stream.
+          </p>
+        </div>
+
         {/* Metrics */}
         <div className="space-y-2">
           <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
