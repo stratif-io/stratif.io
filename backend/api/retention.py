@@ -96,43 +96,52 @@ def get_retention(
         unit_expr = f"FLOOR(({days_diff}) / {unit_divisor})"
 
     # ── WHERE clauses ──────────────────────────────────────────────────────────
-    cohort_clauses: list[str] = []
-    cohort_params: list = []
-
-    if start_date:
-        cohort_clauses.append("timestamp >= ?")
-        cohort_params.append(to_sql_datetime(start_date, "00:00:00"))
-    if end_date:
-        cohort_clauses.append("timestamp <= ?")
-        cohort_params.append(to_sql_datetime(end_date, "23:59:59"))
-
+    # Dimension filters apply to both the cohort scan and the activity scan.
     filter_clauses: list[str] = []
     filter_params: list = []
     if filters:
         filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
-        cohort_clauses.extend(filter_clauses)
-        cohort_params.extend(filter_params)
 
-    cohort_where = ("WHERE " + " AND ".join(cohort_clauses)) if cohort_clauses else ""
-    activity_where = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+    filter_where = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
 
-    params = cohort_params + filter_params
+    # Date-range params used to restrict which users qualify as "new" cohort members.
+    date_params: list = []
+    date_clauses: list[str] = []
+    if start_date:
+        date_clauses.append("first_seen >= ?")
+        date_params.append(to_sql_datetime(start_date, "00:00:00"))
+    if end_date:
+        date_clauses.append("first_seen <= ?")
+        date_params.append(to_sql_datetime(end_date, "23:59:59"))
+
+    cohort_date_where = ("WHERE " + " AND ".join(date_clauses)) if date_clauses else ""
+
+    # params order: filter (for first_seen subquery) + filter (for activity) + date range
+    params = filter_params + filter_params + date_params
 
     query = f"""
-        WITH signups AS (
+        WITH first_seen AS (
+            -- Global first event per user (respects dimension filters but no date range).
+            -- This ensures only truly new users within the range enter cohorts.
             SELECT
                 user_id,
-                MIN({day_col}) AS cohort_date
+                MIN({day_col}) AS first_seen
             FROM events
-            {cohort_where}
+            {filter_where}
             GROUP BY user_id
+        ),
+        signups AS (
+            -- Restrict to users whose very first event falls within the date range.
+            SELECT user_id, first_seen AS cohort_date
+            FROM first_seen
+            {cohort_date_where}
         ),
         user_activity AS (
             SELECT DISTINCT
                 user_id,
                 {date_trunc("day", "timestamp", dialect)} AS activity_date
             FROM events
-            {activity_where}
+            {filter_where}
         ),
         cohort_activity AS (
             SELECT
