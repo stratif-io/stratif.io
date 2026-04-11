@@ -351,7 +351,7 @@ export function PivotTable({
                   <col key={h} style={{ width: `${100 / headers.length}%` }} />
                 ))}
               </colgroup>
-              <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
+              <thead className="sticky top-0 z-10 bg-muted">
                 <tr>
                   {headers.map((h) => (
                     <th
