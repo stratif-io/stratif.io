@@ -108,8 +108,8 @@ function PathCard({ path, rank, maxCount, onClick }: PathCardProps) {
 
           <div className="h-1.5 bg-muted overflow-hidden">
             <div
-              className="h-full bg-primary/50 transition-[width] duration-500"
-              style={{ width: `${barWidth}%` }}
+              className="h-full w-full bg-primary/50 origin-left transition-transform duration-500"
+              style={{ transform: `scaleX(${barWidth / 100})` }}
             />
           </div>
 

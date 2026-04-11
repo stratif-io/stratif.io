@@ -63,9 +63,10 @@ export function PeoplePage() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [search, setSearch] = useState('')
   const [limit, setLimit] = useState(100)
-  const [col1Collapsed, setCol1Collapsed] = useState(false)
+  const isMobile = () => window.innerWidth < 768
+  const [col1Collapsed, setCol1Collapsed] = useState(() => isMobile())
   const [col2Collapsed, setCol2Collapsed] = useState(false)
-  const [col3Collapsed, setCol3Collapsed] = useState(false)
+  const [col3Collapsed, setCol3Collapsed] = useState(() => isMobile())
 
   const { users, isLoading, isError, error, hasNextPage, fetchNextPage, isFetchingNextPage } =
     usePeopleList()
@@ -97,7 +98,7 @@ export function PeoplePage() {
           {/* Column 1 — user list */}
           <div
             className={cn(
-              'border-r flex flex-col overflow-hidden transition-all duration-200',
+              'border-r flex flex-col overflow-hidden transition-all duration-200 shrink-0',
               col1Collapsed ? 'w-10' : 'w-[28%]'
             )}
           >
@@ -174,8 +175,8 @@ export function PeoplePage() {
           {/* Column 2 — timeline */}
           <div
             className={cn(
-              'flex flex-col overflow-hidden border-r transition-all duration-200',
-              col2Collapsed ? 'w-10' : 'w-[36%]'
+              'flex flex-col overflow-hidden border-r transition-all duration-200 min-w-0',
+              col2Collapsed ? 'w-10' : 'flex-1'
             )}
           >
             {col2Collapsed ? (

@@ -60,11 +60,11 @@ Stack: ${this.state.error?.stack}`
       return (
         <div className="flex min-h-screen items-center justify-center p-4 bg-muted/20">
           <Card className="w-full max-w-lg shadow-lg">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-destructive/20 to-destructive/5 ring-4 ring-destructive/10">
-                <AlertTriangle className="h-8 w-8 text-destructive" />
-              </div>
-              <CardTitle className="text-2xl">Something went wrong</CardTitle>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2.5 text-xl">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
+                Something went wrong
+              </CardTitle>
               <CardDescription>
                 The page ran into an error. Reloading usually fixes it.
               </CardDescription>
