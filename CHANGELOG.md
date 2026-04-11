@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.24.0](https://github.com/stratif-io/stratif.io/compare/v0.23.3...v0.24.0) (2026-04-11)
+
+
+### Features
+
+* **dashboard:** move Learn button to Mission Control page header ([f1d0152](https://github.com/stratif-io/stratif.io/commit/f1d0152f564e9037fe6bd1aa7d0d02c56f11d744))
+* **dashboard:** move Learn button to Mission Control page header ([42f9362](https://github.com/stratif-io/stratif.io/commit/42f936241cb8d97c8fa16eaca8958945d0d07f3e))
+
 ## [0.23.3](https://github.com/stratif-io/stratif.io/compare/v0.23.2...v0.23.3) (2026-04-11)
 
 
