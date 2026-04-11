@@ -1,10 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, Copy, ExternalLink, TrendingDown } from 'lucide-react'
+import { ChevronDown, TrendingDown } from 'lucide-react'
 import { Fragment, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -24,8 +22,6 @@ interface PathFunnelDialogProps {
 
 export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFunnelDialogProps) {
   const [methodologyOpen, setMethodologyOpen] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const navigate = useNavigate()
   const { activeFilters, activeConnectionId } = useAppStore()
   const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
@@ -68,69 +64,13 @@ export function PathFunnelDialog({ path, dateRange, open, onOpenChange }: PathFu
       (typeof steps)[0] | null
     >((worst, s) => (worst === null || s.step_conversion_rate < worst.step_conversion_rate ? s : worst), null)
 
-  const getPermalink = () => {
-    const params = new URLSearchParams({
-      events: events.join(','),
-      start_date: startDate || '',
-      end_date: endDate || '',
-    })
-    return `/funnel?${params.toString()}`
-  }
-
-  const copyPermalink = async () => {
-    await navigator.clipboard.writeText(`${window.location.origin}${getPermalink()}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const openFullPage = () => {
-    onOpenChange(false)
-    navigate(getPermalink())
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between pr-2">
-            <div className="flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-primary" />
-              Conversion Funnel
-            </div>
-            <div className="flex items-center gap-1">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Copy permalink"
-                      onClick={copyPermalink}
-                    >
-                      {copied ? (
-                        <span className="text-success text-xs font-medium">Copied!</span>
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Copy permalink</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Open full page"
-                      onClick={openFullPage}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Open full page</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+          <DialogTitle className="flex items-center gap-2">
+            <TrendingDown className="h-5 w-5 text-primary" />
+            Conversion Funnel
           </DialogTitle>
         </DialogHeader>
 
