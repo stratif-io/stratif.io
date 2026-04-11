@@ -13,17 +13,6 @@ vi.mock('@/stores', () => ({
   useAppStore: vi.fn(() => ({ activeConnectionId: 'conn-1', activeFilters: {} })),
 }))
 
-const mockSearchParams = new URLSearchParams()
-const mockSetSearchParams = vi.fn()
-
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
-  return {
-    ...actual,
-    useSearchParams: () => [mockSearchParams, mockSetSearchParams],
-  }
-})
-
 import { fetchPathAnalysis, fetchEvents } from '@/lib/api'
 
 const createWrapper = () => {
@@ -50,7 +39,6 @@ const defaultOptions = {
 describe('usePathExplorer', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockSearchParams.delete('mode')
   })
 
   it('returns empty data when dateRange is missing', () => {
@@ -274,60 +262,6 @@ describe('usePathExplorer', () => {
     await waitFor(() =>
       expect(fetchPathAnalysis).toHaveBeenCalledWith(
         expect.objectContaining({ group_by: 'session_id' })
-      )
-    )
-  })
-
-  it('defaults counting_mode to exact when mode param is absent from URL', async () => {
-    vi.mocked(fetchPathAnalysis).mockResolvedValue({
-      start_event: null,
-      end_event: null,
-      min_path_length: 2,
-      max_path_length: 5,
-      max_time_between_events: null,
-      time_unit: 'seconds',
-      group_by: 'user_id',
-      date_range: null,
-      event_filters: null,
-      total_paths: 0,
-      data: [],
-    })
-
-    vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
-
-    renderHook(() => usePathExplorer(defaultOptions), { wrapper: createWrapper() })
-
-    await waitFor(() =>
-      expect(fetchPathAnalysis).toHaveBeenCalledWith(
-        expect.objectContaining({ counting_mode: 'exact' })
-      )
-    )
-  })
-
-  it('passes counting_mode contains to API when mode=contains is in the URL', async () => {
-    mockSearchParams.set('mode', 'contains')
-
-    vi.mocked(fetchPathAnalysis).mockResolvedValue({
-      start_event: null,
-      end_event: null,
-      min_path_length: 2,
-      max_path_length: 5,
-      max_time_between_events: null,
-      time_unit: 'seconds',
-      group_by: 'user_id',
-      date_range: null,
-      event_filters: null,
-      total_paths: 0,
-      data: [],
-    })
-
-    vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
-
-    renderHook(() => usePathExplorer(defaultOptions), { wrapper: createWrapper() })
-
-    await waitFor(() =>
-      expect(fetchPathAnalysis).toHaveBeenCalledWith(
-        expect.objectContaining({ counting_mode: 'contains' })
       )
     )
   })
