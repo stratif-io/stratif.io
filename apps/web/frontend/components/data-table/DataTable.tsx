@@ -14,7 +14,7 @@ import {
   PaginationState,
   Row,
 } from '@tanstack/react-table'
-import { Download } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronsUpDown, Download } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -392,10 +392,27 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  <TableHead
+                    key={header.id}
+                    onClick={
+                      header.column.getCanSort()
+                        ? header.column.getToggleSortingHandler()
+                        : undefined
+                    }
+                    className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
+                  >
+                    {header.isPlaceholder ? null : (
+                      <div className="flex items-center gap-1.5">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getIsSorted() === 'asc' ? (
+                          <ArrowUp className="h-3.5 w-3.5 shrink-0" />
+                        ) : header.column.getIsSorted() === 'desc' ? (
+                          <ArrowDown className="h-3.5 w-3.5 shrink-0" />
+                        ) : header.column.getCanSort() ? (
+                          <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-30" />
+                        ) : null}
+                      </div>
+                    )}
                   </TableHead>
                 ))}
               </TableRow>
