@@ -94,7 +94,7 @@ def date_trunc(unit: str, col_expr: str, dialect: str = "duckdb") -> str:
         _ch_map: dict[str, str] = {
             "hour": f"toStartOfHour({col_expr})",
             "day": f"toStartOfDay({col_expr})",
-            "week": f"toStartOfWeek({col_expr})",
+            "week": f"toStartOfWeek({col_expr}, 1)",  # mode 1 = Monday-start (ISO)
             "month": f"toStartOfMonth({col_expr})",
             "quarter": f"toStartOfQuarter({col_expr})",
             "year": f"toStartOfYear({col_expr})",

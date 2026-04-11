@@ -153,7 +153,7 @@ class DeterministicBaseTest:
             params={
                 **self._p(),
                 "offset": 0,
-                "limit": 20,
+                "limit": 19,  # 10 page_views + 9 signups; avoids tie-group at boundary
                 "sort_field": "timestamp",
                 "sort_order": "asc",
             },
