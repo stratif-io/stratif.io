@@ -181,6 +181,42 @@ def client_bracket():
     app.dependency_overrides.clear()
 
 
+def _make_db_today_cohort() -> AnalyticsDatabase:
+    """DB with a user who just signed up today. D7/D30/D90 milestones are unreached."""
+    from datetime import date
+
+    today_str = date.today().isoformat()
+    conn = duckdb.connect(":memory:")
+    conn.execute("""
+        CREATE TABLE events (
+            user_id VARCHAR,
+            timestamp TIMESTAMP,
+            event_name VARCHAR,
+            properties VARCHAR
+        )
+    """)
+    conn.execute(f"""
+        INSERT INTO events VALUES
+            ('user-today', '{today_str} 08:00:00', 'signup', '{{}}')
+    """)
+    return AnalyticsDatabase(conn=conn, backend=DuckDBBackend(), events_cte=None)
+
+
+@pytest.fixture()
+def client_today_cohort():
+    test_db = _make_db_today_cohort()
+
+    async def override_db():
+        yield test_db
+
+    app.dependency_overrides[get_analytics_db] = override_db
+    from starlette.testclient import TestClient
+
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
 class TestBracketRetention:
     def test_user_returning_within_bracket_counts_for_d7(self, client_bracket):
         """user-a returned on day 3 — must count for D7 bracket (days 1–7)."""
@@ -262,3 +298,26 @@ class TestBracketRetention:
         assert len(cohort["milestone_values"]) == len(body["milestones"])
         for v in cohort["milestone_values"]:
             assert v is None or isinstance(v, (int, float))
+
+    def test_unreached_milestones_are_null_for_today_cohort(self, client_today_cohort):
+        """A cohort from today has not reached D7/D30/D90 — those must be None."""
+        from datetime import date
+
+        today = date.today().isoformat()
+        response = client_today_cohort.get(
+            "/api/retention",
+            params={"start_date": today, "end_date": today, "granularity": "day"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["data"]) == 1
+        cohort = body["data"][0]
+        milestones = body["milestones"]
+
+        # D1 may or may not be None depending on exact timing (day 0 vs day 1),
+        # but D7, D30, D90 are definitely unreached for a cohort from today.
+        for m, v in zip(milestones, cohort["milestone_values"], strict=False):
+            if m >= 7:
+                assert v is None, (
+                    f"Milestone D{m} should be None for today's cohort, got {v}"
+                )

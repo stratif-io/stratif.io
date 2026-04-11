@@ -258,9 +258,20 @@ def get_retention(
     today = date_type.today()
 
     def is_reached(cohort_date_str: str, milestone: int) -> bool:
-        """True if enough time has passed for this cohort to reach the milestone."""
+        """True if enough time has passed for this cohort to have reached the milestone."""
         d = date_type.fromisoformat(cohort_date_str[:10])
-        return (today - d).days >= milestone * unit_divisor
+        if gran in ("month", "quarter", "year"):
+            # Use calendar months to match SQL's date_diff_months arithmetic
+            month_diff = (today.year - d.year) * 12 + (today.month - d.month)
+            if gran == "month":
+                return month_diff >= milestone
+            elif gran == "quarter":
+                return month_diff >= milestone * 3
+            else:  # year
+                return month_diff >= milestone * 12
+        else:
+            # day/week: floor division matches SQL's FLOOR(days / unit_divisor)
+            return (today - d).days >= milestone * unit_divisor
 
     data = []
     for cohort_date_str, info in cohorts.items():
