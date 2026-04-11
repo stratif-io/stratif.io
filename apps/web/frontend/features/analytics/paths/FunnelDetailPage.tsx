@@ -1,14 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import {
-  ArrowLeft,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Copy,
-  Plus,
-  TrendingDown,
-  X,
-} from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronRight, Plus, TrendingDown, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAnalytics } from '@/lib/analytics'
@@ -21,7 +12,6 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageTransition } from '@/components/layout/PageTransition'
@@ -49,7 +39,6 @@ export function FunnelDetailPage() {
   const navigate = useNavigate()
   const { dateRange, activeFilters, activeConnectionId } = useAppStore()
   const [methodologyOpen, setMethodologyOpen] = useState(false)
-  const [copied, setCopied] = useState(false)
 
   const eventsParam = searchParams.get('events') || ''
   const initialEvents = eventsParam.split(',').filter(Boolean)
@@ -140,12 +129,6 @@ export function FunnelDetailPage() {
 
   const steps = funnelData?.data || []
 
-  const copyPermalink = async () => {
-    await navigator.clipboard.writeText(window.location.href)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   // Derived summary metrics
   const firstStep = steps[0]
   const lastStep = steps[steps.length - 1]
@@ -177,25 +160,6 @@ export function FunnelDetailPage() {
                 </p>
               </div>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Copy permalink"
-                  onClick={copyPermalink}
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-success" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{copied ? 'Copied!' : 'Copy permalink'}</p>
-              </TooltipContent>
-            </Tooltip>
           </div>
 
           {/* Filter bar */}
