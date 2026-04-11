@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.1](https://github.com/stratif-io/stratif.io/compare/v0.25.0...v0.25.1) (2026-04-11)
+
+
+### Bug Fixes
+
+* confirm workflow_dispatch release trigger works end-to-end ([b23b79b](https://github.com/stratif-io/stratif.io/commit/b23b79b6dd611c549ff8359554f714cf032deb7e))
+* confirm workflow_dispatch release trigger works end-to-end ([71c10dd](https://github.com/stratif-io/stratif.io/commit/71c10ddbba947e6cdafb30e099218a2166a99a56))
+
 ## [0.25.0](https://github.com/stratif-io/stratif.io/compare/v0.24.1...v0.25.0) (2026-04-11)
 
 
