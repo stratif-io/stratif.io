@@ -12,7 +12,7 @@ import { SPACING, TYPOGRAPHY } from '@/lib/constants'
 import { DevCard } from '@/components/dev'
 import { NoConnectionScreen } from '@/components/ui/no-connection-guard'
 import { EmptyState } from '@/components/ui/empty-state'
-import { TrendingUp } from 'lucide-react'
+import { TrendingUp, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { computePctChange, formatPeriodRange } from '@/lib/format-metric'
 import type { TrendMetric } from './hooks/useMissionControlTrends'
@@ -73,7 +73,22 @@ export function DashboardPage() {
         {/* Main scrollable content */}
         <div className={cn('flex-1 min-w-0', SPACING.page)}>
           <div className={SPACING.section}>
-            <h1 className={TYPOGRAPHY.pageLabel}>Mission Control</h1>
+            <div className="flex items-center justify-between">
+              <h1 className={TYPOGRAPHY.pageLabel}>Mission Control</h1>
+              <button
+                onClick={() => setLearnOpen((v) => !v)}
+                aria-pressed={learnOpen}
+                className={cn(
+                  'flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all',
+                  learnOpen
+                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                    : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                )}
+              >
+                <BookOpen className="h-3 w-3" />
+                Learn
+              </button>
+            </div>
 
             {isError ? (
               <QueryError error={error} />
@@ -95,8 +110,6 @@ export function DashboardPage() {
                   resetToDefault={resetToDefault}
                   heroMetric={heroMetric}
                   onHeroChange={setHeroMetric}
-                  learnOpen={learnOpen}
-                  onLearnToggle={() => setLearnOpen((v) => !v)}
                 />
                 <DevCard sql={topEventsSql}>
                   <TopEvents events={topEvents} loading={eventsLoading} />
