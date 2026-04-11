@@ -19,7 +19,7 @@ function RetentionMiniBar({ values }: { values: (number | null)[] }) {
       {values.map((v, i) => (
         <div
           key={i}
-          className={cn('flex-1 rounded-sm', v && v > 0 ? 'bg-primary/60' : 'bg-muted/40')}
+          className={cn('flex-1 rounded-sm', v !== null && v > 0 ? 'bg-primary/60' : 'bg-muted/40')}
           style={{ height: `${v ? Math.max((v / max) * 100, 15) : 8}%` }}
         />
       ))}
@@ -71,11 +71,11 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
         const vals = data
           .map((r) => r.milestone_values[i])
           .filter((v): v is number => v !== null && v !== undefined)
-        if (vals.length === 0) return 0
+        if (vals.length === 0) return null
         return vals.reduce((s, v) => s + v, 0) / vals.length
       }),
     [data, milestones]
-  )
+  ) as (number | null)[]
 
   return (
     <div className="overflow-auto">
@@ -154,15 +154,19 @@ export function RetentionTable({ data, granularity, milestones }: RetentionTable
               <TableCell />
               {avgMilestoneValues.map((pct, i) => (
                 <TableCell key={milestones[i]} className="text-center p-1.5">
-                  <div
-                    className={cn(
-                      'rounded-md px-2 py-1 text-sm tabular-nums font-semibold mx-auto w-fit',
-                      pct >= 20 ? 'text-success' : 'text-foreground'
-                    )}
-                    style={getCellStyle(pct)}
-                  >
-                    {pct.toFixed(1)}%
-                  </div>
+                  {pct === null ? (
+                    <div className="text-xs text-muted-foreground">—</div>
+                  ) : (
+                    <div
+                      className={cn(
+                        'rounded-md px-2 py-1 text-sm tabular-nums font-semibold mx-auto w-fit',
+                        pct >= 20 ? 'text-success' : 'text-foreground'
+                      )}
+                      style={getCellStyle(pct)}
+                    >
+                      {pct.toFixed(1)}%
+                    </div>
+                  )}
                 </TableCell>
               ))}
             </TableRow>
