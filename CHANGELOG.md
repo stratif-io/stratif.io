@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.23.0](https://github.com/stratif-io/stratif.io/compare/v0.22.1...v0.23.0) (2026-04-11)
+
+
+### Features
+
+* add contains counting mode to PathAnalyzer (DuckDB) ([79d2380](https://github.com/stratif-io/stratif.io/commit/79d23808749e0b1f1188c2837970259a3a11c000))
+* add counting_mode param to fetchPathAnalysis ([2c6af6e](https://github.com/stratif-io/stratif.io/commit/2c6af6e8b919bbcfe65df0deda3b8545c3258ffa))
+* add Exact/Contains counting mode toggle to Paths Explorer toolbar ([a56fe49](https://github.com/stratif-io/stratif.io/commit/a56fe4906f3c1286068b81cabc6531119a6cb088))
+* add InterceptHandler to route stdlib logs through structlog ([f23ecf6](https://github.com/stratif-io/stratif.io/commit/f23ecf6aafc65347aaa243bb13bdd19d5703f066))
+* add Learn panel to Paths Explorer ([f930e10](https://github.com/stratif-io/stratif.io/commit/f930e10736403afc8994737fef421a1f127d425f))
+* apply TYPOGRAPHY constants to EventsTable cell renderers ([dd3d368](https://github.com/stratif-io/stratif.io/commit/dd3d368c46135e9ccb89c0a2c34c58bead6e233d))
+* apply TYPOGRAPHY constants to PivotTable th/td; update row height estimate to 44px ([932be6b](https://github.com/stratif-io/stratif.io/commit/932be6b8e3948b771ed859f2250fa432805a9d7d))
+* **dashboard:** Learn panel — business metric explanations ([#294](https://github.com/stratif-io/stratif.io/issues/294)) ([829c909](https://github.com/stratif-io/stratif.io/commit/829c909ec7f9f0f27c17cee707ddf457833be038))
+* **design-system:** export and register PageHeader + SectionHeader ([66a1389](https://github.com/stratif-io/stratif.io/commit/66a1389955b04e89401d39174d23fb944ba404e1))
+* expose counting_mode param on /api/path-analysis endpoint ([42a7645](https://github.com/stratif-io/stratif.io/commit/42a7645ae16d515931d09ef04ed7c849744a8b61))
+* read countingMode option in usePathExplorer, pass counting_mode to API ([63e8ca1](https://github.com/stratif-io/stratif.io/commit/63e8ca144522ac35d86df55a37568070c8e80873))
+* register table TYPOGRAPHY constants in design system LayoutSection ([d76cba1](https://github.com/stratif-io/stratif.io/commit/d76cba138c913dbeb4c43892e830ce500a3c6b4a))
+* remove permalink from funnel modal and page ([8a81bb8](https://github.com/stratif-io/stratif.io/commit/8a81bb802fa9d1402d3ef5dc09644fe79f562c06))
+* remove unique paths badge from toolbar ([f834d07](https://github.com/stratif-io/stratif.io/commit/f834d07702a2e50d323afd4be23048cb6ffdcd63))
+* **ui:** add PageHeader component ([c8d0b69](https://github.com/stratif-io/stratif.io/commit/c8d0b69ca8cf99a85eab2684bc079281a7845395))
+* **ui:** add SectionHeader component ([601c8e7](https://github.com/stratif-io/stratif.io/commit/601c8e71a29cdd51e9cb79bb86b7986eb68a0314))
+
+
+### Bug Fixes
+
+* align Learn button style with Mission Control pill; add no-gap callout ([c0e88ab](https://github.com/stratif-io/stratif.io/commit/c0e88ab8219dcad2cbbf93fd62552a917cd71cbe))
+* **analytics:** use TYPOGRAPHY.label for h4 in PathFunnelDialog ([dd3ce6d](https://github.com/stratif-io/stratif.io/commit/dd3ce6d0faf07e17f62a34ac21a35d758e39bf4e))
+* center sidebar icons when collapsed by zeroing gap on hidden label ([7d95b4c](https://github.com/stratif-io/stratif.io/commit/7d95b4c3fa3a4ae6e775378ed5325c68da58cf4b))
+* **connections:** replace h1 with SectionHeader in ConnectionList ([805c6dd](https://github.com/stratif-io/stratif.io/commit/805c6dd524c6b96bbda5d01acd188882b3328e6d))
+* **connections:** use h1+pageLabel directly in ConnectionDetailPage, not PageHeader wrapper ([398bf4d](https://github.com/stratif-io/stratif.io/commit/398bf4d84078e5be67a9379abb7c5c15f9d762f7))
+* **connections:** use PageHeader in ConnectionDetailPage ([0538617](https://github.com/stratif-io/stratif.io/commit/0538617d6eb32176571d82a3ce9094ddfef28980))
+* **connections:** use TYPOGRAPHY.label for h3 headings in ConnectionConfigTab ([046b837](https://github.com/stratif-io/stratif.io/commit/046b8372749550b66777a20b63f4edb6c4585ecf))
+* count total pattern occurrences in contains mode, not just distinct users ([dc45e0f](https://github.com/stratif-io/stratif.io/commit/dc45e0f71cbb6839bcd22925f6b5728e57d7d3db))
+* forward exc_info through InterceptHandler ([e4a4d8d](https://github.com/stratif-io/stratif.io/commit/e4a4d8d427e3afe6c392daf1f1bf57d393e33d4c))
+* move sys import to top level in test_logging ([2def16d](https://github.com/stratif-io/stratif.io/commit/2def16d744c89dc704dd0b8d10573c9a35a8502b))
+* **pages:** add PageHeader to pages missing a heading ([3c8a4fe](https://github.com/stratif-io/stratif.io/commit/3c8a4fe6e3b554ff345bfcfd3c13744c4a7c0046))
+* **people:** use PageHeader and TYPOGRAPHY constants in PeoplePage ([ecb68a5](https://github.com/stratif-io/stratif.io/commit/ecb68a57f8eb858b330b26c103bd3023d3779428))
+* read counting mode from URL searchParams in usePathExplorer (not from props) ([60b2d63](https://github.com/stratif-io/stratif.io/commit/60b2d636a6d84817baaf3e2b0d57b76725bee81f))
+* remove off-by-one in subsequence LATERAL range that caused duplicate paths ([0e3f48f](https://github.com/stratif-io/stratif.io/commit/0e3f48f0e9d94075cd25d5514658eaad30ed155b))
+* restore Open full page button in funnel dialog ([58f6631](https://github.com/stratif-io/stratif.io/commit/58f6631cad2c1ac107c3603e4afc8c64cf78bfff))
+* right-align counting mode toggle with flex-1 spacer ([5aec0a4](https://github.com/stratif-io/stratif.io/commit/5aec0a427b15a7c806d9b53c01277b1148c3e03f))
+* **ui:** move page-header test to __tests__ dir ([088c5ab](https://github.com/stratif-io/stratif.io/commit/088c5ab4fc39bffe74ea735b21052046b17806d7))
+* **ui:** replace hardcoded colors with theme tokens in NotFoundPage ([23c44ce](https://github.com/stratif-io/stratif.io/commit/23c44ceb8ff128c639c1d025a7e7b25b8e7f4a67))
+* **ui:** use TYPOGRAPHY.cardTitle in EmptyState ([305dcb4](https://github.com/stratif-io/stratif.io/commit/305dcb4c6ab62711d025c810744094b9aa15f4be))
+* use &gt;= for funnel timestamp comparison to handle same-timestamp events ([5393c16](https://github.com/stratif-io/stratif.io/commit/5393c16077e9bac37b88b218fe76d6ce56f2d94d))
+* use COUNT(DISTINCT user_id) for unique_sessions in contains mode; add structural tests ([ad8b542](https://github.com/stratif-io/stratif.io/commit/ad8b5427aa81b5b56037079ae74b051c625ee999))
+* use PrintLoggerFactory to prevent InterceptHandler recursion ([0ec462c](https://github.com/stratif-io/stratif.io/commit/0ec462c6881cb35743f53509d0b5880b69053538))
+* use subquery+WHERE instead of QUALIFY for match_count filter ([0436aea](https://github.com/stratif-io/stratif.io/commit/0436aeaf5fcfa3ead9f160c4af448a41035265df))
+
 ## [0.22.1](https://github.com/stratif-io/stratif.io/compare/v0.22.0...v0.22.1) (2026-04-10)
 
 
