@@ -36,8 +36,8 @@ export function TopEvents({ events, loading }: TopEventsProps) {
               <div key={idx} className="relative">
                 {/* Bar */}
                 <div
-                  className="absolute inset-0 rounded bg-primary/8 transition-[width] duration-500"
-                  style={{ width: `${barWidth}%` }}
+                  className="absolute inset-y-0 left-0 w-full rounded bg-primary/8 origin-left transition-transform duration-500"
+                  style={{ transform: `scaleX(${barWidth / 100})` }}
                   aria-hidden="true"
                 />
                 {/* Row content */}

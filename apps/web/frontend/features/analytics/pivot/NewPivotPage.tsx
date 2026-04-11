@@ -15,6 +15,7 @@ import { PivotTable } from '@/components/pivot-table/PivotTable'
 import type { PivotRowsRequest, PivotRowsResponse } from '@/components/pivot-table/types'
 import { parseTrendParams } from './parseTrendParams'
 import { useAnalytics } from '@/lib/analytics'
+import { PageHeader } from '@/components/ui/page-header'
 
 // ── Helper: map PivotRowsRequest ZoneCol → fetchPivotGridRows shape ─────────
 
@@ -123,6 +124,7 @@ export function NewPivotPage() {
     <PageTransition>
       <NoConnectionGuard>
         <div className="flex h-full flex-col">
+          <PageHeader title="Pivot" />
           <PivotTable
             colDefsData={colDefsData}
             colDefsLoading={colDefsLoading}

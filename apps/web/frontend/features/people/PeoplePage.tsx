@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { UserTimeline, EventPropertiesPanel } from '@/components/ui/user-timeline'
 import { cn } from '@/lib/utils'
+import { PageHeader } from '@/components/ui/page-header'
+import { TYPOGRAPHY } from '@/lib/constants'
 import { usePeopleList } from './hooks/usePeopleList'
 import { useUserTimeline } from './hooks/useUserTimeline'
 import type { UserSummary, Event } from '@/types'
@@ -61,9 +63,10 @@ export function PeoplePage() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [search, setSearch] = useState('')
   const [limit, setLimit] = useState(100)
-  const [col1Collapsed, setCol1Collapsed] = useState(false)
+  const isMobile = () => window.innerWidth < 768
+  const [col1Collapsed, setCol1Collapsed] = useState(() => isMobile())
   const [col2Collapsed, setCol2Collapsed] = useState(false)
-  const [col3Collapsed, setCol3Collapsed] = useState(false)
+  const [col3Collapsed, setCol3Collapsed] = useState(() => isMobile())
 
   const { users, isLoading, isError, error, hasNextPage, fetchNextPage, isFetchingNextPage } =
     usePeopleList()
@@ -95,7 +98,7 @@ export function PeoplePage() {
           {/* Column 1 — user list */}
           <div
             className={cn(
-              'border-r flex flex-col overflow-hidden transition-all duration-200',
+              'border-r flex flex-col overflow-hidden transition-all duration-200 shrink-0',
               col1Collapsed ? 'w-10' : 'w-[28%]'
             )}
           >
@@ -110,7 +113,7 @@ export function PeoplePage() {
               <>
                 <div className="p-4 border-b shrink-0">
                   <div className="flex items-center justify-between mb-3">
-                    <h1 className="text-lg font-semibold">People</h1>
+                    <PageHeader title="People" />
                     <CollapseButton
                       collapsed={false}
                       onToggle={() => setCol1Collapsed(true)}
@@ -172,8 +175,8 @@ export function PeoplePage() {
           {/* Column 2 — timeline */}
           <div
             className={cn(
-              'flex flex-col overflow-hidden border-r transition-all duration-200',
-              col2Collapsed ? 'w-10' : 'w-[36%]'
+              'flex flex-col overflow-hidden border-r transition-all duration-200 min-w-0',
+              col2Collapsed ? 'w-10' : 'flex-1'
             )}
           >
             {col2Collapsed ? (
@@ -245,7 +248,7 @@ export function PeoplePage() {
             ) : (
               <div className="flex-1 flex flex-col">
                 <div className="p-4 border-b shrink-0 flex items-center justify-between">
-                  <span className="text-sm font-semibold">Timeline</span>
+                  <span className={TYPOGRAPHY.label}>Timeline</span>
                   <CollapseButton
                     collapsed={false}
                     onToggle={() => setCol2Collapsed(true)}
@@ -282,7 +285,7 @@ export function PeoplePage() {
             ) : (
               <>
                 <div className="px-4 py-3 border-b shrink-0 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Properties</h2>
+                  <h2 className={TYPOGRAPHY.label}>Properties</h2>
                   <CollapseButton
                     collapsed={false}
                     onToggle={() => setCol3Collapsed(true)}

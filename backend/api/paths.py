@@ -304,7 +304,7 @@ def get_path_funnel(
                 FROM {prev_cte} prev
                 JOIN events e ON prev.user_id = e.user_id
                 WHERE e.event_name = ?
-                    AND e.timestamp > prev.t{i - 1}{extra_sql}
+                    AND e.timestamp >= prev.t{i - 1}{extra_sql}
                 GROUP BY prev.user_id{(", " + prev_time_groups) if prev_time_groups else ""}
             )""")
             all_params.append(event_name)

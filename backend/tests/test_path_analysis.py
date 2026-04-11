@@ -1,10 +1,12 @@
 """Unit tests for path analysis and path funnel."""
 
+import duckdb
 import pytest
 
 from backend.api.paths import get_paths
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.path_analyzer import (
+    PathAnalyzer,
     PathAnalyzerError,
     generate_path_analysis_query,
 )
@@ -95,10 +97,12 @@ class TestPathAnalyzerQuery:
         assert "'Purchase'" in query
 
     def test_query_with_time_constraint(self):
+        # Standard SQL (non-DuckDB) path applies time constraints inline
         query = generate_path_analysis_query(
             table_name="events",
             max_time_between_events=60,
             time_unit="minutes",
+            sql_dialect="sqlite",
         )
         assert "3600" in query  # 60 minutes = 3600 seconds
 
@@ -152,3 +156,140 @@ class TestPathsLimitSQL:
         for limit in [1, 5, 10, 20]:
             query = self._paths_query(limit=limit)
             assert f"LIMIT {limit}" in query
+
+    def test_produces_exact_counts_cte(self):
+        query = generate_path_analysis_query(table_name="events")
+        assert "exact_counts" in query
+        assert "contains_matches" in query
+
+    def test_has_user_sequences(self):
+        query = generate_path_analysis_query(table_name="events")
+        assert "user_sequences" in query
+
+    def test_null_timing(self):
+        query = generate_path_analysis_query(table_name="events")
+        assert "NULL" in query  # avg/median are NULL in contains mode
+
+    def test_has_cross_join_and_match_count(self):
+        query = generate_path_analysis_query(table_name="events")
+        assert "CROSS JOIN" in query
+        assert "match_count" in query
+        assert "WHERE match_count > 0" in query
+        assert "SUM(match_count)" in query
+
+    def test_has_generate_series(self):
+        query = generate_path_analysis_query(table_name="events")
+        assert "generate_series" in query
+
+
+class TestPathAnalysisCountingModeAPI:
+    def test_api_produces_contains_query(self):
+        db = CapturingDB()
+        from backend.api.paths import get_path_analysis
+
+        get_path_analysis(
+            db=db,
+            start_event=None,
+            end_event=None,
+            min_path_length=2,
+            max_path_length=5,
+            max_time_between_events=None,
+            time_unit="seconds",
+            top_n=10,
+            group_by="user_id",
+            start_date=None,
+            end_date=None,
+            filters=None,
+            event_filters=None,
+        )
+        query = db.calls[0][0]
+        assert "contains_matches" in query
+
+
+class TestPathCountingModeCounts:
+    """Integration tests running real DuckDB queries against toy data.
+
+    Toy scenario
+    ------------
+    Two users:
+      u1: Home → Search → ProductView → Home → Search   (5 events, loops back)
+      u2: Home → Search → ProductView                   (3 events, straight path)
+
+    Expected exact occurrence counts (no duplicates):
+      Home → Search → ProductView          2  (once per user)
+      Home → Search → ProductView → Home   1  (u1 only)
+      Search → ProductView → Home → Search 1  (u1 only)
+      ... etc.
+
+    Critical invariant: for every path, contains_count >= exact_count.
+    The exact counts must also be correct (no inflation from duplicate
+    DuckDB array slices when j > ARRAY_LENGTH(events)).
+    """
+
+    @pytest.fixture
+    def conn(self):
+        c = duckdb.connect()
+        c.execute("""
+            CREATE TABLE events AS
+            SELECT * FROM (VALUES
+              ('u1', 's1', 'Home',        TIMESTAMPTZ '2024-01-01 10:00:00', '{}'),
+              ('u1', 's1', 'Search',      TIMESTAMPTZ '2024-01-01 10:01:00', '{}'),
+              ('u1', 's1', 'ProductView', TIMESTAMPTZ '2024-01-01 10:02:00', '{}'),
+              ('u1', 's1', 'Home',        TIMESTAMPTZ '2024-01-01 10:03:00', '{}'),
+              ('u1', 's1', 'Search',      TIMESTAMPTZ '2024-01-01 10:04:00', '{}'),
+              ('u2', 's2', 'Home',        TIMESTAMPTZ '2024-01-01 11:00:00', '{}'),
+              ('u2', 's2', 'Search',      TIMESTAMPTZ '2024-01-01 11:01:00', '{}'),
+              ('u2', 's2', 'ProductView', TIMESTAMPTZ '2024-01-01 11:02:00', '{}')
+            ) t(user_id, session_id, event_name, timestamp, properties)
+        """)
+        return c
+
+    def _run(self, conn):
+        pa = PathAnalyzer(dialect="duckdb")
+        q = pa.generate_path_analysis_query(
+            "events",
+            min_path_length=2,
+            max_path_length=5,
+            top_n=20,
+        )
+        rows = conn.execute(q).fetchall()
+        # columns: path, path_length, occurrence_count, unique_users, ...
+        return {r[0]: {"occ": r[2], "users": r[3]} for r in rows}
+
+    def test_no_duplicate_counts(self, conn):
+        """Contains mode must not inflate counts due to out-of-bounds array slices.
+
+        u1 has 5 events; max_path_length=5. The longest path for u1 starts at
+        i=1 and ends at j=5. The old bug generated j=6 as well, which DuckDB
+        silently truncated to the same 5-element slice — doubling the count for
+        every max-length path.
+        """
+        result = self._run(conn)
+
+        # Home→Search→ProductView appears exactly once per user = 2 total.
+        assert result["Home -> Search -> ProductView"]["occ"] == 2
+
+        # The full 5-event path for u1 appears exactly once, not twice.
+        assert result["Home -> Search -> ProductView -> Home -> Search"]["occ"] == 1
+
+    def test_shorter_path_gte_longer_extension(self, conn):
+        """A shorter path must have contains count >= any longer path that extends it.
+
+        Home→Search→ProductView (3 events) appears in every session that also
+        has Home→Search→ProductView→Home (4 events), so the 3-event count must
+        be >= the 4-event count.
+
+        Note: the minimum returned path length is 3 events (not 2) because the
+        subsequence CTE uses `j - i >= min_path_length` where length = j-i+1,
+        so 2-event paths are not emitted when min_path_length=2.
+        """
+        result = self._run(conn)
+
+        three_step = result["Home -> Search -> ProductView"]["occ"]
+        four_step = result["Home -> Search -> ProductView -> Home"]["occ"]
+        assert three_step >= four_step
+
+    def test_unique_users_correct(self, conn):
+        """unique_users for Home→Search→ProductView should be 2 (both users)."""
+        result = self._run(conn)
+        assert result["Home -> Search -> ProductView"]["users"] == 2

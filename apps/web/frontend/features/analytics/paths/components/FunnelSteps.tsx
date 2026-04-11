@@ -88,10 +88,12 @@ export function FunnelSteps({ steps }: FunnelStepsProps) {
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className={cn(
-                    'h-full transition-[width] duration-700 ease-out rounded-full',
+                    'h-full w-full origin-left transition-transform duration-700 ease-out',
                     barBg(step.overall_conversion_rate)
                   )}
-                  style={{ width: `${Math.max(step.overall_conversion_rate, 1)}%` }}
+                  style={{
+                    transform: `scaleX(${Math.max(step.overall_conversion_rate, 1) / 100})`,
+                  }}
                 />
               </div>
             </div>
