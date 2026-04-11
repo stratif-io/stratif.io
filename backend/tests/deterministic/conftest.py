@@ -32,20 +32,17 @@ else:
     _CONFIG_PATH = _REPO_ROOT / "connections.yaml"
 
 if not _CONFIG_PATH.exists():
-    raise FileNotFoundError(
-        f"connections.yaml not found at {_CONFIG_PATH}.\n"
-        "Copy connections.yaml.example → connections.yaml and fill in credentials."
-    )
+    DET_CONFIG: dict | None = None
+else:
+    DET_CONFIG = yaml.safe_load(_CONFIG_PATH.read_text())["backends"]
 
-DET_CONFIG: dict = yaml.safe_load(_CONFIG_PATH.read_text())["backends"]
-
-# Resolve relative file_path credentials to absolute paths based on the repo root.
-for _cfg in DET_CONFIG.values():
-    creds = _cfg.get("credentials") or {}
-    if "file_path" in creds:
-        fp = pathlib.Path(creds["file_path"])
-        if not fp.is_absolute():
-            creds["file_path"] = str(_REPO_ROOT / fp)
+    # Resolve relative file_path credentials to absolute paths based on the repo root.
+    for _cfg in DET_CONFIG.values():
+        creds = _cfg.get("credentials") or {}
+        if "file_path" in creds:
+            fp = pathlib.Path(creds["file_path"])
+            if not fp.is_absolute():
+                creds["file_path"] = str(_REPO_ROOT / fp)
 
 # ---------------------------------------------------------------------------
 # Encryption key used for all deterministic test credential storage.
@@ -112,6 +109,10 @@ def deterministic_setup(client, request):
 
     cls = request.cls
     db_type = cls.db_type
+
+    if DET_CONFIG is None:
+        pytest.skip("connections.yaml not found — integration tests require it")
+
     cfg = DET_CONFIG.get(db_type, {})
 
     if not cfg.get("enabled", False):
