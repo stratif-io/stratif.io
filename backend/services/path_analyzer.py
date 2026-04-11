@@ -468,7 +468,7 @@ events_sessionized AS (
         session_ids[i:j]      AS path_session_ids
     FROM user_sequences,
     LATERAL (SELECT UNNEST(range(1, ARRAY_LENGTH(events) + 1)) AS i),
-    LATERAL (SELECT UNNEST(range(i + 1, LEAST(ARRAY_LENGTH(events) + 1, i + {max_length}) + 1)) AS j)
+    LATERAL (SELECT UNNEST(range(i + 1, LEAST(ARRAY_LENGTH(events) + 1, i + {max_length}))) AS j)
     WHERE j - i >= {min_length}
       AND j - i <= {max_length}
 )"""
@@ -484,7 +484,7 @@ events_sessionized AS (
         timestamps[j]         AS end_ts
     FROM user_sequences,
     LATERAL (SELECT UNNEST(range(1, ARRAY_LENGTH(events) + 1)) AS i),
-    LATERAL (SELECT UNNEST(range(i + 1, LEAST(ARRAY_LENGTH(events) + 1, i + {max_length}) + 1)) AS j)
+    LATERAL (SELECT UNNEST(range(i + 1, LEAST(ARRAY_LENGTH(events) + 1, i + {max_length}))) AS j)
     WHERE j - i >= {min_length}
       AND j - i <= {max_length}
 )"""
