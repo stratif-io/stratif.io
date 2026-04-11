@@ -25,6 +25,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          skip-labeling: true
 
   build-frontend:
     needs: release-please
@@ -127,7 +128,6 @@ jobs:
         run: |
           PR_NUMBER=$(gh pr list \
             --base develop \
-            --label "autorelease: pending" \
             --json number,headRefName \
             --jq '[.[] | select(.headRefName | startswith("release-please--"))] | .[0].number // empty')
 
