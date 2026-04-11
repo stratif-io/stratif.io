@@ -57,20 +57,6 @@ _GOLDEN_DIR = pathlib.Path(__file__).parent / "golden"
 
 
 # ---------------------------------------------------------------------------
-# CLI flag
-# ---------------------------------------------------------------------------
-
-
-def pytest_addoption(parser: pytest.Parser) -> None:
-    parser.addoption(
-        "--generate-golden",
-        action="store_true",
-        default=False,
-        help="Write API responses to golden files instead of asserting (DuckDB only).",
-    )
-
-
-# ---------------------------------------------------------------------------
 # Session-scoped TestClient with temp-file SQLite product DB
 # ---------------------------------------------------------------------------
 
@@ -140,6 +126,10 @@ def deterministic_setup(client, request):
         with contextlib.suppress(Exception):
             close_connection(backend_obj, conn)
         raise
+    # Close the write connection immediately so the API can open a read connection
+    # to the same file (DuckDB forbids mixed read/write configs on the same file).
+    close_connection(backend_obj, conn)
+    conn = None
 
     # --- Register connection via API ---
     r = client.post(
@@ -181,9 +171,11 @@ def deterministic_setup(client, request):
     yield  # tests run here
 
     # --- Teardown ---
-    drop_table(backend_obj, conn)
+    # Reopen a write connection to drop the table.
     with contextlib.suppress(Exception):
-        close_connection(backend_obj, conn)
+        _, teardown_conn = open_write_connection(db_type, cfg["credentials"])
+        drop_table(backend_obj, teardown_conn)
+        close_connection(backend_obj, teardown_conn)
     client.delete(f"/api/connections/{connection_id}")
     cls.connection_id = None
 

@@ -1,0 +1,41 @@
+{
+  "sql": [
+    "\n        WITH \nevents_with_lag AS (\n    SELECT\n        user_id,\n        event_name,\n        timestamp,\n        json_extract_string(\"properties\", '$.device_type') AS device_type,\n        LAG(timestamp, 1) OVER (PARTITION BY user_id ORDER BY timestamp) AS prev_timestamp,\n        LAG(event_name, 1) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_1,\n        LAG(event_name, 2) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_2,\n        LAG(event_name, 3) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_3\n    FROM events\n),\nevents_with_session AS (\n    SELECT\n        user_id,\n        event_name,\n        timestamp,\n        device_type,\n        step_minus_1,\n        step_minus_2,\n        step_minus_3,\n        CASE\n            WHEN prev_timestamp IS NULL\n                OR timestamp - prev_timestamp > INTERVAL '30 minutes'\n            THEN 1\n            ELSE 0\n        END AS is_new_session\n    FROM events_with_lag\n),\nevents_with_session_id AS (\n    SELECT\n        user_id,\n        event_name,\n        timestamp,\n        device_type,\n        step_minus_1,\n        step_minus_2,\n        step_minus_3,\n        user_id || '-' || CAST(SUM(is_new_session) OVER (PARTITION BY user_id ORDER BY timestamp ROWS UNBOUNDED PRECEDING) AS TEXT) AS session_id\n    FROM events_with_session\n),\nderived_path_analysis AS (\n    SELECT\n        user_id || '-' || CAST(ROW_NUMBER() OVER (ORDER BY timestamp) AS TEXT) AS event_id,\n        user_id,\n        session_id,\n        event_name AS target_event,\n        step_minus_1,\n        step_minus_2,\n        step_minus_3,\n        device_type\n    FROM events_with_session_id\n    WHERE step_minus_1 IS NOT NULL\n)\n        SELECT\n            COALESCE(step_minus_3, 'Start') AS step_3,\n            COALESCE(step_minus_2, 'Start') AS step_2,\n            COALESCE(step_minus_1, 'Start') AS step_1,\n            target_event,\n            device_type,\n            COUNT(*) AS path_count\n        FROM derived_path_analysis\n        WHERE target_event = 'purchase'AND user_id IN (SELECT DISTINCT user_id FROM events WHERE timestamp >= '2023-01-01 00:00:00' AND timestamp <= '2024-12-31 23:59:59')\n        GROUP BY step_minus_3, step_minus_2, step_minus_1, target_event, device_type\n        ORDER BY path_count DESC\n        LIMIT 5\n    ",
+    "\n        WITH \nevents_with_lag AS (\n    SELECT\n        user_id,\n        event_name,\n        timestamp,\n        json_extract_string(\"properties\", '$.device_type') AS device_type,\n        LAG(timestamp, 1) OVER (PARTITION BY user_id ORDER BY timestamp) AS prev_timestamp,\n        LAG(event_name, 1) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_1,\n        LAG(event_name, 2) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_2,\n        LAG(event_name, 3) OVER (PARTITION BY user_id ORDER BY timestamp) AS step_minus_3\n    FROM events\n),\nevents_with_session AS (\n    SELECT\n        user_id,\n        event_name,\n        timestamp,\n        device_type,\n        step_minus_1,\n        step_minus_2,\n        step_minus_3,\n        CASE\n            WHEN prev_timestamp IS NULL\n                OR timestamp - prev_timestamp > INTERVAL '30 minutes'\n            THEN 1\n            ELSE 0\n        END AS is_new_session\n    FROM events_with_lag\n),\nevents_with_session_id AS (\n    SELECT\n        user_id,\n        event_name,\n        timestamp,\n        device_type,\n        step_minus_1,\n        step_minus_2,\n        step_minus_3,\n        user_id || '-' || CAST(SUM(is_new_session) OVER (PARTITION BY user_id ORDER BY timestamp ROWS UNBOUNDED PRECEDING) AS TEXT) AS session_id\n    FROM events_with_session\n),\nderived_path_analysis AS (\n    SELECT\n        user_id || '-' || CAST(ROW_NUMBER() OVER (ORDER BY timestamp) AS TEXT) AS event_id,\n        user_id,\n        session_id,\n        event_name AS target_event,\n        step_minus_1,\n        step_minus_2,\n        step_minus_3,\n        device_type\n    FROM events_with_session_id\n    WHERE step_minus_1 IS NOT NULL\n)\n        SELECT COUNT(*) FROM derived_path_analysis WHERE target_event = 'purchase'AND user_id IN (SELECT DISTINCT user_id FROM events WHERE timestamp >= '2023-01-01 00:00:00' AND timestamp <= '2024-12-31 23:59:59')\n    "
+  ],
+  "target_event": "purchase",
+  "device_type": null,
+  "total_occurrences": 288,
+  "data": [
+    {
+      "path": "signup \u2192 add_to_cart \u2192 checkout \u2192 purchase",
+      "step_3": "signup",
+      "step_2": "add_to_cart",
+      "step_1": "checkout",
+      "target": "purchase",
+      "device_type": "Mobile",
+      "count": 144,
+      "percentage": 50.0
+    },
+    {
+      "path": "signup \u2192 add_to_cart \u2192 checkout \u2192 purchase",
+      "step_3": "signup",
+      "step_2": "add_to_cart",
+      "step_1": "checkout",
+      "target": "purchase",
+      "device_type": "Tablet",
+      "count": 72,
+      "percentage": 25.0
+    },
+    {
+      "path": "signup \u2192 add_to_cart \u2192 checkout \u2192 purchase",
+      "step_3": "signup",
+      "step_2": "add_to_cart",
+      "step_1": "checkout",
+      "target": "purchase",
+      "device_type": "Desktop",
+      "count": 72,
+      "percentage": 25.0
+    }
+  ]
+}
