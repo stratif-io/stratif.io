@@ -87,12 +87,13 @@ jobs:
         run: bun install
         working-directory: apps/web
 
-      # apps/web/.npmrc configures //npm.pkg.github.com/:_authToken=${STRATIFIO_OSS_TOKEN}.
-      # Do NOT use actions/setup-node with registry-url here — it creates a userconfig
-      # .npmrc that overrides the project .npmrc and replaces STRATIFIO_OSS_TOKEN with
-      # NODE_AUTH_TOKEN (GITHUB_TOKEN), causing a 401.
+      # npm ignores apps/web/.npmrc in workspace mode (root package.json has
+      # "workspaces": ["apps/*"]). Write auth to the user-level npmrc instead —
+      # that always takes precedence regardless of workspace context.
       - name: Publish to GitHub Packages
-        run: npm publish --access public
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${STRATIFIO_OSS_TOKEN}" >> ~/.npmrc
+          npm publish --access public
         working-directory: apps/web
         env:
           STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
