@@ -134,9 +134,11 @@ jobs:
           gh pr merge "$PR_NUMBER" --merge --admin
 
           echo "Pushing develop → main to trigger release…"
-          git fetch origin develop
+          git fetch origin
           git checkout develop
           git pull origin develop
+          # main may have extra commits (e.g. uv.lock refresh) not yet in develop
+          git merge origin/main --no-edit || true
           git push origin develop:main
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
