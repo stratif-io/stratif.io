@@ -1,6 +1,7 @@
 """Tests for InterceptHandler."""
 
 import logging
+import sys
 
 import structlog.testing
 
@@ -31,7 +32,6 @@ def test_intercept_handler_forwards_to_structlog():
 
 def test_intercept_handler_forwards_exc_info():
     """exc_info on a log record must be forwarded to structlog."""
-    import sys
     from backend.core.logging import InterceptHandler
 
     handler = InterceptHandler()
