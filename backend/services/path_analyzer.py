@@ -405,26 +405,26 @@ exact_counts AS (
 contains_matches AS (
     SELECT
         ec.path,
-        us.user_id
+        us.user_id,
+        (
+            SELECT COUNT(*)
+            FROM generate_series(
+                1,
+                GREATEST(1, ARRAY_LENGTH(us.events) - ARRAY_LENGTH(ec.path) + 1)
+            ) t(i)
+            WHERE us.events[i : i + ARRAY_LENGTH(ec.path) - 1] = ec.path
+        ) AS match_count
     FROM exact_counts ec
     CROSS JOIN user_sequences us
-    WHERE (
-        SELECT bool_or(
-            us.events[i : i + ARRAY_LENGTH(ec.path) - 1] = ec.path
-        )
-        FROM generate_series(
-            1,
-            GREATEST(1, ARRAY_LENGTH(us.events) - ARRAY_LENGTH(ec.path) + 1)
-        ) t(i)
-    )
+    QUALIFY match_count > 0
 )
 SELECT
     ARRAY_TO_STRING(path, ' -> ')                          AS path,
     ARRAY_LENGTH(path)                                      AS path_length,
-    COUNT(*)                                                AS occurrence_count,
+    SUM(match_count)                                        AS occurrence_count,
     COUNT(DISTINCT user_id)                                 AS unique_users,
     COUNT(DISTINCT user_id)                                 AS unique_sessions,
-    ROUND(100.0 * COUNT(*) / (
+    ROUND(100.0 * COUNT(DISTINCT user_id) / (
         SELECT COUNT(DISTINCT user_id) FROM user_sequences
     ), 2)                                                   AS percentage_of_total,
     NULL::DOUBLE                                            AS avg_time_to_complete,
