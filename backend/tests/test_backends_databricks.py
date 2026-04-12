@@ -39,26 +39,29 @@ class TestDatabricksIdentity:
 
 class TestDatabricksCredentials:
     def test_valid(self):
-        c = DatabricksCredentials(host="h", http_path="/p", token="t")
-        assert c.host == "h"
+        c = DatabricksCredentials(server_hostname="h", http_path="/p", access_token="t")
+        assert c.server_hostname == "h"
 
     def test_parse_credentials(self, backend):
         creds = backend.parse_credentials(
-            {"host": "h", "http_path": "/p", "token": "t"}
+            {"server_hostname": "h", "http_path": "/p", "access_token": "t"}
         )
         assert isinstance(creds, DatabricksCredentials)
 
     def test_pool_key(self, backend):
-        creds = DatabricksCredentials(host="h", http_path="/p", token="t")
+        creds = DatabricksCredentials(
+            server_hostname="h", http_path="/p", access_token="t"
+        )
         assert backend.pool_key("c42", creds) == ("c42", "databricks")
 
 
 class TestDatabricksExecution:
-    def test_execute_converts_to_named_params(self, backend):
+    def test_execute_passes_params_as_list(self, backend):
         conn, cursor = _make_conn([(42,)])
         backend.execute(conn, "SELECT * FROM t WHERE id = ?", ["abc"])
         call_args = cursor.execute.call_args
-        assert ":p0" in call_args[0][0]
+        assert call_args[0][0] == "SELECT * FROM t WHERE id = ?"
+        assert call_args[0][1] == ["abc"]
 
     def test_execute_no_params(self, backend):
         conn, cursor = _make_conn([(7,)])

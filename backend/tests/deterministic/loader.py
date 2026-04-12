@@ -81,6 +81,8 @@ _INSERT_PROPS = {
     "snowflake": f"INSERT INTO {TABLE_NAME} (user_id, timestamp, event_name, properties) VALUES (?, ?, ?, PARSE_JSON(?))",
     # PostgreSQL JSONB: backend.execute() converts ? → %s; ::jsonb casts the string to jsonb
     "postgres": f"INSERT INTO {TABLE_NAME} (user_id, timestamp, event_name, properties) VALUES (?, ?, ?, ?::jsonb)",
+    # Databricks: inline param substitution passes strings; timestamp column needs explicit CAST
+    "databricks": f"INSERT INTO {TABLE_NAME} (user_id, timestamp, event_name, properties) VALUES (?, CAST(? AS TIMESTAMP), ?, ?)",
 }
 _INSERT_DEFAULT = f"INSERT INTO {TABLE_NAME} (user_id, timestamp, event_name, properties) VALUES (?, ?, ?, ?)"
 

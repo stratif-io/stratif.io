@@ -9,7 +9,6 @@ from typing import Any
 from pydantic import BaseModel
 
 from backend.backends._utils import (
-    _to_named_params,
     infer_type,
     pick_events_table,
     suggest_fields,
@@ -79,16 +78,16 @@ class DatabricksBackend:
 
     def connection_string(self, credentials: BaseModel) -> str | None:
         creds = DatabricksCredentials.model_validate(credentials.model_dump())
-        return f"databricks://token:****@{creds.host}?http_path={creds.http_path}"
+        return f"databricks://token:****@{creds.server_hostname}?http_path={creds.http_path}"
 
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         from databricks import sql as dbsql
 
         creds = DatabricksCredentials.model_validate(credentials.model_dump())
         return dbsql.connect(
-            server_hostname=creds.host,
+            server_hostname=creds.server_hostname,
             http_path=creds.http_path,
-            access_token=creds.token,
+            access_token=creds.access_token,
         )
 
     def pool_key(self, connection_id: str, credentials: BaseModel) -> tuple:
@@ -256,11 +255,18 @@ class DatabricksBackend:
                 cursor.close()
 
     def execute(self, conn: Any, query: str, params: list | None) -> list[tuple]:
-        named_query, named_params = _to_named_params(query, params or [])
         cursor = conn.cursor()
         try:
-            cursor.execute(named_query, named_params or None)
-            return cursor.fetchall()
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            if cursor.description is None:
+                return []
+            try:
+                return cursor.fetchall()
+            except IndexError:
+                return []
         finally:
             with contextlib.suppress(Exception):
                 cursor.close()
@@ -268,14 +274,19 @@ class DatabricksBackend:
     def execute_with_columns(
         self, conn: Any, query: str, params: list | None
     ) -> tuple[list[str], list[tuple]]:
-        named_query, named_params = _to_named_params(query, params or [])
         cursor = conn.cursor()
         try:
-            cursor.execute(named_query, named_params or None)
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
             columns = (
                 [desc[0] for desc in cursor.description] if cursor.description else []
             )
-            rows = cursor.fetchall()
+            try:
+                rows = cursor.fetchall() if cursor.description else []
+            except IndexError:
+                rows = []
             return columns, rows
         finally:
             with contextlib.suppress(Exception):

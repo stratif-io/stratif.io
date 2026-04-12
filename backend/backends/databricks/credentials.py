@@ -2,6 +2,6 @@ from pydantic import BaseModel
 
 
 class DatabricksCredentials(BaseModel):
-    host: str
+    server_hostname: str
     http_path: str
-    token: str
+    access_token: str
