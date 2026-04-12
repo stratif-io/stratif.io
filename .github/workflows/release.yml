@@ -159,7 +159,7 @@ jobs:
           # suppresses push events from GITHUB_TOKEN to prevent infinite loops).
           # After pushing, we trigger the release workflow explicitly via
           # workflow_dispatch, which GITHUB_TOKEN IS allowed to fire.
-          git fetch origin develop
+          git fetch origin develop main
           git push --force-with-lease origin origin/develop:main
           gh workflow run release.yml --ref main
         env:
