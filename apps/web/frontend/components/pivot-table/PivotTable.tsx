@@ -13,12 +13,12 @@ import { ZoneBar } from './ZoneBar'
 import { FilterBar } from '../shared/FilterBar'
 import * as XLSX from 'xlsx'
 import { rowsToCsv, downloadCsv } from './csvExport'
-import type { ZoneCol, FilterEntry, PivotTableProps } from './types'
+import type { ZoneCol, FilterEntry, PivotTableProps, SortItem } from './types'
 import { buildLeafMeta } from './types'
 import { DevCard } from '@/components/dev'
 import { EmptyState } from '@/components/ui/empty-state'
 import { QueryError } from '@/components/ui/query-error'
-import { BarChart2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, BarChart2, ChevronsUpDown } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import type { Granularity } from '@/types'
 import { useAnalytics } from '@/lib/analytics'
@@ -57,6 +57,10 @@ export function PivotTable({
   const [pivotCols, setPivotCols] = useState<ZoneCol[]>(initialPivotCols ?? DEFAULT_PIVOT_COLS)
   const [valueCols, setValueCols] = useState<ZoneCol[]>(initialValueCols ?? DEFAULT_VALUE_COLS)
   const [pivotFilters, setPivotFilters] = useState<FilterEntry[]>(initialPivotFilters ?? [])
+  const [sortModel, setSortModel] = useState<SortItem[]>(() => {
+    const init = initialRowGroups ?? DEFAULT_ROW_GROUPS
+    return init.length > 0 ? [{ colId: init[0].colId, sort: 'asc' }] : []
+  })
   const [rows, setRows] = useState<Record<string, unknown>[]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [isQuerying, setIsQuerying] = useState(false)
@@ -71,6 +75,22 @@ export function PivotTable({
 
   const fetchIdRef = useRef(0)
   const parentRef = useRef<HTMLDivElement>(null)
+
+  // Reset sort to first row group (asc) whenever the row group set changes
+  const rowGroupIdsKey = rowGroups.map((r) => r.colId).join('\x00')
+  useEffect(() => {
+    setSortModel(rowGroups.length > 0 ? [{ colId: rowGroups[0].colId, sort: 'asc' }] : [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowGroupIdsKey])
+
+  const toggleSort = useCallback((colId: string) => {
+    setSortModel((prev) => {
+      const existing = prev.find((s) => s.colId === colId)
+      if (!existing) return [{ colId, sort: 'asc' }]
+      if (existing.sort === 'asc') return [{ colId, sort: 'desc' }]
+      return [{ colId, sort: 'asc' }] // wrap around back to asc
+    })
+  }, [])
 
   const leafCols = useMemo(
     () =>
@@ -151,6 +171,7 @@ export function PivotTable({
         rowGroups,
         pivotCols,
         valueCols,
+        sortModel,
       })
       if (id !== fetchIdRef.current) return
       function flattenFields(defs: { field?: string; children?: unknown[] }[]): string[] {
@@ -187,6 +208,7 @@ export function PivotTable({
     rowGroups,
     pivotCols,
     valueCols,
+    sortModel,
   ])
 
   useEffect(() => {
@@ -353,14 +375,34 @@ export function PivotTable({
               </colgroup>
               <thead className="sticky top-0 z-10 bg-muted">
                 <tr>
-                  {headers.map((h) => (
-                    <th
-                      key={h}
-                      className={`h-12 px-4 text-left ${TYPOGRAPHY.tableHeader} border-b border-border whitespace-nowrap overflow-hidden text-ellipsis`}
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  {headers.map((h, i) => {
+                    const isRowGroup = i < rowGroups.length
+                    const sortDir = isRowGroup
+                      ? sortModel.find((s) => s.colId === h)?.sort
+                      : undefined
+                    return (
+                      <th
+                        key={h}
+                        onClick={isRowGroup ? () => toggleSort(h) : undefined}
+                        className={`h-12 px-4 text-left ${TYPOGRAPHY.tableHeader} border-b border-border whitespace-nowrap overflow-hidden text-ellipsis${isRowGroup ? ' cursor-pointer select-none hover:bg-muted/70' : ''}`}
+                      >
+                        {isRowGroup ? (
+                          <div className="flex items-center gap-1.5">
+                            <span>{rowGroups[i].label}</span>
+                            {sortDir === 'asc' ? (
+                              <ArrowUp className="h-3 w-3 shrink-0" />
+                            ) : sortDir === 'desc' ? (
+                              <ArrowDown className="h-3 w-3 shrink-0" />
+                            ) : (
+                              <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-30" />
+                            )}
+                          </div>
+                        ) : (
+                          h
+                        )}
+                      </th>
+                    )
+                  })}
                 </tr>
               </thead>
               <tbody style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
