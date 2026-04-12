@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.2](https://github.com/stratif-io/stratif.io/compare/v0.26.1...v0.26.2) (2026-04-12)
+
+
+### Bug Fixes
+
+* fetch main before force-with-lease push to handle UI-merged PRs ([0afe092](https://github.com/stratif-io/stratif.io/commit/0afe092d9d812430296fc746d1b49435c763cb90))
+
 ## [0.26.1](https://github.com/stratif-io/stratif.io/compare/v0.26.0...v0.26.1) (2026-04-12)
 
 
