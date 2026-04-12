@@ -171,9 +171,8 @@ class DatabricksSeeder(BaseSeeder):
             "http_path": creds["http_path"],
             "access_token": creds["access_token"],
             "enable_telemetry": False,
+            "_tls_no_verify": True,  # Caddy uses a self-signed local CA
         }
-        if tls_ca := creds.get("tls_trusted_ca_file"):
-            connect_kwargs["_tls_trusted_ca_file"] = tls_ca
         with sql.connect(**connect_kwargs) as self._conn:
             self._register_table()
 
