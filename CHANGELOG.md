@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.28.0](https://github.com/stratif-io/stratif.io/compare/v0.27.0...v0.28.0) (2026-04-12)
+
+
+### Features
+
+* clean pipeline test 1 ([297c2bd](https://github.com/stratif-io/stratif.io/commit/297c2bdda518c3406a802bd2c23e4b84b08b31a5))
+* clean pipeline test 1 ([2983269](https://github.com/stratif-io/stratif.io/commit/298326934f88d96f89e74f4dbc4c4c5c9350528a))
+
 ## [0.27.0](https://github.com/stratif-io/stratif.io/compare/v0.26.2...v0.27.0) (2026-04-12)
 
 
