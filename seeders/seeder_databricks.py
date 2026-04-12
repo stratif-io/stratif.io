@@ -50,29 +50,37 @@ class DatabricksSeeder(BaseSeeder):
                 USING DELTA
             """)
 
+    @staticmethod
+    def _sql_str(value: object) -> str:
+        """Escape a value for safe inline insertion into a SQL literal."""
+        return "'" + str(value).replace("\\", "\\\\").replace("'", "\\'") + "'"
+
     def _insert_events(self, events: list[tuple]) -> None:
         assert self._conn is not None, "_conn not initialized — call seed() first"
         if not events:
             return
-        rows = [
-            (
-                e[0],
-                e[1],
-                e[2],
-                json.dumps(e[3]),
-                e[4],
-                json.dumps(e[5]),
-                json.dumps(e[6]),
-            )
-            for e in events
-        ]
+        sub_batch_size = 1000
         with self._conn.cursor() as cur:
-            cur.executemany(
-                "INSERT INTO events "
-                "(user_id, event_name, timestamp, properties, server, traits, context) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                rows,
-            )
+            for i in range(0, len(events), sub_batch_size):
+                sub = events[i : i + sub_batch_size]
+                value_clauses = []
+                for e in sub:
+                    user_id = self._sql_str(e[0])
+                    event_name = self._sql_str(e[1])
+                    ts = self._sql_str(e[2])
+                    props = self._sql_str(json.dumps(e[3]))
+                    server = self._sql_str(e[4])
+                    traits = self._sql_str(json.dumps(e[5]))
+                    ctx = self._sql_str(json.dumps(e[6]))
+                    value_clauses.append(
+                        f"({user_id}, {event_name}, CAST({ts} AS TIMESTAMP),"
+                        f" {props}, {server}, {traits}, {ctx})"
+                    )
+                cur.execute(
+                    "INSERT INTO events"
+                    " (user_id, event_name, timestamp, properties, server, traits, context)"
+                    f" VALUES {', '.join(value_clauses)}"
+                )
 
     def seed(self) -> dict[str, int]:
         creds = self._db_creds
@@ -86,19 +94,31 @@ class DatabricksSeeder(BaseSeeder):
         self._generate_products()
         users = self._generate_users()
 
+        batch_size = 10_000
         total_events = 0
-        with sql.connect(
-            server_hostname=creds["server_hostname"],
-            http_path=creds["http_path"],
-            access_token=creds["access_token"],
-        ) as self._conn:
+        connect_kwargs: dict = {
+            "server_hostname": creds["server_hostname"],
+            "http_path": creds["http_path"],
+            "access_token": creds["access_token"],
+            "enable_telemetry": False,
+        }
+        if tls_ca := creds.get("tls_trusted_ca_file"):
+            connect_kwargs["_tls_trusted_ca_file"] = tls_ca
+        with sql.connect(**connect_kwargs) as self._conn:
             self._create_events_table()
 
-            for batch in self._generate_events_batched(users):
-                self._insert_events(batch)
-                total_events += len(batch)
-                if total_events % PROGRESS_INTERVAL < len(batch):
-                    log.info("seeding_progress", total_events=total_events)
+            pending: list[tuple] = []
+            for chunk in self._generate_events_batched(users):
+                pending.extend(chunk)
+                while len(pending) >= batch_size:
+                    batch, pending = pending[:batch_size], pending[batch_size:]
+                    self._insert_events(batch)
+                    total_events += len(batch)
+                    log.info("seeding_progress", total_events=total_events, batch_size=len(batch))
+            if pending:
+                self._insert_events(pending)
+                total_events += len(pending)
+                log.info("seeding_progress", total_events=total_events, batch_size=len(pending))
 
         stats = {
             "total_events": total_events,
