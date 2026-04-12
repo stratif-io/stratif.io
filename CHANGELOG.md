@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.26.1](https://github.com/stratif-io/stratif.io/compare/v0.26.0...v0.26.1) (2026-04-12)
+
+
+### Bug Fixes
+
+* use --force-with-lease when pushing develop→main in sync-develop ([9665514](https://github.com/stratif-io/stratif.io/commit/9665514af1f81e31b64764638f35caa47c724316))
+* use --force-with-lease when pushing develop→main in sync-develop ([553cc56](https://github.com/stratif-io/stratif.io/commit/553cc568aa7811814be1d466acb5521028527553))
+
 ## [0.26.0](https://github.com/stratif-io/stratif.io/compare/v0.25.2...v0.26.0) (2026-04-12)
 
 
