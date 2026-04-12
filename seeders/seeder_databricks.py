@@ -14,7 +14,8 @@ the JVM never accumulates in-memory write state and never OOMs.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import os
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,24 +32,25 @@ log = structlog.get_logger(__name__)
 # Host path that is bind-mounted into the Spark container.
 # Override with DATABRICKS_EVENTS_HOST_DIR env var to match your docker-compose.yml.
 # Must NOT use /tmp on macOS — Docker Desktop doesn't expose the real macOS /tmp.
-import os as _os
 EVENTS_HOST_DIR = Path(
-    _os.environ.get(
+    os.environ.get(
         "DATABRICKS_EVENTS_HOST_DIR",
         str(Path.home() / "my_work/docker_databases/data/databricks-events"),
     )
 )
 EVENTS_CONTAINER_DIR = "/tmp/databricks-events"
 
-_SCHEMA = pa.schema([
-    pa.field("user_id",    pa.string(),              nullable=False),
-    pa.field("event_name", pa.string(),              nullable=False),
-    pa.field("timestamp",  pa.timestamp("us", tz="UTC"), nullable=False),
-    pa.field("properties", pa.string(),              nullable=False),
-    pa.field("server",     pa.string(),              nullable=False),
-    pa.field("traits",     pa.string(),              nullable=False),
-    pa.field("context",    pa.string(),              nullable=False),
-])
+_SCHEMA = pa.schema(
+    [
+        pa.field("user_id", pa.string(), nullable=False),
+        pa.field("event_name", pa.string(), nullable=False),
+        pa.field("timestamp", pa.timestamp("us", tz="UTC"), nullable=False),
+        pa.field("properties", pa.string(), nullable=False),
+        pa.field("server", pa.string(), nullable=False),
+        pa.field("traits", pa.string(), nullable=False),
+        pa.field("context", pa.string(), nullable=False),
+    ]
+)
 
 
 class DatabricksSeeder(BaseSeeder):
@@ -102,11 +104,11 @@ class DatabricksSeeder(BaseSeeder):
             for e in chunk:
                 ts_raw = e[2]
                 if isinstance(ts_raw, str):
-                    ts = datetime.fromisoformat(ts_raw).replace(tzinfo=timezone.utc)
+                    ts = datetime.fromisoformat(ts_raw).replace(tzinfo=UTC)
                 elif isinstance(ts_raw, datetime):
-                    ts = ts_raw if ts_raw.tzinfo else ts_raw.replace(tzinfo=timezone.utc)
+                    ts = ts_raw if ts_raw.tzinfo else ts_raw.replace(tzinfo=UTC)
                 else:
-                    ts = datetime.fromtimestamp(float(ts_raw), tz=timezone.utc)
+                    ts = datetime.fromtimestamp(float(ts_raw), tz=UTC)
 
                 rows["user_id"].append(str(e[0]))
                 rows["event_name"].append(str(e[1]))
@@ -119,13 +121,19 @@ class DatabricksSeeder(BaseSeeder):
 
                 if len(rows["user_id"]) >= batch_size:
                     flush()
-                    log.info("seeding_progress", total_events=total_events,
-                             batch_size=batch_size)
+                    log.info(
+                        "seeding_progress",
+                        total_events=total_events,
+                        batch_size=batch_size,
+                    )
 
         if rows["user_id"]:
             flush()
-            log.info("seeding_progress", total_events=total_events,
-                     batch_size=len(rows["user_id"]))
+            log.info(
+                "seeding_progress",
+                total_events=total_events,
+                batch_size=len(rows["user_id"]),
+            )
 
         if writer:
             writer.close()
