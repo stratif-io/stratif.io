@@ -282,7 +282,9 @@ class PostgreSQLBackend:
         cursor = conn.cursor()
         try:
             cursor.execute(query, params or None)
-            return cursor.fetchall()
+            if cursor.description is not None:
+                return cursor.fetchall()
+            return []
         finally:
             with contextlib.suppress(Exception):
                 cursor.close()

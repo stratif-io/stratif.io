@@ -71,7 +71,7 @@ class TestClickHouseDialect:
         assert backend.date_trunc("day", "ts") == "toStartOfDay(ts)"
 
     def test_date_trunc_week(self, backend):
-        assert backend.date_trunc("week", "ts") == "toStartOfWeek(ts)"
+        assert backend.date_trunc("week", "ts") == "toStartOfWeek(ts, 1)"
 
     def test_date_trunc_month(self, backend):
         assert backend.date_trunc("month", "ts") == "toStartOfMonth(ts)"

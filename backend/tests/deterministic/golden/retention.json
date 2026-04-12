@@ -1,0 +1,21 @@
+{
+  "sql": "\n        WITH signups AS (\n            SELECT\n                user_id,\n                MIN(DATE_TRUNC('day', timestamp)) AS cohort_date\n            FROM events\n            WHERE timestamp >= '2023-01-01 00:00:00' AND timestamp <= '2024-12-31 23:59:59'\n            GROUP BY user_id\n        ),\n        user_activity AS (\n            SELECT DISTINCT\n                user_id,\n                DATE_TRUNC('day', timestamp) AS activity_date\n            FROM events\n            \n        ),\n        cohort_activity AS (\n            SELECT\n                s.user_id,\n                s.cohort_date,\n                FLOOR((DATE_DIFF('day', s.cohort_date, a.activity_date)) / 1) AS unit_since_signup\n            FROM signups s\n            LEFT JOIN user_activity a ON s.user_id = a.user_id\n            WHERE a.activity_date >= s.cohort_date\n        ),\n        cohort_sizes AS (\n            SELECT\n                cohort_date,\n                COUNT(DISTINCT user_id) AS cohort_size\n            FROM signups\n            GROUP BY cohort_date\n        ),\n        retention_counts AS (\n            SELECT\n                ca.cohort_date,\n                ca.unit_since_signup,\n                COUNT(DISTINCT ca.user_id) AS returning_users\n            FROM cohort_activity ca\n            JOIN cohort_sizes cs ON ca.cohort_date = cs.cohort_date\n            GROUP BY ca.cohort_date, ca.unit_since_signup\n        )\n        SELECT\n            cs.cohort_date,\n            cs.cohort_size,\n            rc.unit_since_signup,\n            rc.returning_users\n        FROM cohort_sizes cs\n        LEFT JOIN retention_counts rc ON cs.cohort_date = rc.cohort_date\n        ORDER BY cs.cohort_date DESC, rc.unit_since_signup ASC\n    ",
+  "granularity": "day",
+  "milestones": [1, 7, 14, 30, 90],
+  "total_available_cohorts": 1,
+  "data": [
+    {
+      "cohort_date": "2023-01-01",
+      "cohort_size": 10,
+      "retention_series": [
+        100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 100.0
+      ],
+      "milestone_values": [0.0, 100.0, 100.0, 0.0, 100.0]
+    }
+  ]
+}
