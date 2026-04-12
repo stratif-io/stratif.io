@@ -48,6 +48,11 @@ def get_clickhouse_credentials(cfg: dict) -> dict:
     return _get_credentials(cfg, "clickhouse")
 
 
+def get_databricks_credentials(cfg: dict) -> dict:
+    """Return credentials dict for the Databricks backend."""
+    return _get_credentials(cfg, "databricks")
+
+
 def _get_credentials(cfg: dict, backend: str) -> dict:
     try:
         return cfg["backends"][backend]["credentials"]
