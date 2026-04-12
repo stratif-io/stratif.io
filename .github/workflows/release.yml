@@ -3,11 +3,13 @@ name: Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
   packages: write
+  actions: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -74,9 +76,12 @@ jobs:
           fi
 
           # Wait for GitHub to compute mergeability after the push, then merge.
-          # The PR merge triggers a new push event on main → run 2 (release_created=true).
+          # NOTE: gh pr merge with GITHUB_TOKEN does NOT trigger a new push event
+          # (GitHub suppresses all workflow triggers from GITHUB_TOKEN to prevent
+          # infinite loops). We fire workflow_dispatch explicitly instead.
           sleep 10
           gh pr merge "$PR_NUMBER" --merge --admin
+          gh workflow run release.yml --ref main
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
