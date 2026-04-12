@@ -14,7 +14,6 @@ the JVM never accumulates in-memory write state and never OOMs.
 
 from __future__ import annotations
 
-import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -29,9 +28,16 @@ from seeders.seeder import BaseSeeder, SeedConfig
 
 log = structlog.get_logger(__name__)
 
-# Host path that is bind-mounted into the Spark container at the same path.
-# Must match the volume mapping in docker-compose.yml.
-EVENTS_HOST_DIR = Path("/tmp/databricks-events")
+# Host path that is bind-mounted into the Spark container.
+# Override with DATABRICKS_EVENTS_HOST_DIR env var to match your docker-compose.yml.
+# Must NOT use /tmp on macOS — Docker Desktop doesn't expose the real macOS /tmp.
+import os as _os
+EVENTS_HOST_DIR = Path(
+    _os.environ.get(
+        "DATABRICKS_EVENTS_HOST_DIR",
+        str(Path.home() / "my_work/docker_databases/data/databricks-events"),
+    )
+)
 EVENTS_CONTAINER_DIR = "/tmp/databricks-events"
 
 _SCHEMA = pa.schema([
@@ -69,9 +75,11 @@ class DatabricksSeeder(BaseSeeder):
 
         Returns the total number of events written.
         """
-        if EVENTS_HOST_DIR.exists():
-            shutil.rmtree(EVENTS_HOST_DIR)
-        EVENTS_HOST_DIR.mkdir(parents=True)
+        # Clear existing files without removing the directory itself.
+        # Deleting the directory would break the Docker bind-mount inode on macOS.
+        EVENTS_HOST_DIR.mkdir(parents=True, exist_ok=True)
+        for f in EVENTS_HOST_DIR.iterdir():
+            f.unlink(missing_ok=True)
 
         import json
 
