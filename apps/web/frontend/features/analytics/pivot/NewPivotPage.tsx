@@ -87,7 +87,7 @@ export function NewPivotPage() {
         pivotMode: params.pivotCols.length > 0,
         groupKeys: [],
         filterModel: {},
-        sortModel: [],
+        sortModel: (params.sortModel ?? []).map((s) => ({ colId: s.colId, sort: s.sort })),
         startRow: 0,
         endRow: 500,
         start_date: params.startDate,
