@@ -89,6 +89,7 @@ class DatabricksBackend:
             server_hostname=creds.host,
             http_path=creds.http_path,
             access_token=creds.token,
+            _tls_no_verify=True,  # local Caddy proxy uses a self-signed CA
         )
 
     def pool_key(self, connection_id: str, credentials: BaseModel) -> tuple:
