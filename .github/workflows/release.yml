@@ -160,7 +160,7 @@ jobs:
           # After pushing, we trigger the release workflow explicitly via
           # workflow_dispatch, which GITHUB_TOKEN IS allowed to fire.
           git fetch origin develop
-          git push origin origin/develop:main
+          git push --force-with-lease origin origin/develop:main
           gh workflow run release.yml --ref main
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
