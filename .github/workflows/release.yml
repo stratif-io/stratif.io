@@ -3,13 +3,11 @@ name: Release
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
   packages: write
-  actions: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -25,9 +23,62 @@ jobs:
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          target-branch: main
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+  # When release_created=false: release-please created a version bump PR on main.
+  # We refresh uv.lock inside the PR branch (release-please bumps pyproject.toml
+  # without touching uv.lock), then merge it. The PR merge triggers a new push
+  # event on main, which kicks off run 2 where release_created=true.
+  auto-merge-release-pr:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Refresh uv.lock and merge version bump PR
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --base main \
+            --json number,headRefName \
+            --jq '[.[] | select(.headRefName | startswith("release-please--"))] | .[0].number // empty')
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No pending release-please PR — no unreleased commits. Done."
+            exit 0
+          fi
+
+          # Refresh uv.lock in the PR branch before merging so the lockfile
+          # stays in sync with the bumped pyproject.toml version.
+          PR_BRANCH=$(gh pr view "$PR_NUMBER" --json headRefName --jq '.headRefName')
+          git fetch origin "$PR_BRANCH"
+          git checkout "$PR_BRANCH"
+          uv lock
+          if ! git diff --quiet uv.lock; then
+            git add uv.lock
+            git commit -m "chore: refresh uv.lock for version bump [skip ci]"
+            git push origin "$PR_BRANCH"
+          fi
+
+          # Wait for GitHub to compute mergeability after the push, then merge.
+          # The PR merge triggers a new push event on main → run 2 (release_created=true).
+          sleep 10
+          gh pr merge "$PR_NUMBER" --merge --admin
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-frontend:
     needs: release-please
@@ -101,9 +152,11 @@ jobs:
         env:
           STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
 
+  # After a release, open a PR to sync the version bump and uv.lock back into
+  # develop so it stays up to date with main.
   sync-develop:
     needs: release-please
-    if: always() && needs.release-please.result == 'success'
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -111,65 +164,21 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
-      - name: Configure git
+      - name: Open sync PR (main → develop)
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      # When release_created=false: release-please created a version bump PR on
-      # develop (the repo default branch). We refresh uv.lock inside the PR branch
-      # (release-please bumps pyproject.toml without touching uv.lock), then
-      # auto-merge to develop, then push develop→main.
-      # The resulting push to main triggers a second run where release_created=true.
-      # No direct commits to main means develop and main stay in sync — no divergence.
-      - name: Merge version bump PR and push to main
-        if: ${{ needs.release-please.outputs.release_created != 'true' }}
-        run: |
-          PR_NUMBER=$(gh pr list \
+          OUTPUT=$(gh pr create \
+            --title "chore: sync main → develop after ${{ needs.release-please.outputs.tag_name }}" \
+            --body "Version bump and uv.lock from the ${{ needs.release-please.outputs.tag_name }} release. Merge to keep develop in sync with main." \
             --base develop \
-            --json number,headRefName \
-            --jq '[.[] | select(.headRefName | startswith("release-please--"))] | .[0].number // empty')
-
-          if [ -z "$PR_NUMBER" ]; then
-            echo "No pending release-please PR — no unreleased feat/fix commits. Done."
-            exit 0
-          fi
-
-          # Refresh uv.lock in the PR branch before merging so no extra commit
-          # is needed on main or develop after the fact.
-          PR_BRANCH=$(gh pr view "$PR_NUMBER" --json headRefName --jq '.headRefName')
-          git fetch origin "$PR_BRANCH"
-          git checkout "$PR_BRANCH"
-          uv lock
-          if ! git diff --quiet uv.lock; then
-            git add uv.lock
-            git commit -m "chore: refresh uv.lock for version bump [skip ci]"
-            git push origin "$PR_BRANCH"
-          fi
-
-          # Merge to develop. Wait for GitHub to compute mergeability first.
-          sleep 10
-          gh pr merge "$PR_NUMBER" --merge --admin
-
-          # Push develop→main so main has the version bump.
-          # NOTE: GITHUB_TOKEN pushes do NOT trigger new workflow runs (GitHub
-          # suppresses push events from GITHUB_TOKEN to prevent infinite loops).
-          # After pushing, we trigger the release workflow explicitly via
-          # workflow_dispatch, which GITHUB_TOKEN IS allowed to fire.
-          git fetch origin develop main
-          git push --force-with-lease origin origin/develop:main
-          gh workflow run release.yml --ref main
+            --head main 2>&1) && echo "$OUTPUT" || {
+            if echo "$OUTPUT" | grep -q "No commits between"; then
+              echo "develop and main are identical — no sync PR needed."
+            elif echo "$OUTPUT" | grep -qiE "already exists|A pull request for"; then
+              echo "Sync PR already exists — skipping."
+            else
+              echo "$OUTPUT"
+              exit 1
+            fi
+          }
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # When release_created=true: all assets are being built in parallel jobs.
-      # develop and main are already in sync (version bump + uv.lock came through
-      # the auto-merged PR). Nothing more to do.
-      - name: Confirm release
-        if: ${{ needs.release-please.outputs.release_created == 'true' }}
-        run: |
-          echo "✓ Release ${{ needs.release-please.outputs.tag_name }} created."
-          echo "  develop and main are in sync — no further sync needed."
