@@ -201,7 +201,9 @@ class SQLiteBackend:
         )
 
     def execute(self, conn: Any, query: str, params: list | None) -> list[tuple]:
-        return list(conn.execute(query, params or []).fetchall())
+        result = list(conn.execute(query, params or []).fetchall())
+        conn.commit()
+        return result
 
     def execute_with_columns(
         self, conn: Any, query: str, params: list | None
@@ -238,7 +240,7 @@ class SQLiteBackend:
         _map = {
             "hour": f"STRFTIME('%Y-%m-%d %H:00:00', {col})",
             "day": f"DATE({col})",
-            "week": f"DATE({col}, 'weekday 1', '-6 days')",
+            "week": f"DATE({col}, 'weekday 0', '-6 days')",
             "month": f"STRFTIME('%Y-%m-01', {col})",
             "year": f"STRFTIME('%Y-01-01', {col})",
         }

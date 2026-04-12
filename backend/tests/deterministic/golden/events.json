@@ -1,0 +1,4 @@
+{
+  "sql": "SELECT DISTINCT event_name FROM events ORDER BY event_name",
+  "events": ["add_to_cart", "checkout", "page_view", "purchase", "signup"]
+}
