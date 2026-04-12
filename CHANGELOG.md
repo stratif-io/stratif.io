@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.26.0](https://github.com/stratif-io/stratif.io/compare/v0.25.2...v0.26.0) (2026-04-12)
+
+
+### Features
+
+* **retention:** add BENCHMARKS, getCellClass, milestoneTooltip helpers ([14df518](https://github.com/stratif-io/stratif.io/commit/14df5189bd61fe645a0e3ee8e8117248604442a3))
+* **retention:** bracket retention, benchmark colors, Δ column, Learn panel ([0296554](https://github.com/stratif-io/stratif.io/commit/02965545d0ae79810736f0a2256780f43d211478))
+* **retention:** redesign RetentionTable with benchmark colors, soon cells, delta column ([3141a2e](https://github.com/stratif-io/stratif.io/commit/3141a2e19305b59470780d8e93974b1c7fdf5e71))
+* **retention:** register RetentionLearnPanel in design system ([9b36848](https://github.com/stratif-io/stratif.io/commit/9b36848eb013ebdaf469c3eea05135f53e0654e9))
+* **retention:** remove metric cards, add Learn panel ([85bd16d](https://github.com/stratif-io/stratif.io/commit/85bd16d3939cd8b1a02080fa32f001b487fa4ec3))
+* **retention:** switch to bracket (cumulative) retention + updated milestones ([c405cb5](https://github.com/stratif-io/stratif.io/commit/c405cb54012d471bb93a9eb79b897ab91efb79b5))
+* **retention:** update frontend types for nullable milestone_values ([c2531e8](https://github.com/stratif-io/stratif.io/commit/c2531e80d6a026f424ce18de7916239c2d93fcf4))
+* sortable column headers in DataTable + pivot table sorts by row dimension ([99e6dcf](https://github.com/stratif-io/stratif.io/commit/99e6dcfc47f167c28b29ba95fa97c1be67bbe2ed))
+* sortable headers in DataTable + pivot table row sorting ([5342911](https://github.com/stratif-io/stratif.io/commit/53429118d154a9400c7a03ce120910ac9c51818c))
+
+
+### Bug Fixes
+
+* **retention:** calendar-accurate is_reached for month/quarter/year + null test ([aedaf2b](https://github.com/stratif-io/stratif.io/commit/aedaf2bf1a12c16a67f0ba382e00c36ac1621f2c))
+* **retention:** fix avg row showing 0% for unreached milestones ([ef342ae](https://github.com/stratif-io/stratif.io/commit/ef342ae1c9fcb8f9e1899ad860a92bfa541a16ac))
+* **retention:** fix timezone off-by-one in formatDate, remove dead avgMilestones from hook ([306fae3](https://github.com/stratif-io/stratif.io/commit/306fae3de7516f6b5991167a0213c0df9a32cf55))
+* **retention:** use TableHead for Average row label for accessibility ([5a89504](https://github.com/stratif-io/stratif.io/commit/5a895040d40fbdaed623bc98d1aad4151ff42dd6))
+
 ## [0.25.2](https://github.com/stratif-io/stratif.io/compare/v0.25.1...v0.25.2) (2026-04-11)
 
 
