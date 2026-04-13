@@ -6,12 +6,6 @@ import { TableStep } from '../TableStep'
 
 vi.mock('../../../hooks/useConnectionsData', () => ({
   useConnectionTables: vi.fn(),
-  useUpsertSchemaConfig: vi.fn(() => ({
-    mutate: vi.fn(),
-    isPending: false,
-    isSuccess: false,
-    isError: false,
-  })),
 }))
 
 vi.mock('../../TableBrowserPicker', () => ({
