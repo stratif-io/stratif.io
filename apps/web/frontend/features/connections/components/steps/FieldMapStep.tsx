@@ -364,14 +364,6 @@ export function FieldMapStep({ connId }: Props) {
                 }}
               />
             ))}
-
-            {/* Trailing "add" card */}
-            <div
-              className="border border-dashed border-border rounded-lg flex items-center justify-center min-h-[120px] cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
-              onClick={addProp}
-            >
-              <span className="text-xs text-muted-foreground">+ Add property</span>
-            </div>
           </div>
         )}
       </div>
