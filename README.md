@@ -101,14 +101,14 @@ Open **http://localhost:9999** when it's done.
 
 ## ⚙️ Configuration
 
-| Variable                   | Default                                      | Description                                                      |
-| -------------------------- | -------------------------------------------- | ---------------------------------------------------------------- |
-| `STRATIFIO_ENCRYPTION_KEY` | _(required)_                                 | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
-| `STRATIFIO_PRODUCT_DB_URL` | `sqlite+aiosqlite:///./stratifio_product.db` | Product DB storing connection configs                            |
-| `STRATIFIO_AUTH_ENABLED`   | `false`                                      | Enable API key authentication                                    |
-| `STRATIFIO_API_KEY`        | _(empty)_                                    | Required when `AUTH_ENABLED=true`                                |
-| `STRATIFIO_CORS_ORIGINS`   | `http://localhost:8000`                      | Allowed CORS origins                                             |
-| `STRATIFIO_DEBUG`          | `false`                                      | Enable `/docs` and `/redoc` endpoints                            |
+| Variable                   | Default                                           | Description                                                      |
+| -------------------------- | ------------------------------------------------- | ---------------------------------------------------------------- |
+| `STRATIFIO_ENCRYPTION_KEY` | _(required)_                                      | Encrypts stored credentials. Generate: `openssl rand -base64 32` |
+| `STRATIFIO_PRODUCT_DB_URL` | `sqlite+aiosqlite:///./data/stratifio_product.db` | Product DB storing connection configs                            |
+| `STRATIFIO_AUTH_ENABLED`   | `false`                                           | Enable API key authentication                                    |
+| `STRATIFIO_API_KEY`        | _(empty)_                                         | Required when `AUTH_ENABLED=true`                                |
+| `STRATIFIO_CORS_ORIGINS`   | `http://localhost:8000`                           | Allowed CORS origins                                             |
+| `STRATIFIO_DEBUG`          | `false`                                           | Enable `/docs` and `/redoc` endpoints                            |
 
 Copy `.env.example` as a starting point:
 
