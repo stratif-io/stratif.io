@@ -377,7 +377,8 @@ async def open_analytics_db(
         pool_key = backend.pool_key(connection_id, credentials)
         factory = lambda: backend.open(credentials, read_only=False)  # noqa: E731
         conn = _pool_get(pool_key, factory)
-        cols = backend.get_table_columns(conn, f"{_iq}{events_table}{_iq}")
+        _quoted_table = ".".join(f"{_iq}{p}{_iq}" for p in events_table.split("."))
+        cols = backend.get_table_columns(conn, _quoted_table)
         db = AnalyticsDatabase(
             conn,
             backend,
@@ -391,7 +392,8 @@ async def open_analytics_db(
         return db
 
     conn = backend.open(credentials, read_only=True)
-    cols = backend.get_table_columns(conn, f"{_iq}{events_table}{_iq}")
+    _quoted_table = ".".join(f"{_iq}{p}{_iq}" for p in events_table.split("."))
+    cols = backend.get_table_columns(conn, _quoted_table)
     return AnalyticsDatabase(
         conn,
         backend,
