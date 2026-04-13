@@ -66,7 +66,7 @@ const USER_IDENTITY_FIELDS = [
 
 const PROPERTY_TYPES: PropertyType[] = ['string', 'number', 'boolean', 'timestamp']
 
-const EVENT_GRID = 'grid-cols-[1fr_1fr_80px_28px_56px_28px]'
+const EVENT_GRID = 'grid-cols-[1fr_1fr_80px_90px_56px_28px]'
 
 const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   Timer,
@@ -190,11 +190,18 @@ function CompactCategoryButton({
           type="button"
           title={selected ? selected.label : 'No category'}
           className={cn(
-            'h-7 w-7 flex items-center justify-center rounded border border-input text-xs font-medium hover:bg-accent transition-colors',
+            'h-7 w-full flex items-center gap-1.5 rounded border border-input px-2 text-xs font-medium hover:bg-accent transition-colors truncate',
             value ? 'text-foreground' : 'text-muted-foreground/40'
           )}
         >
-          {SelectedIcon ? <SelectedIcon className="h-3.5 w-3.5" /> : '—'}
+          {SelectedIcon ? (
+            <>
+              <SelectedIcon className="h-3 w-3 shrink-0" />
+              <span className="truncate">{selected!.label}</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground/40">—</span>
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-1" align="start">
@@ -687,7 +694,7 @@ export function FieldMapStep({ connId }: FieldMapStepProps) {
                 <span>Name</span>
                 <span>Column path</span>
                 <span>Type</span>
-                <span />
+                <span>Category</span>
                 <span>Filter</span>
                 <span />
               </div>
