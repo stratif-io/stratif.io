@@ -72,12 +72,17 @@ export function ConnectionDetailPage() {
 
   const completedSteps = getCompletedSteps(connection, testStatus)
 
-  const handleStepClick = (step: ConnectionStep) => {
+  // Route all navigation through this when on fieldmap so pending detections are guarded.
+  const guardedNavigate = (path: string) => {
     if (currentStep === 'fieldmap' && fieldMapRef.current) {
-      fieldMapRef.current.requestLeave(() => navigate(`/connections/${id}/${step}`))
+      fieldMapRef.current.requestLeave(() => navigate(path))
     } else {
-      navigate(`/connections/${id}/${step}`)
+      navigate(path)
     }
+  }
+
+  const handleStepClick = (step: ConnectionStep) => {
+    guardedNavigate(`/connections/${id}/${step}`)
   }
 
   const handleTestStatusChange = (status: TestStatus) => {
@@ -116,7 +121,7 @@ export function ConnectionDetailPage() {
           variant="ghost"
           size="sm"
           className="-ml-2 text-muted-foreground"
-          onClick={() => navigate('/connections')}
+          onClick={() => guardedNavigate('/connections')}
         >
           <ArrowLeft className="h-4 w-4 mr-1.5" />
           Connections
