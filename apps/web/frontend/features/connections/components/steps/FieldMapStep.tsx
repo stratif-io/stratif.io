@@ -37,6 +37,7 @@ export function FieldMapStep({ connId }: Props) {
   const {
     form,
     updateForm,
+    setForm,
     pendingDetections,
     setPendingDetections,
     detectedColumns,
@@ -90,22 +91,24 @@ export function FieldMapStep({ connId }: Props) {
   }
 
   function addProp() {
-    updateForm({
+    setForm((prev) => ({
+      ...prev,
       customProps: [
-        ...form.customProps,
+        ...prev.customProps,
         { id: crypto.randomUUID(), name: '', path: '', type: 'string', category: undefined },
       ],
-    })
+    }))
   }
 
   function removeProp(idx: number) {
-    updateForm({ customProps: form.customProps.filter((_, i) => i !== idx) })
+    setForm((prev) => ({ ...prev, customProps: prev.customProps.filter((_, i) => i !== idx) }))
   }
 
   function updateProp(idx: number, patch: Partial<CustomProperty>) {
-    updateForm({
-      customProps: form.customProps.map((p, i) => (i === idx ? { ...p, ...patch } : p)),
-    })
+    setForm((prev) => ({
+      ...prev,
+      customProps: prev.customProps.map((p, i) => (i === idx ? { ...p, ...patch } : p)),
+    }))
   }
 
   // Group props by category (null = no category); named categories first alphabetically, null last
@@ -312,27 +315,24 @@ export function FieldMapStep({ connId }: Props) {
                 }}
                 onChangeCategory={(newCat) => {
                   const idxSet = new Set(groupProps.map((gp) => gp.idx))
-                  updateForm({
-                    customProps: form.customProps.map((p, i) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    customProps: prev.customProps.map((p, i) =>
                       idxSet.has(i) ? { ...p, category: newCat ?? undefined } : p
                     ),
-                  })
+                  }))
                 }}
                 onChangeProp={(idx, patch) => updateProp(idx, patch)}
                 onRemoveProp={(idx) => removeProp(idx)}
                 onAddToCategory={() => {
-                  updateForm({
+                  const category = cat ?? undefined
+                  setForm((prev) => ({
+                    ...prev,
                     customProps: [
-                      ...form.customProps,
-                      {
-                        id: crypto.randomUUID(),
-                        name: '',
-                        path: '',
-                        type: 'string',
-                        category: cat ?? undefined,
-                      },
+                      ...prev.customProps,
+                      { id: crypto.randomUUID(), name: '', path: '', type: 'string', category },
                     ],
-                  })
+                  }))
                 }}
               />
             ))}

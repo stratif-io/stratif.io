@@ -251,6 +251,7 @@ export function useSchemaForm(connId: string) {
   return {
     form,
     updateForm,
+    setForm,
     pendingDetections,
     setPendingDetections,
     detectedColumns,
