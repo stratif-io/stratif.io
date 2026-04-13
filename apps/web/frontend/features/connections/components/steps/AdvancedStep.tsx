@@ -64,7 +64,7 @@ export function AdvancedStep({ connId, onDone }: AdvancedStepProps) {
       </div>
 
       <div className="flex justify-end pt-3 border-t">
-        <Button variant="outline" size="sm" onClick={onDone}>
+        <Button type="button" variant="outline" size="sm" onClick={onDone}>
           Done — Back to Connections
         </Button>
       </div>

@@ -133,6 +133,7 @@ export function FieldMapStep({ connId }: FieldMapStepProps) {
                 </>
               ) : (
                 <input
+                  aria-label={label}
                   className="flex-1 h-7 rounded border border-input bg-background px-2 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-ring"
                   value={value}
                   list={`cols-${key}`}
