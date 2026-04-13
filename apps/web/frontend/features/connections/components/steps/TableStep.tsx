@@ -101,6 +101,7 @@ export function TableStep({ connId, currentTable, onConfirm }: TableStepProps) {
             type="button"
             onClick={() => setSelected('')}
             className="text-[10px] text-blue-500 hover:text-blue-700"
+            aria-label={`Change selected table ${selected}`}
           >
             Change
           </button>
@@ -108,7 +109,7 @@ export function TableStep({ connId, currentTable, onConfirm }: TableStepProps) {
       )}
 
       <div className="flex justify-end pt-3 border-t">
-        <Button size="sm" disabled={!selected} onClick={() => selected && onConfirm(selected)}>
+        <Button size="sm" disabled={!selected} onClick={() => onConfirm(selected)}>
           Confirm Table →
         </Button>
       </div>
