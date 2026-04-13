@@ -9,7 +9,7 @@
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](package.json)
 [![ghcr.io](https://img.shields.io/badge/ghcr.io-latest-24292e?logo=github)](https://github.com/stratif-io/stratif.io/pkgs/container/stratif.io)
 
-**Your events are already in your warehouse. Connect directly — no pipelines, no ingestion, no vendor lock-in.**
+**No event pipelines. No vendor lock-in. Connect directly to your existing warehouse.**
 
 [Website](https://stratif.io) · [Quick Start](#-quick-start) · [Docs](docs/docs.md) · [Contributing](CONTRIBUTING.md)
 
