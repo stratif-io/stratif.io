@@ -145,8 +145,12 @@ describe('FieldMapStep', () => {
     expect(screen.getByTestId('identity-row-email_field')).toBeInTheDocument()
   })
 
+  // Helper: a dummy pending detection forces expanded={true} on all CategoryCards
+  const expandCards = { pendingDetections: [{ fieldKey: '_x', label: 'X', proposedColumn: '_x' }] }
+
   it('renders property cards for customProps', () => {
     renderStep({
+      ...expandCards,
       form: {
         ...baseHookReturn.form,
         customProps: [
@@ -159,6 +163,7 @@ describe('FieldMapStep', () => {
 
   it('groups props with same category into one card', () => {
     renderStep({
+      ...expandCards,
       form: {
         ...baseHookReturn.form,
         customProps: [
@@ -179,16 +184,14 @@ describe('FieldMapStep', () => {
         ],
       },
     })
-    // Both names appear
     expect(screen.getByDisplayValue('Session Duration')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Page Views')).toBeInTheDocument()
-    // Only one category card header (one CategoryBadge showing "metrics" / its label)
-    // Both are in the same card — we verify via a single "add to metrics" footer button
     expect(screen.getAllByRole('button', { name: /add to metrics/i })).toHaveLength(1)
   })
 
   it('puts props with different categories in different cards', () => {
     renderStep({
+      ...expandCards,
       form: {
         ...baseHookReturn.form,
         customProps: [
@@ -205,7 +208,6 @@ describe('FieldMapStep', () => {
     })
     expect(screen.getByDisplayValue('Plan')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Session Duration')).toBeInTheDocument()
-    // Two separate add-to-category buttons
     expect(screen.getByRole('button', { name: /add to user/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /add to metrics/i })).toBeInTheDocument()
   })
@@ -256,6 +258,7 @@ describe('FieldMapStep', () => {
   it('calls setEnabledFields when filter toggle is clicked on a custom property row', async () => {
     const setEnabledFields = vi.fn()
     renderStep({
+      ...expandCards,
       setEnabledFields,
       enabledFields: {},
       form: {
@@ -276,6 +279,7 @@ describe('FieldMapStep', () => {
   it('filter toggle removes field from enabledFields when already enabled', async () => {
     const setEnabledFields = vi.fn()
     renderStep({
+      ...expandCards,
       setEnabledFields,
       enabledFields: { 'traits.plan': { label: 'Plan', icon: 'Activity' } },
       form: {
@@ -329,7 +333,7 @@ describe('FieldMapStep', () => {
         { id: 'p1', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
       ],
     }
-    renderStep({ setForm, form: prevForm })
+    renderStep({ ...expandCards, setForm, form: prevForm })
     await userEvent.click(screen.getByRole('button', { name: /add to user/i }))
     expect(setForm).toHaveBeenCalled()
     const updater = setForm.mock.calls[0][0]
