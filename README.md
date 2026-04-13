@@ -4,7 +4,7 @@
     <img src="docs/logo.svg" alt="stratif.io"/>
   </picture>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: ELv2](https://img.shields.io/badge/License-ELv2-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](package.json)
 [![ghcr.io](https://img.shields.io/badge/ghcr.io-latest-24292e?logo=github)](https://github.com/cabichahine/stratif.io/pkgs/container/stratif.io)
@@ -176,7 +176,7 @@ bun run lint && bun run build && bun run test:run
 
 ## 📄 License
 
-MIT © stratif.io Contributors
+Elastic License 2.0 © Carlo Abi Chahine
 
 ---
 
