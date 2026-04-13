@@ -123,6 +123,9 @@ class DatabricksSeeder(BaseSeeder):
             )
 
         df = pd.DataFrame(rows)
+        # Databricks COPY INTO rejects nanosecond timestamps (Parquet INT64 NANOS).
+        # Cast to microseconds, which maps to INT64 MICROS and is always accepted.
+        df["timestamp"] = df["timestamp"].astype("datetime64[us]")
 
         with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as tmp:
             local_file = tmp.name
