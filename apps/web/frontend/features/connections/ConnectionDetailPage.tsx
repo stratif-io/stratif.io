@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import type { SchemaConfigBody } from '@/types'
 import { ConnectionSetupLayout } from './components/ConnectionSetupLayout'
 import { CredentialsStep } from './components/steps/CredentialsStep'
 import { TableStep } from './components/steps/TableStep'
-import { FieldMapStep } from './components/steps/FieldMapStep'
+import { FieldMapStep, type FieldMapStepHandle } from './components/steps/FieldMapStep'
 import { AdvancedStep } from './components/steps/AdvancedStep'
 import type { ConnectionStep, TestStatus } from './components/ConnectionSidebar'
 
@@ -39,6 +39,7 @@ export function ConnectionDetailPage() {
   const navigate = useNavigate()
   const { data: connection, isLoading, error } = useConnection(id ?? '')
   const [testStatus, setTestStatus] = useState<TestStatus>('idle')
+  const fieldMapRef = useRef<FieldMapStepHandle>(null)
   const upsertSchema = useUpsertSchemaConfig(id ?? '')
   const { data: schemaConfig } = useSchemaConfig(id ?? '')
 
@@ -72,7 +73,11 @@ export function ConnectionDetailPage() {
   const completedSteps = getCompletedSteps(connection, testStatus)
 
   const handleStepClick = (step: ConnectionStep) => {
-    navigate(`/connections/${id}/${step}`)
+    if (currentStep === 'fieldmap' && fieldMapRef.current) {
+      fieldMapRef.current.requestLeave(() => navigate(`/connections/${id}/${step}`))
+    } else {
+      navigate(`/connections/${id}/${step}`)
+    }
   }
 
   const handleTestStatusChange = (status: TestStatus) => {
@@ -141,7 +146,7 @@ export function ConnectionDetailPage() {
             onConfirm={handleTableConfirm}
           />
         )}
-        {currentStep === 'fieldmap' && <FieldMapStep connId={connection.id} />}
+        {currentStep === 'fieldmap' && <FieldMapStep ref={fieldMapRef} connId={connection.id} />}
         {currentStep === 'advanced' && (
           <AdvancedStep connId={connection.id} onDone={() => navigate('/connections')} />
         )}
