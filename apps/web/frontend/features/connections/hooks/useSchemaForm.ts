@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import type { CustomProperty, SchemaDetectColumn } from '@/types'
+import type {
+  CustomProperty,
+  DimensionCategoryConfig,
+  PropertyType,
+  SchemaDetectColumn,
+} from '@/types'
+import dimensionCategories from '@/config/dimension-categories.json'
+import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
 import {
   useSchemaConfig,
   useFilterConfig,
@@ -161,10 +168,28 @@ export function useSchemaForm(connId: string) {
         setPendingDetections(pending)
 
         if (data.proposed_custom_properties?.length) {
-          const proposals = data.proposed_custom_properties as CustomProperty[]
+          const proposals = data.proposed_custom_properties as Array<{
+            name: string
+            path: string
+            type: PropertyType
+          }>
+          const allCats = dimensionCategories as DimensionCategoryConfig[]
+          const groups = groupDimensionsByCategory(
+            proposals.map((p) => ({ value: p.name, label: p.name })),
+            allCats
+          )
+          const categoryMap = new Map<string, string>()
+          for (const group of groups) {
+            for (const dim of group.dimensions) categoryMap.set(dim.value, group.category.id)
+          }
+          const propsWithCategory: CustomProperty[] = proposals.map((p) => ({
+            ...p,
+            id: crypto.randomUUID(),
+            category: categoryMap.get(p.name),
+          }))
           setForm((prev) => {
-            const existingPaths = prev.customProps.map((p) => p.path)
-            const newProps = proposals.filter((p) => !existingPaths.includes(p.path))
+            const existingPaths = prev.customProps.map((cp) => cp.path)
+            const newProps = propsWithCategory.filter((p) => !existingPaths.includes(p.path))
             if (!newProps.length) return prev
             return { ...prev, customProps: [...prev.customProps, ...newProps] }
           })
