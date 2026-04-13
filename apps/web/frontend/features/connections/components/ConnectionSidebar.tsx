@@ -25,7 +25,7 @@ interface ConnectionSidebarProps {
   dbType: string
   testStatus: TestStatus
   currentStep: ConnectionStep
-  completedSteps: string[]
+  completedSteps: ConnectionStep[]
   onStepClick: (step: ConnectionStep) => void
   tableFooter?: string
 }
@@ -78,16 +78,18 @@ export function ConnectionSidebar({
       <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider px-1 mb-1.5">
         Setup
       </p>
-      <nav className="space-y-0.5">
+      <nav aria-label="Setup steps" className="space-y-0.5">
         {STEPS.map((step, i) => {
           const isCompleted = completedSteps.includes(step.id)
           const isActive = currentStep === step.id
           return (
             <button
               key={step.id}
+              type="button"
               data-testid={`step-nav-${step.id}`}
               data-active={String(isActive)}
               data-completed={String(isCompleted)}
+              aria-current={isActive ? 'step' : undefined}
               onClick={() => onStepClick(step.id)}
               className={cn(
                 'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left',

@@ -1,14 +1,14 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ConnectionSidebar } from '../ConnectionSidebar'
+import { ConnectionSidebar, ConnectionStep } from '../ConnectionSidebar'
 
 const baseProps = {
   connectionName: 'my-prod-db',
   dbType: 'postgresql',
   testStatus: 'idle' as const,
   currentStep: 'credentials' as const,
-  completedSteps: [] as string[],
+  completedSteps: [] as ConnectionStep[],
   onStepClick: vi.fn(),
 }
 
