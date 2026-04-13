@@ -1,6 +1,6 @@
 {
   "name": "@stratif-io/web",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "description": "stratif.io Analytics — open source analytics dashboard",
   "main": "./frontend/index.ts",
   "exports": {
