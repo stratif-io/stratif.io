@@ -133,14 +133,14 @@ function ColumnCombobox({
           <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] max-w-xs p-0" align="start">
         <Command>
           <CommandInput
             placeholder="Search or type column…"
             value={search}
             onValueChange={setSearch}
           />
-          <CommandList>
+          <CommandList className="max-h-52">
             {!showCreate && options.length === 0 && (
               <CommandEmpty>Type a column name to set it.</CommandEmpty>
             )}
