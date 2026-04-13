@@ -40,7 +40,7 @@
 curl -fsSL https://stratif.io/install.sh | sh
 ```
 
-Open **http://localhost:8000** when it's done. For Docker Compose and advanced setup, see [Docs](docs/docs.md).
+Open **http://localhost:6870** when it's done. For Docker Compose and advanced setup, see [Docs](docs/docs.md).
 
 ---
 
