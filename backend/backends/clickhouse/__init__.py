@@ -301,6 +301,10 @@ class ClickHouseBackend:
         fn = _DATE_TRUNC_MAP.get(unit)
         if fn is None:
             raise ValueError(f"Unsupported date_trunc unit: {unit!r}")
+        # toStartOfWeek defaults to Sunday-start; mode=1 forces Monday-start
+        # to match ISO week bucketing used by DuckDB/PostgreSQL DATE_TRUNC('week').
+        if unit == "week":
+            return f"{fn}({col}, 1)"
         return f"{fn}({col})"
 
     def date_diff_days(self, start: str, end: str) -> str:
