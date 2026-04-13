@@ -120,7 +120,12 @@ function ConnectionRow({ connection }: { connection: Connection }) {
 
 export function ConnectionList() {
   const { data, isLoading, error } = useConnections()
+  const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)
+
+  function handleCreated(id: string) {
+    navigate(`/connections/${id}/credentials`)
+  }
 
   return (
     <div className="space-y-4">
@@ -161,7 +166,11 @@ export function ConnectionList() {
         </div>
       )}
 
-      <ConnectionFormDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <ConnectionFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={handleCreated}
+      />
     </div>
   )
 }
