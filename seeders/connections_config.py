@@ -33,6 +33,11 @@ def get_duckdb_credentials(cfg: dict) -> dict:
     return _get_credentials(cfg, "duckdb")
 
 
+def get_duckdb_fr_credentials(cfg: dict) -> dict:
+    """Return credentials dict for the French-column DuckDB backend."""
+    return _get_credentials(cfg, "duckdb_fr")
+
+
 def get_sqlite_credentials(cfg: dict) -> dict:
     """Return credentials dict for the SQLite backend."""
     return _get_credentials(cfg, "sqlite")
