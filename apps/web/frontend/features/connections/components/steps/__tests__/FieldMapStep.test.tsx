@@ -210,15 +210,19 @@ describe('FieldMapStep', () => {
     expect(screen.getByRole('button', { name: /add to metrics/i })).toBeInTheDocument()
   })
 
-  it('renders props with no category in a "no category" card', () => {
+  it('renders props with no category in an "Other" card (collapsed by default)', async () => {
     renderStep({
       form: {
         ...baseHookReturn.form,
         customProps: [{ id: 'p1', name: 'Page URL', path: 'context.page.url', type: 'string' }],
       },
     })
+    // The "Other" card header should be visible
+    expect(screen.getByText('Other')).toBeInTheDocument()
+    // Collapsed by default — expand it first
+    await userEvent.click(screen.getByText('Other'))
     expect(screen.getByDisplayValue('Page URL')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /add uncategorized/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /add to other/i })).toBeInTheDocument()
   })
 
   it('shows save status', () => {
@@ -337,14 +341,16 @@ describe('FieldMapStep', () => {
     )
   })
 
-  it('calls setForm with uncategorized prop when "add uncategorized" is clicked', async () => {
+  it('calls setForm with uncategorized prop when "add to Other" is clicked', async () => {
     const setForm = vi.fn()
     const prevForm = {
       ...baseHookReturn.form,
       customProps: [{ id: 'p1', name: 'Page URL', path: 'context.page.url', type: 'string' }],
     }
     renderStep({ setForm, form: prevForm })
-    await userEvent.click(screen.getByRole('button', { name: /add uncategorized/i }))
+    // Expand the "Other" card first (collapsed by default)
+    await userEvent.click(screen.getByText('Other'))
+    await userEvent.click(screen.getByRole('button', { name: /add to other/i }))
     expect(setForm).toHaveBeenCalled()
     const updater = setForm.mock.calls[0][0]
     const result = updater(prevForm)
