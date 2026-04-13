@@ -39,7 +39,7 @@ def seeder():
         return DatabricksSeeder(config=SeedConfig(seed_users=2, seed_days=1))
 
 
-def test_create_events_table_drops_and_creates(seeder, mock_connect):
+def test_create_events_table_uses_struct_and_map_columns(seeder, mock_connect):
     mock_sql, mock_conn, mock_cursor = mock_connect
     seeder._conn = mock_conn
 
@@ -47,25 +47,26 @@ def test_create_events_table_drops_and_creates(seeder, mock_connect):
 
     calls = [c[0][0] for c in mock_cursor.execute.call_args_list]
     assert any("DROP TABLE" in sql for sql in calls)
-    assert any("CREATE TABLE" in sql for sql in calls)
     assert any("USING DELTA" in sql for sql in calls)
+    ddl = next(sql for sql in calls if "CREATE TABLE" in sql)
+    assert "MAP<STRING, STRING>" in ddl
+    assert "STRUCT<" in ddl
+    # properties is MAP, traits and context are STRUCTs
+    assert "properties" in ddl
+    assert "traits" in ddl
+    assert "context" in ddl
 
 
 def test_insert_events_uses_batch_insert(seeder, mock_connect):
     mock_sql, mock_conn, mock_cursor = mock_connect
     seeder._conn = mock_conn
 
+    props = {"amount": 10, "page_url": "/checkout"}
+    traits = {"first_name": "Alice", "last_name": "Smith", "phone": "555-0100", "email": "a@b.com", "date_of_birth": "1990-01-01"}
+    context = {"country": "US", "city": "NYC", "timezone": "EST", "device_type": "desktop", "browser": "Chrome", "os": "macOS", "screen_resolution": "1920x1080", "referrer": "google.com"}
     events = [
-        (
-            "user1",
-            "Purchase",
-            "2024-01-01T00:00:00",
-            {"amount": 10},
-            "server.us.1",
-            {},
-            {},
-        ),
-        ("user2", "Search", "2024-01-01T01:00:00", {}, "server.eu.1", {}, {}),
+        ("user1", "Purchase", "2024-01-01T00:00:00", props, "server.us.1", traits, context),
+        ("user2", "Search", "2024-01-01T01:00:00", {}, "server.eu.1", traits, context),
     ]
     seeder._insert_events(events)
 
@@ -74,9 +75,21 @@ def test_insert_events_uses_batch_insert(seeder, mock_connect):
     mock_cursor.executemany.assert_not_called()
     sql_arg, params_arg = mock_cursor.execute.call_args[0]
     assert "INSERT INTO events" in sql_arg
-    # Two rows → two placeholder groups
     assert sql_arg.count("(?, ?, ?, ?, ?, ?, ?)") == 2
     assert len(params_arg) == 14  # 2 rows × 7 columns
+
+    # properties values are coerced to str; traits and context passed as dicts
+    row1_props = params_arg[3]
+    assert isinstance(row1_props, dict)
+    assert row1_props["amount"] == "10"
+
+    row1_traits = params_arg[5]
+    assert isinstance(row1_traits, dict)
+    assert row1_traits["first_name"] == "Alice"
+
+    row1_context = params_arg[6]
+    assert isinstance(row1_context, dict)
+    assert row1_context["country"] == "US"
 
 
 def test_insert_events_no_op_on_empty(seeder, mock_connect):
