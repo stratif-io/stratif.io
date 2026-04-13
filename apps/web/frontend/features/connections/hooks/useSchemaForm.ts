@@ -60,7 +60,7 @@ const DEFAULT_FORM: SchemaFormState = {
 
 export function useSchemaForm(connId: string) {
   const { data: schemaConfig } = useSchemaConfig(connId)
-  const { data: filterConfig } = useFilterConfig(connId)
+  const { data: filterConfig, isSuccess: filterConfigLoaded } = useFilterConfig(connId)
   const upsert = useUpsertSchemaConfig(connId)
   const upsertFilter = useUpsertFilterConfig(connId)
   const detect = useDetectSchema(connId)
@@ -103,14 +103,14 @@ export function useSchemaForm(connId: string) {
   }, [schemaConfig])
 
   useEffect(() => {
-    if (!filterConfig || filterInitialized.current) return
+    if (!filterConfigLoaded || filterInitialized.current) return
     filterInitialized.current = true
     const fields: Record<string, { label: string; icon: string }> = {}
-    for (const f of filterConfig.filter_fields ?? []) {
+    for (const f of filterConfig?.filter_fields ?? []) {
       fields[f.field] = { label: f.label, icon: f.icon }
     }
     setEnabledFields(fields)
-  }, [filterConfig])
+  }, [filterConfigLoaded, filterConfig])
 
   useEffect(() => {
     if (!initialized.current) return
