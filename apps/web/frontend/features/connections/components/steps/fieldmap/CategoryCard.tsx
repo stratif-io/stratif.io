@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, MoreHorizontal } from 'lucide-react'
+import { Plus, MoreHorizontal, ChevronDown, ChevronRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
@@ -32,40 +32,66 @@ export function CategoryCard({
   onRemoveProp,
   onAddToCategory,
 }: Props) {
+  const isNullCategory = category === null
+  // "Other" card (null category): collapsible, collapsed by default
+  const [collapsed, setCollapsed] = useState(isNullCategory)
+
   return (
     <div className="border border-border rounded-lg bg-card flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 pt-2.5 pb-2 border-b border-border">
-        <CategoryBadge value={category} onChange={(v) => onChangeCategory(v)} />
-      </div>
-
-      {/* Property rows */}
-      <div className="flex flex-col divide-y divide-border">
-        {props.map(({ prop, idx }) => {
-          const filterEnabled = !!prop.path && !!enabledFields[prop.path]
-          return (
-            <PropertyRow
-              key={prop.id ?? idx}
-              prop={prop}
-              colNames={colNames}
-              filterEnabled={filterEnabled}
-              onChange={(patch) => onChangeProp(idx, patch)}
-              onFilterToggle={() => onFilterToggleProp(idx)}
-              onRemove={() => onRemoveProp(idx)}
-            />
-          )
-        })}
-      </div>
-
-      {/* Footer: add to category */}
-      <button
-        type="button"
-        onClick={onAddToCategory}
-        className="flex items-center gap-1 px-3 py-2 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors rounded-b-lg"
+      <div
+        className={cn(
+          'flex items-center gap-2 px-3 pt-2.5 pb-2 border-b border-border',
+          isNullCategory && 'cursor-pointer select-none hover:bg-muted/30 transition-colors'
+        )}
+        onClick={isNullCategory ? () => setCollapsed((c) => !c) : undefined}
       >
-        <Plus className="h-3 w-3" />
-        {category ? `add to ${category}` : 'add uncategorized'}
-      </button>
+        {isNullCategory ? (
+          <>
+            {collapsed ? (
+              <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
+            )}
+            <span className="text-xs font-medium text-muted-foreground">Other</span>
+            <span className="ml-auto text-[10px] text-muted-foreground">{props.length}</span>
+          </>
+        ) : (
+          <CategoryBadge value={category} onChange={(v) => onChangeCategory(v)} />
+        )}
+      </div>
+
+      {/* Property rows (hidden when collapsed) */}
+      {!collapsed && (
+        <div className="flex flex-col divide-y divide-border">
+          {props.map(({ prop, idx }) => {
+            const filterEnabled = !!prop.path && !!enabledFields[prop.path]
+            return (
+              <PropertyRow
+                key={prop.id ?? idx}
+                prop={prop}
+                colNames={colNames}
+                filterEnabled={filterEnabled}
+                onChange={(patch) => onChangeProp(idx, patch)}
+                onFilterToggle={() => onFilterToggleProp(idx)}
+                onRemove={() => onRemoveProp(idx)}
+              />
+            )
+          })}
+        </div>
+      )}
+
+      {/* Footer: add to category (hidden when collapsed) */}
+      {!collapsed && (
+        <button
+          type="button"
+          onClick={onAddToCategory}
+          className="flex items-center gap-1 px-3 py-2 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors rounded-b-lg"
+        >
+          <Plus className="h-3 w-3" />
+          {category ? `add to ${category}` : 'add to Other'}
+        </button>
+      )}
     </div>
   )
 }

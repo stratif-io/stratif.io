@@ -53,6 +53,17 @@ export function FieldMapStep({ connId }: Props) {
 
   const colNames = detectedColumns.map((c) => c.name)
 
+  // Fix 3: exclude columns already mapped to required/identity fields from event property suggestions
+  const usedPaths = new Set(
+    [
+      form.userIdField,
+      form.eventNameField,
+      form.timestampField,
+      ...Object.values(form.userIdentityFields).filter(Boolean),
+    ].filter(Boolean) as string[]
+  )
+  const propColNames = colNames.filter((c) => !usedPaths.has(c))
+
   // Identity: show "N more optional" toggle if all remaining are empty and unmapped
   const [identityExpanded, setIdentityExpanded] = useState(false)
   const mappedIdentityCount = Object.values(form.userIdentityFields).filter(Boolean).length
@@ -306,7 +317,7 @@ export function FieldMapStep({ connId }: Props) {
                 key={cat ?? '__none__'}
                 category={cat}
                 props={groupProps}
-                colNames={colNames}
+                colNames={propColNames}
                 enabledFields={enabledFields}
                 onFilterToggleProp={(idx) => {
                   const p = groupProps.find((gp) => gp.idx === idx)
