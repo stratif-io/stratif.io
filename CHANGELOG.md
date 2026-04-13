@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.30.0](https://github.com/stratif-io/stratif.io/compare/v0.29.0...v0.30.0) (2026-04-13)
+
+
+### Features
+
+* deterministic golden-file E2E tests for all 6 backends ([e79b8af](https://github.com/stratif-io/stratif.io/commit/e79b8af8506528a4f23dc1e02fd5b0c571b09388))
+* **seeders:** add Databricks seeder ([f14fadf](https://github.com/stratif-io/stratif.io/commit/f14fadf661ad6570fea0a73306045880f276f708))
+* **seeders:** add DatabricksSeeder ([32b9d0d](https://github.com/stratif-io/stratif.io/commit/32b9d0d0921d22fa743ea1494b76ec5b1757635a))
+* **seeders:** add get_databricks_credentials ([cf2c6db](https://github.com/stratif-io/stratif.io/commit/cf2c6db480f7138419393d88fd0c99a872aae688))
+* **seeders:** add overwrite_schema flag to DatabricksSeeder ([5ab90ed](https://github.com/stratif-io/stratif.io/commit/5ab90ed41b2ace1e51ac3a9836820b6efd49fd57))
+* **seeders:** Databricks batch insert + STRUCT/MAP columns + overwrite_schema flag ([88e922f](https://github.com/stratif-io/stratif.io/commit/88e922f88f827048d9d2d9e5d3b6b866d9028f91))
+* **seeders:** register seed-databricks CLI entry point ([3409dd7](https://github.com/stratif-io/stratif.io/commit/3409dd764b709e907bdfed9520b0ae393fd71c5c))
+* **seeders:** use multi-row batch INSERT for Databricks seeder ([c10f66d](https://github.com/stratif-io/stratif.io/commit/c10f66ddb439bb96b7452c1f68dd0773b84240e3))
+* **seeders:** use STRUCT/MAP column types for Databricks events table ([de33348](https://github.com/stratif-io/stratif.io/commit/de33348ed2e79176cf7ab608fda4e1a02b9b466b))
+
+
+### Bug Fixes
+
+* **seeders:** use named_struct/from_json for Databricks STRUCT and MAP inserts ([dcdc7d1](https://github.com/stratif-io/stratif.io/commit/dcdc7d14f6918f9b8408ba56f4a9acb5c58ee1eb))
+
 ## [0.29.0](https://github.com/stratif-io/stratif.io/compare/v0.28.1...v0.29.0) (2026-04-12)
 
 
