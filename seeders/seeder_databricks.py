@@ -24,10 +24,13 @@ log = structlog.get_logger(__name__)
 class DatabricksSeeder(BaseSeeder):
     """Writes seeded events to a Databricks SQL warehouse."""
 
-    def __init__(self, config: SeedConfig | None = None) -> None:
+    def __init__(
+        self, config: SeedConfig | None = None, *, overwrite_schema: bool = True
+    ) -> None:
         super().__init__(config=config or SeedConfig())
         self._db_creds = get_databricks_credentials(load_connections_yaml())
         self._conn: Any = None
+        self._overwrite_schema = overwrite_schema
 
     # ------------------------------------------------------------------
     # Dialect implementation
@@ -39,39 +42,78 @@ class DatabricksSeeder(BaseSeeder):
             cur.execute("DROP TABLE IF EXISTS events")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS events (
-                    user_id     STRING    NOT NULL,
-                    event_name  STRING    NOT NULL,
-                    timestamp   TIMESTAMP NOT NULL,
-                    properties  STRING    NOT NULL,
-                    server      STRING    NOT NULL,
-                    traits      STRING    NOT NULL,
-                    context     STRING    NOT NULL
+                    user_id     STRING      NOT NULL,
+                    event_name  STRING      NOT NULL,
+                    timestamp   TIMESTAMP   NOT NULL,
+                    properties  MAP<STRING, STRING> NOT NULL,
+                    server      STRING      NOT NULL,
+                    traits      STRUCT<
+                                    first_name:     STRING,
+                                    last_name:      STRING,
+                                    phone:          STRING,
+                                    email:          STRING,
+                                    date_of_birth:  STRING
+                                > NOT NULL,
+                    context     STRUCT<
+                                    country:            STRING,
+                                    city:               STRING,
+                                    timezone:           STRING,
+                                    device_type:        STRING,
+                                    browser:            STRING,
+                                    os:                 STRING,
+                                    screen_resolution:  STRING,
+                                    referrer:           STRING
+                                > NOT NULL
                 )
                 USING DELTA
             """)
+
+    # One placeholder group per row — properties via from_json(), structs via named_struct()
+    _ROW_PLACEHOLDER = (
+        "("
+        "?, ?, ?, "
+        "from_json(?, 'map<string,string>'), "
+        "?, "
+        "named_struct('first_name', ?, 'last_name', ?, 'phone', ?, 'email', ?, 'date_of_birth', ?), "
+        "named_struct('country', ?, 'city', ?, 'timezone', ?, 'device_type', ?, 'browser', ?, 'os', ?, 'screen_resolution', ?, 'referrer', ?)"
+        ")"
+    )
 
     def _insert_events(self, events: list[tuple]) -> None:
         assert self._conn is not None, "_conn not initialized — call seed() first"
         if not events:
             return
-        rows = [
-            (
+        params: list = []
+        for e in events:
+            traits: dict = e[5]
+            ctx: dict = e[6]
+            params += [
                 e[0],
                 e[1],
                 e[2],
-                json.dumps(e[3]),
+                json.dumps({str(k): str(v) for k, v in e[3].items()}),
                 e[4],
-                json.dumps(e[5]),
-                json.dumps(e[6]),
-            )
-            for e in events
-        ]
+                traits.get("first_name", ""),
+                traits.get("last_name", ""),
+                traits.get("phone", ""),
+                traits.get("email", ""),
+                traits.get("date_of_birth", ""),
+                ctx.get("country", ""),
+                ctx.get("city", ""),
+                ctx.get("timezone", ""),
+                ctx.get("device_type", ""),
+                ctx.get("browser", ""),
+                ctx.get("os", ""),
+                ctx.get("screen_resolution", ""),
+                ctx.get("referrer", ""),
+            ]
+        placeholders = ", ".join(self._ROW_PLACEHOLDER for _ in events)
         with self._conn.cursor() as cur:
-            cur.executemany(
+            cur.execute(
                 "INSERT INTO events "
                 "(user_id, event_name, timestamp, properties, server, traits, context) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                rows,
+                f"VALUES {placeholders}",
+                params,
             )
 
     def seed(self) -> dict[str, int]:
@@ -92,7 +134,8 @@ class DatabricksSeeder(BaseSeeder):
             http_path=creds["http_path"],
             access_token=creds["access_token"],
         ) as self._conn:
-            self._create_events_table()
+            if self._overwrite_schema:
+                self._create_events_table()
 
             for batch in self._generate_events_batched(users):
                 self._insert_events(batch)
