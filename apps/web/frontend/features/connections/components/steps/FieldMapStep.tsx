@@ -1,4 +1,5 @@
-import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useBlocker } from 'react-router-dom'
 import { ScanSearch, Plus, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SaveStatus } from '@/components/ui/save-status'
@@ -37,19 +38,11 @@ const USER_IDENTITY_FIELDS: { key: UserIdentityKey; label: string }[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-export interface FieldMapStepHandle {
-  /** Call to request navigation away. If there are pending detections, shows a confirmation dialog first. */
-  requestLeave: (onConfirm: () => void) => void
-}
-
 interface Props {
   connId: string
 }
 
-export const FieldMapStep = forwardRef<FieldMapStepHandle, Props>(function FieldMapStep(
-  { connId }: Props,
-  ref
-) {
+export function FieldMapStep({ connId }: Props) {
   const {
     form,
     updateForm,
@@ -67,19 +60,8 @@ export const FieldMapStep = forwardRef<FieldMapStepHandle, Props>(function Field
     upsert,
   } = useSchemaForm(connId)
 
-  const [leaveDialog, setLeaveDialog] = useState<{ onConfirm: () => void } | null>(null)
-  const pendingDetectionsRef = useRef(pendingDetections)
-  pendingDetectionsRef.current = pendingDetections
-
-  useImperativeHandle(ref, () => ({
-    requestLeave(onConfirm) {
-      if (pendingDetectionsRef.current.length > 0) {
-        setLeaveDialog({ onConfirm })
-      } else {
-        onConfirm()
-      }
-    },
-  }))
+  // Block all React Router navigation while there are pending detections.
+  const blocker = useBlocker(pendingDetections.length > 0)
 
   const colNames = detectedColumns.map((c) => c.name)
 
@@ -401,7 +383,10 @@ export const FieldMapStep = forwardRef<FieldMapStepHandle, Props>(function Field
       </div>
 
       {/* ── Pending detections leave guard ──────────────────────────────── */}
-      <Dialog open={leaveDialog !== null} onOpenChange={(open) => !open && setLeaveDialog(null)}>
+      <Dialog
+        open={blocker.state === 'blocked'}
+        onOpenChange={(open) => !open && blocker.reset?.()}
+      >
         <DialogContent data-testid="leave-guard-dialog">
           <DialogHeader>
             <DialogTitle>Unconfirmed suggestions</DialogTitle>
@@ -412,23 +397,16 @@ export const FieldMapStep = forwardRef<FieldMapStepHandle, Props>(function Field
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLeaveDialog(null)}>
+            <Button variant="outline" onClick={() => blocker.reset?.()}>
               Stay and review
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setLeaveDialog(null)
-                leaveDialog?.onConfirm()
-              }}
-            >
+            <Button variant="outline" onClick={() => blocker.proceed?.()}>
               Leave anyway
             </Button>
             <Button
               onClick={() => {
                 acceptAllDetections()
-                setLeaveDialog(null)
-                leaveDialog?.onConfirm()
+                blocker.proceed?.()
               }}
             >
               Accept all &amp; continue
@@ -438,4 +416,4 @@ export const FieldMapStep = forwardRef<FieldMapStepHandle, Props>(function Field
       </Dialog>
     </div>
   )
-})
+}

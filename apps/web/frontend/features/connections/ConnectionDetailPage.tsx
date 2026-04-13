@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import type { SchemaConfigBody } from '@/types'
 import { ConnectionSetupLayout } from './components/ConnectionSetupLayout'
 import { CredentialsStep } from './components/steps/CredentialsStep'
 import { TableStep } from './components/steps/TableStep'
-import { FieldMapStep, type FieldMapStepHandle } from './components/steps/FieldMapStep'
+import { FieldMapStep } from './components/steps/FieldMapStep'
 import { AdvancedStep } from './components/steps/AdvancedStep'
 import type { ConnectionStep, TestStatus } from './components/ConnectionSidebar'
 
@@ -39,7 +39,6 @@ export function ConnectionDetailPage() {
   const navigate = useNavigate()
   const { data: connection, isLoading, error } = useConnection(id ?? '')
   const [testStatus, setTestStatus] = useState<TestStatus>('idle')
-  const fieldMapRef = useRef<FieldMapStepHandle>(null)
   const upsertSchema = useUpsertSchemaConfig(id ?? '')
   const { data: schemaConfig } = useSchemaConfig(id ?? '')
 
@@ -72,17 +71,8 @@ export function ConnectionDetailPage() {
 
   const completedSteps = getCompletedSteps(connection, testStatus)
 
-  // Route all navigation through this when on fieldmap so pending detections are guarded.
-  const guardedNavigate = (path: string) => {
-    if (currentStep === 'fieldmap' && fieldMapRef.current) {
-      fieldMapRef.current.requestLeave(() => navigate(path))
-    } else {
-      navigate(path)
-    }
-  }
-
   const handleStepClick = (step: ConnectionStep) => {
-    guardedNavigate(`/connections/${id}/${step}`)
+    navigate(`/connections/${id}/${step}`)
   }
 
   const handleTestStatusChange = (status: TestStatus) => {
@@ -121,7 +111,7 @@ export function ConnectionDetailPage() {
           variant="ghost"
           size="sm"
           className="-ml-2 text-muted-foreground"
-          onClick={() => guardedNavigate('/connections')}
+          onClick={() => navigate('/connections')}
         >
           <ArrowLeft className="h-4 w-4 mr-1.5" />
           Connections
@@ -151,7 +141,7 @@ export function ConnectionDetailPage() {
             onConfirm={handleTableConfirm}
           />
         )}
-        {currentStep === 'fieldmap' && <FieldMapStep ref={fieldMapRef} connId={connection.id} />}
+        {currentStep === 'fieldmap' && <FieldMapStep connId={connection.id} />}
         {currentStep === 'advanced' && (
           <AdvancedStep connId={connection.id} onDone={() => navigate('/connections')} />
         )}
