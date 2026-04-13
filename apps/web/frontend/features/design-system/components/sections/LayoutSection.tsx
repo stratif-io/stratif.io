@@ -12,6 +12,7 @@ import {
   type ConnectionStep,
   type TestStatus,
 } from '@/features/connections/components/ConnectionSidebar'
+import { ConnectionSetupLayout } from '@/features/connections/components/ConnectionSetupLayout'
 
 function PageTransitionDemo() {
   const [key, setKey] = useState(0)
@@ -173,6 +174,24 @@ export function LayoutSection() {
           ))}
         </div>
       </ComponentRow>
+      <ComponentRow label="ConnectionSetupLayout">
+        <div className="w-full max-w-2xl">
+          <ConnectionSetupLayout
+            connectionName="my-prod-db"
+            dbType="postgresql"
+            testStatus="connected"
+            currentStep="table"
+            completedSteps={['credentials']}
+            onStepClick={() => {}}
+            tableFooter="public.events"
+          >
+            <div className="flex items-center justify-center h-full min-h-[200px] text-sm text-muted-foreground">
+              Content panel slot
+            </div>
+          </ConnectionSetupLayout>
+        </div>
+      </ComponentRow>
+
       <ComponentRow label="PageHeader — page-level h1 title">
         <PageHeader title="Analytics" />
         <PageHeader title="People" subtitle="All tracked users" />
