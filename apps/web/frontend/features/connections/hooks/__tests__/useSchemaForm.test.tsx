@@ -61,6 +61,7 @@ beforeEach(() => {
   vi.mocked(useFilterConfig).mockReturnValue({
     data: { filter_fields: [] },
     isLoading: false,
+    isSuccess: true,
   } as unknown as ReturnType<typeof useFilterConfig>)
   vi.mocked(useUpsertFilterConfig).mockReturnValue({
     mutate: vi.fn(),
@@ -165,6 +166,31 @@ describe('useSchemaForm', () => {
     expect(result.current.form.userIdentityFields.email_field).toBe('email')
     expect(result.current.form.userIdentityFields.phone_field).toBe('phone_num')
     expect(result.current.pendingDetections).toHaveLength(0)
+  })
+
+  it('setEnabledFields triggers upsertFilter even when filterConfig is null (new connection)', async () => {
+    const upsertFilterMutate = vi.fn()
+    vi.mocked(useFilterConfig).mockReturnValue({
+      data: null,
+      isLoading: false,
+      isSuccess: true,
+    } as unknown as ReturnType<typeof useFilterConfig>)
+    vi.mocked(useUpsertFilterConfig).mockReturnValue({
+      mutate: upsertFilterMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpsertFilterConfig>)
+
+    const { result } = renderHook(() => useSchemaForm('conn-new'), { wrapper })
+    act(() => {
+      result.current.setEnabledFields({ user_id: { label: 'User ID', icon: 'Activity' } })
+    })
+    // Give the debounce timer a chance to fire
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 700))
+    })
+    expect(upsertFilterMutate).toHaveBeenCalledWith({
+      filter_fields: [{ field: 'user_id', label: 'User ID', icon: 'Activity' }],
+    })
   })
 
   it('acceptAllDetections applies all pending detections', () => {
