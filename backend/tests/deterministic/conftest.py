@@ -122,7 +122,7 @@ def deterministic_setup(client, request):
     backend_obj, conn = open_write_connection(db_type, cfg["credentials"])
     try:
         create_table(backend_obj, conn)
-        insert_rows(backend_obj, conn)
+        insert_rows(backend_obj, conn, cred_dict=cfg["credentials"])
     except Exception:
         with contextlib.suppress(Exception):
             close_connection(backend_obj, conn)
