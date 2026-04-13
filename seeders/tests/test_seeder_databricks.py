@@ -200,6 +200,99 @@ def test_insert_events_never_exceeds_databricks_param_limit(seeder, mock_connect
         assert len(params) <= seeder._MAX_PARAMS
 
 
+CREDS_WITH_VOLUME = {
+    **CREDS,
+    "catalog": "workspace",
+    "schema": "default",
+    "staging_volume": "seeds",
+}
+
+
+@pytest.fixture
+def seeder_with_volume():
+    with (
+        patch(
+            "seeders.seeder_databricks.get_databricks_credentials",
+            return_value=CREDS_WITH_VOLUME,
+        ),
+        patch("seeders.seeder_databricks.load_connections_yaml", return_value={}),
+    ):
+        return DatabricksSeeder(config=SeedConfig(seed_users=2, seed_days=1))
+
+
+def test_seed_uses_parquet_mode_when_staging_volume_set(
+    seeder_with_volume, mock_connect
+):
+    mock_sql, mock_conn, mock_cursor = mock_connect
+
+    with patch.object(seeder_with_volume, "_bulk_load_parquet") as mock_bulk:
+        seeder_with_volume.seed()
+
+    mock_bulk.assert_called_once()
+    events_arg = mock_bulk.call_args[0][0]
+    assert len(events_arg) > 0
+
+
+def test_seed_uses_insert_mode_when_no_staging_volume(seeder, mock_connect):
+    mock_sql, mock_conn, mock_cursor = mock_connect
+
+    with patch.object(seeder, "_bulk_load_parquet") as mock_bulk:
+        seeder.seed()
+
+    mock_bulk.assert_not_called()
+
+
+def test_bulk_load_volume_path_uses_catalog_schema_volume(
+    seeder_with_volume, mock_connect
+):
+    """_bulk_load_parquet must PUT/COPY/REMOVE at /Volumes/{catalog}/{schema}/{volume}/."""
+    mock_sql, mock_conn, mock_cursor = mock_connect
+    seeder_with_volume._conn = mock_conn
+
+    event = (
+        "u1",
+        "PageView",
+        "2024-01-01T00:00:00",
+        {"page": "/home"},
+        "srv",
+        {
+            "first_name": "A",
+            "last_name": "B",
+            "phone": "",
+            "email": "a@b.com",
+            "date_of_birth": "",
+        },
+        {
+            "country": "US",
+            "city": "NY",
+            "timezone": "EST",
+            "device_type": "desktop",
+            "browser": "Chrome",
+            "os": "macOS",
+            "screen_resolution": "1920x1080",
+            "referrer": "",
+        },
+    )
+
+    tmp_obj = MagicMock()
+    tmp_obj.name = "/tmp/seed_events.parquet"
+    with (
+        patch("pandas.DataFrame.to_parquet"),
+        patch("seeders.seeder_databricks.tempfile.NamedTemporaryFile") as mock_tmp,
+        patch("seeders.seeder_databricks.Path"),
+    ):
+        mock_tmp.return_value.__enter__ = MagicMock(return_value=tmp_obj)
+        mock_tmp.return_value.__exit__ = MagicMock(return_value=False)
+        seeder_with_volume._bulk_load_parquet([event])
+
+    all_sql = " ".join(c[0][0] for c in mock_cursor.execute.call_args_list)
+    assert "/Volumes/workspace/default/seeds/" in all_sql
+    assert "PUT" in all_sql
+    assert "COPY INTO" in all_sql
+    assert "FILEFORMAT = PARQUET" in all_sql
+    assert "REMOVE" in all_sql
+
+
 def test_seed_returns_stats(seeder, mock_connect):
     mock_sql, mock_conn, mock_cursor = mock_connect
 
