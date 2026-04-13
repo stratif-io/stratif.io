@@ -126,7 +126,11 @@ function PropertyRow({
         type="button"
         onClick={onFilterToggle}
         disabled={!prop.path}
-        aria-label={filterEnabled ? `Remove from filters` : `Add to filters`}
+        aria-label={
+          filterEnabled
+            ? `Remove ${prop.name || prop.path} from filters`
+            : `Add ${prop.name || prop.path} to filters`
+        }
         className={cn(
           'shrink-0 flex items-center group',
           !prop.path && 'opacity-30 cursor-not-allowed'

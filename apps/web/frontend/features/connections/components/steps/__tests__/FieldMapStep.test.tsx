@@ -29,6 +29,7 @@ const baseHookReturn = {
     powerUserThresholdDays: 4,
   },
   updateForm: vi.fn(),
+  setForm: vi.fn(),
   pendingDetections: [],
   setPendingDetections: vi.fn(),
   detectedColumns: [],
@@ -223,5 +224,134 @@ describe('FieldMapStep', () => {
   it('shows save status', () => {
     renderStep({ upsert: { isPending: true, isSuccess: false, isError: false } })
     expect(screen.getByTestId('save-status')).toBeInTheDocument()
+  })
+
+  // ── Bug A: Filter toggle ──────────────────────────────────────────────────────
+
+  it('calls setEnabledFields when filter toggle is clicked on required field row', async () => {
+    const setEnabledFields = vi.fn()
+    renderStep({ setEnabledFields, enabledFields: {} })
+    // The userIdField row has value 'user_id' (from baseHookReturn.form.userIdField)
+    const toggleBtn = screen.getByLabelText(/add user id to filters/i)
+    await userEvent.click(toggleBtn)
+    expect(setEnabledFields).toHaveBeenCalled()
+    // The updater fn should produce the new enabledFields
+    const updater = setEnabledFields.mock.calls[0][0]
+    const result = updater({})
+    expect(result).toMatchObject({ user_id: expect.objectContaining({ label: 'User ID' }) })
+  })
+
+  it('filter toggle on required field reflects filterEnabled=true when field is in enabledFields', () => {
+    renderStep({
+      enabledFields: { user_id: { label: 'User ID', icon: 'Activity' } },
+    })
+    // The toggle button aria-label should say "Remove User ID from filters" when filterEnabled=true
+    expect(screen.getByLabelText(/remove user id from filters/i)).toBeInTheDocument()
+  })
+
+  it('calls setEnabledFields when filter toggle is clicked on a custom property row', async () => {
+    const setEnabledFields = vi.fn()
+    renderStep({
+      setEnabledFields,
+      enabledFields: {},
+      form: {
+        ...baseHookReturn.form,
+        customProps: [
+          { id: 'p1', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
+        ],
+      },
+    })
+    const filterToggle = screen.getByLabelText(/add plan to filters/i)
+    await userEvent.click(filterToggle)
+    expect(setEnabledFields).toHaveBeenCalled()
+    const updater = setEnabledFields.mock.calls[0][0]
+    const result = updater({})
+    expect(result).toMatchObject({ 'traits.plan': expect.any(Object) })
+  })
+
+  it('filter toggle removes field from enabledFields when already enabled', async () => {
+    const setEnabledFields = vi.fn()
+    renderStep({
+      setEnabledFields,
+      enabledFields: { 'traits.plan': { label: 'Plan', icon: 'Activity' } },
+      form: {
+        ...baseHookReturn.form,
+        customProps: [
+          { id: 'p1', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
+        ],
+      },
+    })
+    const filterToggle = screen.getByLabelText(/remove plan from filters/i)
+    await userEvent.click(filterToggle)
+    expect(setEnabledFields).toHaveBeenCalled()
+    const updater = setEnabledFields.mock.calls[0][0]
+    const result = updater({ 'traits.plan': { label: 'Plan', icon: 'Activity' } })
+    expect(result).not.toHaveProperty('traits.plan')
+  })
+
+  // ── Bug B: Add property ───────────────────────────────────────────────────────
+  // addProp / onAddToCategory use setForm(prev => ...) to avoid stale-closure overwrites.
+  // We call the updater with a representative prev state to verify the result.
+
+  it('calls setForm with new prop when "Add property" header button is clicked', async () => {
+    const setForm = vi.fn()
+    renderStep({ setForm })
+    await userEvent.click(screen.getByRole('button', { name: /add property/i }))
+    expect(setForm).toHaveBeenCalled()
+    const updater = setForm.mock.calls[0][0]
+    const result = updater(baseHookReturn.form)
+    expect(result.customProps).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: '', path: '', type: 'string' })])
+    )
+  })
+
+  it('calls setForm with new prop when empty-state dashed card is clicked', async () => {
+    const setForm = vi.fn()
+    renderStep({ setForm })
+    await userEvent.click(screen.getByText(/add your first event property/i))
+    expect(setForm).toHaveBeenCalled()
+    const updater = setForm.mock.calls[0][0]
+    const result = updater(baseHookReturn.form)
+    expect(result.customProps).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: '', path: '', type: 'string' })])
+    )
+  })
+
+  it('calls setForm with new prop in correct category when "add to {category}" is clicked', async () => {
+    const setForm = vi.fn()
+    const prevForm = {
+      ...baseHookReturn.form,
+      customProps: [
+        { id: 'p1', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
+      ],
+    }
+    renderStep({ setForm, form: prevForm })
+    await userEvent.click(screen.getByRole('button', { name: /add to user/i }))
+    expect(setForm).toHaveBeenCalled()
+    const updater = setForm.mock.calls[0][0]
+    const result = updater(prevForm)
+    expect(result.customProps).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: '', path: '', type: 'string', category: 'user' }),
+      ])
+    )
+  })
+
+  it('calls setForm with uncategorized prop when "add uncategorized" is clicked', async () => {
+    const setForm = vi.fn()
+    const prevForm = {
+      ...baseHookReturn.form,
+      customProps: [{ id: 'p1', name: 'Page URL', path: 'context.page.url', type: 'string' }],
+    }
+    renderStep({ setForm, form: prevForm })
+    await userEvent.click(screen.getByRole('button', { name: /add uncategorized/i }))
+    expect(setForm).toHaveBeenCalled()
+    const updater = setForm.mock.calls[0][0]
+    const result = updater(prevForm)
+    expect(result.customProps).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: '', path: '', type: 'string', category: undefined }),
+      ])
+    )
   })
 })
