@@ -439,6 +439,73 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         assert params == ["Bob"]
 
 
+@pytest.mark.asyncio
+async def test_dotted_events_table_quoted_per_part():
+    """get_table_columns must receive each part of a dotted table name quoted
+    separately, e.g. `catalog`.`schema`.`table` not `catalog.schema.table`."""
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    import duckdb
+
+    from backend.backends.duckdb import DuckDBBackend
+    from backend.services.analytics_db import open_analytics_db
+
+    backend = DuckDBBackend()
+    real_conn = duckdb.connect(":memory:")
+
+    captured_calls: list[str] = []
+
+    def capture_columns(conn, table_expr):
+        captured_calls.append(table_expr)
+        return frozenset()
+
+    schema_config = MagicMock()
+    schema_config.user_id_field = "uid"
+    schema_config.timestamp_field = "ts"
+    schema_config.event_name_field = "en"
+    schema_config.events_table = "cat.sch.tbl"
+    schema_config.custom_properties = []
+    schema_config.session_timeout_minutes = 30
+    schema_config.resurrection_window_days = 30
+    schema_config.power_user_threshold_days = 4
+    schema_config.email_field = None
+    schema_config.first_name_field = None
+    schema_config.last_name_field = None
+    schema_config.date_of_birth_field = None
+    schema_config.phone_field = None
+
+    filter_config = MagicMock()
+    filter_config.filter_fields = []
+
+    conn_obj = MagicMock()
+    conn_obj.db_type = "duckdb"
+    conn_obj.credentials_encrypted = "dummy"
+    conn_obj.schema_config = schema_config
+    conn_obj.filter_config = filter_config
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = conn_obj
+
+    session = AsyncMock()
+    session.execute = AsyncMock(return_value=mock_result)
+
+    with (
+        patch(
+            "backend.services.crypto.decrypt_credentials",
+            return_value={"file_path": ":memory:"},
+        ),
+        patch.object(backend, "open", return_value=real_conn),
+        patch.object(backend, "get_table_columns", side_effect=capture_columns),
+    ):
+        await open_analytics_db("conn-x", session, {"duckdb": backend})
+
+    assert len(captured_calls) == 1
+    q = backend.identifier_quote_char
+    assert captured_calls[0] == f"{q}cat{q}.{q}sch{q}.{q}tbl{q}", (
+        f"Expected per-part quoting but got: {captured_calls[0]!r}"
+    )
+
+
 def test_execute_reconnects_and_retries_on_stale_postgres_connection():
     """execute() should evict the stale pool entry, open a fresh connection, and retry."""
     from unittest.mock import MagicMock, patch
