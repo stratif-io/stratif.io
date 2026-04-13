@@ -311,8 +311,11 @@ export function FieldMapStep({ connId }: Props) {
                   toggleFilter(p.prop.path, p.prop.name || p.prop.path, 'Activity')
                 }}
                 onChangeCategory={(newCat) => {
-                  groupProps.forEach(({ idx }) => {
-                    updateProp(idx, { category: newCat ?? undefined })
+                  const idxSet = new Set(groupProps.map((gp) => gp.idx))
+                  updateForm({
+                    customProps: form.customProps.map((p, i) =>
+                      idxSet.has(i) ? { ...p, category: newCat ?? undefined } : p
+                    ),
                   })
                 }}
                 onChangeProp={(idx, patch) => updateProp(idx, patch)}
