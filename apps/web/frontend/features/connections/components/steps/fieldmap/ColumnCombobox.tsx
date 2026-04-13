@@ -71,10 +71,11 @@ export function ColumnCombobox({
             onValueChange={setSearch}
           />
           <CommandList className="max-h-52">
-            {!showCreate && options.length === 0 && (
-              <CommandEmpty>Type a column name to set it.</CommandEmpty>
+            {!showCreate && (
+              <CommandEmpty>
+                {options.length === 0 ? 'Type a column name to set it.' : 'No column found.'}
+              </CommandEmpty>
             )}
-            {!showCreate && options.length > 0 && <CommandEmpty>No column found.</CommandEmpty>}
             {showCreate && (
               <CommandGroup>
                 <CommandItem value={trimmed} onSelect={() => select(trimmed)}>
