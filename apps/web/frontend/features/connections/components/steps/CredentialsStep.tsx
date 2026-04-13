@@ -54,13 +54,17 @@ export function CredentialsStep({ connection, onTestStatusChange, onNext }: Prop
       Object.entries(credentials).filter(([, v]) => v !== '' && v !== null && v !== undefined)
     )
     if (Object.keys(changedCredentials).length > 0) {
-      update.mutate({ credentials: changedCredentials })
+      update.mutate(
+        { credentials: changedCredentials },
+        {
+          onSuccess: () => test.mutate(connection.id),
+        }
+      )
     }
   }
 
   function handleFormInput() {
     if (credsTimer.current) clearTimeout(credsTimer.current)
-    test.reset()
     credsTimer.current = setTimeout(saveCredentials, 1000)
   }
 
