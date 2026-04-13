@@ -80,20 +80,22 @@ export function FieldRow({
         </p>
       </div>
 
-      {/* Pending: proposed value + accept/reject */}
+      {/* Pending: editable combobox + accept/reject */}
       {state === 'suggested' ? (
         <div className="flex-1 flex items-center gap-2">
-          <div className="flex-1 rounded-md border border-amber-400 bg-white dark:bg-background px-3 py-1.5 font-mono text-xs text-amber-800 dark:text-amber-400 italic flex items-center justify-between">
-            <span>{pending!.proposedColumn}</span>
-            <span className="text-[9px] text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded not-italic">
-              detected
-            </span>
+          <div className="flex-1 [&_[data-slot=combobox]]:border-amber-400 [&_[data-slot=combobox]]:bg-amber-50/60 dark:[&_[data-slot=combobox]]:bg-amber-950/20">
+            <ColumnCombobox
+              value={pending!.proposedColumn}
+              detectedColumns={colNames}
+              onChange={onChange}
+              placeholder="Select column…"
+            />
           </div>
           <button
             type="button"
             data-testid={`accept-${fieldKey}`}
             onClick={onAccept}
-            className="h-7 w-7 flex items-center justify-center rounded-md border border-green-300 bg-green-50 text-green-600 hover:bg-green-100"
+            className="h-7 w-7 flex items-center justify-center rounded-md border border-green-300 bg-green-50 text-green-600 hover:bg-green-100 shrink-0"
             aria-label={`Accept suggestion for ${label}`}
           >
             <Check className="h-3.5 w-3.5" />
@@ -102,7 +104,7 @@ export function FieldRow({
             type="button"
             data-testid={`reject-${fieldKey}`}
             onClick={onReject}
-            className="h-7 w-7 flex items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:text-destructive hover:border-destructive/50"
+            className="h-7 w-7 flex items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:text-destructive hover:border-destructive/50 shrink-0"
             aria-label={`Reject suggestion for ${label}`}
           >
             <X className="h-3.5 w-3.5" />

@@ -305,19 +305,10 @@ export function FieldMapStep({ connId }: Props) {
                 props={groupProps}
                 colNames={colNames}
                 enabledFields={enabledFields}
-                onFilterToggleCategory={() => {
-                  const anyEnabled = groupProps.some(
-                    (p) => p.prop.path && enabledFields[p.prop.path]
-                  )
-                  groupProps.forEach(({ prop }) => {
-                    if (!prop.path) return
-                    const isEnabled = !!enabledFields[prop.path]
-                    if (anyEnabled && isEnabled) {
-                      toggleFilter(prop.path, prop.name || prop.path, 'Activity')
-                    } else if (!anyEnabled && !isEnabled) {
-                      toggleFilter(prop.path, prop.name || prop.path, 'Activity')
-                    }
-                  })
+                onFilterToggleProp={(idx) => {
+                  const p = groupProps.find((gp) => gp.idx === idx)
+                  if (!p?.prop.path) return
+                  toggleFilter(p.prop.path, p.prop.name || p.prop.path, 'Activity')
                 }}
                 onChangeCategory={(newCat) => {
                   groupProps.forEach(({ idx }) => {
