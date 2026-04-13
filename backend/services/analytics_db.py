@@ -383,17 +383,26 @@ async def open_analytics_db(
 
     _quoted_table = ".".join(f"{_iq}{p}{_iq}" for p in events_table.split("."))
 
+    def _get_available_columns(
+        conn: object, col_types: dict[str, str]
+    ) -> frozenset[str]:
+        if _get_col_types:
+            return frozenset(col_types.keys())
+        cols = backend.get_table_columns(conn, _quoted_table)
+        return cols or frozenset()
+
     if backend.use_pool:
         pool_key = backend.pool_key(connection_id, credentials)
         factory = lambda: backend.open(credentials, read_only=False)  # noqa: E731
         conn = _pool_get(pool_key, factory)
         col_types = _get_col_types(conn, _quoted_table) if _get_col_types else {}
         custom_prop_exprs, filter_exprs = _build_exprs(col_types)
+        available_cols = _get_available_columns(conn, col_types)
         db = AnalyticsDatabase(
             conn,
             backend,
             events_cte=events_cte,
-            available_columns=frozenset(col_types.keys()) or None,
+            available_columns=available_cols or None,
             filter_fields=filter_fields,
             filter_exprs=filter_exprs,
             custom_props=custom_props,
@@ -410,11 +419,12 @@ async def open_analytics_db(
     conn = backend.open(credentials, read_only=True)
     col_types = _get_col_types(conn, _quoted_table) if _get_col_types else {}
     custom_prop_exprs, filter_exprs = _build_exprs(col_types)
+    available_cols = _get_available_columns(conn, col_types)
     return AnalyticsDatabase(
         conn,
         backend,
         events_cte=events_cte,
-        available_columns=frozenset(col_types.keys()) or None,
+        available_columns=available_cols or None,
         filter_fields=filter_fields,
         filter_exprs=filter_exprs,
         custom_props=custom_props,
