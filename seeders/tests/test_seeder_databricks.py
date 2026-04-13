@@ -158,6 +158,48 @@ def test_seed_skips_schema_when_overwrite_false(mock_connect):
     assert not any("CREATE TABLE" in sql for sql in calls)
 
 
+def test_insert_events_splits_large_batches_to_respect_param_limit(
+    seeder, mock_connect
+):
+    """A batch exceeding _MAX_ROWS_PER_INSERT must be split into multiple INSERT calls."""
+    mock_sql, mock_conn, mock_cursor = mock_connect
+    seeder._conn = mock_conn
+
+    row = (
+        "u",
+        "E",
+        "2024-01-01T00:00:00",
+        {},
+        "srv",
+        {},
+        {},
+    )
+    # Use exactly _MAX_ROWS_PER_INSERT + 1 rows to force a split into 2 calls
+    n = seeder._MAX_ROWS_PER_INSERT + 1
+    seeder._insert_events([row] * n)
+
+    assert mock_cursor.execute.call_count == 2
+    first_call_params = mock_cursor.execute.call_args_list[0][0][1]
+    second_call_params = mock_cursor.execute.call_args_list[1][0][1]
+    assert (
+        len(first_call_params) == seeder._MAX_ROWS_PER_INSERT * seeder._PARAMS_PER_ROW
+    )
+    assert len(second_call_params) == 1 * seeder._PARAMS_PER_ROW
+
+
+def test_insert_events_never_exceeds_databricks_param_limit(seeder, mock_connect):
+    """No single INSERT call may exceed _MAX_PARAMS parameters."""
+    mock_sql, mock_conn, mock_cursor = mock_connect
+    seeder._conn = mock_conn
+
+    row = ("u", "E", "2024-01-01T00:00:00", {}, "srv", {}, {})
+    seeder._insert_events([row] * 5000)
+
+    for call in mock_cursor.execute.call_args_list:
+        params = call[0][1]
+        assert len(params) <= seeder._MAX_PARAMS
+
+
 def test_seed_returns_stats(seeder, mock_connect):
     mock_sql, mock_conn, mock_cursor = mock_connect
 
