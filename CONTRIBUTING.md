@@ -4,14 +4,14 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## Before submitting
 
-Run the full quality suite:
+Pre-commit hooks run automatically on every commit (ruff lint/format, type-check, lint-staged, TypeScript). Run the following manually before opening a PR:
 
 ```bash
 # Frontend
-bun run lint && bun run build && bun run test:run
+bun run build && bun run test:run
 
 # Backend
-uv run ruff check . && uv run ruff format --check . && uv run pytest backend/
+uv run pytest backend/
 ```
 
 All checks must pass with zero warnings.
