@@ -23,17 +23,17 @@ def mock_connect():
         yield mock_sql, mock_conn, mock_cursor
 
 
+CREDS = {
+    "server_hostname": "adb-123.azuredatabricks.net",
+    "http_path": "/sql/1.0/warehouses/abc123",
+    "access_token": "dapiTEST",
+}
+
+
 @pytest.fixture
 def seeder():
-    creds = {
-        "server_hostname": "adb-123.azuredatabricks.net",
-        "http_path": "/sql/1.0/warehouses/abc123",
-        "access_token": "dapiTEST",
-    }
     with (
-        patch(
-            "seeders.seeder_databricks.get_databricks_credentials", return_value=creds
-        ),
+        patch("seeders.seeder_databricks.get_databricks_credentials", return_value=CREDS),
         patch("seeders.seeder_databricks.load_connections_yaml", return_value={}),
     ):
         return DatabricksSeeder(config=SeedConfig(seed_users=2, seed_days=1))
@@ -100,6 +100,34 @@ def test_insert_events_no_op_on_empty(seeder, mock_connect):
 
     mock_cursor.execute.assert_not_called()
     mock_cursor.executemany.assert_not_called()
+
+
+def test_seed_overwrites_schema_by_default(seeder, mock_connect):
+    mock_sql, mock_conn, mock_cursor = mock_connect
+
+    seeder.seed()
+
+    calls = [c[0][0] for c in mock_cursor.execute.call_args_list]
+    assert any("DROP TABLE" in sql for sql in calls)
+    assert any("CREATE TABLE" in sql for sql in calls)
+
+
+def test_seed_skips_schema_when_overwrite_false(mock_connect):
+    with (
+        patch("seeders.seeder_databricks.get_databricks_credentials", return_value=CREDS),
+        patch("seeders.seeder_databricks.load_connections_yaml", return_value={}),
+    ):
+        seeder = DatabricksSeeder(
+            config=SeedConfig(seed_users=2, seed_days=1),
+            overwrite_schema=False,
+        )
+    mock_sql, mock_conn, mock_cursor = mock_connect
+
+    seeder.seed()
+
+    calls = [c[0][0] for c in mock_cursor.execute.call_args_list]
+    assert not any("DROP TABLE" in sql for sql in calls)
+    assert not any("CREATE TABLE" in sql for sql in calls)
 
 
 def test_seed_returns_stats(seeder, mock_connect):
