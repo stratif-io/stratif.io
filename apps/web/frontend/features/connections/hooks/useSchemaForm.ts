@@ -112,7 +112,7 @@ export function useSchemaForm(connId: string) {
       upsert.mutate(buildSavePayload(form))
     }, 800)
     return () => clearTimeout(schemaTimer.current)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- upsert/upsertFilter are new objects each render; only form/enabledFields changes should trigger saves
   }, [form])
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export function useSchemaForm(connId: string) {
       })
     }, 600)
     return () => clearTimeout(filterTimer.current)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- upsert/upsertFilter are new objects each render; only form/enabledFields changes should trigger saves
   }, [enabledFields])
 
   function updateForm(patch: Partial<SchemaFormState>) {
@@ -161,11 +161,13 @@ export function useSchemaForm(connId: string) {
         setPendingDetections(pending)
 
         if (data.proposed_custom_properties?.length) {
-          const existing = form.customProps.map((p: CustomProperty) => p.path)
-          const newProps = data.proposed_custom_properties.filter(
-            (p: CustomProperty) => !existing.includes(p.path)
-          )
-          if (newProps.length) updateForm({ customProps: [...form.customProps, ...newProps] })
+          const proposals = data.proposed_custom_properties as CustomProperty[]
+          setForm((prev) => {
+            const existingPaths = prev.customProps.map((p) => p.path)
+            const newProps = proposals.filter((p) => !existingPaths.includes(p.path))
+            if (!newProps.length) return prev
+            return { ...prev, customProps: [...prev.customProps, ...newProps] }
+          })
         }
       },
     })
@@ -190,10 +192,16 @@ export function useSchemaForm(connId: string) {
 
   function acceptAllDetections() {
     const identityPatch: Partial<Record<UserIdentityKey, string>> = {}
-    const topLevelPatch: Partial<SchemaFormState> = {}
+    const topLevelPatch: Partial<
+      Pick<
+        SchemaFormState,
+        'userIdField' | 'eventNameField' | 'timestampField' | 'userIdentityFields'
+      >
+    > = {}
     for (const det of pendingDetections) {
       if (['userIdField', 'eventNameField', 'timestampField'].includes(det.fieldKey)) {
-        topLevelPatch[det.fieldKey as keyof SchemaFormState] = det.proposedColumn as never
+        topLevelPatch[det.fieldKey as 'userIdField' | 'eventNameField' | 'timestampField'] =
+          det.proposedColumn
       } else {
         identityPatch[det.fieldKey as UserIdentityKey] = det.proposedColumn
       }
