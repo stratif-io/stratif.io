@@ -343,7 +343,7 @@ export function FieldMapStep({ connId }: FieldMapStepProps) {
     upsert,
   } = useSchemaForm(connId)
 
-  const [openSections, setOpenSections] = useState({ identity: false, properties: true })
+  const [openSections, setOpenSections] = useState({ identity: true, properties: true })
   const [propSearch, setPropSearch] = useState('')
 
   const colNames = detectedColumns.map((c) => (typeof c === 'string' ? c : c.name))
