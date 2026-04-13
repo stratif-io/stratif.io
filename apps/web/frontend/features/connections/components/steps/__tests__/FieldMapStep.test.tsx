@@ -156,6 +156,70 @@ describe('FieldMapStep', () => {
     expect(screen.getByDisplayValue('Plan')).toBeInTheDocument()
   })
 
+  it('groups props with same category into one card', () => {
+    renderStep({
+      form: {
+        ...baseHookReturn.form,
+        customProps: [
+          {
+            id: 'p1',
+            name: 'Session Duration',
+            path: 'properties.session_duration',
+            type: 'number',
+            category: 'metrics',
+          },
+          {
+            id: 'p2',
+            name: 'Page Views',
+            path: 'properties.page_views',
+            type: 'number',
+            category: 'metrics',
+          },
+        ],
+      },
+    })
+    // Both names appear
+    expect(screen.getByDisplayValue('Session Duration')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Page Views')).toBeInTheDocument()
+    // Only one category card header (one CategoryBadge showing "metrics" / its label)
+    // Both are in the same card — we verify via a single "add to metrics" footer button
+    expect(screen.getAllByRole('button', { name: /add to metrics/i })).toHaveLength(1)
+  })
+
+  it('puts props with different categories in different cards', () => {
+    renderStep({
+      form: {
+        ...baseHookReturn.form,
+        customProps: [
+          { id: 'p1', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
+          {
+            id: 'p2',
+            name: 'Session Duration',
+            path: 'properties.session_duration',
+            type: 'number',
+            category: 'metrics',
+          },
+        ],
+      },
+    })
+    expect(screen.getByDisplayValue('Plan')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Session Duration')).toBeInTheDocument()
+    // Two separate add-to-category buttons
+    expect(screen.getByRole('button', { name: /add to user/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /add to metrics/i })).toBeInTheDocument()
+  })
+
+  it('renders props with no category in a "no category" card', () => {
+    renderStep({
+      form: {
+        ...baseHookReturn.form,
+        customProps: [{ id: 'p1', name: 'Page URL', path: 'context.page.url', type: 'string' }],
+      },
+    })
+    expect(screen.getByDisplayValue('Page URL')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /add uncategorized/i })).toBeInTheDocument()
+  })
+
   it('shows save status', () => {
     renderStep({ upsert: { isPending: true, isSuccess: false, isError: false } })
     expect(screen.getByTestId('save-status')).toBeInTheDocument()
