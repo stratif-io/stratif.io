@@ -49,11 +49,7 @@ bun run test:e2e             # end-to-end tests (Playwright)
 
 ## Configuration
 
-Copy `.env.example` as a starting point:
-
-```bash
-cp .env.example .env
-```
+Copy `.env.example` as a starting point (`cp .env.example .env`), then set `STRATIFIO_ENCRYPTION_KEY`.
 
 | Variable                   | Default                                               | Description                                                      |
 | -------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------- |
