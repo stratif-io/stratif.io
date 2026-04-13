@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, ChevronDown, ChevronRight, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import type { CustomProperty, PropertyType } from '@/types'
@@ -17,6 +17,7 @@ interface Props {
   onChangeCategory: (newCat: string | null) => void // change category for all props in this group
   onChangeProp: (idx: number, patch: Partial<CustomProperty>) => void
   onAddToCategory: () => void // adds a new blank prop in this category
+  onRemoveProp: (idx: number) => void
 }
 
 export function CategoryCard({
@@ -28,6 +29,7 @@ export function CategoryCard({
   onChangeCategory,
   onChangeProp,
   onAddToCategory,
+  onRemoveProp,
 }: Props) {
   const isNullCategory = category === null
   // "Other" card (null category): collapsible, collapsed by default
@@ -71,6 +73,7 @@ export function CategoryCard({
                 filterEnabled={filterEnabled}
                 onChange={(patch) => onChangeProp(idx, patch)}
                 onFilterToggle={() => onFilterToggleProp(idx)}
+                onRemove={() => onRemoveProp(idx)}
               />
             )
           })}
@@ -100,9 +103,17 @@ interface RowProps {
   filterEnabled: boolean
   onChange: (patch: Partial<CustomProperty>) => void
   onFilterToggle: () => void
+  onRemove: () => void
 }
 
-function PropertyRow({ prop, colNames, filterEnabled, onChange, onFilterToggle }: RowProps) {
+function PropertyRow({
+  prop,
+  colNames,
+  filterEnabled,
+  onChange,
+  onFilterToggle,
+  onRemove,
+}: RowProps) {
   const typeIdx = PROPERTY_TYPES.indexOf(prop.type)
   const nextType = PROPERTY_TYPES[(typeIdx + 1) % PROPERTY_TYPES.length]
 
@@ -168,6 +179,15 @@ function PropertyRow({ prop, colNames, filterEnabled, onChange, onFilterToggle }
         value={prop.category}
         onChange={(newCat) => onChange({ category: newCat ?? undefined })}
       />
+      {/* Delete button */}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Remove property"
+        className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+      >
+        <X className="h-4 w-4" />
+      </button>
     </div>
   )
 }

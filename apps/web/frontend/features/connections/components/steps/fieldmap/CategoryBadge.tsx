@@ -64,7 +64,7 @@ export function CategoryBadge({ value, onChange }: Props) {
           )}
         >
           {Icon && <Icon className="h-3 w-3 shrink-0" />}
-          <span>{selected?.label ?? 'no category'}</span>
+          <span>{selected?.label ?? 'Other'}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-1" align="start">
@@ -76,7 +76,7 @@ export function CategoryBadge({ value, onChange }: Props) {
             setOpen(false)
           }}
         >
-          — no category
+          Other
         </button>
         {cats.map((cat) => {
           const CatIcon = ICON_MAP[cat.icon] ?? null

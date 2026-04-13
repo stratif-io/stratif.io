@@ -146,7 +146,14 @@ export function useSchemaForm(connId: string) {
     detect.mutate(form.eventsTable, {
       onSuccess: (data) => {
         if (data.events_table) updateForm({ eventsTable: data.events_table })
-        if (data.columns?.length) setDetectedColumns(data.columns)
+        if (data.columns?.length) {
+          const topLevelCols = data.columns as SchemaDetectColumn[]
+          const nestedCols = (data.proposed_custom_properties ?? []).map(
+            (p: { path: string; type: string }) => ({ name: p.path, type: p.type })
+          )
+          const allCols = [...topLevelCols, ...nestedCols]
+          setDetectedColumns(Array.from(new Map(allCols.map((c) => [c.name, c])).values()))
+        }
 
         const pending: PendingDetection[] = []
         const fieldMap: Record<string, { key: string; label: string }> = {
