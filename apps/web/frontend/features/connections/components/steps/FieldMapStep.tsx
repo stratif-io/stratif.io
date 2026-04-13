@@ -6,7 +6,7 @@ import { useSchemaForm, type UserIdentityKey } from '../../hooks/useSchemaForm'
 import { cn } from '@/lib/utils'
 import type { CustomProperty } from '@/types'
 import { FieldRow } from './fieldmap/FieldRow'
-import { PropertyCard } from './fieldmap/PropertyCard'
+import { CategoryCard } from './fieldmap/CategoryCard'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -108,18 +108,21 @@ export function FieldMapStep({ connId }: Props) {
     })
   }
 
-  // Sort: categorised first (grouped), uncategorised last
-  const sortedProps = useMemo(
-    () =>
-      [...form.customProps.map((prop, idx) => ({ prop, idx }))].sort((a, b) => {
-        if (a.prop.category && !b.prop.category) return -1
-        if (!a.prop.category && b.prop.category) return 1
-        if (a.prop.category && b.prop.category && a.prop.category !== b.prop.category)
-          return a.prop.category.localeCompare(b.prop.category)
-        return a.prop.name.localeCompare(b.prop.name)
-      }),
-    [form.customProps]
-  )
+  // Group props by category (null = no category); named categories first alphabetically, null last
+  const categoryGroups = useMemo(() => {
+    const map = new Map<string | null, Array<{ prop: CustomProperty; idx: number }>>()
+    form.customProps.forEach((prop, idx) => {
+      const key = prop.category ?? null
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push({ prop, idx })
+    })
+    type Group = [string | null, Array<{ prop: CustomProperty; idx: number }>]
+    const named = [...map.entries()]
+      .filter(([k]) => k !== null)
+      .sort(([a], [b]) => a!.localeCompare(b!)) as Group[]
+    const nullGroup: Group[] = map.has(null) ? [[null, map.get(null)!]] : []
+    return [...named, ...nullGroup]
+  }, [form.customProps])
 
   return (
     <div className="flex flex-col gap-6 p-1">
@@ -282,7 +285,7 @@ export function FieldMapStep({ connId }: Props) {
           </Button>
         </div>
 
-        {sortedProps.length === 0 && (
+        {form.customProps.length === 0 && (
           <div
             className={cn(
               'border border-dashed border-border rounded-lg flex items-center justify-center py-8 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors'
@@ -293,25 +296,50 @@ export function FieldMapStep({ connId }: Props) {
           </div>
         )}
 
-        {sortedProps.length > 0 && (
+        {form.customProps.length > 0 && (
           <div className="grid grid-cols-2 gap-3">
-            {sortedProps.map(({ prop, idx }) => (
-              <PropertyCard
-                key={prop.id ?? idx}
-                prop={prop}
+            {categoryGroups.map(([cat, groupProps]) => (
+              <CategoryCard
+                key={cat ?? '__none__'}
+                category={cat}
+                props={groupProps}
                 colNames={colNames}
-                filterEnabled={!!prop.path && !!enabledFields[prop.path]}
-                onFilterToggle={() => {
-                  if (!prop.path) return
-                  const catId = prop.category
-                  toggleFilter(
-                    prop.path,
-                    prop.name || prop.path,
-                    catId ? 'Activity' : 'MoreHorizontal'
+                enabledFields={enabledFields}
+                onFilterToggleCategory={() => {
+                  const anyEnabled = groupProps.some(
+                    (p) => p.prop.path && enabledFields[p.prop.path]
                   )
+                  groupProps.forEach(({ prop }) => {
+                    if (!prop.path) return
+                    const isEnabled = !!enabledFields[prop.path]
+                    if (anyEnabled && isEnabled) {
+                      toggleFilter(prop.path, prop.name || prop.path, 'Activity')
+                    } else if (!anyEnabled && !isEnabled) {
+                      toggleFilter(prop.path, prop.name || prop.path, 'Activity')
+                    }
+                  })
                 }}
-                onChange={(patch) => updateProp(idx, patch)}
-                onRemove={() => removeProp(idx)}
+                onChangeCategory={(newCat) => {
+                  groupProps.forEach(({ idx }) => {
+                    updateProp(idx, { category: newCat ?? undefined })
+                  })
+                }}
+                onChangeProp={(idx, patch) => updateProp(idx, patch)}
+                onRemoveProp={(idx) => removeProp(idx)}
+                onAddToCategory={() => {
+                  updateForm({
+                    customProps: [
+                      ...form.customProps,
+                      {
+                        id: crypto.randomUUID(),
+                        name: '',
+                        path: '',
+                        type: 'string',
+                        category: cat ?? undefined,
+                      },
+                    ],
+                  })
+                }}
               />
             ))}
 
