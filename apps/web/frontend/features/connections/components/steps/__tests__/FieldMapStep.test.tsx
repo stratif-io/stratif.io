@@ -8,6 +8,10 @@ vi.mock('../../../hooks/useSchemaForm', () => ({
   useSchemaForm: vi.fn(),
 }))
 
+vi.mock('react-router-dom', () => ({
+  useBlocker: vi.fn(() => ({ state: 'idle', proceed: vi.fn(), reset: vi.fn() })),
+}))
+
 import { useSchemaForm } from '../../../hooks/useSchemaForm'
 
 const baseHookReturn = {

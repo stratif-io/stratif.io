@@ -37,6 +37,14 @@ vi.mock('../hooks/useConnectionsData', () => ({
   useDeleteConnection: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }))
 
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>()
+  return {
+    ...actual,
+    useBlocker: vi.fn(() => ({ state: 'idle', proceed: vi.fn(), reset: vi.fn() })),
+  }
+})
+
 vi.mock('../hooks/useSchemaForm', () => ({
   useSchemaForm: vi.fn(() => ({
     form: {
