@@ -24,8 +24,8 @@ build/
 .DS_Store
 Thumbs.db
 
-# Database — binary files live in data/, never commit them
-/data/
+# Database — binary files live in data/dbs/, never commit them
+/data/dbs/
 *.duckdb
 *.duckdb.wal
 *.sqlite
