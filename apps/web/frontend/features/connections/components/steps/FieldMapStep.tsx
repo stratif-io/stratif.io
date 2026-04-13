@@ -1,5 +1,6 @@
 import { Check, X, ScanSearch } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SaveStatus } from '@/components/ui/save-status'
 import { useSchemaForm, type PendingDetection } from '../../hooks/useSchemaForm'
 import { cn } from '@/lib/utils'
 
@@ -31,6 +32,7 @@ export function FieldMapStep({ connId }: FieldMapStepProps) {
     acceptDetection,
     rejectDetection,
     acceptAllDetections,
+    upsert,
   } = useSchemaForm(connId)
 
   const colNames = detectedColumns.map((c) => (typeof c === 'string' ? c : c.name))
@@ -44,7 +46,20 @@ export function FieldMapStep({ connId }: FieldMapStepProps) {
       {/* Header with Detect button */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-medium">Required Fields</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium">Required Fields</h3>
+            <SaveStatus
+              status={
+                upsert.isPending
+                  ? 'saving'
+                  : upsert.isSuccess
+                    ? 'saved'
+                    : upsert.isError
+                      ? 'error'
+                      : 'idle'
+              }
+            />
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             Map your table columns to the fields stratif.io needs.
           </p>

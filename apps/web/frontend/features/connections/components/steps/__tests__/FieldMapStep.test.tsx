@@ -163,6 +163,20 @@ describe('FieldMapStep', () => {
     expect(screen.getByRole('button', { name: /accept all/i })).toBeInTheDocument()
   })
 
+  it('shows save status indicator in header', () => {
+    vi.mocked(useSchemaForm).mockReturnValue({
+      ...baseHookReturn,
+      upsert: { isPending: true, isSuccess: false, isError: false },
+    } as unknown as ReturnType<typeof useSchemaForm>)
+    const qc = new QueryClient()
+    render(
+      <QueryClientProvider client={qc}>
+        <FieldMapStep connId="conn-1" />
+      </QueryClientProvider>
+    )
+    expect(screen.getByTestId('save-status')).toBeInTheDocument()
+  })
+
   it('calls acceptAllDetections when Accept All is clicked', async () => {
     const acceptAllDetections = vi.fn()
     vi.mocked(useSchemaForm).mockReturnValue({
