@@ -137,6 +137,36 @@ describe('useSchemaForm', () => {
     expect(result.current.pendingDetections).toHaveLength(0)
   })
 
+  it('acceptDetection applies identity field to userIdentityFields', () => {
+    const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+    act(() => {
+      result.current.setPendingDetections([
+        { fieldKey: 'email_field', label: 'Email', proposedColumn: 'email' },
+      ])
+    })
+    act(() => {
+      result.current.acceptDetection('email_field')
+    })
+    expect(result.current.form.userIdentityFields.email_field).toBe('email')
+    expect(result.current.pendingDetections).toHaveLength(0)
+  })
+
+  it('acceptAllDetections applies multiple identity fields without dropping any', () => {
+    const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+    act(() => {
+      result.current.setPendingDetections([
+        { fieldKey: 'email_field', label: 'Email', proposedColumn: 'email' },
+        { fieldKey: 'phone_field', label: 'Phone', proposedColumn: 'phone_num' },
+      ])
+    })
+    act(() => {
+      result.current.acceptAllDetections()
+    })
+    expect(result.current.form.userIdentityFields.email_field).toBe('email')
+    expect(result.current.form.userIdentityFields.phone_field).toBe('phone_num')
+    expect(result.current.pendingDetections).toHaveLength(0)
+  })
+
   it('acceptAllDetections applies all pending detections', () => {
     const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
     act(() => {

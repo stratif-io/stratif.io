@@ -189,15 +189,19 @@ export function useSchemaForm(connId: string) {
   }
 
   function acceptAllDetections() {
+    const identityPatch: Partial<Record<UserIdentityKey, string>> = {}
+    const topLevelPatch: Partial<SchemaFormState> = {}
     for (const det of pendingDetections) {
       if (['userIdField', 'eventNameField', 'timestampField'].includes(det.fieldKey)) {
-        updateForm({ [det.fieldKey]: det.proposedColumn } as Partial<SchemaFormState>)
+        topLevelPatch[det.fieldKey as keyof SchemaFormState] = det.proposedColumn as never
       } else {
-        updateForm({
-          userIdentityFields: { ...form.userIdentityFields, [det.fieldKey]: det.proposedColumn },
-        })
+        identityPatch[det.fieldKey as UserIdentityKey] = det.proposedColumn
       }
     }
+    if (Object.keys(identityPatch).length) {
+      topLevelPatch.userIdentityFields = { ...form.userIdentityFields, ...identityPatch }
+    }
+    if (Object.keys(topLevelPatch).length) updateForm(topLevelPatch)
     setPendingDetections([])
   }
 
