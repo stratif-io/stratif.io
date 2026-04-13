@@ -123,15 +123,16 @@ class TestMissionControlEndpoint:
         assert response.status_code == 200
 
     def test_dau_mau_mau_includes_users_before_start_date(self, client):
-        # Querying only 2024-01-16: user-1 (from 2024-01-15) is in the 28-day MAU window
+        # Querying only 2024-01-16: user-1 (from 2024-01-15) is in the 30-day MAU window.
+        # Both DAU and MAU use the same trailing 30-day window ending 2024-01-16.
         response = client.get(
             "/api/mission-control",
             params={"start_date": "2024-01-16", "end_date": "2024-01-16"},
         )
         body = response.json()
-        # DAU = users on 2024-01-16 = 1 (user-2)
-        # MAU = users in 28 days ending 2024-01-16 = 2 (user-1 + user-2)
-        # ratio = 1/2 = 0.5
+        # MAU = distinct users in 30-day window = 2 (user-1 + user-2)
+        # DAU = avg daily distinct users in same window: (1 + 1) / 2 days with data = 1.0
+        # ratio = 1.0 / 2 = 0.5
         assert body["current"]["dau_mau_ratio"] == pytest.approx(0.5, abs=0.01)
 
 

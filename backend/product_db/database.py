@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+from urllib.parse import urlparse
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -67,6 +70,9 @@ async def close_product_db() -> None:
 async def init_product_db() -> None:
     """Create all tables. Safe to call on every startup (CREATE TABLE IF NOT EXISTS)."""
     engine = _get_engine()
+    if engine.dialect.name == "sqlite":
+        db_path = urlparse(str(settings.product_db_url)).path.lstrip("/")
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     is_postgres = engine.dialect.name == "postgresql"
     async with engine.begin() as conn:
         if is_postgres:

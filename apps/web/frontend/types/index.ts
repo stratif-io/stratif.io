@@ -433,7 +433,7 @@ export interface MetricBreakdown {
   retained_count?: number
   prev_unique_users?: number
   avg_dau?: number
-  mau_28d?: number
+  mau_30d?: number
 }
 
 export interface MissionControlResponse {

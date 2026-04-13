@@ -118,7 +118,11 @@ def _fetch_period_metrics(
     new_users = new_rows[0][0] if new_rows else 0
 
     # --- 4. DAU/MAU ratio ---
-    mau_start = period_end - timedelta(days=27)
+    # Both DAU and MAU use the same trailing 30-day window anchored at period_end.
+    # This guarantees the ratio is always in [0, 1] and avoids window mismatch
+    # (previously DAU used the selected period while MAU used a fixed 28-day window,
+    # which could produce ratios > 1 for short periods).
+    mau_start = period_end - timedelta(days=29)  # 30-day window
     mau_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
     mau_params: list = [f"{mau_start} 00:00:00", pe]
     mau_where.extend(filter_clauses)
@@ -137,11 +141,11 @@ def _fetch_period_metrics(
         FROM (
             SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) AS daily_count
             FROM events
-            {ev_where_sql}
+            {mau_where_sql}
             GROUP BY DATE(timestamp)
         ) t
         """,
-        ev_params,
+        mau_params,
     )
     dau = dau_rows[0][0] if dau_rows else 0.0
     dau_mau_ratio = round(dau / mau, 4) if mau else 0.0
@@ -422,18 +426,7 @@ def _fetch_single_metric(
     if metric != "dau_mau_ratio":
         raise ValueError(f"Unknown metric: {metric}")
 
-    dau_sql = f"""
-        SELECT AVG(daily_count)
-        FROM (
-            SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) AS daily_count
-            FROM events {ev_where_sql}
-            GROUP BY DATE(timestamp)
-        ) t
-        """
-    dau_rows = db.execute(dau_sql, ev_params)
-    dau = dau_rows[0][0] if dau_rows else 0.0
-
-    mau_start = period_end - timedelta(days=27)
+    mau_start = period_end - timedelta(days=29)  # 30-day window
     mau_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
     mau_params: list = [f"{mau_start} 00:00:00", pe]
     mau_where.extend(filter_clauses)
@@ -442,9 +435,20 @@ def _fetch_single_metric(
     mau_sql = f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql}"
     mau_rows = db.execute(mau_sql, mau_params)
     mau = mau_rows[0][0] if mau_rows else 0
+
+    dau_sql = f"""
+        SELECT AVG(daily_count)
+        FROM (
+            SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) AS daily_count
+            FROM events {mau_where_sql}
+            GROUP BY DATE(timestamp)
+        ) t
+        """
+    dau_rows = db.execute(dau_sql, mau_params)
+    dau = dau_rows[0][0] if dau_rows else 0.0
     value = round(dau / mau, 4) if mau else 0.0
     return value, [
-        interpolate_sql(dau_sql, ev_params),
+        interpolate_sql(dau_sql, mau_params),
         interpolate_sql(mau_sql, mau_params),
     ]
 
@@ -667,6 +671,36 @@ def get_mission_control_metric(
         breakdown = {
             "retained_count": int(retained_b),
             "prev_unique_users": int(prev_uniq_b),
+        }
+
+    if metric == "dau_mau_ratio" and start_date and end_date:
+        pe_bk = f"{end} 23:59:59"
+        mau_start_bk = end - timedelta(days=29)  # 30-day window
+        mau_where_bk: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+        mau_params_bk: list = [f"{mau_start_bk} 00:00:00", pe_bk]
+        mau_where_bk.extend(filter_clauses)
+        mau_params_bk.extend(filter_params)
+        mau_where_sql_bk = "WHERE " + " AND ".join(mau_where_bk)
+        mau_rows_bk = db.execute(
+            f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql_bk}",
+            mau_params_bk,
+        )
+        mau_bk = mau_rows_bk[0][0] if mau_rows_bk else 0
+        dau_rows_bk = db.execute(
+            f"""
+            SELECT AVG(daily_count)
+            FROM (
+                SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) AS daily_count
+                FROM events {mau_where_sql_bk}
+                GROUP BY DATE(timestamp)
+            ) t
+            """,
+            mau_params_bk,
+        )
+        dau_bk = round(dau_rows_bk[0][0] or 0.0, 2) if dau_rows_bk else 0.0
+        breakdown = {
+            "avg_dau": dau_bk,
+            "mau_30d": int(mau_bk),
         }
 
     all_sqls: list[str] = []
@@ -1069,7 +1103,7 @@ def get_mission_control_trend(
         dau_params_ex: list = [day_ps_ex, day_pe_ex]
         dau_where_ex.extend(filter_clauses)
         dau_params_ex.extend(filter_params)
-        mau_start_ex = start - timedelta(days=27)
+        mau_start_ex = start - timedelta(days=29)  # 30-day window
         mau_where_ex: list[str] = ["timestamp >= ?", "timestamp <= ?"]
         mau_params_ex: list = [f"{mau_start_ex} 00:00:00", day_pe_ex]
         mau_where_ex.extend(filter_clauses)
@@ -1090,7 +1124,7 @@ def get_mission_control_trend(
             dau_params.extend(filter_params)
             dau_where_sql = "WHERE " + " AND ".join(dau_where)
 
-            mau_start = current_day - timedelta(days=27)
+            mau_start = current_day - timedelta(days=29)  # 30-day window
             mau_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
             mau_params: list = [f"{mau_start} 00:00:00", day_pe]
             mau_where.extend(filter_clauses)
