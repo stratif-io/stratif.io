@@ -7,7 +7,7 @@
 [![License: ELv2](https://img.shields.io/badge/License-ELv2-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](package.json)
-[![ghcr.io](https://img.shields.io/badge/ghcr.io-latest-24292e?logo=github)](https://github.com/cabichahine/stratif.io/pkgs/container/stratif.io)
+[![ghcr.io](https://img.shields.io/badge/ghcr.io-latest-24292e?logo=github)](https://github.com/stratif-io/stratif.io/pkgs/container/stratif.io)
 
 **No event pipelines · Open source & self-hosted · Learn product analytics hands-on**
 
@@ -31,6 +31,25 @@
 **Open source and self-hosted.** No vendor lock-in, no surprise invoices. One install script and you own your analytics stack completely.
 
 **Learn product analytics hands-on.** stratif.io ships with ~5,000 realistic sample events. Explore funnels, retention, and user journeys without needing your own data — no account, no credit card.
+
+---
+
+## ⚡ Quick Start
+
+```bash
+curl -fsSL https://stratif.io/install.sh | sh
+```
+
+Open **http://localhost:8000** when it's done.
+
+> **Docker Compose:**
+>
+> ```bash
+> git clone https://github.com/stratif-io/stratif.io.git
+> cd stratif.io
+> echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+> docker compose up
+> ```
 
 ---
 
@@ -77,25 +96,6 @@ _\* Mitzu, Kubit, NetSpring, Houseware — all closed-source, cloud-only, paid._
 ## 🗄️ Supported Databases
 
 DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
-
----
-
-## ⚡ Quick Start
-
-```bash
-curl -fsSL https://stratif.io/install.sh | sh
-```
-
-Open **http://localhost:9999** when it's done.
-
-> **Docker Compose:**
->
-> ```bash
-> git clone https://github.com/stratif-io/stratif.io.git
-> cd stratif.io
-> echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
-> docker compose up
-> ```
 
 ---
 
@@ -165,7 +165,7 @@ For production: set `STRATIFIO_DEBUG=false` and pin `STRATIFIO_CORS_ORIGINS` to 
 
 ## 🤝 Contributing
 
-Pull requests are welcome. For major changes, open an issue first to discuss what you'd like to change. Have a question or idea? [Start a discussion](https://github.com/cabichahine/stratif.io/discussions).
+Pull requests are welcome. For major changes, open an issue first to discuss what you'd like to change. Have a question or idea? [Start a discussion](https://github.com/stratif-io/stratif.io/discussions).
 
 ```bash
 # Run the full quality suite before submitting
