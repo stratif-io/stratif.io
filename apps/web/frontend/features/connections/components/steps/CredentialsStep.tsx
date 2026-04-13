@@ -36,18 +36,9 @@ export function CredentialsStep({ connection, onTestStatusChange, onNext }: Prop
         ? 'failed'
         : 'idle'
 
-  const autoAdvanced = useRef(false)
-
-  // Auto-test on mount; if it passes immediately, skip straight to next step
+  // Auto-test on mount
   useEffect(() => {
-    test.mutate(connection.id, {
-      onSuccess: (result) => {
-        if (result.ok && !autoAdvanced.current) {
-          autoAdvanced.current = true
-          onNext()
-        }
-      },
-    })
+    test.mutate(connection.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connection.id])
 
