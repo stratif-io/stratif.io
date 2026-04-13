@@ -34,7 +34,9 @@ CREDS = {
 @pytest.fixture
 def seeder():
     with (
-        patch("seeders.seeder_databricks.get_databricks_credentials", return_value=CREDS),
+        patch(
+            "seeders.seeder_databricks.get_databricks_credentials", return_value=CREDS
+        ),
         patch("seeders.seeder_databricks.load_connections_yaml", return_value={}),
     ):
         return DatabricksSeeder(config=SeedConfig(seed_users=2, seed_days=1))
@@ -63,10 +65,33 @@ def test_insert_events_uses_batch_insert(seeder, mock_connect):
     seeder._conn = mock_conn
 
     props = {"amount": 10, "page_url": "/checkout"}
-    traits = {"first_name": "Alice", "last_name": "Smith", "phone": "555-0100", "email": "a@b.com", "date_of_birth": "1990-01-01"}
-    context = {"country": "US", "city": "NYC", "timezone": "EST", "device_type": "desktop", "browser": "Chrome", "os": "macOS", "screen_resolution": "1920x1080", "referrer": "google.com"}
+    traits = {
+        "first_name": "Alice",
+        "last_name": "Smith",
+        "phone": "555-0100",
+        "email": "a@b.com",
+        "date_of_birth": "1990-01-01",
+    }
+    context = {
+        "country": "US",
+        "city": "NYC",
+        "timezone": "EST",
+        "device_type": "desktop",
+        "browser": "Chrome",
+        "os": "macOS",
+        "screen_resolution": "1920x1080",
+        "referrer": "google.com",
+    }
     events = [
-        ("user1", "Purchase", "2024-01-01T00:00:00", props, "server.us.1", traits, context),
+        (
+            "user1",
+            "Purchase",
+            "2024-01-01T00:00:00",
+            props,
+            "server.us.1",
+            traits,
+            context,
+        ),
         ("user2", "Search", "2024-01-01T01:00:00", {}, "server.eu.1", traits, context),
     ]
     seeder._insert_events(events)
@@ -115,7 +140,9 @@ def test_seed_overwrites_schema_by_default(seeder, mock_connect):
 
 def test_seed_skips_schema_when_overwrite_false(mock_connect):
     with (
-        patch("seeders.seeder_databricks.get_databricks_credentials", return_value=CREDS),
+        patch(
+            "seeders.seeder_databricks.get_databricks_credentials", return_value=CREDS
+        ),
         patch("seeders.seeder_databricks.load_connections_yaml", return_value={}),
     ):
         seeder = DatabricksSeeder(

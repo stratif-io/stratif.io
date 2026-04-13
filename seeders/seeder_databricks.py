@@ -24,7 +24,9 @@ log = structlog.get_logger(__name__)
 class DatabricksSeeder(BaseSeeder):
     """Writes seeded events to a Databricks SQL warehouse."""
 
-    def __init__(self, config: SeedConfig | None = None, *, overwrite_schema: bool = True) -> None:
+    def __init__(
+        self, config: SeedConfig | None = None, *, overwrite_schema: bool = True
+    ) -> None:
         super().__init__(config=config or SeedConfig())
         self._db_creds = get_databricks_credentials(load_connections_yaml())
         self._conn: Any = None
