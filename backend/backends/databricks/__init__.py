@@ -103,16 +103,41 @@ class DatabricksBackend:
             return False
 
     def get_table_columns(self, conn: Any, table_expr: str) -> frozenset[str]:
+        return frozenset(self.get_column_types(conn, table_expr).keys())
+
+    def get_column_types(self, conn: Any, table_expr: str) -> dict[str, str]:
+        """Return {col_name: sql_type_string} from cursor.description."""
         try:
             cursor = conn.cursor()
             try:
                 cursor.execute(f"SELECT * FROM {table_expr} LIMIT 0")
-                return frozenset(d[0] for d in cursor.description or [])
+                return {
+                    d[0]: (d[1] if isinstance(d[1], str) else str(d[1]))
+                    for d in (cursor.description or [])
+                }
             finally:
                 with contextlib.suppress(Exception):
                     cursor.close()
         except Exception:
-            return frozenset()
+            return {}
+
+    def resolve_prop_expr(self, path: str, col_types: dict[str, str]) -> str:
+        """For Databricks: use struct dot-notation for STRUCT/MAP/ARRAY root columns,
+        get_json_object for STRING root columns containing JSON.
+        """
+        parts = path.split(".")
+        if len(parts) == 1:
+            return f"`{parts[0]}`"
+        root = parts[0]
+        root_type = (col_types.get(root) or "").upper()
+        if root_type.startswith(
+            ("STRUCT<", "MAP<", "ARRAY<", "STRUCT", "MAP", "ARRAY")
+        ):
+            # Struct/map field access via dot notation
+            return ".".join(f"`{p}`" for p in parts)
+        # JSON string extraction
+        nested_key = ".".join(parts[1:])
+        return self.json_extract_string(f"`{root}`", nested_key)
 
     def table_exists(self, conn: Any, table_name: str) -> bool:
         try:
