@@ -136,7 +136,8 @@ export function FieldMapStep({ connId }: Props) {
   const categoryGroups = useMemo(() => {
     const map = new Map<string | null, Array<{ prop: CustomProperty; idx: number }>>()
     form.customProps.forEach((prop, idx) => {
-      const key = prop.category ?? null
+      // Treat category "other" (catch-all) and uncategorized the same — both go to the "Other" group
+      const key = !prop.category || prop.category === 'other' ? null : prop.category
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push({ prop, idx })
     })
