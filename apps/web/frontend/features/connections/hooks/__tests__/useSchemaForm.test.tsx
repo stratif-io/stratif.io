@@ -102,12 +102,49 @@ describe('useSchemaForm', () => {
         suggestions: { user_id_field: 'uid', event_name_field: null, timestamp_field: null },
         proposed_custom_properties: [],
         events_table: 'public.events',
-        columns: ['uid', 'event_name'],
+        columns: [
+          { name: 'uid', type: 'string' },
+          { name: 'event_name', type: 'string' },
+        ],
       })
     })
     expect(result.current.pendingDetections).toHaveLength(1)
     expect(result.current.pendingDetections[0].fieldKey).toBe('userIdField')
     expect(result.current.pendingDetections[0].proposedColumn).toBe('uid')
+  })
+
+  it('detect merges nested paths from proposed_custom_properties into detectedColumns', () => {
+    let detectCallback: ((data: unknown) => void) | undefined
+    vi.mocked(useDetectSchema).mockReturnValue({
+      mutate: vi.fn((_table: unknown, opts: { onSuccess?: (data: unknown) => void }) => {
+        detectCallback = opts?.onSuccess
+      }),
+      isPending: false,
+    } as unknown as ReturnType<typeof useDetectSchema>)
+
+    const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+    act(() => {
+      result.current.handleDetect()
+    })
+    act(() => {
+      detectCallback?.({
+        suggestions: {},
+        proposed_custom_properties: [
+          { name: 'session_duration', path: 'properties.session_duration', type: 'number' },
+          { name: 'plan', path: 'traits.plan', type: 'string' },
+        ],
+        events_table: 'public.events',
+        columns: [
+          { name: 'user_id', type: 'string' },
+          { name: 'properties', type: 'json' },
+        ],
+      })
+    })
+    const colNames = result.current.detectedColumns.map((c) => c.name)
+    expect(colNames).toContain('user_id')
+    expect(colNames).toContain('properties')
+    expect(colNames).toContain('properties.session_duration')
+    expect(colNames).toContain('traits.plan')
   })
 
   it('acceptDetection applies the column and removes the pending detection', () => {

@@ -101,6 +101,13 @@ export function FieldMapStep({ connId }: Props) {
     }
   }
 
+  function removeProp(idx: number) {
+    setForm((prev) => ({
+      ...prev,
+      customProps: prev.customProps.filter((_, i) => i !== idx),
+    }))
+  }
+
   function addProp() {
     setForm((prev) => ({
       ...prev,
@@ -335,6 +342,7 @@ export function FieldMapStep({ connId }: Props) {
                   }))
                 }}
                 onChangeProp={(idx, patch) => updateProp(idx, patch)}
+                onRemoveProp={(idx) => removeProp(idx)}
                 onAddToCategory={() => {
                   const category = cat ?? undefined
                   setForm((prev) => ({
