@@ -158,6 +158,141 @@ def test_seed_skips_schema_when_overwrite_false(mock_connect):
     assert not any("CREATE TABLE" in sql for sql in calls)
 
 
+def test_insert_events_splits_large_batches_to_respect_param_limit(
+    seeder, mock_connect
+):
+    """A batch exceeding _MAX_ROWS_PER_INSERT must be split into multiple INSERT calls."""
+    mock_sql, mock_conn, mock_cursor = mock_connect
+    seeder._conn = mock_conn
+
+    row = (
+        "u",
+        "E",
+        "2024-01-01T00:00:00",
+        {},
+        "srv",
+        {},
+        {},
+    )
+    # Use exactly _MAX_ROWS_PER_INSERT + 1 rows to force a split into 2 calls
+    n = seeder._MAX_ROWS_PER_INSERT + 1
+    seeder._insert_events([row] * n)
+
+    assert mock_cursor.execute.call_count == 2
+    first_call_params = mock_cursor.execute.call_args_list[0][0][1]
+    second_call_params = mock_cursor.execute.call_args_list[1][0][1]
+    assert (
+        len(first_call_params) == seeder._MAX_ROWS_PER_INSERT * seeder._PARAMS_PER_ROW
+    )
+    assert len(second_call_params) == 1 * seeder._PARAMS_PER_ROW
+
+
+def test_insert_events_never_exceeds_databricks_param_limit(seeder, mock_connect):
+    """No single INSERT call may exceed _MAX_PARAMS parameters."""
+    mock_sql, mock_conn, mock_cursor = mock_connect
+    seeder._conn = mock_conn
+
+    row = ("u", "E", "2024-01-01T00:00:00", {}, "srv", {}, {})
+    seeder._insert_events([row] * 5000)
+
+    for call in mock_cursor.execute.call_args_list:
+        params = call[0][1]
+        assert len(params) <= seeder._MAX_PARAMS
+
+
+CREDS_WITH_VOLUME = {
+    **CREDS,
+    "catalog": "workspace",
+    "schema": "default",
+    "staging_volume": "seeds",
+}
+
+
+@pytest.fixture
+def seeder_with_volume():
+    with (
+        patch(
+            "seeders.seeder_databricks.get_databricks_credentials",
+            return_value=CREDS_WITH_VOLUME,
+        ),
+        patch("seeders.seeder_databricks.load_connections_yaml", return_value={}),
+    ):
+        return DatabricksSeeder(config=SeedConfig(seed_users=2, seed_days=1))
+
+
+def test_seed_uses_parquet_mode_when_staging_volume_set(
+    seeder_with_volume, mock_connect
+):
+    mock_sql, mock_conn, mock_cursor = mock_connect
+
+    with patch.object(seeder_with_volume, "_bulk_load_parquet") as mock_bulk:
+        seeder_with_volume.seed()
+
+    mock_bulk.assert_called_once()
+    events_arg = mock_bulk.call_args[0][0]
+    assert len(events_arg) > 0
+
+
+def test_seed_uses_insert_mode_when_no_staging_volume(seeder, mock_connect):
+    mock_sql, mock_conn, mock_cursor = mock_connect
+
+    with patch.object(seeder, "_bulk_load_parquet") as mock_bulk:
+        seeder.seed()
+
+    mock_bulk.assert_not_called()
+
+
+def test_bulk_load_volume_path_uses_catalog_schema_volume(
+    seeder_with_volume, mock_connect
+):
+    """_bulk_load_parquet must PUT/COPY/REMOVE at /Volumes/{catalog}/{schema}/{volume}/."""
+    mock_sql, mock_conn, mock_cursor = mock_connect
+    seeder_with_volume._conn = mock_conn
+
+    event = (
+        "u1",
+        "PageView",
+        "2024-01-01T00:00:00",
+        {"page": "/home"},
+        "srv",
+        {
+            "first_name": "A",
+            "last_name": "B",
+            "phone": "",
+            "email": "a@b.com",
+            "date_of_birth": "",
+        },
+        {
+            "country": "US",
+            "city": "NY",
+            "timezone": "EST",
+            "device_type": "desktop",
+            "browser": "Chrome",
+            "os": "macOS",
+            "screen_resolution": "1920x1080",
+            "referrer": "",
+        },
+    )
+
+    tmp_obj = MagicMock()
+    tmp_obj.name = "/tmp/seed_events.parquet"
+    with (
+        patch("pandas.DataFrame.to_parquet"),
+        patch("seeders.seeder_databricks.tempfile.NamedTemporaryFile") as mock_tmp,
+        patch("seeders.seeder_databricks.Path"),
+    ):
+        mock_tmp.return_value.__enter__ = MagicMock(return_value=tmp_obj)
+        mock_tmp.return_value.__exit__ = MagicMock(return_value=False)
+        seeder_with_volume._bulk_load_parquet([event])
+
+    all_sql = " ".join(c[0][0] for c in mock_cursor.execute.call_args_list)
+    assert "/Volumes/workspace/default/seeds/" in all_sql
+    assert "PUT" in all_sql
+    assert "COPY INTO" in all_sql
+    assert "FILEFORMAT = PARQUET" in all_sql
+    assert "REMOVE" in all_sql
+
+
 def test_seed_returns_stats(seeder, mock_connect):
     mock_sql, mock_conn, mock_cursor = mock_connect
 
