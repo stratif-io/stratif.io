@@ -61,7 +61,7 @@ DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
 | Open source                     |     ✅     |          ❌          |   ✅    |           ❌            |
 | Self-hosted                     |     ✅     |          ❌          |   ✅    |           ❌            |
 | Warehouse-native (no ingestion) |     ✅     |          ❌          |   ❌    |           ✅            |
-| Free                            |     ✅     |          ❌          |   ❌    |           ❌            |
+| No usage-based pricing          |     ✅     |          ❌          |   ❌    |           ❌            |
 | Sample data to learn with       |     ✅     |          ❌          |   ❌    |           ❌            |
 
 _\* Mitzu, Kubit, NetSpring, Houseware — all closed-source, cloud-only, paid._
