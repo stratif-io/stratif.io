@@ -41,10 +41,10 @@ export type PendingDetection = {
 }
 
 const DEFAULT_FORM: SchemaFormState = {
-  userIdField: 'user_id',
-  timestampField: 'timestamp',
-  eventNameField: 'event_name',
-  eventsTable: 'events',
+  userIdField: '',
+  timestampField: '',
+  eventNameField: '',
+  eventsTable: '',
   sessionTimeoutMinutes: 30,
   resurrectionWindowDays: 30,
   powerUserThresholdDays: 4,
@@ -81,10 +81,10 @@ export function useSchemaForm(connId: string) {
     if (!schemaConfig || initialized.current) return
     initialized.current = true
     setForm({
-      userIdField: schemaConfig.user_id_field ?? DEFAULT_FORM.userIdField,
-      timestampField: schemaConfig.timestamp_field ?? DEFAULT_FORM.timestampField,
-      eventNameField: schemaConfig.event_name_field ?? DEFAULT_FORM.eventNameField,
-      eventsTable: schemaConfig.events_table ?? DEFAULT_FORM.eventsTable,
+      userIdField: schemaConfig.user_id_field ?? '',
+      timestampField: schemaConfig.timestamp_field ?? '',
+      eventNameField: schemaConfig.event_name_field ?? '',
+      eventsTable: schemaConfig.events_table ?? '',
       sessionTimeoutMinutes:
         schemaConfig.session_timeout_minutes ?? DEFAULT_FORM.sessionTimeoutMinutes,
       resurrectionWindowDays:
