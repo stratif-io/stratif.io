@@ -62,8 +62,8 @@ function buildLearnContent(
 
     case 'unique_users':
       return {
-        title: 'Unique Users (MAU)',
-        what: 'Distinct users who triggered at least one event — your Monthly Active Users for the selected window. This is your total audience size: everyone who showed up, regardless of how often.',
+        title: 'Unique Users',
+        what: 'Distinct users who triggered at least one event in the selected period. This is your active audience size for that window — everyone who showed up, regardless of how often.',
         snapshot: [
           {
             label: curLabel,
