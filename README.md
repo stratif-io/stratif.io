@@ -17,7 +17,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/mc_dark.png"/>
-  <img src="docs/mc.png" alt="stratif.io Dashboard"/>
+  <img src="docs/mc.png" alt="stratif.io — funnel analysis on a DuckDB events table"/>
 </picture>
 
 ---
@@ -27,6 +27,15 @@ curl -fsSL https://stratif.io/install.sh | sh
 ```
 
 Open **http://localhost:9999** when it's done.
+
+> **Docker Compose:**
+>
+> ```bash
+> git clone https://github.com/stratif-io/stratif.io.git
+> cd stratif.io
+> echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+> docker compose up
+> ```
 
 ---
 
