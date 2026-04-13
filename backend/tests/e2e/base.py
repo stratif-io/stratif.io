@@ -37,6 +37,13 @@ class BaseE2ETest:
     connection_id: ClassVar[str | None] = None
     detected_schema: ClassVar[dict | None] = None
 
+    # Backends that need the deterministic dataset seeded before tests run.
+    # File-based backends (duckdb, sqlite) point to pre-seeded files in
+    # connections.yaml; server backends start empty and must be seeded here.
+    _SEED_BACKENDS: ClassVar[frozenset[str]] = frozenset(
+        {"postgresql", "clickhouse", "databricks"}
+    )
+
     # ------------------------------------------------------------------
     # Class setup — skip entire class if backend is not enabled
     # ------------------------------------------------------------------
@@ -48,6 +55,56 @@ class BaseE2ETest:
             pytest.skip(f"backend '{cls.db_type}' not enabled in connections.yaml")
         cls.connection_id = None
         cls.detected_schema = None
+        cls._seed_if_needed(cfg)
+
+    @classmethod
+    def teardown_class(cls) -> None:
+        cfg = E2E_CONFIG.get(cls.db_type, {})
+        cls._teardown_seed_if_needed(cfg)
+
+    @classmethod
+    def _seed_if_needed(cls, cfg: dict) -> None:
+        """Seed the test database for server backends that start empty."""
+        if cls.db_type not in cls._SEED_BACKENDS:
+            return
+        import contextlib
+
+        from backend.tests.deterministic.loader import (
+            close_connection,
+            create_table,
+            drop_table,
+            insert_rows,
+            open_write_connection,
+        )
+
+        backend_obj, conn = open_write_connection(cls.db_type, cfg["credentials"])
+        try:
+            with contextlib.suppress(Exception):
+                drop_table(backend_obj, conn)
+            create_table(backend_obj, conn)
+            insert_rows(backend_obj, conn, cred_dict=cfg["credentials"])
+        finally:
+            close_connection(backend_obj, conn)
+
+    @classmethod
+    def _teardown_seed_if_needed(cls, cfg: dict) -> None:
+        """Drop the seeded table after tests complete."""
+        if cls.db_type not in cls._SEED_BACKENDS:
+            return
+        import contextlib
+
+        from backend.tests.deterministic.loader import (
+            close_connection,
+            drop_table,
+            open_write_connection,
+        )
+
+        backend_obj, conn = open_write_connection(cls.db_type, cfg["credentials"])
+        try:
+            with contextlib.suppress(Exception):
+                drop_table(backend_obj, conn)
+        finally:
+            close_connection(backend_obj, conn)
 
     # ------------------------------------------------------------------
     # Helpers
@@ -213,7 +270,13 @@ class BaseE2ETest:
         assert conn_id is not None
         schema = type(self).detected_schema
         assert schema is not None
-        suggestions = schema["suggestions"]
+        # Include events_table and detected custom_properties so the real table name
+        # and JSON property paths are saved (not left at defaults).
+        suggestions = {
+            **schema["suggestions"],
+            "events_table": schema["events_table"],
+            "custom_properties": schema.get("proposed_custom_properties", []),
+        }
         r = client.put(f"/api/connections/{conn_id}/schema", json=suggestions)
         assert r.status_code == 200, r.text
 

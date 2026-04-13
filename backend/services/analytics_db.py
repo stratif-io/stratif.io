@@ -201,14 +201,19 @@ class AnalyticsDatabase:
         return "NULL"
 
     def has_column(self, col: str) -> bool:
+        if self._events_cte is not None:
+            # CTE is active — available_columns reflects the underlying table, not what
+            # the CTE selects. Core fields are always in the CTE; for everything else
+            # only root-level paths from custom_props are exposed.
+            if col in ("user_id", "timestamp", "event_name"):
+                return True
+            root_cols = {
+                p["path"].split(".")[0] for p in self._custom_props if "path" in p
+            }
+            return col in root_cols
         if self._available_columns is not None:
             return col in self._available_columns
-        if col in ("user_id", "timestamp", "event_name"):
-            return True
-        if self._events_cte is None:
-            return True
-        root_cols = {p["path"].split(".")[0] for p in self._custom_props if "path" in p}
-        return col in root_cols
+        return True
 
     def close(self) -> None:
         if self._pooled:
@@ -313,12 +318,6 @@ async def open_analytics_db(
         or events_table != "events"
     )
 
-    custom_prop_exprs: dict[str, str] = {
-        p["name"]: _resolve_path_to_sql(p["path"], dialect)
-        for p in custom_props
-        if "name" in p and "path" in p
-    }
-
     filter_config = conn_obj.filter_config
     filter_fields: list[dict] = (
         [
@@ -338,34 +337,43 @@ async def open_analytics_db(
         "date_of_birth_field",
         "phone_field",
     )
-    if schema_config:
-        for _key in _identity_field_keys:
-            _col = getattr(schema_config, _key, None)
-            if _col:
-                custom_prop_exprs[_col] = _resolve_path_to_sql(_col, dialect)
 
-    filter_exprs: dict[str, str] = {}
-    _src_to_std_name = {uid_f: "user_id", ts_f: "timestamp", en_f: "event_name"}
-    for ff in filter_fields:
-        field = ff.get("field", "")
-        if field in custom_prop_exprs:
-            filter_exprs[field] = custom_prop_exprs[field]
-        elif field in (uid_f, ts_f, en_f):
-            filter_exprs[field] = (
-                _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
-            )
-        else:
-            filter_exprs[field] = _resolve_path_to_sql(field, dialect)
+    _resolve_expr = getattr(backend, "resolve_prop_expr", None)
+    _get_col_types = getattr(backend, "get_column_types", None)
 
-    shared_kwargs: dict = {
-        "filter_fields": filter_fields,
-        "filter_exprs": filter_exprs,
-        "custom_props": custom_props,
-        "custom_prop_exprs": custom_prop_exprs,
-        "session_timeout_minutes": session_timeout_minutes,
-        "resurrection_window_days": resurrection_window_days,
-        "power_user_threshold_days": power_user_threshold_days,
-    }
+    def _resolve(path: str, col_types: dict[str, str]) -> str:
+        if _resolve_expr is not None:
+            return _resolve_expr(path, col_types)
+        return _resolve_path_to_sql(path, dialect)
+
+    def _build_exprs(
+        col_types: dict[str, str],
+    ) -> tuple[dict[str, str], dict[str, str]]:
+        """Build custom_prop_exprs and filter_exprs given column type info."""
+        prop_exprs: dict[str, str] = {
+            p["name"]: _resolve(p["path"], col_types)
+            for p in custom_props
+            if "name" in p and "path" in p
+        }
+        if schema_config:
+            for _key in _identity_field_keys:
+                _col = getattr(schema_config, _key, None)
+                if _col:
+                    prop_exprs[_col] = _resolve(_col, col_types)
+
+        _src_to_std_name = {uid_f: "user_id", ts_f: "timestamp", en_f: "event_name"}
+        f_exprs: dict[str, str] = {}
+        for ff in filter_fields:
+            field = ff.get("field", "")
+            if field in prop_exprs:
+                f_exprs[field] = prop_exprs[field]
+            elif field in (uid_f, ts_f, en_f):
+                f_exprs[field] = (
+                    _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
+                )
+            else:
+                f_exprs[field] = _resolve(field, col_types)
+        return prop_exprs, f_exprs
 
     events_cte = (
         backend.build_events_cte(events_table, uid_f, ts_f, en_f, custom_props)
@@ -373,18 +381,35 @@ async def open_analytics_db(
         else None
     )
 
+    _quoted_table = ".".join(f"{_iq}{p}{_iq}" for p in events_table.split("."))
+
+    def _get_available_columns(
+        conn: object, col_types: dict[str, str]
+    ) -> frozenset[str]:
+        if _get_col_types:
+            return frozenset(col_types.keys())
+        cols = backend.get_table_columns(conn, _quoted_table)
+        return cols or frozenset()
+
     if backend.use_pool:
         pool_key = backend.pool_key(connection_id, credentials)
         factory = lambda: backend.open(credentials, read_only=False)  # noqa: E731
         conn = _pool_get(pool_key, factory)
-        _quoted_table = ".".join(f"{_iq}{p}{_iq}" for p in events_table.split("."))
-        cols = backend.get_table_columns(conn, _quoted_table)
+        col_types = _get_col_types(conn, _quoted_table) if _get_col_types else {}
+        custom_prop_exprs, filter_exprs = _build_exprs(col_types)
+        available_cols = _get_available_columns(conn, col_types)
         db = AnalyticsDatabase(
             conn,
             backend,
             events_cte=events_cte,
-            available_columns=cols or None,
-            **shared_kwargs,
+            available_columns=available_cols or None,
+            filter_fields=filter_fields,
+            filter_exprs=filter_exprs,
+            custom_props=custom_props,
+            custom_prop_exprs=custom_prop_exprs,
+            session_timeout_minutes=session_timeout_minutes,
+            resurrection_window_days=resurrection_window_days,
+            power_user_threshold_days=power_user_threshold_days,
         )
         db._pooled = True
         db._pool_key = pool_key
@@ -392,12 +417,19 @@ async def open_analytics_db(
         return db
 
     conn = backend.open(credentials, read_only=True)
-    _quoted_table = ".".join(f"{_iq}{p}{_iq}" for p in events_table.split("."))
-    cols = backend.get_table_columns(conn, _quoted_table)
+    col_types = _get_col_types(conn, _quoted_table) if _get_col_types else {}
+    custom_prop_exprs, filter_exprs = _build_exprs(col_types)
+    available_cols = _get_available_columns(conn, col_types)
     return AnalyticsDatabase(
         conn,
         backend,
         events_cte=events_cte,
-        available_columns=cols or None,
-        **shared_kwargs,
+        available_columns=available_cols or None,
+        filter_fields=filter_fields,
+        filter_exprs=filter_exprs,
+        custom_props=custom_props,
+        custom_prop_exprs=custom_prop_exprs,
+        session_timeout_minutes=session_timeout_minutes,
+        resurrection_window_days=resurrection_window_days,
+        power_user_threshold_days=power_user_threshold_days,
     )
