@@ -9,7 +9,7 @@ set -eu
 REPO="stratif-io/stratif.io"
 REPO_URL="https://github.com/${REPO}"
 INSTALL_DIR="${STRATIFIO_DIR:-$HOME/.stratifio}"
-PORT="${STRATIFIO_PORT:-8000}"
+PORT="${STRATIFIO_PORT:-6870}"
 DATA_DIR="${STRATIFIO_DATA_DIR:-$INSTALL_DIR/data}"
 
 gh_curl() { curl ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"} "$@"; }

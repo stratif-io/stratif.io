@@ -138,8 +138,15 @@ def get_raw_events(
 
     props_col = "properties" if db.has_column("properties") else "NULL"
     custom_exprs = db.get_custom_prop_exprs()
-    custom_names = list(custom_exprs.keys())
-    extra_cols = (", " + ", ".join(custom_exprs.values())) if custom_exprs else ""
+    # Exclude custom exprs that duplicate the props_col to avoid double-selecting
+    # the same column (which causes Row namedtuple issues in some backends).
+    filtered_exprs = (
+        {k: v for k, v in custom_exprs.items() if k != "properties"}
+        if props_col == "properties"
+        else custom_exprs
+    )
+    custom_names = list(filtered_exprs.keys())
+    extra_cols = (", " + ", ".join(filtered_exprs.values())) if filtered_exprs else ""
     data_query = f"""
         SELECT user_id, event_name, timestamp, {props_col}{extra_cols}
         FROM events
@@ -151,6 +158,8 @@ def get_raw_events(
 
     def _build_props(row: tuple) -> dict:
         base = json.loads(row[3]) if isinstance(row[3], str) else (row[3] or {})
+        if not isinstance(base, dict):
+            base = {}
         for i, name in enumerate(custom_names):
             val = row[4 + i]
             if val is not None:
@@ -189,8 +198,13 @@ def get_user_events(
     """Get all events for a specific user, sorted chronologically (ASC)."""
     props_col = "properties" if db.has_column("properties") else "NULL"
     custom_exprs = db.get_custom_prop_exprs()
-    custom_names = list(custom_exprs.keys())
-    extra_cols = (", " + ", ".join(custom_exprs.values())) if custom_exprs else ""
+    filtered_exprs = (
+        {k: v for k, v in custom_exprs.items() if k != "properties"}
+        if props_col == "properties"
+        else custom_exprs
+    )
+    custom_names = list(filtered_exprs.keys())
+    extra_cols = (", " + ", ".join(filtered_exprs.values())) if filtered_exprs else ""
     user_events_query = f"""
         SELECT user_id, event_name, timestamp, {props_col}{extra_cols}
         FROM events
@@ -202,6 +216,8 @@ def get_user_events(
 
     def _build_props(row: tuple) -> dict:
         base = json.loads(row[3]) if isinstance(row[3], str) else (row[3] or {})
+        if not isinstance(base, dict):
+            base = {}
         for i, name in enumerate(custom_names):
             val = row[4 + i]
             if val is not None:

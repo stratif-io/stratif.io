@@ -18,6 +18,19 @@ from typing import Any
 # format instead of the ISO-8601 "T" separator that DuckDB returns.
 _SPACE_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})$")
 
+# Matches "YYYY-MM-DD HH:MM:SS+HH:MM" or "YYYY-MM-DD HH:MM:SS+00:00" —
+# Databricks returns timezone-aware timestamps; strip the tz offset before
+# further normalisation so they compare equal to tz-naive dialects.
+_SPACE_TS_TZ_RE = re.compile(
+    r"^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})[+-]\d{2}:\d{2}$"
+)
+
+# Matches "YYYY-MM-DDTHH:MM:SS+HH:MM" — ISO-8601 with T separator and tz offset
+# (Databricks returns this for DATE_TRUNC results on cohort/bucket fields).
+# Strip the tz offset so the string reduces to "YYYY-MM-DDTHH:MM:SS" for further
+# normalisation by _MIDNIGHT_TS_RE.
+_ISO_TS_TZ_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})[+-]\d{2}:\d{2}$")
+
 # Matches "YYYY-MM-DDTHH:MM:SS" after the space→T normalisation step above.
 # When the time portion is midnight we strip it so date-bucket fields like
 # trend dates compare equal across dialects (DuckDB returns "YYYY-MM-DD",
@@ -80,6 +93,14 @@ def _deep_copy_normalize(obj: Any) -> Any:
         # compare equal to backends returning native floats.
         if _NUMERIC_STR_RE.match(obj):
             return round(float(obj), 4)
+        # Strip timezone offset from "YYYY-MM-DDTHH:MM:SS+HH:MM" (Databricks ISO).
+        m = _ISO_TS_TZ_RE.match(obj)
+        if m:
+            obj = m.group(1)
+        # Strip timezone offset from "YYYY-MM-DD HH:MM:SS+HH:MM" (Databricks space).
+        m = _SPACE_TS_TZ_RE.match(obj)
+        if m:
+            obj = f"{m.group(1)}T{m.group(2)}"
         # Normalize "YYYY-MM-DD HH:MM:SS" → "YYYY-MM-DDTHH:MM:SS" so that
         # SQLite's/PostgreSQL's space-separated timestamps compare equal to
         # DuckDB's ISO-8601.

@@ -5,6 +5,13 @@ The API is NOT used here — this is raw DDL/DML.
 
 Table name: deterministic_events
 Columns:    user_id, timestamp, event_name, properties
+
+Insertion policy
+----------------
+- Databricks MUST go through UC volume staging (Parquet → COPY INTO).
+  Direct row-by-row INSERT is forbidden — it is orders of magnitude too slow.
+  Credentials must include catalog, schema, and staging_volume.
+- All other backends use row-by-row INSERT (acceptable speed for small test sets).
 """
 
 from __future__ import annotations
@@ -135,17 +142,116 @@ def create_table(backend: DatabaseBackend, conn: Any) -> None:
     backend.execute(conn, _CREATE[dialect], None)
 
 
-def insert_rows(backend: DatabaseBackend, conn: Any) -> None:
-    """Insert all EVENTS rows one at a time (batching via executemany not supported universally)."""
-    dialect = backend.dialect_name
-    sql = _INSERT_PROPS.get(dialect, _INSERT_DEFAULT)
+def insert_rows(
+    backend: DatabaseBackend, conn: Any, cred_dict: dict | None = None
+) -> None:
+    """Insert all EVENTS rows into the table.
 
+    Databricks MUST supply cred_dict with catalog / schema / staging_volume so
+    data is staged via a UC volume (Parquet → COPY INTO).  Direct row-by-row
+    INSERT is explicitly forbidden for Databricks — raise early rather than
+    silently run for minutes.
+    """
+    dialect = backend.dialect_name
+
+    if dialect == "databricks":
+        if not cred_dict:
+            raise ValueError(
+                "Databricks insert_rows requires cred_dict with catalog, schema, "
+                "and staging_volume.  Direct row-by-row INSERT is forbidden."
+            )
+        _insert_rows_databricks_volume(backend, conn, cred_dict)
+        return
+
+    sql = _INSERT_PROPS.get(dialect, _INSERT_DEFAULT)
     for row in EVENTS:
         backend.execute(
             conn,
             sql,
             [row["user_id"], row["timestamp"], row["event_name"], row["properties"]],
         )
+
+
+def _insert_rows_databricks_volume(
+    backend: DatabaseBackend, conn: Any, cred_dict: dict
+) -> None:
+    """Fast Databricks bulk insert via Unity Catalog volume staging.
+
+    1. Serialise EVENTS to Parquet in memory using pyarrow.
+    2. PUT the Parquet file to /Volumes/{catalog}/{schema}/{staging_volume}/seed.parquet
+       via the SQL connector staging PUT (no Files API token scope required).
+    3. COPY INTO the table from the volume path.
+
+    Raises ValueError if catalog / schema / staging_volume are missing — there is
+    no row-by-row fallback.
+    """
+    catalog = cred_dict.get("catalog")
+    schema = cred_dict.get("schema") or cred_dict.get("schema_name")
+    staging_volume = cred_dict.get("staging_volume")
+
+    if not (catalog and schema and staging_volume):
+        raise ValueError(
+            f"Databricks seeding requires catalog, schema, and staging_volume in "
+            f"credentials (got catalog={catalog!r}, schema={schema!r}, "
+            f"staging_volume={staging_volume!r}).  "
+            f"Add them to connections.yaml under databricks.credentials."
+        )
+
+    import io
+
+    import databricks.sql as dsql
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    host = cred_dict["host"]
+    http_path = cred_dict["http_path"]
+    token = cred_dict["token"]
+    volume_path = (
+        f"/Volumes/{catalog}/{schema}/{staging_volume}/deterministic_seed.parquet"
+    )
+
+    # --- Build Parquet in memory ---
+    table = pa.table(
+        {
+            "user_id": pa.array([r["user_id"] for r in EVENTS], type=pa.string()),
+            "timestamp": pa.array([r["timestamp"] for r in EVENTS], type=pa.string()),
+            "event_name": pa.array([r["event_name"] for r in EVENTS], type=pa.string()),
+            "properties": pa.array([r["properties"] for r in EVENTS], type=pa.string()),
+        }
+    )
+    buf = io.BytesIO()
+    pq.write_table(table, buf)
+    buf.seek(0)
+
+    # --- PUT via SQL connector staging (no Files API scope required) ---
+    staging_conn = dsql.connect(
+        server_hostname=host,
+        http_path=http_path,
+        access_token=token,
+        staging_allowed_local_path="/tmp",
+    )
+    staging_cursor = staging_conn.cursor()
+    try:
+        staging_cursor.execute(
+            f"PUT '__input_stream__' INTO '{volume_path}' OVERWRITE",
+            input_stream=buf,
+        )
+    finally:
+        staging_cursor.close()
+        staging_conn.close()
+
+    # --- COPY INTO ---
+    # Parquet preserves column names; CAST timestamp string to TIMESTAMP at load time.
+    copy_sql = f"""
+        COPY INTO {TABLE_NAME}
+        FROM (
+            SELECT user_id, CAST(timestamp AS TIMESTAMP), event_name, properties
+            FROM '{volume_path}'
+        )
+        FILEFORMAT = PARQUET
+        COPY_OPTIONS ('force' = 'true')
+    """
+    backend.execute(conn, copy_sql, None)
 
 
 def drop_table(backend: DatabaseBackend, conn: Any) -> None:
