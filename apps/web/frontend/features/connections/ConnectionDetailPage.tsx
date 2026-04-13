@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SPACING } from '@/lib/constants'
-import { useConnection, useUpsertSchemaConfig } from './hooks/useConnectionsData'
+import { useConnection, useSchemaConfig, useUpsertSchemaConfig } from './hooks/useConnectionsData'
+import type { SchemaConfigBody } from '@/types'
 import { ConnectionSetupLayout } from './components/ConnectionSetupLayout'
 import { CredentialsStep } from './components/steps/CredentialsStep'
 import { TableStep } from './components/steps/TableStep'
@@ -39,6 +40,7 @@ export function ConnectionDetailPage() {
   const { data: connection, isLoading, error } = useConnection(id ?? '')
   const [testStatus, setTestStatus] = useState<TestStatus>('idle')
   const upsertSchema = useUpsertSchemaConfig(id ?? '')
+  const { data: schemaConfig } = useSchemaConfig(id ?? '')
 
   if (isLoading) {
     return (
@@ -52,7 +54,7 @@ export function ConnectionDetailPage() {
     return (
       <div className={SPACING.page}>
         <p className="text-sm text-destructive">
-          {(error as Error)?.message ?? 'Connection not found'}
+          {error instanceof Error ? error.message : 'Connection not found'}
         </p>
         <Button variant="link" className="px-0 mt-2" onClick={() => navigate('/connections')}>
           Back to Connections
@@ -61,16 +63,13 @@ export function ConnectionDetailPage() {
     )
   }
 
-  const conn = connection as typeof connection & {
-    schema_config?: { events_table?: string } | null
-  }
-  const defaultStep = getDefaultStep(conn)
+  const defaultStep = getDefaultStep(connection)
   const validSteps: ConnectionStep[] = ['credentials', 'table', 'fieldmap', 'advanced']
   const currentStep: ConnectionStep = validSteps.includes(stepParam as ConnectionStep)
     ? (stepParam as ConnectionStep)
     : defaultStep
 
-  const completedSteps = getCompletedSteps(conn, testStatus)
+  const completedSteps = getCompletedSteps(connection, testStatus)
 
   const handleStepClick = (step: ConnectionStep) => {
     navigate(`/connections/${id}/${step}`)
@@ -81,14 +80,27 @@ export function ConnectionDetailPage() {
   }
 
   const handleTableConfirm = (tableName: string) => {
-    upsertSchema.mutate({ events_table: tableName } as never, {
-      onSuccess: () => navigate(`/connections/${id}/fieldmap`),
-    })
+    const payload: SchemaConfigBody = {
+      user_id_field: schemaConfig?.user_id_field ?? 'user_id',
+      event_name_field: schemaConfig?.event_name_field ?? 'event_name',
+      timestamp_field: schemaConfig?.timestamp_field ?? 'timestamp',
+      events_table: tableName,
+      session_timeout_minutes: schemaConfig?.session_timeout_minutes ?? 30,
+      resurrection_window_days: schemaConfig?.resurrection_window_days ?? 30,
+      power_user_threshold_days: schemaConfig?.power_user_threshold_days ?? 4,
+      custom_properties: schemaConfig?.custom_properties ?? [],
+      email_field: schemaConfig?.email_field ?? null,
+      first_name_field: schemaConfig?.first_name_field ?? null,
+      last_name_field: schemaConfig?.last_name_field ?? null,
+      date_of_birth_field: schemaConfig?.date_of_birth_field ?? null,
+      phone_field: schemaConfig?.phone_field ?? null,
+    }
+    upsertSchema.mutate(payload, { onSuccess: () => navigate(`/connections/${id}/fieldmap`) })
   }
 
   const tableFooter =
     currentStep === 'fieldmap' || currentStep === 'advanced'
-      ? (conn.schema_config?.events_table ?? undefined)
+      ? (connection.schema_config?.events_table ?? undefined)
       : undefined
 
   return (
@@ -125,7 +137,7 @@ export function ConnectionDetailPage() {
         {currentStep === 'table' && (
           <TableStep
             connId={connection.id}
-            currentTable={conn.schema_config?.events_table ?? ''}
+            currentTable={connection.schema_config?.events_table ?? ''}
             onConfirm={handleTableConfirm}
           />
         )}
