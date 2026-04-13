@@ -3,9 +3,18 @@ set -euo pipefail
 
 SAMPLE_DB="/data/sample.duckdb"
 
+# Write connections.yaml so seed-duckdb knows where to write the DuckDB file.
+cat > /app/connections.yaml << YAML
+backends:
+  duckdb:
+    enabled: true
+    credentials:
+      file_path: $SAMPLE_DB
+    expected_columns: []
+YAML
+
 if [ ! -f "$SAMPLE_DB" ]; then
   echo "[stratifio] Seeding sample analytics data (first run)…"
-  DB_PATH_PREFIX=/data/sample \
   SEED_USERS=5000 \
   SEED_DAYS=90 \
   seed-duckdb
