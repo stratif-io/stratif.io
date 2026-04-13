@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # Product DB — SQLite for local dev, PostgreSQL for production
     # Override with STRATIFIO_PRODUCT_DB_URL=postgresql+asyncpg://user:pass@host/db
-    product_db_url: str = "sqlite+aiosqlite:///./data/stratifio_product.db"
+    product_db_url: str = "sqlite+aiosqlite:///./data/dbs/stratifio_product.db"
 
     # Encryption key for credentials (required to store connections)
     encryption_key: str = ""
