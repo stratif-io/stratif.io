@@ -2,6 +2,51 @@
 
 [← Back to README](../README.md)
 
+## Docker Compose
+
+```bash
+git clone https://github.com/stratif-io/stratif.io.git
+cd stratif.io
+echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+docker compose up
+```
+
+Open **http://localhost:9999** when it's done.
+
+---
+
+## Local Development
+
+**Prerequisites:** [Bun](https://bun.sh), Python 3.12+, [uv](https://docs.astral.sh/uv/)
+
+```bash
+git clone https://github.com/stratif-io/stratif.io.git
+cd stratif.io
+
+bun install
+uv sync
+
+cp .env.example .env
+# Set STRATIFIO_ENCRYPTION_KEY in .env
+
+uv run seed-duckdb          # seed sample data (optional)
+
+uv run serve                # backend  → http://localhost:8000
+bun run dev                 # frontend → http://localhost:5173
+```
+
+**Quality checks:**
+
+```bash
+bun run test:run             # frontend unit tests (Vitest)
+uv run pytest backend/       # backend tests
+bun run lint                 # ESLint (zero warnings)
+bun run build                # TypeScript + production build
+bun run test:e2e             # end-to-end tests (Playwright)
+```
+
+---
+
 ## Configuration
 
 Copy `.env.example` as a starting point:
