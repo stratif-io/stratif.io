@@ -114,8 +114,8 @@ function buildFormula(
         lines: [
           { value: String(breakdown?.avg_dau ?? '—'), label: 'avg distinct users/day (DAU)' },
           {
-            value: String(breakdown?.mau_28d ?? '—'),
-            label: 'users in last 28 days (MAU)',
+            value: String(breakdown?.mau_30d ?? '—'),
+            label: 'users in last 30 days (MAU)',
             op: 'divide',
           },
           {
@@ -126,7 +126,7 @@ function buildFormula(
           },
         ],
         footnote:
-          'Benchmarks: ~20% is typical, ~50% is excellent (WhatsApp-level). MAU uses a rolling 28-day window.',
+          'Benchmarks: ~20% is typical, ~50% is excellent (WhatsApp-level). MAU uses a rolling 30-day window.',
       }
     case 'wau':
       return {
