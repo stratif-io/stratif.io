@@ -4,6 +4,7 @@ import pytest
 
 from seeders.connections_config import (
     get_clickhouse_credentials,
+    get_databricks_credentials,
     get_duckdb_credentials,
     get_postgresql_credentials,
     get_sqlite_credentials,
@@ -37,6 +38,12 @@ backends:
       user: admin
       password: secret
       secure: false
+  databricks:
+    enabled: true
+    credentials:
+      server_hostname: adb-123.azuredatabricks.net
+      http_path: /sql/1.0/warehouses/abc123
+      access_token: dapiTEST
 """
 
 
@@ -92,3 +99,18 @@ def test_get_duckdb_credentials_missing_backend(yaml_path):
     cfg["backends"].pop("duckdb")
     with pytest.raises(KeyError, match="duckdb"):
         get_duckdb_credentials(cfg)
+
+
+def test_get_databricks_credentials(yaml_path):
+    cfg = load_connections_yaml(yaml_path)
+    creds = get_databricks_credentials(cfg)
+    assert creds["server_hostname"] == "adb-123.azuredatabricks.net"
+    assert creds["http_path"] == "/sql/1.0/warehouses/abc123"
+    assert creds["access_token"] == "dapiTEST"
+
+
+def test_get_databricks_credentials_missing_backend(yaml_path):
+    cfg = load_connections_yaml(yaml_path)
+    cfg["backends"].pop("databricks")
+    with pytest.raises(KeyError, match="databricks"):
+        get_databricks_credentials(cfg)

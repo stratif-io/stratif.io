@@ -36,6 +36,7 @@ seed-duckdb = "seeders.seeder_duckdb:main"
 seed-sqlite = "seeders.seeder_sqlite:main"
 seed-postgres = "seeders.seeder_postgresql:main"
 seed-clickhouse = "seeders.seeder_clickhouse:main"
+seed-databricks = "seeders.seeder_databricks:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -52,6 +53,13 @@ asyncio_mode = "auto"
 markers = [
     "integration: marks tests that require a real external database connection (deselect with '-m not integration')",
     "e2e: marks self-bootstrapping end-to-end tests — credentials come from backend/tests/e2e/connections.yaml (deselect with '-m not e2e')",
+    "deterministic: marks all deterministic golden-file tests (deselect with '-m not deterministic')",
+    "deterministic_duckdb: deterministic tests for the DuckDB backend",
+    "deterministic_sqlite: deterministic tests for the SQLite backend",
+    "deterministic_pg: deterministic tests for the PostgreSQL backend",
+    "deterministic_ch: deterministic tests for the ClickHouse backend",
+    "deterministic_sf: deterministic tests for the Snowflake backend",
+    "deterministic_db: deterministic tests for the Databricks backend",
 ]
 
 [dependency-groups]

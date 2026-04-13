@@ -1,0 +1,25 @@
+{
+  "sql": "\n        SELECT event_name, COUNT(*) AS count\n        FROM events\n        \n        GROUP BY event_name\n        ORDER BY count DESC\n        LIMIT 10\n        ",
+  "data": [
+    {
+      "name": "add_to_cart",
+      "count": 504
+    },
+    {
+      "name": "checkout",
+      "count": 288
+    },
+    {
+      "name": "page_view",
+      "count": 720
+    },
+    {
+      "name": "purchase",
+      "count": 288
+    },
+    {
+      "name": "signup",
+      "count": 648
+    }
+  ]
+}
