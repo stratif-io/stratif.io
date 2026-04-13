@@ -37,9 +37,9 @@ def _normalize(name: str) -> str:
 
 
 def _tokens(name: str) -> set[str]:
-    """Split a (possibly snake_case / camelCase) name into lowercase tokens."""
+    """Split a (possibly snake_case / camelCase / dotted) name into lowercase tokens."""
     normalized = _normalize(name)
-    return set(filter(None, re.split(r"[_\-\s]", normalized)))
+    return set(filter(None, re.split(r"[._\-\s]", normalized)))
 
 
 def _best_match(
@@ -68,12 +68,13 @@ def _best_match(
         if norm in col_norm:
             return col_norm[norm]
 
-    # 3. Token overlap — require at least one shared token between alias and column.
-    # Character-level substring ("ts" in "traits") is intentionally excluded.
+    # 3. All alias tokens must be present in column tokens (subset check).
+    # This avoids false positives like "user_email" matching "is_returning_user"
+    # via the shared "user" token.
     for alias in aliases:
         alias_toks = _tokens(alias)
         for col_l, col_orig in col_lower.items():
-            if alias_toks & _tokens(col_l):
+            if alias_toks <= _tokens(col_l):  # subset, not intersection
                 return col_orig
 
     # 4. Fuzzy similarity

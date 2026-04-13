@@ -53,13 +53,20 @@ export function FieldMapStep({ connId }: Props) {
 
   const colNames = detectedColumns.map((c) => c.name)
 
-  // Fix 3: exclude columns already mapped to required/identity fields from event property suggestions
+  // Exclude columns already mapped to required/identity fields from event property suggestions.
+  // Also exclude columns pending as identity suggestions to avoid offering them in props.
+  const identityKeys = new Set(USER_IDENTITY_FIELDS.map((f) => f.key))
+  const pendingIdentityPaths = pendingDetections
+    .filter((d) => identityKeys.has(d.fieldKey as UserIdentityKey))
+    .map((d) => d.proposedColumn)
+
   const usedPaths = new Set(
     [
       form.userIdField,
       form.eventNameField,
       form.timestampField,
       ...Object.values(form.userIdentityFields).filter(Boolean),
+      ...pendingIdentityPaths,
     ].filter(Boolean) as string[]
   )
   const propColNames = colNames.filter((c) => !usedPaths.has(c))
@@ -138,12 +145,14 @@ export function FieldMapStep({ connId }: Props) {
       [...arr].sort((a, b) =>
         a.prop.name.localeCompare(b.prop.name, undefined, { sensitivity: 'base' })
       )
-    const named = [...map.entries()]
-      .filter(([k]) => k !== null)
-      .sort(([a], [b]) => a!.localeCompare(b!))
-      .map(([k, v]) => [k, sortProps(v)] as Group) as Group[]
-    const nullGroup: Group[] = map.has(null) ? [[null, sortProps(map.get(null)!)]] : []
-    return [...named, ...nullGroup]
+    const groups: Group[] = [...map.entries()].map(([k, v]) => [k, sortProps(v)] as Group)
+    // Sort: named categories alphabetically, null (Other) always last
+    groups.sort((a, b) => {
+      if (a[0] === null) return 1
+      if (b[0] === null) return -1
+      return a[0].localeCompare(b[0])
+    })
+    return groups
   }, [form.customProps])
 
   return (
