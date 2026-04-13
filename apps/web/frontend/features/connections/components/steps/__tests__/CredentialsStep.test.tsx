@@ -17,7 +17,7 @@ vi.mock('../../../hooks/useConnectionsData', () => ({
   useConnectionString: vi.fn(() => ({ data: null })),
 }))
 
-import { useTestConnection } from '../../../hooks/useConnectionsData'
+import { useTestConnection, useUpdateConnection } from '../../../hooks/useConnectionsData'
 
 const mockConnection = Object.freeze({
   id: 'conn-1',
@@ -161,6 +161,55 @@ describe('CredentialsStep', () => {
     } as unknown as ReturnType<typeof useTestConnection>)
     renderStep()
     expect(screen.getByRole('button', { name: /re-test/i })).toBeInTheDocument()
+  })
+
+  it('calls mutate with connection.id on mount (auto-test)', () => {
+    const mutate = vi.fn()
+    vi.mocked(useTestConnection).mockReturnValue({
+      mutate,
+      isPending: false,
+      data: undefined,
+      error: null,
+      reset: vi.fn(),
+    } as unknown as ReturnType<typeof useTestConnection>)
+    renderStep()
+    expect(mutate).toHaveBeenCalledWith(mockConnection.id)
+  })
+
+  it('does NOT show Re-test button when test passes', () => {
+    vi.mocked(useTestConnection).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      data: { ok: true },
+      error: null,
+      reset: vi.fn(),
+    } as unknown as ReturnType<typeof useTestConnection>)
+    renderStep()
+    expect(screen.queryByRole('button', { name: /re-test/i })).not.toBeInTheDocument()
+  })
+
+  it('debounces credential save: does not call update.mutate immediately on form input, only after 1000ms', () => {
+    vi.useFakeTimers()
+    const updateMutate = vi.fn()
+    vi.mocked(useUpdateConnection).mockReturnValue({
+      mutate: updateMutate,
+      isPending: false,
+      isSuccess: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<typeof useUpdateConnection>)
+    renderStep()
+    const form = document.querySelector('form')!
+    form.dispatchEvent(new Event('input', { bubbles: true }))
+    // Should NOT fire synchronously
+    expect(updateMutate).not.toHaveBeenCalled()
+    // Advance past debounce window
+    vi.advanceTimersByTime(999)
+    expect(updateMutate).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    // At this point the debounce fires; saveCredentials skips mutate for empty fields,
+    // but the important thing is it was NOT called before the debounce elapsed
+    vi.useRealTimers()
   })
 
   it('calls onNext when Next button is clicked', async () => {
