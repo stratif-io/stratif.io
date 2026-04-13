@@ -51,7 +51,7 @@ def test_create_events_table_drops_and_creates(seeder, mock_connect):
     assert any("USING DELTA" in sql for sql in calls)
 
 
-def test_insert_events_calls_executemany(seeder, mock_connect):
+def test_insert_events_uses_batch_insert(seeder, mock_connect):
     mock_sql, mock_conn, mock_cursor = mock_connect
     seeder._conn = mock_conn
 
@@ -69,11 +69,14 @@ def test_insert_events_calls_executemany(seeder, mock_connect):
     ]
     seeder._insert_events(events)
 
-    mock_cursor.executemany.assert_called_once()
-    sql_arg, rows_arg = mock_cursor.executemany.call_args[0]
+    # Single execute call with multi-row VALUES — not executemany
+    mock_cursor.execute.assert_called_once()
+    mock_cursor.executemany.assert_not_called()
+    sql_arg, params_arg = mock_cursor.execute.call_args[0]
     assert "INSERT INTO events" in sql_arg
-    assert len(rows_arg) == 2
-    assert len(rows_arg[0]) == 7
+    # Two rows → two placeholder groups
+    assert sql_arg.count("(?, ?, ?, ?, ?, ?, ?)") == 2
+    assert len(params_arg) == 14  # 2 rows × 7 columns
 
 
 def test_insert_events_no_op_on_empty(seeder, mock_connect):
@@ -82,6 +85,7 @@ def test_insert_events_no_op_on_empty(seeder, mock_connect):
 
     seeder._insert_events([])
 
+    mock_cursor.execute.assert_not_called()
     mock_cursor.executemany.assert_not_called()
 
 
