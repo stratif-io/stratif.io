@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -75,21 +76,21 @@ def test_insert_events_uses_batch_insert(seeder, mock_connect):
     mock_cursor.executemany.assert_not_called()
     sql_arg, params_arg = mock_cursor.execute.call_args[0]
     assert "INSERT INTO events" in sql_arg
-    assert sql_arg.count("(?, ?, ?, ?, ?, ?, ?)") == 2
-    assert len(params_arg) == 14  # 2 rows × 7 columns
+    assert "from_json" in sql_arg
+    assert "named_struct" in sql_arg
+    # 2 rows × 18 params (3 scalars + 1 json props + 1 server + 5 traits fields + 8 context fields)
+    assert len(params_arg) == 36
 
-    # properties values are coerced to str; traits and context passed as dicts
-    row1_props = params_arg[3]
-    assert isinstance(row1_props, dict)
-    assert row1_props["amount"] == "10"
+    # properties passed as JSON string
+    row1_props_json = params_arg[3]
+    assert isinstance(row1_props_json, str)
+    assert json.loads(row1_props_json)["amount"] == "10"
 
-    row1_traits = params_arg[5]
-    assert isinstance(row1_traits, dict)
-    assert row1_traits["first_name"] == "Alice"
+    # traits fields flattened — first_name is index 5
+    assert params_arg[5] == "Alice"
 
-    row1_context = params_arg[6]
-    assert isinstance(row1_context, dict)
-    assert row1_context["country"] == "US"
+    # context fields start at index 10 — country is first
+    assert params_arg[10] == "US"
 
 
 def test_insert_events_no_op_on_empty(seeder, mock_connect):
