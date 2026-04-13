@@ -9,7 +9,8 @@ import {
 } from '../../hooks/useConnectionsData'
 import type { Connection } from '@/types'
 import type { TestStatus } from '../ConnectionSidebar'
-import { CredentialFields, buildCredentials } from '../ConnectionConfigTab'
+import { CredentialFields } from '../ConnectionConfigTab'
+import { buildCredentials } from '../ConnectionConfigTab.helpers'
 
 interface Props {
   connection: Connection
