@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Plus, MoreHorizontal, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, ChevronDown, ChevronRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import type { CustomProperty, PropertyType } from '@/types'
 import { ColumnCombobox } from './ColumnCombobox'
@@ -17,7 +16,6 @@ interface Props {
   onFilterToggleProp: (idx: number) => void // toggles filter for a single prop
   onChangeCategory: (newCat: string | null) => void // change category for all props in this group
   onChangeProp: (idx: number, patch: Partial<CustomProperty>) => void
-  onRemoveProp: (idx: number) => void
   onAddToCategory: () => void // adds a new blank prop in this category
 }
 
@@ -29,7 +27,6 @@ export function CategoryCard({
   onFilterToggleProp,
   onChangeCategory,
   onChangeProp,
-  onRemoveProp,
   onAddToCategory,
 }: Props) {
   const isNullCategory = category === null
@@ -74,7 +71,6 @@ export function CategoryCard({
                 filterEnabled={filterEnabled}
                 onChange={(patch) => onChangeProp(idx, patch)}
                 onFilterToggle={() => onFilterToggleProp(idx)}
-                onRemove={() => onRemoveProp(idx)}
               />
             )
           })}
@@ -104,18 +100,9 @@ interface RowProps {
   filterEnabled: boolean
   onChange: (patch: Partial<CustomProperty>) => void
   onFilterToggle: () => void
-  onRemove: () => void
 }
 
-function PropertyRow({
-  prop,
-  colNames,
-  filterEnabled,
-  onChange,
-  onFilterToggle,
-  onRemove,
-}: RowProps) {
-  const [menuOpen, setMenuOpen] = useState(false)
+function PropertyRow({ prop, colNames, filterEnabled, onChange, onFilterToggle }: RowProps) {
   const typeIdx = PROPERTY_TYPES.indexOf(prop.type)
   const nextType = PROPERTY_TYPES[(typeIdx + 1) % PROPERTY_TYPES.length]
 
@@ -176,30 +163,11 @@ function PropertyRow({
           />
         </span>
       </button>
-      {/* ⋯ menu */}
-      <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="shrink-0 h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted"
-            aria-label="Property options"
-          >
-            <MoreHorizontal className="h-3.5 w-3.5" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-36 p-1" align="end">
-          <button
-            type="button"
-            className="w-full rounded px-2 py-1.5 text-left text-xs text-destructive hover:bg-destructive/10"
-            onClick={() => {
-              setMenuOpen(false)
-              onRemove()
-            }}
-          >
-            Delete property
-          </button>
-        </PopoverContent>
-      </Popover>
+      {/* Per-row category picker */}
+      <CategoryBadge
+        value={prop.category}
+        onChange={(newCat) => onChange({ category: newCat ?? undefined })}
+      />
     </div>
   )
 }

@@ -111,10 +111,6 @@ export function FieldMapStep({ connId }: Props) {
     }))
   }
 
-  function removeProp(idx: number) {
-    setForm((prev) => ({ ...prev, customProps: prev.customProps.filter((_, i) => i !== idx) }))
-  }
-
   function updateProp(idx: number, patch: Partial<CustomProperty>) {
     setForm((prev) => ({
       ...prev,
@@ -131,10 +127,15 @@ export function FieldMapStep({ connId }: Props) {
       map.get(key)!.push({ prop, idx })
     })
     type Group = [string | null, Array<{ prop: CustomProperty; idx: number }>]
+    const sortProps = (arr: Array<{ prop: CustomProperty; idx: number }>) =>
+      [...arr].sort((a, b) =>
+        a.prop.name.localeCompare(b.prop.name, undefined, { sensitivity: 'base' })
+      )
     const named = [...map.entries()]
       .filter(([k]) => k !== null)
-      .sort(([a], [b]) => a!.localeCompare(b!)) as Group[]
-    const nullGroup: Group[] = map.has(null) ? [[null, map.get(null)!]] : []
+      .sort(([a], [b]) => a!.localeCompare(b!))
+      .map(([k, v]) => [k, sortProps(v)] as Group) as Group[]
+    const nullGroup: Group[] = map.has(null) ? [[null, sortProps(map.get(null)!)]] : []
     return [...named, ...nullGroup]
   }, [form.customProps])
 
@@ -334,7 +335,6 @@ export function FieldMapStep({ connId }: Props) {
                   }))
                 }}
                 onChangeProp={(idx, patch) => updateProp(idx, patch)}
-                onRemoveProp={(idx) => removeProp(idx)}
                 onAddToCategory={() => {
                   const category = cat ?? undefined
                   setForm((prev) => ({
