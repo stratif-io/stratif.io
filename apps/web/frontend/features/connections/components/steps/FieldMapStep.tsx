@@ -1,7 +1,15 @@
-import { useMemo, useState } from 'react'
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { ScanSearch, Plus, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SaveStatus } from '@/components/ui/save-status'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useSchemaForm, type UserIdentityKey } from '../../hooks/useSchemaForm'
 import { cn } from '@/lib/utils'
 import type { CustomProperty } from '@/types'
@@ -29,11 +37,19 @@ const USER_IDENTITY_FIELDS: { key: UserIdentityKey; label: string }[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
+export interface FieldMapStepHandle {
+  /** Call to request navigation away. If there are pending detections, shows a confirmation dialog first. */
+  requestLeave: (onConfirm: () => void) => void
+}
+
 interface Props {
   connId: string
 }
 
-export function FieldMapStep({ connId }: Props) {
+export const FieldMapStep = forwardRef<FieldMapStepHandle, Props>(function FieldMapStep(
+  { connId }: Props,
+  ref
+) {
   const {
     form,
     updateForm,
@@ -50,6 +66,20 @@ export function FieldMapStep({ connId }: Props) {
     acceptAllDetections,
     upsert,
   } = useSchemaForm(connId)
+
+  const [leaveDialog, setLeaveDialog] = useState<{ onConfirm: () => void } | null>(null)
+  const pendingDetectionsRef = useRef(pendingDetections)
+  pendingDetectionsRef.current = pendingDetections
+
+  useImperativeHandle(ref, () => ({
+    requestLeave(onConfirm) {
+      if (pendingDetectionsRef.current.length > 0) {
+        setLeaveDialog({ onConfirm })
+      } else {
+        onConfirm()
+      }
+    },
+  }))
 
   const colNames = detectedColumns.map((c) => c.name)
 
@@ -337,6 +367,7 @@ export function FieldMapStep({ connId }: Props) {
                 props={groupProps}
                 colNames={propColNames}
                 enabledFields={enabledFields}
+                expanded={pendingDetections.length > 0}
                 onFilterToggleProp={(idx) => {
                   const p = groupProps.find((gp) => gp.idx === idx)
                   if (!p?.prop.path) return
@@ -368,6 +399,43 @@ export function FieldMapStep({ connId }: Props) {
           </div>
         )}
       </div>
+
+      {/* ── Pending detections leave guard ──────────────────────────────── */}
+      <Dialog open={leaveDialog !== null} onOpenChange={(open) => !open && setLeaveDialog(null)}>
+        <DialogContent data-testid="leave-guard-dialog">
+          <DialogHeader>
+            <DialogTitle>Unconfirmed suggestions</DialogTitle>
+            <DialogDescription>
+              You have {pendingDetections.length} auto-detected field
+              {pendingDetections.length !== 1 ? 's' : ''} waiting for review. Accept them all now,
+              or stay on this step to confirm each one individually.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLeaveDialog(null)}>
+              Stay and review
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setLeaveDialog(null)
+                leaveDialog?.onConfirm()
+              }}
+            >
+              Leave anyway
+            </Button>
+            <Button
+              onClick={() => {
+                acceptAllDetections()
+                setLeaveDialog(null)
+                leaveDialog?.onConfirm()
+              }}
+            >
+              Accept all &amp; continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
-}
+})
