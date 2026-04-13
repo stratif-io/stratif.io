@@ -81,9 +81,9 @@ export function ConnectionDetailPage() {
 
   const handleTableConfirm = (tableName: string) => {
     const payload: SchemaConfigBody = {
-      user_id_field: schemaConfig?.user_id_field ?? 'user_id',
-      event_name_field: schemaConfig?.event_name_field ?? 'event_name',
-      timestamp_field: schemaConfig?.timestamp_field ?? 'timestamp',
+      user_id_field: schemaConfig?.user_id_field ?? '',
+      event_name_field: schemaConfig?.event_name_field ?? '',
+      timestamp_field: schemaConfig?.timestamp_field ?? '',
       events_table: tableName,
       session_timeout_minutes: schemaConfig?.session_timeout_minutes ?? 30,
       resurrection_window_days: schemaConfig?.resurrection_window_days ?? 30,
