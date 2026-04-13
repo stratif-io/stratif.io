@@ -56,7 +56,9 @@ def get_paths(
             f"AND user_id IN (SELECT DISTINCT user_id FROM events WHERE {date_filter})"
         )
 
-    where_clause = " AND ".join(where_clauses) + date_subquery
+    where_clause = " AND ".join(where_clauses) + (
+        " " + date_subquery if date_subquery else ""
+    )
     params = params + date_params
 
     timeout = db.get_session_timeout_minutes()
