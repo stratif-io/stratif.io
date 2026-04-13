@@ -89,7 +89,7 @@ function renderPage(step?: string) {
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route path="/connections/:id/:step?" element={<ConnectionDetailPage />} />
+          <Route path="/connections/:id/:tab?" element={<ConnectionDetailPage />} />
           <Route path="/connections" element={<div>connections list</div>} />
         </Routes>
       </MemoryRouter>

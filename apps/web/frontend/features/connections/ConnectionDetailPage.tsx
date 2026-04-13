@@ -35,7 +35,7 @@ function getCompletedSteps(
 }
 
 export function ConnectionDetailPage() {
-  const { id, step: stepParam } = useParams<{ id: string; step?: string }>()
+  const { id, tab: stepParam } = useParams<{ id: string; tab?: string }>()
   const navigate = useNavigate()
   const { data: connection, isLoading, error } = useConnection(id ?? '')
   const [testStatus, setTestStatus] = useState<TestStatus>('idle')
