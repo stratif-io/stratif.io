@@ -1,0 +1,40 @@
+name: New connector
+description: Request or propose a new warehouse / database connector
+labels: ["connector", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Want stratif.io to connect to a new warehouse or database? Tell us about it here before writing any code.
+
+  - type: input
+    id: database
+    attributes:
+      label: Database / warehouse name
+      placeholder: e.g. BigQuery, MySQL, Redshift
+    validations:
+      required: true
+
+  - type: input
+    id: library
+    attributes:
+      label: Python library you plan to use
+      placeholder: e.g. google-cloud-bigquery, sqlalchemy-bigquery
+    validations:
+      required: false
+
+  - type: textarea
+    id: prior_art
+    attributes:
+      label: Prior art or reference
+      description: Any existing adapters, drivers, or projects that handle this connection?
+    validations:
+      required: false
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Your use case
+      description: What does your events data look like in this warehouse? Any quirks we should know about?
+    validations:
+      required: false
