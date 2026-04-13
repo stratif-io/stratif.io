@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.31.0](https://github.com/stratif-io/stratif.io/compare/v0.30.0...v0.31.0) (2026-04-13)
+
+
+### Features
+
+* Parquet + COPY INTO fast path for Databricks seeder ([caf2181](https://github.com/stratif-io/stratif.io/commit/caf21819ce75b4815c31f0cdb98f81399362cd5a))
+* Parquet + COPY INTO fast path for Databricks seeder ([8f49c14](https://github.com/stratif-io/stratif.io/commit/8f49c14e5e745a43cae744e953e9f2f9b946bbd0))
+
+
+### Bug Fixes
+
+* cast Parquet timestamps to microseconds for Databricks COPY INTO ([920a031](https://github.com/stratif-io/stratif.io/commit/920a03132dff66223833cdd7d7a9887fd9474690))
+* cast Parquet timestamps to microseconds for Databricks COPY INTO ([9cf8543](https://github.com/stratif-io/stratif.io/commit/9cf8543c37a78c1fbad64550a466a03bb8887abd))
+* change install.sh default port from 8000 to 6870 ([#392](https://github.com/stratif-io/stratif.io/issues/392)) ([ca9c349](https://github.com/stratif-io/stratif.io/commit/ca9c34922ff64dc841b47345247ec5f69d085680))
+* change install.sh default port from 8000 to 6870 ([#394](https://github.com/stratif-io/stratif.io/issues/394)) ([af14ae1](https://github.com/stratif-io/stratif.io/commit/af14ae13bc20282515805a5275ea774bde4853ac))
+* correct Docker product DB env var, port in README, and missing connections.yaml in entrypoint ([fd1551f](https://github.com/stratif-io/stratif.io/commit/fd1551fe4c6b6d2b96506fe91d468d5874f99278))
+* Databricks table quoting and seeder param limit ([a50deed](https://github.com/stratif-io/stratif.io/commit/a50deedc77125d5fa420a47ff6cdbc716cbad837))
+* Docker, README port, and missing connections.yaml in entrypoint ([031b533](https://github.com/stratif-io/stratif.io/commit/031b5338d3ec785b969194f1d96b264650f1b544))
+* **mission-control:** correct DAU/MAU computation and clean up Learn panel ([#391](https://github.com/stratif-io/stratif.io/issues/391)) ([41494b9](https://github.com/stratif-io/stratif.io/commit/41494b926cc6649a654bb4db0b1cdc76beb6a25f))
+* quote each part of dotted table name separately for Databricks ([014889e](https://github.com/stratif-io/stratif.io/commit/014889e3e3b5acc50d55546e8972879735e80f72))
+* split large seeder batches to stay within Databricks 10k param limit ([9fe3b1b](https://github.com/stratif-io/stratif.io/commit/9fe3b1ba263b8711ff4162a8a6c1e4f04ce0be5f))
+
 ## [0.30.0](https://github.com/stratif-io/stratif.io/compare/v0.29.0...v0.30.0) (2026-04-13)
 
 
