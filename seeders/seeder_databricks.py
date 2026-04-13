@@ -79,10 +79,20 @@ class DatabricksSeeder(BaseSeeder):
         ")"
     )
 
+    # Databricks limits parameterized queries to 10,000 parameters.
+    # With 18 params per row, the max safe batch size is 10_000 // 18 = 555.
+    _PARAMS_PER_ROW = 18
+    _MAX_PARAMS = 10_000
+    _MAX_ROWS_PER_INSERT = _MAX_PARAMS // _PARAMS_PER_ROW  # 555
+
     def _insert_events(self, events: list[tuple]) -> None:
         assert self._conn is not None, "_conn not initialized — call seed() first"
         if not events:
             return
+        for i in range(0, len(events), self._MAX_ROWS_PER_INSERT):
+            self._insert_batch(events[i : i + self._MAX_ROWS_PER_INSERT])
+
+    def _insert_batch(self, events: list[tuple]) -> None:
         params: list = []
         for e in events:
             traits: dict = e[5]
