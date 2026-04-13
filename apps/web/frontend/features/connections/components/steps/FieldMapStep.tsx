@@ -542,24 +542,13 @@ export function FieldMapStep({ connId }: FieldMapStepProps) {
                   </button>
                 </>
               ) : (
-                <>
-                  <input
-                    aria-label={label}
-                    className="flex-1 h-7 rounded border border-input bg-background px-2 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                <div className="flex-1">
+                  <ColumnCombobox
                     value={value}
-                    list={`cols-${key}`}
-                    onChange={(e) =>
-                      updateForm({ [key]: e.target.value } as Parameters<typeof updateForm>[0])
-                    }
+                    detectedColumns={colNames}
+                    onChange={(v) => updateForm({ [key]: v } as Parameters<typeof updateForm>[0])}
                   />
-                  {colNames.length > 0 && (
-                    <datalist id={`cols-${key}`}>
-                      {colNames.map((c) => (
-                        <option key={c} value={c} />
-                      ))}
-                    </datalist>
-                  )}
-                </>
+                </div>
               )}
             </div>
           )

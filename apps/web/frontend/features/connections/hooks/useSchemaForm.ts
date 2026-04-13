@@ -188,10 +188,20 @@ export function useSchemaForm(connId: string) {
             category: categoryMap.get(p.name),
           }))
           setForm((prev) => {
-            const existingPaths = prev.customProps.map((cp) => cp.path)
-            const newProps = propsWithCategory.filter((p) => !existingPaths.includes(p.path))
-            if (!newProps.length) return prev
-            return { ...prev, customProps: [...prev.customProps, ...newProps] }
+            const reservedPaths = new Set([
+              prev.userIdField,
+              prev.eventNameField,
+              prev.timestampField,
+              ...Object.values(prev.userIdentityFields).filter(Boolean),
+            ])
+            const existingPaths = new Set(prev.customProps.map((cp) => cp.path))
+            // Also remove any existing custom props that now conflict with reserved fields
+            const cleanedProps = prev.customProps.filter((p) => !reservedPaths.has(p.path))
+            const newProps = propsWithCategory.filter(
+              (p) => !existingPaths.has(p.path) && !reservedPaths.has(p.path)
+            )
+            if (!newProps.length && cleanedProps.length === prev.customProps.length) return prev
+            return { ...prev, customProps: [...cleanedProps, ...newProps] }
           })
         }
       },
