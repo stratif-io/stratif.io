@@ -34,6 +34,25 @@
 
 ---
 
+## ⚡ Quick Start
+
+```bash
+curl -fsSL https://stratif.io/install.sh | sh
+```
+
+Open **http://localhost:8000** when it's done.
+
+> **Docker Compose:**
+>
+> ```bash
+> git clone https://github.com/stratif-io/stratif.io.git
+> cd stratif.io
+> echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+> docker compose up
+> ```
+
+---
+
 ## 🔄 How it works
 
 1. **Point stratif.io at your database** — DuckDB, Postgres, Snowflake, ClickHouse, and more
@@ -77,25 +96,6 @@ _\* Mitzu, Kubit, NetSpring, Houseware — all closed-source, cloud-only, paid._
 ## 🗄️ Supported Databases
 
 DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
-
----
-
-## ⚡ Quick Start
-
-```bash
-curl -fsSL https://stratif.io/install.sh | sh
-```
-
-Open **http://localhost:8000** when it's done.
-
-> **Docker Compose:**
->
-> ```bash
-> git clone https://github.com/stratif-io/stratif.io.git
-> cd stratif.io
-> echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
-> docker compose up
-> ```
 
 ---
 
