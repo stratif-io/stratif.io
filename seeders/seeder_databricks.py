@@ -9,6 +9,7 @@ Seeding parameters (users, days) are read from seeders/.env or environment varia
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import structlog
@@ -65,22 +66,46 @@ class DatabricksSeeder(BaseSeeder):
                 USING DELTA
             """)
 
+    # One placeholder group per row — properties via from_json(), structs via named_struct()
+    _ROW_PLACEHOLDER = (
+        "("
+        "?, ?, ?, "
+        "from_json(?, 'map<string,string>'), "
+        "?, "
+        "named_struct('first_name', ?, 'last_name', ?, 'phone', ?, 'email', ?, 'date_of_birth', ?), "
+        "named_struct('country', ?, 'city', ?, 'timezone', ?, 'device_type', ?, 'browser', ?, 'os', ?, 'screen_resolution', ?, 'referrer', ?)"
+        ")"
+    )
+
     def _insert_events(self, events: list[tuple]) -> None:
         assert self._conn is not None, "_conn not initialized — call seed() first"
         if not events:
             return
         params: list = []
         for e in events:
+            traits: dict = e[5]
+            ctx: dict = e[6]
             params += [
                 e[0],
                 e[1],
                 e[2],
-                {str(k): str(v) for k, v in e[3].items()},
+                json.dumps({str(k): str(v) for k, v in e[3].items()}),
                 e[4],
-                e[5],
-                e[6],
+                traits.get("first_name", ""),
+                traits.get("last_name", ""),
+                traits.get("phone", ""),
+                traits.get("email", ""),
+                traits.get("date_of_birth", ""),
+                ctx.get("country", ""),
+                ctx.get("city", ""),
+                ctx.get("timezone", ""),
+                ctx.get("device_type", ""),
+                ctx.get("browser", ""),
+                ctx.get("os", ""),
+                ctx.get("screen_resolution", ""),
+                ctx.get("referrer", ""),
             ]
-        placeholders = ", ".join("(?, ?, ?, ?, ?, ?, ?)" for _ in events)
+        placeholders = ", ".join(self._ROW_PLACEHOLDER for _ in events)
         with self._conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO events "
