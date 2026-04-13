@@ -66,6 +66,10 @@ backends:
       token: ""
       catalog: ""
       schema: ""
+      # staging_volume: "seeds"  # Optional UC Volume name for fast Parquet bulk load.
+      #   When set, the seeder writes a Parquet file, PUTs it to
+      #   /Volumes/{catalog}/{schema}/{staging_volume}/, and uses COPY INTO.
+      #   Much faster than parameterized INSERTs. Requires Unity Catalog.
     expected_columns:
       - city
       - country
