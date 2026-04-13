@@ -54,8 +54,9 @@ class DatabricksSeeder(BaseSeeder):
         assert self._conn is not None, "_conn not initialized — call seed() first"
         if not events:
             return
-        rows = [
-            (
+        params: list = []
+        for e in events:
+            params += [
                 e[0],
                 e[1],
                 e[2],
@@ -63,15 +64,14 @@ class DatabricksSeeder(BaseSeeder):
                 e[4],
                 json.dumps(e[5]),
                 json.dumps(e[6]),
-            )
-            for e in events
-        ]
+            ]
+        placeholders = ", ".join("(?, ?, ?, ?, ?, ?, ?)" for _ in events)
         with self._conn.cursor() as cur:
-            cur.executemany(
+            cur.execute(
                 "INSERT INTO events "
                 "(user_id, event_name, timestamp, properties, server, traits, context) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                rows,
+                f"VALUES {placeholders}",
+                params,
             )
 
     def seed(self) -> dict[str, int]:
