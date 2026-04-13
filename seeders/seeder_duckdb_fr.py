@@ -1,7 +1,13 @@
-"""DuckDB seeder — writes analytics events to a DuckDB file.
+"""DuckDB seeder (alternate) — writes analytics events to a DuckDB file with French column names.
+
+Table: evenement
+Columns:
+    tampon_de_temps     — timestamp
+    identifiant_utilisateur — user_id
+    nom_de_l_evenement  — event_name
 
 Usage:
-    uv run seed-duckdb
+    uv run seed-duckdb-fr
 
 Connection config is read from connections.yaml at the project root.
 Seeding parameters (users, days) are read from seeders/.env or environment variables.
@@ -14,14 +20,14 @@ import duckdb
 import pandas as pd
 import structlog
 
-from seeders.connections_config import get_duckdb_credentials, load_connections_yaml
+from seeders.connections_config import get_duckdb_fr_credentials, load_connections_yaml
 from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
 
 log = structlog.get_logger(__name__)
 
 
-class DuckDBSeeder(BaseSeeder):
-    """Writes seeded events to a DuckDB database file."""
+class DuckDBFrSeeder(BaseSeeder):
+    """Writes seeded events to a DuckDB database file using French column names."""
 
     _db_path: str
 
@@ -29,9 +35,9 @@ class DuckDBSeeder(BaseSeeder):
         config = SeedConfig()
         super().__init__(config=config)
 
-        creds = get_duckdb_credentials(load_connections_yaml())
+        creds = get_duckdb_fr_credentials(load_connections_yaml())
         self._db_path: str = creds["file_path"]
-        self._table_name: str = creds.get("table_name", "events")
+        self._table_name: str = creds.get("table_name", "evenement")
         self._conn: duckdb.DuckDBPyConnection
 
     # ------------------------------------------------------------------
@@ -42,13 +48,13 @@ class DuckDBSeeder(BaseSeeder):
         self._conn.execute(f"DROP TABLE IF EXISTS {self._table_name}")
         self._conn.execute(f"""
             CREATE TABLE {self._table_name} (
-                user_id     VARCHAR,
-                event_name  VARCHAR,
-                timestamp   TIMESTAMP,
-                properties  JSON,
-                server      VARCHAR,
-                traits      JSON,
-                context     JSON
+                identifiant_utilisateur VARCHAR,
+                "nom_de_l'evenement"    VARCHAR,
+                tampon_de_temps         TIMESTAMP,
+                properties              JSON,
+                server                  VARCHAR,
+                traits                  JSON,
+                context                 JSON
             )
         """)
 
@@ -58,9 +64,9 @@ class DuckDBSeeder(BaseSeeder):
 
         df = pd.DataFrame(  # noqa: F841
             {
-                "user_id": [e[0] for e in events],
-                "event_name": [e[1] for e in events],
-                "timestamp": [e[2] for e in events],
+                "identifiant_utilisateur": [e[0] for e in events],
+                "nom_de_l_evenement": [e[1] for e in events],
+                "tampon_de_temps": [e[2] for e in events],
                 "properties": [json.dumps(e[3]) for e in events],
                 "server": [e[4] for e in events],
                 "traits": [json.dumps(e[5]) for e in events],
@@ -70,8 +76,8 @@ class DuckDBSeeder(BaseSeeder):
 
         self._conn.execute(
             f"INSERT INTO {self._table_name} "
-            "SELECT user_id, event_name, timestamp, properties::JSON, server, "
-            "traits::JSON, context::JSON FROM df"
+            "SELECT identifiant_utilisateur, nom_de_l_evenement, tampon_de_temps, "
+            "properties::JSON, server, traits::JSON, context::JSON FROM df"
         )
 
     def seed(self) -> dict[str, int]:
@@ -110,7 +116,7 @@ class DuckDBSeeder(BaseSeeder):
 
 
 def main() -> None:
-    seeder = DuckDBSeeder()
+    seeder = DuckDBFrSeeder()
     stats = seeder.seed()
     print(
         f"\nDone — {stats['total_events']:,} events, {stats['total_users']:,} users "
