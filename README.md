@@ -11,7 +11,7 @@
 
 **Your events are already in your warehouse. Connect directly — no pipelines, no ingestion, no vendor lock-in.**
 
-[Quick Start](#-quick-start) · [Docs](docs/docs.md) · [Contributing](CONTRIBUTING.md)
+[Website](https://stratif.io) · [Quick Start](#-quick-start) · [Docs](docs/docs.md) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -24,24 +24,23 @@
 
 ---
 
+## Why stratif.io?
+
+**Your events are already in your warehouse. Stop sending them somewhere else.** Every SaaS analytics platform makes you re-pipe your data into their system — creating vendor lock-in, duplicating data, and adding cost. stratif.io connects directly to your existing DuckDB, Postgres, Snowflake, or ClickHouse. No ingestion. No pipelines. No data ever leaves your infrastructure.
+
+**Open source and self-hosted.** No vendor lock-in, no surprise invoices. One install script and you own your analytics stack completely.
+
+**Learn product analytics hands-on.** stratif.io ships with ~5,000 realistic sample events. Explore funnels, retention, and user journeys without needing your own data — no account, no credit card.
+
+---
+
 ## ⚡ Quick Start
 
 ```bash
 curl -fsSL https://stratif.io/install.sh | sh
 ```
 
-Open **http://localhost:8000** when it's done.
-
-> **Docker Compose:**
->
-> ```bash
-> git clone https://github.com/stratif-io/stratif.io.git
-> cd stratif.io
-> echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
-> docker compose up
-> ```
->
-> Open **http://localhost:9999** when it's done.
+Open **http://localhost:8000** when it's done. For Docker Compose and advanced setup, see [Docs](docs/docs.md).
 
 ---
 
@@ -66,38 +65,6 @@ DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
 | Sample data to learn with       |     ✅     |          ❌          |   ❌    |           ❌            |
 
 _\* Mitzu, Kubit, NetSpring, Houseware — all closed-source, cloud-only, paid._
-
----
-
-## 🔧 Local Development
-
-**Prerequisites:** [Bun](https://bun.sh), Python 3.12+, [uv](https://docs.astral.sh/uv/)
-
-```bash
-git clone https://github.com/stratif-io/stratif.io.git
-cd stratif.io
-
-bun install
-uv sync
-
-cp .env.example .env
-# Set STRATIFIO_ENCRYPTION_KEY in .env
-
-uv run seed-duckdb          # seed sample data (optional)
-
-uv run serve                # backend  → http://localhost:8000
-bun run dev                 # frontend → http://localhost:5173
-```
-
-**Quality checks:**
-
-```bash
-bun run test:run             # frontend unit tests (Vitest)
-uv run pytest backend/       # backend tests
-bun run lint                 # ESLint (zero warnings)
-bun run build                # TypeScript + production build
-bun run test:e2e             # end-to-end tests (Playwright)
-```
 
 ---
 
