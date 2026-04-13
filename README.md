@@ -4,14 +4,12 @@
     <img src="docs/logo.svg" alt="stratif.io"/>
   </picture>
 
+**Warehouse-native product analytics. Your events are already there.**
+
 [![License: ELv2](https://img.shields.io/badge/License-ELv2-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](package.json)
-[![ghcr.io](https://img.shields.io/badge/ghcr.io-latest-24292e?logo=github)](https://github.com/cabichahine/stratif.io/pkgs/container/stratif.io)
-
-**No event pipelines · Open source & self-hosted · Learn product analytics hands-on**
-
-[Quick Start](#-quick-start) · [Comparison](#-comparison) · [Databases](#%EF%B8%8F-supported-databases) · [Local Dev](#-local-development)
+[![ghcr.io](https://img.shields.io/badge/ghcr.io-latest-24292e?logo=github)](https://github.com/stratif-io/stratif.io/pkgs/container/stratif.io)
 
 </div>
 
@@ -24,39 +22,21 @@
 
 ---
 
+```bash
+curl -fsSL https://stratif.io/install.sh | sh
+```
+
+Open **http://localhost:9999** when it's done.
+
+---
+
 ## Why stratif.io?
 
-**Your events are already in your warehouse. Stop sending them somewhere else.** Every SaaS analytics platform makes you re-pipe your data into their system — creating vendor lock-in, duplicating data, and adding cost. stratif.io connects directly to your existing DuckDB, Postgres, Snowflake, or ClickHouse. No ingestion. No pipelines. No data ever leaves your infrastructure.
+→ **No pipelines.** Your events are already in your warehouse — stop re-piping them into yet another SaaS.  
+→ **Self-hosted.** You own the stack. No vendor lock-in, no surprise invoices.  
+→ **Works today.** Connects to DuckDB, Postgres, Snowflake, ClickHouse. One table, three columns, done.
 
-**Open source and self-hosted.** No vendor lock-in, no surprise invoices. One install script and you own your analytics stack completely.
-
-**Learn product analytics hands-on.** stratif.io ships with ~5,000 realistic sample events. Explore funnels, retention, and user journeys without needing your own data — no account, no credit card.
-
----
-
-## 🔄 How it works
-
-1. **Point stratif.io at your database** — DuckDB, Postgres, Snowflake, ClickHouse, and more
-2. **Select your events table** — one row per event, with a timestamp, a user ID, and an event name
-3. **Explore** funnels, retention, journeys, sessions, and SQL directly in the UI
-
-No agents, no pipelines, no data ever leaves your infrastructure.
-
----
-
-## 📋 What your data needs to look like
-
-stratif.io works with any table where **each row is a single event**. The only requirements are three columns:
-
-| Column     | Description                                     |
-| ---------- | ----------------------------------------------- |
-| timestamp  | When the event happened                         |
-| user_id    | Who performed it                                |
-| event_name | What happened (e.g. `page_viewed`, `signed_up`) |
-
-Any additional columns — simple values or nested JSON — are picked up automatically as event properties you can filter and group by.
-
-Most teams already have this. If your events live in a raw table, a log export, or a dbt model, you're ready. A one-time `SELECT` that aliases those three columns is all the preparation needed — something any analyst or engineer can put together in minutes.
+Actively developed — new features and connectors ship regularly. Follow the repo or check [Issues](https://github.com/stratif-io/stratif.io/issues) for what's coming.
 
 ---
 
@@ -74,28 +54,35 @@ _\* Mitzu, Kubit, NetSpring, Houseware — all closed-source, cloud-only, paid._
 
 ---
 
+## 🔄 How it works
+
+1. **Point stratif.io at your database** — DuckDB, Postgres, Snowflake, ClickHouse, and more
+2. **Select your events table** — one row per event, with a timestamp, a user ID, and an event name
+3. **Explore** funnels, retention, journeys, sessions, and SQL directly in the UI
+
+No agents, no pipelines, no data ever leaves your infrastructure.
+
+---
+
 ## 🗄️ Supported Databases
 
 DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
 
 ---
 
-## ⚡ Quick Start
+## 📋 What your data needs to look like
 
-```bash
-curl -fsSL https://stratif.io/install.sh | sh
-```
+stratif.io works with any table where **each row is a single event**. The only requirements are three columns:
 
-Open **http://localhost:9999** when it's done.
+| Column     | Description                                     |
+| ---------- | ----------------------------------------------- |
+| timestamp  | When the event happened                         |
+| user_id    | Who performed it                                |
+| event_name | What happened (e.g. `page_viewed`, `signed_up`) |
 
-> **Docker Compose:**
->
-> ```bash
-> git clone https://github.com/stratif-io/stratif.io.git
-> cd stratif.io
-> echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
-> docker compose up
-> ```
+Any additional columns — simple values or nested JSON — are picked up automatically as event properties you can filter and group by.
+
+Most teams already have this. If your events live in a raw table, a log export, or a dbt model, you're ready. A one-time `SELECT` that aliases those three columns is all the preparation needed.
 
 ---
 
@@ -151,6 +138,19 @@ bun run test:e2e             # end-to-end tests (Playwright)
 
 ---
 
+## 🤝 Contributing
+
+Pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the full process.
+
+The short version: open an issue first for features and new connectors, then submit a PR. Bug fixes can go straight to a PR. All PRs are reviewed and merged by the maintainer — there are no direct pushes.
+
+```bash
+# Run the full quality suite before submitting
+bun run lint && bun run build && bun run test:run
+```
+
+---
+
 ## 🔒 Security
 
 - **Credentials** encrypted with Fernet (AES-128-CBC + HMAC-SHA256)
@@ -160,17 +160,6 @@ bun run test:e2e             # end-to-end tests (Playwright)
 - **Rate limiting** on login (10 req/min) and registration (3 req/min)
 
 For production: set `STRATIFIO_DEBUG=false` and pin `STRATIFIO_CORS_ORIGINS` to your frontend domain.
-
----
-
-## 🤝 Contributing
-
-Pull requests are welcome. For major changes, open an issue first to discuss what you'd like to change. Have a question or idea? [Start a discussion](https://github.com/cabichahine/stratif.io/discussions).
-
-```bash
-# Run the full quality suite before submitting
-bun run lint && bun run build && bun run test:run
-```
 
 ---
 
