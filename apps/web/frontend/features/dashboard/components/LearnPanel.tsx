@@ -458,7 +458,7 @@ function buildLearnContent(
         ratio >= 0.5 ? 'excellent' : ratio >= 0.3 ? 'strong' : ratio >= 0.2 ? 'typical' : 'low'
       return {
         title: 'DAU / MAU',
-        what: 'How often monthly users return on a daily basis — a direct measure of product stickiness. A ratio of 0.50 means the average monthly user is active every other day. This metric captures the habit-forming quality of your product.',
+        what: 'How often monthly users return on a daily basis — a direct measure of product stickiness. Both DAU and MAU are computed over the same trailing 30-day window ending on the last day of the selected period, so the ratio is always between 0 and 1. A ratio of 0.50 means users are active every other day on average.',
         snapshot: [
           {
             label: 'Stickiness',
@@ -468,10 +468,11 @@ function buildLearnContent(
           {
             label: 'Avg daily actives (DAU)',
             value: breakdown?.avg_dau != null ? String(breakdown.avg_dau) : '—',
+            sub: 'trailing 30-day window',
           },
           {
             label: 'Monthly actives (MAU)',
-            value: breakdown?.mau_28d != null ? String(breakdown.mau_28d) : '—',
+            value: breakdown?.mau_30d != null ? String(breakdown.mau_30d) : '—',
             sub:
               prevLabel +
               ': ' +
@@ -484,7 +485,7 @@ function buildLearnContent(
             ? `Stickiness dropped ${pctStr}. Users may still activate, but they're not returning as often. Look at avg active days and session trends for supporting evidence.`
             : 'Stickiness is stable.',
         benchmark:
-          '~20% is typical · ~50% is excellent (WhatsApp-level) · MAU uses a rolling 28-day window',
+          '~20% is typical · ~50% is excellent (WhatsApp-level) · Both DAU and MAU use the same rolling 30-day window',
       }
     }
 
