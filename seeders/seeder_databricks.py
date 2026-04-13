@@ -9,7 +9,6 @@ Seeding parameters (users, days) are read from seeders/.env or environment varia
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 import structlog
@@ -39,13 +38,28 @@ class DatabricksSeeder(BaseSeeder):
             cur.execute("DROP TABLE IF EXISTS events")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS events (
-                    user_id     STRING    NOT NULL,
-                    event_name  STRING    NOT NULL,
-                    timestamp   TIMESTAMP NOT NULL,
-                    properties  STRING    NOT NULL,
-                    server      STRING    NOT NULL,
-                    traits      STRING    NOT NULL,
-                    context     STRING    NOT NULL
+                    user_id     STRING      NOT NULL,
+                    event_name  STRING      NOT NULL,
+                    timestamp   TIMESTAMP   NOT NULL,
+                    properties  MAP<STRING, STRING> NOT NULL,
+                    server      STRING      NOT NULL,
+                    traits      STRUCT<
+                                    first_name:     STRING,
+                                    last_name:      STRING,
+                                    phone:          STRING,
+                                    email:          STRING,
+                                    date_of_birth:  STRING
+                                > NOT NULL,
+                    context     STRUCT<
+                                    country:            STRING,
+                                    city:               STRING,
+                                    timezone:           STRING,
+                                    device_type:        STRING,
+                                    browser:            STRING,
+                                    os:                 STRING,
+                                    screen_resolution:  STRING,
+                                    referrer:           STRING
+                                > NOT NULL
                 )
                 USING DELTA
             """)
@@ -60,10 +74,10 @@ class DatabricksSeeder(BaseSeeder):
                 e[0],
                 e[1],
                 e[2],
-                json.dumps(e[3]),
+                {str(k): str(v) for k, v in e[3].items()},
                 e[4],
-                json.dumps(e[5]),
-                json.dumps(e[6]),
+                e[5],
+                e[6],
             ]
         placeholders = ", ".join("(?, ?, ?, ?, ?, ?, ?)" for _ in events)
         with self._conn.cursor() as cur:
