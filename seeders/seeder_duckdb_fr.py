@@ -75,8 +75,8 @@ class DuckDBFrSeeder(BaseSeeder):
         )
 
         self._conn.execute(
-            f'INSERT INTO {self._table_name} '
-            'SELECT identifiant_utilisateur, nom_de_l_evenement, tampon_de_temps, '
+            f"INSERT INTO {self._table_name} "
+            "SELECT identifiant_utilisateur, nom_de_l_evenement, tampon_de_temps, "
             "properties::JSON, server, traits::JSON, context::JSON FROM df"
         )
 
