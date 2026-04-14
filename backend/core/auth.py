@@ -4,6 +4,8 @@ OSS mode: optionally verify API key header.
 SaaS override: replace get_current_user via app.dependency_overrides with a JWT verifier.
 """
 
+import secrets
+
 from fastapi import HTTPException, Request, status
 
 from backend.config import settings
@@ -18,7 +20,7 @@ async def get_current_user(
     if not settings.auth_enabled:
         return
     api_key = request.headers.get("X-API-Key", "")
-    if api_key != settings.api_key:
+    if not secrets.compare_digest(api_key, settings.api_key):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid API key",
