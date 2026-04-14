@@ -2,9 +2,28 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from backend.backends.base import ColumnInfo
+
+# Permissive identifier pattern: letters, digits, underscore, dash, dot.
+# Dot allowed so callers can pass "schema.table" where relevant.
+# Rejects quotes, semicolons, backticks, whitespace — anything that could
+# break out of an f-string-interpolated SQL identifier.
+_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.\-]{0,127}$")
+
+
+def validate_identifier(name: str | None, *, label: str = "identifier") -> None:
+    """Raise ValueError if name is not a safe SQL identifier.
+
+    Catalog/schema/table names from API input are f-string interpolated into
+    SQL by several warehouse backends. Reject anything that could break out.
+    """
+    if name is None:
+        return
+    if not _IDENT_RE.match(name):
+        raise ValueError(f"Invalid {label}: {name!r}")
 
 
 def _to_named_params(query: str, params: list[Any]) -> tuple[str, dict[str, Any]]:

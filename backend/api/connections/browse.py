@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException
 
 from backend.backends import get_backend
+from backend.backends._utils import validate_identifier
 from backend.product_db.deps import DBSession
 from backend.product_db.models import Connection
 from backend.services.crypto import decrypt_credentials
@@ -25,6 +26,11 @@ async def browse_connection(
     catalog: str | None = None,
     schema: str | None = None,
 ):
+    try:
+        validate_identifier(catalog, label="catalog")
+        validate_identifier(schema, label="schema")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     conn = await _get_connection_or_404(conn_id, session)
     db_type: str = conn.db_type
 
@@ -158,6 +164,10 @@ async def list_tables(conn_id: str, session: DBSession):
 @router.get("/{conn_id}/columns")
 async def list_columns(conn_id: str, session: DBSession, table: str):
     """Return column names for a given table (full_name), for the Query Studio catalog."""
+    try:
+        validate_identifier(table, label="table")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     conn = await _get_connection_or_404(conn_id, session)
     db_type: str = conn.db_type
 

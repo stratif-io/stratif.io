@@ -12,6 +12,11 @@ from backend.config import settings
 
 def _get_fernet() -> Fernet:
     """Derive a valid 32-byte Fernet key from the configured encryption_key."""
+    if len(settings.encryption_key) < 32:
+        raise RuntimeError(
+            "STRATIFIO_ENCRYPTION_KEY must be set to a 32+ character secret. "
+            "Generate one with: openssl rand -base64 32"
+        )
     raw = settings.encryption_key.encode()
     key_bytes = hashlib.sha256(raw).digest()
     fernet_key = base64.urlsafe_b64encode(key_bytes)

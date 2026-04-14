@@ -5,6 +5,7 @@ import re
 
 from fastapi import APIRouter, HTTPException
 
+from backend.backends._utils import validate_identifier
 from backend.product_db.deps import DBSession
 from backend.product_db.models import Connection
 from backend.services.crypto import decrypt_credentials
@@ -195,6 +196,11 @@ async def detect_schema(
 ):
     """Detect columns from the target database and suggest field mappings."""
     from backend.backends import get_backend
+
+    try:
+        validate_identifier(events_table, label="events_table")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     conn = await session.get(Connection, conn_id)
     if not conn:
