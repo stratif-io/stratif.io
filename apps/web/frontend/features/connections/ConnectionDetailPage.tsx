@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SPACING } from '@/lib/constants'
-import { useConnection, useSchemaConfig, useUpsertSchemaConfig } from './hooks/useConnectionsData'
+import {
+  useConnection,
+  useSchemaConfig,
+  useUpsertSchemaConfig,
+  useTestConnection,
+} from './hooks/useConnectionsData'
 import type { SchemaConfigBody } from '@/types'
 import { ConnectionSetupLayout } from './components/ConnectionSetupLayout'
 import { CredentialsStep } from './components/steps/CredentialsStep'
@@ -39,8 +44,26 @@ export function ConnectionDetailPage() {
   const navigate = useNavigate()
   const { data: connection, isLoading, error } = useConnection(id ?? '')
   const [testStatus, setTestStatus] = useState<TestStatus>('idle')
+  const backgroundTest = useTestConnection()
   const upsertSchema = useUpsertSchemaConfig(id ?? '')
   const { data: schemaConfig } = useSchemaConfig(id ?? '')
+
+  // When arriving at a non-credentials step (e.g. navigated here after creation),
+  // run a background test once to populate the sidebar status badge.
+  useEffect(() => {
+    if (!id || !connection) return
+    const validSteps: ConnectionStep[] = ['credentials', 'table', 'fieldmap', 'advanced']
+    const step = validSteps.includes(stepParam as ConnectionStep)
+      ? (stepParam as ConnectionStep)
+      : getDefaultStep(connection)
+    if (step !== 'credentials') {
+      backgroundTest.mutate(id, {
+        onSuccess: (result) => setTestStatus(result.ok ? 'connected' : 'failed'),
+        onError: () => setTestStatus('failed'),
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, !!connection])
 
   if (isLoading) {
     return (
