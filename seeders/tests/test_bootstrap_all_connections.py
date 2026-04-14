@@ -126,7 +126,7 @@ def test_bootstraps_only_enabled_backends(tmp_path):
     with _patch_db(url), _patch_backend():
         from seeders.bootstrap_all_connections import bootstrap
 
-        bootstrap(yaml_path)
+        bootstrap(yaml_path, skip_seed=True)
 
     async def _check():
         engine = create_async_engine(url)
@@ -154,7 +154,7 @@ def test_persists_schema_suggestions_and_custom_properties(tmp_path):
     with _patch_db(url), _patch_backend():
         from seeders.bootstrap_all_connections import bootstrap
 
-        bootstrap(yaml_path)
+        bootstrap(yaml_path, skip_seed=True)
 
     async def _check():
         engine = create_async_engine(url)
@@ -193,7 +193,7 @@ def test_auto_selects_string_filter_fields(tmp_path):
     with _patch_db(url), _patch_backend():
         from seeders.bootstrap_all_connections import bootstrap
 
-        bootstrap(yaml_path)
+        bootstrap(yaml_path, skip_seed=True)
 
     async def _check():
         engine = create_async_engine(url)
@@ -224,8 +224,8 @@ def test_bootstrap_is_idempotent(tmp_path):
     with _patch_db(url), _patch_backend():
         from seeders.bootstrap_all_connections import bootstrap
 
-        bootstrap(yaml_path)
-        bootstrap(yaml_path)
+        bootstrap(yaml_path, skip_seed=True)
+        bootstrap(yaml_path, skip_seed=True)
 
     async def _check():
         engine = create_async_engine(url)
@@ -276,7 +276,7 @@ def test_detection_failure_skips_backend(tmp_path):
     ):
         from seeders.bootstrap_all_connections import bootstrap
 
-        bootstrap(yaml_path)
+        bootstrap(yaml_path, skip_seed=True)
 
     async def _check():
         engine = create_async_engine(url)
@@ -287,3 +287,62 @@ def test_detection_failure_skips_backend(tmp_path):
         await engine.dispose()
 
     asyncio.run(_check())
+
+
+def test_backend_option_bootstraps_only_selected(tmp_path):
+    url = _setup_db(tmp_path)
+    yaml_path = _write_yaml(
+        tmp_path,
+        {
+            "backends": {
+                "duckdb": {"enabled": True, "credentials": {"file_path": "/x.db"}},
+                "sqlite": {"enabled": True, "credentials": {"file_path": "/y.db"}},
+            }
+        },
+    )
+
+    with _patch_db(url), _patch_backend():
+        from seeders.bootstrap_all_connections import bootstrap
+
+        bootstrap(yaml_path, only="sqlite", skip_seed=True)
+
+    async def _check():
+        engine = create_async_engine(url)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        async with factory() as session:
+            conns = (await session.execute(select(Connection))).scalars().all()
+            assert [c.name for c in conns] == ["Sample SQLite"]
+        await engine.dispose()
+
+    asyncio.run(_check())
+
+
+def test_runs_seeder_when_skip_seed_false(tmp_path):
+    url = _setup_db(tmp_path)
+    yaml_path = _write_yaml(
+        tmp_path,
+        {
+            "backends": {
+                "duckdb": {"enabled": True, "credentials": {"file_path": "/x.db"}},
+            }
+        },
+    )
+
+    called: list[str] = []
+
+    def _fake_run_seeder(db_type: str) -> None:
+        called.append(db_type)
+
+    with (
+        _patch_db(url),
+        _patch_backend(),
+        patch(
+            "seeders.bootstrap_all_connections._run_seeder",
+            side_effect=_fake_run_seeder,
+        ),
+    ):
+        from seeders.bootstrap_all_connections import bootstrap
+
+        bootstrap(yaml_path)
+
+    assert called == ["duckdb"]

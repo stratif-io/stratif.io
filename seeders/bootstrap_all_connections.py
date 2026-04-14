@@ -1,11 +1,12 @@
 """Bootstrap every enabled connection in connections.yaml into the product DB.
 
 For each backend with `enabled: true`:
-  1. Upsert a `Connection` row (credentials from YAML, encrypted).
-  2. Open the backend and run schema detection.
-  3. Persist detected field mappings as `ConnectionSchemaConfig`
+  1. Run its seeder to (re)create the events table and load sample data.
+  2. Upsert a `Connection` row (credentials from YAML, encrypted).
+  3. Open the backend and run schema detection.
+  4. Persist detected field mappings as `ConnectionSchemaConfig`
      and proposed nested paths as `ConnectionCustomProperty` rows.
-  4. Auto-select the first N string-typed proposed properties as
+  5. Auto-select the first N string-typed proposed properties as
      global `ConnectionFilterField` rows.
 
 Idempotent — existing connections (matched by name) are updated in place.
@@ -13,6 +14,8 @@ Idempotent — existing connections (matched by name) are updated in place.
 Usage:
     python -m seeders.bootstrap_all_connections
     python -m seeders.bootstrap_all_connections --yaml /path/to/connections.yaml
+    python -m seeders.bootstrap_all_connections --backend duckdb
+    python -m seeders.bootstrap_all_connections --skip-seed
 """
 
 from __future__ import annotations
@@ -48,6 +51,15 @@ DISPLAY_NAMES = {
     "clickhouse": "Sample ClickHouse",
     "snowflake": "Sample Snowflake",
     "databricks": "Sample Databricks",
+}
+
+SEEDER_MODULES = {
+    "duckdb": "seeders.seeder_duckdb",
+    "sqlite": "seeders.seeder_sqlite",
+    "postgresql": "seeders.seeder_postgresql",
+    "clickhouse": "seeders.seeder_clickhouse",
+    "snowflake": "seeders.seeder_snowflake",
+    "databricks": "seeders.seeder_databricks",
 }
 
 SCHEMA_SUGGESTION_FIELDS = (
@@ -202,15 +214,41 @@ async def _replace_filter_config(
     session.add(filter_config)
 
 
-async def _bootstrap(yaml_path: Path | None) -> None:
+def _run_seeder(db_type: str) -> None:
+    module_name = SEEDER_MODULES.get(db_type)
+    if module_name is None:
+        print(f"[stratifio] No seeder registered for '{db_type}' — skipping seed step")
+        return
+    import importlib
+
+    module = importlib.import_module(module_name)
+    print(f"[stratifio] Running seeder for '{db_type}'")
+    module.main()
+
+
+async def _bootstrap(
+    yaml_path: Path | None,
+    only: str | None = None,
+    skip_seed: bool = False,
+) -> None:
     cfg = load_connections_yaml(yaml_path)
     backends_cfg: dict = cfg.get("backends", {}) or {}
+
+    if only is not None and only not in backends_cfg:
+        raise SystemExit(
+            f"Backend '{only}' not found in connections.yaml. "
+            f"Available: {sorted(backends_cfg.keys())}"
+        )
 
     await init_product_db()
     factory = get_session_factory()
 
     for db_type, entry in backends_cfg.items():
+        if only is not None and db_type != only:
+            continue
         if not entry or not entry.get("enabled"):
+            if only is not None:
+                print(f"[stratifio] '{db_type}' is not enabled in connections.yaml")
             continue
         try:
             get_backend(db_type)
@@ -219,6 +257,14 @@ async def _bootstrap(yaml_path: Path | None) -> None:
             continue
 
         creds = entry.get("credentials") or {}
+
+        if not skip_seed:
+            try:
+                _run_seeder(db_type)
+            except Exception as exc:
+                print(f"[stratifio] Seeder failed for '{db_type}': {exc}")
+                continue
+
         try:
             info = _detect(db_type, creds)
         except Exception as exc:
@@ -229,9 +275,19 @@ async def _bootstrap(yaml_path: Path | None) -> None:
             await _upsert_one(session, db_type, creds, info)
 
 
-def bootstrap(yaml_path: Path | None = None) -> None:
-    """Bootstrap every enabled connection declared in connections.yaml."""
-    asyncio.run(_bootstrap(yaml_path))
+def bootstrap(
+    yaml_path: Path | None = None,
+    only: str | None = None,
+    skip_seed: bool = False,
+) -> None:
+    """Bootstrap enabled connections declared in connections.yaml.
+
+    Args:
+        yaml_path: Path to connections.yaml (default: project root).
+        only: If set, only this backend is bootstrapped.
+        skip_seed: If True, skip the seeder step and only run detection + persist.
+    """
+    asyncio.run(_bootstrap(yaml_path, only=only, skip_seed=skip_seed))
 
 
 def main() -> None:
@@ -244,8 +300,18 @@ def main() -> None:
         default=None,
         help="Path to connections.yaml (default: <project_root>/connections.yaml)",
     )
+    parser.add_argument(
+        "--backend",
+        default=None,
+        help="Bootstrap only this backend (e.g. duckdb, postgresql, snowflake)",
+    )
+    parser.add_argument(
+        "--skip-seed",
+        action="store_true",
+        help="Skip running seeders; only detect schema and persist connection config",
+    )
     args = parser.parse_args()
-    bootstrap(args.yaml)
+    bootstrap(args.yaml, only=args.backend, skip_seed=args.skip_seed)
 
 
 if __name__ == "__main__":
