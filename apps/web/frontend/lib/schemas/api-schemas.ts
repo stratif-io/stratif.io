@@ -224,6 +224,8 @@ export const SchemaConfigSchema = z.object({
   events_table: z.string().optional(),
   custom_properties: z.array(CustomPropertySchema),
   session_timeout_minutes: z.number().optional(),
+  query_timeout_seconds: z.number().optional(),
+  max_concurrent_queries: z.number().optional(),
   resurrection_window_days: z.number().optional(),
   power_user_threshold_days: z.number().optional(),
   email_field: z.string().nullable().optional(),

@@ -17,6 +17,7 @@ import {
   ConversionDataSchema,
   ApiErrorSchema,
   MetricCardSchema,
+  SchemaConfigSchema,
 } from '../api-schemas'
 
 describe('DateRangeSchema', () => {
@@ -667,5 +668,24 @@ describe('MetricCardSchema', () => {
       description: 'from last week',
     })
     expect(result.success).toBe(false)
+  })
+})
+
+describe('SchemaConfigSchema', () => {
+  it('accepts query_timeout_seconds and max_concurrent_queries', () => {
+    const parsed = SchemaConfigSchema.parse({
+      id: '11111111-1111-1111-1111-111111111111',
+      connection_id: '22222222-2222-2222-2222-222222222222',
+      user_id_field: 'u',
+      timestamp_field: 't',
+      event_name_field: 'e',
+      events_table: 'events',
+      custom_properties: [],
+      query_timeout_seconds: 12,
+      max_concurrent_queries: 7,
+      updated_at: '2026-04-14T00:00:00Z',
+    })
+    expect(parsed.query_timeout_seconds).toBe(12)
+    expect(parsed.max_concurrent_queries).toBe(7)
   })
 })
