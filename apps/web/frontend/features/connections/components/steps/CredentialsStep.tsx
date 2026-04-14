@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { SaveStatus } from '@/components/ui/save-status'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
@@ -24,20 +24,24 @@ export function CredentialsStep({ connection, onTestStatusChange, onNext }: Prop
   const { data: credsData } = useConnectionCredentials(connection.id)
   const formRef = useRef<HTMLFormElement>(null)
   const credsTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Start as true so the banner shows "Testing…" immediately before the effect fires
+  const [autoTestStarted, setAutoTestStarted] = useState(false)
 
   const fields = credsData?.fields ?? {}
 
-  // Derive test status
-  const testStatus: TestStatus = test.isPending
-    ? 'testing'
-    : test.data?.ok === true
-      ? 'connected'
-      : test.data?.ok === false || test.error
-        ? 'failed'
-        : 'idle'
+  // Derive test status — treat pre-effect render as "testing"
+  const testStatus: TestStatus =
+    !autoTestStarted || test.isPending
+      ? 'testing'
+      : test.data?.ok === true
+        ? 'connected'
+        : test.data?.ok === false || test.error
+          ? 'failed'
+          : 'idle'
 
   // Auto-test on mount
   useEffect(() => {
+    setAutoTestStarted(true)
     test.mutate(connection.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connection.id])
