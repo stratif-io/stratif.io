@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AdvancedStep } from '../AdvancedStep'
@@ -15,6 +15,8 @@ const baseHookReturn = {
     sessionTimeoutMinutes: 30,
     resurrectionWindowDays: 30,
     powerUserThresholdDays: 4,
+    queryTimeoutSeconds: 10,
+    maxConcurrentQueries: 5,
     userIdField: '',
     eventNameField: '',
     timestampField: '',
@@ -74,5 +76,28 @@ describe('AdvancedStep', () => {
     renderStep(onDone)
     await userEvent.click(screen.getByRole('button', { name: /done/i }))
     expect(onDone).toHaveBeenCalled()
+  })
+
+  it('renders query timeout and max concurrent inputs with defaults', () => {
+    renderStep()
+    expect(screen.getByLabelText(/query timeout/i)).toHaveValue(10)
+    expect(screen.getByLabelText(/max concurrent queries/i)).toHaveValue(5)
+  })
+
+  it('updates max concurrent on change', () => {
+    const updateForm = vi.fn()
+    vi.mocked(useSchemaForm).mockReturnValue({
+      ...baseHookReturn,
+      updateForm,
+    } as unknown as ReturnType<typeof useSchemaForm>)
+    const qc = new QueryClient()
+    render(
+      <QueryClientProvider client={qc}>
+        <AdvancedStep connId="conn-1" onDone={() => {}} />
+      </QueryClientProvider>
+    )
+    const input = screen.getByLabelText(/max concurrent queries/i)
+    fireEvent.change(input, { target: { value: '3' } })
+    expect(updateForm).toHaveBeenCalledWith({ maxConcurrentQueries: 3 })
   })
 })
