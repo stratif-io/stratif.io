@@ -7,7 +7,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.services import get_analytics_db
+from backend.services import get_analytics_db, query_cache
 from backend.services.connection_executor import AnalyticsDatabase
 from backend.services.sql_builder import date_trunc
 from backend.services.validators import interpolate_sql, parse_date
@@ -613,6 +613,12 @@ def get_mission_control_metric(
             detail=f"Unsupported metric '{metric}'. Supported: {sorted(SUPPORTED_METRICS)}",
         )
 
+    cached = query_cache.get(
+        db.connection_id, "mc_metric", metric, start_date, end_date, filters
+    )
+    if cached is not None:
+        return cached
+
     filter_clauses: list[str] = []
     filter_params: list = []
     if filters:
@@ -724,13 +730,17 @@ def get_mission_control_metric(
         if s:
             all_sqls.append(s)
 
-    return {
+    result = {
         "metric": metric,
         "current": float(current_value),
         "previous": float(previous_value) if previous_value is not None else None,
         "sql": all_sqls if len(all_sqls) > 1 else (all_sqls[0] if all_sqls else ""),
         **({"breakdown": breakdown} if breakdown is not None else {}),
     }
+    query_cache.set(
+        db.connection_id, result, "mc_metric", metric, start_date, end_date, filters
+    )
+    return result
 
 
 def _trunc_to_bucket(d: date, granularity: str) -> date:
@@ -784,6 +794,12 @@ def get_mission_control_trend(
             status_code=400,
             detail=f"Unsupported metric '{metric}'. Supported: {sorted(SUPPORTED_METRICS)}",
         )
+
+    cached = query_cache.get(
+        db.connection_id, "mc_trend", metric, granularity, start_date, end_date, filters
+    )
+    if cached is not None:
+        return cached
 
     if start_date and end_date:
         start, end, filter_clauses, filter_params = _parse_request_params(
@@ -1175,11 +1191,22 @@ def get_mission_control_trend(
             current_day += timedelta(days=1)
         data = _resample(data, granularity, agg="avg")
 
-    return {
+    trend_result = {
         "sql": sql_val,
         "metric": metric,
         "data": [{"date": d["date"], "value": float(d["value"])} for d in data],
     }
+    query_cache.set(
+        db.connection_id,
+        trend_result,
+        "mc_trend",
+        metric,
+        granularity,
+        start_date,
+        end_date,
+        filters,
+    )
+    return trend_result
 
 
 @router.get("/mission-control")

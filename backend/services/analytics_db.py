@@ -70,9 +70,11 @@ class AnalyticsDatabase:
         resurrection_window_days: int = 30,
         power_user_threshold_days: int = 4,
         available_columns: frozenset[str] | None = None,
+        connection_id: str = "",
     ):
         self._conn = conn
         self._backend = backend
+        self.connection_id: str = connection_id
         self._filter_fields: list[dict] = filter_fields or []
         self._filter_exprs: dict[str, str] = filter_exprs or {}
         self._custom_props: list[dict] = custom_props or []
@@ -410,6 +412,7 @@ async def open_analytics_db(
             session_timeout_minutes=session_timeout_minutes,
             resurrection_window_days=resurrection_window_days,
             power_user_threshold_days=power_user_threshold_days,
+            connection_id=connection_id,
         )
         db._pooled = True
         db._pool_key = pool_key
@@ -432,4 +435,5 @@ async def open_analytics_db(
         session_timeout_minutes=session_timeout_minutes,
         resurrection_window_days=resurrection_window_days,
         power_user_threshold_days=power_user_threshold_days,
+        connection_id=connection_id,
     )
