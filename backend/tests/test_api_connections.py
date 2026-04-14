@@ -114,6 +114,8 @@ class TestSchemaConfigNewFields:
         body = resp.json()
         assert body["resurrection_window_days"] == 30
         assert body["power_user_threshold_days"] == 4
+        assert body["query_timeout_seconds"] == 10
+        assert body["max_concurrent_queries"] == 5
 
     def test_schema_config_persists_query_execution_fields(self, schema_client):
         payload = {
