@@ -61,12 +61,7 @@ export function CredentialsStep({ connection, onTestStatusChange, onNext }: Prop
       update.mutate(
         { credentials: changedCredentials },
         {
-          onSuccess: () =>
-            test.mutate(connection.id, {
-              onSuccess: (result) => {
-                if (result.ok) onNext()
-              },
-            }),
+          onSuccess: () => test.mutate(connection.id),
         }
       )
     }
