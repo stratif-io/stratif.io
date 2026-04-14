@@ -56,7 +56,14 @@ export function NewConnectionPage() {
         onSuccess: (conn) => {
           track('connection_created', { db_type: dbType })
           test.mutate(conn.id, {
-            onSettled: () => navigate(`/connections/${conn.id}/table`),
+            onSuccess: (result) => {
+              if (result.ok) {
+                navigate(`/connections/${conn.id}/table`)
+              } else {
+                navigate(`/connections/${conn.id}/credentials`)
+              }
+            },
+            onError: () => navigate(`/connections/${conn.id}/credentials`),
           })
         },
       }
@@ -103,9 +110,8 @@ export function NewConnectionPage() {
           {testStatus === 'failed' && <XCircle className="h-4 w-4" />}
           <span>
             {testStatus === 'testing' && 'Testing connection…'}
-            {testStatus === 'connected' && 'Connected — continuing to table setup…'}
-            {testStatus === 'failed' &&
-              'Connection created but test failed — check your credentials'}
+            {testStatus === 'connected' && 'Connected — redirecting to table setup…'}
+            {testStatus === 'failed' && 'Test failed — redirecting to credentials to fix…'}
           </span>
         </div>
 
