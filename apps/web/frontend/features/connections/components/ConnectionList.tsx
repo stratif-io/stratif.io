@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
 import { useConnections, useDeleteConnection, useTestConnection } from '../hooks/useConnectionsData'
-import { ConnectionFormDialog } from './ConnectionFormDialog'
 import { DbLogo } from '@/components/DbLogo'
 import type { Connection } from '@/types'
 import { cn } from '@/lib/utils'
@@ -121,11 +120,6 @@ function ConnectionRow({ connection }: { connection: Connection }) {
 export function ConnectionList() {
   const { data, isLoading, error } = useConnections()
   const navigate = useNavigate()
-  const [createOpen, setCreateOpen] = useState(false)
-
-  function handleCreated(id: string) {
-    navigate(`/connections/${id}/credentials`)
-  }
 
   return (
     <div className="space-y-4">
@@ -134,7 +128,7 @@ export function ConnectionList() {
           <SectionHeader title="Connections" subtitle="Manage your event database connections" />
         </div>
         {data && data.length > 0 && (
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button size="sm" onClick={() => navigate('/connections/new')}>
             <Plus className="h-4 w-4 mr-1.5" />
             Add Connection
           </Button>
@@ -152,7 +146,7 @@ export function ConnectionList() {
           description="Connect your event database to start exploring your analytics. Supports DuckDB, PostgreSQL, Snowflake, Databricks and more."
           action={{
             label: 'Add your first connection',
-            onClick: () => setCreateOpen(true),
+            onClick: () => navigate('/connections/new'),
             variant: 'default',
           }}
         />
@@ -165,12 +159,6 @@ export function ConnectionList() {
           ))}
         </div>
       )}
-
-      <ConnectionFormDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onCreated={handleCreated}
-      />
     </div>
   )
 }

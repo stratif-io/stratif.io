@@ -38,6 +38,9 @@ const ConnectionsPage = lazy(() =>
 const ConnectionDetailPage = lazy(() =>
   import('@/features/connections').then((m) => ({ default: m.ConnectionDetailPage }))
 )
+const NewConnectionPage = lazy(() =>
+  import('@/features/connections').then((m) => ({ default: m.NewConnectionPage }))
+)
 const QueryStudioPage = lazy(() =>
   import('@/features/query-studio/QueryStudioPage').then((m) => ({ default: m.QueryStudioPage }))
 )
@@ -69,6 +72,7 @@ const router = createBrowserRouter([
           { path: '/pivot', element: <PivotPage /> },
           { path: '/events', element: <EventsPage /> },
           { path: '/connections', element: <ConnectionsPage /> },
+          { path: '/connections/new', element: <NewConnectionPage /> },
           { path: '/connections/:id/:tab?', element: <ConnectionDetailPage /> },
           { path: '/query-studio', element: <QueryStudioPage /> },
           ...(import.meta.env.DEV && DesignSystemPage
