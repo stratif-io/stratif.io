@@ -58,6 +58,12 @@ class ConnectionSchemaConfig(Base):
     power_user_threshold_days: Mapped[int] = mapped_column(
         Integer, nullable=False, default=4
     )
+    query_timeout_seconds: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=10
+    )
+    max_concurrent_queries: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=5
+    )
     email_field: Mapped[str | None] = mapped_column(String, nullable=True)
     first_name_field: Mapped[str | None] = mapped_column(String, nullable=True)
     last_name_field: Mapped[str | None] = mapped_column(String, nullable=True)

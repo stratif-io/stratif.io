@@ -217,6 +217,8 @@ async def upsert_schema_config(
     config.session_timeout_minutes = body.session_timeout_minutes
     config.resurrection_window_days = body.resurrection_window_days
     config.power_user_threshold_days = body.power_user_threshold_days
+    config.query_timeout_seconds = body.query_timeout_seconds
+    config.max_concurrent_queries = body.max_concurrent_queries
     config.email_field = body.email_field
     config.first_name_field = body.first_name_field
     config.last_name_field = body.last_name_field
@@ -423,6 +425,8 @@ def _schema_config_response(config: ConnectionSchemaConfig) -> dict:
         "session_timeout_minutes": config.session_timeout_minutes,
         "resurrection_window_days": config.resurrection_window_days,
         "power_user_threshold_days": config.power_user_threshold_days,
+        "query_timeout_seconds": config.query_timeout_seconds,
+        "max_concurrent_queries": config.max_concurrent_queries,
         "email_field": config.email_field,
         "first_name_field": config.first_name_field,
         "last_name_field": config.last_name_field,
