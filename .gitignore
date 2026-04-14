@@ -47,9 +47,6 @@ apps/video/node_modules/
 apps/video/out/
 apps/video/public/*.webm
 apps/video/public/*.mp3
-apps/web/playwright-report/
-apps/web/test-results/
-apps/web/tests/.auth/
 .superpowers/
 docs/superpowers/brainstorm/
 
