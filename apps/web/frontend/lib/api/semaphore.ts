@@ -3,7 +3,7 @@ export const IDLE_DISMISS_DELAY_MS = 3000
 
 type CountChangeCallback = (running: number, queued: number) => void
 
-export type TaskOpts = { groupKey?: string }
+export type TaskOpts = { groupKey?: string; timeoutMs?: number }
 
 type QueueEntry = { resolve: () => void; groupKey?: string }
 
@@ -11,18 +11,24 @@ export class QuerySemaphore {
   private running = 0
   private queue: QueueEntry[] = []
   private activeGroups = new Map<string, number>()
-  private readonly max: number
+  private _max: number
   private readonly onCountChange: CountChangeCallback
 
   constructor(max: number, onCountChange: CountChangeCallback) {
-    this.max = max
+    this._max = max
     this.onCountChange = onCountChange
   }
 
-  async run<T>(task: () => Promise<T>, opts?: TaskOpts): Promise<T> {
+  setMax(n: number): void {
+    this._max = Math.max(1, n)
+    while (this.running < this._max && this.queue.length > 0) this.dispatchNext()
+    this.onCountChange(this.running, this.queue.length)
+  }
+
+  async run<T>(task: (signal?: AbortSignal) => Promise<T>, opts?: TaskOpts): Promise<T> {
     const groupKey = opts?.groupKey
 
-    if (this.running < this.max) {
+    if (this.running < this._max) {
       this.running++
       if (groupKey) this.incGroup(groupKey)
       this.onCountChange(this.running, this.queue.length)
@@ -34,9 +40,18 @@ export class QuerySemaphore {
       // Slot already accounted for by dispatcher (running++ and group inc done there).
     }
 
+    const controller = opts?.timeoutMs ? new AbortController() : undefined
+    const timer = opts?.timeoutMs
+      ? setTimeout(
+          () => controller!.abort(new DOMException('Query timeout', 'TimeoutError')),
+          opts.timeoutMs
+        )
+      : undefined
+
     try {
-      return await task()
+      return await task(controller?.signal)
     } finally {
+      if (timer) clearTimeout(timer)
       this.running--
       // Dispatch BEFORE decrementing the finishing task's group so a queued task
       // with the same groupKey is preferred over an unrelated FIFO head.
@@ -58,7 +73,7 @@ export class QuerySemaphore {
 
   private dispatchNext(): void {
     if (this.queue.length === 0) return
-    if (this.running >= this.max) return
+    if (this.running >= this._max) return
 
     // Prefer a queued task whose groupKey matches a currently-running group.
     let idx = -1
@@ -93,7 +108,8 @@ export function initSemaphore(onCountChange: CountChangeCallback): void {
 
 export async function fetchWithSemaphore(
   input: RequestInfo | URL,
-  init?: RequestInit
+  init?: RequestInit,
+  opts?: { groupKey?: string; timeoutMs?: number }
 ): Promise<Response> {
-  return getSemaphore().run(() => fetch(input, init))
+  return getSemaphore().run((signal) => fetch(input, { ...init, signal }), opts)
 }

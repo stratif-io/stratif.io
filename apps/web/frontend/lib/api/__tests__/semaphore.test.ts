@@ -245,6 +245,32 @@ describe('QuerySemaphore setMax', () => {
   })
 })
 
+describe('QuerySemaphore timeout', () => {
+  it('aborts the task when timeoutMs elapses', async () => {
+    const sem = new QuerySemaphore(1, () => {})
+    const started = vi.fn()
+    await expect(
+      sem.run(
+        (signal) =>
+          new Promise((_, reject) => {
+            started()
+            signal!.addEventListener('abort', () =>
+              reject(new DOMException('Query timeout', 'TimeoutError'))
+            )
+          }),
+        { timeoutMs: 20 }
+      )
+    ).rejects.toThrow(/timeout/i)
+    expect(started).toHaveBeenCalled()
+  })
+
+  it('does not abort when task completes before timeout', async () => {
+    const sem = new QuerySemaphore(1, () => {})
+    const result = await sem.run(async () => 'ok', { timeoutMs: 1000 })
+    expect(result).toBe('ok')
+  })
+})
+
 describe('fetchWithSemaphore', () => {
   beforeEach(() => {
     initSemaphore(vi.fn())
@@ -255,7 +281,7 @@ describe('fetchWithSemaphore', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     await fetchWithSemaphore('/api/test', { method: 'GET' })
-    expect(mockFetch).toHaveBeenCalledWith('/api/test', { method: 'GET' })
+    expect(mockFetch).toHaveBeenCalledWith('/api/test', { method: 'GET', signal: undefined })
 
     vi.unstubAllGlobals()
   })
