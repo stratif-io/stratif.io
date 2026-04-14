@@ -9,7 +9,7 @@ DbType = Literal[
     "duckdb", "databricks", "postgresql", "sqlite", "clickhouse", "snowflake"
 ]
 
-_PATH_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.]*$")
+_PATH_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.\-']*$")
 
 
 class CustomProperty(BaseModel):
@@ -22,7 +22,7 @@ class CustomProperty(BaseModel):
     @classmethod
     def validate_path(cls, v: str) -> str:
         if not _PATH_RE.match(v):
-            raise ValueError("path must match ^[a-zA-Z_][a-zA-Z0-9_.]*$")
+            raise ValueError("path must match ^[a-zA-Z_][a-zA-Z0-9_.\\-']*$")
         return v
 
     model_config = {"extra": "ignore"}

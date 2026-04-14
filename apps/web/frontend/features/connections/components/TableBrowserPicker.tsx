@@ -124,22 +124,25 @@ export function TableBrowserPicker({ connId, value, onChange, loading: externalL
               <button
                 onClick={() => enter(item)}
                 className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 transition-colors text-left',
-                  selected && 'bg-primary/5'
+                  'w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors text-left',
+                  selected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
                 )}
               >
                 <Icon
                   className={cn(
                     'h-3.5 w-3.5 flex-shrink-0',
-                    selected ? 'text-primary' : 'text-muted-foreground'
+                    selected ? 'text-primary-foreground' : 'text-muted-foreground'
                   )}
                 />
-                <span className={cn('flex-1', selected && 'font-medium text-primary')}>
-                  {item.name}
-                </span>
-                {selected && <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
+                <span className={cn('flex-1', selected && 'font-medium')}>{item.name}</span>
+                {selected && <Check className="h-3.5 w-3.5 flex-shrink-0" />}
                 {!isLeaf && (
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <ChevronRight
+                    className={cn(
+                      'h-3.5 w-3.5 flex-shrink-0',
+                      selected ? 'text-primary-foreground' : 'text-muted-foreground'
+                    )}
+                  />
                 )}
               </button>
             </li>

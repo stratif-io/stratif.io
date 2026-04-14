@@ -31,6 +31,8 @@ Object.defineProperty(window, 'scrollTo', {
   value: vi.fn(),
 })
 
+Element.prototype.scrollIntoView = vi.fn()
+
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),

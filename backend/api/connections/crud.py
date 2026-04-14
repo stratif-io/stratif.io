@@ -148,15 +148,20 @@ async def test_connection(conn_id: str, session: DBSession):
         backend.execute(c, "SELECT 1", None)
         c.close()
 
+    # Databricks SQL warehouses can take 30-60s to start from a cold state.
+    # Other engines connect near-instantly, so 10s is plenty for them.
+    timeout_s = 90 if conn.db_type == "databricks" else 10
     try:
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor(max_workers=1) as pool:
-            await asyncio.wait_for(loop.run_in_executor(pool, _do_test), timeout=10)
+            await asyncio.wait_for(
+                loop.run_in_executor(pool, _do_test), timeout=timeout_s
+            )
         return {"ok": True, "db_type": conn.db_type}
     except TimeoutError:
         raise HTTPException(
             status_code=status.HTTP_408_REQUEST_TIMEOUT,
-            detail="Connection timed out after 10 seconds",
+            detail=f"Connection timed out after {timeout_s} seconds",
         ) from None
     except Exception as exc:
         raise HTTPException(

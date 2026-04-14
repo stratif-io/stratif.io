@@ -34,8 +34,14 @@ _KNOWN_EVENT_NAME = ("event_name", "event", "action", "event_type", "name", "typ
 
 
 def pick_events_table(tables: list[str], hint: str | None) -> str | None:
-    if hint and hint in tables:
-        return hint
+    if hint:
+        if hint in tables:
+            return hint
+        # Frontend sends schema-qualified names ("main.evenement") but most
+        # backends list bare table names. Match on the last dotted segment.
+        last = hint.rsplit(".", 1)[-1]
+        if last in tables:
+            return last
     return next(
         (t for t in tables if t.lower() in ("events", "event", "analytics")),
         tables[0] if tables else None,

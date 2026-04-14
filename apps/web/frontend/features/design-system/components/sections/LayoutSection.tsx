@@ -7,6 +7,12 @@ import { SectionHeader } from '@/components/ui/section-header'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { TYPOGRAPHY } from '@/lib/constants'
+import {
+  ConnectionSidebar,
+  type ConnectionStep,
+  type TestStatus,
+} from '@/features/connections/components/ConnectionSidebar'
+import { ConnectionSetupLayout } from '@/features/connections/components/ConnectionSetupLayout'
 
 function PageTransitionDemo() {
   const [key, setKey] = useState(0)
@@ -120,6 +126,72 @@ export function LayoutSection() {
       <ComponentRow label="ConnectionSelector">
         <ConnectionSelector />
       </ComponentRow>
+
+      <ComponentRow label="ConnectionSidebar">
+        <div className="flex gap-4 flex-wrap">
+          {(
+            [
+              { testStatus: 'idle', currentStep: 'credentials', completedSteps: [], label: 'Idle' },
+              {
+                testStatus: 'testing',
+                currentStep: 'credentials',
+                completedSteps: [],
+                label: 'Testing',
+              },
+              {
+                testStatus: 'connected',
+                currentStep: 'table',
+                completedSteps: ['credentials'],
+                label: 'Connected + step 2 active',
+              },
+              {
+                testStatus: 'failed',
+                currentStep: 'credentials',
+                completedSteps: [],
+                label: 'Failed',
+              },
+            ] as {
+              testStatus: TestStatus
+              currentStep: ConnectionStep
+              completedSteps: ConnectionStep[]
+              label: string
+            }[]
+          ).map(({ testStatus, currentStep, completedSteps, label }) => (
+            <div key={label} className="flex flex-col gap-1">
+              <p className="text-[10px] text-muted-foreground px-1">{label}</p>
+              <div className="border rounded-md overflow-hidden h-64">
+                <ConnectionSidebar
+                  connectionName="my-prod-db"
+                  dbType="postgresql"
+                  testStatus={testStatus}
+                  currentStep={currentStep}
+                  completedSteps={completedSteps}
+                  onStepClick={() => {}}
+                  tableFooter={currentStep !== 'credentials' ? 'public.events' : undefined}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </ComponentRow>
+      <ComponentRow label="ConnectionSetupLayout">
+        <div className="w-full max-w-2xl">
+          <ConnectionSetupLayout
+            connectionName="my-prod-db"
+            dbType="postgresql"
+            testStatus="connected"
+            currentStep="table"
+            completedSteps={['credentials']}
+            onStepClick={() => {}}
+            tableFooter="public.events"
+          >
+            <div className="flex items-center justify-center h-full min-h-[200px] text-sm text-muted-foreground">
+              Content panel slot
+            </div>
+          </ConnectionSetupLayout>
+        </div>
+      </ComponentRow>
+
       <ComponentRow label="PageHeader — page-level h1 title">
         <PageHeader title="Analytics" />
         <PageHeader title="People" subtitle="All tracked users" />
