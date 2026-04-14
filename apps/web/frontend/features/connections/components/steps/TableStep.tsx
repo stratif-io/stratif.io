@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +16,11 @@ export function TableStep({ connId, currentTable, onConfirm }: TableStepProps) {
   const { data: tablesData, isLoading } = useConnectionTables(connId, true)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(currentTable)
+
+  // Sync when schemaConfig loads asynchronously after mount
+  useEffect(() => {
+    if (currentTable && !selected) setSelected(currentTable)
+  }, [currentTable])
 
   const allTables = tablesData?.tables ?? []
   const filtered = search.trim()

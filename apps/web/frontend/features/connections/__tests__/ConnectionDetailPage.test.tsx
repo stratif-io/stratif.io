@@ -80,13 +80,14 @@ vi.mock('../hooks/useSchemaForm', () => ({
   })),
 }))
 
-import { useConnection } from '../hooks/useConnectionsData'
+import { useConnection, useSchemaConfig } from '../hooks/useConnectionsData'
 
 const baseConn = Object.freeze({
   id: 'conn-1',
   name: 'My DB',
   db_type: 'postgresql',
   created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
   schema_config: null,
 })
 
@@ -121,31 +122,28 @@ describe('ConnectionDetailPage — default step routing', () => {
   })
 
   it('lands on table step when schema_config exists but events_table is empty', () => {
-    vi.mocked(useConnection).mockReturnValue({
-      data: { ...baseConn, schema_config: { events_table: '' } },
+    vi.mocked(useSchemaConfig).mockReturnValue({
+      data: { events_table: '' },
       isLoading: false,
-      error: null,
-    } as ReturnType<typeof useConnection>)
+    } as ReturnType<typeof useSchemaConfig>)
     renderPage()
     expect(screen.getByTestId('step-nav-table')).toHaveAttribute('data-active', 'true')
   })
 
   it('lands on fieldmap step when table is set', () => {
-    vi.mocked(useConnection).mockReturnValue({
-      data: { ...baseConn, schema_config: { events_table: 'public.events' } },
+    vi.mocked(useSchemaConfig).mockReturnValue({
+      data: { events_table: 'public.events' },
       isLoading: false,
-      error: null,
-    } as ReturnType<typeof useConnection>)
+    } as ReturnType<typeof useSchemaConfig>)
     renderPage()
     expect(screen.getByTestId('step-nav-fieldmap')).toHaveAttribute('data-active', 'true')
   })
 
   it('respects explicit step URL param', () => {
-    vi.mocked(useConnection).mockReturnValue({
-      data: { ...baseConn, schema_config: { events_table: 'public.events' } },
+    vi.mocked(useSchemaConfig).mockReturnValue({
+      data: { events_table: 'public.events' },
       isLoading: false,
-      error: null,
-    } as ReturnType<typeof useConnection>)
+    } as ReturnType<typeof useSchemaConfig>)
     renderPage('advanced')
     expect(screen.getByTestId('step-nav-advanced')).toHaveAttribute('data-active', 'true')
   })

@@ -17,22 +17,21 @@ import { FieldMapStep } from './components/steps/FieldMapStep'
 import { AdvancedStep } from './components/steps/AdvancedStep'
 import type { ConnectionStep, TestStatus } from './components/ConnectionSidebar'
 
-// Determine which step to land on when no explicit step is in the URL
-function getDefaultStep(connection: {
-  schema_config?: { events_table?: string } | null
-}): ConnectionStep {
-  if (!connection.schema_config) return 'credentials'
-  if (!connection.schema_config.events_table) return 'table'
+function getDefaultStep(
+  schemaConfig: { events_table?: string } | null | undefined
+): ConnectionStep {
+  if (!schemaConfig) return 'credentials'
+  if (!schemaConfig.events_table) return 'table'
   return 'fieldmap'
 }
 
 function getCompletedSteps(
-  connection: { schema_config?: { events_table?: string } | null },
+  schemaConfig: { events_table?: string } | null | undefined,
   testStatus: TestStatus
 ): ConnectionStep[] {
   const steps: ConnectionStep[] = []
   if (testStatus === 'connected') steps.push('credentials')
-  if (connection.schema_config?.events_table) {
+  if (schemaConfig?.events_table) {
     if (!steps.includes('credentials')) steps.push('credentials')
     steps.push('table')
   }
@@ -55,7 +54,7 @@ export function ConnectionDetailPage() {
     const validSteps: ConnectionStep[] = ['credentials', 'table', 'fieldmap', 'advanced']
     const step = validSteps.includes(stepParam as ConnectionStep)
       ? (stepParam as ConnectionStep)
-      : getDefaultStep(connection)
+      : getDefaultStep(schemaConfig)
     if (step !== 'credentials') {
       backgroundTest.mutate(id, {
         onSuccess: (result) => setTestStatus(result.ok ? 'connected' : 'failed'),
@@ -86,13 +85,13 @@ export function ConnectionDetailPage() {
     )
   }
 
-  const defaultStep = getDefaultStep(connection)
+  const defaultStep = getDefaultStep(schemaConfig)
   const validSteps: ConnectionStep[] = ['credentials', 'table', 'fieldmap', 'advanced']
   const currentStep: ConnectionStep = validSteps.includes(stepParam as ConnectionStep)
     ? (stepParam as ConnectionStep)
     : defaultStep
 
-  const completedSteps = getCompletedSteps(connection, testStatus)
+  const completedSteps = getCompletedSteps(schemaConfig, testStatus)
 
   const handleStepClick = (step: ConnectionStep) => {
     navigate(`/connections/${id}/${step}`)
@@ -123,7 +122,7 @@ export function ConnectionDetailPage() {
 
   const tableFooter =
     currentStep === 'fieldmap' || currentStep === 'advanced'
-      ? (connection.schema_config?.events_table ?? undefined)
+      ? (schemaConfig?.events_table ?? undefined)
       : undefined
 
   return (
@@ -160,7 +159,7 @@ export function ConnectionDetailPage() {
         {currentStep === 'table' && (
           <TableStep
             connId={connection.id}
-            currentTable={connection.schema_config?.events_table ?? ''}
+            currentTable={schemaConfig?.events_table ?? ''}
             onConfirm={handleTableConfirm}
           />
         )}
