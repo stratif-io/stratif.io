@@ -30,6 +30,8 @@ export type SchemaFormState = {
   sessionTimeoutMinutes: number
   resurrectionWindowDays: number
   powerUserThresholdDays: number
+  queryTimeoutSeconds: number
+  maxConcurrentQueries: number
   customProps: CustomProperty[]
   userIdentityFields: Record<UserIdentityKey, string | null>
 }
@@ -48,6 +50,8 @@ const DEFAULT_FORM: SchemaFormState = {
   sessionTimeoutMinutes: 30,
   resurrectionWindowDays: 30,
   powerUserThresholdDays: 4,
+  queryTimeoutSeconds: 10,
+  maxConcurrentQueries: 5,
   customProps: [],
   userIdentityFields: {
     email_field: null,
@@ -91,6 +95,9 @@ export function useSchemaForm(connId: string) {
         schemaConfig.resurrection_window_days ?? DEFAULT_FORM.resurrectionWindowDays,
       powerUserThresholdDays:
         schemaConfig.power_user_threshold_days ?? DEFAULT_FORM.powerUserThresholdDays,
+      queryTimeoutSeconds: schemaConfig.query_timeout_seconds ?? DEFAULT_FORM.queryTimeoutSeconds,
+      maxConcurrentQueries:
+        schemaConfig.max_concurrent_queries ?? DEFAULT_FORM.maxConcurrentQueries,
       customProps: schemaConfig.custom_properties ?? [],
       userIdentityFields: {
         email_field: schemaConfig.email_field ?? null,
@@ -290,6 +297,8 @@ function buildSavePayload(form: SchemaFormState) {
     session_timeout_minutes: form.sessionTimeoutMinutes,
     resurrection_window_days: form.resurrectionWindowDays,
     power_user_threshold_days: form.powerUserThresholdDays,
+    query_timeout_seconds: form.queryTimeoutSeconds,
+    max_concurrent_queries: form.maxConcurrentQueries,
     custom_properties: form.customProps,
     ...form.userIdentityFields,
   }
