@@ -17,9 +17,12 @@ export function TableStep({ connId, currentTable, onConfirm }: TableStepProps) {
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(currentTable)
 
-  // Sync when schemaConfig loads asynchronously after mount
+  // Sync when schemaConfig loads asynchronously after mount.
+  // `selected` intentionally excluded: including it would re-overwrite
+  // the user's manual selection back to currentTable.
   useEffect(() => {
     if (currentTable && !selected) setSelected(currentTable)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTable])
 
   const allTables = tablesData?.tables ?? []
