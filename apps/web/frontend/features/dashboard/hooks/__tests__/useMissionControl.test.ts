@@ -9,6 +9,10 @@ vi.mock('@/lib/api', () => ({
   fetchTopEvents: vi.fn(),
 }))
 
+vi.mock('@/features/connections/hooks/useConnectionsData', () => ({
+  useSchemaConfig: vi.fn(() => ({ data: undefined })),
+}))
+
 vi.mock('@/stores', () => ({
   useAppStore: vi.fn(() => ({
     activeFilters: {},

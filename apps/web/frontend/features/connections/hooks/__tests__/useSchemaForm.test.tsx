@@ -230,6 +230,47 @@ describe('useSchemaForm', () => {
     })
   })
 
+  it('defaults queryTimeoutSeconds and maxConcurrentQueries when not in schemaConfig', () => {
+    vi.mocked(useSchemaConfig).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useSchemaConfig>)
+    const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+    expect(result.current.form.queryTimeoutSeconds).toBe(10)
+    expect(result.current.form.maxConcurrentQueries).toBe(5)
+  })
+
+  it('hydrates queryTimeoutSeconds and maxConcurrentQueries from schemaConfig', () => {
+    vi.mocked(useSchemaConfig).mockReturnValue({
+      data: { ...mockSchema, query_timeout_seconds: 42, max_concurrent_queries: 7 },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useSchemaConfig>)
+    const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+    expect(result.current.form.queryTimeoutSeconds).toBe(42)
+    expect(result.current.form.maxConcurrentQueries).toBe(7)
+  })
+
+  it('sends query_timeout_seconds and max_concurrent_queries on debounced save', async () => {
+    const upsertMutate = vi.fn()
+    vi.mocked(useUpsertSchemaConfig).mockReturnValue({
+      mutate: upsertMutate,
+      isPending: false,
+      isSuccess: false,
+      isError: false,
+      error: null,
+    } as unknown as ReturnType<typeof useUpsertSchemaConfig>)
+    const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+    act(() => {
+      result.current.updateForm({ queryTimeoutSeconds: 25, maxConcurrentQueries: 3 })
+    })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 900))
+    })
+    expect(upsertMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ query_timeout_seconds: 25, max_concurrent_queries: 3 })
+    )
+  })
+
   it('acceptAllDetections applies all pending detections', () => {
     const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
     act(() => {

@@ -114,6 +114,24 @@ class TestSchemaConfigNewFields:
         body = resp.json()
         assert body["resurrection_window_days"] == 30
         assert body["power_user_threshold_days"] == 4
+        assert body["query_timeout_seconds"] == 10
+        assert body["max_concurrent_queries"] == 5
+
+    def test_schema_config_persists_query_execution_fields(self, schema_client):
+        payload = {
+            "user_id_field": "user_id",
+            "timestamp_field": "ts",
+            "event_name_field": "event_name",
+            "events_table": "events",
+            "query_timeout_seconds": 25,
+            "max_concurrent_queries": 8,
+        }
+        r = schema_client.put("/api/connections/conn-1/schema", json=payload)
+        assert r.status_code == 200, r.text
+        r = schema_client.get("/api/connections/conn-1/schema")
+        body = r.json()
+        assert body["query_timeout_seconds"] == 25
+        assert body["max_concurrent_queries"] == 8
 
 
 class TestSchemaConfigUserIdentityFields:

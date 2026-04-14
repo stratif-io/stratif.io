@@ -87,6 +87,35 @@ function TrendMetricPickerDemo({
 
 function QueryStatusIndicatorDemo() {
   const setQueryCounts = useAppStore((s) => s.setQueryCounts)
+  const seedHistory = () => {
+    const store = useAppStore.getState()
+    const runningEvents = crypto.randomUUID()
+    const runningUsers = crypto.randomUUID()
+    const doneRetention = crypto.randomUUID()
+    const failedRevenue = crypto.randomUUID()
+    store.addQueryStart({
+      id: runningEvents,
+      cardName: 'Events',
+      querySnippet: 'mission_control.events',
+    })
+    store.addQueryStart({
+      id: runningUsers,
+      cardName: 'Active Users',
+      querySnippet: 'mission_control.users',
+    })
+    store.addQueryStart({
+      id: doneRetention,
+      cardName: 'Retention',
+      querySnippet: 'mission_control.retention',
+    })
+    store.markQueryFinish(doneRetention, 'done')
+    store.addQueryStart({
+      id: failedRevenue,
+      cardName: 'Revenue',
+      querySnippet: 'mission_control.revenue',
+    })
+    store.markQueryFinish(failedRevenue, 'failed')
+  }
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
@@ -101,10 +130,14 @@ function QueryStatusIndicatorDemo() {
           <Button size="sm" variant="outline" onClick={() => setQueryCounts(0, 0)}>
             all done
           </Button>
+          <Button size="sm" variant="outline" onClick={seedHistory}>
+            Seed history
+          </Button>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
         After "all done", the pill fades out after 3 s. Click a running state to bring it back.
+        "Seed history" populates the popover with sample running + finished entries.
       </p>
     </div>
   )

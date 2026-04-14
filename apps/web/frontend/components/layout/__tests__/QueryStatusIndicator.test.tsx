@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryStatusIndicator } from '../QueryStatusIndicator'
 import { useAppStore } from '@/stores'
 import { IDLE_DISMISS_DELAY_MS } from '@/lib/api/semaphore'
@@ -10,6 +11,7 @@ beforeEach(() => {
     runningQueries: 0,
     queuedQueries: 0,
     queryEverActive: false,
+    queryHistory: [],
   })
 })
 
@@ -61,5 +63,37 @@ describe('QueryStatusIndicator', () => {
     })
     rerender(<QueryStatusIndicator />)
     expect(screen.getByText(/1 running/)).toBeInTheDocument()
+  })
+
+  it('opens a popover listing query history on click', async () => {
+    vi.useRealTimers()
+    useAppStore.setState({
+      runningQueries: 1,
+      queuedQueries: 0,
+      queryEverActive: true,
+      queryHistory: [
+        {
+          id: 'a',
+          cardName: 'Events',
+          querySnippet: 'SELECT 1',
+          startedAt: Date.now(),
+          status: 'running',
+        },
+        {
+          id: 'b',
+          cardName: 'Users',
+          querySnippet: 'SELECT 2',
+          startedAt: Date.now() - 1000,
+          finishedAt: Date.now(),
+          status: 'done',
+        },
+      ],
+    })
+    const user = userEvent.setup()
+    render(<QueryStatusIndicator />)
+    const trigger = screen.getByRole('button')
+    await user.click(trigger)
+    expect(await screen.findByText('Events')).toBeInTheDocument()
+    expect(screen.getByText('Users')).toBeInTheDocument()
   })
 })

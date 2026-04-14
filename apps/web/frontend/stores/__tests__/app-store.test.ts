@@ -381,6 +381,56 @@ describe('useAppStore', () => {
     })
   })
 
+  describe('queryHistory slice', () => {
+    beforeEach(() => {
+      useAppStore.setState({ queryHistory: [] })
+    })
+
+    it('tracks running queries and prunes them 5s after finish', () => {
+      vi.useFakeTimers()
+      try {
+        useAppStore
+          .getState()
+          .addQueryStart({ id: 'q1', cardName: 'Events', querySnippet: 'SELECT 1' })
+        const h = useAppStore.getState().queryHistory
+        expect(h).toHaveLength(1)
+        expect(h[0].status).toBe('running')
+
+        useAppStore.getState().markQueryFinish('q1', 'done')
+        expect(useAppStore.getState().queryHistory[0].status).toBe('done')
+        expect(useAppStore.getState().queryHistory[0].finishedAt).toBeTypeOf('number')
+
+        vi.advanceTimersByTime(6000)
+        expect(useAppStore.getState().queryHistory).toHaveLength(0)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('caps history at 50 entries', () => {
+      for (let i = 0; i < 60; i++) {
+        useAppStore.getState().addQueryStart({ id: `q${i}`, cardName: 'X', querySnippet: '.' })
+      }
+      expect(useAppStore.getState().queryHistory).toHaveLength(50)
+    })
+
+    it('prepends newest entries first', () => {
+      useAppStore.getState().addQueryStart({ id: 'a', cardName: 'A', querySnippet: '.' })
+      useAppStore.getState().addQueryStart({ id: 'b', cardName: 'B', querySnippet: '.' })
+      expect(useAppStore.getState().queryHistory[0].id).toBe('b')
+    })
+
+    it('does not persist queryHistory to localStorage', () => {
+      const setItemSpy = vi.spyOn(window.localStorage, 'setItem')
+      useAppStore.getState().addQueryStart({ id: 'q1', cardName: 'X', querySnippet: '.' })
+      const lastCall = setItemSpy.mock.calls[setItemSpy.mock.calls.length - 1]
+      if (lastCall) {
+        const stored = JSON.parse(lastCall[1] || '{}')
+        expect(stored.state).not.toHaveProperty('queryHistory')
+      }
+    })
+  })
+
   describe('devMode removal', () => {
     it('does not expose devMode', () => {
       const state = useAppStore.getState()

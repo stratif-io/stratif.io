@@ -4,6 +4,8 @@ import { fetchMissionControlMetric, fetchTopEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import { formatDateParam } from '@/lib/utils'
 import { QUERY_STALE_TIME } from '@/lib/constants'
+import { useSchemaConfig } from '@/features/connections/hooks/useConnectionsData'
+import { METRIC_LABELS } from './missionControlMetrics'
 import type { DateRange, MissionControlResponse } from '@/types'
 
 const METRICS = [
@@ -39,6 +41,8 @@ export interface UseMissionControlReturn {
   topEvents: Array<{ name: string; count: number }>
   eventsLoading: boolean
   topEventsSql: string | string[] | undefined
+  timeoutSeconds: number
+  refetch: () => void
 }
 
 export function useMissionControl({
@@ -47,6 +51,8 @@ export function useMissionControl({
   const startDate = dateRange.from ? formatDateParam(dateRange.from) : undefined
   const endDate = dateRange.to ? formatDateParam(dateRange.to) : undefined
   const { activeFilters, activeConnectionId } = useAppStore()
+  const { data: schemaConfig } = useSchemaConfig(activeConnectionId ?? '')
+  const timeoutMs = (schemaConfig?.query_timeout_seconds ?? 10) * 1000
 
   // Queries are enabled whenever a connection is selected, with or without dates.
   // When no date range is set (all-time), start_date/end_date are omitted from
@@ -74,13 +80,23 @@ export function useMissionControl({
         activeConnectionId,
       ],
       queryFn: () =>
-        fetchMissionControlMetric({
-          metric,
-          start_date: startDate,
-          end_date: endDate,
-          filters: activeFilters,
-          connection_id: activeConnectionId ?? undefined,
-        }),
+        fetchMissionControlMetric(
+          {
+            metric,
+            start_date: startDate,
+            end_date: endDate,
+            filters: activeFilters,
+            connection_id: activeConnectionId ?? undefined,
+          },
+          {
+            groupKey: `mc:${metric}`,
+            timeoutMs,
+            meta: {
+              cardName: METRIC_LABELS[metric] ?? metric,
+              querySnippet: `mission-control/metric metric=${metric}`,
+            },
+          }
+        ),
       enabled,
       staleTime: QUERY_STALE_TIME.default,
     })),
@@ -96,6 +112,8 @@ export function useMissionControl({
         filters: activeFilters,
         connection_id: activeConnectionId ?? undefined,
       }),
+    // note: fetchTopEvents is shared across features; tagging is scoped to
+    // mission-control fetchers only (per Task 12). Leave topEvents untagged.
     enabled,
     staleTime: QUERY_STALE_TIME.default,
   })
@@ -132,6 +150,12 @@ export function useMissionControl({
       }
     : undefined
 
+  const refetch = () => {
+    metricResults.forEach((r) => {
+      if (r.isError) r.refetch()
+    })
+  }
+
   return {
     data,
     isLoading,
@@ -142,5 +166,7 @@ export function useMissionControl({
     topEvents: topEventsData?.data ?? [],
     eventsLoading,
     topEventsSql: topEventsData?.sql,
+    timeoutSeconds: Math.round(timeoutMs / 1000),
+    refetch,
   }
 }

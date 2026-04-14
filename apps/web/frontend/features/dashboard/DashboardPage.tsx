@@ -26,10 +26,20 @@ export function DashboardPage() {
   const { pinned, togglePin, isPinned, resetToDefault } = usePinnedMetrics(
     activeConnectionId ?? null
   )
-  const { data, metricLoading, metricSql, isError, error, topEvents, eventsLoading, topEventsSql } =
-    useMissionControl({
-      dateRange,
-    })
+  const {
+    data,
+    metricLoading,
+    metricSql,
+    isError,
+    error,
+    topEvents,
+    eventsLoading,
+    topEventsSql,
+    timeoutSeconds,
+    refetch,
+  } = useMissionControl({
+    dateRange,
+  })
   const { trends } = useMissionControlTrends({ dateRange, visibleMetrics: pinned })
 
   const [heroMetric, setHeroMetric] = useState<TrendMetric>('total_events')
@@ -91,7 +101,7 @@ export function DashboardPage() {
             </div>
 
             {isError ? (
-              <QueryError error={error} />
+              <QueryError error={error} timeoutSeconds={timeoutSeconds} onRetry={refetch} />
             ) : isEmpty ? (
               <EmptyState
                 icon={TrendingUp}
