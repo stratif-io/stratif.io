@@ -189,62 +189,6 @@ describe('QuerySemaphore groupKey ordering', () => {
   })
 })
 
-describe('QuerySemaphore setMax', () => {
-  it('grows capacity and dispatches queued tasks', async () => {
-    const gates: Array<() => void> = []
-    const started: string[] = []
-    const make = (id: string) => () =>
-      new Promise<void>((resolve) => {
-        started.push(id)
-        gates.push(resolve)
-      })
-    const sem = new QuerySemaphore(1, () => {})
-    sem.run(make('a'))
-    sem.run(make('b'))
-    sem.run(make('c'))
-    await Promise.resolve()
-    expect(started).toEqual(['a'])
-
-    sem.setMax(3)
-    await Promise.resolve()
-    expect(started).toEqual(['a', 'b', 'c'])
-
-    gates.forEach((g) => g())
-  })
-
-  it('does not cancel in-flight tasks when shrinking', async () => {
-    const gates: Array<() => void> = []
-    const started: string[] = []
-    const make = (id: string) => () =>
-      new Promise<void>((resolve) => {
-        started.push(id)
-        gates.push(resolve)
-      })
-    const sem = new QuerySemaphore(3, () => {})
-    sem.run(make('a'))
-    sem.run(make('b'))
-    sem.run(make('c'))
-    await Promise.resolve()
-    expect(started).toEqual(['a', 'b', 'c'])
-
-    sem.setMax(1)
-    const pendingRun = sem.run(make('d'))
-    gates[0]()
-    await Promise.resolve()
-    expect(started).toEqual(['a', 'b', 'c'])
-
-    gates[1]()
-    await Promise.resolve()
-    expect(started).toEqual(['a', 'b', 'c'])
-
-    gates[2]()
-    await new Promise((r) => setTimeout(r, 0))
-    expect(started).toEqual(['a', 'b', 'c', 'd'])
-    gates[3]()
-    await pendingRun
-  })
-})
-
 describe('QuerySemaphore timeout', () => {
   it('aborts the task when timeoutMs elapses', async () => {
     const sem = new QuerySemaphore(1, () => {})

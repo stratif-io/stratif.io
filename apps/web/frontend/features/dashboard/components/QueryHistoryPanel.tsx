@@ -1,9 +1,17 @@
+import { useEffect, useState } from 'react'
 import { Loader2, Check, X } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
 
 export function QueryHistoryPanel() {
   const history = useAppStore((s) => s.queryHistory)
+  const [, setTick] = useState(0)
+  const hasRunning = history.some((q) => q.status === 'running')
+  useEffect(() => {
+    if (!hasRunning) return
+    const id = setInterval(() => setTick((t) => t + 1), 500)
+    return () => clearInterval(id)
+  }, [hasRunning])
 
   if (!history.length) {
     return <p className="p-2 text-xs text-muted-foreground">No recent queries</p>
