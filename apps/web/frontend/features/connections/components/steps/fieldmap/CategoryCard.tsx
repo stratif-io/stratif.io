@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, ChevronDown, ChevronRight, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -13,6 +13,7 @@ interface Props {
   props: Array<{ prop: CustomProperty; idx: number }>
   colNames: string[]
   enabledFields: Record<string, { label: string; icon: string }>
+  expanded?: boolean // when true, force-expand (e.g. after schema detect)
   onFilterToggleProp: (idx: number) => void // toggles filter for a single prop
   onChangeCategory: (newCat: string | null) => void // change category for all props in this group
   onChangeProp: (idx: number, patch: Partial<CustomProperty>) => void
@@ -25,6 +26,7 @@ export function CategoryCard({
   props,
   colNames,
   enabledFields,
+  expanded = false,
   onFilterToggleProp,
   onChangeCategory,
   onChangeProp,
@@ -32,32 +34,33 @@ export function CategoryCard({
   onRemoveProp,
 }: Props) {
   const isNullCategory = category === null
-  // "Other" card (null category): collapsible, collapsed by default
-  const [collapsed, setCollapsed] = useState(isNullCategory)
+  // All cards collapsed by default; force-expand when detect runs
+  const [collapsed, setCollapsed] = useState(true)
+
+  useEffect(() => {
+    if (expanded) setCollapsed(false)
+  }, [expanded])
 
   return (
     <div className="border border-border rounded-lg bg-card flex flex-col">
       {/* Header */}
       <div
-        className={cn(
-          'flex items-center gap-2 px-3 pt-2.5 pb-2 border-b border-border',
-          isNullCategory && 'cursor-pointer select-none hover:bg-muted/30 transition-colors'
-        )}
-        onClick={isNullCategory ? () => setCollapsed((c) => !c) : undefined}
+        className="flex items-center gap-2 px-3 pt-2.5 pb-2 border-b border-border cursor-pointer select-none hover:bg-muted/30 transition-colors"
+        onClick={() => setCollapsed((c) => !c)}
       >
-        {isNullCategory ? (
-          <>
-            {collapsed ? (
-              <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
-            ) : (
-              <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
-            )}
-            <span className="text-xs font-medium text-muted-foreground">Other</span>
-            <span className="ml-auto text-[10px] text-muted-foreground">{props.length}</span>
-          </>
+        {collapsed ? (
+          <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
         ) : (
-          <CategoryBadge value={category} onChange={(v) => onChangeCategory(v)} />
+          <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
         )}
+        {isNullCategory ? (
+          <span className="text-xs font-medium text-muted-foreground">Other</span>
+        ) : (
+          <div onClick={(e) => e.stopPropagation()}>
+            <CategoryBadge value={category} onChange={(v) => onChangeCategory(v)} />
+          </div>
+        )}
+        <span className="ml-auto text-[10px] text-muted-foreground">{props.length}</span>
       </div>
 
       {/* Property rows (hidden when collapsed) */}
