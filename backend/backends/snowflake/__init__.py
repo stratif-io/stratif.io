@@ -56,6 +56,12 @@ class SnowflakeBackend:
         }
         if creds.role:
             kwargs["role"] = creds.role
+        if creds.host:
+            kwargs["host"] = creds.host
+        if creds.port:
+            kwargs["port"] = creds.port
+        if creds.protocol:
+            kwargs["protocol"] = creds.protocol
         return snowflake.connector.connect(**kwargs)
 
     def pool_key(self, connection_id: str, credentials: BaseModel) -> tuple:
@@ -167,7 +173,38 @@ class SnowflakeBackend:
                 continue
             sql_type = col.type.upper()
             if "VARIANT" in sql_type or "OBJECT" in sql_type:
-                proposed.append({"name": col.name, "path": col.name, "type": "string"})
+                # Sample a few rows and collect top-level JSON keys in Python.
+                # Avoids LATERAL FLATTEN, which is slow / buggy on fakesnow.
+                import json as _json
+
+                keys: set[str] = set()
+                try:
+                    cur_s = conn.cursor()
+                    try:
+                        cur_s.execute(
+                            f'SELECT "{col.name}" FROM "{events_table}" '
+                            f'WHERE "{col.name}" IS NOT NULL LIMIT 50'
+                        )
+                        for (val,) in cur_s.fetchall():
+                            if val is None:
+                                continue
+                            obj = val if isinstance(val, dict) else _json.loads(val)
+                            if isinstance(obj, dict):
+                                keys.update(obj.keys())
+                    finally:
+                        with contextlib.suppress(Exception):
+                            cur_s.close()
+                except Exception:
+                    keys = set()
+                if keys:
+                    for key in sorted(keys):
+                        proposed.append(
+                            {"name": key, "path": f"{col.name}.{key}", "type": "string"}
+                        )
+                else:
+                    proposed.append(
+                        {"name": col.name, "path": col.name, "type": "string"}
+                    )
             else:
                 proposed.append(
                     {"name": col.name, "path": col.name, "type": infer_type(sql_type)}

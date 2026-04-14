@@ -53,6 +53,11 @@ def get_clickhouse_credentials(cfg: dict) -> dict:
     return _get_credentials(cfg, "clickhouse")
 
 
+def get_snowflake_credentials(cfg: dict) -> dict:
+    """Return credentials dict for the Snowflake backend."""
+    return _get_credentials(cfg, "snowflake")
+
+
 def get_databricks_credentials(cfg: dict) -> dict:
     """Return credentials dict for the Databricks backend."""
     return _get_credentials(cfg, "databricks")

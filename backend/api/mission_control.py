@@ -7,9 +7,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.services import get_analytics_db
+from backend.services import get_analytics_db, query_cache
 from backend.services.connection_executor import AnalyticsDatabase
-from backend.services.sql_builder import date_trunc
+from backend.services.sql_builder import date_diff_days, date_trunc
 from backend.services.validators import interpolate_sql, parse_date
 from backend.services.views import session_ctes
 
@@ -101,19 +101,26 @@ def _fetch_period_metrics(
     avg_session_duration_sec = round(sess_row[1] or 0.0, 2)
     avg_events_per_session = round(sess_row[2] or 0.0, 2)
 
-    # --- 3. New vs returning users ---
-    # new_users: users whose DATE(MIN(timestamp over all history)) is in period
+    # --- 3. New users ---
+    # A user is "new" when their first event *within the filtered segment*
+    # falls in the selected period. Filters must apply to the inner subquery,
+    # otherwise with filters active we reflect global history instead of the
+    # segment the user is looking at — and the partition
+    #   new + returning + resurrected == unique_users
+    # breaks.
+    new_where_sql = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
     new_rows = db.execute(
-        """
+        f"""
         SELECT COUNT(*)
         FROM (
             SELECT user_id
             FROM events
+            {new_where_sql}
             GROUP BY user_id
             HAVING DATE(MIN(timestamp)) >= ? AND DATE(MIN(timestamp)) <= ?
         ) t
         """,
-        [str(period_start), str(period_end)],
+        list(filter_params) + [str(period_start), str(period_end)],
     )
     new_users = new_rows[0][0] if new_rows else 0
 
@@ -129,26 +136,22 @@ def _fetch_period_metrics(
     mau_params.extend(filter_params)
     mau_where_sql = "WHERE " + " AND ".join(mau_where)
 
-    mau_rows = db.execute(
-        f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql}",
-        mau_params,
-    )
-    mau = mau_rows[0][0] if mau_rows else 0
-
-    dau_rows = db.execute(
+    dau_mau_rows = db.execute(
         f"""
-        SELECT AVG(daily_count)
-        FROM (
-            SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) AS daily_count
-            FROM events
-            {mau_where_sql}
-            GROUP BY DATE(timestamp)
-        ) t
+        WITH user_days AS (
+            SELECT DISTINCT user_id, DATE(timestamp) AS d
+            FROM events {mau_where_sql}
+        )
+        SELECT
+            COUNT(DISTINCT user_id) AS mau,
+            CAST(COUNT(*) AS DOUBLE) / NULLIF(COUNT(DISTINCT d), 0) AS avg_dau
+        FROM user_days
         """,
         mau_params,
     )
-    dau = dau_rows[0][0] if dau_rows else 0.0
-    dau_mau_ratio = round(dau / mau, 4) if mau else 0.0
+    mau = dau_mau_rows[0][0] if dau_mau_rows else 0
+    avg_dau = dau_mau_rows[0][1] if dau_mau_rows else 0.0
+    dau_mau_ratio = round((avg_dau or 0.0) / mau, 4) if mau else 0.0
 
     # --- 5. New metrics (delegated to _fetch_single_metric) ---
     resurrected_users = int(
@@ -285,71 +288,77 @@ def _fetch_single_metric(
         )
 
     if metric == "new_users":
-        sql = """
+        # First event *within the filtered segment* falls in period.
+        # Applying filters to the inner subquery is essential — see the
+        # aggregate path's comment for the partition-identity rationale.
+        new_where_sql = (
+            ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
+        )
+        sql = f"""
             SELECT COUNT(*)
             FROM (
                 SELECT user_id
                 FROM events
+                {new_where_sql}
                 GROUP BY user_id
                 HAVING DATE(MIN(timestamp)) >= ? AND DATE(MIN(timestamp)) <= ?
             ) t
             """
-        params = [str(period_start), str(period_end)]
+        params = list(filter_params) + [str(period_start), str(period_end)]
         rows = db.execute(sql, params)
         return (rows[0][0] if rows else 0), interpolate_sql(sql, params)
 
     if metric in ("returning_users", "resurrected_users"):
+        # Prior history must be scoped to the same filtered segment as the
+        # current period — a user whose global history differs from their
+        # history within the filter (e.g. events with different country/plan)
+        # would otherwise be miscategorized.
         resurrection_cutoff = period_start - timedelta(
             days=db.get_resurrection_window_days()
         )
-        prior_active_subq = (
-            "SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id"
+        prior_where = ["timestamp < ?"] + list(filter_clauses)
+        prior_where_sql = "WHERE " + " AND ".join(prior_where)
+        having = (
+            "HAVING MAX(DATE(timestamp)) >= ?"
+            if metric == "returning_users"
+            else "HAVING MAX(DATE(timestamp)) < ?"
         )
-        if metric == "returning_users":
-            # Last seen WITHIN resurrection window before period_start
-            last_seen_subq = (
-                "SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id "
-                "HAVING MAX(DATE(timestamp)) >= ?"
-            )
-            sql = f"""
-                SELECT COUNT(DISTINCT e.user_id)
-                FROM events e
-                {ev_where_sql}
-                AND e.user_id IN ({prior_active_subq})
-                AND e.user_id IN ({last_seen_subq})
-                """
-            params = ev_params + [ps, ps, str(resurrection_cutoff)]
-            rows = db.execute(sql, params)
-        else:
-            # Last seen BEYOND resurrection window before period_start
-            last_seen_subq = (
-                "SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id "
-                "HAVING MAX(DATE(timestamp)) < ?"
-            )
-            sql = f"""
-                SELECT COUNT(DISTINCT e.user_id)
-                FROM events e
-                {ev_where_sql}
-                AND e.user_id IN ({prior_active_subq})
-                AND e.user_id IN ({last_seen_subq})
-                """
-            params = ev_params + [ps, ps, str(resurrection_cutoff)]
-            rows = db.execute(sql, params)
+        # A single last_seen subquery replaces the previous redundant
+        # (prior_active ∧ last_seen) pair — the HAVING clause already implies
+        # the user had prior activity.
+        last_seen_subq = (
+            f"SELECT user_id FROM events {prior_where_sql} GROUP BY user_id {having}"
+        )
+        sql = f"""
+            SELECT COUNT(DISTINCT e.user_id)
+            FROM events e
+            {ev_where_sql}
+            AND e.user_id IN ({last_seen_subq})
+            """
+        params = (
+            list(ev_params) + [ps] + list(filter_params) + [str(resurrection_cutoff)]
+        )
+        rows = db.execute(sql, params)
         return (rows[0][0] if rows else 0), interpolate_sql(sql, params)
 
     if metric == "churned_users":
+        # Both sides (prev period, current period) must apply the same
+        # filters, otherwise "churned US users" becomes "anyone active last
+        # period (globally) who's absent from the US segment this period".
         prev_start, prev_end = _compute_previous_period(period_start, period_end)
         pps = f"{prev_start} 00:00:00"
         ppe = f"{prev_end} 23:59:59"
+        prev_where = ["timestamp >= ?", "timestamp <= ?"] + list(filter_clauses)
+        prev_where_sql = "WHERE " + " AND ".join(prev_where)
         sql = f"""
             SELECT COUNT(DISTINCT user_id)
             FROM events
-            WHERE timestamp >= ? AND timestamp <= ?
+            {prev_where_sql}
               AND user_id NOT IN (
                 SELECT DISTINCT user_id FROM events {ev_where_sql}
               )
             """
-        params = [pps, ppe] + ev_params
+        params = [pps, ppe] + list(filter_params) + list(ev_params)
         rows = db.execute(sql, params)
         return (rows[0][0] if rows else 0), interpolate_sql(sql, params)
 
@@ -426,31 +435,31 @@ def _fetch_single_metric(
     if metric != "dau_mau_ratio":
         raise ValueError(f"Unknown metric: {metric}")
 
+    # Single-query implementation: deduplicate to (user_id, day) pairs once,
+    # then derive both MAU (distinct users in window) and avg DAU
+    # (COUNT(*) / COUNT(DISTINCT d) == SUM of daily active users / num days)
+    # from the same scan.
     mau_start = period_end - timedelta(days=29)  # 30-day window
     mau_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
     mau_params: list = [f"{mau_start} 00:00:00", pe]
     mau_where.extend(filter_clauses)
     mau_params.extend(filter_params)
     mau_where_sql = "WHERE " + " AND ".join(mau_where)
-    mau_sql = f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql}"
-    mau_rows = db.execute(mau_sql, mau_params)
-    mau = mau_rows[0][0] if mau_rows else 0
-
-    dau_sql = f"""
-        SELECT AVG(daily_count)
-        FROM (
-            SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) AS daily_count
+    sql = f"""
+        WITH user_days AS (
+            SELECT DISTINCT user_id, DATE(timestamp) AS d
             FROM events {mau_where_sql}
-            GROUP BY DATE(timestamp)
-        ) t
+        )
+        SELECT
+            COUNT(DISTINCT user_id) AS mau,
+            CAST(COUNT(*) AS DOUBLE) / NULLIF(COUNT(DISTINCT d), 0) AS avg_dau
+        FROM user_days
         """
-    dau_rows = db.execute(dau_sql, mau_params)
-    dau = dau_rows[0][0] if dau_rows else 0.0
-    value = round(dau / mau, 4) if mau else 0.0
-    return value, [
-        interpolate_sql(dau_sql, mau_params),
-        interpolate_sql(mau_sql, mau_params),
-    ]
+    rows = db.execute(sql, mau_params)
+    mau = rows[0][0] if rows else 0
+    avg_dau = rows[0][1] if rows else 0.0
+    value = round((avg_dau or 0.0) / mau, 4) if mau else 0.0
+    return value, interpolate_sql(sql, mau_params)
 
 
 def _fetch_single_metric_all_time(
@@ -600,6 +609,12 @@ def get_mission_control_metric(
             detail=f"Unsupported metric '{metric}'. Supported: {sorted(SUPPORTED_METRICS)}",
         )
 
+    cached = query_cache.get(
+        db.connection_id, "mc_metric", metric, start_date, end_date, filters
+    )
+    if cached is not None:
+        return cached
+
     filter_clauses: list[str] = []
     filter_params: list = []
     if filters:
@@ -681,23 +696,21 @@ def get_mission_control_metric(
         mau_where_bk.extend(filter_clauses)
         mau_params_bk.extend(filter_params)
         mau_where_sql_bk = "WHERE " + " AND ".join(mau_where_bk)
-        mau_rows_bk = db.execute(
-            f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql_bk}",
-            mau_params_bk,
-        )
-        mau_bk = mau_rows_bk[0][0] if mau_rows_bk else 0
-        dau_rows_bk = db.execute(
+        bk_rows = db.execute(
             f"""
-            SELECT AVG(daily_count)
-            FROM (
-                SELECT DATE(timestamp) AS d, COUNT(DISTINCT user_id) AS daily_count
+            WITH user_days AS (
+                SELECT DISTINCT user_id, DATE(timestamp) AS d
                 FROM events {mau_where_sql_bk}
-                GROUP BY DATE(timestamp)
-            ) t
+            )
+            SELECT
+                COUNT(DISTINCT user_id) AS mau,
+                CAST(COUNT(*) AS DOUBLE) / NULLIF(COUNT(DISTINCT d), 0) AS avg_dau
+            FROM user_days
             """,
             mau_params_bk,
         )
-        dau_bk = round(dau_rows_bk[0][0] or 0.0, 2) if dau_rows_bk else 0.0
+        mau_bk = bk_rows[0][0] if bk_rows else 0
+        dau_bk = round(bk_rows[0][1] or 0.0, 2) if bk_rows else 0.0
         breakdown = {
             "avg_dau": dau_bk,
             "mau_30d": int(mau_bk),
@@ -711,13 +724,17 @@ def get_mission_control_metric(
         if s:
             all_sqls.append(s)
 
-    return {
+    result = {
         "metric": metric,
         "current": float(current_value),
         "previous": float(previous_value) if previous_value is not None else None,
         "sql": all_sqls if len(all_sqls) > 1 else (all_sqls[0] if all_sqls else ""),
         **({"breakdown": breakdown} if breakdown is not None else {}),
     }
+    query_cache.set(
+        db.connection_id, result, "mc_metric", metric, start_date, end_date, filters
+    )
+    return result
 
 
 def _trunc_to_bucket(d: date, granularity: str) -> date:
@@ -771,6 +788,12 @@ def get_mission_control_trend(
             status_code=400,
             detail=f"Unsupported metric '{metric}'. Supported: {sorted(SUPPORTED_METRICS)}",
         )
+
+    cached = query_cache.get(
+        db.connection_id, "mc_trend", metric, granularity, start_date, end_date, filters
+    )
+    if cached is not None:
+        return cached
 
     if start_date and end_date:
         start, end, filter_clauses, filter_params = _parse_request_params(
@@ -923,6 +946,11 @@ def get_mission_control_trend(
 
     elif metric == "resurrected_users":
         resurrection_cutoff_days = db.get_resurrection_window_days()
+        prior_where_sql = (
+            ("WHERE timestamp < ? AND " + " AND ".join(filter_clauses))
+            if filter_clauses
+            else "WHERE timestamp < ?"
+        )
         current_day = start
         data = []
         while current_day <= end:
@@ -934,20 +962,21 @@ def get_mission_control_trend(
             day_ev_where.extend(filter_clauses)
             day_ev_params.extend(filter_params)
             day_ev_where_sql = "WHERE " + " AND ".join(day_ev_where)
+            # Prior-history subquery must apply the same filters as the
+            # current-day events — otherwise a user whose filtered history is
+            # empty but whose global history is old gets wrongly tagged as
+            # resurrected.
             rows = db.execute(
                 f"""
                 SELECT COUNT(DISTINCT e.user_id)
                 FROM events e
                 {day_ev_where_sql}
                 AND e.user_id IN (
-                    SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id
-                )
-                AND e.user_id IN (
-                    SELECT user_id FROM events WHERE timestamp < ? GROUP BY user_id
-                    HAVING MAX(DATE(timestamp)) < ?
+                    SELECT user_id FROM events {prior_where_sql}
+                    GROUP BY user_id HAVING MAX(DATE(timestamp)) < ?
                 )
                 """,
-                day_ev_params + [day_ps, day_ps, str(day_cutoff)],
+                day_ev_params + [day_ps] + list(filter_params) + [str(day_cutoff)],
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
@@ -955,6 +984,9 @@ def get_mission_control_trend(
         sql_val = "resurrected_users daily trend"
 
     elif metric == "churned_users":
+        # Both the prev-window and current-day sides must apply filters;
+        # otherwise "churned US users" includes users who were never in the
+        # US segment to begin with.
         current_day = start
         data = []
         while current_day <= end:
@@ -962,16 +994,23 @@ def get_mission_control_trend(
             day_pe = f"{current_day} 23:59:59"
             prev_d_end = current_day - timedelta(days=1)
             prev_d_start = current_day - timedelta(days=7)
+            prev_where = ["timestamp >= ?", "timestamp <= ?"] + list(filter_clauses)
+            cur_where = ["timestamp >= ?", "timestamp <= ?"] + list(filter_clauses)
+            prev_where_sql = " AND ".join(prev_where)
+            cur_where_sql = " AND ".join(cur_where)
             rows = db.execute(
-                """
+                f"""
                 SELECT COUNT(DISTINCT user_id) FROM events
-                WHERE timestamp >= ? AND timestamp <= ?
+                WHERE {prev_where_sql}
                   AND user_id NOT IN (
                     SELECT DISTINCT user_id FROM events
-                    WHERE timestamp >= ? AND timestamp <= ?
+                    WHERE {cur_where_sql}
                   )
                 """,
-                [f"{prev_d_start} 00:00:00", f"{prev_d_end} 23:59:59", day_ps, day_pe],
+                [f"{prev_d_start} 00:00:00", f"{prev_d_end} 23:59:59"]
+                + list(filter_params)
+                + [day_ps, day_pe]
+                + list(filter_params),
             )
             data.append({"date": str(current_day), "value": rows[0][0] if rows else 0})
             current_day += timedelta(days=1)
@@ -1094,63 +1133,66 @@ def get_mission_control_trend(
         sql_val = "power_users daily trend"
 
     else:  # dau_mau_ratio
+        # Single query: deduplicate to (user_id, day) pairs over the wider range
+        # [start - 29 days, end] so every day's trailing 30-day MAU window is covered.
+        # Self-join on user_days gives per-day DAU + trailing-30d MAU in one round-trip.
+        wider_start = start - timedelta(days=29)
+        wider_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+        wider_params: list = [f"{wider_start} 00:00:00", pe]
+        wider_where.extend(filter_clauses)
+        wider_params.extend(filter_params)
+        wider_where_sql = "WHERE " + " AND ".join(wider_where)
+        target_start_str = str(start)
+        target_end_str = str(end)
+        diff_expr = date_diff_days("w.d", "t.d", dialect)
+        sql_val = f"""
+            WITH user_days AS (
+                SELECT DISTINCT user_id, DATE(timestamp) AS d
+                FROM events {wider_where_sql}
+            )
+            SELECT
+                t.d,
+                COUNT(DISTINCT CASE WHEN t.d = w.d THEN w.user_id END) AS dau,
+                COUNT(DISTINCT w.user_id) AS mau
+            FROM (
+                SELECT DISTINCT d FROM user_days
+                WHERE d >= ? AND d <= ?
+            ) t
+            JOIN user_days w ON {diff_expr} BETWEEN 0 AND 29
+            GROUP BY t.d
+            ORDER BY t.d
+            """
+        dau_mau_params = wider_params + [target_start_str, target_end_str]
+        rows = db.execute(sql_val, dau_mau_params)
+        by_day = {
+            str(r[0]): round((r[1] or 0) / r[2], 4) if r[2] else 0.0 for r in rows
+        }
         current_day = start
         data = []
-        # Build representative SQL using the first day's params for display
-        day_ps_ex = f"{start} 00:00:00"
-        day_pe_ex = f"{start} 23:59:59"
-        dau_where_ex: list[str] = ["timestamp >= ?", "timestamp <= ?"]
-        dau_params_ex: list = [day_ps_ex, day_pe_ex]
-        dau_where_ex.extend(filter_clauses)
-        dau_params_ex.extend(filter_params)
-        mau_start_ex = start - timedelta(days=29)  # 30-day window
-        mau_where_ex: list[str] = ["timestamp >= ?", "timestamp <= ?"]
-        mau_params_ex: list = [f"{mau_start_ex} 00:00:00", day_pe_ex]
-        mau_where_ex.extend(filter_clauses)
-        mau_params_ex.extend(filter_params)
-        dau_sql_ex = f"SELECT COUNT(DISTINCT user_id) FROM events WHERE {' AND '.join(dau_where_ex)}"
-        mau_sql_ex = f"SELECT COUNT(DISTINCT user_id) FROM events WHERE {' AND '.join(mau_where_ex)}"
-        sql_val = [
-            interpolate_sql(dau_sql_ex, dau_params_ex),
-            interpolate_sql(mau_sql_ex, mau_params_ex),
-        ]
-
         while current_day <= end:
-            day_ps = f"{current_day} 00:00:00"
-            day_pe = f"{current_day} 23:59:59"
-            dau_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
-            dau_params: list = [day_ps, day_pe]
-            dau_where.extend(filter_clauses)
-            dau_params.extend(filter_params)
-            dau_where_sql = "WHERE " + " AND ".join(dau_where)
-
-            mau_start = current_day - timedelta(days=29)  # 30-day window
-            mau_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
-            mau_params: list = [f"{mau_start} 00:00:00", day_pe]
-            mau_where.extend(filter_clauses)
-            mau_params.extend(filter_params)
-            mau_where_sql = "WHERE " + " AND ".join(mau_where)
-
-            dau_r = db.execute(
-                f"SELECT COUNT(DISTINCT user_id) FROM events {dau_where_sql}",
-                dau_params,
+            data.append(
+                {"date": str(current_day), "value": by_day.get(str(current_day), 0.0)}
             )
-            mau_r = db.execute(
-                f"SELECT COUNT(DISTINCT user_id) FROM events {mau_where_sql}",
-                mau_params,
-            )
-            dau_val = dau_r[0][0] if dau_r else 0
-            mau_val = mau_r[0][0] if mau_r else 0
-            ratio = round(dau_val / mau_val, 4) if mau_val else 0.0
-            data.append({"date": str(current_day), "value": ratio})
             current_day += timedelta(days=1)
         data = _resample(data, granularity, agg="avg")
+        sql_val = interpolate_sql(sql_val, dau_mau_params)
 
-    return {
+    trend_result = {
         "sql": sql_val,
         "metric": metric,
         "data": [{"date": d["date"], "value": float(d["value"])} for d in data],
     }
+    query_cache.set(
+        db.connection_id,
+        trend_result,
+        "mc_trend",
+        metric,
+        granularity,
+        start_date,
+        end_date,
+        filters,
+    )
+    return trend_result
 
 
 @router.get("/mission-control")

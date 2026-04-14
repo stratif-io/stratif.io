@@ -41,7 +41,7 @@ class BaseE2ETest:
     # File-based backends (duckdb, sqlite) point to pre-seeded files in
     # connections.yaml; server backends start empty and must be seeded here.
     _SEED_BACKENDS: ClassVar[frozenset[str]] = frozenset(
-        {"postgresql", "clickhouse", "databricks"}
+        {"postgresql", "clickhouse", "databricks", "snowflake"}
     )
 
     # ------------------------------------------------------------------
@@ -118,8 +118,12 @@ class BaseE2ETest:
         creds = self._credentials()
         if self.db_type in ("sqlite", "duckdb"):
             creds["file_path"] = "/nonexistent/path/does_not_exist.db"
-        elif self.db_type in ("postgresql", "clickhouse", "snowflake"):
+        elif self.db_type in ("postgresql", "clickhouse"):
             creds["password"] = creds.get("password", "") + "_wrong"
+        elif self.db_type == "snowflake":
+            # fakesnow accepts any password, so drop a required credential
+            # field to force Pydantic validation to fail during /test.
+            creds.pop("user", None)
         elif self.db_type == "databricks":
             creds["token"] = creds.get("token", "") + "_wrong"
         return creds

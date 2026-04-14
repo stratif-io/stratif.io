@@ -11,3 +11,6 @@ class SnowflakeCredentials(BaseModel):
     database: str
     schema_: str = Field(alias="schema")
     role: str | None = None
+    host: str | None = None
+    port: int | None = None
+    protocol: str | None = None

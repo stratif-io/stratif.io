@@ -25,6 +25,16 @@ _PRODUCT_DB_TABLES = [
     "connection_filter_fields",
 ]
 
+# Columns that may be missing on existing on-disk product DBs that were created
+# before the column was introduced. Each entry: (table, column, sql_type, default).
+# SQLite supports ``ALTER TABLE ... ADD COLUMN ... NOT NULL DEFAULT <const>``,
+# so this doubles as both the DDL and the backfill value for existing rows.
+_ENSURE_COLUMNS: list[tuple[str, str, str, str]] = [
+    ("connection_schema_configs", "query_timeout_seconds", "INTEGER", "10"),
+    ("connection_schema_configs", "max_concurrent_queries", "INTEGER", "5"),
+]
+
+
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
 
@@ -92,3 +102,45 @@ async def init_product_db() -> None:
                 """)
                 )
         await conn.run_sync(Base.metadata.create_all)
+        await _ensure_columns(conn, is_postgres=is_postgres)
+
+
+async def _ensure_columns(conn, *, is_postgres: bool) -> None:
+    """Add columns to existing product DB tables if they are missing.
+
+    Handles the case where an on-disk SQLite (or Postgres) product DB was created
+    before a new NOT NULL column was introduced on the model: ``create_all`` skips
+    existing tables, so new columns would never appear without this helper.
+
+    SQLite supports ``ALTER TABLE ... ADD COLUMN ... NOT NULL DEFAULT <const>``;
+    the default clause is used to backfill existing rows in a single statement.
+    """
+    for table, column, sql_type, default in _ENSURE_COLUMNS:
+        if is_postgres:
+            exists_sql = text(
+                "SELECT 1 FROM information_schema.columns "
+                "WHERE table_schema = 'app' AND table_name = :t "
+                "AND column_name = :c"
+            )
+            result = await conn.execute(exists_sql, {"t": table, "c": column})
+            if result.first() is not None:
+                continue
+            await conn.execute(
+                text(
+                    f'ALTER TABLE app."{table}" '
+                    f'ADD COLUMN "{column}" {sql_type} NOT NULL DEFAULT {default}'
+                )
+            )
+        else:
+            # Assume SQLite (the local/dev default). PRAGMA table_info returns
+            # one row per column; column index 1 is the column name.
+            rows = (await conn.execute(text(f'PRAGMA table_info("{table}")'))).all()
+            existing = {r[1] for r in rows}
+            if column in existing:
+                continue
+            await conn.execute(
+                text(
+                    f'ALTER TABLE "{table}" '
+                    f'ADD COLUMN "{column}" {sql_type} NOT NULL DEFAULT {default}'
+                )
+            )

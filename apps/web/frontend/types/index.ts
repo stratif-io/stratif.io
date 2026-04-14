@@ -340,6 +340,8 @@ export interface SchemaConfig {
   session_timeout_minutes: number
   resurrection_window_days?: number
   power_user_threshold_days?: number
+  query_timeout_seconds?: number
+  max_concurrent_queries?: number
   email_field?: string | null
   first_name_field?: string | null
   last_name_field?: string | null
@@ -394,6 +396,8 @@ export interface SchemaConfigBody {
   session_timeout_minutes: number
   resurrection_window_days?: number
   power_user_threshold_days?: number
+  query_timeout_seconds?: number
+  max_concurrent_queries?: number
   email_field?: string | null
   first_name_field?: string | null
   last_name_field?: string | null

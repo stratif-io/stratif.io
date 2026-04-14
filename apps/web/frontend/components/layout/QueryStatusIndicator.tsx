@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/stores'
 import { IDLE_DISMISS_DELAY_MS } from '@/lib/api/semaphore'
 import { cn } from '@/lib/utils'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { QueryHistoryPanel } from '@/features/dashboard/components/QueryHistoryPanel'
 
 export function QueryStatusIndicator() {
   const runningQueries = useAppStore((s) => s.runningQueries)
@@ -48,42 +50,53 @@ export function QueryStatusIndicator() {
         if (fading) setDismissed(true)
       }}
       className={cn(
-        'relative rounded-full border border-border bg-muted px-3 py-1 text-xs transition-opacity duration-700',
+        'transition-opacity duration-700',
         hidden ? 'invisible opacity-0' : fading ? 'opacity-0' : 'opacity-100'
       )}
     >
-      {/* Ghost: fixed max-width content — drives the container width */}
-      <span className="invisible flex items-center gap-1.5 whitespace-nowrap" aria-hidden>
-        <span className="inline-block h-1.5 w-1.5 rounded-full" />
-        <span className="font-semibold">99 running</span>
-        <span>·</span>
-        <span>99 queued</span>
-      </span>
+      <Popover>
+        <PopoverTrigger
+          type="button"
+          aria-label="Show query history"
+          className="relative rounded-full border border-border bg-muted px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {/* Ghost: fixed max-width content — drives the container width */}
+          <span className="invisible flex items-center gap-1.5 whitespace-nowrap" aria-hidden>
+            <span className="inline-block h-1.5 w-1.5 rounded-full" />
+            <span className="font-semibold">99 running</span>
+            <span>·</span>
+            <span>99 queued</span>
+          </span>
 
-      {/* Real content — overlaid absolutely */}
-      <span className="absolute inset-0 flex items-center justify-center gap-1.5 px-3">
-        {isActive ? (
-          <>
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary shrink-0" />
-            <span className="text-primary/70 font-semibold whitespace-nowrap">
-              {runningQueries} running
-            </span>
-            {queuedQueries > 0 && (
+          {/* Real content — overlaid absolutely */}
+          <span className="absolute inset-0 flex items-center justify-center gap-1.5 px-3">
+            {isActive ? (
               <>
-                <span className="text-muted-foreground">·</span>
-                <span className="text-muted-foreground whitespace-nowrap">
-                  {queuedQueries} queued
+                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary shrink-0" />
+                <span className="text-primary/70 font-semibold whitespace-nowrap">
+                  {runningQueries} running
                 </span>
+                {queuedQueries > 0 && (
+                  <>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-muted-foreground whitespace-nowrap">
+                      {queuedQueries} queued
+                    </span>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-success shrink-0" />
+                <span className="text-muted-foreground whitespace-nowrap">all done</span>
               </>
             )}
-          </>
-        ) : (
-          <>
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-success shrink-0" />
-            <span className="text-muted-foreground whitespace-nowrap">all done</span>
-          </>
-        )}
-      </span>
+          </span>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="p-0">
+          <QueryHistoryPanel />
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }

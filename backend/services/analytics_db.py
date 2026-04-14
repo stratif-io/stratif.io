@@ -8,7 +8,7 @@ from fastapi import HTTPException
 
 from backend.backends.base import DatabaseBackend
 from backend.config import settings
-from backend.services.pool import _pool_evict, _pool_get
+from backend.services.pool import _pool_evict, _pool_get, _pool_set_meta
 from backend.services.sql_builder import json_extract_string
 
 if TYPE_CHECKING:
@@ -70,9 +70,11 @@ class AnalyticsDatabase:
         resurrection_window_days: int = 30,
         power_user_threshold_days: int = 4,
         available_columns: frozenset[str] | None = None,
+        connection_id: str = "",
     ):
         self._conn = conn
         self._backend = backend
+        self.connection_id: str = connection_id
         self._filter_fields: list[dict] = filter_fields or []
         self._filter_exprs: dict[str, str] = filter_exprs or {}
         self._custom_props: list[dict] = custom_props or []
@@ -106,7 +108,7 @@ class AnalyticsDatabase:
                 if self._pool_factory and self._pool_key is not None:
                     # Evict the dead connection and retry once with a fresh one.
                     _pool_evict(self._pool_key)
-                    self._conn = _pool_get(self._pool_key, self._pool_factory)
+                    self._conn, _ = _pool_get(self._pool_key, self._pool_factory)
                     try:
                         return self._backend.execute(self._conn, query, params)
                     except Exception as retry_exc:
@@ -394,8 +396,19 @@ async def open_analytics_db(
     if backend.use_pool:
         pool_key = backend.pool_key(connection_id, credentials)
         factory = lambda: backend.open(credentials, read_only=False)  # noqa: E731
-        conn = _pool_get(pool_key, factory)
-        col_types = _get_col_types(conn, _quoted_table) if _get_col_types else {}
+        conn, pool_meta = _pool_get(pool_key, factory)
+
+        # Re-derive column types only on a cold pool hit (new connection).
+        # On subsequent requests the cached col_types are reused, avoiding
+        # an extra round-trip (e.g. SELECT * FROM table LIMIT 0 on Databricks).
+        if _get_col_types:
+            if "col_types" not in pool_meta:
+                pool_meta["col_types"] = _get_col_types(conn, _quoted_table)
+                _pool_set_meta(pool_key, pool_meta)
+            col_types: dict[str, str] = pool_meta["col_types"]
+        else:
+            col_types = {}
+
         custom_prop_exprs, filter_exprs = _build_exprs(col_types)
         available_cols = _get_available_columns(conn, col_types)
         db = AnalyticsDatabase(
@@ -410,6 +423,7 @@ async def open_analytics_db(
             session_timeout_minutes=session_timeout_minutes,
             resurrection_window_days=resurrection_window_days,
             power_user_threshold_days=power_user_threshold_days,
+            connection_id=connection_id,
         )
         db._pooled = True
         db._pool_key = pool_key
@@ -432,4 +446,5 @@ async def open_analytics_db(
         session_timeout_minutes=session_timeout_minutes,
         resurrection_window_days=resurrection_window_days,
         power_user_threshold_days=power_user_threshold_days,
+        connection_id=connection_id,
     )

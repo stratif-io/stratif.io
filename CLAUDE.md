@@ -15,8 +15,6 @@ uv run serve             # Backend server (port 8000)
 bun run test:run         # Unit tests once (Vitest)
 bun run test             # Unit tests in watch mode
 bun run test:coverage    # Unit tests with coverage
-bun run test:e2e         # E2E tests (Playwright, multi-browser)
-bun run test:e2e:ui      # E2E tests with interactive UI
 
 # Quality checks (run before committing)
 bun run lint             # ESLint (zero warnings allowed)

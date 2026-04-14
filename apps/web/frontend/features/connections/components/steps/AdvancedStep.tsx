@@ -61,6 +61,36 @@ export function AdvancedStep({ connId, onDone }: AdvancedStepProps) {
             className="h-9 w-40"
           />
         </div>
+
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="query-timeout" className="text-xs">
+            Query Timeout (seconds)
+          </Label>
+          <Input
+            id="query-timeout"
+            type="number"
+            min={1}
+            max={600}
+            value={form.queryTimeoutSeconds}
+            onChange={(e) => updateForm({ queryTimeoutSeconds: Number(e.target.value) })}
+            className="h-9 w-40"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="max-concurrent-queries" className="text-xs">
+            Max Concurrent Queries
+          </Label>
+          <Input
+            id="max-concurrent-queries"
+            type="number"
+            min={1}
+            max={50}
+            value={form.maxConcurrentQueries}
+            onChange={(e) => updateForm({ maxConcurrentQueries: Number(e.target.value) })}
+            className="h-9 w-40"
+          />
+        </div>
       </div>
 
       <div className="flex justify-end pt-3 border-t">

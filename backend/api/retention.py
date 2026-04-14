@@ -106,14 +106,23 @@ def get_retention(
     filter_where = ("WHERE " + " AND ".join(filter_clauses)) if filter_clauses else ""
 
     # Date-range params used to restrict which users qualify as "new" cohort members.
+    # `first_seen` is date-truncated (YYYY-MM-DD in sqlite's TEXT collation).
+    # For sqlite, use date-only bounds to avoid lexicographic comparison against a
+    # longer datetime string (which excludes rows exactly on the start boundary).
     date_params: list = []
     date_clauses: list[str] = []
     if start_date:
         date_clauses.append("first_seen >= ?")
-        date_params.append(to_sql_datetime(start_date, "00:00:00"))
+        date_params.append(
+            start_date
+            if dialect == "sqlite"
+            else to_sql_datetime(start_date, "00:00:00")
+        )
     if end_date:
         date_clauses.append("first_seen <= ?")
-        date_params.append(to_sql_datetime(end_date, "23:59:59"))
+        date_params.append(
+            end_date if dialect == "sqlite" else to_sql_datetime(end_date, "23:59:59")
+        )
 
     cohort_date_where = ("WHERE " + " AND ".join(date_clauses)) if date_clauses else ""
 

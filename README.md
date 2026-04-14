@@ -11,7 +11,7 @@
 
 **No event pipelines. No vendor lock-in. Connect directly to your existing warehouse.**
 
-[Website](https://stratif.io) · [Quick Start](#-quick-start) · [Docs](docs/docs.md) · [Contributing](CONTRIBUTING.md)
+[Website](https://stratif.io) · [Live Demo](https://demo.stratif.io) · [Quick Start](#-quick-start) · [Docs](docs/docs.md) · [Contributing](CONTRIBUTING.md)
 
 </div>
 

@@ -37,7 +37,9 @@ seed-duckdb-fr = "seeders.seeder_duckdb_fr:main"
 seed-sqlite = "seeders.seeder_sqlite:main"
 seed-postgres = "seeders.seeder_postgresql:main"
 seed-clickhouse = "seeders.seeder_clickhouse:main"
+seed-snowflake = "seeders.seeder_snowflake:main"
 seed-databricks = "seeders.seeder_databricks:main"
+bootstrap-all-connections = "seeders.bootstrap_all_connections:main"
 
 [build-system]
 requires = ["hatchling"]
