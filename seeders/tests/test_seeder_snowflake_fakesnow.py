@@ -14,8 +14,19 @@ import pytest
 @pytest.fixture
 def fakesnow_patched():
     fakesnow = pytest.importorskip("fakesnow")
-    with fakesnow.patch():
+    import unittest.mock
+
+    import snowflake.connector
+
+    # The session-scoped snowflake_conn fixture in the contract conftest may have
+    # already activated fakesnow.patch() for the whole test session.  Calling
+    # fakesnow.patch() a second time raises "Snowflake connector is already patched".
+    # If the connector is already mocked we just yield without re-patching.
+    if isinstance(snowflake.connector.connect, unittest.mock.MagicMock):
         yield
+    else:
+        with fakesnow.patch():
+            yield
 
 
 def test_snowflake_seeder_e2e_against_fakesnow(fakesnow_patched):
