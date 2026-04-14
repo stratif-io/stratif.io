@@ -251,7 +251,13 @@ export function useSchemaForm(connId: string) {
     if (Object.keys(identityPatch).length) {
       topLevelPatch.userIdentityFields = { ...form.userIdentityFields, ...identityPatch }
     }
-    if (Object.keys(topLevelPatch).length) updateForm(topLevelPatch)
+    if (Object.keys(topLevelPatch).length) {
+      const merged = { ...form, ...topLevelPatch }
+      // Flush immediately so the save is not lost if the component unmounts (e.g. navigation).
+      clearTimeout(schemaTimer.current)
+      upsert.mutate(buildSavePayload(merged))
+      updateForm(topLevelPatch)
+    }
     setPendingDetections([])
   }
 
