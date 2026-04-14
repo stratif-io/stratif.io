@@ -71,14 +71,17 @@ class SnowflakeSeeder(BaseSeeder):
             )
             for e in events
         ]
+        # snowflake-connector-python can't batch-rewrite INSERT...SELECT with
+        # PARSE_JSON (error 252001). Execute row-by-row — slower but correct.
         cur = self._conn.cursor()
         try:
-            cur.executemany(
+            stmt = (
                 "INSERT INTO events "
                 "(user_id, event_name, timestamp, properties, server, traits, context) "
-                "SELECT %s, %s, %s, PARSE_JSON(%s), %s, PARSE_JSON(%s), PARSE_JSON(%s)",
-                rows,
+                "SELECT %s, %s, %s, PARSE_JSON(%s), %s, PARSE_JSON(%s), PARSE_JSON(%s)"
             )
+            for row in rows:
+                cur.execute(stmt, row)
         finally:
             cur.close()
 

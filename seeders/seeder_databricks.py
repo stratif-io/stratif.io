@@ -241,11 +241,20 @@ class DatabricksSeeder(BaseSeeder):
     def seed(self) -> dict[str, int]:
         creds = self._db_creds
         staging_volume = creds.get("staging_volume")
+        # Accept both the YAML-standard keys (host/token — matches the backend's
+        # Pydantic model) and the legacy seeder keys (server_hostname/access_token).
+        host = creds.get("host") or creds.get("server_hostname")
+        token = creds.get("token") or creds.get("access_token")
+        if not host or not token:
+            raise KeyError(
+                "Databricks credentials must include 'host' and 'token' "
+                "(or legacy 'server_hostname' / 'access_token')."
+            )
         log.info(
             "seeding_start",
             users=self.config.seed_users,
             days=self.config.seed_days,
-            server_hostname=creds.get("server_hostname"),
+            host=host,
             mode="parquet" if staging_volume else "insert",
         )
 
@@ -253,9 +262,9 @@ class DatabricksSeeder(BaseSeeder):
         users = self._generate_users()
 
         connect_kwargs: dict[str, Any] = {
-            "server_hostname": creds["server_hostname"],
+            "server_hostname": host,
             "http_path": creds["http_path"],
-            "access_token": creds["access_token"],
+            "access_token": token,
         }
         if staging_volume:
             connect_kwargs["staging_allowed_local_path"] = tempfile.gettempdir()
