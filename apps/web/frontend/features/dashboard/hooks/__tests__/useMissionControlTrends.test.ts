@@ -10,6 +10,10 @@ vi.mock('@/lib/api', () => ({
   fetchMissionControlTrend: vi.fn(),
 }))
 
+vi.mock('@/features/connections/hooks/useConnectionsData', () => ({
+  useSchemaConfig: vi.fn(() => ({ data: undefined })),
+}))
+
 // Mock the store
 vi.mock('@/stores', () => ({
   useAppStore: vi.fn(() => ({
