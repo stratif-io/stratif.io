@@ -174,24 +174,27 @@ export function FieldMapStep({ connId }: Props) {
       {pendingDetections.length > 0 && (
         <div
           data-testid="detect-banner"
-          className="flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 dark:border-blue-800 dark:bg-blue-950/40"
+          role="status"
+          aria-live="polite"
+          className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5"
         >
           <div className="flex items-center gap-2">
-            <Sparkles className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+            <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span className="text-xs font-medium text-primary">
               {pendingDetections.length} field{pendingDetections.length !== 1 ? 's' : ''}{' '}
               auto-detected from schema
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" className="h-7 text-xs" onClick={acceptAllDetections}>
+            <Button size="sm" className="h-9 text-xs" onClick={acceptAllDetections}>
               Accept all
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 text-xs text-muted-foreground"
+              className="h-9 text-xs text-muted-foreground"
               onClick={() => setPendingDetections([])}
+              title="Clear all suggestions without applying"
             >
               Dismiss
             </Button>
@@ -226,7 +229,7 @@ export function FieldMapStep({ connId }: Props) {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 text-xs"
+                className="h-9 text-xs"
                 data-testid="detect-btn"
                 onClick={handleDetect}
                 disabled={detect.isPending}
@@ -257,7 +260,10 @@ export function FieldMapStep({ connId }: Props) {
               }}
               onAccept={() => acceptDetection(key)}
               onReject={() => rejectDetection(key)}
-              onChange={(v) => updateForm({ [key]: v } as Parameters<typeof updateForm>[0])}
+              onChange={(v) => {
+                updateForm({ [key]: v } as Parameters<typeof updateForm>[0])
+                setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== key))
+              }}
             />
           )
         })}
@@ -300,8 +306,14 @@ export function FieldMapStep({ connId }: Props) {
               }}
               onAccept={() => acceptDetection(key)}
               onReject={() => rejectDetection(key)}
-              onChange={(v) => setUserIdentityField(key, v || null)}
-              onClear={() => setUserIdentityField(key, null)}
+              onChange={(v) => {
+                setUserIdentityField(key, v || null)
+                setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== key))
+              }}
+              onClear={() => {
+                setUserIdentityField(key, null)
+                setPendingDetections((prev) => prev.filter((d) => d.fieldKey !== key))
+              }}
             />
           )
         })}
@@ -323,21 +335,24 @@ export function FieldMapStep({ connId }: Props) {
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Event Properties
           </span>
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addProp}>
+          <Button size="sm" variant="outline" className="h-9 text-xs" onClick={addProp}>
             <Plus className="h-3 w-3 mr-1" />
             Add property
           </Button>
         </div>
 
         {form.customProps.length === 0 && (
-          <div
-            className={cn(
-              'border border-dashed border-border rounded-lg flex items-center justify-center py-8 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors'
-            )}
+          <button
+            type="button"
             onClick={addProp}
+            className={cn(
+              'w-full border border-dashed border-border rounded-lg flex items-center justify-center py-8',
+              'hover:border-primary/50 hover:bg-muted/30 transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
+            )}
           >
             <span className="text-xs text-muted-foreground">+ Add your first event property</span>
-          </div>
+          </button>
         )}
 
         {form.customProps.length > 0 && (

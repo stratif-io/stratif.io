@@ -4,6 +4,14 @@ import { Plus, Trash2, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useConnections, useDeleteConnection, useTestConnection } from '../hooks/useConnectionsData'
 import { DbLogo } from '@/components/DbLogo'
 import type { Connection } from '@/types'
@@ -39,6 +47,8 @@ function ConnectionRow({ connection }: { connection: Connection }) {
   const deleteMutation = useDeleteConnection()
   const testMutation = useTestConnection()
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   function handleTest(e: React.MouseEvent) {
     e.stopPropagation()
@@ -49,11 +59,17 @@ function ConnectionRow({ connection }: { connection: Connection }) {
     })
   }
 
-  function handleDelete(e: React.MouseEvent) {
+  function handleDeleteClick(e: React.MouseEvent) {
     e.stopPropagation()
-    if (confirm(`Delete connection "${connection.name}"? This cannot be undone.`)) {
-      deleteMutation.mutate(connection.id)
-    }
+    setDeleteError(null)
+    setConfirmOpen(true)
+  }
+
+  function confirmDelete() {
+    deleteMutation.mutate(connection.id, {
+      onSuccess: () => setConfirmOpen(false),
+      onError: (err) => setDeleteError(err.message),
+    })
   }
 
   return (
@@ -108,11 +124,43 @@ function ConnectionRow({ connection }: { connection: Connection }) {
           className="h-8 w-8 text-destructive hover:text-destructive"
           aria-label="Delete connection"
           disabled={deleteMutation.isPending}
-          onClick={handleDelete}
+          onClick={handleDeleteClick}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Delete connection?</DialogTitle>
+            <DialogDescription>
+              "{connection.name}" will be permanently removed. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && (
+            <p role="alert" className="text-sm text-destructive">
+              {deleteError}
+            </p>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

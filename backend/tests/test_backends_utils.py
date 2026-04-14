@@ -1,6 +1,34 @@
 """Tests for backend/_utils.py shared helpers."""
 
-from backend.backends._utils import sample_property_types
+from backend.backends._utils import pick_events_table, sample_property_types
+
+
+def test_pick_events_table_honors_bare_hint():
+    assert pick_events_table(["evenement", "events"], "evenement") == "evenement"
+
+
+def test_pick_events_table_honors_schema_qualified_hint():
+    # Frontend sends "main.evenement" but backend lists bare names.
+    # The hint's last dotted segment must still be honored.
+    assert pick_events_table(["evenement", "events"], "main.evenement") == "evenement"
+
+
+def test_pick_events_table_qualified_hint_not_found_falls_back():
+    # Hint last-segment not in tables → fall back to known name.
+    assert pick_events_table(["evenement", "events"], "main.other") == "events"
+
+
+def test_pick_events_table_no_hint_picks_known_name():
+    assert pick_events_table(["evenement", "events"], None) == "events"
+
+
+def test_pick_events_table_no_hint_no_known_picks_first():
+    assert pick_events_table(["foo", "bar"], None) == "foo"
+
+
+def test_pick_events_table_empty():
+    assert pick_events_table([], None) is None
+    assert pick_events_table([], "main.evenement") is None
 
 
 def test_sample_detects_numeric_property():
