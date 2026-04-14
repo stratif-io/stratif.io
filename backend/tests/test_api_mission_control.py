@@ -1,5 +1,7 @@
 """Integration tests for /api/mission-control endpoint."""
 
+import json
+
 import pytest
 
 
@@ -110,8 +112,6 @@ class TestMissionControlEndpoint:
 
     def test_filters_param_accepted(self, client):
         """Filters param is accepted without error and scopes results."""
-        import json
-
         response = client.get(
             "/api/mission-control",
             params={
@@ -134,6 +134,109 @@ class TestMissionControlEndpoint:
         # DAU = avg daily distinct users in same window: (1 + 1) / 2 days with data = 1.0
         # ratio = 1.0 / 2 = 0.5
         assert body["current"]["dau_mau_ratio"] == pytest.approx(0.5, abs=0.01)
+
+
+class TestFilterApplicationAcrossMetrics:
+    """Filters must scope every user-classification metric consistently.
+
+    Without this, applying a filter (e.g. country=US) produces incoherent
+    results: new_users ignores the filter, returning/resurrected/churned
+    miscategorize users whose global history differs from their history
+    within the filtered segment.
+
+    Fixture seed (filterable_client, conftest.py): period 2024-03-15.
+    With filter country=US:
+      - user-A: first US event in period (was UK in 2023) → NEW
+      - user-C: US before + in period, within 30d window → RETURNING
+      - user-D: first ever event in period → NEW
+      - user-E: first US event in period (was UK 2024-03-01) → NEW
+      - user-B: UK only, absent in current period → NOT in any count
+    """
+
+    PERIOD = {"start_date": "2024-03-15", "end_date": "2024-03-15"}
+    US_FILTER = {"filters": json.dumps({"country": "US"})}
+
+    def _get(self, filterable_client, metric: str):
+        return filterable_client.get(
+            "/api/mission-control/metric",
+            params={"metric": metric, **self.PERIOD, **self.US_FILTER},
+        ).json()["current"]
+
+    def test_unique_users_respects_filter(self, filterable_client):
+        # 4 users have a US event on 2024-03-15: A, C, D, E
+        assert self._get(filterable_client, "unique_users") == 4
+
+    def test_new_users_respects_filter(self, filterable_client):
+        # NEW = first event *in the filtered segment* falls in period.
+        # A, D, E all qualify (C's first US event is 2024-02-20).
+        assert self._get(filterable_client, "new_users") == 3
+
+    def test_returning_users_respects_filter(self, filterable_client):
+        # RETURNING = prior activity *within filtered segment*, within window.
+        # Only user-C qualifies (US on 2024-02-20, within 30d cutoff 2024-02-14).
+        assert self._get(filterable_client, "returning_users") == 1
+
+    def test_resurrected_users_respects_filter(self, filterable_client):
+        # RESURRECTED = prior activity in filtered segment, beyond window.
+        # No user has a US event before 2024-02-14, so the count is 0.
+        assert self._get(filterable_client, "resurrected_users") == 0
+
+    def test_churned_users_respects_filter(self, filterable_client):
+        # CHURNED = active in prev period (filtered), absent in current (filtered).
+        # No user has a US event on 2024-03-14 (prev period). Count is 0.
+        assert self._get(filterable_client, "churned_users") == 0
+
+    def test_user_partition_identity_holds_with_filter(self, filterable_client):
+        """new + returning + resurrected == unique_users (under any filter)."""
+        new = self._get(filterable_client, "new_users")
+        ret = self._get(filterable_client, "returning_users")
+        res = self._get(filterable_client, "resurrected_users")
+        uniq = self._get(filterable_client, "unique_users")
+        assert new + ret + res == uniq, (
+            f"partition broken: new={new} + ret={ret} + res={res} != uniq={uniq}"
+        )
+
+    def test_trend_resurrected_respects_filter(self, filterable_client):
+        resp = filterable_client.get(
+            "/api/mission-control/trend",
+            params={
+                "metric": "resurrected_users",
+                "start_date": "2024-03-15",
+                "end_date": "2024-03-15",
+                **self.US_FILTER,
+            },
+        )
+        assert resp.status_code == 200
+        # No US user has prior history beyond the resurrection window.
+        assert sum(d["value"] for d in resp.json()["data"]) == 0
+
+    def test_trend_churned_respects_filter(self, filterable_client):
+        resp = filterable_client.get(
+            "/api/mission-control/trend",
+            params={
+                "metric": "churned_users",
+                "start_date": "2024-03-15",
+                "end_date": "2024-03-15",
+                **self.US_FILTER,
+            },
+        )
+        assert resp.status_code == 200
+        # No US user was active in the 7-day prev window and absent today.
+        assert sum(d["value"] for d in resp.json()["data"]) == 0
+
+    def test_aggregate_endpoint_respects_filter(self, filterable_client):
+        """The /api/mission-control (aggregate) endpoint mirrors per-metric values."""
+        resp = filterable_client.get(
+            "/api/mission-control",
+            params={**self.PERIOD, **self.US_FILTER},
+        )
+        assert resp.status_code == 200
+        cur = resp.json()["current"]
+        assert cur["unique_users"] == 4
+        assert cur["new_users"] == 3
+        assert cur["returning_users"] == 1
+        assert cur["resurrected_users"] == 0
+        assert cur["churned_users"] == 0
 
 
 class TestMissionControlTrendEndpoint:
