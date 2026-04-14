@@ -121,10 +121,9 @@ class BaseE2ETest:
         elif self.db_type in ("postgresql", "clickhouse"):
             creds["password"] = creds.get("password", "") + "_wrong"
         elif self.db_type == "snowflake":
-            # fakesnow accepts any password, so force an unreachable endpoint.
-            creds["password"] = creds.get("password", "") + "_wrong"
-            creds["host"] = "127.0.0.1"
-            creds["port"] = 1
+            # fakesnow accepts any password, so drop a required credential
+            # field to force Pydantic validation to fail during /test.
+            creds.pop("user", None)
         elif self.db_type == "databricks":
             creds["token"] = creds.get("token", "") + "_wrong"
         return creds
