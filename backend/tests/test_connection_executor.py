@@ -540,7 +540,7 @@ def test_execute_reconnects_and_retries_on_stale_postgres_connection():
 
     with (
         patch("backend.services.analytics_db._pool_evict") as mock_evict,
-        patch("backend.services.analytics_db._pool_get", return_value=fresh_conn),
+        patch("backend.services.analytics_db._pool_get", return_value=(fresh_conn, {})),
     ):
         result = db.execute("SELECT 1")
 
