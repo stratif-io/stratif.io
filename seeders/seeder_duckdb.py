@@ -31,6 +31,7 @@ class DuckDBSeeder(BaseSeeder):
 
         creds = get_duckdb_credentials(load_connections_yaml())
         self._db_path: str = creds["file_path"]
+        self._table_name: str = creds.get("table_name", "events")
         self._conn: duckdb.DuckDBPyConnection
 
     # ------------------------------------------------------------------
@@ -38,9 +39,9 @@ class DuckDBSeeder(BaseSeeder):
     # ------------------------------------------------------------------
 
     def _create_events_table(self) -> None:
-        self._conn.execute("DROP TABLE IF EXISTS events")
-        self._conn.execute("""
-            CREATE TABLE events (
+        self._conn.execute(f"DROP TABLE IF EXISTS {self._table_name}")
+        self._conn.execute(f"""
+            CREATE TABLE {self._table_name} (
                 user_id     VARCHAR,
                 event_name  VARCHAR,
                 timestamp   TIMESTAMP,
@@ -68,7 +69,7 @@ class DuckDBSeeder(BaseSeeder):
         )
 
         self._conn.execute(
-            "INSERT INTO events "
+            f"INSERT INTO {self._table_name} "
             "SELECT user_id, event_name, timestamp, properties::JSON, server, "
             "traits::JSON, context::JSON FROM df"
         )

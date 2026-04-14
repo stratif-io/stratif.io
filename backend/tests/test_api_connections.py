@@ -243,3 +243,25 @@ class TestSuggestFieldsUserIdentity:
         # "usr_id" is close enough to "user_id" (ratio > 0.65)
         result = _suggest_fields(self._cols(["usr_id", "ts", "event"]))
         assert result.get("user_id_field") == "usr_id"
+
+    # False-positive regression tests (subset check, dotted path token split)
+    def test_no_false_positive_user_email_vs_returning_user(self):
+        # "user_email" alias tokens {"user","email"} must NOT match
+        # "properties.is_returning_user" because "email" is absent.
+        result = _suggest_fields(
+            self._cols(["user_id", "ts", "event", "properties.is_returning_user"])
+        )
+        assert result.get("email_field") is None
+
+    def test_no_false_positive_last_name_vs_first_name(self):
+        # "last_name" alias tokens {"last","name"} must NOT match
+        # "traits.first_name" — "last" is absent from {"traits","first","name"}.
+        result = _suggest_fields(
+            self._cols(["user_id", "ts", "event", "traits.first_name"])
+        )
+        assert result.get("last_name_field") is None
+
+    def test_dotted_path_tokens_split_correctly(self):
+        # "traits.email" should match email_field — tokens {"traits","email"} ⊇ {"email"}
+        result = _suggest_fields(self._cols(["user_id", "ts", "event", "traits.email"]))
+        assert result.get("email_field") == "traits.email"

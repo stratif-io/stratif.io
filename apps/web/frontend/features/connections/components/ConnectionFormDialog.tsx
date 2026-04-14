@@ -20,6 +20,7 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   connection?: Connection
+  onCreated?: (id: string) => void
 }
 
 const DB_TYPES: { value: DbType; label: string }[] = [
@@ -263,7 +264,7 @@ function buildCredentials(dbType: DbType, form: HTMLFormElement): Record<string,
   }
 }
 
-export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) {
+export function ConnectionFormDialog({ open, onOpenChange, connection, onCreated }: Props) {
   const [name, setName] = useState('')
   const [dbType, setDbType] = useState<DbType>('duckdb')
 
@@ -310,10 +311,10 @@ export function ConnectionFormDialog({ open, onOpenChange, connection }: Props) 
       create.mutate(
         { name, db_type: dbType, credentials },
         {
-          onSuccess: () => {
+          onSuccess: (newConnection) => {
             track('connection_created', { db_type: dbType })
-            toast.success('Connection created')
             onOpenChange(false)
+            onCreated?.(newConnection.id)
           },
         }
       )

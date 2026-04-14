@@ -36,6 +36,12 @@ def _normalize(name: str) -> str:
     return s.lower()
 
 
+def _tokens(name: str) -> set[str]:
+    """Split a (possibly snake_case / camelCase / dotted) name into lowercase tokens."""
+    normalized = _normalize(name)
+    return set(filter(None, re.split(r"[._\-\s]", normalized)))
+
+
 def _best_match(
     col_names: list[str], aliases: tuple[str, ...], threshold: float = 0.80
 ) -> str | None:
@@ -44,7 +50,8 @@ def _best_match(
     Priority:
     1. Exact match (case-insensitive)
     2. Normalised exact match (handles camelCase vs snake_case)
-    3. Substring containment (alias is a substring of the column or vice-versa)
+    3. Token overlap — alias tokens must overlap with column tokens (avoids
+       false positives like "ts" matching "traits" via character substring)
     4. Fuzzy match via difflib with the given similarity threshold
     """
     col_lower: dict[str, str] = {c.lower(): c for c in col_names}
@@ -61,10 +68,13 @@ def _best_match(
         if norm in col_norm:
             return col_norm[norm]
 
-    # 3. Substring containment
+    # 3. All alias tokens must be present in column tokens (subset check).
+    # This avoids false positives like "user_email" matching "is_returning_user"
+    # via the shared "user" token.
     for alias in aliases:
+        alias_toks = _tokens(alias)
         for col_l, col_orig in col_lower.items():
-            if alias in col_l or col_l in alias:
+            if alias_toks <= _tokens(col_l):  # subset, not intersection
                 return col_orig
 
     # 4. Fuzzy similarity
