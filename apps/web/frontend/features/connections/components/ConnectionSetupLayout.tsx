@@ -24,7 +24,7 @@ export function ConnectionSetupLayout({
   children,
 }: ConnectionSetupLayoutProps) {
   return (
-    <div className="flex border rounded-lg overflow-hidden min-h-[480px] bg-muted/30">
+    <div className="flex border rounded-lg overflow-hidden h-[560px] bg-muted/30">
       <ConnectionSidebar
         connectionName={connectionName}
         dbType={dbType}
@@ -34,7 +34,7 @@ export function ConnectionSetupLayout({
         onStepClick={onStepClick}
         tableFooter={tableFooter}
       />
-      <div className="flex-1 bg-muted/20 overflow-auto">{children}</div>
+      <div className="flex-1 bg-muted/20 overflow-hidden flex flex-col">{children}</div>
     </div>
   )
 }
