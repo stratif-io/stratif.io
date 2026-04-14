@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SPACING } from '@/lib/constants'
@@ -46,6 +47,7 @@ export function ConnectionDetailPage() {
   const backgroundTest = useTestConnection()
   const upsertSchema = useUpsertSchemaConfig(id ?? '')
   const { data: schemaConfig } = useSchemaConfig(id ?? '')
+  const qc = useQueryClient()
 
   // When arriving at a non-credentials step (e.g. navigated here after creation),
   // run a background test once to populate the sidebar status badge.
@@ -117,7 +119,14 @@ export function ConnectionDetailPage() {
       date_of_birth_field: schemaConfig?.date_of_birth_field ?? null,
       phone_field: schemaConfig?.phone_field ?? null,
     }
-    upsertSchema.mutate(payload, { onSuccess: () => navigate(`/connections/${id}/fieldmap`) })
+    upsertSchema.mutate(payload, {
+      onSuccess: (saved) => {
+        // Update the cache immediately so FieldMapStep sees the correct events_table
+        // on mount and doesn't overwrite it with the stale value via auto-save.
+        qc.setQueryData(['connections', id, 'schema'], saved)
+        navigate(`/connections/${id}/fieldmap`)
+      },
+    })
   }
 
   const tableFooter =
