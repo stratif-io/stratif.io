@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 
@@ -134,7 +134,9 @@ async def delete_connection(conn_id: str, session: DBSession):
 
 @router.post("/{conn_id}/test")
 @limiter.limit("10/minute")
-async def test_connection(request: Request, conn_id: str, session: DBSession):
+async def test_connection(
+    request: Request, response: Response, conn_id: str, session: DBSession
+):
     import asyncio
     from concurrent.futures import ThreadPoolExecutor
 

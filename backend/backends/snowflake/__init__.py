@@ -56,6 +56,12 @@ class SnowflakeBackend:
         }
         if creds.role:
             kwargs["role"] = creds.role
+        if creds.host:
+            kwargs["host"] = creds.host
+        if creds.port:
+            kwargs["port"] = creds.port
+        if creds.protocol:
+            kwargs["protocol"] = creds.protocol
         return snowflake.connector.connect(**kwargs)
 
     def pool_key(self, connection_id: str, credentials: BaseModel) -> tuple:

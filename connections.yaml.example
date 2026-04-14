@@ -54,6 +54,10 @@ backends:
       database: ""
       schema: ""
       warehouse: ""
+      # Fakesnow (local simulator) overrides — omit for real Snowflake:
+      # host: localhost
+      # port: 9001
+      # protocol: http
     expected_columns:
       - city
       - country
