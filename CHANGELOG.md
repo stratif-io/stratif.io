@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.33.0](https://github.com/stratif-io/stratif.io/compare/v0.32.1...v0.33.0) (2026-04-14)
+
+
+### Features
+
+* add server-side TTL cache for mission control analytics queries ([93fc5e1](https://github.com/stratif-io/stratif.io/commit/93fc5e1bd88808c8d59369496cec106641c3f3e1))
+* **connections:** add query timeout and max concurrent inputs ([87da698](https://github.com/stratif-io/stratif.io/commit/87da698afebf6ec20049f85c9c730d47e41b961a))
+* **connections:** form state for query execution settings ([13636c7](https://github.com/stratif-io/stratif.io/commit/13636c7a8691042e51456d6438330e124ddf6253))
+* **connections:** persist query_timeout_seconds and max_concurrent_queries ([5a9b3b0](https://github.com/stratif-io/stratif.io/commit/5a9b3b0c6cc832a69a8943a6954b708026bb12aa))
+* **dashboard:** apply max_concurrent_queries to semaphore ([d72a7c4](https://github.com/stratif-io/stratif.io/commit/d72a7c4c427cd570f7b73dfc81c7a9a5daca95b2))
+* **dashboard:** clickable query history popover ([1573ede](https://github.com/stratif-io/stratif.io/commit/1573edef12d30ced9fff291d5156ddf83834cfa8))
+* **dashboard:** show timeout error on mission-control cards ([0bf3067](https://github.com/stratif-io/stratif.io/commit/0bf3067ed104bea07b12caa85da55289a74ac5a2))
+* **dashboard:** tag mission-control queries with groupKey, meta and per-connection timeout ([0d2f791](https://github.com/stratif-io/stratif.io/commit/0d2f791247f514cd69477e870e19402754128d67))
+* **db:** backfill new schema_config columns on startup ([002a34a](https://github.com/stratif-io/stratif.io/commit/002a34a0a666aaa6b6abf14e99d2af13e817865f))
+* no retry on timeout + redesign query history popover ([2b84497](https://github.com/stratif-io/stratif.io/commit/2b844978e3c5221bb67b3ee3df0fafb93977fb8b))
+* no retry on timeout + redesign QueryHistoryPanel ([cea7e26](https://github.com/stratif-io/stratif.io/commit/cea7e265f74c8667954b20e6013146cf1e52fd3f))
+* query execution control (ordering, history popover, per-connection timeout + concurrency) ([4bc62e1](https://github.com/stratif-io/stratif.io/commit/4bc62e10bc11aa3b37e143c652d067d61a3200ff))
+* **schemas:** accept query execution fields on SchemaConfigSchema ([1d10aea](https://github.com/stratif-io/stratif.io/commit/1d10aea4da0147e43a3d53f4ebbd51d85cd63a5c))
+* **seeders:** add bootstrap_all_connections script ([f58e8bb](https://github.com/stratif-io/stratif.io/commit/f58e8bb3c43f36d0e2826c800dbf56397923e3ed))
+* **seeders:** bootstrap all enabled connections from YAML ([5728a80](https://github.com/stratif-io/stratif.io/commit/5728a80364d893f97aefb955c68b024bf9daf9f5))
+* **seeders:** restrict auto global filters to country + city ([3d684f7](https://github.com/stratif-io/stratif.io/commit/3d684f7cafbe013134a1424caa49d9d7a61bbf1c))
+* **seeders:** snowflake seeder + bootstrap-all invokes seeders ([8903b1a](https://github.com/stratif-io/stratif.io/commit/8903b1a4471e4c16005f0d85039a730ff5f91072))
+* **seeders:** snowflake seeder + bootstrap-all invokes seeders ([7bc2f16](https://github.com/stratif-io/stratif.io/commit/7bc2f16b6c5bc14798047d70f5fb395ab4d3864c))
+* **semaphore:** emit start/finish events into store ([56b8492](https://github.com/stratif-io/stratif.io/commit/56b8492cb2c057b2b1e0b284dd0cac420d1128f3))
+* **semaphore:** groupKey-aware queue ordering ([4eed3df](https://github.com/stratif-io/stratif.io/commit/4eed3dfdb91dac16fb04688c7e1f10ef750cc5e6))
+* **semaphore:** per-task timeout via AbortController ([ffc63a1](https://github.com/stratif-io/stratif.io/commit/ffc63a141ab4a32c299ad4019d6ee2db81d6cb3b))
+* server-side TTL cache for analytics queries (Databricks perf) ([c2efc69](https://github.com/stratif-io/stratif.io/commit/c2efc6983078a9f4f00b592d2d6872ddbaad7be5))
+* **snowflake:** wire fakesnow for e2e integration tests ([48d1958](https://github.com/stratif-io/stratif.io/commit/48d1958fbc30752ab74c49ff89ee2150ef9a8160))
+* **snowflake:** wire fakesnow for e2e integration tests ([3ce8748](https://github.com/stratif-io/stratif.io/commit/3ce8748d258c48baf30725d3119f7e7dbfb4569c))
+* **store:** queryHistory slice with rolling finish prune ([d5a8b9a](https://github.com/stratif-io/stratif.io/commit/d5a8b9a2a6ce4b902314197389b85bb0dd222f58))
+
+
+### Bug Fixes
+
+* make full test suite green ([2a82665](https://github.com/stratif-io/stratif.io/commit/2a826653ebd1cb2e3c60c8ee3462a5ca99fcf680))
+* make full test suite green ([8a44c83](https://github.com/stratif-io/stratif.io/commit/8a44c83a749e0989565aa7617b92a94925b4329e))
+* **mission-control:** apply filters to all user-classification KPIs ([45a7cec](https://github.com/stratif-io/stratif.io/commit/45a7cec20b3dff8b17957c17a2e5e75429182322))
+* **mission-control:** apply filters to new/returning/resurrected/churned ([ad9bca9](https://github.com/stratif-io/stratif.io/commit/ad9bca97e2cb28cd174cedecc1e23a8a2457e712))
+* **seeders:** snowflake row-at-a-time insert; databricks accepts YAML host/token ([371cfac](https://github.com/stratif-io/stratif.io/commit/371cfac4deeb83b8fd96425dba134c83f0a4e35d))
+* **seeders:** snowflake row-at-a-time insert; databricks accepts YAML… ([456f8e0](https://github.com/stratif-io/stratif.io/commit/456f8e07f62c15d2fc6dcf8a47e51303cdb19243))
+* **test:** revert vmThreads pool (caused SIGSEGV in CI) ([516e628](https://github.com/stratif-io/stratif.io/commit/516e628cc1b7bc3a561060fa252f245b5cd1c99d))
+* **test:** skip fakesnow.patch() when already active from session fixture ([8b8cd2c](https://github.com/stratif-io/stratif.io/commit/8b8cd2c222af7f1124a17ced921039e856cb7738))
+* **test:** skip fakesnow.patch() when already active from session fixture ([c99f942](https://github.com/stratif-io/stratif.io/commit/c99f94263c4be84639ad006062e17d49e9572034))
+
+
+### Performance Improvements
+
+* cache column types in connection pool to eliminate per-request … ([0a86bf7](https://github.com/stratif-io/stratif.io/commit/0a86bf7205b3c9d17012396b5b991b2a3f65d13f))
+* cache column types in connection pool to eliminate per-request LIMIT 0 query ([776c336](https://github.com/stratif-io/stratif.io/commit/776c336c59d781728b2d24213dc0e7a478a89d7d))
+* rewrite DAU/MAU to use a single query instead of 2+ per call ([fff210f](https://github.com/stratif-io/stratif.io/commit/fff210f352a19996eedbe72abf55f8788ea8ba01))
+* rewrite DAU/MAU to use a single query instead of 2+ per call ([dcc1a36](https://github.com/stratif-io/stratif.io/commit/dcc1a368479868056e7f53a03908cfb22027af28))
+* **seeders:** bulk-load snowflake via write_pandas + PARSE_JSON staging ([af00d8e](https://github.com/stratif-io/stratif.io/commit/af00d8eb7e02efce1687882855f6cca64ee975a9))
+* **seeders:** fakesnow fast path + multi-row INSERT for snowflake ([817ac4e](https://github.com/stratif-io/stratif.io/commit/817ac4ed1d78fd6126d9fe01d9b50f509959cca8))
+* **seeders:** fakesnow fast path + multi-row INSERT for snowflake ([c10399e](https://github.com/stratif-io/stratif.io/commit/c10399e226ecb1f8eb855c8091336ec3120b353e))
+* **test:** use vmThreads pool for ~2x faster test runs ([707c1ee](https://github.com/stratif-io/stratif.io/commit/707c1ee980aba6a531fb6930e620ab40a2ae0aa4))
+
 ## [0.32.1](https://github.com/stratif-io/stratif.io/compare/v0.32.0...v0.32.1) (2026-04-14)
 
 
