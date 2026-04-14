@@ -127,8 +127,8 @@ export function ConnectionDetailPage() {
       : undefined
 
   return (
-    <div className={SPACING.page}>
-      <div className="mb-4">
+    <div className="flex flex-col h-full p-4 sm:p-6">
+      <div className="mb-4 shrink-0">
         <Button
           type="button"
           variant="ghost"
