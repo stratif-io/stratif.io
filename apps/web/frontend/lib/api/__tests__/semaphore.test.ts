@@ -127,6 +127,51 @@ describe('QuerySemaphore groupKey ordering', () => {
     expect(order).toEqual(['A', 'B', 'C'])
   })
 
+  it('with max>1, prefers same-group queue entry over FIFO when a slot frees', async () => {
+    const order: string[] = []
+    const gates: Record<string, () => void> = {}
+    const make = (id: string) => () =>
+      new Promise<void>((resolve) => {
+        order.push(id)
+        gates[id] = resolve
+      })
+
+    const sem = new QuerySemaphore(2, () => {})
+    // Start A1 and B1 simultaneously (both run, fill both slots).
+    const pA1 = sem.run(make('A1'), { groupKey: 'A' })
+    const pB1 = sem.run(make('B1'), { groupKey: 'B' })
+    // Queue in this order: C1 (new group), A2 (same as running A), B2 (same as running B)
+    const pC1 = sem.run(make('C1'), { groupKey: 'C' })
+    const pA2 = sem.run(make('A2'), { groupKey: 'A' })
+    const pB2 = sem.run(make('B2'), { groupKey: 'B' })
+
+    // Let A1 and B1 start executing
+    await Promise.resolve()
+    expect(order).toEqual(['A1', 'B1'])
+
+    // Finish A1; dispatch should pick A2 (group match) over C1 (FIFO head)
+    gates['A1']()
+    await pA1
+    await Promise.resolve()
+    expect(order).toEqual(['A1', 'B1', 'A2'])
+
+    // Finish B1; dispatch should pick B2 over C1
+    gates['B1']()
+    await pB1
+    await Promise.resolve()
+    expect(order).toEqual(['A1', 'B1', 'A2', 'B2'])
+
+    // Drain the rest
+    gates['A2']()
+    gates['B2']()
+    await Promise.all([pA2, pB2])
+    await Promise.resolve()
+    gates['C1']()
+    await Promise.all([pC1])
+
+    expect(order).toEqual(['A1', 'B1', 'A2', 'B2', 'C1'])
+  })
+
   it('works with untagged tasks', async () => {
     const order: number[] = []
     const sem = new QuerySemaphore(1, () => {})
