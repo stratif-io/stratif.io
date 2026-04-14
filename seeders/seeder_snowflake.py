@@ -36,6 +36,8 @@ class SnowflakeSeeder(BaseSeeder):
     # Dialect implementation
     # ------------------------------------------------------------------
 
+    _STAGING_TABLE = "EVENTS_STAGING"
+
     def _create_events_table(self) -> None:
         assert self._conn is not None, "_conn not initialized — call seed() first"
         cur = self._conn.cursor()
@@ -52,36 +54,58 @@ class SnowflakeSeeder(BaseSeeder):
                     context     VARIANT
                 )
             """)
+            # Staging table has VARCHAR for JSON columns so write_pandas can bulk
+            # upload via Parquet. PARSE_JSON happens in the final INSERT..SELECT.
+            cur.execute(f"DROP TABLE IF EXISTS {self._STAGING_TABLE}")
+            cur.execute(f"""
+                CREATE TEMPORARY TABLE {self._STAGING_TABLE} (
+                    USER_ID     STRING       NOT NULL,
+                    EVENT_NAME  STRING       NOT NULL,
+                    TIMESTAMP   TIMESTAMP_NTZ NOT NULL,
+                    PROPERTIES  STRING,
+                    SERVER      STRING       NOT NULL,
+                    TRAITS      STRING,
+                    CONTEXT     STRING
+                )
+            """)
         finally:
             cur.close()
 
     def _insert_events(self, events: list[tuple]) -> None:
+        """Bulk-upload a batch into the staging table via Parquet."""
         assert self._conn is not None, "_conn not initialized — call seed() first"
         if not events:
             return
-        rows = [
-            (
-                e[0],
-                e[1],
-                e[2],
-                json.dumps(e[3]),
-                e[4],
-                json.dumps(e[5]),
-                json.dumps(e[6]),
-            )
-            for e in events
-        ]
-        # snowflake-connector-python can't batch-rewrite INSERT...SELECT with
-        # PARSE_JSON (error 252001). Execute row-by-row — slower but correct.
+        import pandas as pd
+        from snowflake.connector.pandas_tools import write_pandas
+
+        df = pd.DataFrame(
+            {
+                "USER_ID": [e[0] for e in events],
+                "EVENT_NAME": [e[1] for e in events],
+                "TIMESTAMP": [e[2] for e in events],
+                "PROPERTIES": [json.dumps(e[3]) for e in events],
+                "SERVER": [e[4] for e in events],
+                "TRAITS": [json.dumps(e[5]) for e in events],
+                "CONTEXT": [json.dumps(e[6]) for e in events],
+            }
+        )
+        write_pandas(self._conn, df, self._STAGING_TABLE, quote_identifiers=False)
+
+    def _finalize_events(self) -> None:
+        """Promote staged rows into the VARIANT-typed events table."""
+        assert self._conn is not None, "_conn not initialized — call seed() first"
         cur = self._conn.cursor()
         try:
-            stmt = (
-                "INSERT INTO events "
-                "(user_id, event_name, timestamp, properties, server, traits, context) "
-                "SELECT %s, %s, %s, PARSE_JSON(%s), %s, PARSE_JSON(%s), PARSE_JSON(%s)"
-            )
-            for row in rows:
-                cur.execute(stmt, row)
+            cur.execute(f"""
+                INSERT INTO events
+                    (user_id, event_name, timestamp, properties, server, traits, context)
+                SELECT
+                    USER_ID, EVENT_NAME, TIMESTAMP,
+                    PARSE_JSON(PROPERTIES), SERVER,
+                    PARSE_JSON(TRAITS), PARSE_JSON(CONTEXT)
+                FROM {self._STAGING_TABLE}
+            """)
         finally:
             cur.close()
 
@@ -122,6 +146,9 @@ class SnowflakeSeeder(BaseSeeder):
                 total_events += len(batch)
                 if total_events % PROGRESS_INTERVAL < len(batch):
                     log.info("seeding_progress", total_events=total_events)
+
+            log.info("seeding_finalize", total_events=total_events)
+            self._finalize_events()
         finally:
             self._conn.close()
 
