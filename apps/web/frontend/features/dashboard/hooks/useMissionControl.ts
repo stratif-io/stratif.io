@@ -41,6 +41,8 @@ export interface UseMissionControlReturn {
   topEvents: Array<{ name: string; count: number }>
   eventsLoading: boolean
   topEventsSql: string | string[] | undefined
+  timeoutSeconds: number
+  refetch: () => void
 }
 
 export function useMissionControl({
@@ -148,6 +150,12 @@ export function useMissionControl({
       }
     : undefined
 
+  const refetch = () => {
+    metricResults.forEach((r) => {
+      if (r.isError) r.refetch()
+    })
+  }
+
   return {
     data,
     isLoading,
@@ -158,5 +166,7 @@ export function useMissionControl({
     topEvents: topEventsData?.data ?? [],
     eventsLoading,
     topEventsSql: topEventsData?.sql,
+    timeoutSeconds: Math.round(timeoutMs / 1000),
+    refetch,
   }
 }

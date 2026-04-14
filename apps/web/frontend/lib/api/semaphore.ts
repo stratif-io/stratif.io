@@ -1,6 +1,19 @@
 export const MAX_CONCURRENT_QUERIES = 5
 export const IDLE_DISMISS_DELAY_MS = 3000
 
+/**
+ * Detect whether an error thrown during a semaphore-tagged fetch is a timeout
+ * abort (see `fetchWithSemaphore`). This covers both the `DOMException` we
+ * raise via `controller.abort(new DOMException('Query timeout', 'TimeoutError'))`
+ * and the generic `AbortError` some environments surface when a fetch is
+ * cancelled via signal without a reason.
+ */
+export function isTimeoutError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false
+  const name = (err as { name?: unknown }).name
+  return name === 'TimeoutError' || name === 'AbortError'
+}
+
 type CountChangeCallback = (running: number, queued: number) => void
 
 export type QueryMeta = { cardName: string; querySnippet: string }
