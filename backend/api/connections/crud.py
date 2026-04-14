@@ -16,6 +16,7 @@ from backend.product_db.models import (
     ConnectionFilterField,
     ConnectionSchemaConfig,
 )
+from backend.services import query_cache
 from backend.services.crypto import decrypt_credentials, encrypt_credentials
 
 from .models import (
@@ -245,6 +246,7 @@ async def upsert_schema_config(
         )
 
     await session.commit()
+    query_cache.invalidate(conn_id)
 
     return {
         **body.model_dump(),
