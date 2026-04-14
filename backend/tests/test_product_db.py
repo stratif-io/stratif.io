@@ -194,6 +194,115 @@ async def test_close_product_db_clears_globals_even_if_dispose_raises():
 
 
 @pytest.mark.asyncio
+async def test_init_product_db_backfills_new_schema_config_columns(
+    tmp_path, monkeypatch
+):
+    """init_product_db must add new NOT NULL columns to an existing SQLite DB
+    whose ``connection_schema_configs`` table predates them, and backfill
+    existing rows with the model defaults (query_timeout_seconds=10,
+    max_concurrent_queries=5)."""
+    import sqlite3
+    import uuid as _uuid
+
+    from backend.config import settings
+    from backend.product_db import database as db_module
+
+    db_path = tmp_path / "product.db"
+
+    # 1. Build an OLD-schema DB on disk: the connection_schema_configs table
+    #    without the two new columns, plus a row referencing a real connection.
+    old_conn_id = "c-old"
+    config_id = str(_uuid.uuid4())
+    with sqlite3.connect(db_path) as raw:
+        raw.executescript(
+            """
+            CREATE TABLE connections (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                db_type TEXT NOT NULL,
+                credentials_encrypted TEXT NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL
+            );
+            CREATE TABLE connection_schema_configs (
+                id TEXT PRIMARY KEY,
+                connection_id TEXT NOT NULL UNIQUE
+                    REFERENCES connections(id) ON DELETE CASCADE,
+                user_id_field TEXT NOT NULL,
+                timestamp_field TEXT NOT NULL,
+                event_name_field TEXT NOT NULL,
+                events_table TEXT NOT NULL,
+                session_timeout_minutes INTEGER NOT NULL,
+                resurrection_window_days INTEGER NOT NULL,
+                power_user_threshold_days INTEGER NOT NULL,
+                email_field TEXT,
+                first_name_field TEXT,
+                last_name_field TEXT,
+                date_of_birth_field TEXT,
+                phone_field TEXT,
+                updated_at DATETIME NOT NULL
+            );
+            """
+        )
+        raw.execute(
+            "INSERT INTO connections (id,name,db_type,credentials_encrypted,"
+            "created_at,updated_at) VALUES (?,?,?,?,?,?)",
+            (old_conn_id, "Old", "duckdb", "enc", "2026-01-01", "2026-01-01"),
+        )
+        raw.execute(
+            "INSERT INTO connection_schema_configs (id,connection_id,user_id_field,"
+            "timestamp_field,event_name_field,events_table,session_timeout_minutes,"
+            "resurrection_window_days,power_user_threshold_days,updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (
+                config_id,
+                old_conn_id,
+                "user_id",
+                "timestamp",
+                "event_name",
+                "events",
+                30,
+                30,
+                4,
+                "2026-01-01",
+            ),
+        )
+
+    # 2. Point the app at this file and run init_product_db.
+    monkeypatch.setattr(settings, "product_db_url", f"sqlite+aiosqlite:///{db_path}")
+    db_module.reset_engine()
+    try:
+        await db_module.init_product_db()
+    finally:
+        await db_module.close_product_db()
+
+    # 3. Verify columns exist and existing row was backfilled with defaults.
+    with sqlite3.connect(db_path) as raw:
+        cols = {
+            row[1]
+            for row in raw.execute(
+                'PRAGMA table_info("connection_schema_configs")'
+            ).fetchall()
+        }
+        assert "query_timeout_seconds" in cols
+        assert "max_concurrent_queries" in cols
+
+        row = raw.execute(
+            "SELECT query_timeout_seconds, max_concurrent_queries "
+            "FROM connection_schema_configs WHERE id = ?",
+            (config_id,),
+        ).fetchone()
+        assert row == (10, 5)
+
+    # 4. Idempotent: running init again must not raise.
+    db_module.reset_engine()
+    try:
+        await db_module.init_product_db()
+    finally:
+        await db_module.close_product_db()
+
+
+@pytest.mark.asyncio
 async def test_lifespan_calls_close_product_db():
     """Lifespan teardown must call close_product_db."""
     from backend.main import app, lifespan
