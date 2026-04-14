@@ -145,7 +145,8 @@ export function useSchemaForm(connId: string) {
   function handleDetect() {
     detect.mutate(form.eventsTable, {
       onSuccess: (data) => {
-        if (data.events_table) updateForm({ eventsTable: data.events_table })
+        // Do NOT update eventsTable — the user chose it explicitly in the Table step.
+        // Detection only populates column mappings for the already-chosen table.
         if (data.columns?.length) {
           const topLevelCols = data.columns as SchemaDetectColumn[]
           const nestedCols = (data.proposed_custom_properties ?? []).map(
