@@ -72,25 +72,58 @@ class SnowflakeSeeder(BaseSeeder):
             cur.close()
 
     def _insert_events(self, events: list[tuple]) -> None:
-        """Bulk-upload a batch into the staging table via Parquet."""
+        """Bulk insert a batch into the VARCHAR staging table.
+
+        Using executemany with a pure VALUES clause (no function calls) lets
+        snowflake-connector-python rewrite the batch into a multi-row insert.
+        PARSE_JSON would break that rewrite (error 252001), hence the staging
+        detour.
+
+        fakesnow fast path: fakesnow's SQL translation layer makes INSERTs
+        ~20× slower than the DuckDB engine underneath. When running under
+        fakesnow we grab the raw DuckDB connection and bulk-insert directly.
+        """
         assert self._conn is not None, "_conn not initialized — call seed() first"
         if not events:
             return
-        import pandas as pd
-        from snowflake.connector.pandas_tools import write_pandas
+        rows = [
+            (
+                e[0],
+                e[1],
+                e[2],
+                json.dumps(e[3]),
+                e[4],
+                json.dumps(e[5]),
+                json.dumps(e[6]),
+            )
+            for e in events
+        ]
 
-        df = pd.DataFrame(
-            {
-                "USER_ID": [e[0] for e in events],
-                "EVENT_NAME": [e[1] for e in events],
-                "TIMESTAMP": [e[2] for e in events],
-                "PROPERTIES": [json.dumps(e[3]) for e in events],
-                "SERVER": [e[4] for e in events],
-                "TRAITS": [json.dumps(e[5]) for e in events],
-                "CONTEXT": [json.dumps(e[6]) for e in events],
-            }
-        )
-        write_pandas(self._conn, df, self._STAGING_TABLE, quote_identifiers=False)
+        duck = getattr(self._conn, "_duck_conn", None)
+        if duck is not None:
+            duck.executemany(
+                f"INSERT INTO {self._STAGING_TABLE} "
+                "(USER_ID, EVENT_NAME, TIMESTAMP, PROPERTIES, SERVER, TRAITS, CONTEXT) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                rows,
+            )
+            return
+
+        # Real Snowflake: single multi-row INSERT per batch.
+        placeholders = ",".join(["(%s,%s,%s,%s,%s,%s,%s)"] * len(rows))
+        flat: list = []
+        for row in rows:
+            flat.extend(row)
+        cur = self._conn.cursor()
+        try:
+            cur.execute(
+                f"INSERT INTO {self._STAGING_TABLE} "
+                "(USER_ID, EVENT_NAME, TIMESTAMP, PROPERTIES, SERVER, TRAITS, CONTEXT) "
+                f"VALUES {placeholders}",
+                flat,
+            )
+        finally:
+            cur.close()
 
     def _finalize_events(self) -> None:
         """Promote staged rows into the VARIANT-typed events table."""
