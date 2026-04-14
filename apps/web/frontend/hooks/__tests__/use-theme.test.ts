@@ -10,9 +10,10 @@ describe('useTheme', () => {
 
     useAppStore.setState({ theme: 'system' })
 
-    vi.stubGlobal(
-      'matchMedia',
-      vi.fn().mockImplementation((query: string) => ({
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      configurable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
         matches: false,
         media: query,
         onchange: null,
@@ -21,8 +22,8 @@ describe('useTheme', () => {
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
         dispatchEvent: vi.fn(),
-      }))
-    )
+      })),
+    })
   })
 
   describe('theme switching', () => {
