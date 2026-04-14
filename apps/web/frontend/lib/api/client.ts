@@ -1,13 +1,15 @@
 import { QueryClient } from '@tanstack/react-query'
 import type { z } from 'zod'
 import { ZodError } from 'zod'
+import { isTimeoutError } from '@/lib/api/semaphore'
 import { QUERY_STALE_TIME } from '@/lib/constants'
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: QUERY_STALE_TIME.default,
-      retry: 1,
+      // Never retry timeout errors — the user deliberately set a limit.
+      retry: (failureCount, error) => !isTimeoutError(error) && failureCount < 1,
       refetchOnWindowFocus: false,
     },
   },
