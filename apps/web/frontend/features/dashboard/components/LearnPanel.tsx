@@ -29,6 +29,12 @@ function buildLearnContent(
   const down = pctChange !== null && pctChange < 0
   const pctStr = pctChange !== null ? `${up ? '+' : ''}${pctChange.toFixed(1)}%` : '—'
 
+  const eventsPerUser = current.unique_users > 0 ? current.total_events / current.unique_users : 0
+  const eventsPerUserStr = eventsPerUser > 0 ? eventsPerUser.toFixed(1) : '—'
+  const shareOfActives = (n: number): string =>
+    current.unique_users > 0 ? `${((n / current.unique_users) * 100).toFixed(0)}%` : '—'
+  const netChange = current.new_users + current.resurrected_users - current.churned_users
+
   switch (key) {
     case 'total_events':
       return {
@@ -54,10 +60,10 @@ function buildLearnContent(
           },
         ],
         insight: up
-          ? `Activity is up ${pctStr}. More events per user typically signals deeper engagement — users are doing more with your product.`
+          ? `Activity is up ${pctStr} — your ${fmt('total_events', current.unique_users)} active users fired ${eventsPerUserStr} events each on average. Rising events/user usually signals deeper engagement.`
           : down
-            ? `Activity is down ${pctStr}. Worth checking whether this reflects fewer users, shorter sessions, or a specific event that dropped off.`
-            : 'Event volume is holding steady vs. the prior period.',
+            ? `Activity is down ${pctStr} (${eventsPerUserStr} events per active user). Worth checking whether fewer users, shorter sessions, or one specific event dropped off.`
+            : `Event volume is steady at ${eventsPerUserStr} per active user.`,
       }
 
     case 'unique_users':
@@ -84,10 +90,10 @@ function buildLearnContent(
           },
         ],
         insight: up
-          ? `Your active user base grew ${pctStr}. Check whether growth is coming from new users or returning ones to understand the source.`
+          ? `Your active user base grew ${pctStr} to ${current.unique_users.toLocaleString()} — ${current.new_users} new, ${current.returning_users} returning, ${current.resurrected_users} resurrected. The mix tells you whether growth is acquisition or retention.`
           : down
-            ? `Active users are down ${pctStr}. Compare new vs. returning users to diagnose whether this is an acquisition or retention problem.`
-            : 'Audience size is stable.',
+            ? `Active users are down ${pctStr} to ${current.unique_users.toLocaleString()}. With ${current.new_users} new and ${current.returning_users} returning this period, the ratio points to ${current.new_users > current.returning_users ? 'a retention' : 'an acquisition'} problem.`
+            : `Audience size is stable at ${current.unique_users.toLocaleString()}.`,
       }
 
     case 'wau':
@@ -113,11 +119,17 @@ function buildLearnContent(
             sub: 'weekly reach of monthly base',
           },
         ],
-        insight: up
-          ? `Weekly active users grew ${pctStr}. Rising WAU ahead of MAU often means engagement is accelerating.`
-          : down
-            ? `Weekly active users fell ${pctStr}. If MAU is holding steady, your users may be visiting less frequently.`
-            : 'Weekly activity is stable.',
+        insight: (() => {
+          const wauShare =
+            current.unique_users > 0
+              ? `${((current.wau / current.unique_users) * 100).toFixed(0)}%`
+              : '—'
+          if (up)
+            return `Weekly active users grew ${pctStr} to ${current.wau.toLocaleString()} — ${wauShare} of your total active base showed up in the last 7 days. Rising WAU ahead of MAU often means engagement is accelerating.`
+          if (down)
+            return `Weekly active users fell ${pctStr} to ${current.wau.toLocaleString()} (${wauShare} of your monthly base). If MAU is steady, your users are visiting less frequently.`
+          return `Weekly activity is stable at ${current.wau.toLocaleString()} (${wauShare} of the monthly base).`
+        })(),
       }
 
     case 'total_sessions':
@@ -143,13 +155,19 @@ function buildLearnContent(
             value: fmt('avg_session_duration_sec', current.avg_session_duration_sec),
           },
         ],
-        insight: up
-          ? `Sessions are up ${pctStr}. Users are visiting more often — a strong signal of habit formation.`
-          : down
-            ? `Sessions dropped ${pctStr}. If unique users are stable, people are coming back less often. If both dropped, it may be a broader engagement issue.`
-            : 'Session count is stable.',
+        insight: (() => {
+          const perUser =
+            current.unique_users > 0
+              ? (current.total_sessions / current.unique_users).toFixed(1)
+              : '—'
+          if (up)
+            return `Sessions are up ${pctStr} — that's ${perUser} sessions per active user, a strong habit-formation signal.`
+          if (down)
+            return `Sessions dropped ${pctStr} to ${perUser} per active user. If unique users are stable, people are coming back less often; if both dropped, it's a broader engagement issue.`
+          return `Session count is stable at ${perUser} per active user.`
+        })(),
         benchmark:
-          'The inactivity timeout that ends a session is configurable in connection settings.',
+          'Sessions are grouped events separated by an inactivity gap (the timeout is configurable per connection). A user-level filter scopes which users are counted, but each session includes all of that user’s events.',
       }
 
     case 'avg_session_duration_sec':
@@ -174,11 +192,15 @@ function buildLearnContent(
             value: fmt('avg_events_per_session', current.avg_events_per_session),
           },
         ],
-        insight: up
-          ? `Sessions are ${pctStr} longer. Users are spending more time — dig into which flows drive the longest sessions.`
-          : down
-            ? `Sessions are ${pctStr} shorter. Check if users are completing their goal faster (good) or abandoning earlier (bad). Compare with events/session for context.`
-            : 'Session length is stable.',
+        insight: (() => {
+          const dur = fmt('avg_session_duration_sec', current.avg_session_duration_sec)
+          const depth = fmt('avg_events_per_session', current.avg_events_per_session)
+          if (up)
+            return `Sessions are ${pctStr} longer — averaging ${dur} across ${depth} events. Dig into which flows drive the longest sessions.`
+          if (down)
+            return `Sessions are ${pctStr} shorter (${dur}, ${depth} events). Check whether users are completing their goal faster (good) or abandoning earlier (bad).`
+          return `Session length is steady at ${dur} (${depth} events per session).`
+        })(),
       }
 
     case 'avg_events_per_session':
@@ -204,10 +226,10 @@ function buildLearnContent(
           },
         ],
         insight: up
-          ? `Users are doing ${pctStr} more per session. Rising depth is a strong engagement signal.`
+          ? `Users are doing ${pctStr} more per session — ${fmt('avg_events_per_session', current.avg_events_per_session)} events per visit on average. Rising depth is a strong engagement signal.`
           : down
-            ? `Users are doing ${pctStr} less per session. Cross-reference with session duration — if both dropped, engagement is thinning.`
-            : 'Interaction depth is stable.',
+            ? `Users are doing ${pctStr} less per session (${fmt('avg_events_per_session', current.avg_events_per_session)} events). Cross-reference with session duration — if both dropped, engagement is thinning.`
+            : `Interaction depth is stable at ${fmt('avg_events_per_session', current.avg_events_per_session)} events per session.`,
       }
 
     case 'avg_active_days':
@@ -234,10 +256,10 @@ function buildLearnContent(
           },
         ],
         insight: up
-          ? `Users are returning ${pctStr} more days on average — habit formation is strengthening.`
+          ? `Users are returning ${pctStr} more days on average — the typical user showed up on ${fmt('avg_active_days', current.avg_active_days)} distinct days this period. Habit formation is strengthening.`
           : down
-            ? `Average active days fell ${pctStr}. Users are dipping in less regularly. Check if this correlates with a drop in new users (who naturally have lower active days).`
-            : 'Return frequency is stable.',
+            ? `Average active days fell ${pctStr} to ${fmt('avg_active_days', current.avg_active_days)}. Users are dipping in less regularly — check if this correlates with a drop in new users (who naturally have lower active days).`
+            : `Return frequency is stable at ${fmt('avg_active_days', current.avg_active_days)} days per user.`,
         benchmark: 'Only counts users who were active at least once during the period.',
       }
 
@@ -266,11 +288,12 @@ function buildLearnContent(
           },
         ],
         insight: up
-          ? `Power users grew ${pctStr}. More users hitting the activity threshold means your product is delivering enough value to create habits.`
+          ? `Power users grew ${pctStr} — ${current.power_users.toLocaleString()} users (${shareOfActives(current.power_users)} of actives) hit the activity threshold this period. That's your strongest cohort getting bigger.`
           : down
-            ? `Power users fell ${pctStr}. If overall unique users are stable, some highly engaged users dropped a tier. Look at whether avg session duration or events/session also declined.`
-            : 'Power user count is stable.',
-        benchmark: 'The activity threshold is configurable in your connection settings.',
+            ? `Power users fell ${pctStr} to ${current.power_users.toLocaleString()} (${shareOfActives(current.power_users)} of actives). If overall unique users are stable, some highly engaged users dropped a tier.`
+            : `Power user count is stable at ${current.power_users.toLocaleString()} (${shareOfActives(current.power_users)} of actives).`,
+        benchmark:
+          'A user is "power" when their distinct active-days in the period meet the threshold configured on the connection.',
       }
 
     case 'new_users':
@@ -299,10 +322,10 @@ function buildLearnContent(
           },
         ],
         insight: up
-          ? `New user acquisition is up ${pctStr}. Pair this with retention rate to check if new users are staying.`
+          ? `New user acquisition is up ${pctStr} — ${current.new_users.toLocaleString()} first-timers this period (${shareOfActives(current.new_users)} of actives). Pair with retention rate to check if they stick.`
           : down
-            ? `New users are down ${pctStr}. Check your acquisition channels — this could indicate reduced marketing spend, seasonal slowdown, or a referral drop.`
-            : 'New user volume is stable.',
+            ? `New users dropped ${pctStr} to ${current.new_users.toLocaleString()} (${shareOfActives(current.new_users)} of actives). Check your acquisition channels — marketing spend, seasonality, or a referral drop.`
+            : `New user volume is stable at ${current.new_users.toLocaleString()} (${shareOfActives(current.new_users)} of actives).`,
         benchmark:
           'Newness is checked against all historical data — a user is new only once, at their very first event.',
       }
@@ -333,10 +356,12 @@ function buildLearnContent(
           },
         ],
         insight: up
-          ? `Returning users grew ${pctStr}. Your existing user base is staying active — a direct indicator of retention health.`
+          ? `Returning users grew ${pctStr} — ${current.returning_users.toLocaleString()} regulars this period (${shareOfActives(current.returning_users)} of actives). Your existing base is staying active, a direct retention-health signal.`
           : down
-            ? `Returning users fell ${pctStr}. This is a retention signal — users are not coming back as consistently. Pair with retention rate for a clearer picture.`
-            : 'Returning user volume is stable.',
+            ? `Returning users fell ${pctStr} to ${current.returning_users.toLocaleString()} (${shareOfActives(current.returning_users)} of actives). A retention signal — users are not coming back as consistently.`
+            : `Returning user volume is stable at ${current.returning_users.toLocaleString()} (${shareOfActives(current.returning_users)} of actives).`,
+        benchmark:
+          'A user is "returning" when their last activity before this period falls within the resurrection window (configurable per connection; 30 days by default).',
       }
 
     case 'resurrected_users':
@@ -364,10 +389,10 @@ function buildLearnContent(
           },
         ],
         insight: up
-          ? `Resurrections are up ${pctStr}. Something brought lapsed users back — check if a campaign, update, or external mention coincides with this period.`
+          ? `Resurrections are up ${pctStr} — ${current.resurrected_users.toLocaleString()} lapsed users came back (${shareOfActives(current.resurrected_users)} of actives). Check whether a campaign, update, or external mention coincides with this period.`
           : down
-            ? `Resurrections fell ${pctStr}. If you ran re-engagement campaigns, this is worth investigating. If not, this may reflect a smaller pool of dormant users.`
-            : 'Resurrection rate is stable.',
+            ? `Resurrections fell ${pctStr} to ${current.resurrected_users.toLocaleString()} (${shareOfActives(current.resurrected_users)} of actives). Worth investigating if you ran re-engagement work; otherwise it may reflect a smaller pool of dormant users.`
+            : `Resurrection volume is stable at ${current.resurrected_users.toLocaleString()} (${shareOfActives(current.resurrected_users)} of actives).`,
         benchmark:
           'A user is resurrected if the gap since their last activity exceeds the resurrection window (configurable in connection settings).',
       }
@@ -400,11 +425,14 @@ function buildLearnContent(
             sub: 'new + resurrected − churned',
           },
         ],
-        insight: down
-          ? `Churn dropped ${pctStr} — you're losing fewer users than before. This is one of the most impactful improvements you can make.`
-          : up
-            ? `Churn rose ${pctStr}. Look at what changed in the prior period — a feature removal, price change, or competitor move could be the cause.`
-            : 'Churn is stable vs. the prior period.',
+        insight: (() => {
+          const netStr = `${netChange >= 0 ? '+' : ''}${netChange}`
+          if (down)
+            return `Churn dropped ${pctStr} — ${current.churned_users.toLocaleString()} users didn't return, against ${current.new_users + current.resurrected_users} new + resurrected (net ${netStr}). One of the highest-impact improvements you can make.`
+          if (up)
+            return `Churn rose ${pctStr} to ${current.churned_users.toLocaleString()} — net change ${netStr} after new + resurrected. Look at what changed in the prior period: feature removal, price change, or competitor move.`
+          return `Churn is stable at ${current.churned_users.toLocaleString()} (net ${netStr} after new + resurrected).`
+        })(),
         benchmark: 'Compared against the equivalent preceding period of the same length.',
       }
 
@@ -443,11 +471,14 @@ function buildLearnContent(
             sub: pctStr + ' vs. prior period',
           },
         ],
-        insight: up
-          ? `Retention improved ${pctStr}. Even small gains here compound over time — a +5pp improvement in retention can double long-term user base size.`
-          : down
-            ? `Retention dropped ${pctStr}. Dig into the churned cohort: are they new users failing to activate, or established users disengaging?`
-            : 'Retention is holding steady.',
+        insight: (() => {
+          const outOfTen = Math.round(rate * 10)
+          if (up)
+            return `Retention improved ${pctStr} — roughly ${outOfTen} of every 10 prior-period users came back. Even a +5pp improvement here compounds into dramatic long-term user-base growth.`
+          if (down)
+            return `Retention dropped ${pctStr} — only ${outOfTen} of every 10 prior-period users returned. Dig into the churned cohort: new users failing to activate, or established users disengaging?`
+          return `Retention is holding steady — ${outOfTen} of every 10 prior-period users came back.`
+        })(),
         benchmark: '>25% monthly is decent · >40% is strong for most consumer products',
       }
     }
@@ -479,11 +510,14 @@ function buildLearnContent(
               (previous.dau_mau_ratio != null ? fmt('dau_mau_ratio', previous.dau_mau_ratio) : '—'),
           },
         ],
-        insight: up
-          ? `Stickiness improved ${pctStr}. Users are coming back more frequently — your product is becoming a daily habit.`
-          : down
-            ? `Stickiness dropped ${pctStr}. Users may still activate, but they're not returning as often. Look at avg active days and session trends for supporting evidence.`
-            : 'Stickiness is stable.',
+        insight: (() => {
+          const daysOf30 = Math.round(ratio * 30)
+          if (up)
+            return `Stickiness improved ${pctStr} — at ${fmt('dau_mau_ratio', ratio)}, the average monthly user is now active roughly ${daysOf30} of every 30 days. Your product is becoming a daily habit.`
+          if (down)
+            return `Stickiness dropped ${pctStr} to ${fmt('dau_mau_ratio', ratio)} — the avg monthly user comes back ~${daysOf30} of 30 days. Cross-reference with avg active days and session trends.`
+          return `Stickiness is stable at ${fmt('dau_mau_ratio', ratio)} — the avg monthly user is active ~${daysOf30} of every 30 days.`
+        })(),
         benchmark:
           '~20% is typical · ~50% is excellent (WhatsApp-level) · Both DAU and MAU use the same rolling 30-day window',
       }
