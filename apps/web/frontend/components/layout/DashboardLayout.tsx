@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 import { Sidebar } from './Sidebar'
@@ -5,6 +6,8 @@ import { Header } from './Header'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { useUrlSync } from '@/hooks'
+import { useSchemaConfig } from '@/features/connections/hooks/useConnectionsData'
+import { getSemaphore } from '@/lib/api/semaphore'
 
 const FULL_BLEED_ROUTES = ['/query-studio', '/people']
 
@@ -19,6 +22,15 @@ export function DashboardLayout() {
   useUrlSync()
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const activeConnectionId = useAppStore((state) => state.activeConnectionId)
+  const { data: schemaConfig } = useSchemaConfig(activeConnectionId ?? '')
+  const maxConcurrent = schemaConfig?.max_concurrent_queries ?? 5
+  useEffect(() => {
+    try {
+      getSemaphore().setMax(maxConcurrent)
+    } catch {
+      // semaphore not yet initialized — ignore
+    }
+  }, [maxConcurrent])
   const location = useLocation()
   const fullBleed = isFullBleed(location.pathname, activeConnectionId)
 
