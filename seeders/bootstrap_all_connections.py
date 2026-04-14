@@ -42,7 +42,8 @@ from backend.product_db.models import (
 from backend.services.crypto import encrypt_credentials
 from seeders.connections_config import load_connections_yaml
 
-MAX_AUTO_FILTERS = 5
+AUTO_FILTER_NAMES = ("country", "city")
+AUTO_FILTER_ICONS = {"country": "globe", "city": "map-pin"}
 
 DISPLAY_NAMES = {
     "duckdb": "Sample DuckDB",
@@ -89,14 +90,18 @@ def _detect(db_type: str, creds: dict) -> SchemaInfo:
 
 
 def _select_filter_fields(proposed: list[dict]) -> list[dict]:
+    by_name = {p["name"]: p for p in proposed if p.get("type") == "string"}
     picked: list[dict] = []
-    for p in proposed:
-        if p.get("type") != "string":
+    for name in AUTO_FILTER_NAMES:
+        if name not in by_name:
             continue
-        label = p["name"].replace("_", " ").title()
-        picked.append({"field": p["name"], "label": label, "icon": "filter"})
-        if len(picked) >= MAX_AUTO_FILTERS:
-            break
+        picked.append(
+            {
+                "field": name,
+                "label": name.replace("_", " ").title(),
+                "icon": AUTO_FILTER_ICONS.get(name, "filter"),
+            }
+        )
     return picked
 
 

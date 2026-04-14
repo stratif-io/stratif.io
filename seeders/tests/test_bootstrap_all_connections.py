@@ -202,9 +202,9 @@ def test_auto_selects_string_filter_fields(tmp_path):
             fields = (
                 (await session.execute(select(ConnectionFilterField))).scalars().all()
             )
-            # Only string-typed proposals, number 'age' excluded
+            # Only country + city are auto-selected as global filters
             names = {f.field for f in fields}
-            assert names == {"country", "city", "device_type"}
+            assert names == {"country", "city"}
         await engine.dispose()
 
     asyncio.run(_check())
@@ -246,7 +246,7 @@ def test_bootstrap_is_idempotent(tmp_path):
             fields = (
                 (await session.execute(select(ConnectionFilterField))).scalars().all()
             )
-            assert len(fields) == 3
+            assert len(fields) == 2
         await engine.dispose()
 
     asyncio.run(_check())
