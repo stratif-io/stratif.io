@@ -115,7 +115,7 @@ export function TableStep({ connId, currentTable, onConfirm }: TableStepProps) {
             </button>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">No table selected</p>
+          <div />
         )}
         <Button
           size="sm"

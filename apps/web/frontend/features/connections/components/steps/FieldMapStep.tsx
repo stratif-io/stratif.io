@@ -169,7 +169,7 @@ export function FieldMapStep({ connId }: Props) {
   }, [form.customProps])
 
   return (
-    <div className="flex flex-col gap-6 p-1">
+    <div className="flex flex-col gap-6 p-4 overflow-y-auto h-full">
       {/* ── Detect banner ───────────────────────────────────────────────── */}
       {pendingDetections.length > 0 && (
         <div
