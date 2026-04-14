@@ -3,7 +3,22 @@ export const IDLE_DISMISS_DELAY_MS = 3000
 
 type CountChangeCallback = (running: number, queued: number) => void
 
-export type TaskOpts = { groupKey?: string; timeoutMs?: number }
+export type QueryMeta = { cardName: string; querySnippet: string }
+export type TaskOpts = { groupKey?: string; timeoutMs?: number; meta?: QueryMeta }
+
+type TaskStartCallback = (id: string, meta: QueryMeta) => void
+type TaskFinishCallback = (id: string, status: 'done' | 'failed') => void
+
+type SemaphoreHooks = {
+  onTaskStart?: TaskStartCallback
+  onTaskFinish?: TaskFinishCallback
+}
+
+type InitOpts = {
+  onCountChange: CountChangeCallback
+  onTaskStart?: TaskStartCallback
+  onTaskFinish?: TaskFinishCallback
+}
 
 type QueueEntry = { resolve: () => void; groupKey?: string }
 
@@ -13,10 +28,14 @@ export class QuerySemaphore {
   private activeGroups = new Map<string, number>()
   private _max: number
   private readonly onCountChange: CountChangeCallback
+  private readonly onTaskStart?: TaskStartCallback
+  private readonly onTaskFinish?: TaskFinishCallback
 
-  constructor(max: number, onCountChange: CountChangeCallback) {
+  constructor(max: number, onCountChange: CountChangeCallback, hooks?: SemaphoreHooks) {
     this._max = max
     this.onCountChange = onCountChange
+    this.onTaskStart = hooks?.onTaskStart
+    this.onTaskFinish = hooks?.onTaskFinish
   }
 
   setMax(n: number): void {
@@ -48,10 +67,19 @@ export class QuerySemaphore {
         )
       : undefined
 
+    const meta = opts?.meta
+    const taskId = meta ? crypto.randomUUID() : undefined
+    if (meta && taskId) this.onTaskStart?.(taskId, meta)
+
+    let status: 'done' | 'failed' = 'done'
     try {
       return await task(controller?.signal)
+    } catch (err) {
+      status = 'failed'
+      throw err
     } finally {
       if (timer) clearTimeout(timer)
+      if (meta && taskId) this.onTaskFinish?.(taskId, status)
       this.running--
       // Dispatch BEFORE decrementing the finishing task's group so a queued task
       // with the same groupKey is preferred over an unrelated FIFO head.
@@ -102,14 +130,21 @@ export function getSemaphore(): QuerySemaphore {
   return _semaphore
 }
 
-export function initSemaphore(onCountChange: CountChangeCallback): void {
-  _semaphore = new QuerySemaphore(MAX_CONCURRENT_QUERIES, onCountChange)
+export function initSemaphore(opts: CountChangeCallback | InitOpts): void {
+  if (typeof opts === 'function') {
+    _semaphore = new QuerySemaphore(MAX_CONCURRENT_QUERIES, opts)
+  } else {
+    _semaphore = new QuerySemaphore(MAX_CONCURRENT_QUERIES, opts.onCountChange, {
+      onTaskStart: opts.onTaskStart,
+      onTaskFinish: opts.onTaskFinish,
+    })
+  }
 }
 
 export async function fetchWithSemaphore(
   input: RequestInfo | URL,
   init?: RequestInit,
-  opts?: { groupKey?: string; timeoutMs?: number }
+  opts?: TaskOpts
 ): Promise<Response> {
   return getSemaphore().run((signal) => fetch(input, { ...init, signal }), opts)
 }

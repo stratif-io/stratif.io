@@ -271,6 +271,44 @@ describe('QuerySemaphore timeout', () => {
   })
 })
 
+describe('QuerySemaphore meta callbacks', () => {
+  it('calls onTaskStart when meta is provided, with a new id', async () => {
+    const onTaskStart = vi.fn()
+    const onTaskFinish = vi.fn()
+    const sem = new QuerySemaphore(1, () => {}, { onTaskStart, onTaskFinish })
+    await sem.run(async () => 'ok', { meta: { cardName: 'Events', querySnippet: 'SELECT 1' } })
+    expect(onTaskStart).toHaveBeenCalledTimes(1)
+    const [id, meta] = onTaskStart.mock.calls[0]
+    expect(typeof id).toBe('string')
+    expect(meta).toEqual({ cardName: 'Events', querySnippet: 'SELECT 1' })
+    expect(onTaskFinish).toHaveBeenCalledWith(id, 'done')
+  })
+
+  it('calls onTaskFinish with "failed" when task rejects', async () => {
+    const onTaskStart = vi.fn()
+    const onTaskFinish = vi.fn()
+    const sem = new QuerySemaphore(1, () => {}, { onTaskStart, onTaskFinish })
+    await expect(
+      sem.run(
+        async () => {
+          throw new Error('boom')
+        },
+        { meta: { cardName: 'X', querySnippet: 'Y' } }
+      )
+    ).rejects.toThrow('boom')
+    expect(onTaskFinish).toHaveBeenCalledWith(expect.any(String), 'failed')
+  })
+
+  it('skips callbacks when no meta is provided', async () => {
+    const onTaskStart = vi.fn()
+    const onTaskFinish = vi.fn()
+    const sem = new QuerySemaphore(1, () => {}, { onTaskStart, onTaskFinish })
+    await sem.run(async () => 'ok')
+    expect(onTaskStart).not.toHaveBeenCalled()
+    expect(onTaskFinish).not.toHaveBeenCalled()
+  })
+})
+
 describe('fetchWithSemaphore', () => {
   beforeEach(() => {
     initSemaphore(vi.fn())

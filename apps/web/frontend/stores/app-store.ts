@@ -181,6 +181,8 @@ export const useAppStore = create<AppState>()(
 
 // Initialize the global query semaphore, wired to the Zustand store.
 // Must run after store creation to avoid circular dependency.
-initSemaphore((running, queued) => {
-  useAppStore.getState().setQueryCounts(running, queued)
+initSemaphore({
+  onCountChange: (running, queued) => useAppStore.getState().setQueryCounts(running, queued),
+  onTaskStart: (id, meta) => useAppStore.getState().addQueryStart({ id, ...meta }),
+  onTaskFinish: (id, status) => useAppStore.getState().markQueryFinish(id, status),
 })
