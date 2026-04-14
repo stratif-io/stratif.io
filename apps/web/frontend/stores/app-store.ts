@@ -13,6 +13,18 @@ function suggestGranularity(range: DateRange): Granularity | null {
   return 'year'
 }
 
+export type QueryHistoryEntry = {
+  id: string
+  cardName: string
+  querySnippet: string
+  startedAt: number
+  finishedAt?: number
+  status: 'running' | 'done' | 'failed'
+}
+
+const QUERY_HISTORY_CAP = 50
+const QUERY_HISTORY_PRUNE_MS = 5000
+
 interface AppState {
   theme: 'light' | 'dark' | 'system'
   setTheme: (theme: 'light' | 'dark' | 'system') => void
@@ -54,6 +66,11 @@ interface AppState {
   /** SQL to pre-populate Query Studio with — ephemeral, cleared after consumption. */
   pendingQueryStudioSql: string | null
   setPendingQueryStudioSql: (sql: string | null) => void
+
+  /** Rolling history of recent queries — ephemeral, capped at 50 entries, pruned 5s after finish. */
+  queryHistory: QueryHistoryEntry[]
+  addQueryStart: (entry: Omit<QueryHistoryEntry, 'startedAt' | 'status'>) => void
+  markQueryFinish: (id: string, status: 'done' | 'failed') => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -113,6 +130,30 @@ export const useAppStore = create<AppState>()(
 
       pendingQueryStudioSql: null,
       setPendingQueryStudioSql: (sql) => set({ pendingQueryStudioSql: sql }),
+
+      queryHistory: [],
+      addQueryStart: (entry) =>
+        set((state) => {
+          const newEntry: QueryHistoryEntry = {
+            ...entry,
+            startedAt: Date.now(),
+            status: 'running',
+          }
+          const next = [newEntry, ...state.queryHistory]
+          return { queryHistory: next.slice(0, QUERY_HISTORY_CAP) }
+        }),
+      markQueryFinish: (id, status) => {
+        set((state) => ({
+          queryHistory: state.queryHistory.map((e) =>
+            e.id === id ? { ...e, status, finishedAt: Date.now() } : e
+          ),
+        }))
+        setTimeout(() => {
+          set((state) => ({
+            queryHistory: state.queryHistory.filter((e) => e.id !== id),
+          }))
+        }, QUERY_HISTORY_PRUNE_MS)
+      },
     }),
     {
       name: 'stratifio-storage',
