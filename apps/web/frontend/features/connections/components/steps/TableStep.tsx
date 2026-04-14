@@ -75,10 +75,12 @@ export function TableStep({ connId, currentTable, onConfirm }: TableStepProps) {
               type="button"
               onClick={() => setSelected(t.full_name)}
               className={cn(
-                'flex items-start justify-between px-3 py-2 rounded-md border text-left',
+                'flex items-start justify-between px-3 py-2 rounded-md border text-left transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                'active:bg-primary/20',
                 selected === t.full_name
-                  ? 'border-blue-400 bg-blue-50'
-                  : 'border-border bg-background hover:border-blue-300'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border bg-background hover:border-primary/50'
               )}
             >
               <span className="text-[11px] font-semibold text-foreground">{t.full_name}</span>
@@ -114,7 +116,8 @@ export function TableStep({ connId, currentTable, onConfirm }: TableStepProps) {
             <button
               type="button"
               onClick={() => setSelected('')}
-              className="ml-auto text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+              aria-label="Clear selected table"
+              className="ml-auto text-[10px] text-muted-foreground hover:text-foreground shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-1"
             >
               Clear
             </button>

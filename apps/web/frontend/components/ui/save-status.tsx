@@ -25,7 +25,13 @@ export function SaveStatus({ status, onRetry, className }: Props) {
   if (status === 'idle' || hidden) return null
 
   return (
-    <span data-testid="save-status" className={cn('flex items-center gap-1 text-xs', className)}>
+    <span
+      data-testid="save-status"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className={cn('flex items-center gap-1 text-xs', className)}
+    >
       {status === 'saving' && (
         <>
           <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
