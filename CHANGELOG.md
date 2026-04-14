@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.32.1](https://github.com/stratif-io/stratif.io/compare/v0.32.0...v0.32.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* **security:** harden auth, crypto, error handling, and SQL identifier inputs ([65a9939](https://github.com/stratif-io/stratif.io/commit/65a993972f53ff31ad87e07193acbf966ee8ccd8))
+* **security:** harden auth, crypto, error handling, and SQL identifier inputs ([7dd0196](https://github.com/stratif-io/stratif.io/commit/7dd0196d2efa23f8c2e0aa6a27aebc10ed3b6694))
+* **security:** set test encryption key in root conftest ([9b6cf74](https://github.com/stratif-io/stratif.io/commit/9b6cf74d82492e62e61a7c2eedef914404f25931))
+
 ## [0.32.0](https://github.com/stratif-io/stratif.io/compare/v0.31.0...v0.32.0) (2026-04-14)
 
 
