@@ -8,12 +8,19 @@ import { useUrlSync } from '@/hooks'
 
 const FULL_BLEED_ROUTES = ['/query-studio', '/people']
 
+function isFullBleed(pathname: string, activeConnectionId: string | null): boolean {
+  if (FULL_BLEED_ROUTES.includes(pathname) && !!activeConnectionId) return true
+  // Connection detail pages (/connections/:id/...) but not the list or new form
+  if (pathname.startsWith('/connections/') && pathname !== '/connections/new') return true
+  return false
+}
+
 export function DashboardLayout() {
   useUrlSync()
   const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const activeConnectionId = useAppStore((state) => state.activeConnectionId)
   const location = useLocation()
-  const fullBleed = FULL_BLEED_ROUTES.includes(location.pathname) && !!activeConnectionId
+  const fullBleed = isFullBleed(location.pathname, activeConnectionId)
 
   return (
     <TooltipProvider delayDuration={300}>

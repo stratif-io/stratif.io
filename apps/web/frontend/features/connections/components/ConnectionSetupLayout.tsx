@@ -24,7 +24,7 @@ export function ConnectionSetupLayout({
   children,
 }: ConnectionSetupLayoutProps) {
   return (
-    <div className="flex border rounded-lg overflow-hidden h-[560px] bg-muted/30">
+    <div className="flex border rounded-lg overflow-hidden flex-1 min-h-0 bg-muted/30">
       <ConnectionSidebar
         connectionName={connectionName}
         dbType={dbType}

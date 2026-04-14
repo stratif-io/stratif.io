@@ -86,30 +86,43 @@ export function TableStep({ connId, currentTable, onConfirm }: TableStepProps) {
         </div>
       )}
 
-      {selected && (
-        <div
-          data-testid="selected-table-bar"
-          className="flex items-center justify-between px-3 py-2 rounded-md border border-blue-200 bg-blue-50/60"
-        >
-          <div>
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">
-              Selected
-            </p>
-            <p className="text-[11px] font-bold text-blue-700 font-mono">{selected}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSelected('')}
-            className="text-[10px] text-blue-500 hover:text-blue-700"
-            aria-label={`Change selected table ${selected}`}
+      <div className="flex items-center justify-between pt-3 border-t gap-3">
+        {selected ? (
+          <div
+            data-testid="selected-table-bar"
+            className="flex items-center gap-2 px-3 py-2 rounded-md border border-primary/30 bg-primary/5 flex-1 min-w-0"
           >
-            Change
-          </button>
-        </div>
-      )}
-
-      <div className="flex justify-end pt-3 border-t">
-        <Button size="sm" disabled={!selected} onClick={() => onConfirm(selected)}>
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <svg
+                className="h-3 w-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={3}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span className="text-xs font-mono font-semibold text-primary truncate">
+              {selected}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelected('')}
+              className="ml-auto text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+            >
+              Clear
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">No table selected</p>
+        )}
+        <Button
+          size="sm"
+          disabled={!selected}
+          onClick={() => onConfirm(selected)}
+          className="shrink-0"
+        >
           Confirm Table →
         </Button>
       </div>
