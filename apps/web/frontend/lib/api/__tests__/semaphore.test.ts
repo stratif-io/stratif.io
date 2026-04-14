@@ -97,6 +97,53 @@ describe('QuerySemaphore', () => {
   })
 })
 
+describe('QuerySemaphore groupKey ordering', () => {
+  it('drains queued tasks of the running groupKey before switching groups', async () => {
+    const order: string[] = []
+    const sem = new QuerySemaphore(1, () => {})
+    const make = (g: string) => () => {
+      order.push(g)
+      return Promise.resolve()
+    }
+    const p1 = sem.run(make('A'), { groupKey: 'A' })
+    const p2 = sem.run(make('B'), { groupKey: 'B' })
+    const p3 = sem.run(make('A'), { groupKey: 'A' })
+    await Promise.all([p1, p2, p3])
+    expect(order).toEqual(['A', 'A', 'B'])
+  })
+
+  it('falls back to FIFO when no queued task matches a running group', async () => {
+    const order: string[] = []
+    const sem = new QuerySemaphore(1, () => {})
+    const make = (g: string) => () => {
+      order.push(g)
+      return Promise.resolve()
+    }
+    await Promise.all([
+      sem.run(make('A'), { groupKey: 'A' }),
+      sem.run(make('B'), { groupKey: 'B' }),
+      sem.run(make('C'), { groupKey: 'C' }),
+    ])
+    expect(order).toEqual(['A', 'B', 'C'])
+  })
+
+  it('works with untagged tasks', async () => {
+    const order: number[] = []
+    const sem = new QuerySemaphore(1, () => {})
+    await Promise.all([
+      sem.run(() => {
+        order.push(1)
+        return Promise.resolve()
+      }),
+      sem.run(() => {
+        order.push(2)
+        return Promise.resolve()
+      }),
+    ])
+    expect(order).toEqual([1, 2])
+  })
+})
+
 describe('fetchWithSemaphore', () => {
   beforeEach(() => {
     initSemaphore(vi.fn())
