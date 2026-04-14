@@ -20,7 +20,7 @@ import { Progress } from '@/components/ui/progress'
 import { Smartphone, Monitor, ArrowRight } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-const API_KEY = import.meta.env.VITE_API_KEY || 'dev-key-change-in-production'
+const API_KEY = import.meta.env.VITE_API_KEY || ''
 
 interface PathDataItem {
   step_3: string
