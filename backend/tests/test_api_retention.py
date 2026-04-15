@@ -365,6 +365,84 @@ def client_clickhouse_fake(monkeypatch):
     app.dependency_overrides.clear()
 
 
+def _make_db_with_country_filter() -> AnalyticsDatabase:
+    """DB with a country column so filter_params are non-empty.
+
+    This is necessary to reproduce the params-order bug:
+    params = filter_params + filter_params + date_params  ← wrong
+    The SQL CTE order is first_seen(filter) → signups(date) → user_activity(filter),
+    so 'UK' (a filter value) would land in the date slot and DuckDB raises:
+    ConversionException: invalid date field format: "UK".
+    """
+    conn = duckdb.connect(":memory:")
+    conn.execute("""
+        CREATE TABLE events (
+            user_id VARCHAR,
+            timestamp TIMESTAMP,
+            event_name VARCHAR,
+            properties VARCHAR,
+            country VARCHAR
+        )
+    """)
+    conn.execute("""
+        INSERT INTO events VALUES
+            ('user-uk-1', '2024-01-05 09:00:00', 'Home', '{}', 'UK'),
+            ('user-uk-2', '2024-01-10 08:00:00', 'Home', '{}', 'UK'),
+            ('user-uk-2', '2024-01-11 08:00:00', 'Home', '{}', 'UK'),
+            ('user-us',   '2024-01-03 10:00:00', 'Home', '{}', 'US')
+    """)
+    return AnalyticsDatabase(
+        conn=conn,
+        backend=DuckDBBackend(),
+        events_cte=None,
+        filter_exprs={"country": "country"},
+    )
+
+
+@pytest.fixture()
+def client_country_filter():
+    test_db = _make_db_with_country_filter()
+
+    async def override_db():
+        yield test_db
+
+    app.dependency_overrides[get_analytics_db] = override_db
+    from starlette.testclient import TestClient
+
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
+class TestFilterParamsOrder:
+    def test_dimension_filter_with_date_range_returns_matching_users(
+        self, client_country_filter
+    ):
+        """A country filter must not corrupt the date params and vice versa.
+
+        Root cause: params = filter_params + filter_params + date_params (wrong)
+        The SQL CTE order is first_seen(filter) → signups(date) → user_activity(filter),
+        so 'UK' lands in the date slot → signups WHERE first_seen >= 'UK' returns 0 rows.
+        Correct order: filter_params + date_params + filter_params.
+        """
+        response = client_country_filter.get(
+            "/api/retention",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-31",
+                "filters": '{"country": "UK"}',
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()["data"]
+        # There are 2 UK users with first events in Jan 2024 — at least one cohort must appear
+        assert len(data) > 0, (
+            "Expected UK users to appear in retention cohorts but got 0 cohorts. "
+            "Likely params order bug: filter value 'UK' landing in date param slots "
+            "causes signups CTE to return 0 rows."
+        )
+
+
 class TestClickHouseDateParams:
     def test_date_range_params_are_date_only_strings(self, client_clickhouse_fake):
         """Retention for ClickHouse must pass '2025-01-01' not '2025-01-01 00:00:00'.
