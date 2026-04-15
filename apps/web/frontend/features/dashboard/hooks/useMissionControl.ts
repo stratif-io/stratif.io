@@ -54,12 +54,9 @@ export function useMissionControl({
   const { data: schemaConfig } = useSchemaConfig(activeConnectionId ?? '')
   const timeoutMs = (schemaConfig?.query_timeout_seconds ?? 10) * 1000
 
-  // Queries are enabled whenever a connection is selected, with or without dates.
-  // When no date range is set (all-time), start_date/end_date are omitted from
-  // the request and the backend returns aggregate data over all time.
   const enabled = !!activeConnectionId
 
-  // Previous period calculation (same as useMissionControlTrends)
+  // Previous period calculation
   const periodDays =
     dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) + 1 : 0
   const prevEndDate = dateRange.from ? formatDateParam(subDays(dateRange.from, 1)) : undefined
@@ -68,7 +65,7 @@ export function useMissionControl({
       ? formatDateParam(subDays(dateRange.from, periodDays))
       : undefined
 
-  // 8 per-metric queries run in parallel
+  // One request per metric — allows progressive card rendering and stays within per-query timeout
   const metricResults = useQueries({
     queries: METRICS.map((metric) => ({
       queryKey: [
@@ -123,18 +120,17 @@ export function useMissionControl({
   const isError = metricResults.some((r) => r.isError)
   const error = (metricResults.find((r) => r.error)?.error as Error | null) ?? null
 
-  // Per-metric loading map — each card uses its own flag
+  // Per-metric loading map — each card uses its own flag for progressive rendering
   const metricLoading = Object.fromEntries(
     METRICS.map((metric, i) => [metric, metricResults[i].isLoading])
   ) as Record<MetricKey, boolean>
 
-  // Per-metric SQL map — exposes the SQL for the "number" query on each card
+  // Per-metric SQL map
   const metricSql = Object.fromEntries(
     METRICS.map((metric, i) => [metric, metricResults[i].data?.sql ?? null])
   ) as Record<MetricKey, string | string[] | null>
 
-  // Build data progressively: populate resolved metrics immediately, use 0 for still-loading ones.
-  // data is undefined only when queries are disabled (no connection).
+  // Build data progressively: populate resolved metrics immediately, 0 for still-loading ones.
   const data: MissionControlResponse | undefined = enabled
     ? {
         period: { start_date: startDate, end_date: endDate },

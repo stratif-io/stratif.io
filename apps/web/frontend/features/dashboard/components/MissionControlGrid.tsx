@@ -1,7 +1,7 @@
 import { memo, useRef, useEffect } from 'react'
 import { HeroMetricCard } from './HeroMetricCard'
 import { MiniMetricCard } from './MiniMetricCard'
-import { MetricCardSkeleton } from '@/components/ui/loading-state'
+import { HeroMetricCardSkeleton, MiniMetricCardSkeleton } from '@/components/ui/loading-state'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Settings2 } from 'lucide-react'
 import { formatMetricValue, computePctChange, formatPeriodRange } from '@/lib/format-metric'
@@ -159,27 +159,25 @@ export const MissionControlGrid = memo(function MissionControlGrid({
 
   if (isInitialLoading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
-        {/* LEFT: Hero skeleton */}
-        <MetricCardSkeleton />
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] lg:items-start gap-4">
+        {/* LEFT: Hero skeleton — h-full stretches to match right column height */}
+        <HeroMetricCardSkeleton />
 
-        {/* RIGHT: Mini skeletons in category layout */}
+        {/* RIGHT: Mini skeletons — exact padding/heights match MiniMetricCard */}
         <div className="flex flex-col gap-5">
           {CATEGORIES.map(({ label, metrics }) => (
             <div key={label}>
-              <div className="h-3 w-16 rounded bg-muted animate-pulse mb-2" />
+              <div className="h-2.5 w-16 rounded bg-muted animate-pulse mb-2" />
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-2">
                 {metrics.map((metricKey) => (
-                  <div
+                  <MiniMetricCardSkeleton
                     key={metricKey}
                     className={
                       metricKey === 'dau_mau_ratio' || metricKey === 'retention_rate'
                         ? 'col-span-2'
                         : undefined
                     }
-                  >
-                    <MetricCardSkeleton />
-                  </div>
+                  />
                 ))}
               </div>
             </div>

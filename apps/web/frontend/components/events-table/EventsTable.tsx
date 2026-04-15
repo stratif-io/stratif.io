@@ -107,13 +107,13 @@ export function buildDimCols(fields: FilterField[], custom: CustomProperty[]): D
     result.push({
       id: cp.name,
       label: cp.name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-      getValue: (p) => extractFromPath(p, cp.path),
+      getValue: (p) => p[cp.name],
     })
   }
   for (const ff of fields) {
     if (!seen.has(ff.field) && !STANDARD.has(ff.field)) {
       seen.add(ff.field)
-      result.push({ id: ff.field, label: ff.label, getValue: (p) => p[ff.field] })
+      result.push({ id: ff.field, label: ff.label, getValue: (p) => extractFromPath(p, ff.field) })
     }
   }
   return result
