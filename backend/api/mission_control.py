@@ -1267,6 +1267,6 @@ def get_mission_control(
         }
 
     query_cache.set(
-        db.connection_id, "mc_aggregate", start_date, end_date, filters, result
+        db.connection_id, result, "mc_aggregate", start_date, end_date, filters
     )
     return result
