@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.35.1](https://github.com/stratif-io/stratif.io/compare/v0.35.0...v0.35.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* **dev:** format main.tsx ([52a7eef](https://github.com/stratif-io/stratif.io/commit/52a7eefd1f13ee5994244d1950bb71de4d50328a))
+* **dev:** hide design system when VITE_NO_DESIGN_SYSTEM=true ([77dd12f](https://github.com/stratif-io/stratif.io/commit/77dd12f06079314d118dab04f7f0811738c6d3c7))
+* **dev:** hide design system when VITE_NO_DESIGN_SYSTEM=true ([0116a15](https://github.com/stratif-io/stratif.io/commit/0116a15df3bd24c681b8c598dad99f369f3724ee))
+* **retention:** correct params order to match CTE sequence ([4cff7f8](https://github.com/stratif-io/stratif.io/commit/4cff7f8a1682684d1b468512a8efd0297ff22c4b))
+
 ## [0.35.0](https://github.com/stratif-io/stratif.io/compare/v0.34.1...v0.35.0) (2026-04-15)
 
 
