@@ -209,11 +209,13 @@ export function EventsPage() {
     [allColOptions, colVisibility]
   )
 
-  // Sync initial colVisibility once dimCols are loaded
-  const dimColsLoadedRef = useRef(false)
+  // Sync initial colVisibility once dimCols are loaded (per connection).
+  // Keying on connection ID so the guard resets when the active connection changes.
+  const dimColsLoadedForRef = useRef<string | null>(null)
   useEffect(() => {
-    if (dimColsLoadedRef.current || dimCols.length === 0) return
-    dimColsLoadedRef.current = true
+    if (dimCols.length === 0) return
+    if (dimColsLoadedForRef.current === (activeConnectionId ?? null)) return
+    dimColsLoadedForRef.current = activeConnectionId ?? null
     const storageKey = `of_events_colstate_v2_${activeConnectionId ?? 'default'}`
     try {
       const versionKey = `${storageKey}_ver`

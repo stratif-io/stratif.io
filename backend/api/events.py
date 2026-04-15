@@ -145,8 +145,18 @@ def get_raw_events(
         if props_col == "properties"
         else custom_exprs
     )
-    custom_names = list(filtered_exprs.keys())
-    extra_cols = (", " + ", ".join(filtered_exprs.values())) if filtered_exprs else ""
+    # Also select filter field expressions for direct columns not already covered
+    # by custom_prop_exprs (e.g. a `country` column that is a filter field but not
+    # a custom property will otherwise be missing from event.properties).
+    filter_exprs = db.get_filter_exprs()
+    ff_extra = {
+        k: v
+        for k, v in filter_exprs.items()
+        if k not in filtered_exprs and k not in ("properties", props_col)
+    }
+    all_extra = {**filtered_exprs, **ff_extra}
+    custom_names = list(all_extra.keys())
+    extra_cols = (", " + ", ".join(all_extra.values())) if all_extra else ""
     data_query = f"""
         SELECT user_id, event_name, timestamp, {props_col}{extra_cols}
         FROM events
@@ -203,8 +213,15 @@ def get_user_events(
         if props_col == "properties"
         else custom_exprs
     )
-    custom_names = list(filtered_exprs.keys())
-    extra_cols = (", " + ", ".join(filtered_exprs.values())) if filtered_exprs else ""
+    filter_exprs = db.get_filter_exprs()
+    ff_extra = {
+        k: v
+        for k, v in filter_exprs.items()
+        if k not in filtered_exprs and k not in ("properties", props_col)
+    }
+    all_extra = {**filtered_exprs, **ff_extra}
+    custom_names = list(all_extra.keys())
+    extra_cols = (", " + ", ".join(all_extra.values())) if all_extra else ""
     user_events_query = f"""
         SELECT user_id, event_name, timestamp, {props_col}{extra_cols}
         FROM events
