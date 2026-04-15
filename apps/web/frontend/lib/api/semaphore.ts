@@ -16,7 +16,7 @@ export function isTimeoutError(err: unknown): boolean {
 
 type CountChangeCallback = (running: number, queued: number) => void
 
-export type QueryMeta = { cardName: string; querySnippet: string }
+export type QueryMeta = { id?: string; cardName: string; querySnippet: string }
 export type TaskOpts = { groupKey?: string; timeoutMs?: number; meta?: QueryMeta }
 
 type TaskStartCallback = (id: string, meta: QueryMeta) => void
@@ -81,7 +81,7 @@ export class QuerySemaphore {
       : undefined
 
     const meta = opts?.meta
-    const taskId = meta ? crypto.randomUUID() : undefined
+    const taskId = meta ? (meta.id ?? crypto.randomUUID()) : undefined
     if (meta && taskId) this.onTaskStart?.(taskId, meta)
 
     let status: 'done' | 'failed' = 'done'

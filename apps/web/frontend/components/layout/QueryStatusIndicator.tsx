@@ -9,9 +9,13 @@ export function QueryStatusIndicator() {
   const runningQueries = useAppStore((s) => s.runningQueries)
   const queuedQueries = useAppStore((s) => s.queuedQueries)
   const queryEverActive = useAppStore((s) => s.queryEverActive)
+  const queryLog = useAppStore((s) => s.queryLog)
 
   const isActive = runningQueries > 0 || queuedQueries > 0
   const isDone = queryEverActive && !isActive
+
+  // Last successfully completed query — first 'done' entry in the log (newest first)
+  const lastCompleted = queryLog.find((e) => e.status === 'done')
 
   const [fading, setFading] = useState(false)
   const [dismissed, setDismissed] = useState(false)
@@ -88,7 +92,9 @@ export function QueryStatusIndicator() {
             ) : (
               <>
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-success shrink-0" />
-                <span className="text-muted-foreground whitespace-nowrap">all done</span>
+                <span className="text-muted-foreground whitespace-nowrap">
+                  {lastCompleted?.cardName ?? 'all done'}
+                </span>
               </>
             )}
           </span>

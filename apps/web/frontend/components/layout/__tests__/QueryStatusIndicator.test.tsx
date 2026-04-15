@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryStatusIndicator } from '../QueryStatusIndicator'
@@ -12,6 +13,7 @@ beforeEach(() => {
     queuedQueries: 0,
     queryEverActive: false,
     queryHistory: [],
+    queryLog: [],
   })
 })
 
@@ -90,7 +92,11 @@ describe('QueryStatusIndicator', () => {
       ],
     })
     const user = userEvent.setup()
-    render(<QueryStatusIndicator />)
+    render(
+      <MemoryRouter>
+        <QueryStatusIndicator />
+      </MemoryRouter>
+    )
     const trigger = screen.getByRole('button')
     await user.click(trigger)
     expect(await screen.findByText('Events')).toBeInTheDocument()

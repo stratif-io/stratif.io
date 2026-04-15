@@ -33,6 +33,7 @@ import {
   QueryStudioResponse,
 } from '@/types'
 import { fetchWithSemaphore, type TaskOpts } from './semaphore'
+import { useAppStore } from '@/stores'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -45,6 +46,12 @@ async function fetchApi<T>(
   options?: RequestInit,
   taskOpts?: TaskOpts
 ): Promise<T> {
+  // Pre-generate a stable task ID so we can attach the API-returned SQL to the history entry.
+  const taskId = taskOpts?.meta ? crypto.randomUUID() : undefined
+  const opts: TaskOpts | undefined = taskId
+    ? { ...taskOpts, meta: { ...taskOpts!.meta!, id: taskId } }
+    : taskOpts
+
   const response = await fetchWithSemaphore(
     `${API_URL}${endpoint}`,
     {
@@ -52,7 +59,7 @@ async function fetchApi<T>(
       credentials: 'include',
       headers: { ...headers, ...options?.headers },
     },
-    taskOpts
+    opts
   )
 
   if (response.status === 503) {
@@ -69,7 +76,17 @@ async function fetchApi<T>(
     return undefined as T
   }
 
-  return response.json()
+  const data = (await response.json()) as T
+
+  // Attach any SQL returned by the API to the query history entry so it's viewable in the log.
+  if (taskId && data && typeof data === 'object' && 'sql' in data) {
+    const sql = (data as Record<string, unknown>).sql
+    if (sql) {
+      useAppStore.getState().setQuerySql(taskId, sql as string | string[])
+    }
+  }
+
+  return data
 }
 
 /** Serialize active filters (Record<string, string|null>) to a JSON query param, omitting nulls. */

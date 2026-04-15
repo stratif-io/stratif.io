@@ -1,30 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { EditorView } from '@codemirror/view'
-import { EditorState } from '@codemirror/state'
-import { sql } from '@codemirror/lang-sql'
-import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
-import { tags } from '@lezer/highlight'
-import { oneDark } from '@codemirror/theme-one-dark'
-import { format as formatSql } from 'sql-formatter'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Minimize2, PanelRightClose, PanelRightOpen, Play, Terminal } from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
 import { executeQueryStudio } from '@/lib/api/queries'
+import { prettySql } from '@/lib/format-sql'
+import { SqlViewer } from '@/components/ui/sql-viewer'
 import type { QueryStudioResponse } from '@/types'
-
-const lightHighlightStyle = HighlightStyle.define([
-  { tag: tags.keyword, color: '#0000ff' },
-  { tag: tags.string, color: '#a31515' },
-  { tag: tags.number, color: '#098658' },
-  { tag: tags.comment, color: '#008000', fontStyle: 'italic' },
-  { tag: tags.operator, color: '#000000' },
-  { tag: tags.punctuation, color: '#000000' },
-  { tag: tags.name, color: '#001080' },
-  { tag: tags.typeName, color: '#267f99' },
-  { tag: tags.function(tags.name), color: '#795e26' },
-])
 
 function sqlLabel(q: string): string {
   const upper = q.toUpperCase()
@@ -46,14 +29,6 @@ function sqlLabel(q: string): string {
   return first ? first.toLowerCase() : 'query'
 }
 
-function prettySql(q: string): string {
-  try {
-    return formatSql(q, { language: 'sql', tabWidth: 2, keywordCase: 'upper' })
-  } catch {
-    return q
-  }
-}
-
 function useIsDark(): boolean {
   const theme = useAppStore((s) => s.theme)
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
@@ -71,46 +46,6 @@ function useIsDark(): boolean {
   }, [theme])
 
   return dark
-}
-
-function SqlViewer({
-  query,
-  dark,
-  fontSize = '11px',
-}: {
-  query: string
-  dark: boolean
-  fontSize?: string
-}) {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!containerRef.current) return
-    const view = new EditorView({
-      state: EditorState.create({
-        doc: prettySql(query),
-        extensions: [
-          sql(),
-          ...(dark ? [oneDark] : [syntaxHighlighting(lightHighlightStyle)]),
-          EditorState.readOnly.of(true),
-          EditorView.theme(
-            {
-              '&': { fontSize, background: dark ? '#282c34' : '#ffffff' },
-              '&.cm-focused': { outline: 'none' },
-              '.cm-content': { padding: '4px 0' },
-              '.cm-gutters': { display: 'none' },
-              '.cm-scroller': { overflow: 'auto' },
-            },
-            { dark }
-          ),
-        ],
-      }),
-      parent: containerRef.current,
-    })
-    return () => view.destroy()
-  }, [query, dark, fontSize])
-
-  return <div ref={containerRef} />
 }
 
 interface Rect {
