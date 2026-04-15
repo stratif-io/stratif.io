@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.34.0](https://github.com/stratif-io/stratif.io/compare/v0.33.0...v0.34.0) (2026-04-15)
+
+
+### Features
+
+* dimension-value queries in log behind a toggle ([6a48a79](https://github.com/stratif-io/stratif.io/commit/6a48a793a269fb198b600d44470c4020d9c81b32))
+* per-row SQL button, last 20 queries from session log, scrollable panel ([586e6bb](https://github.com/stratif-io/stratif.io/commit/586e6bbd1c7122f31d6b6cb2912bf367b2683699))
+* query log page + clickable SQL viewer in query clicker ([3cbc49a](https://github.com/stratif-io/stratif.io/commit/3cbc49ad36bf10e1aab802648292817fbc949adb))
+* query log page + SQL viewer in query clicker ([92fbfde](https://github.com/stratif-io/stratif.io/commit/92fbfdecfafcac78a29bd85b58ccc42d51c6aa6a))
+* wire query log tracking to all analytics fetch functions ([cfc0110](https://github.com/stratif-io/stratif.io/commit/cfc0110ac12a15ea296e04258df33c80563751ae))
+
+
+### Bug Fixes
+
+* add ClickHouse cases to date_diff_days and date_diff_months in sql_builder ([9f01cb1](https://github.com/stratif-io/stratif.io/commit/9f01cb1b15be07f54e7c5248c115db1af91b6341))
+* apply log level at import time, not in lifespan ([9301cbe](https://github.com/stratif-io/stratif.io/commit/9301cbe4a608379709404918949676a4aeca5c73))
+* apply log level at import time, not in lifespan ([af40079](https://github.com/stratif-io/stratif.io/commit/af4007999ab9feb8ed797a1c53cd0e877dd04ea8))
+* augment bootstrap schema detection with fuzzy identity-field matching ([9c98e96](https://github.com/stratif-io/stratif.io/commit/9c98e966d30ae3f3328b5d6233aaa82649261961))
+* **backend:** replace CAST(... AS DOUBLE) with 1.0 * COUNT(*) in dau_mau_ratio ([bcc75bf](https://github.com/stratif-io/stratif.io/commit/bcc75bf41ea771322b5009349d620ff99af2c877))
+* compact query panel — fixes overflow, clipped rows, spurious hint ([fb83a55](https://github.com/stratif-io/stratif.io/commit/fb83a55ff1c21f46d44dd4c167f97df4a0063d49))
+* convert backend connection errors in open_analytics_db to HTTP 503 ([c888955](https://github.com/stratif-io/stratif.io/commit/c8889555f563a6631371284942bb9cbbf9d98d67))
+* **dashboard:** match skeleton dimensions to actual card layout ([677809c](https://github.com/stratif-io/stratif.io/commit/677809c7fc70a8e2ae4869217df7db03edda1a9c))
+* **dashboard:** revert to per-metric requests, fix cache arg order ([0cbfd9c](https://github.com/stratif-io/stratif.io/commit/0cbfd9c5d687e4fbf1e37768e199a2564fb9dbeb))
+* look up custom property values by name not path in EventsTable ([2192e41](https://github.com/stratif-io/stratif.io/commit/2192e419a5c69a7651f3fc055521483450657c44))
+* **mission-control:** prevent EmptyState flicker while top events still loading ([a8c92e3](https://github.com/stratif-io/stratif.io/commit/a8c92e3b78d700b65ab5b8eeca0e09dda2b428fa))
+* pass HTTPException through generic exception handler ([39ec575](https://github.com/stratif-io/stratif.io/commit/39ec575516d576fc01bfe9f6303d2d90772fc764))
+* pass log_config=None to uvicorn to prevent log level being overr… ([021fec4](https://github.com/stratif-io/stratif.io/commit/021fec41bb35e1baf0519b56de6516d34b672533))
+* pass log_config=None to uvicorn to prevent log level being overridden ([8c9bf1e](https://github.com/stratif-io/stratif.io/commit/8c9bf1e3b56b66a43e30815502ca5dc99793e385))
+* pass log_config=None to uvicorn to prevent log level being overridden ([bd27046](https://github.com/stratif-io/stratif.io/commit/bd27046fa440a4c3b0a05f382ed8ecd98c4cc206))
+* prevent timezone-induced date drift in URL sync ([1be257e](https://github.com/stratif-io/stratif.io/commit/1be257e27b3886db9b6e7c2a8710d027f037bb59))
+* remove snowflake from bootstrap + infer categories on schema detect ([a9f40ee](https://github.com/stratif-io/stratif.io/commit/a9f40ee61e5b61746f4f6e0c35358d7c37fc233e))
+* remove sql field from golden snapshots and guard empty state ([5c34f81](https://github.com/stratif-io/stratif.io/commit/5c34f81b3b8cda9f051f99b22888f35b04885132))
+* remove sql field from golden snapshots and guard empty state ([056c97b](https://github.com/stratif-io/stratif.io/commit/056c97b8179e8c01e32b5d65940ebaa60cda3abb))
+* select filter field values in raw events query ([5b75e53](https://github.com/stratif-io/stratif.io/commit/5b75e53752ed71fa0651b0fea1e4374fc6adca3a))
+* **test:** make test_logging robust to test-order structlog pollution ([58264a6](https://github.com/stratif-io/stratif.io/commit/58264a628f31b49f71bd09b089044a1af80c9f80))
+* use date-only params for ClickHouse retention queries ([08e8166](https://github.com/stratif-io/stratif.io/commit/08e81666bf6ac47a70e53cfc32cec54f075b388d))
+* use extractFromPath for filter field values in EventsTable ([5c04d87](https://github.com/stratif-io/stratif.io/commit/5c04d87b0209178f973033cbaa2099bdd7b02caa))
+
+
+### Performance Improvements
+
+* **dashboard:** replace 14 per-metric requests with 1 aggregate call ([64cc28d](https://github.com/stratif-io/stratif.io/commit/64cc28d74064357febea688572f460eef84240c5))
+* **dashboard:** replace 14 per-metric requests with 1 aggregate call ([bf93a78](https://github.com/stratif-io/stratif.io/commit/bf93a785638587b374144c8273be84fedcc9c1ac))
+* eliminate queryLog subscription from QueryStatusIndicator ([530a731](https://github.com/stratif-io/stratif.io/commit/530a7312d3e717e06741c1acdf432c4aad378d2d))
+
 ## [0.33.0](https://github.com/stratif-io/stratif.io/compare/v0.32.1...v0.33.0) (2026-04-14)
 
 
