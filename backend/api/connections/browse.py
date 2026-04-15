@@ -53,7 +53,7 @@ async def browse_connection(
     try:
         if backend.use_pool:
             pool_key = backend.pool_key(conn_id, credentials)
-            db_conn = _pool_get(
+            db_conn, _meta = _pool_get(
                 pool_key, lambda: backend.open(credentials, read_only=False)
             )
             items = backend.browse(db_conn, catalog=catalog, schema=schema)
@@ -143,7 +143,7 @@ async def list_tables(conn_id: str, session: DBSession):
     try:
         if backend.use_pool:
             pool_key = backend.pool_key(conn_id, credentials)
-            db_conn = _pool_get(
+            db_conn, _meta = _pool_get(
                 pool_key, lambda: backend.open(credentials, read_only=False)
             )
             tables = _collect(db_conn)
