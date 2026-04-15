@@ -396,7 +396,15 @@ async def open_analytics_db(
     if backend.use_pool:
         pool_key = backend.pool_key(connection_id, credentials)
         factory = lambda: backend.open(credentials, read_only=False)  # noqa: E731
-        conn, pool_meta = _pool_get(pool_key, factory)
+        try:
+            conn, pool_meta = _pool_get(pool_key, factory)
+        except Exception as exc:
+            if backend.is_connection_error(exc):
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"Could not connect to database: {exc}",
+                ) from exc
+            raise
 
         # Re-derive column types only on a cold pool hit (new connection).
         # On subsequent requests the cached col_types are reused, avoiding
@@ -430,7 +438,15 @@ async def open_analytics_db(
         db._pool_factory = factory
         return db
 
-    conn = backend.open(credentials, read_only=True)
+    try:
+        conn = backend.open(credentials, read_only=True)
+    except Exception as exc:
+        if backend.is_connection_error(exc):
+            raise HTTPException(
+                status_code=503,
+                detail=f"Could not connect to database: {exc}",
+            ) from exc
+        raise
     col_types = _get_col_types(conn, _quoted_table) if _get_col_types else {}
     custom_prop_exprs, filter_exprs = _build_exprs(col_types)
     available_cols = _get_available_columns(conn, col_types)
