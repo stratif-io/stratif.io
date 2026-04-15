@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.35.0](https://github.com/stratif-io/stratif.io/compare/v0.34.1...v0.35.0) (2026-04-15)
+
+
+### Features
+
+* **dashboard:** per-card error state with red border and retry button ([6323305](https://github.com/stratif-io/stratif.io/commit/63233057e4bb80582576c1c9db12740b7ad57162))
+* **dashboard:** per-card error state with red border and retry button ([f57b0d5](https://github.com/stratif-io/stratif.io/commit/f57b0d5a80704bc7aa92c4e7046fe7a06f21aa13))
+* **dashboard:** show error reason in parenthesis on failed cards ([3096900](https://github.com/stratif-io/stratif.io/commit/3096900606100f8a944fc8cce70b194671dc0f4b))
+
 ## [0.34.1](https://github.com/stratif-io/stratif.io/compare/v0.34.0...v0.34.1) (2026-04-15)
 
 
