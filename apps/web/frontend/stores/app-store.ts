@@ -17,13 +17,18 @@ export type QueryHistoryEntry = {
   id: string
   cardName: string
   querySnippet: string
+  /** Actual SQL returned by the API, attached after the response resolves. */
+  sql?: string | string[]
   startedAt: number
   finishedAt?: number
   status: 'running' | 'done' | 'failed'
+  /** Lookup/dimension-value queries (filter dropdowns, distinct values). Hidden by default. */
+  auxiliary?: boolean
 }
 
 const QUERY_HISTORY_CAP = 50
 const QUERY_HISTORY_PRUNE_MS = 5000
+const QUERY_LOG_CAP = 200
 
 interface AppState {
   theme: 'light' | 'dark' | 'system'
@@ -71,6 +76,19 @@ interface AppState {
   queryHistory: QueryHistoryEntry[]
   addQueryStart: (entry: Omit<QueryHistoryEntry, 'startedAt' | 'status'>) => void
   markQueryFinish: (id: string, status: 'done' | 'failed') => void
+  /** Attaches SQL returned by the API to a history entry (and the full log). */
+  setQuerySql: (id: string, sql: string | string[]) => void
+
+  /** Full session query log — never auto-pruned, capped at 200. Use for the /query-log page. */
+  queryLog: QueryHistoryEntry[]
+  clearQueryLog: () => void
+
+  /**
+   * Card name of the most recently completed (done) query.
+   * Stored as a scalar so QueryStatusIndicator can subscribe without
+   * re-rendering on every queryLog mutation.
+   */
+  lastCompletedName: string | null
 }
 
 export const useAppStore = create<AppState>()(
@@ -132,28 +150,48 @@ export const useAppStore = create<AppState>()(
       setPendingQueryStudioSql: (sql) => set({ pendingQueryStudioSql: sql }),
 
       queryHistory: [],
+      queryLog: [],
+      lastCompletedName: null,
       addQueryStart: (entry) =>
         set((state) => {
           const newEntry: QueryHistoryEntry = {
             ...entry,
             startedAt: Date.now(),
             status: 'running',
+            auxiliary: entry.auxiliary,
           }
           const next = [newEntry, ...state.queryHistory]
-          return { queryHistory: next.slice(0, QUERY_HISTORY_CAP) }
+          const logNext = [newEntry, ...state.queryLog]
+          return {
+            queryHistory: next.slice(0, QUERY_HISTORY_CAP),
+            queryLog: logNext.slice(0, QUERY_LOG_CAP),
+          }
         }),
       markQueryFinish: (id, status) => {
-        set((state) => ({
-          queryHistory: state.queryHistory.map((e) =>
-            e.id === id ? { ...e, status, finishedAt: Date.now() } : e
-          ),
-        }))
+        set((state) => {
+          const finishedAt = Date.now()
+          const entry = state.queryLog.find((e) => e.id === id)
+          return {
+            queryHistory: state.queryHistory.map((e) =>
+              e.id === id ? { ...e, status, finishedAt } : e
+            ),
+            queryLog: state.queryLog.map((e) => (e.id === id ? { ...e, status, finishedAt } : e)),
+            lastCompletedName:
+              status === 'done' && entry ? entry.cardName : state.lastCompletedName,
+          }
+        })
         setTimeout(() => {
           set((state) => ({
             queryHistory: state.queryHistory.filter((e) => e.id !== id),
           }))
         }, QUERY_HISTORY_PRUNE_MS)
       },
+      setQuerySql: (id, sql) =>
+        set((state) => ({
+          queryHistory: state.queryHistory.map((e) => (e.id === id ? { ...e, sql } : e)),
+          queryLog: state.queryLog.map((e) => (e.id === id ? { ...e, sql } : e)),
+        })),
+      clearQueryLog: () => set({ queryLog: [] }),
     }),
     {
       name: 'stratifio-storage',

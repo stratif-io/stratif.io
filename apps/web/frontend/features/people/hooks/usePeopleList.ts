@@ -23,14 +23,17 @@ export function usePeopleList(): UsePeopleListReturn {
   const query = useInfiniteQuery({
     queryKey: ['people-list', startDate, endDate, activeConnectionId, activeFilters],
     queryFn: ({ pageParam }) =>
-      fetchUserList({
-        start_date: startDate,
-        end_date: endDate,
-        limit: 50,
-        offset: pageParam,
-        connection_id: activeConnectionId ?? undefined,
-        filters: activeFilters,
-      }),
+      fetchUserList(
+        {
+          start_date: startDate,
+          end_date: endDate,
+          limit: 50,
+          offset: pageParam,
+          connection_id: activeConnectionId ?? undefined,
+          filters: activeFilters,
+        },
+        { meta: { cardName: 'People', querySnippet: 'user list' } }
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.data.length === 50 ? allPages.length * 50 : undefined,

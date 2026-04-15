@@ -144,7 +144,7 @@ def _fetch_period_metrics(
         )
         SELECT
             COUNT(DISTINCT user_id) AS mau,
-            CAST(COUNT(*) AS DOUBLE) / NULLIF(COUNT(DISTINCT d), 0) AS avg_dau
+            1.0 * COUNT(*) / NULLIF(COUNT(DISTINCT d), 0) AS avg_dau
         FROM user_days
         """,
         mau_params,
@@ -452,7 +452,7 @@ def _fetch_single_metric(
         )
         SELECT
             COUNT(DISTINCT user_id) AS mau,
-            CAST(COUNT(*) AS DOUBLE) / NULLIF(COUNT(DISTINCT d), 0) AS avg_dau
+            1.0 * COUNT(*) / NULLIF(COUNT(DISTINCT d), 0) AS avg_dau
         FROM user_days
         """
     rows = db.execute(sql, mau_params)
@@ -704,7 +704,7 @@ def get_mission_control_metric(
             )
             SELECT
                 COUNT(DISTINCT user_id) AS mau,
-                CAST(COUNT(*) AS DOUBLE) / NULLIF(COUNT(DISTINCT d), 0) AS avg_dau
+                1.0 * COUNT(*) / NULLIF(COUNT(DISTINCT d), 0) AS avg_dau
             FROM user_days
             """,
             mau_params_bk,

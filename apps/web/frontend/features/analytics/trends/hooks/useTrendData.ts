@@ -117,14 +117,17 @@ export function useTrendData({
     ],
     queryFn: async () => {
       startRef.current = Date.now()
-      return fetchPivot({
-        row_dimensions: pivotRowDims,
-        measures: [measure],
-        start_date: startDate,
-        end_date: endDate,
-        filters: mergedFilters,
-        connection_id: activeConnectionId ?? undefined,
-      })
+      return fetchPivot(
+        {
+          row_dimensions: pivotRowDims,
+          measures: [measure],
+          start_date: startDate,
+          end_date: endDate,
+          filters: mergedFilters,
+          connection_id: activeConnectionId ?? undefined,
+        },
+        { meta: { cardName: 'Trends', querySnippet: measure ?? 'trend' } }
+      )
     },
     staleTime: QUERY_STALE_TIME.default,
   })

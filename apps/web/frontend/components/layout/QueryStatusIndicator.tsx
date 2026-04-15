@@ -9,6 +9,7 @@ export function QueryStatusIndicator() {
   const runningQueries = useAppStore((s) => s.runningQueries)
   const queuedQueries = useAppStore((s) => s.queuedQueries)
   const queryEverActive = useAppStore((s) => s.queryEverActive)
+  const lastCompletedName = useAppStore((s) => s.lastCompletedName)
 
   const isActive = runningQueries > 0 || queuedQueries > 0
   const isDone = queryEverActive && !isActive
@@ -88,7 +89,9 @@ export function QueryStatusIndicator() {
             ) : (
               <>
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-success shrink-0" />
-                <span className="text-muted-foreground whitespace-nowrap">all done</span>
+                <span className="text-muted-foreground whitespace-nowrap">
+                  {lastCompletedName ?? 'all done'}
+                </span>
               </>
             )}
           </span>

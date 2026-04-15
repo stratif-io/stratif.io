@@ -73,7 +73,11 @@ export function EventsPage() {
     queryFn: async () => {
       if (!activeConnectionId || customPropFields.length === 0) return {}
       const results = await Promise.all(
-        customPropFields.map((field) => fetchFieldOptions(activeConnectionId, field))
+        customPropFields.map((field) =>
+          fetchFieldOptions(activeConnectionId, field, {
+            meta: { cardName: 'Dimension Values', querySnippet: field, auxiliary: true },
+          })
+        )
       )
       return Object.fromEntries(results.map((r) => [r.field, r.values]))
     },
@@ -122,18 +126,26 @@ export function EventsPage() {
       activeConnectionId,
     ],
     queryFn: () =>
-      fetchRawEvents({
-        limit,
-        offset: (page - 1) * limit,
-        event_name: eventNameFilter.length ? eventNameFilter.join('|') : undefined,
-        user_id: userIdFilter || undefined,
-        sort_field: sortField,
-        sort_order: sortOrder,
-        start_date: startDate,
-        end_date: endDate,
-        filters: mergedFilters,
-        connection_id: activeConnectionId ?? undefined,
-      }),
+      fetchRawEvents(
+        {
+          limit,
+          offset: (page - 1) * limit,
+          event_name: eventNameFilter.length ? eventNameFilter.join('|') : undefined,
+          user_id: userIdFilter || undefined,
+          sort_field: sortField,
+          sort_order: sortOrder,
+          start_date: startDate,
+          end_date: endDate,
+          filters: mergedFilters,
+          connection_id: activeConnectionId ?? undefined,
+        },
+        {
+          meta: {
+            cardName: 'Events',
+            querySnippet: eventNameFilter.length ? eventNameFilter.join(', ') : 'raw events',
+          },
+        }
+      ),
     staleTime: QUERY_STALE_TIME.default,
     placeholderData: keepPreviousData,
   })

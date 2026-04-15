@@ -1,0 +1,42 @@
+{
+  "period": {
+    "start_date": "2023-01-01",
+    "end_date": "2024-12-31"
+  },
+  "previous_period": {
+    "start_date": "2020-12-31",
+    "end_date": "2022-12-31"
+  },
+  "current": {
+    "total_events": 2448,
+    "unique_users": 10,
+    "total_sessions": 720,
+    "avg_session_duration_sec": 720.0,
+    "avg_events_per_session": 3.4,
+    "new_users": 10,
+    "returning_users": 0,
+    "resurrected_users": 0,
+    "churned_users": 0,
+    "retention_rate": 0.0,
+    "wau": 0,
+    "avg_active_days": 72.0,
+    "power_users": 10,
+    "dau_mau_ratio": 1.0
+  },
+  "previous": {
+    "total_events": 0,
+    "unique_users": 0,
+    "total_sessions": 0,
+    "avg_session_duration_sec": 0.0,
+    "avg_events_per_session": 0.0,
+    "new_users": 0,
+    "returning_users": 0,
+    "resurrected_users": 0,
+    "churned_users": 0,
+    "retention_rate": 0.0,
+    "wau": 0,
+    "avg_active_days": 0.0,
+    "power_users": 0,
+    "dau_mau_ratio": 0.0
+  }
+}

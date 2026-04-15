@@ -57,7 +57,7 @@ export function DashboardPage() {
   }, [isConnectionNotFound, activeConnectionId, setActiveConnectionId])
 
   const allMetricsLoaded = Object.values(metricLoading).every((v) => !v)
-  const isEmpty = !isError && allMetricsLoaded && topEvents.length === 0
+  const isEmpty = !isError && allMetricsLoaded && !eventsLoading && topEvents.length === 0
 
   if (!activeConnectionId || isConnectionNotFound) {
     return (

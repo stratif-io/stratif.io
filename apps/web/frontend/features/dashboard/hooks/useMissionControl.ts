@@ -105,15 +105,16 @@ export function useMissionControl({
   const { data: topEventsData, isLoading: eventsLoading } = useQuery({
     queryKey: ['topEvents', startDate, endDate, activeFilters, activeConnectionId],
     queryFn: () =>
-      fetchTopEvents({
-        limit: 5,
-        start_date: startDate,
-        end_date: endDate,
-        filters: activeFilters,
-        connection_id: activeConnectionId ?? undefined,
-      }),
-    // note: fetchTopEvents is shared across features; tagging is scoped to
-    // mission-control fetchers only (per Task 12). Leave topEvents untagged.
+      fetchTopEvents(
+        {
+          limit: 5,
+          start_date: startDate,
+          end_date: endDate,
+          filters: activeFilters,
+          connection_id: activeConnectionId ?? undefined,
+        },
+        { meta: { cardName: 'Top Events', querySnippet: 'top events by volume' } }
+      ),
     enabled,
     staleTime: QUERY_STALE_TIME.default,
   })

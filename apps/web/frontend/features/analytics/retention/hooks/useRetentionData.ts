@@ -41,13 +41,16 @@ export function useRetentionData({
   } = useQuery({
     queryKey: ['retention', startDate, endDate, granularity, activeFilters, activeConnectionId],
     queryFn: () =>
-      fetchRetention({
-        start_date: startDate,
-        end_date: endDate,
-        granularity,
-        filters: activeFilters,
-        connection_id: activeConnectionId ?? undefined,
-      }),
+      fetchRetention(
+        {
+          start_date: startDate,
+          end_date: endDate,
+          granularity,
+          filters: activeFilters,
+          connection_id: activeConnectionId ?? undefined,
+        },
+        { meta: { cardName: 'Retention', querySnippet: `${granularity} retention` } }
+      ),
     enabled: true,
     staleTime: QUERY_STALE_TIME.default,
   })

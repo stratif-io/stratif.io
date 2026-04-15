@@ -546,3 +546,80 @@ def test_execute_reconnects_and_retries_on_stale_postgres_connection():
 
     mock_evict.assert_called_once_with(("conn-3", "user-3", "postgres"))
     assert result == [(1,)]
+
+
+@pytest.mark.asyncio
+async def test_open_analytics_db_raises_503_when_backend_open_fails():
+    """open_analytics_db must convert a backend connection error into HTTP 503.
+
+    If backend.open() raises a connection-level error (e.g. Snowflake
+    OperationalError 250001 'Could not connect after N attempts'), the caller
+    should receive a clean 503 HTTPException rather than an unhandled 500.
+    """
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    try:
+        from snowflake.connector.errors import OperationalError as SnowflakeOpError
+    except ImportError:
+        pytest.skip("snowflake-connector-python not installed")
+
+    from backend.backends.snowflake import SnowflakeBackend
+    from backend.services.analytics_db import open_analytics_db
+
+    # Simulate the Snowflake connector error: could not connect after 2 attempts
+    connect_error = SnowflakeOpError(
+        msg="Could not connect to Snowflake backend after 2 attempt(s).Aborting",
+        errno=250001,
+    )
+
+    backend = SnowflakeBackend()
+
+    schema_config = MagicMock()
+    schema_config.user_id_field = "user_id"
+    schema_config.timestamp_field = "timestamp"
+    schema_config.event_name_field = "event_name"
+    schema_config.events_table = "events"
+    schema_config.custom_properties = []
+    schema_config.session_timeout_minutes = 30
+    schema_config.resurrection_window_days = 30
+    schema_config.power_user_threshold_days = 4
+    schema_config.email_field = None
+    schema_config.first_name_field = None
+    schema_config.last_name_field = None
+    schema_config.date_of_birth_field = None
+    schema_config.phone_field = None
+
+    filter_config = MagicMock()
+    filter_config.filter_fields = []
+
+    conn_obj = MagicMock()
+    conn_obj.db_type = "snowflake"
+    conn_obj.credentials_encrypted = "dummy"
+    conn_obj.schema_config = schema_config
+    conn_obj.filter_config = filter_config
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = conn_obj
+
+    session = AsyncMock()
+    session.execute = AsyncMock(return_value=mock_result)
+
+    with (
+        patch(
+            "backend.services.crypto.decrypt_credentials",
+            return_value={
+                "account": "test",
+                "user": "test",
+                "password": "test",
+                "warehouse": "test",
+                "database": "test",
+                "schema": "test",
+            },
+        ),
+        patch.object(backend, "open", side_effect=connect_error),
+        pytest.raises(HTTPException) as exc_info,
+    ):
+        await open_analytics_db("conn-sf", session, {"snowflake": backend})
+
+    assert exc_info.value.status_code == 503
+    assert "connect" in exc_info.value.detail.lower()

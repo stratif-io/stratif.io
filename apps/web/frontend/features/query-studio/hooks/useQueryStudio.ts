@@ -39,10 +39,18 @@ export function useQueryStudio(): UseQueryStudioReturn {
       const finalSql = limit !== null && !hasLimit ? `${trimmed}\nLIMIT ${limit}` : trimmed
       setIsRunning(true)
       try {
-        const response = await executeQueryStudio({
-          sql: finalSql,
-          connection_id: activeConnectionId ?? undefined,
-        })
+        const response = await executeQueryStudio(
+          {
+            sql: finalSql,
+            connection_id: activeConnectionId ?? undefined,
+          },
+          {
+            meta: {
+              cardName: 'SQL Studio',
+              querySnippet: trimmed.slice(0, 80),
+            },
+          }
+        )
         setResult(response)
         setHistory((prev) => [trimmed, ...prev].slice(0, MAX_HISTORY))
       } finally {
