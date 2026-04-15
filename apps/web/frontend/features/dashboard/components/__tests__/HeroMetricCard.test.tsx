@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { HeroMetricCard } from '../HeroMetricCard'
 
@@ -75,5 +75,33 @@ describe('HeroMetricCard', () => {
     renderWithTooltip(<HeroMetricCard {...baseProps} prevPeriodLabel="2025-01-01 – 2025-12-31" />)
     expect(screen.getByText(/prev\. \(2025-01-01 – 2025-12-31\):/)).toBeInTheDocument()
     expect(screen.queryByText(/prev\. period:/)).not.toBeInTheDocument()
+  })
+
+  it('shows the error reason in parenthesis when errorMessage is provided', () => {
+    renderWithTooltip(
+      <HeroMetricCard {...baseProps} isError errorMessage="timeout after 10s" onRetry={vi.fn()} />
+    )
+    expect(screen.getByText(/\(timeout after 10s\)/)).toBeInTheDocument()
+  })
+
+  it('shows a retry button when isError is true', () => {
+    const onRetry = vi.fn()
+    renderWithTooltip(<HeroMetricCard {...baseProps} isError onRetry={onRetry} />)
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument()
+  })
+
+  it('calls onRetry when retry button is clicked', () => {
+    const onRetry = vi.fn()
+    renderWithTooltip(<HeroMetricCard {...baseProps} isError onRetry={onRetry} />)
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }))
+    expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('applies error border style when isError is true', () => {
+    const onRetry = vi.fn()
+    renderWithTooltip(<HeroMetricCard {...baseProps} isError onRetry={onRetry} />)
+    const card = document.querySelector('[data-error="true"]')
+    expect(card).toBeTruthy()
+    expect(card?.className).toMatch(/destructive/)
   })
 })

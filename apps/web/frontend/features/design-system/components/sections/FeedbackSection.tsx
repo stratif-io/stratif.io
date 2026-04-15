@@ -10,6 +10,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { NotFoundPage } from '../../NotFoundPage'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast-provider'
+import { MiniMetricCard } from '@/features/dashboard/components/MiniMetricCard'
+import { HeroMetricCard } from '@/features/dashboard/components/HeroMetricCard'
 
 const stubError = new Error('Failed to load data.')
 
@@ -52,6 +54,34 @@ export function FeedbackSection() {
       <ComponentRow label="QueryError">
         <div className="border rounded-md w-64">
           <QueryError error={stubError} />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="Card error state (MiniMetricCard)">
+        <div className="w-48">
+          <MiniMetricCard
+            label="Unique Users"
+            value="—"
+            pctChange={null}
+            isError
+            onRetry={() => toast('Retrying…')}
+          />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="Card error state (HeroMetricCard)">
+        <div className="w-80 h-48">
+          <HeroMetricCard
+            label="Total Events"
+            metricKey="total_events"
+            value="—"
+            pctChange={null}
+            previousValue="—"
+            sparklineValues={[]}
+            color="hsl(var(--chart-1))"
+            isError
+            onRetry={() => toast('Retrying…')}
+          />
         </div>
       </ComponentRow>
 
