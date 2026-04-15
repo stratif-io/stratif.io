@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, ExternalLink } from 'lucide-react'
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  AlertCircle,
+  ExternalLink,
+  Code2,
+} from 'lucide-react'
 import { useAppStore } from '@/stores'
 import { cn } from '@/lib/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -43,26 +51,15 @@ function QueryRow({
 
   return (
     <div
-      role={hasSql ? 'button' : undefined}
-      tabIndex={hasSql ? 0 : undefined}
-      title={hasSql ? 'Click to view SQL' : undefined}
-      onClick={() => hasSql && onViewSql(entry)}
-      onKeyDown={(e) => {
-        if (hasSql && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault()
-          onViewSql(entry)
-        }
-      }}
       className={cn(
-        'flex items-center gap-2 px-3 py-1.5 transition-colors duration-100',
-        hasSql
-          ? 'cursor-pointer hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none'
-          : '',
+        'flex items-center gap-2 px-3 py-1.5 group',
         entry.status === 'failed' ? 'bg-destructive/5' : ''
       )}
     >
+      {/* Status icon */}
       <StatusDot status={entry.status} />
 
+      {/* Name + snippet */}
       <div className="min-w-0 flex-1 leading-none">
         <p className="truncate text-xs font-medium">{entry.cardName}</p>
         <p className="truncate text-[10px] text-muted-foreground/60 font-mono mt-0.5">
@@ -70,31 +67,32 @@ function QueryRow({
         </p>
       </div>
 
-      <div className="shrink-0 text-right leading-none">
-        <p
-          className={cn(
-            'text-[10px] font-medium tabular-nums',
-            entry.status === 'running' ? 'text-primary' : 'text-muted-foreground'
-          )}
-        >
-          {elapsed}
-        </p>
-        {hasSql && <p className="text-[9px] text-muted-foreground/40 mt-0.5">sql</p>}
-      </div>
-    </div>
-  )
-}
-
-// ── Section label ─────────────────────────────────────────────────────────────
-
-function SectionLabel({ label, count }: { label: string; count: number }) {
-  return (
-    <p className="flex items-center gap-1.5 px-3 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
-      {label}
-      <span className="rounded-full bg-muted px-1.5 py-px font-medium text-muted-foreground">
-        {count}
+      {/* Elapsed */}
+      <span
+        className={cn(
+          'text-[10px] font-medium tabular-nums shrink-0',
+          entry.status === 'running' ? 'text-primary' : 'text-muted-foreground/70'
+        )}
+      >
+        {elapsed}
       </span>
-    </p>
+
+      {/* SQL button — always reserve space, visible only when sql available */}
+      <button
+        onClick={() => onViewSql(entry)}
+        disabled={!hasSql}
+        aria-label="View SQL"
+        title="View SQL"
+        className={cn(
+          'shrink-0 rounded p-0.5 transition-colors',
+          hasSql
+            ? 'text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer'
+            : 'text-transparent cursor-default pointer-events-none'
+        )}
+      >
+        <Code2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
   )
 }
 
@@ -173,8 +171,14 @@ function SqlDialog({
 
 // ── Panel ─────────────────────────────────────────────────────────────────────
 
+const PANEL_CAP = 20
+
 export function QueryHistoryPanel() {
-  const history = useAppStore((s) => s.queryHistory)
+  // Show last 20 entries from the session log (never pruned) instead of the
+  // active-only queryHistory which disappears 5s after each query finishes.
+  const queryLog = useAppStore((s) => s.queryLog)
+  const runningQueries = useAppStore((s) => s.runningQueries)
+  const queuedQueries = useAppStore((s) => s.queuedQueries)
   const navigate = useNavigate()
   const [selectedEntry, setSelectedEntry] = useState<QueryHistoryEntry | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -184,29 +188,30 @@ export function QueryHistoryPanel() {
     setDialogOpen(true)
   }
 
-  const running = history.filter((e) => e.status === 'running')
-  const failed = history.filter((e) => e.status === 'failed')
-  const done = history.filter((e) => e.status === 'done')
+  const entries = queryLog.slice(0, PANEL_CAP)
+  const isActive = runningQueries > 0 || queuedQueries > 0
+  const failedCount = entries.filter((e) => e.status === 'failed').length
 
   return (
     <>
       <div className="w-72 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-3 py-2 border-b">
+        <div className="flex items-center justify-between px-3 py-2 border-b shrink-0">
           <span className="text-xs font-semibold">Query activity</span>
           <div className="flex items-center gap-2 text-[10px]">
-            {running.length > 0 && (
+            {isActive && (
               <span className="flex items-center gap-1 text-primary">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse inline-block" />
-                {running.length} running
+                {runningQueries} running
+                {queuedQueries > 0 && ` · ${queuedQueries} queued`}
               </span>
             )}
-            {failed.length > 0 && (
+            {failedCount > 0 && (
               <span className="flex items-center gap-1 text-destructive">
-                <AlertCircle className="h-3 w-3" /> {failed.length} failed
+                <AlertCircle className="h-3 w-3" /> {failedCount} failed
               </span>
             )}
-            {running.length === 0 && failed.length === 0 && (
+            {!isActive && failedCount === 0 && entries.length > 0 && (
               <span className="flex items-center gap-1 text-success">
                 <CheckCircle2 className="h-3 w-3" /> all done
               </span>
@@ -214,48 +219,27 @@ export function QueryHistoryPanel() {
           </div>
         </div>
 
-        {/* Body */}
-        {history.length === 0 ? (
+        {/* Body — scrollable list of last 20 queries */}
+        {entries.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <Clock className="h-6 w-6 text-muted-foreground/25" />
-            <p className="text-xs text-muted-foreground">No recent queries</p>
+            <p className="text-xs text-muted-foreground">No queries yet</p>
           </div>
         ) : (
-          <div className="max-h-72 overflow-y-auto py-1">
-            {running.length > 0 && (
-              <div>
-                {(failed.length > 0 || done.length > 0) && (
-                  <SectionLabel label="Running" count={running.length} />
-                )}
-                {running.map((e) => (
-                  <QueryRow key={e.id} entry={e} onViewSql={openSqlDialog} />
-                ))}
-              </div>
-            )}
-            {failed.length > 0 && (
-              <div>
-                <SectionLabel label="Failed" count={failed.length} />
-                {failed.map((e) => (
-                  <QueryRow key={e.id} entry={e} onViewSql={openSqlDialog} />
-                ))}
-              </div>
-            )}
-            {done.length > 0 && (
-              <div>
-                {(running.length > 0 || failed.length > 0) && (
-                  <SectionLabel label="Completed" count={done.length} />
-                )}
-                {done.map((e) => (
-                  <QueryRow key={e.id} entry={e} onViewSql={openSqlDialog} />
-                ))}
-              </div>
-            )}
+          <div className="overflow-y-auto py-1" style={{ maxHeight: '288px' }}>
+            {entries.map((e) => (
+              <QueryRow key={e.id} entry={e} onViewSql={openSqlDialog} />
+            ))}
           </div>
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t px-3 py-2">
-          <span className="text-[10px] text-muted-foreground/40">Session</span>
+        <div className="flex items-center justify-between border-t px-3 py-2 shrink-0">
+          <span className="text-[10px] text-muted-foreground/40">
+            {queryLog.length > PANEL_CAP
+              ? `Showing ${PANEL_CAP} of ${queryLog.length}`
+              : `${entries.length} quer${entries.length === 1 ? 'y' : 'ies'}`}
+          </span>
           <button
             onClick={() => navigate('/query-log')}
             className="flex items-center gap-1 text-[10px] text-primary hover:underline"

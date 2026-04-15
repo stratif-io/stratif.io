@@ -73,7 +73,8 @@ describe('QueryStatusIndicator', () => {
       runningQueries: 1,
       queuedQueries: 0,
       queryEverActive: true,
-      queryHistory: [
+      queryHistory: [],
+      queryLog: [
         {
           id: 'a',
           cardName: 'Events',
