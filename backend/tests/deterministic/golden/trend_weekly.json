@@ -1,5 +1,4 @@
 {
-  "sql": "SELECT DATE_TRUNC('week', timestamp), COUNT(*) FROM events WHERE timestamp >= '2023-01-01 00:00:00' AND timestamp <= '2024-12-31 23:59:59' GROUP BY DATE_TRUNC('week', timestamp) ORDER BY 1",
   "metric": "total_events",
   "data": [
     {

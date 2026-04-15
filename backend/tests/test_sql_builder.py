@@ -3,6 +3,7 @@
 from backend.services.sql_builder import (
     cast_to_text,
     date_diff_days,
+    date_diff_months,
     date_trunc,
     epoch_diff_seconds,
     extract_day_of_week,
@@ -84,6 +85,33 @@ class TestDateDiffDays:
     def test_bigquery(self):
         result = date_diff_days("s", "e", "bigquery")
         assert result == "DATE_DIFF(e, s, DAY)"
+
+    def test_clickhouse(self):
+        result = date_diff_days("s", "e", "clickhouse")
+        assert result == "dateDiff('day', s, e)"
+
+
+# ---------------------------------------------------------------------------
+# date_diff_months
+# ---------------------------------------------------------------------------
+
+
+class TestDateDiffMonths:
+    def test_duckdb(self):
+        assert date_diff_months("s", "e", "duckdb") == "DATE_DIFF('month', s, e)"
+
+    def test_clickhouse(self):
+        result = date_diff_months("s", "e", "clickhouse")
+        assert result == "dateDiff('month', s, e)"
+
+    def test_sqlite(self):
+        result = date_diff_months("s", "e", "sqlite")
+        assert "strftime('%Y'" in result
+        assert "strftime('%m'" in result
+
+    def test_databricks(self):
+        result = date_diff_months("s", "e", "databricks")
+        assert "MONTHS_BETWEEN" in result
 
 
 # ---------------------------------------------------------------------------

@@ -140,6 +140,8 @@ def date_diff_days(start_expr: str, end_expr: str, dialect: str = "duckdb") -> s
         return f"DATEDIFF(day, {start_expr}, {end_expr})"
     if dialect == "databricks":
         return f"DATEDIFF({end_expr}, {start_expr})"
+    if dialect == "clickhouse":
+        return f"dateDiff('day', {start_expr}, {end_expr})"
     # DuckDB
     return f"DATE_DIFF('day', {start_expr}, {end_expr})"
 
@@ -180,6 +182,8 @@ def date_diff_months(start_expr: str, end_expr: str, dialect: str = "duckdb") ->
         return f"DATEDIFF(month, {start_expr}, {end_expr})"
     if dialect == "databricks":
         return f"CAST(MONTHS_BETWEEN({end_expr}, {start_expr}) AS INTEGER)"
+    if dialect == "clickhouse":
+        return f"dateDiff('month', {start_expr}, {end_expr})"
     # DuckDB
     return f"DATE_DIFF('month', {start_expr}, {end_expr})"
 

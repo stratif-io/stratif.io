@@ -111,17 +111,19 @@ def get_retention(
     # longer datetime string (which excludes rows exactly on the start boundary).
     date_params: list = []
     date_clauses: list[str] = []
+    # ClickHouse: toStartOfDay(DateTime64) returns Date in 24.x; date-only strings
+    # ('2025-01-01') compare cleanly to both Date and DateTime columns, but
+    # datetime strings ('2025-01-01 00:00:00') raise TYPE_MISMATCH (code 53).
+    use_date_only = dialect in ("sqlite", "clickhouse")
     if start_date:
         date_clauses.append("first_seen >= ?")
         date_params.append(
-            start_date
-            if dialect == "sqlite"
-            else to_sql_datetime(start_date, "00:00:00")
+            start_date if use_date_only else to_sql_datetime(start_date, "00:00:00")
         )
     if end_date:
         date_clauses.append("first_seen <= ?")
         date_params.append(
-            end_date if dialect == "sqlite" else to_sql_datetime(end_date, "23:59:59")
+            end_date if use_date_only else to_sql_datetime(end_date, "23:59:59")
         )
 
     cohort_date_where = ("WHERE " + " AND ".join(date_clauses)) if date_clauses else ""

@@ -3,11 +3,18 @@
 import logging
 import sys
 
+import structlog
 import structlog.testing
 
 
 def test_intercept_handler_forwards_to_structlog():
     """A stdlib log record emitted via InterceptHandler must appear in structlog output."""
+    # other tests may call setup_logging() with log_level=ERROR, leaving
+    # wrapper_class=BoundLoggerFilteringAtError which silently drops WARNING
+    # (30 < 40).  Reset to defaults (BoundLoggerFilteringAtNotset, level 0)
+    # so capture_logs() can intercept all log levels regardless of test order.
+    structlog.reset_defaults()
+
     from backend.core.logging import InterceptHandler
 
     handler = InterceptHandler()
@@ -32,6 +39,8 @@ def test_intercept_handler_forwards_to_structlog():
 
 def test_intercept_handler_forwards_exc_info():
     """exc_info on a log record must be forwarded to structlog."""
+    structlog.reset_defaults()
+
     from backend.core.logging import InterceptHandler
 
     handler = InterceptHandler()

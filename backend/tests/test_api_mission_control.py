@@ -715,3 +715,26 @@ def test_metric_response_includes_sql(client):
     sql = data["sql"]
     sql_text = " ".join(sql) if isinstance(sql, list) else sql
     assert "COUNT(DISTINCT" in sql_text
+
+
+def test_dau_mau_ratio_sql_uses_portable_cast(client):
+    """dau_mau_ratio must not use CAST(... AS DOUBLE) — that syntax is DuckDB-only
+    and raises 'type "double" does not exist' on PostgreSQL.
+    The portable form is multiplication by 1.0."""
+    resp = client.get(
+        "/api/mission-control/metric",
+        params={
+            "metric": "dau_mau_ratio",
+            "start_date": "2024-01-01",
+            "end_date": "2024-01-31",
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    sql = data["sql"]
+    sql_text = " ".join(sql) if isinstance(sql, list) else sql
+    # "CAST(... AS DOUBLE)" without "PRECISION" is DuckDB-only — must not appear
+    assert "AS DOUBLE)" not in sql_text, (
+        "dau_mau_ratio SQL uses CAST(... AS DOUBLE) which fails on PostgreSQL. "
+        "Use '1.0 * COUNT(*)' instead."
+    )

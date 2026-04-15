@@ -55,7 +55,7 @@ describe('mission-control fetchers forward task opts', () => {
       }
     )
     const opts = vi.mocked(fetchWithSemaphore).mock.calls[0][2]
-    expect(opts).toEqual({
+    expect(opts).toMatchObject({
       groupKey: 'mc:total_events',
       timeoutMs: 12000,
       meta: { cardName: 'Total Events', querySnippet: 'snippet' },

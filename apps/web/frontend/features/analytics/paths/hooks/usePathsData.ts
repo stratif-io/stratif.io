@@ -47,14 +47,17 @@ export function usePathsData({
   } = useQuery({
     queryKey: ['paths', targetEvent, deviceType, startDate, endDate, activeConnectionId],
     queryFn: () =>
-      fetchPaths({
-        target_event: targetEvent,
-        device_type: deviceType || undefined,
-        limit: 5,
-        start_date: startDate,
-        end_date: endDate,
-        connection_id: activeConnectionId ?? undefined,
-      }),
+      fetchPaths(
+        {
+          target_event: targetEvent,
+          device_type: deviceType || undefined,
+          limit: 5,
+          start_date: startDate,
+          end_date: endDate,
+          connection_id: activeConnectionId ?? undefined,
+        },
+        { meta: { cardName: 'Paths', querySnippet: `paths → ${targetEvent}` } }
+      ),
     enabled: !!activeConnectionId && !!targetEvent && !!startDate && !!endDate,
     staleTime: QUERY_STALE_TIME.default,
   })

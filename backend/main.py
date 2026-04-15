@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import structlog
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,8 +14,13 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from backend.config import settings
+from backend.core.logging import setup_logging
 from backend.core.middleware import AccessLogMiddleware, RequestIdMiddleware
 from backend.core.rate_limit import limiter
+
+# Configure logging immediately so every logger created during import respects the level.
+setup_logging(settings.log_level, settings.log_format)
 
 log = structlog.get_logger(__name__)
 
@@ -43,14 +48,11 @@ from backend.api import (  # noqa: E402
     retention_router,
     sessions_router,
 )
-from backend.config import settings  # noqa: E402
-from backend.core.logging import setup_logging  # noqa: E402
 from backend.product_db import close_product_db, init_product_db  # noqa: E402
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    setup_logging(settings.log_level, settings.log_format)
     await init_product_db()
     try:
         yield
@@ -73,6 +75,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # ty
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
     log.error(
         "unhandled_exception",
         path=request.url.path,
@@ -160,4 +164,11 @@ if dist_path.exists():
 def main():
     import uvicorn
 
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=settings.debug)
+    uvicorn.run(
+        "backend.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=settings.debug,
+        log_config=None,  # prevent uvicorn from overriding our structlog setup
+        log_level=settings.log_level.lower(),
+    )

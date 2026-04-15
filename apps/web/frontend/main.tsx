@@ -44,6 +44,9 @@ const NewConnectionPage = lazy(() =>
 const QueryStudioPage = lazy(() =>
   import('@/features/query-studio/QueryStudioPage').then((m) => ({ default: m.QueryStudioPage }))
 )
+const QueryLogPage = lazy(() =>
+  import('@/features/query-log/QueryLogPage').then((m) => ({ default: m.QueryLogPage }))
+)
 const NotFoundPage = lazy(() =>
   import('@/features/design-system/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
 )
@@ -75,6 +78,7 @@ const router = createBrowserRouter([
           { path: '/connections/new', element: <NewConnectionPage /> },
           { path: '/connections/:id/:tab?', element: <ConnectionDetailPage /> },
           { path: '/query-studio', element: <QueryStudioPage /> },
+          { path: '/query-log', element: <QueryLogPage /> },
           ...(import.meta.env.DEV && DesignSystemPage
             ? [{ path: '/design-system', element: <DesignSystemPage /> }]
             : []),

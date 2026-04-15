@@ -321,3 +321,70 @@ class TestBracketRetention:
                 assert v is None, (
                     f"Milestone D{m} should be None for today's cohort, got {v}"
                 )
+
+
+# ---------------------------------------------------------------------------
+# ClickHouse dialect — date param format
+# ---------------------------------------------------------------------------
+
+
+class _FakeClickHouseDB:
+    """Minimal AnalyticsDatabase stand-in that records execute() params."""
+
+    def __init__(self):
+        self.all_params: list = []
+
+    def get_dialect(self) -> str:
+        return "clickhouse"
+
+    def execute(self, query: str, params: list | None) -> list[tuple]:
+        if params:
+            self.all_params.extend(params)
+        return []
+
+    def build_filter_clauses(self, filters: dict) -> tuple[list[str], list]:
+        return [], []
+
+
+@pytest.fixture()
+def client_clickhouse_fake(monkeypatch):
+    """TestClient wired to a fake ClickHouse db that records params."""
+    from backend.services import get_analytics_db
+
+    fake_db = _FakeClickHouseDB()
+
+    async def override_db():
+        yield fake_db
+
+    app.dependency_overrides[get_analytics_db] = override_db
+    from starlette.testclient import TestClient
+
+    with TestClient(app) as c:
+        yield c, fake_db
+
+    app.dependency_overrides.clear()
+
+
+class TestClickHouseDateParams:
+    def test_date_range_params_are_date_only_strings(self, client_clickhouse_fake):
+        """Retention for ClickHouse must pass '2025-01-01' not '2025-01-01 00:00:00'.
+
+        toStartOfDay(DateTime64) returns Date in ClickHouse 24.x.
+        Comparing Date >= '2025-01-01 00:00:00' raises CODE 53 TYPE_MISMATCH.
+        Date-only strings ('2025-01-01') work for both Date and DateTime columns.
+        """
+        client, fake_db = client_clickhouse_fake
+        response = client.get(
+            "/api/retention",
+            params={"start_date": "2025-01-01", "end_date": "2025-01-31"},
+        )
+        assert response.status_code == 200
+
+        # The date-range params must NOT contain time info (space + HH:MM:SS)
+        for p in fake_db.all_params:
+            if isinstance(p, str) and ("2025-01-01" in p or "2025-01-31" in p):
+                assert " " not in p, (
+                    f"ClickHouse date param must be date-only, got: {p!r}. "
+                    "toStartOfDay(DateTime64) returns Date in ClickHouse 24.x; "
+                    "datetime strings cause TYPE_MISMATCH (code 53)."
+                )

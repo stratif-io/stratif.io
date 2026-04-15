@@ -20,12 +20,15 @@ export function useUserTimeline(userId: string | null, limit = 100): UseUserTime
   const query = useInfiniteQuery({
     queryKey: ['user-timeline', userId, limit, activeConnectionId],
     queryFn: ({ pageParam }) =>
-      fetchUserEvents({
-        user_id: userId!,
-        limit,
-        offset: pageParam,
-        connection_id: activeConnectionId ?? undefined,
-      }),
+      fetchUserEvents(
+        {
+          user_id: userId!,
+          limit,
+          offset: pageParam,
+          connection_id: activeConnectionId ?? undefined,
+        },
+        { meta: { cardName: 'User Timeline', querySnippet: userId! } }
+      ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.data.length === limit ? allPages.length * limit : undefined,

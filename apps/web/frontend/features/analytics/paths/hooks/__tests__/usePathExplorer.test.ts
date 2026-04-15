@@ -94,7 +94,8 @@ describe('usePathExplorer', () => {
         max_path_length: 5,
         start_date: '2026-01-01',
         end_date: '2026-01-31',
-      })
+      }),
+      expect.anything()
     )
   })
 
@@ -191,7 +192,8 @@ describe('usePathExplorer', () => {
         expect.objectContaining({
           start_event: 'Home',
           end_event: 'Purchase',
-        })
+        }),
+        expect.anything()
       )
     )
   })
@@ -228,7 +230,8 @@ describe('usePathExplorer', () => {
         expect.objectContaining({
           max_time_between_events: 60,
           time_unit: 'minutes',
-        })
+        }),
+        expect.anything()
       )
     )
   })
@@ -261,7 +264,8 @@ describe('usePathExplorer', () => {
 
     await waitFor(() =>
       expect(fetchPathAnalysis).toHaveBeenCalledWith(
-        expect.objectContaining({ group_by: 'session_id' })
+        expect.objectContaining({ group_by: 'session_id' }),
+        expect.anything()
       )
     )
   })

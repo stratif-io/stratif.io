@@ -73,20 +73,30 @@ export function usePathExplorer({
       activeConnectionId,
     ],
     queryFn: () =>
-      fetchPathAnalysis({
-        start_event: startEvent || undefined,
-        end_event: endEvent || undefined,
-        min_path_length: minPathLength,
-        max_path_length: maxPathLength,
-        max_time_between_events: maxTimeBetweenEvents || undefined,
-        time_unit: timeUnit,
-        group_by: groupBy,
-        top_n: topN,
-        start_date: startDate,
-        end_date: endDate,
-        filters: activeFilters,
-        connection_id: activeConnectionId ?? undefined,
-      }),
+      fetchPathAnalysis(
+        {
+          start_event: startEvent || undefined,
+          end_event: endEvent || undefined,
+          min_path_length: minPathLength,
+          max_path_length: maxPathLength,
+          max_time_between_events: maxTimeBetweenEvents || undefined,
+          time_unit: timeUnit,
+          group_by: groupBy,
+          top_n: topN,
+          start_date: startDate,
+          end_date: endDate,
+          filters: activeFilters,
+          connection_id: activeConnectionId ?? undefined,
+        },
+        {
+          meta: {
+            cardName: 'Path Explorer',
+            querySnippet: startEvent
+              ? `${startEvent}${endEvent ? ` → ${endEvent}` : ' → …'}`
+              : 'path analysis',
+          },
+        }
+      ),
     enabled: !!activeConnectionId,
     staleTime: QUERY_STALE_TIME.default,
   })

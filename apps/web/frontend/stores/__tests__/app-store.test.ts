@@ -383,7 +383,7 @@ describe('useAppStore', () => {
 
   describe('queryHistory slice', () => {
     beforeEach(() => {
-      useAppStore.setState({ queryHistory: [] })
+      useAppStore.setState({ queryHistory: [], queryLog: [] })
     })
 
     it('tracks running queries and prunes them 5s after finish', () => {
@@ -428,6 +428,42 @@ describe('useAppStore', () => {
         const stored = JSON.parse(lastCall[1] || '{}')
         expect(stored.state).not.toHaveProperty('queryHistory')
       }
+    })
+  })
+
+  describe('queryLog slice', () => {
+    beforeEach(() => {
+      useAppStore.setState({ queryHistory: [], queryLog: [] })
+    })
+
+    it('mirrors entries into queryLog without pruning', () => {
+      vi.useFakeTimers()
+      try {
+        useAppStore.getState().addQueryStart({ id: 'q1', cardName: 'A', querySnippet: '.' })
+        useAppStore.getState().markQueryFinish('q1', 'done')
+        vi.advanceTimersByTime(6000)
+        // queryHistory pruned after 5s
+        expect(useAppStore.getState().queryHistory).toHaveLength(0)
+        // queryLog is never pruned
+        expect(useAppStore.getState().queryLog).toHaveLength(1)
+        expect(useAppStore.getState().queryLog[0].status).toBe('done')
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('setQuerySql attaches sql to both history and log', () => {
+      useAppStore.getState().addQueryStart({ id: 'q1', cardName: 'A', querySnippet: '.' })
+      useAppStore.getState().setQuerySql('q1', 'SELECT 1')
+      expect(useAppStore.getState().queryHistory[0].sql).toBe('SELECT 1')
+      expect(useAppStore.getState().queryLog[0].sql).toBe('SELECT 1')
+    })
+
+    it('clearQueryLog empties the log', () => {
+      useAppStore.getState().addQueryStart({ id: 'q1', cardName: 'A', querySnippet: '.' })
+      expect(useAppStore.getState().queryLog).toHaveLength(1)
+      useAppStore.getState().clearQueryLog()
+      expect(useAppStore.getState().queryLog).toHaveLength(0)
     })
   })
 

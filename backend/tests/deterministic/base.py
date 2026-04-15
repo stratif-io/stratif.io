@@ -168,6 +168,38 @@ class DeterministicBaseTest:
         assert r.status_code == 200, r.text
         self._assert_or_generate(request, "raw_sessions_page1", r.json())
 
+    def test_15_mission_control_aggregate(
+        self, client, request, deterministic_setup
+    ) -> None:
+        """Full mission-control aggregate — includes dau_mau_ratio via CAST(COUNT(*) AS DOUBLE)
+        on DuckDB-only backends; must succeed on all supported dialects."""
+        r = client.get("/api/mission-control", params=self._p())
+        assert r.status_code == 200, r.text
+        self._assert_or_generate(request, "mission_control_aggregate", r.json())
+
+    def test_16_mission_control_metric_dau_mau(
+        self, client, request, deterministic_setup
+    ) -> None:
+        """Per-metric dau_mau_ratio — the per-metric SQL path that failed on PostgreSQL
+        with 'type double does not exist'."""
+        r = client.get(
+            "/api/mission-control/metric",
+            params={**self._p(), "metric": "dau_mau_ratio"},
+        )
+        assert r.status_code == 200, r.text
+        self._assert_or_generate(request, "mission_control_metric_dau_mau", r.json())
+
+    def test_17_mission_control_trend_dau_mau(
+        self, client, request, deterministic_setup
+    ) -> None:
+        """Trend for dau_mau_ratio — exercises the breakdown SQL path."""
+        r = client.get(
+            "/api/mission-control/trend",
+            params={**self._p(), "metric": "dau_mau_ratio", "granularity": "month"},
+        )
+        assert r.status_code == 200, r.text
+        self._assert_or_generate(request, "mission_control_trend_dau_mau", r.json())
+
 
 def _json_diff(expected: dict, actual: dict) -> str:
     a = json.dumps(expected, indent=2, default=str).splitlines(keepends=True)

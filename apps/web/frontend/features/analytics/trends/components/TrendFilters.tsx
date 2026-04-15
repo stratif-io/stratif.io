@@ -27,7 +27,11 @@ function FilterRowValueSelect({
 }) {
   const { data, isLoading } = useQuery({
     queryKey: ['trend-filter-values', field, connectionId],
-    queryFn: () => fetchPivotGridFilterValues({ field, connection_id: connectionId }),
+    queryFn: () =>
+      fetchPivotGridFilterValues(
+        { field, connection_id: connectionId },
+        { meta: { cardName: 'Dimension Values', querySnippet: field, auxiliary: true } }
+      ),
     staleTime: QUERY_STALE_TIME.default,
   })
 
