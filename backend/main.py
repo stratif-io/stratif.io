@@ -164,4 +164,11 @@ if dist_path.exists():
 def main():
     import uvicorn
 
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=settings.debug)
+    uvicorn.run(
+        "backend.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=settings.debug,
+        log_config=None,  # prevent uvicorn from overriding our structlog setup
+        log_level=settings.log_level.lower(),
+    )
