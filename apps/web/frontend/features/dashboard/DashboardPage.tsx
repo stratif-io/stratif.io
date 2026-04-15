@@ -30,6 +30,8 @@ export function DashboardPage() {
     data,
     metricLoading,
     metricSql,
+    metricError,
+    metricRefetch,
     isError,
     error,
     topEvents,
@@ -57,7 +59,10 @@ export function DashboardPage() {
   }, [isConnectionNotFound, activeConnectionId, setActiveConnectionId])
 
   const allMetricsLoaded = Object.values(metricLoading).every((v) => !v)
-  const isEmpty = !isError && allMetricsLoaded && !eventsLoading && topEvents.length === 0
+  // Only block the whole page when all metrics fail together (systemic error).
+  // Individual metric failures are shown per-card via metricError/metricRefetch.
+  const allMetricsFailed = isError && Object.values(metricError).every((e) => e !== null)
+  const isEmpty = !allMetricsFailed && allMetricsLoaded && !eventsLoading && topEvents.length === 0
 
   if (!activeConnectionId || isConnectionNotFound) {
     return (
@@ -100,7 +105,7 @@ export function DashboardPage() {
               </button>
             </div>
 
-            {isError ? (
+            {allMetricsFailed ? (
               <QueryError error={error} timeoutSeconds={timeoutSeconds} onRetry={refetch} />
             ) : isEmpty ? (
               <EmptyState
@@ -115,6 +120,8 @@ export function DashboardPage() {
                   trends={trends}
                   metricLoading={metricLoading}
                   metricSql={metricSql}
+                  metricError={metricError}
+                  metricRefetch={metricRefetch}
                   togglePin={togglePin}
                   isPinned={isPinned}
                   resetToDefault={resetToDefault}

@@ -36,6 +36,8 @@ export interface UseMissionControlReturn {
   isLoading: boolean
   metricLoading: Record<MetricKey, boolean>
   metricSql: Record<MetricKey, string | string[] | null>
+  metricError: Record<MetricKey, Error | null>
+  metricRefetch: Record<MetricKey, () => void>
   isError: boolean
   error: Error | null
   topEvents: Array<{ name: string; count: number }>
@@ -130,6 +132,15 @@ export function useMissionControl({
     METRICS.map((metric, i) => [metric, metricResults[i].data?.sql ?? null])
   ) as Record<MetricKey, string | string[] | null>
 
+  // Per-metric error and refetch maps — each card can show its own error and retry
+  const metricError = Object.fromEntries(
+    METRICS.map((metric, i) => [metric, (metricResults[i].error as Error | null) ?? null])
+  ) as Record<MetricKey, Error | null>
+
+  const metricRefetch = Object.fromEntries(
+    METRICS.map((metric, i) => [metric, () => void metricResults[i].refetch()])
+  ) as Record<MetricKey, () => void>
+
   // Build data progressively: populate resolved metrics immediately, 0 for still-loading ones.
   const data: MissionControlResponse | undefined = enabled
     ? {
@@ -158,6 +169,8 @@ export function useMissionControl({
     isLoading,
     metricLoading,
     metricSql,
+    metricError,
+    metricRefetch,
     isError,
     error,
     topEvents: topEventsData?.data ?? [],
