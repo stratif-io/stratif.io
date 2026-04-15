@@ -15,6 +15,8 @@ export interface MiniMetricCardProps {
   isHero?: boolean // highlight when this metric is the hero
   onClick?: () => void
   loading?: boolean
+  isError?: boolean // query failed — show red border + retry
+  onRetry?: () => void
   fullWidth?: boolean // true for DAU/MAU which spans 2 cols
   changeLabel?: string
   sparklineFormatter?: (value: number) => string
@@ -32,6 +34,8 @@ export const MiniMetricCard = memo(function MiniMetricCard({
   isHero,
   onClick,
   loading,
+  isError,
+  onRetry,
   fullWidth,
   changeLabel,
   sparklineFormatter,
@@ -68,13 +72,29 @@ export const MiniMetricCard = memo(function MiniMetricCard({
       className={cn(
         'relative overflow-hidden rounded-xl border p-3 text-left w-full transition-colors',
         'hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        isHero
-          ? 'border-2 border-primary bg-card shadow-md ring-2 ring-primary/40'
-          : 'border-border bg-card shadow-sm opacity-80 hover:opacity-100 transition-opacity',
+        isError
+          ? 'border-destructive/60 bg-card shadow-sm ring-1 ring-destructive/30'
+          : isHero
+            ? 'border-2 border-primary bg-card shadow-md ring-2 ring-primary/40'
+            : 'border-border bg-card shadow-sm opacity-80 hover:opacity-100 transition-opacity',
         fullWidth && 'col-span-2'
       )}
     >
       <CardLoadingBar loading={loading} />
+      {isError && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onRetry?.()
+          }}
+          aria-label={`Retry ${label}`}
+          className="absolute inset-0 flex flex-col items-center justify-center gap-1 z-10 cursor-pointer"
+        >
+          <span className="text-[10px] font-semibold text-destructive tracking-wide">Failed</span>
+          <span className="text-[10px] text-muted-foreground underline">Retry</span>
+        </button>
+      )}
 
       {/* Sparkline — subtle background */}
       {sparklineData.length > 1 && !loading && (

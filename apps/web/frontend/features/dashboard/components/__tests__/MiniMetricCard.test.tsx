@@ -67,4 +67,24 @@ describe('MiniMetricCard', () => {
     // Content is opacity-0 but still in DOM; loading bar is rendered
     expect(document.querySelector('.bg-primary\\/50')).toBeTruthy()
   })
+
+  it('shows a retry button when isError is true', () => {
+    const onRetry = vi.fn()
+    renderWithTooltip(<MiniMetricCard {...baseProps} isError onRetry={onRetry} />)
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument()
+  })
+
+  it('calls onRetry when retry button is clicked', () => {
+    const onRetry = vi.fn()
+    renderWithTooltip(<MiniMetricCard {...baseProps} isError onRetry={onRetry} />)
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }))
+    expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('applies error border style when isError is true', () => {
+    const onRetry = vi.fn()
+    renderWithTooltip(<MiniMetricCard {...baseProps} isError onRetry={onRetry} />)
+    const card = screen.getByRole('button', { name: /view.*trend/i })
+    expect(card.className).toMatch(/destructive/)
+  })
 })

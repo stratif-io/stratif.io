@@ -16,6 +16,8 @@ export interface MissionControlGridProps {
   trends: Record<TrendMetric, MetricTrend>
   metricLoading: Record<TrendMetric, boolean>
   metricSql?: Record<TrendMetric, string | string[] | null>
+  metricError?: Record<TrendMetric, Error | null>
+  metricRefetch?: Record<TrendMetric, () => void>
   togglePin: (key: string) => void
   isPinned: (key: string) => boolean
   resetToDefault: () => void
@@ -116,6 +118,8 @@ export const MissionControlGrid = memo(function MissionControlGrid({
   trends,
   metricLoading,
   metricSql,
+  metricError,
+  metricRefetch,
   togglePin,
   isPinned,
   resetToDefault,
@@ -225,6 +229,8 @@ export const MissionControlGrid = memo(function MissionControlGrid({
             sparklinePreviousDates={trends[heroMetric]?.previousDates}
             color={heroConfig.color}
             loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
+            isError={!!metricError?.[heroMetric]}
+            onRetry={metricRefetch?.[heroMetric]}
           />
         </DevCard>
       </div>
@@ -282,6 +288,8 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                         onClick={() => setHeroMetric(metricKey)}
                         changeLabel={changeLabel}
                         loading={cardLoading}
+                        isError={!!metricError?.[metricKey]}
+                        onRetry={metricRefetch?.[metricKey]}
                         fullWidth={isFullWidth}
                         sparklineFormatter={(v) => formatMetricValue(metricKey, v)}
                         decimalsOverride={decimalsOverride}

@@ -21,6 +21,8 @@ export interface HeroMetricCardProps {
   sparklinePreviousDates?: string[]
   color: string
   loading?: boolean
+  isError?: boolean
+  onRetry?: () => void
   changeLabel?: string
   prevPeriodLabel?: string
 }
@@ -83,6 +85,8 @@ export const HeroMetricCard = memo(function HeroMetricCard({
   sparklinePreviousDates,
   color,
   loading,
+  isError,
+  onRetry,
   changeLabel,
   prevPeriodLabel,
 }: HeroMetricCardProps) {
@@ -129,7 +133,26 @@ export const HeroMetricCard = memo(function HeroMetricCard({
   const gradientId = `hero-gradient-${metricKey}`
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-md p-0 flex flex-col h-full transition-colors hover:bg-accent/20">
+    <div
+      data-error={isError ? 'true' : undefined}
+      className={cn(
+        'relative overflow-hidden rounded-xl border bg-card shadow-md p-0 flex flex-col h-full transition-colors hover:bg-accent/20',
+        isError ? 'border-destructive/60 ring-1 ring-destructive/30' : 'border-border'
+      )}
+    >
+      {isError && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-card/80 backdrop-blur-[2px]">
+          <span className="text-sm font-semibold text-destructive">Query failed</span>
+          <button
+            type="button"
+            onClick={onRetry}
+            aria-label={`Retry ${label}`}
+            className="text-xs px-3 py-1.5 rounded-md border border-destructive/40 text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
       {/* Chart fills the card — no padding, chart is the primary visual */}
       <div
         className={cn(
