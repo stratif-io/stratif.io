@@ -80,6 +80,13 @@ interface AppState {
   /** Full session query log — never auto-pruned, capped at 200. Use for the /query-log page. */
   queryLog: QueryHistoryEntry[]
   clearQueryLog: () => void
+
+  /**
+   * Card name of the most recently completed (done) query.
+   * Stored as a scalar so QueryStatusIndicator can subscribe without
+   * re-rendering on every queryLog mutation.
+   */
+  lastCompletedName: string | null
 }
 
 export const useAppStore = create<AppState>()(
@@ -142,6 +149,7 @@ export const useAppStore = create<AppState>()(
 
       queryHistory: [],
       queryLog: [],
+      lastCompletedName: null,
       addQueryStart: (entry) =>
         set((state) => {
           const newEntry: QueryHistoryEntry = {
@@ -157,14 +165,18 @@ export const useAppStore = create<AppState>()(
           }
         }),
       markQueryFinish: (id, status) => {
-        set((state) => ({
-          queryHistory: state.queryHistory.map((e) =>
-            e.id === id ? { ...e, status, finishedAt: Date.now() } : e
-          ),
-          queryLog: state.queryLog.map((e) =>
-            e.id === id ? { ...e, status, finishedAt: Date.now() } : e
-          ),
-        }))
+        set((state) => {
+          const finishedAt = Date.now()
+          const entry = state.queryLog.find((e) => e.id === id)
+          return {
+            queryHistory: state.queryHistory.map((e) =>
+              e.id === id ? { ...e, status, finishedAt } : e
+            ),
+            queryLog: state.queryLog.map((e) => (e.id === id ? { ...e, status, finishedAt } : e)),
+            lastCompletedName:
+              status === 'done' && entry ? entry.cardName : state.lastCompletedName,
+          }
+        })
         setTimeout(() => {
           set((state) => ({
             queryHistory: state.queryHistory.filter((e) => e.id !== id),

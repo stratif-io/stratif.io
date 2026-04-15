@@ -14,6 +14,7 @@ beforeEach(() => {
     queryEverActive: false,
     queryHistory: [],
     queryLog: [],
+    lastCompletedName: null,
   })
 })
 
