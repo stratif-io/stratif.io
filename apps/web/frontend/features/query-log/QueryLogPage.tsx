@@ -220,6 +220,7 @@ export function QueryLogPage() {
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [showAuxiliary, setShowAuxiliary] = useState(false)
 
   function toggleRow(id: string) {
     setExpandedIds((prev) => {
@@ -235,14 +236,16 @@ export function QueryLogPage() {
     navigate('/query-studio')
   }
 
+  const visibleLog = showAuxiliary ? queryLog : queryLog.filter((e) => !e.auxiliary)
   const filtered =
-    statusFilter === 'all' ? queryLog : queryLog.filter((e) => e.status === statusFilter)
+    statusFilter === 'all' ? visibleLog : visibleLog.filter((e) => e.status === statusFilter)
 
   const counts = {
-    running: queryLog.filter((e) => e.status === 'running').length,
-    done: queryLog.filter((e) => e.status === 'done').length,
-    failed: queryLog.filter((e) => e.status === 'failed').length,
+    running: visibleLog.filter((e) => e.status === 'running').length,
+    done: visibleLog.filter((e) => e.status === 'done').length,
+    failed: visibleLog.filter((e) => e.status === 'failed').length,
   }
+  const auxiliaryCount = queryLog.filter((e) => e.auxiliary).length
 
   return (
     <PageTransition>
@@ -262,20 +265,38 @@ export function QueryLogPage() {
               <p className="text-xs text-muted-foreground mt-0.5">
                 {queryLog.length === 0
                   ? 'No queries this session'
-                  : `${queryLog.length} quer${queryLog.length === 1 ? 'y' : 'ies'} this session`}
+                  : `${visibleLog.length} quer${visibleLog.length === 1 ? 'y' : 'ies'} this session`}
               </p>
             </div>
           </div>
 
-          {queryLog.length > 0 && (
-            <button
-              onClick={clearQueryLog}
-              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Clear log
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {auxiliaryCount > 0 && (
+              <button
+                onClick={() => setShowAuxiliary((v) => !v)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors',
+                  showAuxiliary
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+              >
+                {showAuxiliary ? 'Hide' : 'Show'} dimension queries
+                <span className="rounded-full bg-muted px-1.5 py-px text-[10px]">
+                  {auxiliaryCount}
+                </span>
+              </button>
+            )}
+            {queryLog.length > 0 && (
+              <button
+                onClick={clearQueryLog}
+                className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Clear log
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Status filter tabs */}

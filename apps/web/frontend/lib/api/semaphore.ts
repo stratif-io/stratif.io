@@ -16,7 +16,13 @@ export function isTimeoutError(err: unknown): boolean {
 
 type CountChangeCallback = (running: number, queued: number) => void
 
-export type QueryMeta = { id?: string; cardName: string; querySnippet: string }
+export type QueryMeta = {
+  id?: string
+  cardName: string
+  querySnippet: string
+  /** Lookup/dimension-value queries — shown only when the "show auxiliary" toggle is on. */
+  auxiliary?: boolean
+}
 export type TaskOpts = { groupKey?: string; timeoutMs?: number; meta?: QueryMeta }
 
 type TaskStartCallback = (id: string, meta: QueryMeta) => void

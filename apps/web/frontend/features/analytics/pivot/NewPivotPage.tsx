@@ -113,12 +113,15 @@ export function NewPivotPage() {
 
   const fetchFilterValues = useCallback(
     async (field: string): Promise<string[]> => {
-      const res = await fetchPivotGridFilterValues({
-        field,
-        start_date: startDate,
-        end_date: endDate,
-        connection_id: activeConnectionId ?? undefined,
-      })
+      const res = await fetchPivotGridFilterValues(
+        {
+          field,
+          start_date: startDate,
+          end_date: endDate,
+          connection_id: activeConnectionId ?? undefined,
+        },
+        { meta: { cardName: 'Dimension Values', querySnippet: field, auxiliary: true } }
+      )
       return res.values.map(String)
     },
     [startDate, endDate, activeConnectionId]

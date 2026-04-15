@@ -384,19 +384,26 @@ export const fetchPivotGridColDefs = (connection_id?: string) => {
   return fetchApi<PivotGridColDefsResponse>(`/api/pivot/grid?${searchParams}`)
 }
 
-export const fetchPivotGridFilterValues = (params: {
-  field: string
-  start_date?: string
-  end_date?: string
-  event_filter?: string
-  connection_id?: string
-}) => {
+export const fetchPivotGridFilterValues = (
+  params: {
+    field: string
+    start_date?: string
+    end_date?: string
+    event_filter?: string
+    connection_id?: string
+  },
+  opts?: TaskOpts
+) => {
   const sp = new URLSearchParams({ field: params.field })
   if (params.start_date) sp.set('start_date', params.start_date)
   if (params.end_date) sp.set('end_date', params.end_date)
   if (params.event_filter) sp.set('event_filter', params.event_filter)
   if (params.connection_id) sp.set('connection_id', params.connection_id)
-  return fetchApi<{ field: string; values: unknown[] }>(`/api/pivot/grid/filter-values?${sp}`)
+  return fetchApi<{ field: string; values: unknown[] }>(
+    `/api/pivot/grid/filter-values?${sp}`,
+    undefined,
+    opts
+  )
 }
 
 export const fetchPivotGridRows = (
@@ -479,9 +486,11 @@ export const upsertFilterConfig = (connId: string, body: FilterConfigBody) =>
 export const fetchFilterOptions = (connId: string) =>
   fetchApi<FilterOptionsResponse>(`/api/connections/${connId}/filter-options`)
 
-export const fetchFieldOptions = (connId: string, field: string) =>
+export const fetchFieldOptions = (connId: string, field: string, opts?: TaskOpts) =>
   fetchApi<{ field: string; values: string[] }>(
-    `/api/connections/${connId}/field-options?field=${encodeURIComponent(field)}`
+    `/api/connections/${connId}/field-options?field=${encodeURIComponent(field)}`,
+    undefined,
+    opts
   )
 
 export const fetchSchemaDetect = (connId: string, eventsTable?: string) => {

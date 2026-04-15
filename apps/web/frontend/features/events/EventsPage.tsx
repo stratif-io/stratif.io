@@ -73,7 +73,11 @@ export function EventsPage() {
     queryFn: async () => {
       if (!activeConnectionId || customPropFields.length === 0) return {}
       const results = await Promise.all(
-        customPropFields.map((field) => fetchFieldOptions(activeConnectionId, field))
+        customPropFields.map((field) =>
+          fetchFieldOptions(activeConnectionId, field, {
+            meta: { cardName: 'Dimension Values', querySnippet: field, auxiliary: true },
+          })
+        )
       )
       return Object.fromEntries(results.map((r) => [r.field, r.values]))
     },

@@ -22,6 +22,8 @@ export type QueryHistoryEntry = {
   startedAt: number
   finishedAt?: number
   status: 'running' | 'done' | 'failed'
+  /** Lookup/dimension-value queries (filter dropdowns, distinct values). Hidden by default. */
+  auxiliary?: boolean
 }
 
 const QUERY_HISTORY_CAP = 50
@@ -156,6 +158,7 @@ export const useAppStore = create<AppState>()(
             ...entry,
             startedAt: Date.now(),
             status: 'running',
+            auxiliary: entry.auxiliary,
           }
           const next = [newEntry, ...state.queryHistory]
           const logNext = [newEntry, ...state.queryLog]
