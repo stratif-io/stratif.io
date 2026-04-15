@@ -117,13 +117,16 @@ export function FunnelDetailPage() {
       activeConnectionId,
     ],
     queryFn: () =>
-      fetchPathFunnel({
-        events,
-        start_date: startDate,
-        end_date: endDate,
-        filters: activeFilters,
-        connection_id: activeConnectionId ?? undefined,
-      }),
+      fetchPathFunnel(
+        {
+          events,
+          start_date: startDate,
+          end_date: endDate,
+          filters: activeFilters,
+          connection_id: activeConnectionId ?? undefined,
+        },
+        { meta: { cardName: 'Funnel', querySnippet: events.join(' → ') } }
+      ),
     enabled: events.length >= 2,
   })
 

@@ -54,7 +54,8 @@ describe('useQueryStudio', () => {
       await result.current.execute(1000)
     })
     expect(mockExecute).toHaveBeenCalledWith(
-      expect.objectContaining({ sql: 'SELECT * FROM events\nLIMIT 1000' })
+      expect.objectContaining({ sql: 'SELECT * FROM events\nLIMIT 1000' }),
+      expect.anything()
     )
   })
 
@@ -66,7 +67,8 @@ describe('useQueryStudio', () => {
       await result.current.execute(1000)
     })
     expect(mockExecute).toHaveBeenCalledWith(
-      expect.objectContaining({ sql: 'SELECT * FROM events LIMIT 50' })
+      expect.objectContaining({ sql: 'SELECT * FROM events LIMIT 50' }),
+      expect.anything()
     )
   })
 
@@ -78,7 +80,8 @@ describe('useQueryStudio', () => {
       await result.current.execute(null)
     })
     expect(mockExecute).toHaveBeenCalledWith(
-      expect.objectContaining({ sql: 'SELECT COUNT(*) FROM events' })
+      expect.objectContaining({ sql: 'SELECT COUNT(*) FROM events' }),
+      expect.anything()
     )
   })
 

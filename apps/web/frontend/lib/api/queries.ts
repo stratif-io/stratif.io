@@ -102,13 +102,16 @@ export const fetchEvents = (connection_id?: string) => {
   return fetchApi<EventsResponse>(`/api/events?${searchParams}`)
 }
 
-export const fetchTopEvents = (params: {
-  limit?: number
-  start_date?: string
-  end_date?: string
-  filters?: Record<string, string | null>
-  connection_id?: string
-}) => {
+export const fetchTopEvents = (
+  params: {
+    limit?: number
+    start_date?: string
+    end_date?: string
+    filters?: Record<string, string | null>
+    connection_id?: string
+  },
+  opts?: TaskOpts
+) => {
   const searchParams = new URLSearchParams()
   if (params.limit) searchParams.set('limit', String(params.limit))
   if (params.start_date) searchParams.set('start_date', params.start_date)
@@ -117,21 +120,24 @@ export const fetchTopEvents = (params: {
   if (f) searchParams.set('filters', f)
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
 
-  return fetchApi<TopEventsResponse>(`/api/events/top?${searchParams}`)
+  return fetchApi<TopEventsResponse>(`/api/events/top?${searchParams}`, undefined, opts)
 }
 
-export const fetchRawEvents = (params: {
-  limit?: number
-  offset?: number
-  event_name?: string
-  user_id?: string
-  sort_order?: 'asc' | 'desc'
-  sort_field?: string
-  start_date?: string
-  end_date?: string
-  filters?: Record<string, string | null>
-  connection_id?: string
-}) => {
+export const fetchRawEvents = (
+  params: {
+    limit?: number
+    offset?: number
+    event_name?: string
+    user_id?: string
+    sort_order?: 'asc' | 'desc'
+    sort_field?: string
+    start_date?: string
+    end_date?: string
+    filters?: Record<string, string | null>
+    connection_id?: string
+  },
+  opts?: TaskOpts
+) => {
   const searchParams = new URLSearchParams()
   if (params.limit) searchParams.set('limit', String(params.limit))
   if (params.offset) searchParams.set('offset', String(params.offset))
@@ -145,32 +151,40 @@ export const fetchRawEvents = (params: {
   if (f) searchParams.set('filters', f)
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
 
-  return fetchApi<RawEventsResponse>(`/api/raw/events?${searchParams}`)
+  return fetchApi<RawEventsResponse>(`/api/raw/events?${searchParams}`, undefined, opts)
 }
 
-export const fetchUserEvents = (params: {
-  user_id: string
-  limit?: number
-  offset?: number
-  connection_id?: string
-}) => {
+export const fetchUserEvents = (
+  params: {
+    user_id: string
+    limit?: number
+    offset?: number
+    connection_id?: string
+  },
+  opts?: TaskOpts
+) => {
   const searchParams = new URLSearchParams()
   if (params.limit) searchParams.set('limit', String(params.limit))
   if (params.offset !== undefined) searchParams.set('offset', String(params.offset))
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
   return fetchApi<UserEventsResponse>(
-    `/api/users/${encodeURIComponent(params.user_id)}/events?${searchParams}`
+    `/api/users/${encodeURIComponent(params.user_id)}/events?${searchParams}`,
+    undefined,
+    opts
   )
 }
 
-export const fetchUserList = (params: {
-  start_date?: string
-  end_date?: string
-  limit?: number
-  offset?: number
-  connection_id?: string
-  filters?: Record<string, string | null>
-}) => {
+export const fetchUserList = (
+  params: {
+    start_date?: string
+    end_date?: string
+    limit?: number
+    offset?: number
+    connection_id?: string
+    filters?: Record<string, string | null>
+  },
+  opts?: TaskOpts
+) => {
   const searchParams = new URLSearchParams()
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
@@ -179,16 +193,19 @@ export const fetchUserList = (params: {
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
   const f = serializeFilters(params.filters)
   if (f) searchParams.set('filters', f)
-  return fetchApi<UserListResponse>(`/api/users?${searchParams}`)
+  return fetchApi<UserListResponse>(`/api/users?${searchParams}`, undefined, opts)
 }
 
-export const fetchRetention = (params: {
-  start_date?: string
-  end_date?: string
-  granularity?: 'day' | 'week' | 'month' | 'quarter' | 'year'
-  filters?: Record<string, string | null>
-  connection_id?: string
-}) => {
+export const fetchRetention = (
+  params: {
+    start_date?: string
+    end_date?: string
+    granularity?: 'day' | 'week' | 'month' | 'quarter' | 'year'
+    filters?: Record<string, string | null>
+    connection_id?: string
+  },
+  opts?: TaskOpts
+) => {
   const searchParams = new URLSearchParams()
   if (params.start_date) searchParams.set('start_date', params.start_date)
   if (params.end_date) searchParams.set('end_date', params.end_date)
@@ -197,17 +214,20 @@ export const fetchRetention = (params: {
   if (f) searchParams.set('filters', f)
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
 
-  return fetchApi<RetentionResponse>(`/api/retention?${searchParams}`)
+  return fetchApi<RetentionResponse>(`/api/retention?${searchParams}`, undefined, opts)
 }
 
-export const fetchPaths = (params: {
-  target_event: string
-  device_type?: string
-  limit?: number
-  start_date?: string
-  end_date?: string
-  connection_id?: string
-}) => {
+export const fetchPaths = (
+  params: {
+    target_event: string
+    device_type?: string
+    limit?: number
+    start_date?: string
+    end_date?: string
+    connection_id?: string
+  },
+  opts?: TaskOpts
+) => {
   const searchParams = new URLSearchParams()
   searchParams.set('target_event', params.target_event)
   if (params.device_type) searchParams.set('device_type', params.device_type)
@@ -216,24 +236,27 @@ export const fetchPaths = (params: {
   if (params.end_date) searchParams.set('end_date', params.end_date)
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
 
-  return fetchApi<PathsResponse>(`/api/paths?${searchParams}`)
+  return fetchApi<PathsResponse>(`/api/paths?${searchParams}`, undefined, opts)
 }
 
-export const fetchPathAnalysis = (params: {
-  start_event?: string
-  end_event?: string
-  min_path_length?: number
-  max_path_length?: number
-  max_time_between_events?: number
-  time_unit?: string
-  top_n?: number
-  group_by?: string
-  start_date?: string
-  end_date?: string
-  filters?: Record<string, string | null>
-  event_filters?: Record<string, Record<string, unknown>>
-  connection_id?: string
-}) => {
+export const fetchPathAnalysis = (
+  params: {
+    start_event?: string
+    end_event?: string
+    min_path_length?: number
+    max_path_length?: number
+    max_time_between_events?: number
+    time_unit?: string
+    top_n?: number
+    group_by?: string
+    start_date?: string
+    end_date?: string
+    filters?: Record<string, string | null>
+    event_filters?: Record<string, Record<string, unknown>>
+    connection_id?: string
+  },
+  opts?: TaskOpts
+) => {
   const searchParams = new URLSearchParams()
   if (params.start_event) searchParams.set('start_event', params.start_event)
   if (params.end_event) searchParams.set('end_event', params.end_event)
@@ -251,17 +274,20 @@ export const fetchPathAnalysis = (params: {
   if (params.event_filters) searchParams.set('event_filters', JSON.stringify(params.event_filters))
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
 
-  return fetchApi<PathAnalysisResponse>(`/api/path-analysis?${searchParams}`)
+  return fetchApi<PathAnalysisResponse>(`/api/path-analysis?${searchParams}`, undefined, opts)
 }
 
-export const fetchPathFunnel = (params: {
-  events: string[]
-  start_date?: string
-  end_date?: string
-  device_type?: string
-  filters?: Record<string, string | null>
-  connection_id?: string
-}) => {
+export const fetchPathFunnel = (
+  params: {
+    events: string[]
+    start_date?: string
+    end_date?: string
+    device_type?: string
+    filters?: Record<string, string | null>
+    connection_id?: string
+  },
+  opts?: TaskOpts
+) => {
   const searchParams = new URLSearchParams()
   searchParams.set('events', params.events.join(','))
   if (params.start_date) searchParams.set('start_date', params.start_date)
@@ -271,7 +297,7 @@ export const fetchPathFunnel = (params: {
   const f = serializeFilters(params.filters)
   if (f) searchParams.set('filters', f)
 
-  return fetchApi<PathFunnelResponse>(`/api/path-funnel?${searchParams}`)
+  return fetchApi<PathFunnelResponse>(`/api/path-funnel?${searchParams}`, undefined, opts)
 }
 
 export const fetchSessions = (params: {
@@ -325,16 +351,19 @@ export const fetchPivotOptions = (connection_id?: string) => {
   return fetchApi<PivotOptionsResponse>(`/api/pivot/options?${searchParams}`)
 }
 
-export const fetchPivot = (params: {
-  row_dimensions: string[]
-  column_dimensions?: string[]
-  measures: string[]
-  start_date?: string
-  end_date?: string
-  event_filter?: string
-  filters?: Record<string, string | null>
-  connection_id?: string
-}) => {
+export const fetchPivot = (
+  params: {
+    row_dimensions: string[]
+    column_dimensions?: string[]
+    measures: string[]
+    start_date?: string
+    end_date?: string
+    event_filter?: string
+    filters?: Record<string, string | null>
+    connection_id?: string
+  },
+  opts?: TaskOpts
+) => {
   const searchParams = new URLSearchParams()
   searchParams.set('row_dimensions', params.row_dimensions.join(','))
   searchParams.set('column_dimensions', (params.column_dimensions || []).join(','))
@@ -346,7 +375,7 @@ export const fetchPivot = (params: {
   if (f) searchParams.set('filters', f)
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
 
-  return fetchApi<PivotResponse>(`/api/pivot?${searchParams}`)
+  return fetchApi<PivotResponse>(`/api/pivot?${searchParams}`, undefined, opts)
 }
 
 export const fetchPivotGridColDefs = (connection_id?: string) => {
@@ -370,15 +399,22 @@ export const fetchPivotGridFilterValues = (params: {
   return fetchApi<{ field: string; values: unknown[] }>(`/api/pivot/grid/filter-values?${sp}`)
 }
 
-export const fetchPivotGridRows = (body: PivotGridRowsRequest & { connection_id?: string }) => {
+export const fetchPivotGridRows = (
+  body: PivotGridRowsRequest & { connection_id?: string },
+  opts?: TaskOpts
+) => {
   const sp = new URLSearchParams()
   if (body.connection_id) sp.set('connection_id', body.connection_id)
   const { connection_id: _cid, ...rest } = body
-  return fetchApi<PivotGridRowsResponse>(`/api/pivot/grid/rows?${sp}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(rest),
-  })
+  return fetchApi<PivotGridRowsResponse>(
+    `/api/pivot/grid/rows?${sp}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rest),
+    },
+    opts
+  )
 }
 
 export const fetchSandboxData = (params: { start_date?: string; end_date?: string }) => {
@@ -545,12 +581,19 @@ export const fetchMissionControlMetric = (
   )
 }
 
-export const executeQueryStudio = (params: { sql: string; connection_id?: string }) => {
+export const executeQueryStudio = (
+  params: { sql: string; connection_id?: string },
+  opts?: TaskOpts
+) => {
   const searchParams = new URLSearchParams()
   if (params.connection_id) searchParams.set('connection_id', params.connection_id)
-  return fetchApi<QueryStudioResponse>(`/api/query-studio/execute?${searchParams}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sql: params.sql }),
-  })
+  return fetchApi<QueryStudioResponse>(
+    `/api/query-studio/execute?${searchParams}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sql: params.sql }),
+    },
+    opts
+  )
 }

@@ -82,7 +82,8 @@ describe('usePathsData', () => {
         target_event: 'purchase',
         start_date: '2026-01-01',
         end_date: '2026-01-31',
-      })
+      }),
+      expect.anything()
     )
   })
 
@@ -172,7 +173,10 @@ describe('usePathsData', () => {
     )
 
     await waitFor(() =>
-      expect(fetchPaths).toHaveBeenCalledWith(expect.objectContaining({ device_type: 'mobile' }))
+      expect(fetchPaths).toHaveBeenCalledWith(
+        expect.objectContaining({ device_type: 'mobile' }),
+        expect.anything()
+      )
     )
   })
 })

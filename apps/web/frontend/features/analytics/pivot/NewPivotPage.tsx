@@ -80,24 +80,28 @@ export function NewPivotPage() {
 
   const fetchRows = useCallback(
     async (params: PivotRowsRequest): Promise<PivotRowsResponse> => {
-      const res = await fetchPivotGridRows({
-        rowGroupCols: params.rowGroups.map(toGridCol),
-        pivotCols: params.pivotCols.map(toGridCol),
-        valueCols: params.valueCols.map(toGridCol),
-        pivotMode: params.pivotCols.length > 0,
-        groupKeys: [],
-        filterModel: {},
-        sortModel: (params.sortModel ?? []).map((s) => ({ colId: s.colId, sort: s.sort })),
-        startRow: 0,
-        endRow: 500,
-        start_date: params.startDate,
-        end_date: params.endDate,
-        extra_filters: {
-          ...validActiveFilters,
-          ...Object.fromEntries(params.pivotFilters.map((f) => [f.field, f.value])),
+      const measures = params.valueCols.map((c) => c.label).join(', ')
+      const res = await fetchPivotGridRows(
+        {
+          rowGroupCols: params.rowGroups.map(toGridCol),
+          pivotCols: params.pivotCols.map(toGridCol),
+          valueCols: params.valueCols.map(toGridCol),
+          pivotMode: params.pivotCols.length > 0,
+          groupKeys: [],
+          filterModel: {},
+          sortModel: (params.sortModel ?? []).map((s) => ({ colId: s.colId, sort: s.sort })),
+          startRow: 0,
+          endRow: 500,
+          start_date: params.startDate,
+          end_date: params.endDate,
+          extra_filters: {
+            ...validActiveFilters,
+            ...Object.fromEntries(params.pivotFilters.map((f) => [f.field, f.value])),
+          },
+          connection_id: params.activeConnectionId ?? undefined,
         },
-        connection_id: params.activeConnectionId ?? undefined,
-      })
+        { meta: { cardName: 'Pivot', querySnippet: measures || 'pivot grid' } }
+      )
       return {
         rows: res.rows,
         columnDefs: res.secondaryColDefs as Record<string, unknown>[] | undefined,
