@@ -128,8 +128,9 @@ def get_retention(
 
     cohort_date_where = ("WHERE " + " AND ".join(date_clauses)) if date_clauses else ""
 
-    # params order: filter (for first_seen subquery) + filter (for activity) + date range
-    params = filter_params + filter_params + date_params
+    # params order matches CTE sequence:
+    # first_seen (filter) → signups (date) → user_activity (filter)
+    params = filter_params + date_params + filter_params
 
     # ── Series query (per-unit counts for sparkline) ──────────────────────────
     series_query = f"""
