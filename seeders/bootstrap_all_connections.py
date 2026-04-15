@@ -29,6 +29,7 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.connections.schema_detect import assign_categories
 from backend.backends import get_backend
 from backend.backends.base import SchemaInfo
 from backend.product_db.database import get_session_factory, init_product_db
@@ -45,12 +46,14 @@ from seeders.connections_config import load_connections_yaml
 AUTO_FILTER_NAMES = ("country", "city")
 AUTO_FILTER_ICONS = {"country": "globe", "city": "map-pin"}
 
+# Backends excluded from bootstrap regardless of connections.yaml `enabled` flag.
+SKIP_BACKENDS: frozenset[str] = frozenset({"snowflake"})
+
 DISPLAY_NAMES = {
     "duckdb": "Sample DuckDB",
     "sqlite": "Sample SQLite",
     "postgresql": "Sample PostgreSQL",
     "clickhouse": "Sample ClickHouse",
-    "snowflake": "Sample Snowflake",
     "databricks": "Sample Databricks",
 }
 
@@ -59,7 +62,6 @@ SEEDER_MODULES = {
     "sqlite": "seeders.seeder_sqlite",
     "postgresql": "seeders.seeder_postgresql",
     "clickhouse": "seeders.seeder_clickhouse",
-    "snowflake": "seeders.seeder_snowflake",
     "databricks": "seeders.seeder_databricks",
 }
 
@@ -176,9 +178,10 @@ async def _replace_schema_config(
             name=p["name"],
             path=p["path"],
             type=p.get("type", "string"),
+            category=p.get("category"),
             sort_order=i,
         )
-        for i, p in enumerate(info.proposed_custom_properties)
+        for i, p in enumerate(assign_categories(info.proposed_custom_properties))
     ]
     session.add(schema_config)
 
@@ -250,6 +253,9 @@ async def _bootstrap(
 
     for db_type, entry in backends_cfg.items():
         if only is not None and db_type != only:
+            continue
+        if db_type in SKIP_BACKENDS:
+            print(f"[stratifio] Skipping '{db_type}' (excluded from bootstrap)")
             continue
         if not entry or not entry.get("enabled"):
             if only is not None:

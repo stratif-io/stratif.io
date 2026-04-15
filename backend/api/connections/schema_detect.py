@@ -190,6 +190,56 @@ def _parse_struct_field(field_def: str, prefix: str, results: list) -> None:
         results.append({"name": name, "path": path, "type": _infer_type(upper)})
 
 
+# ---------------------------------------------------------------------------
+# Category inference — mirrors apps/web/frontend/config/dimension-categories.json
+# ---------------------------------------------------------------------------
+
+_CATEGORY_PATTERNS: list[tuple[str, list[str]]] = [
+    (
+        "time",
+        [
+            r"^ts_",
+            r"^timestamp$",
+            r"^(date|week|hour|month|quarter|year)$",
+            r"_(at|date|time|ts)$",
+        ],
+    ),
+    ("event", [r"^event_", r"^day_of_week$"]),
+    (
+        "user",
+        [
+            r"^user_",
+            r"_(user|account|customer|tenant)$",
+            r"^(email|first_name|last_name|phone|date_of_birth)$",
+            r"_(email|first_name|last_name|phone)$",
+            r"\.(email|first_name|last_name|phone|date_of_birth)$",
+        ],
+    ),
+    ("geography", [r"(country|city|region|state|geo|locale|timezone)"]),
+    ("device", [r"(device|browser|os|platform|screen|viewport)"]),
+    ("marketing", [r"^utm_", r"(referrer|campaign|channel|source|medium)"]),
+    ("other", [r".*"]),
+]
+
+_COMPILED_PATTERNS: list[tuple[str, list[re.Pattern]]] = [
+    (cat, [re.compile(p) for p in patterns]) for cat, patterns in _CATEGORY_PATTERNS
+]
+
+
+def infer_category(name: str) -> str:
+    """Return the dimension category id that best matches the property name."""
+    lower = name.lower()
+    for cat, regexes in _COMPILED_PATTERNS:
+        if any(rx.search(lower) for rx in regexes):
+            return cat
+    return "other"
+
+
+def assign_categories(proposed: list[dict]) -> list[dict]:
+    """Return a copy of proposed custom properties with `category` set."""
+    return [{**p, "category": infer_category(p["name"])} for p in proposed]
+
+
 @router.get("/{conn_id}/schema/detect")
 async def detect_schema(
     conn_id: str, session: DBSession, events_table: str | None = None
@@ -251,5 +301,7 @@ async def detect_schema(
         "events_table": info.events_table,
         "columns": [{"name": c.name, "type": c.type} for c in info.columns],
         "suggestions": merged_suggestions,
-        "proposed_custom_properties": info.proposed_custom_properties,
+        "proposed_custom_properties": assign_categories(
+            info.proposed_custom_properties
+        ),
     }
