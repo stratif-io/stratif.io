@@ -1198,25 +1198,75 @@ def get_mission_control_trend(
 @router.get("/mission-control")
 def get_mission_control(
     db: Annotated[AnalyticsDatabase, Depends(get_analytics_db)],
-    start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
-    end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     filters: str | None = Query(None, description="JSON dict of dimension filters"),
 ) -> dict:
-    """Return current and previous period KPI metrics."""
-    start, end, filter_clauses, filter_params = _parse_request_params(
-        start_date, end_date, filters, db
+    """Return current and previous period KPI metrics (or all-time when no dates given)."""
+    cached = query_cache.get(
+        db.connection_id, "mc_aggregate", start_date, end_date, filters
     )
+    if cached is not None:
+        return cached
 
-    prev_start, prev_end = _compute_previous_period(start, end)
+    filter_clauses: list[str] = []
+    filter_params: list = []
+    if filters:
+        try:
+            filter_clauses, filter_params = db.build_filter_clauses(json.loads(filters))
+        except json.JSONDecodeError:
+            raise HTTPException(
+                status_code=400, detail="Invalid filters JSON."
+            ) from None
 
-    current = _fetch_period_metrics(db, start, end, filter_clauses, filter_params)
-    previous = _fetch_period_metrics(
-        db, prev_start, prev_end, filter_clauses, filter_params
+    if start_date and end_date:
+        start, end, filter_clauses, filter_params = _parse_request_params(
+            start_date, end_date, filters, db
+        )
+        prev_start, prev_end = _compute_previous_period(start, end)
+        current = _fetch_period_metrics(db, start, end, filter_clauses, filter_params)
+        previous = _fetch_period_metrics(
+            db, prev_start, prev_end, filter_clauses, filter_params
+        )
+        result = {
+            "period": {"start_date": str(start), "end_date": str(end)},
+            "previous_period": {
+                "start_date": str(prev_start),
+                "end_date": str(prev_end),
+            },
+            "current": current,
+            "previous": previous,
+        }
+    else:
+        # All-time: aggregate each metric without date bounds
+        METRICS_ALL_TIME = [
+            "total_events",
+            "unique_users",
+            "total_sessions",
+            "avg_session_duration_sec",
+            "avg_events_per_session",
+            "new_users",
+            "returning_users",
+            "resurrected_users",
+            "churned_users",
+            "retention_rate",
+            "wau",
+            "avg_active_days",
+            "power_users",
+            "dau_mau_ratio",
+        ]
+        current = {
+            m: _fetch_single_metric_all_time(db, m, filter_clauses, filter_params)[0]
+            for m in METRICS_ALL_TIME
+        }
+        result = {
+            "period": {"start_date": None, "end_date": None},
+            "previous_period": {"start_date": None, "end_date": None},
+            "current": current,
+            "previous": None,
+        }
+
+    query_cache.set(
+        db.connection_id, "mc_aggregate", start_date, end_date, filters, result
     )
-
-    return {
-        "period": {"start_date": str(start), "end_date": str(end)},
-        "previous_period": {"start_date": str(prev_start), "end_date": str(prev_end)},
-        "current": current,
-        "previous": previous,
-    }
+    return result

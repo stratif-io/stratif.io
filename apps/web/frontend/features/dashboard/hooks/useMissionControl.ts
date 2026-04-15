@@ -1,14 +1,29 @@
-import { useQuery, useQueries } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { subDays, differenceInDays } from 'date-fns'
-import { fetchMissionControlMetric, fetchTopEvents } from '@/lib/api'
+import { fetchMissionControl, fetchTopEvents } from '@/lib/api'
 import { useAppStore } from '@/stores'
 import { formatDateParam } from '@/lib/utils'
 import { QUERY_STALE_TIME } from '@/lib/constants'
 import { useSchemaConfig } from '@/features/connections/hooks/useConnectionsData'
-import { METRIC_LABELS } from './missionControlMetrics'
 import type { DateRange, MissionControlResponse } from '@/types'
 
-const METRICS = [
+type MetricKey =
+  | 'total_events'
+  | 'unique_users'
+  | 'total_sessions'
+  | 'avg_session_duration_sec'
+  | 'avg_events_per_session'
+  | 'new_users'
+  | 'returning_users'
+  | 'resurrected_users'
+  | 'churned_users'
+  | 'retention_rate'
+  | 'wau'
+  | 'avg_active_days'
+  | 'power_users'
+  | 'dau_mau_ratio'
+
+const ALL_METRICS: MetricKey[] = [
   'total_events',
   'unique_users',
   'total_sessions',
@@ -23,9 +38,7 @@ const METRICS = [
   'avg_active_days',
   'power_users',
   'dau_mau_ratio',
-] as const
-
-type MetricKey = (typeof METRICS)[number]
+]
 
 export interface UseMissionControlOptions {
   dateRange: DateRange
@@ -54,12 +67,9 @@ export function useMissionControl({
   const { data: schemaConfig } = useSchemaConfig(activeConnectionId ?? '')
   const timeoutMs = (schemaConfig?.query_timeout_seconds ?? 10) * 1000
 
-  // Queries are enabled whenever a connection is selected, with or without dates.
-  // When no date range is set (all-time), start_date/end_date are omitted from
-  // the request and the backend returns aggregate data over all time.
   const enabled = !!activeConnectionId
 
-  // Previous period calculation (same as useMissionControlTrends)
+  // Previous period (used to populate MissionControlResponse shape when all-time)
   const periodDays =
     dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) + 1 : 0
   const prevEndDate = dateRange.from ? formatDateParam(subDays(dateRange.from, 1)) : undefined
@@ -68,38 +78,31 @@ export function useMissionControl({
       ? formatDateParam(subDays(dateRange.from, periodDays))
       : undefined
 
-  // 8 per-metric queries run in parallel
-  const metricResults = useQueries({
-    queries: METRICS.map((metric) => ({
-      queryKey: [
-        'missionControlMetric',
-        metric,
-        startDate,
-        endDate,
-        activeFilters,
-        activeConnectionId,
-      ],
-      queryFn: () =>
-        fetchMissionControlMetric(
-          {
-            metric,
-            start_date: startDate,
-            end_date: endDate,
-            filters: activeFilters,
-            connection_id: activeConnectionId ?? undefined,
-          },
-          {
-            groupKey: `mc:${metric}`,
-            timeoutMs,
-            meta: {
-              cardName: METRIC_LABELS[metric] ?? metric,
-              querySnippet: `mission-control/metric metric=${metric}`,
-            },
-          }
-        ),
-      enabled,
-      staleTime: QUERY_STALE_TIME.default,
-    })),
+  // Single aggregate call — replaces 14 per-metric calls
+  const {
+    data: aggregateData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['missionControlAggregate', startDate, endDate, activeFilters, activeConnectionId],
+    queryFn: () =>
+      fetchMissionControl(
+        {
+          start_date: startDate ?? '',
+          end_date: endDate ?? '',
+          filters: activeFilters,
+          connection_id: activeConnectionId ?? undefined,
+        },
+        {
+          groupKey: 'mc:aggregate',
+          timeoutMs,
+          meta: { cardName: 'Mission Control', querySnippet: 'mission-control aggregate' },
+        }
+      ),
+    enabled,
+    staleTime: QUERY_STALE_TIME.default,
   })
 
   const { data: topEventsData, isLoading: eventsLoading } = useQuery({
@@ -119,43 +122,30 @@ export function useMissionControl({
     staleTime: QUERY_STALE_TIME.default,
   })
 
-  const isLoading = metricResults.some((r) => r.isLoading)
-  const isError = metricResults.some((r) => r.isError)
-  const error = (metricResults.find((r) => r.error)?.error as Error | null) ?? null
+  // All metric cards share the same loading state (single request)
+  const metricLoading = Object.fromEntries(ALL_METRICS.map((m) => [m, isLoading])) as Record<
+    MetricKey,
+    boolean
+  >
 
-  // Per-metric loading map — each card uses its own flag
-  const metricLoading = Object.fromEntries(
-    METRICS.map((metric, i) => [metric, metricResults[i].isLoading])
-  ) as Record<MetricKey, boolean>
+  // Aggregate endpoint does not return per-metric SQL — trend SQL still appears via useMissionControlTrends
+  const metricSql = Object.fromEntries(ALL_METRICS.map((m) => [m, null])) as Record<
+    MetricKey,
+    string | string[] | null
+  >
 
-  // Per-metric SQL map — exposes the SQL for the "number" query on each card
-  const metricSql = Object.fromEntries(
-    METRICS.map((metric, i) => [metric, metricResults[i].data?.sql ?? null])
-  ) as Record<MetricKey, string | string[] | null>
-
-  // Build data progressively: populate resolved metrics immediately, use 0 for still-loading ones.
-  // data is undefined only when queries are disabled (no connection).
+  // Shape the aggregate response into MissionControlResponse, filling zeros while loading
   const data: MissionControlResponse | undefined = enabled
-    ? {
+    ? (aggregateData ?? {
         period: { start_date: startDate, end_date: endDate },
-        previous_period: {
-          start_date: prevStartDate,
-          end_date: prevEndDate,
-        },
-        current: Object.fromEntries(
-          METRICS.map((metric, i) => [metric, metricResults[i].data?.current ?? 0])
-        ) as Record<MetricKey, number>,
-        previous: Object.fromEntries(
-          METRICS.map((metric, i) => [metric, metricResults[i].data?.previous ?? null])
-        ) as Record<MetricKey, number | null>,
-      }
+        previous_period: { start_date: prevStartDate, end_date: prevEndDate },
+        current: Object.fromEntries(ALL_METRICS.map((m) => [m, 0])) as Record<MetricKey, number>,
+        previous: Object.fromEntries(ALL_METRICS.map((m) => [m, null])) as Record<
+          MetricKey,
+          number | null
+        >,
+      })
     : undefined
-
-  const refetch = () => {
-    metricResults.forEach((r) => {
-      if (r.isError) r.refetch()
-    })
-  }
 
   return {
     data,
@@ -163,11 +153,13 @@ export function useMissionControl({
     metricLoading,
     metricSql,
     isError,
-    error,
+    error: (error as Error | null) ?? null,
     topEvents: topEventsData?.data ?? [],
     eventsLoading,
     topEventsSql: topEventsData?.sql,
     timeoutSeconds: Math.round(timeoutMs / 1000),
-    refetch,
+    refetch: () => {
+      if (isError) void refetch()
+    },
   }
 }
