@@ -1,5 +1,4 @@
 {
-  "sql": "\n        SELECT event_name, COUNT(*) AS count\n        FROM events\n        \n        GROUP BY event_name\n        ORDER BY count DESC\n        LIMIT 10\n        ",
   "data": [
     {
       "name": "add_to_cart",
