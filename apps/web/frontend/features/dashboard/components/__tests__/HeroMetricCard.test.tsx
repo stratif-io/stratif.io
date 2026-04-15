@@ -77,6 +77,13 @@ describe('HeroMetricCard', () => {
     expect(screen.queryByText(/prev\. period:/)).not.toBeInTheDocument()
   })
 
+  it('shows the error reason in parenthesis when errorMessage is provided', () => {
+    renderWithTooltip(
+      <HeroMetricCard {...baseProps} isError errorMessage="timeout after 10s" onRetry={vi.fn()} />
+    )
+    expect(screen.getByText(/\(timeout after 10s\)/)).toBeInTheDocument()
+  })
+
   it('shows a retry button when isError is true', () => {
     const onRetry = vi.fn()
     renderWithTooltip(<HeroMetricCard {...baseProps} isError onRetry={onRetry} />)

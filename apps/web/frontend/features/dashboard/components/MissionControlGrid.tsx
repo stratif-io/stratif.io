@@ -230,6 +230,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
             color={heroConfig.color}
             loading={(metricLoading[heroMetric] ?? true) || (trends[heroMetric]?.loading ?? true)}
             isError={!!metricError?.[heroMetric]}
+            errorMessage={metricError?.[heroMetric]?.message}
             onRetry={metricRefetch?.[heroMetric]}
           />
         </DevCard>
@@ -289,6 +290,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
                         changeLabel={changeLabel}
                         loading={cardLoading}
                         isError={!!metricError?.[metricKey]}
+                        errorMessage={metricError?.[metricKey]?.message}
                         onRetry={metricRefetch?.[metricKey]}
                         fullWidth={isFullWidth}
                         sparklineFormatter={(v) => formatMetricValue(metricKey, v)}

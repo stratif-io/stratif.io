@@ -22,6 +22,7 @@ export interface HeroMetricCardProps {
   color: string
   loading?: boolean
   isError?: boolean
+  errorMessage?: string
   onRetry?: () => void
   changeLabel?: string
   prevPeriodLabel?: string
@@ -86,6 +87,7 @@ export const HeroMetricCard = memo(function HeroMetricCard({
   color,
   loading,
   isError,
+  errorMessage,
   onRetry,
   changeLabel,
   prevPeriodLabel,
@@ -142,7 +144,9 @@ export const HeroMetricCard = memo(function HeroMetricCard({
     >
       {isError && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-card/80 backdrop-blur-[2px]">
-          <span className="text-sm font-semibold text-destructive">Query failed</span>
+          <span className="text-sm font-semibold text-destructive">
+            Query failed{errorMessage ? ` (${errorMessage})` : ''}
+          </span>
           <button
             type="button"
             onClick={onRetry}

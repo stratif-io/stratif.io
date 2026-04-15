@@ -16,6 +16,7 @@ export interface MiniMetricCardProps {
   onClick?: () => void
   loading?: boolean
   isError?: boolean // query failed — show red border + retry
+  errorMessage?: string // short reason shown in parenthesis
   onRetry?: () => void
   fullWidth?: boolean // true for DAU/MAU which spans 2 cols
   changeLabel?: string
@@ -35,6 +36,7 @@ export const MiniMetricCard = memo(function MiniMetricCard({
   onClick,
   loading,
   isError,
+  errorMessage,
   onRetry,
   fullWidth,
   changeLabel,
@@ -91,7 +93,9 @@ export const MiniMetricCard = memo(function MiniMetricCard({
           aria-label={`Retry ${label}`}
           className="absolute inset-0 flex flex-col items-center justify-center gap-1 z-10 cursor-pointer"
         >
-          <span className="text-[10px] font-semibold text-destructive tracking-wide">Failed</span>
+          <span className="text-[10px] font-semibold text-destructive tracking-wide">
+            Failed{errorMessage ? ` (${errorMessage})` : ''}
+          </span>
           <span className="text-[10px] text-muted-foreground underline">Retry</span>
         </button>
       )}

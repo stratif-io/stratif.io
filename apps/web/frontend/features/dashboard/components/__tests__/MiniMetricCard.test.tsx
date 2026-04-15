@@ -68,6 +68,13 @@ describe('MiniMetricCard', () => {
     expect(document.querySelector('.bg-primary\\/50')).toBeTruthy()
   })
 
+  it('shows the error reason in parenthesis when errorMessage is provided', () => {
+    renderWithTooltip(
+      <MiniMetricCard {...baseProps} isError errorMessage="timeout after 10s" onRetry={vi.fn()} />
+    )
+    expect(screen.getByText(/\(timeout after 10s\)/)).toBeInTheDocument()
+  })
+
   it('shows a retry button when isError is true', () => {
     const onRetry = vi.fn()
     renderWithTooltip(<MiniMetricCard {...baseProps} isError onRetry={onRetry} />)
