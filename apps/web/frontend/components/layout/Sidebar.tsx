@@ -129,7 +129,7 @@ const navGroups: NavGroup[] = [
       },
     ],
   },
-  ...(import.meta.env.DEV
+  ...(import.meta.env.DEV && !import.meta.env.VITE_NO_DESIGN_SYSTEM
     ? [
         {
           title: 'Developer',

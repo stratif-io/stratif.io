@@ -50,7 +50,7 @@ const QueryLogPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('@/features/design-system/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
 )
-const DesignSystemPage = import.meta.env.DEV
+const DesignSystemPage = import.meta.env.DEV && !import.meta.env.VITE_NO_DESIGN_SYSTEM
   ? lazy(() =>
       import('@/features/design-system/DesignSystemPage').then((m) => ({
         default: m.DesignSystemPage,
