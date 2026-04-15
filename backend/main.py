@@ -14,8 +14,13 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from backend.config import settings
+from backend.core.logging import setup_logging
 from backend.core.middleware import AccessLogMiddleware, RequestIdMiddleware
 from backend.core.rate_limit import limiter
+
+# Configure logging immediately so every logger created during import respects the level.
+setup_logging(settings.log_level, settings.log_format)
 
 log = structlog.get_logger(__name__)
 
@@ -43,14 +48,11 @@ from backend.api import (  # noqa: E402
     retention_router,
     sessions_router,
 )
-from backend.config import settings  # noqa: E402
-from backend.core.logging import setup_logging  # noqa: E402
 from backend.product_db import close_product_db, init_product_db  # noqa: E402
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    setup_logging(settings.log_level, settings.log_format)
     await init_product_db()
     try:
         yield
