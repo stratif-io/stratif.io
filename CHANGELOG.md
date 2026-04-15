@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.34.1](https://github.com/stratif-io/stratif.io/compare/v0.34.0...v0.34.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* **browse:** unpack (conn, meta) tuple from _pool_get before calling backend ([babee89](https://github.com/stratif-io/stratif.io/commit/babee893e3021f1e7a83951a9e6caea07c61f528))
+* **databricks:** handle Unity Catalog 4-col SHOW TABLES format ([6b5ffe7](https://github.com/stratif-io/stratif.io/commit/6b5ffe7ab84cd9cca033db6f40aa991f5602e0d0))
+* **databricks:** handle Unity Catalog 4-col SHOW TABLES format ([cf4116d](https://github.com/stratif-io/stratif.io/commit/cf4116d14b194b0609a1f007e545728cc9eb52b9))
+* **lint:** remove unused pytest import in test_api_connections_browse ([30d5699](https://github.com/stratif-io/stratif.io/commit/30d56994e4fb18786c830ca64a8696c7a1f4d09c))
+
 ## [0.34.0](https://github.com/stratif-io/stratif.io/compare/v0.33.0...v0.34.0) (2026-04-15)
 
 
