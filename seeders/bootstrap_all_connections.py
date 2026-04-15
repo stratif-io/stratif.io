@@ -29,7 +29,7 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.connections.schema_detect import assign_categories
+from backend.api.connections.schema_detect import _suggest_fields, assign_categories
 from backend.backends import get_backend
 from backend.backends.base import SchemaInfo
 from backend.product_db.database import get_session_factory, init_product_db
@@ -86,9 +86,19 @@ def _detect(db_type: str, creds: dict) -> SchemaInfo:
     credentials = backend.parse_credentials(creds)
     conn = backend.open(credentials, read_only=True)
     try:
-        return backend.detect_schema(conn, None)
+        info = backend.detect_schema(conn, None)
     finally:
         conn.close()
+
+    # Augment with fuzzy identity-field detection, mirroring the API endpoint.
+    # The backend only matches top-level columns; this also searches nested paths.
+    all_cols = [{"name": c.name, "type": c.type} for c in info.columns] + [
+        {"name": p["path"], "type": p["type"]} for p in info.proposed_custom_properties
+    ]
+    fuzzy_suggestions = _suggest_fields(all_cols)
+    # Backend exact matches take priority; fill in any fields the backend missed.
+    info.suggestions = {**fuzzy_suggestions, **info.suggestions}
+    return info
 
 
 def _select_filter_fields(proposed: list[dict]) -> list[dict]:
