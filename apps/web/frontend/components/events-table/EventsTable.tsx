@@ -113,7 +113,7 @@ export function buildDimCols(fields: FilterField[], custom: CustomProperty[]): D
   for (const ff of fields) {
     if (!seen.has(ff.field) && !STANDARD.has(ff.field)) {
       seen.add(ff.field)
-      result.push({ id: ff.field, label: ff.label, getValue: (p) => p[ff.field] })
+      result.push({ id: ff.field, label: ff.label, getValue: (p) => extractFromPath(p, ff.field) })
     }
   }
   return result
