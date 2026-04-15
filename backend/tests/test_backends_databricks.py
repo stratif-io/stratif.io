@@ -82,11 +82,40 @@ class TestDatabricksBrowse:
         assert all(i["kind"] == "schema" for i in items)
 
     def test_browse_catalog_and_schema_returns_tables(self, backend):
-        # SHOW TABLES returns (tableName, isTemporary) or (dbName, tableName, isTemporary)
-        # The backend reads r[1] for the table name (standard Databricks SHOW TABLES format)
+        # SHOW TABLES returns (namespace, tableName, isTemporary) — 3 columns
         conn, cursor = _make_conn([("default", "events", False)])
         items = backend.browse(conn, catalog="main", schema="default")
         assert all(i["kind"] == "table" for i in items)
+        assert items[0]["name"] == "events"
+        assert items[0]["full_name"] == "main.default.events"
+
+    def test_browse_unity_catalog_show_tables_returns_4_cols(self, backend):
+        """Unity Catalog SHOW TABLES IN catalog.schema returns 4 columns:
+        (catalog, database, tableName, isTemporary).
+        The backend must read tableName from r[-2], not r[1].
+        Without the fix: r[1] = 'default' (schema name, WRONG).
+        With the fix: r[-2] = 'events' (table name, CORRECT).
+        """
+        conn, cursor = _make_conn([("main", "default", "events", False)])
+        items = backend.browse(conn, catalog="main", schema="default")
+        assert len(items) == 1
+        assert items[0]["kind"] == "table"
+        assert items[0]["name"] == "events", (
+            f"Expected table name 'events', got {items[0]['name']!r}. "
+            "Unity Catalog SHOW TABLES returns 4 cols; r[1] is schema name not table name."
+        )
+        assert items[0]["full_name"] == "main.default.events"
+
+    def test_get_tables_unity_catalog_4_cols(self, backend):
+        """get_tables must also handle the 4-column Unity Catalog SHOW TABLES format."""
+        conn, cursor = _make_conn([("main", "default", "events", False)])
+        # Patch current_catalog/current_database query to return something
+        cursor.fetchone.return_value = ("main", "default")
+        tables = backend.get_tables(conn)
+        assert "events" in tables, (
+            f"Expected 'events' in tables, got {tables}. "
+            "Unity Catalog 4-col format: r[1] is schema name, r[-2] is table name."
+        )
 
 
 class TestDatabricksCTE:

@@ -154,7 +154,7 @@ class DatabricksBackend:
             cat, sch = (row[0], row[1]) if row else ("hive_metastore", "default")
             cursor.execute(f"SHOW TABLES IN `{cat}`.`{sch}`")
             rows = cursor.fetchall()
-            return [r[1] if len(r) > 1 else r[0] for r in rows]
+            return [r[-2] if len(r) > 1 else r[0] for r in rows]
         finally:
             with contextlib.suppress(Exception):
                 cursor.close()
@@ -191,8 +191,8 @@ class DatabricksBackend:
             rows = cursor.fetchall()
             return [
                 {
-                    "name": r[1],
-                    "full_name": f"{catalog}.{schema}.{r[1]}",
+                    "name": r[-2],
+                    "full_name": f"{catalog}.{schema}.{r[-2]}",
                     "kind": "table",
                 }
                 for r in rows
@@ -222,7 +222,7 @@ class DatabricksBackend:
                 )
                 cursor.execute(f"SHOW TABLES IN `{default_cat}`.`{default_sch}`")
                 rows = cursor.fetchall()
-                tables = [r[1] if len(r) > 1 else r[0] for r in rows]
+                tables = [r[-2] if len(r) > 1 else r[0] for r in rows]
                 events_table_name = pick_events_table(tables, events_table_hint)
                 if not events_table_name:
                     return SchemaInfo(
