@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { format } from 'date-fns'
 import { useSearchParams, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 
@@ -48,8 +49,11 @@ export function useUrlSync() {
     if (conn) setActiveConnectionId(conn)
 
     if (from && to) {
-      const fromDate = new Date(from)
-      const toDate = new Date(to)
+      // Date-only strings (YYYY-MM-DD) are parsed as UTC midnight by the spec.
+      // Appending T00:00:00 (no timezone) forces local midnight, which is what
+      // formatDateParam expects when checking getHours() === 0.
+      const fromDate = new Date(/^\d{4}-\d{2}-\d{2}$/.test(from) ? `${from}T00:00:00` : from)
+      const toDate = new Date(/^\d{4}-\d{2}-\d{2}$/.test(to) ? `${to}T00:00:00` : to)
       if (!isNaN(fromDate.getTime()) && !isNaN(toDate.getTime())) {
         setDateRange({ from: fromDate, to: toDate })
       }
@@ -66,10 +70,10 @@ export function useUrlSync() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
-  // Serialize dates to strings — Date objects change identity on every setDateRange call,
-  // which would cause an infinite loop (read URL → setDateRange → new Date ref → effect fires → setSearchParams → …).
-  const dateFromKey = dateRange.from?.toISOString().slice(0, 10)
-  const dateToKey = dateRange.to?.toISOString().slice(0, 10)
+  // Serialize dates to strings using LOCAL date (not UTC) to avoid timezone-induced day shifts.
+  // toISOString() returns UTC which is wrong for users in UTC+ zones.
+  const dateFromKey = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined
+  const dateToKey = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
 
   // Store → URL: whenever store values change, push to URL (replace)
   useEffect(() => {
