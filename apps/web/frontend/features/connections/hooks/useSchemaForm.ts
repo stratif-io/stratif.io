@@ -113,11 +113,12 @@ export function useSchemaForm(connId: string) {
 
   useEffect(() => {
     if (!filterConfigLoaded || filterInitialized.current) return
+    if (!schemaConfig) return // wait for schemaConfig before migrating
     filterInitialized.current = true
-    const rawFields = filterConfig?.filter_fields ?? []
-    const migrated = schemaConfig
-      ? migrateFilterFields(rawFields, schemaConfig as SchemaConfig)
-      : rawFields
+    const migrated = migrateFilterFields(
+      filterConfig?.filter_fields ?? [],
+      schemaConfig as SchemaConfig
+    )
     const fields: Record<string, { label: string; icon: string }> = {}
     for (const f of migrated) {
       const key = f.ref || f.field

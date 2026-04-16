@@ -319,6 +319,39 @@ describe('useSchemaForm', () => {
     })
     expect(result.current.enabledFields['abc-123']).toBeUndefined()
   })
+
+  it('filter hydration waits for schemaConfig before migrating', () => {
+    // filterConfigLoaded = true but schemaConfig = undefined → migration must not run yet
+    vi.mocked(useSchemaConfig).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    } as unknown as ReturnType<typeof useSchemaConfig>)
+    vi.mocked(useFilterConfig).mockReturnValue({
+      data: {
+        filter_fields: [{ ref: '', field: 'user_id', label: 'User ID', icon: 'user' }],
+      },
+      isLoading: false,
+      isSuccess: true,
+    } as unknown as ReturnType<typeof useFilterConfig>)
+
+    const { result, rerender } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+
+    // schemaConfig not yet available — enabledFields should be empty
+    expect(Object.keys(result.current.enabledFields)).toHaveLength(0)
+
+    // Now schemaConfig arrives
+    vi.mocked(useSchemaConfig).mockReturnValue({
+      data: mockSchema,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useSchemaConfig>)
+    rerender()
+
+    // Migration should now run and key by the system field ref
+    expect(result.current.enabledFields['$user_id_field']).toEqual({
+      label: 'User ID',
+      icon: 'user',
+    })
+  })
 })
 
 const baseSchema: SchemaConfig = {
