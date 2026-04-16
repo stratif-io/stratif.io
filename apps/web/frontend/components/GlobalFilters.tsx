@@ -4,36 +4,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DateRangePicker } from '@/components/DateRangePicker'
-import {
-  ChevronDown,
-  X,
-  Timer,
-  Activity,
-  CircleUserRound,
-  Globe2,
-  Laptop,
-  Target,
-  MoreHorizontal,
-  type LucideIcon,
-} from 'lucide-react'
+import { ChevronDown, X, MoreHorizontal, type LucideIcon } from 'lucide-react'
 import { useFilterConfig, useFilterOptions } from '@/features/connections/hooks/useConnectionsData'
 import { cn } from '@/lib/utils'
+import { CATEGORY_ICON_MAP } from '@/lib/utils/categoryIconMap'
 import type { DimensionCategoryConfig, FilterField, Granularity } from '@/types'
 import dimensionCategories from '@/config/dimension-categories.json'
 
 function pluralize(word: string): string {
   if (word.endsWith('y')) return word.slice(0, -1) + 'ies'
   return word + 's'
-}
-
-const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
-  Timer,
-  Activity,
-  CircleUserRound,
-  Globe2,
-  Laptop,
-  Target,
-  MoreHorizontal,
 }
 
 const compiledCategories = (dimensionCategories as DimensionCategoryConfig[]).map((cat) => ({
@@ -56,8 +36,9 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
-  const value = activeFilters[field.field] ?? null
-  const FieldIcon = resolveIcon(field.field)
+  const filterKey = field.ref || field.field
+  const value = activeFilters[filterKey] ?? null
+  const FieldIcon = CATEGORY_ICON_MAP[field.icon] ?? resolveIcon(field.label)
 
   const filtered = search
     ? options.filter((o) => o.toLowerCase().includes(search.toLowerCase()))
@@ -67,7 +48,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
   const allItems: (string | null)[] = search ? filtered : [null, ...filtered]
 
   function select(v: string | null) {
-    setActiveFilter(field.field, v)
+    setActiveFilter(filterKey, v)
     setOpen(false)
     setSearch('')
     setFocusedIndex(-1)
@@ -264,12 +245,9 @@ export function GlobalFilters({ granularityDisabled = false }: { granularityDisa
   const { dateRange, setDateRange, activeConnectionId } = useAppStore()
 
   const { data: filterConfig, isLoading: configLoading } = useFilterConfig(activeConnectionId ?? '')
-  const { data: filterOptions, isLoading: optionsLoading } = useFilterOptions(
-    activeConnectionId ?? ''
-  )
+  const { data: filterOptions } = useFilterOptions(activeConnectionId ?? '')
 
   const filterFields = filterConfig?.filter_fields ?? []
-  const isLoading = configLoading || optionsLoading
 
   return (
     <div className="relative w-full after:absolute after:right-0 after:top-0 after:bottom-0 after:w-8 after:bg-gradient-to-l after:from-background after:to-transparent after:pointer-events-none after:rounded-r-lg sm:after:hidden">
@@ -283,7 +261,7 @@ export function GlobalFilters({ granularityDisabled = false }: { granularityDisa
           <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
         </div>
         <GranularityControl disabled={granularityDisabled} />
-        {isLoading
+        {configLoading
           ? Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="px-3 h-full flex items-center shrink-0">
                 <Skeleton className="h-4 w-16" />
@@ -291,9 +269,9 @@ export function GlobalFilters({ granularityDisabled = false }: { granularityDisa
             ))
           : filterFields.map((field) => (
               <DimensionFilter
-                key={field.field}
+                key={field.ref || field.field}
                 field={field}
-                options={filterOptions?.[field.field] ?? []}
+                options={filterOptions?.[field.ref || field.field] ?? []}
               />
             ))}
       </div>

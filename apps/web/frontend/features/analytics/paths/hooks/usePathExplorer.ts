@@ -46,7 +46,10 @@ export function usePathExplorer({
 
   const { data: eventsResponse, isLoading: eventsLoading } = useQuery({
     queryKey: ['events', activeConnectionId],
-    queryFn: () => fetchEvents(activeConnectionId ?? undefined),
+    queryFn: () =>
+      fetchEvents(activeConnectionId ?? undefined, {
+        meta: { cardName: 'Paths', querySnippet: 'event list', auxiliary: true },
+      }),
     enabled: !!activeConnectionId,
     staleTime: QUERY_STALE_TIME.default,
   })

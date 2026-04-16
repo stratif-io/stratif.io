@@ -118,20 +118,6 @@ export function NewConnectionPage() {
         {/* Form */}
         <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col h-full">
           <div className="flex-1 overflow-auto p-4 space-y-4">
-            {/* Name */}
-            <div className="space-y-1.5">
-              <Label htmlFor="conn-name">Connection Name</Label>
-              <Input
-                id="conn-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="My Production DB"
-                required
-                maxLength={100}
-                autoFocus
-              />
-            </div>
-
             {/* DB type */}
             <div className="space-y-1.5">
               <Label>Database Type</Label>
@@ -155,6 +141,19 @@ export function NewConnectionPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-1.5">
+              <Label htmlFor="conn-name">Connection Name</Label>
+              <Input
+                id="conn-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="My Production DB"
+                required
+                maxLength={100}
+              />
             </div>
 
             {/* Credentials */}

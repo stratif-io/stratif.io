@@ -67,7 +67,7 @@ export function CategoryCard({
       {!collapsed && (
         <div className="flex flex-col divide-y divide-border">
           {props.map(({ prop, idx }) => {
-            const filterEnabled = !!prop.path && !!enabledFields[prop.path]
+            const filterEnabled = !!prop.id && !!enabledFields[prop.id]
             return (
               <PropertyRow
                 key={prop.id ?? idx}

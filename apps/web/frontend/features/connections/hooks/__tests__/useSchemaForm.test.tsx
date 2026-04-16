@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { migrateFilterFields } from '../../utils/migrateFilterFields'
+import type { FilterField, SchemaConfig } from '@/types'
 import { renderHook, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -226,7 +228,7 @@ describe('useSchemaForm', () => {
       await new Promise((r) => setTimeout(r, 700))
     })
     expect(upsertFilterMutate).toHaveBeenCalledWith({
-      filter_fields: [{ field: 'user_id', label: 'User ID', icon: 'Activity' }],
+      filter_fields: [{ ref: 'user_id', field: '', label: 'User ID', icon: 'Activity' }],
     })
   })
 
@@ -285,5 +287,115 @@ describe('useSchemaForm', () => {
     expect(result.current.form.userIdField).toBe('uid')
     expect(result.current.form.eventNameField).toBe('action')
     expect(result.current.pendingDetections).toHaveLength(0)
+  })
+
+  it('enabledFields is keyed by ref after loading filterConfig', () => {
+    vi.mocked(useFilterConfig).mockReturnValue({
+      data: {
+        filter_fields: [{ ref: 'abc-123', field: '', label: 'Country', icon: 'globe' }],
+      },
+      isLoading: false,
+      isSuccess: true,
+    } as unknown as ReturnType<typeof useFilterConfig>)
+    const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+    expect(result.current.enabledFields['abc-123']).toEqual({ label: 'Country', icon: 'globe' })
+  })
+
+  it('toggleFilter adds a ref key to enabledFields', () => {
+    const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+    act(() => {
+      result.current.toggleFilter('abc-123', 'Country', 'globe')
+    })
+    expect(result.current.enabledFields['abc-123']).toEqual({ label: 'Country', icon: 'globe' })
+  })
+
+  it('toggleFilter removes an existing ref key from enabledFields', () => {
+    const { result } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+    act(() => {
+      result.current.toggleFilter('abc-123', 'Country', 'globe')
+    })
+    act(() => {
+      result.current.toggleFilter('abc-123', 'Country', 'globe')
+    })
+    expect(result.current.enabledFields['abc-123']).toBeUndefined()
+  })
+
+  it('filter hydration waits for schemaConfig before migrating', () => {
+    // filterConfigLoaded = true but schemaConfig = undefined → migration must not run yet
+    vi.mocked(useSchemaConfig).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    } as unknown as ReturnType<typeof useSchemaConfig>)
+    vi.mocked(useFilterConfig).mockReturnValue({
+      data: {
+        filter_fields: [{ ref: '', field: 'user_id', label: 'User ID', icon: 'user' }],
+      },
+      isLoading: false,
+      isSuccess: true,
+    } as unknown as ReturnType<typeof useFilterConfig>)
+
+    const { result, rerender } = renderHook(() => useSchemaForm('conn-1'), { wrapper })
+
+    // schemaConfig not yet available — enabledFields should be empty
+    expect(Object.keys(result.current.enabledFields)).toHaveLength(0)
+
+    // Now schemaConfig arrives
+    vi.mocked(useSchemaConfig).mockReturnValue({
+      data: mockSchema,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useSchemaConfig>)
+    rerender()
+
+    // Migration should now run and key by the system field ref
+    expect(result.current.enabledFields['$user_id_field']).toEqual({
+      label: 'User ID',
+      icon: 'user',
+    })
+  })
+})
+
+const baseSchema: SchemaConfig = {
+  id: 'schema-1',
+  connection_id: 'conn-1',
+  user_id_field: 'user_id',
+  event_name_field: 'event_name',
+  timestamp_field: 'created_at',
+  events_table: 'public.events',
+  custom_properties: [],
+  session_timeout_minutes: 30,
+  updated_at: '2024-01-01T00:00:00Z',
+}
+
+describe('migrateFilterFields', () => {
+  it('passes through already-migrated entries', () => {
+    const ff: FilterField[] = [{ ref: 'abc-123', field: '', label: 'Country', icon: 'globe' }]
+    const result = migrateFilterFields(ff, baseSchema)
+    expect(result).toEqual(ff)
+  })
+
+  it('migrates legacy entry matching a custom property by path', () => {
+    const schema: SchemaConfig = {
+      ...baseSchema,
+      custom_properties: [
+        { id: 'abc-123', name: 'Country', path: 'context.country', type: 'string' },
+      ],
+    }
+    const ff: FilterField[] = [
+      { ref: '', field: 'context.country', label: 'Country', icon: 'globe' },
+    ]
+    const result = migrateFilterFields(ff, schema)
+    expect(result).toEqual([{ ref: 'abc-123', field: '', label: 'Country', icon: 'globe' }])
+  })
+
+  it('migrates legacy entry matching a system field by value', () => {
+    const ff: FilterField[] = [{ ref: '', field: 'user_id', label: 'User ID', icon: 'user' }]
+    const result = migrateFilterFields(ff, baseSchema)
+    expect(result).toEqual([{ ref: '$user_id_field', field: '', label: 'User ID', icon: 'user' }])
+  })
+
+  it('drops orphaned entries with no match', () => {
+    const ff: FilterField[] = [{ ref: '', field: 'nonexistent', label: 'X', icon: 'x' }]
+    const result = migrateFilterFields(ff, baseSchema)
+    expect(result).toEqual([])
   })
 })

@@ -237,7 +237,8 @@ export const SchemaConfigSchema = z.object({
 })
 
 export const FilterFieldSchema = z.object({
-  field: z.string(),
+  ref: z.string().default(''),
+  field: z.string().default(''),
   label: z.string(),
   icon: z.string(),
 })

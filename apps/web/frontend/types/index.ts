@@ -362,7 +362,8 @@ export interface TablesResponse {
 }
 
 export interface FilterField {
-  field: string
+  ref: string // UUID (custom props) or "$<schema_key>" (system fields); "" = legacy
+  field: string // legacy path string; "" for new entries
   label: string
   icon: string
 }

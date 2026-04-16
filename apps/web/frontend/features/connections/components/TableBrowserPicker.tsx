@@ -41,7 +41,10 @@ const ICONS: Record<string, React.ElementType> = {
 function useBrowse(connId: string, catalog?: string, schema?: string) {
   return useQuery({
     queryKey: ['browse', connId, catalog ?? '', schema ?? ''],
-    queryFn: () => fetchBrowse(connId, catalog, schema),
+    queryFn: () =>
+      fetchBrowse(connId, catalog, schema, {
+        meta: { cardName: 'Connection', querySnippet: 'browsing tables', auxiliary: true },
+      }),
     staleTime: QUERY_STALE_TIME.default,
   })
 }

@@ -1,6 +1,7 @@
 """Pydantic models for the Connections API."""
 
 import re
+import uuid
 from typing import Any, Literal
 
 from pydantic import BaseModel, field_validator
@@ -13,10 +14,22 @@ _PATH_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.\-']*$")
 
 
 class CustomProperty(BaseModel):
+    id: str | None = None
     name: str
     path: str
     type: Literal["string", "number", "boolean", "timestamp"]
     category: str | None = None
+
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        try:
+            uuid.UUID(v)
+        except ValueError:
+            raise ValueError("id must be a valid UUID") from None
+        return v
 
     @field_validator("path")
     @classmethod
@@ -73,9 +86,12 @@ class SchemaConfigResponse(SchemaConfigBody):
 
 
 class FilterField(BaseModel):
-    field: str
+    ref: str = ""  # new: UUID or "$<schema_key>"; empty = legacy
+    field: str = ""  # kept for backward compat with old stored data
     label: str
     icon: str = "filter"
+
+    model_config = {"extra": "ignore"}
 
 
 class FilterConfigBody(BaseModel):
