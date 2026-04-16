@@ -1,6 +1,7 @@
 """Pydantic models for the Connections API."""
 
 import re
+import uuid
 from typing import Any, Literal
 
 from pydantic import BaseModel, field_validator
@@ -18,6 +19,17 @@ class CustomProperty(BaseModel):
     path: str
     type: Literal["string", "number", "boolean", "timestamp"]
     category: str | None = None
+
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        try:
+            uuid.UUID(v)
+        except ValueError:
+            raise ValueError("id must be a valid UUID") from None
+        return v
 
     @field_validator("path")
     @classmethod

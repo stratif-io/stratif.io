@@ -266,7 +266,7 @@ async def upsert_schema_config(
                 "type": prop.type,
                 "category": prop.category,
             }
-            for prop_id, prop in zip(saved_props, body.custom_properties, strict=False)
+            for prop_id, prop in zip(saved_props, body.custom_properties, strict=True)
         ],
     }
 
