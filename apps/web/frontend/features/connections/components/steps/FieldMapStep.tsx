@@ -22,18 +22,19 @@ import { CategoryCard } from './fieldmap/CategoryCard'
 const REQUIRED_FIELDS: {
   key: 'userIdField' | 'eventNameField' | 'timestampField'
   label: string
+  ref: string
 }[] = [
-  { key: 'userIdField', label: 'User ID' },
-  { key: 'eventNameField', label: 'Event Name' },
-  { key: 'timestampField', label: 'Timestamp' },
+  { key: 'userIdField', label: 'User ID', ref: '$user_id_field' },
+  { key: 'eventNameField', label: 'Event Name', ref: '$event_name_field' },
+  { key: 'timestampField', label: 'Timestamp', ref: '$timestamp_field' },
 ]
 
-const USER_IDENTITY_FIELDS: { key: UserIdentityKey; label: string }[] = [
-  { key: 'email_field', label: 'Email' },
-  { key: 'first_name_field', label: 'First Name' },
-  { key: 'last_name_field', label: 'Last Name' },
-  { key: 'date_of_birth_field', label: 'Date of Birth' },
-  { key: 'phone_field', label: 'Phone' },
+const USER_IDENTITY_FIELDS: { key: UserIdentityKey; label: string; ref: string }[] = [
+  { key: 'email_field', label: 'Email', ref: '$email_field' },
+  { key: 'first_name_field', label: 'First Name', ref: '$first_name_field' },
+  { key: 'last_name_field', label: 'Last Name', ref: '$last_name_field' },
+  { key: 'date_of_birth_field', label: 'Date of Birth', ref: '$date_of_birth_field' },
+  { key: 'phone_field', label: 'Phone', ref: '$phone_field' },
 ]
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -52,6 +53,7 @@ export function FieldMapStep({ connId }: Props) {
     detectedColumns,
     enabledFields,
     setEnabledFields,
+    toggleFilter,
     detect,
     handleDetect,
     acceptDetection,
@@ -98,15 +100,6 @@ export function FieldMapStep({ connId }: Props) {
 
   // Required field counts
   const mappedRequiredCount = REQUIRED_FIELDS.filter((f) => !!form[f.key]).length
-
-  function toggleFilter(field: string, label: string, icon: string) {
-    setEnabledFields((prev) => {
-      const next = { ...prev }
-      if (next[field]) delete next[field]
-      else next[field] = { label, icon }
-      return next
-    })
-  }
 
   function setUserIdentityField(key: UserIdentityKey, value: string | null) {
     const previous = form.userIdentityFields[key]
@@ -241,7 +234,7 @@ export function FieldMapStep({ connId }: Props) {
           </div>
         </div>
 
-        {REQUIRED_FIELDS.map(({ key, label }) => {
+        {REQUIRED_FIELDS.map(({ key, label, ref }) => {
           const pending = pendingDetections.find((d) => d.fieldKey === key)
           const value = form[key]
           return (
@@ -253,10 +246,10 @@ export function FieldMapStep({ connId }: Props) {
               value={value}
               pending={pending}
               colNames={colNames}
-              filterEnabled={!!value && !!enabledFields[value]}
+              filterEnabled={!!value && !!enabledFields[ref]}
               onFilterToggle={() => {
                 if (!value) return
-                toggleFilter(value, label, 'Activity')
+                toggleFilter(ref, label, 'Activity')
               }}
               onAccept={() => acceptDetection(key)}
               onReject={() => rejectDetection(key)}
@@ -287,7 +280,7 @@ export function FieldMapStep({ connId }: Props) {
           </div>
         </div>
 
-        {visibleIdentityFields.map(({ key, label }) => {
+        {visibleIdentityFields.map(({ key, label, ref }) => {
           const pending = pendingDetections.find((d) => d.fieldKey === key)
           const value = form.userIdentityFields[key] ?? ''
           return (
@@ -299,10 +292,10 @@ export function FieldMapStep({ connId }: Props) {
               value={value}
               pending={pending}
               colNames={colNames}
-              filterEnabled={!!value && !!enabledFields[value]}
+              filterEnabled={!!value && !!enabledFields[ref]}
               onFilterToggle={() => {
                 if (!value) return
-                toggleFilter(value, label, 'CircleUserRound')
+                toggleFilter(ref, label, 'CircleUserRound')
               }}
               onAccept={() => acceptDetection(key)}
               onReject={() => rejectDetection(key)}
@@ -367,8 +360,8 @@ export function FieldMapStep({ connId }: Props) {
                 expanded={pendingDetections.length > 0}
                 onFilterToggleProp={(idx) => {
                   const p = groupProps.find((gp) => gp.idx === idx)
-                  if (!p?.prop.path) return
-                  toggleFilter(p.prop.path, p.prop.name || p.prop.path, 'Activity')
+                  if (!p?.prop.id) return
+                  toggleFilter(p.prop.id, p.prop.name || p.prop.path, 'Activity')
                 }}
                 onChangeCategory={(newCat) => {
                   const idxSet = new Set(groupProps.map((gp) => gp.idx))

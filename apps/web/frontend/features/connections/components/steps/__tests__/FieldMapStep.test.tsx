@@ -39,6 +39,7 @@ const baseHookReturn = {
   detectedColumns: [],
   enabledFields: {},
   setEnabledFields: vi.fn(),
+  toggleFilter: vi.fn(),
   detect: { isPending: false },
   handleDetect: vi.fn(),
   acceptDetection: vi.fn(),
@@ -238,53 +239,48 @@ describe('FieldMapStep', () => {
 
   // ── Bug A: Filter toggle ──────────────────────────────────────────────────────
 
-  it('calls setEnabledFields when filter toggle is clicked on required field row', async () => {
-    const setEnabledFields = vi.fn()
-    renderStep({ setEnabledFields, enabledFields: {} })
+  it('calls toggleFilter with $user_id_field ref when filter toggle is clicked on required field row', async () => {
+    const toggleFilter = vi.fn()
+    renderStep({ toggleFilter, enabledFields: {} })
     // The userIdField row has value 'user_id' (from baseHookReturn.form.userIdField)
     const toggleBtn = screen.getByLabelText(/add user id to filters/i)
     await userEvent.click(toggleBtn)
-    expect(setEnabledFields).toHaveBeenCalled()
-    // The updater fn should produce the new enabledFields
-    const updater = setEnabledFields.mock.calls[0][0]
-    const result = updater({})
-    expect(result).toMatchObject({ user_id: expect.objectContaining({ label: 'User ID' }) })
+    expect(toggleFilter).toHaveBeenCalledWith('$user_id_field', 'User ID', 'Activity')
   })
 
-  it('filter toggle on required field reflects filterEnabled=true when field is in enabledFields', () => {
+  it('filter toggle on required field reflects filterEnabled=true when ref is in enabledFields', () => {
     renderStep({
-      enabledFields: { user_id: { label: 'User ID', icon: 'Activity' } },
+      enabledFields: { $user_id_field: { label: 'User ID', icon: 'Activity' } },
     })
     // The toggle button aria-label should say "Remove User ID from filters" when filterEnabled=true
     expect(screen.getByLabelText(/remove user id from filters/i)).toBeInTheDocument()
   })
 
-  it('calls setEnabledFields when filter toggle is clicked on a custom property row', async () => {
-    const setEnabledFields = vi.fn()
+  it('calls toggleFilter with prop.id as ref when filter toggle is clicked on a custom property row', async () => {
+    const toggleFilter = vi.fn()
     renderStep({
       ...expandCards,
-      setEnabledFields,
+      toggleFilter,
       enabledFields: {},
       form: {
         ...baseHookReturn.form,
         customProps: [
-          { id: 'p1', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
+          { id: 'abc-123', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
         ],
       },
     })
     const filterToggle = screen.getByLabelText(/add plan to filters/i)
     await userEvent.click(filterToggle)
-    expect(setEnabledFields).toHaveBeenCalled()
-    const updater = setEnabledFields.mock.calls[0][0]
-    const result = updater({})
-    expect(result).toMatchObject({ 'traits.plan': expect.any(Object) })
+    expect(toggleFilter).toHaveBeenCalledWith('abc-123', 'Plan', 'Activity')
   })
 
-  it('filter toggle removes field from enabledFields when already enabled', async () => {
-    const setEnabledFields = vi.fn()
+  it('filter toggle calls toggleFilter with prop.id when filter is already enabled', async () => {
+    const toggleFilter = vi.fn()
+    // CategoryCard still checks enabledFields[prop.path] for display (Task 7 will fix),
+    // so use path as key here to get the "remove" aria-label shown
     renderStep({
       ...expandCards,
-      setEnabledFields,
+      toggleFilter,
       enabledFields: { 'traits.plan': { label: 'Plan', icon: 'Activity' } },
       form: {
         ...baseHookReturn.form,
@@ -295,10 +291,8 @@ describe('FieldMapStep', () => {
     })
     const filterToggle = screen.getByLabelText(/remove plan from filters/i)
     await userEvent.click(filterToggle)
-    expect(setEnabledFields).toHaveBeenCalled()
-    const updater = setEnabledFields.mock.calls[0][0]
-    const result = updater({ 'traits.plan': { label: 'Plan', icon: 'Activity' } })
-    expect(result).not.toHaveProperty('traits.plan')
+    // toggleFilter is called with prop.id (not path) as the ref
+    expect(toggleFilter).toHaveBeenCalledWith('p1', 'Plan', 'Activity')
   })
 
   // ── Bug B: Add property ───────────────────────────────────────────────────────
