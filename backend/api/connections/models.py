@@ -86,9 +86,12 @@ class SchemaConfigResponse(SchemaConfigBody):
 
 
 class FilterField(BaseModel):
-    field: str
+    ref: str = ""  # new: UUID or "$<schema_key>"; empty = legacy
+    field: str = ""  # kept for backward compat with old stored data
     label: str
     icon: str = "filter"
+
+    model_config = {"extra": "ignore"}
 
 
 class FilterConfigBody(BaseModel):

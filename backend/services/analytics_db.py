@@ -164,8 +164,10 @@ class AnalyticsDatabase:
         """Return distinct values for configured filter fields (one query per field)."""
         options: dict[str, list[str]] = {}
         for ff in self._filter_fields:
-            field = ff["field"]
-            expr = self._filter_exprs.get(field)
+            ref = ff.get("ref", "")
+            field = ff.get("field", "")
+            key = ref if ref else field  # use ref for new entries, field for legacy
+            expr = self._filter_exprs.get(key)
             if not expr:
                 continue
             try:
@@ -173,10 +175,10 @@ class AnalyticsDatabase:
                     f"SELECT {expr} AS v, COUNT(*) AS n FROM events "
                     f"WHERE {expr} IS NOT NULL GROUP BY {expr} ORDER BY n DESC LIMIT 200"
                 )
-                options[field] = [str(row[0]) for row in rows if row[0] is not None]
+                options[key] = [str(row[0]) for row in rows if row[0] is not None]
             except Exception as _exc:
-                log.warning("filter_options_query_failed", field=field, error=str(_exc))
-                options[field] = []
+                log.warning("filter_options_query_failed", key=key, error=str(_exc))
+                options[key] = []
         return options
 
     def get_field_options(self, field: str) -> list[str]:
@@ -296,7 +298,13 @@ async def open_analytics_db(
     )
     custom_props: list[dict] = (
         [
-            {"name": p.name, "path": p.path, "type": p.type, "category": p.category}
+            {
+                "id": p.id,
+                "name": p.name,
+                "path": p.path,
+                "type": p.type,
+                "category": p.category,
+            }
             for p in sorted(schema_config.custom_properties, key=lambda x: x.sort_order)
         ]
         if schema_config
@@ -323,7 +331,7 @@ async def open_analytics_db(
     filter_config = conn_obj.filter_config
     filter_fields: list[dict] = (
         [
-            {"field": f.field, "label": f.label, "icon": f.icon}
+            {"ref": f.ref, "field": f.field, "label": f.label, "icon": f.icon}
             for f in sorted(filter_config.filter_fields, key=lambda x: x.sort_order)
         ]
         if filter_config
@@ -365,16 +373,52 @@ async def open_analytics_db(
 
         _src_to_std_name = {uid_f: "user_id", ts_f: "timestamp", en_f: "event_name"}
         f_exprs: dict[str, str] = {}
+
+        _identity_key_to_col = (
+            {key: getattr(schema_config, key, None) for key in _identity_field_keys}
+            if schema_config
+            else {}
+        )
+
+        _prop_by_id: dict[str, dict] = {p["id"]: p for p in custom_props if "id" in p}
+
         for ff in filter_fields:
-            field = ff.get("field", "")
-            if field in prop_exprs:
-                f_exprs[field] = prop_exprs[field]
-            elif field in (uid_f, ts_f, en_f):
-                f_exprs[field] = (
-                    _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
-                )
+            ref = ff.get("ref", "")
+            field = ff.get("field", "")  # legacy fallback key
+
+            if ref.startswith("$"):
+                # System field: "$user_id_field" → schema_config.user_id_field → col name
+                schema_key = ref[1:]
+                if schema_key in (
+                    "user_id_field",
+                    "event_name_field",
+                    "timestamp_field",
+                ):
+                    col = (
+                        getattr(schema_config, schema_key, None)
+                        if schema_config
+                        else None
+                    )
+                    if col:
+                        f_exprs[ref] = _src_to_std_name.get(col, f"{_iq}{col}{_iq}")
+                elif schema_key in _identity_field_keys:
+                    col = _identity_key_to_col.get(schema_key)
+                    if col:
+                        f_exprs[ref] = prop_exprs.get(col) or _resolve(col, col_types)
+            elif ref and ref in _prop_by_id:
+                # UUID ref: look up custom property by id
+                prop = _prop_by_id[ref]
+                f_exprs[ref] = _resolve(prop["path"], col_types)
             else:
-                f_exprs[field] = _resolve(field, col_types)
+                # Legacy fallback: use field string (old path-based lookup)
+                if field in prop_exprs:
+                    f_exprs[field] = prop_exprs[field]
+                elif field in (uid_f, ts_f, en_f):
+                    f_exprs[field] = (
+                        _src_to_std_name[field] if needs_remap else f"{_iq}{field}{_iq}"
+                    )
+                else:
+                    f_exprs[field] = _resolve(field, col_types)
         return prop_exprs, f_exprs
 
     events_cte = (
