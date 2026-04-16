@@ -3,10 +3,12 @@ import type {
   CustomProperty,
   DimensionCategoryConfig,
   PropertyType,
+  SchemaConfig,
   SchemaDetectColumn,
 } from '@/types'
 import dimensionCategories from '@/config/dimension-categories.json'
 import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
+import { migrateFilterFields } from '../utils/migrateFilterFields'
 import {
   useSchemaConfig,
   useFilterConfig,
@@ -111,13 +113,19 @@ export function useSchemaForm(connId: string) {
 
   useEffect(() => {
     if (!filterConfigLoaded || filterInitialized.current) return
+    if (!schemaConfig) return // wait for schemaConfig before migrating
     filterInitialized.current = true
+    const migrated = migrateFilterFields(
+      filterConfig?.filter_fields ?? [],
+      schemaConfig as SchemaConfig
+    )
     const fields: Record<string, { label: string; icon: string }> = {}
-    for (const f of filterConfig?.filter_fields ?? []) {
-      fields[f.field] = { label: f.label, icon: f.icon }
+    for (const f of migrated) {
+      const key = f.ref || f.field
+      if (key) fields[key] = { label: f.label, icon: f.icon }
     }
     setEnabledFields(fields)
-  }, [filterConfigLoaded, filterConfig])
+  }, [filterConfigLoaded, filterConfig, schemaConfig])
 
   useEffect(() => {
     if (!initialized.current) return
@@ -134,8 +142,9 @@ export function useSchemaForm(connId: string) {
     clearTimeout(filterTimer.current)
     filterTimer.current = setTimeout(() => {
       upsertFilter.mutate({
-        filter_fields: Object.entries(enabledFields).map(([field, { label, icon }]) => ({
-          field,
+        filter_fields: Object.entries(enabledFields).map(([ref, { label, icon }]) => ({
+          ref,
+          field: '',
           label,
           icon,
         })),
@@ -147,6 +156,17 @@ export function useSchemaForm(connId: string) {
 
   function updateForm(patch: Partial<SchemaFormState>) {
     setForm((prev) => ({ ...prev, ...patch }))
+  }
+
+  function toggleFilter(ref: string, label: string, icon: string) {
+    setEnabledFields((prev) => {
+      if (prev[ref]) {
+        const next = { ...prev }
+        delete next[ref]
+        return next
+      }
+      return { ...prev, [ref]: { label, icon } }
+    })
   }
 
   function handleDetect() {
@@ -278,6 +298,7 @@ export function useSchemaForm(connId: string) {
     detectedColumns,
     enabledFields,
     setEnabledFields,
+    toggleFilter,
     detect,
     handleDetect,
     acceptDetection,

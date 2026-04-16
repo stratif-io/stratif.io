@@ -96,10 +96,10 @@ function serializeFilters(filters?: Record<string, string | null>): string | und
   return Object.keys(active).length > 0 ? JSON.stringify(active) : undefined
 }
 
-export const fetchEvents = (connection_id?: string) => {
+export const fetchEvents = (connection_id?: string, opts?: TaskOpts) => {
   const searchParams = new URLSearchParams()
   if (connection_id) searchParams.set('connection_id', connection_id)
-  return fetchApi<EventsResponse>(`/api/events?${searchParams}`)
+  return fetchApi<EventsResponse>(`/api/events?${searchParams}`, undefined, opts)
 }
 
 export const fetchTopEvents = (
@@ -345,10 +345,10 @@ export const fetchConversion = (params: {
   return fetchApi<ConversionResponse>(`/api/conversion?${searchParams}`)
 }
 
-export const fetchPivotOptions = (connection_id?: string) => {
+export const fetchPivotOptions = (connection_id?: string, opts?: TaskOpts) => {
   const searchParams = new URLSearchParams()
   if (connection_id) searchParams.set('connection_id', connection_id)
-  return fetchApi<PivotOptionsResponse>(`/api/pivot/options?${searchParams}`)
+  return fetchApi<PivotOptionsResponse>(`/api/pivot/options?${searchParams}`, undefined, opts)
 }
 
 export const fetchPivot = (
@@ -378,10 +378,10 @@ export const fetchPivot = (
   return fetchApi<PivotResponse>(`/api/pivot?${searchParams}`, undefined, opts)
 }
 
-export const fetchPivotGridColDefs = (connection_id?: string) => {
+export const fetchPivotGridColDefs = (connection_id?: string, opts?: TaskOpts) => {
   const searchParams = new URLSearchParams()
   if (connection_id) searchParams.set('connection_id', connection_id)
-  return fetchApi<PivotGridColDefsResponse>(`/api/pivot/grid?${searchParams}`)
+  return fetchApi<PivotGridColDefsResponse>(`/api/pivot/grid?${searchParams}`, undefined, opts)
 }
 
 export const fetchPivotGridFilterValues = (
@@ -434,9 +434,11 @@ export const fetchSandboxData = (params: { start_date?: string; end_date?: strin
 
 // Connections
 
-export const fetchConnections = () => fetchApi<Connection[]>('/api/connections')
+export const fetchConnections = (opts?: TaskOpts) =>
+  fetchApi<Connection[]>('/api/connections', undefined, opts)
 
-export const fetchConnection = (id: string) => fetchApi<Connection>(`/api/connections/${id}`)
+export const fetchConnection = (id: string, opts?: TaskOpts) =>
+  fetchApi<Connection>(`/api/connections/${id}`, undefined, opts)
 
 export const createConnection = (body: ConnectionCreate) =>
   fetchApi<Connection>('/api/connections', {
@@ -453,20 +455,25 @@ export const updateConnection = (id: string, body: ConnectionUpdate) =>
 export const deleteConnection = (id: string) =>
   fetchApi<void>(`/api/connections/${id}`, { method: 'DELETE' })
 
-export const testConnection = (id: string) => {
+export const testConnection = (id: string, opts?: TaskOpts) => {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(new Error('Connection timed out')), 11_000)
   return fetchApi<{ ok: boolean; db_type?: string; error?: string }>(
     `/api/connections/${id}/test`,
-    { method: 'POST', signal: controller.signal }
+    { method: 'POST', signal: controller.signal },
+    opts
   ).finally(() => clearTimeout(timer))
 }
 
-export const fetchConnectionString = (connId: string) =>
-  fetchApi<{ connection_string: string | null }>(`/api/connections/${connId}/string`)
+export const fetchConnectionString = (connId: string, opts?: TaskOpts) =>
+  fetchApi<{ connection_string: string | null }>(
+    `/api/connections/${connId}/string`,
+    undefined,
+    opts
+  )
 
-export const fetchSchemaConfig = (connId: string) =>
-  fetchApi<SchemaConfig>(`/api/connections/${connId}/schema`)
+export const fetchSchemaConfig = (connId: string, opts?: TaskOpts) =>
+  fetchApi<SchemaConfig>(`/api/connections/${connId}/schema`, undefined, opts)
 
 export const upsertSchemaConfig = (connId: string, body: SchemaConfigBody) =>
   fetchApi<SchemaConfig>(`/api/connections/${connId}/schema`, {
@@ -474,8 +481,8 @@ export const upsertSchemaConfig = (connId: string, body: SchemaConfigBody) =>
     body: JSON.stringify(body),
   })
 
-export const fetchFilterConfig = (connId: string) =>
-  fetchApi<FilterConfig>(`/api/connections/${connId}/filters`)
+export const fetchFilterConfig = (connId: string, opts?: TaskOpts) =>
+  fetchApi<FilterConfig>(`/api/connections/${connId}/filters`, undefined, opts)
 
 export const upsertFilterConfig = (connId: string, body: FilterConfigBody) =>
   fetchApi<FilterConfig>(`/api/connections/${connId}/filters`, {
@@ -483,8 +490,8 @@ export const upsertFilterConfig = (connId: string, body: FilterConfigBody) =>
     body: JSON.stringify(body),
   })
 
-export const fetchFilterOptions = (connId: string) =>
-  fetchApi<FilterOptionsResponse>(`/api/connections/${connId}/filter-options`)
+export const fetchFilterOptions = (connId: string, opts?: TaskOpts) =>
+  fetchApi<FilterOptionsResponse>(`/api/connections/${connId}/filter-options`, undefined, opts)
 
 export const fetchFieldOptions = (connId: string, field: string, opts?: TaskOpts) =>
   fetchApi<{ field: string; values: string[] }>(
@@ -498,26 +505,34 @@ export const fetchSchemaDetect = (connId: string, eventsTable?: string) => {
   return fetchApi<SchemaDetectResponse>(`/api/connections/${connId}/schema/detect${qs}`)
 }
 
-export const fetchConnectionTables = (connId: string) =>
-  fetchApi<TablesResponse>(`/api/connections/${connId}/tables`)
+export const fetchConnectionTables = (connId: string, opts?: TaskOpts) =>
+  fetchApi<TablesResponse>(`/api/connections/${connId}/tables`, undefined, opts)
 
-export const fetchConnectionColumns = (connId: string, table: string) =>
+export const fetchConnectionColumns = (connId: string, table: string, opts?: TaskOpts) =>
   fetchApi<{ columns: string[] }>(
-    `/api/connections/${connId}/columns?table=${encodeURIComponent(table)}`
+    `/api/connections/${connId}/columns?table=${encodeURIComponent(table)}`,
+    undefined,
+    opts
   )
 
-export const fetchBrowse = (connId: string, catalog?: string, schema?: string) => {
+export const fetchBrowse = (connId: string, catalog?: string, schema?: string, opts?: TaskOpts) => {
   const params = new URLSearchParams()
   if (catalog) params.set('catalog', catalog)
   if (schema) params.set('schema', schema)
   const qs = params.size ? `?${params}` : ''
   return fetchApi<{ items: Array<{ name: string; full_name: string; kind: string }> }>(
-    `/api/connections/${connId}/browse${qs}`
+    `/api/connections/${connId}/browse${qs}`,
+    undefined,
+    opts
   )
 }
 
-export const fetchConnectionCredentials = (connId: string) =>
-  fetchApi<{ fields: Record<string, string | null> }>(`/api/connections/${connId}/credentials`)
+export const fetchConnectionCredentials = (connId: string, opts?: TaskOpts) =>
+  fetchApi<{ fields: Record<string, string | null> }>(
+    `/api/connections/${connId}/credentials`,
+    undefined,
+    opts
+  )
 
 export const fetchMissionControl = (
   params: {

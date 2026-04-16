@@ -39,6 +39,7 @@ const baseHookReturn = {
   detectedColumns: [],
   enabledFields: {},
   setEnabledFields: vi.fn(),
+  toggleFilter: vi.fn(),
   detect: { isPending: false },
   handleDetect: vi.fn(),
   acceptDetection: vi.fn(),
@@ -238,54 +239,47 @@ describe('FieldMapStep', () => {
 
   // ── Bug A: Filter toggle ──────────────────────────────────────────────────────
 
-  it('calls setEnabledFields when filter toggle is clicked on required field row', async () => {
-    const setEnabledFields = vi.fn()
-    renderStep({ setEnabledFields, enabledFields: {} })
+  it('calls toggleFilter with $user_id_field ref when filter toggle is clicked on required field row', async () => {
+    const toggleFilter = vi.fn()
+    renderStep({ toggleFilter, enabledFields: {} })
     // The userIdField row has value 'user_id' (from baseHookReturn.form.userIdField)
     const toggleBtn = screen.getByLabelText(/add user id to filters/i)
     await userEvent.click(toggleBtn)
-    expect(setEnabledFields).toHaveBeenCalled()
-    // The updater fn should produce the new enabledFields
-    const updater = setEnabledFields.mock.calls[0][0]
-    const result = updater({})
-    expect(result).toMatchObject({ user_id: expect.objectContaining({ label: 'User ID' }) })
+    expect(toggleFilter).toHaveBeenCalledWith('$user_id_field', 'User ID', 'Activity')
   })
 
-  it('filter toggle on required field reflects filterEnabled=true when field is in enabledFields', () => {
+  it('filter toggle on required field reflects filterEnabled=true when ref is in enabledFields', () => {
     renderStep({
-      enabledFields: { user_id: { label: 'User ID', icon: 'Activity' } },
+      enabledFields: { $user_id_field: { label: 'User ID', icon: 'Activity' } },
     })
     // The toggle button aria-label should say "Remove User ID from filters" when filterEnabled=true
     expect(screen.getByLabelText(/remove user id from filters/i)).toBeInTheDocument()
   })
 
-  it('calls setEnabledFields when filter toggle is clicked on a custom property row', async () => {
-    const setEnabledFields = vi.fn()
+  it('calls toggleFilter with prop.id as ref when filter toggle is clicked on a custom property row', async () => {
+    const toggleFilter = vi.fn()
     renderStep({
       ...expandCards,
-      setEnabledFields,
+      toggleFilter,
       enabledFields: {},
       form: {
         ...baseHookReturn.form,
         customProps: [
-          { id: 'p1', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
+          { id: 'abc-123', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
         ],
       },
     })
     const filterToggle = screen.getByLabelText(/add plan to filters/i)
     await userEvent.click(filterToggle)
-    expect(setEnabledFields).toHaveBeenCalled()
-    const updater = setEnabledFields.mock.calls[0][0]
-    const result = updater({})
-    expect(result).toMatchObject({ 'traits.plan': expect.any(Object) })
+    expect(toggleFilter).toHaveBeenCalledWith('abc-123', 'Plan', 'CircleUserRound')
   })
 
-  it('filter toggle removes field from enabledFields when already enabled', async () => {
-    const setEnabledFields = vi.fn()
+  it('filter toggle calls toggleFilter with prop.id when filter is already enabled', async () => {
+    const toggleFilter = vi.fn()
     renderStep({
       ...expandCards,
-      setEnabledFields,
-      enabledFields: { 'traits.plan': { label: 'Plan', icon: 'Activity' } },
+      toggleFilter,
+      enabledFields: { p1: { label: 'Plan', icon: 'Activity' } },
       form: {
         ...baseHookReturn.form,
         customProps: [
@@ -295,10 +289,8 @@ describe('FieldMapStep', () => {
     })
     const filterToggle = screen.getByLabelText(/remove plan from filters/i)
     await userEvent.click(filterToggle)
-    expect(setEnabledFields).toHaveBeenCalled()
-    const updater = setEnabledFields.mock.calls[0][0]
-    const result = updater({ 'traits.plan': { label: 'Plan', icon: 'Activity' } })
-    expect(result).not.toHaveProperty('traits.plan')
+    // toggleFilter is called with prop.id (not path) as the ref
+    expect(toggleFilter).toHaveBeenCalledWith('p1', 'Plan', 'CircleUserRound')
   })
 
   // ── Bug B: Add property ───────────────────────────────────────────────────────
@@ -347,6 +339,67 @@ describe('FieldMapStep', () => {
         expect.objectContaining({ name: '', path: '', type: 'string', category: 'user' }),
       ])
     )
+  })
+
+  // ── Bug C: Category change → icon staleness ──────────────────────────────────
+
+  it('calls setEnabledFields with updated icon when category changes for a prop with active filter', async () => {
+    const setEnabledFields = vi.fn()
+    // Prop p1 is in category 'user' (CircleUserRound) and has an active filter
+    renderStep({
+      ...expandCards,
+      setEnabledFields,
+      enabledFields: { p1: { label: 'Plan', icon: 'CircleUserRound' } },
+      form: {
+        ...baseHookReturn.form,
+        customProps: [
+          { id: 'p1', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
+        ],
+      },
+    })
+    // CategoryCard has a CategoryBadge that triggers onChangeCategory
+    // The badge renders as a button with the category label; clicking it opens a picker
+    // We can find and click the "User" badge to open the picker, but let's use
+    // aria to find the change-category control. In practice we verify setEnabledFields
+    // is called with a function that updates the icon when applied.
+    // CategoryBadge trigger has title="User" (the category label); pick first match
+    const categoryBadge = screen.getAllByTitle('User')[0]
+    await userEvent.click(categoryBadge)
+    // Popover items are plain buttons; pick Geography
+    const geoOption = await screen.findByRole('button', { name: /geography/i })
+    await userEvent.click(geoOption)
+    // setEnabledFields must be called
+    expect(setEnabledFields).toHaveBeenCalled()
+    // Call the updater with the current enabledFields to verify the icon changed
+    const updater = setEnabledFields.mock.calls[0][0]
+    const result = updater({ p1: { label: 'Plan', icon: 'CircleUserRound' } })
+    expect(result.p1.icon).toBe('Globe2')
+  })
+
+  it('calls setEnabledFields with updated icon when per-row category badge changes for a prop with active filter', async () => {
+    const setEnabledFields = vi.fn()
+    renderStep({
+      ...expandCards,
+      setEnabledFields,
+      enabledFields: { p1: { label: 'City', icon: 'Globe2' } },
+      form: {
+        ...baseHookReturn.form,
+        customProps: [
+          { id: 'p1', name: 'City', path: 'context.city', type: 'string', category: 'geography' },
+        ],
+      },
+    })
+    // Per-row CategoryBadge for the prop has title="Geography"
+    const rowBadge = screen.getAllByTitle('Geography')[0]
+    await userEvent.click(rowBadge)
+    // Select Metrics from the popover
+    const metricsOption = await screen.findByRole('button', { name: /metrics/i })
+    await userEvent.click(metricsOption)
+    // setEnabledFields must be called with the new icon
+    expect(setEnabledFields).toHaveBeenCalled()
+    const updater = setEnabledFields.mock.calls[0][0]
+    const result = updater({ p1: { label: 'City', icon: 'Globe2' } })
+    expect(result.p1.icon).toBe('BarChart2')
   })
 
   it('calls setForm with uncategorized prop when "add to Other" is clicked', async () => {

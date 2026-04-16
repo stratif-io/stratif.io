@@ -85,7 +85,10 @@ export function TrendsPage() {
 
   const { data: pivotOptions } = useQuery({
     queryKey: ['pivot-options', activeConnectionId],
-    queryFn: () => fetchPivotOptions(activeConnectionId ?? undefined),
+    queryFn: () =>
+      fetchPivotOptions(activeConnectionId ?? undefined, {
+        meta: { cardName: 'Trends', querySnippet: 'schema options', auxiliary: true },
+      }),
     staleTime: QUERY_STALE_TIME.default,
   })
   const sortByLabel = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label)

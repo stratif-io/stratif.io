@@ -61,7 +61,7 @@ export function NoConnectionScreen() {
           </li>
         </ol>
 
-        <Button onClick={() => navigate('/connections')}>Add your first connection</Button>
+        <Button onClick={() => navigate('/connections/new')}>Add your first connection</Button>
       </div>
     </div>
   )

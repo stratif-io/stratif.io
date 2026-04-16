@@ -269,6 +269,7 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
             obj.path = cp.get("path", "")
             obj.type = cp.get("type", "string")
             obj.category = cp.get("category", "")
+            obj.id = cp.get("id", f"test-id-{i}")
             obj.sort_order = i
             custom_props_objs.append(obj)
 
@@ -277,6 +278,7 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         for i, ff in enumerate(filter_fields):
             obj = MagicMock()
             obj.field = ff.get("field", "")
+            obj.ref = ff.get("ref", "")
             obj.label = ff.get("label", "")
             obj.icon = ff.get("icon", "")
             obj.sort_order = i
@@ -437,6 +439,133 @@ class TestOpenAnalyticsDbIdentityFieldFilters:
         clauses, params = db.build_filter_clauses({"fname": "Bob"})
         assert len(clauses) == 1
         assert params == ["Bob"]
+
+
+@pytest.mark.asyncio
+class TestFilterExprs(TestOpenAnalyticsDbIdentityFieldFilters):
+    """Tests for ref-based filter expression resolution."""
+
+    def _make_session(self, schema_data: dict, filter_fields: list[dict]):
+        """Build a mock AsyncSession — supports id on custom props and ref on filter fields."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        # Build mock custom_property objects
+        custom_props_objs = []
+        for i, cp in enumerate(schema_data.get("custom_properties", [])):
+            obj = MagicMock()
+            obj.name = cp.get("name", "")
+            obj.path = cp.get("path", "")
+            obj.type = cp.get("type", "string")
+            obj.category = cp.get("category", "")
+            obj.id = cp.get("id", f"test-id-{i}")
+            obj.sort_order = i
+            custom_props_objs.append(obj)
+
+        # Build mock filter_field objects
+        filter_field_objs = []
+        for i, ff in enumerate(filter_fields):
+            obj = MagicMock()
+            obj.field = ff.get("field", "")
+            obj.ref = ff.get("ref", "")
+            obj.label = ff.get("label", "")
+            obj.icon = ff.get("icon", "")
+            obj.sort_order = i
+            filter_field_objs.append(obj)
+
+        # Build mock schema_config
+        if schema_data.get("has_schema", True):
+            schema_config = MagicMock()
+            schema_config.user_id_field = schema_data.get("user_id_field", "user_id")
+            schema_config.timestamp_field = schema_data.get(
+                "timestamp_field", "timestamp"
+            )
+            schema_config.event_name_field = schema_data.get(
+                "event_name_field", "event_name"
+            )
+            schema_config.events_table = schema_data.get("events_table", "events")
+            schema_config.custom_properties = custom_props_objs
+            schema_config.session_timeout_minutes = schema_data.get(
+                "session_timeout_minutes", 30
+            )
+            schema_config.resurrection_window_days = schema_data.get(
+                "resurrection_window_days", 30
+            )
+            schema_config.power_user_threshold_days = schema_data.get(
+                "power_user_threshold_days", 4
+            )
+            schema_config.email_field = schema_data.get("email_field")
+            schema_config.first_name_field = schema_data.get("first_name_field")
+            schema_config.last_name_field = schema_data.get("last_name_field")
+            schema_config.date_of_birth_field = schema_data.get("date_of_birth_field")
+            schema_config.phone_field = schema_data.get("phone_field")
+        else:
+            schema_config = None
+
+        filter_config = MagicMock()
+        filter_config.filter_fields = filter_field_objs
+
+        conn_obj = MagicMock()
+        conn_obj.db_type = "duckdb"
+        conn_obj.credentials_encrypted = "dummy"
+        conn_obj.schema_config = schema_config
+        conn_obj.filter_config = filter_config
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = conn_obj
+
+        session = AsyncMock()
+        session.execute = AsyncMock(return_value=mock_result)
+        return session
+
+    async def test_filter_ref_dollar_resolves_to_system_field(self):
+        """$user_id_field ref resolves to the mapped user_id column."""
+        schema = self._default_schema(user_id_field="uid")
+        db = await self._open_db(
+            schema,
+            [{"ref": "$user_id_field", "field": "", "label": "User", "icon": "user"}],
+        )
+        assert "$user_id_field" in db.get_filter_exprs(), (
+            "$user_id_field should resolve to the uid column expression"
+        )
+
+    async def test_filter_ref_uuid_resolves_via_custom_property_id(self):
+        """A UUID ref resolves to the matching custom property's path."""
+        prop_id = "aaaaaaaa-0000-0000-0000-000000000001"
+        schema = self._default_schema(
+            custom_properties=[
+                {
+                    "name": "country",
+                    "path": "context.country",
+                    "type": "string",
+                    "id": prop_id,
+                }
+            ]
+        )
+        db = await self._open_db(
+            schema, [{"ref": prop_id, "field": "", "label": "Country", "icon": "globe"}]
+        )
+        assert prop_id in db.get_filter_exprs(), (
+            "UUID ref should resolve using the matching custom property path"
+        )
+
+    async def test_filter_ref_empty_falls_back_to_field(self):
+        """Legacy row with empty ref falls back to field path lookup."""
+        schema = self._default_schema(
+            custom_properties=[
+                {
+                    "name": "country",
+                    "path": "context.country",
+                    "type": "string",
+                    "id": "some-uuid",
+                }
+            ]
+        )
+        db = await self._open_db(
+            schema,
+            [{"ref": "", "field": "country", "label": "Country", "icon": "globe"}],
+        )
+        # Falls back to old path-name lookup
+        assert "country" in db.get_filter_exprs()
 
 
 @pytest.mark.asyncio

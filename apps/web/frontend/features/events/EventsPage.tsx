@@ -92,7 +92,10 @@ export function EventsPage() {
   // All event names for the event filter combobox
   const { data: eventsData } = useQuery({
     queryKey: ['events', activeConnectionId],
-    queryFn: () => fetchEvents(activeConnectionId ?? undefined),
+    queryFn: () =>
+      fetchEvents(activeConnectionId ?? undefined, {
+        meta: { cardName: 'Events', querySnippet: 'event list', auxiliary: true },
+      }),
     staleTime: QUERY_STALE_TIME.default,
   })
   const allEventNames = eventsData?.events ?? []
