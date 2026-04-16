@@ -56,7 +56,8 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
-  const value = activeFilters[field.field] ?? null
+  const filterKey = field.ref || field.field
+  const value = activeFilters[filterKey] ?? null
   const FieldIcon = resolveIcon(field.field)
 
   const filtered = search
@@ -67,7 +68,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
   const allItems: (string | null)[] = search ? filtered : [null, ...filtered]
 
   function select(v: string | null) {
-    setActiveFilter(field.field, v)
+    setActiveFilter(filterKey, v)
     setOpen(false)
     setSearch('')
     setFocusedIndex(-1)
@@ -291,9 +292,9 @@ export function GlobalFilters({ granularityDisabled = false }: { granularityDisa
             ))
           : filterFields.map((field) => (
               <DimensionFilter
-                key={field.field}
+                key={field.ref || field.field}
                 field={field}
-                options={filterOptions?.[field.field] ?? []}
+                options={filterOptions?.[field.ref || field.field] ?? []}
               />
             ))}
       </div>
