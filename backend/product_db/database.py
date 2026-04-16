@@ -32,6 +32,7 @@ _PRODUCT_DB_TABLES = [
 _ENSURE_COLUMNS: list[tuple[str, str, str, str]] = [
     ("connection_schema_configs", "query_timeout_seconds", "INTEGER", "10"),
     ("connection_schema_configs", "max_concurrent_queries", "INTEGER", "5"),
+    ("connection_filter_fields", "ref", "TEXT", "''"),
 ]
 
 

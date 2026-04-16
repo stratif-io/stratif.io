@@ -142,6 +142,7 @@ class ConnectionFilterField(Base):
         String, ForeignKey("connection_filter_configs.id", ondelete="CASCADE")
     )
     field: Mapped[str] = mapped_column(String, nullable=False)
+    ref: Mapped[str] = mapped_column(String, nullable=False, default="")
     label: Mapped[str] = mapped_column(String, nullable=False)
     icon: Mapped[str] = mapped_column(String, nullable=False, default="filter")
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
