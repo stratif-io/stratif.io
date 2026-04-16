@@ -376,6 +376,32 @@ describe('FieldMapStep', () => {
     expect(result.p1.icon).toBe('Globe2')
   })
 
+  it('calls setEnabledFields with updated icon when per-row category badge changes for a prop with active filter', async () => {
+    const setEnabledFields = vi.fn()
+    renderStep({
+      ...expandCards,
+      setEnabledFields,
+      enabledFields: { p1: { label: 'City', icon: 'Globe2' } },
+      form: {
+        ...baseHookReturn.form,
+        customProps: [
+          { id: 'p1', name: 'City', path: 'context.city', type: 'string', category: 'geography' },
+        ],
+      },
+    })
+    // Per-row CategoryBadge for the prop has title="Geography"
+    const rowBadge = screen.getAllByTitle('Geography')[0]
+    await userEvent.click(rowBadge)
+    // Select Metrics from the popover
+    const metricsOption = await screen.findByRole('button', { name: /metrics/i })
+    await userEvent.click(metricsOption)
+    // setEnabledFields must be called with the new icon
+    expect(setEnabledFields).toHaveBeenCalled()
+    const updater = setEnabledFields.mock.calls[0][0]
+    const result = updater({ p1: { label: 'City', icon: 'Globe2' } })
+    expect(result.p1.icon).toBe('BarChart2')
+  })
+
   it('calls setForm with uncategorized prop when "add to Other" is clicked', async () => {
     const setForm = vi.fn()
     const prevForm = {

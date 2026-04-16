@@ -393,7 +393,20 @@ export function FieldMapStep({ connId }: Props) {
                     return updated
                   })
                 }}
-                onChangeProp={(idx, patch) => updateProp(idx, patch)}
+                onChangeProp={(idx, patch) => {
+                  updateProp(idx, patch)
+                  // If category changed on a single row, sync its icon in enabledFields
+                  if ('category' in patch) {
+                    const prop = form.customProps[idx]
+                    if (prop?.id) {
+                      const newIcon = CATEGORY_ICON[patch.category ?? ''] ?? 'MoreHorizontal'
+                      setEnabledFields((prev) => {
+                        if (!prev[prop.id!]) return prev
+                        return { ...prev, [prop.id!]: { ...prev[prop.id!], icon: newIcon } }
+                      })
+                    }
+                  }
+                }}
                 onRemoveProp={(idx) => removeProp(idx)}
                 onAddToCategory={() => {
                   const category = cat ?? undefined
