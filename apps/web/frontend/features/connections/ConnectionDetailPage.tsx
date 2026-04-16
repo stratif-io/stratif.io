@@ -58,6 +58,7 @@ export function ConnectionDetailPage() {
       ? (stepParam as ConnectionStep)
       : getDefaultStep(schemaConfig)
     if (step !== 'credentials') {
+      setTestStatus('testing')
       backgroundTest.mutate(id, {
         onSuccess: (result) => setTestStatus(result.ok ? 'connected' : 'failed'),
         onError: () => setTestStatus('failed'),

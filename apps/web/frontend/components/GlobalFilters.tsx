@@ -265,12 +265,9 @@ export function GlobalFilters({ granularityDisabled = false }: { granularityDisa
   const { dateRange, setDateRange, activeConnectionId } = useAppStore()
 
   const { data: filterConfig, isLoading: configLoading } = useFilterConfig(activeConnectionId ?? '')
-  const { data: filterOptions, isLoading: optionsLoading } = useFilterOptions(
-    activeConnectionId ?? ''
-  )
+  const { data: filterOptions } = useFilterOptions(activeConnectionId ?? '')
 
   const filterFields = filterConfig?.filter_fields ?? []
-  const isLoading = configLoading || optionsLoading
 
   return (
     <div className="relative w-full after:absolute after:right-0 after:top-0 after:bottom-0 after:w-8 after:bg-gradient-to-l after:from-background after:to-transparent after:pointer-events-none after:rounded-r-lg sm:after:hidden">
@@ -284,7 +281,7 @@ export function GlobalFilters({ granularityDisabled = false }: { granularityDisa
           <DateRangePicker value={dateRange} onChange={setDateRange} inlineMode />
         </div>
         <GranularityControl disabled={granularityDisabled} />
-        {isLoading
+        {configLoading
           ? Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="px-3 h-full flex items-center shrink-0">
                 <Skeleton className="h-4 w-16" />

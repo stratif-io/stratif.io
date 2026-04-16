@@ -42,6 +42,31 @@ beforeEach(() => {
   Object.keys(mockActiveFilters).forEach((k) => delete mockActiveFilters[k])
 })
 
+describe('GlobalFilters — filter pills visible while options loading', () => {
+  it('renders filter pills when filterConfig is ready even if filterOptions is still loading', () => {
+    mockUseFilterConfig.mockReturnValue({
+      data: {
+        id: 'cfg-1',
+        connection_id: 'conn-1',
+        filter_fields: [{ ref: 'abc-123', field: '', label: 'Country', icon: 'globe' }],
+        updated_at: '',
+      },
+      isLoading: false,
+    } as ReturnType<typeof useFilterConfig>)
+
+    // Filter options still loading — should not hide the pills
+    mockUseFilterOptions.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    } as ReturnType<typeof useFilterOptions>)
+
+    render(<GlobalFilters />)
+
+    // The pill must be visible even while options are loading
+    expect(screen.getByRole('button', { name: /all countries/i })).toBeInTheDocument()
+  })
+})
+
 describe('GlobalFilters — filter key resolution', () => {
   it('uses field.ref as lookup key when ref is set', async () => {
     mockUseFilterConfig.mockReturnValue({
