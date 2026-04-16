@@ -16,6 +16,11 @@ import { cn } from '@/lib/utils'
 import type { CustomProperty } from '@/types'
 import { FieldRow } from './fieldmap/FieldRow'
 import { CategoryCard } from './fieldmap/CategoryCard'
+import dimensionCategories from '@/config/dimension-categories.json'
+
+const CATEGORY_ICON: Record<string, string> = Object.fromEntries(
+  dimensionCategories.map((c) => [c.id, c.icon])
+)
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -361,7 +366,11 @@ export function FieldMapStep({ connId }: Props) {
                 onFilterToggleProp={(idx) => {
                   const p = groupProps.find((gp) => gp.idx === idx)
                   if (!p?.prop.id) return
-                  toggleFilter(p.prop.id, p.prop.name || p.prop.path, 'Activity')
+                  toggleFilter(
+                    p.prop.id,
+                    p.prop.name || p.prop.path,
+                    CATEGORY_ICON[cat ?? ''] ?? 'MoreHorizontal'
+                  )
                 }}
                 onChangeCategory={(newCat) => {
                   const idxSet = new Set(groupProps.map((gp) => gp.idx))

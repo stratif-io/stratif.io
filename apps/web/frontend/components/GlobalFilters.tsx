@@ -58,7 +58,7 @@ function DimensionFilter({ field, options }: { field: FilterField; options: stri
 
   const filterKey = field.ref || field.field
   const value = activeFilters[filterKey] ?? null
-  const FieldIcon = resolveIcon(field.field)
+  const FieldIcon = CATEGORY_ICON_MAP[field.icon] ?? resolveIcon(field.label)
 
   const filtered = search
     ? options.filter((o) => o.toLowerCase().includes(search.toLowerCase()))

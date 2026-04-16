@@ -271,7 +271,7 @@ describe('FieldMapStep', () => {
     })
     const filterToggle = screen.getByLabelText(/add plan to filters/i)
     await userEvent.click(filterToggle)
-    expect(toggleFilter).toHaveBeenCalledWith('abc-123', 'Plan', 'Activity')
+    expect(toggleFilter).toHaveBeenCalledWith('abc-123', 'Plan', 'CircleUserRound')
   })
 
   it('filter toggle calls toggleFilter with prop.id when filter is already enabled', async () => {
@@ -290,7 +290,7 @@ describe('FieldMapStep', () => {
     const filterToggle = screen.getByLabelText(/remove plan from filters/i)
     await userEvent.click(filterToggle)
     // toggleFilter is called with prop.id (not path) as the ref
-    expect(toggleFilter).toHaveBeenCalledWith('p1', 'Plan', 'Activity')
+    expect(toggleFilter).toHaveBeenCalledWith('p1', 'Plan', 'CircleUserRound')
   })
 
   // ── Bug B: Add property ───────────────────────────────────────────────────────
