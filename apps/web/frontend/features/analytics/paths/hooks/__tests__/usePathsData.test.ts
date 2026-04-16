@@ -152,6 +152,32 @@ describe('usePathsData', () => {
     expect(result.current.isLoading).toBe(true)
   })
 
+  it('passes auxiliary:true meta to fetchEvents so event-list lookup is logged but hidden', async () => {
+    vi.mocked(fetchPaths).mockResolvedValue({
+      target_event: 'purchase',
+      device_type: null,
+      total_occurrences: 0,
+      data: [],
+    })
+    vi.mocked(fetchEvents).mockResolvedValue({ events: [] })
+
+    renderHook(
+      () =>
+        usePathsData({
+          dateRange: { from: new Date(2026, 0, 1), to: new Date(2026, 0, 31) },
+          targetEvent: 'purchase',
+          deviceType: '',
+        }),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(fetchEvents).toHaveBeenCalled())
+    expect(fetchEvents).toHaveBeenCalledWith(
+      'conn-1',
+      expect.objectContaining({ meta: expect.objectContaining({ auxiliary: true }) })
+    )
+  })
+
   it('passes deviceType to API when provided', async () => {
     vi.mocked(fetchPaths).mockResolvedValue({
       target_event: 'purchase',

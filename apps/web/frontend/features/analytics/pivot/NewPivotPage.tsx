@@ -49,7 +49,10 @@ export function NewPivotPage() {
 
   const { data: colDefsData, isLoading: colDefsLoading } = useQuery({
     queryKey: ['pivot-grid-col-defs', activeConnectionId],
-    queryFn: () => fetchPivotGridColDefs(activeConnectionId ?? undefined),
+    queryFn: () =>
+      fetchPivotGridColDefs(activeConnectionId ?? undefined, {
+        meta: { cardName: 'Pivot', querySnippet: 'column definitions', auxiliary: true },
+      }),
   })
 
   const { data: filterConfig } = useQuery({

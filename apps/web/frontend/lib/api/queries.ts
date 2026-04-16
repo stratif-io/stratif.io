@@ -96,10 +96,10 @@ function serializeFilters(filters?: Record<string, string | null>): string | und
   return Object.keys(active).length > 0 ? JSON.stringify(active) : undefined
 }
 
-export const fetchEvents = (connection_id?: string) => {
+export const fetchEvents = (connection_id?: string, opts?: TaskOpts) => {
   const searchParams = new URLSearchParams()
   if (connection_id) searchParams.set('connection_id', connection_id)
-  return fetchApi<EventsResponse>(`/api/events?${searchParams}`)
+  return fetchApi<EventsResponse>(`/api/events?${searchParams}`, undefined, opts)
 }
 
 export const fetchTopEvents = (
@@ -345,10 +345,10 @@ export const fetchConversion = (params: {
   return fetchApi<ConversionResponse>(`/api/conversion?${searchParams}`)
 }
 
-export const fetchPivotOptions = (connection_id?: string) => {
+export const fetchPivotOptions = (connection_id?: string, opts?: TaskOpts) => {
   const searchParams = new URLSearchParams()
   if (connection_id) searchParams.set('connection_id', connection_id)
-  return fetchApi<PivotOptionsResponse>(`/api/pivot/options?${searchParams}`)
+  return fetchApi<PivotOptionsResponse>(`/api/pivot/options?${searchParams}`, undefined, opts)
 }
 
 export const fetchPivot = (
@@ -378,10 +378,10 @@ export const fetchPivot = (
   return fetchApi<PivotResponse>(`/api/pivot?${searchParams}`, undefined, opts)
 }
 
-export const fetchPivotGridColDefs = (connection_id?: string) => {
+export const fetchPivotGridColDefs = (connection_id?: string, opts?: TaskOpts) => {
   const searchParams = new URLSearchParams()
   if (connection_id) searchParams.set('connection_id', connection_id)
-  return fetchApi<PivotGridColDefsResponse>(`/api/pivot/grid?${searchParams}`)
+  return fetchApi<PivotGridColDefsResponse>(`/api/pivot/grid?${searchParams}`, undefined, opts)
 }
 
 export const fetchPivotGridFilterValues = (
