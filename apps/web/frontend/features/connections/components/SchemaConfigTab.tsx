@@ -491,7 +491,7 @@ export function SchemaConfigTab({ connId }: Props) {
   useEffect(() => {
     if (!filterInitialized.current) return
     const filter_fields: FilterField[] = Object.entries(enabledFields).map(
-      ([field, { label, icon }]) => ({ field, label, icon })
+      ([ref, { label, icon }]) => ({ ref, field: '', label, icon })
     )
     const timer = setTimeout(() => upsertFilter.mutate({ filter_fields }), 600)
     return () => clearTimeout(timer)
