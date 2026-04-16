@@ -411,6 +411,8 @@ async def open_analytics_db(
                 f_exprs[ref] = _resolve(prop["path"], col_types)
             else:
                 # Legacy fallback: use field string (old path-based lookup)
+                if not field:
+                    continue  # stale ref — custom property deleted, skip
                 if field in prop_exprs:
                     f_exprs[field] = prop_exprs[field]
                 elif field in (uid_f, ts_f, en_f):
