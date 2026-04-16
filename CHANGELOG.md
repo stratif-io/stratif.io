@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.0](https://github.com/stratif-io/stratif.io/compare/v0.36.0...v0.37.0) (2026-04-16)
+
+
+### Features
+
+* ship @stratif-io/web as pre-built ESM lib ([d25ca1c](https://github.com/stratif-io/stratif.io/commit/d25ca1c8e9e98f5d6a70214cd228f81b90975812))
+
 ## [0.36.0](https://github.com/stratif-io/stratif.io/compare/v0.35.1...v0.36.0) (2026-04-16)
 
 ### Features
