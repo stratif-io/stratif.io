@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SPACING } from '@/lib/constants'
+import { useAppStore } from '@/stores'
 import {
   useConnection,
   useSchemaConfig,
@@ -48,6 +49,13 @@ export function ConnectionDetailPage() {
   const upsertSchema = useUpsertSchemaConfig(id ?? '')
   const { data: schemaConfig } = useSchemaConfig(id ?? '')
   const qc = useQueryClient()
+  const setActiveConnectionId = useAppStore((s) => s.setActiveConnectionId)
+
+  // Sync the active analytics connection to this connection so GlobalFilters
+  // shows the correct filter pills while configuring and after navigating away.
+  useEffect(() => {
+    if (id) setActiveConnectionId(id)
+  }, [id, setActiveConnectionId])
 
   // When arriving at a non-credentials step (e.g. navigated here after creation),
   // run a background test once to populate the sidebar status badge.
