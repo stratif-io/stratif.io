@@ -434,9 +434,11 @@ export const fetchSandboxData = (params: { start_date?: string; end_date?: strin
 
 // Connections
 
-export const fetchConnections = () => fetchApi<Connection[]>('/api/connections')
+export const fetchConnections = (opts?: TaskOpts) =>
+  fetchApi<Connection[]>('/api/connections', undefined, opts)
 
-export const fetchConnection = (id: string) => fetchApi<Connection>(`/api/connections/${id}`)
+export const fetchConnection = (id: string, opts?: TaskOpts) =>
+  fetchApi<Connection>(`/api/connections/${id}`, undefined, opts)
 
 export const createConnection = (body: ConnectionCreate) =>
   fetchApi<Connection>('/api/connections', {
@@ -466,8 +468,8 @@ export const testConnection = (id: string, opts?: TaskOpts) => {
 export const fetchConnectionString = (connId: string) =>
   fetchApi<{ connection_string: string | null }>(`/api/connections/${connId}/string`)
 
-export const fetchSchemaConfig = (connId: string) =>
-  fetchApi<SchemaConfig>(`/api/connections/${connId}/schema`)
+export const fetchSchemaConfig = (connId: string, opts?: TaskOpts) =>
+  fetchApi<SchemaConfig>(`/api/connections/${connId}/schema`, undefined, opts)
 
 export const upsertSchemaConfig = (connId: string, body: SchemaConfigBody) =>
   fetchApi<SchemaConfig>(`/api/connections/${connId}/schema`, {
@@ -475,8 +477,8 @@ export const upsertSchemaConfig = (connId: string, body: SchemaConfigBody) =>
     body: JSON.stringify(body),
   })
 
-export const fetchFilterConfig = (connId: string) =>
-  fetchApi<FilterConfig>(`/api/connections/${connId}/filters`)
+export const fetchFilterConfig = (connId: string, opts?: TaskOpts) =>
+  fetchApi<FilterConfig>(`/api/connections/${connId}/filters`, undefined, opts)
 
 export const upsertFilterConfig = (connId: string, body: FilterConfigBody) =>
   fetchApi<FilterConfig>(`/api/connections/${connId}/filters`, {
@@ -484,8 +486,8 @@ export const upsertFilterConfig = (connId: string, body: FilterConfigBody) =>
     body: JSON.stringify(body),
   })
 
-export const fetchFilterOptions = (connId: string) =>
-  fetchApi<FilterOptionsResponse>(`/api/connections/${connId}/filter-options`)
+export const fetchFilterOptions = (connId: string, opts?: TaskOpts) =>
+  fetchApi<FilterOptionsResponse>(`/api/connections/${connId}/filter-options`, undefined, opts)
 
 export const fetchFieldOptions = (connId: string, field: string, opts?: TaskOpts) =>
   fetchApi<{ field: string; values: string[] }>(
