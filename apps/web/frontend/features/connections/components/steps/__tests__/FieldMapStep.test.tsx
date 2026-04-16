@@ -276,12 +276,10 @@ describe('FieldMapStep', () => {
 
   it('filter toggle calls toggleFilter with prop.id when filter is already enabled', async () => {
     const toggleFilter = vi.fn()
-    // CategoryCard still checks enabledFields[prop.path] for display (Task 7 will fix),
-    // so use path as key here to get the "remove" aria-label shown
     renderStep({
       ...expandCards,
       toggleFilter,
-      enabledFields: { 'traits.plan': { label: 'Plan', icon: 'Activity' } },
+      enabledFields: { p1: { label: 'Plan', icon: 'Activity' } },
       form: {
         ...baseHookReturn.form,
         customProps: [
