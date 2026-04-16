@@ -13,6 +13,7 @@ _PATH_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.\-']*$")
 
 
 class CustomProperty(BaseModel):
+    id: str | None = None
     name: str
     path: str
     type: Literal["string", "number", "boolean", "timestamp"]

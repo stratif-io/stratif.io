@@ -234,10 +234,13 @@ async def upsert_schema_config(
             ConnectionCustomProperty.schema_config_id == config.id
         )
     )
+    saved_props = []
     for i, prop in enumerate(body.custom_properties):
+        prop_id = prop.id if prop.id else str(uuid.uuid4())
+        saved_props.append(prop_id)
         session.add(
             ConnectionCustomProperty(
-                id=str(uuid.uuid4()),
+                id=prop_id,
                 schema_config_id=config.id,
                 name=prop.name,
                 path=prop.path,
@@ -251,11 +254,20 @@ async def upsert_schema_config(
     query_cache.invalidate(conn_id)
 
     return {
-        **body.model_dump(),
+        **body.model_dump(exclude={"custom_properties"}),
         "id": config.id,
         "connection_id": config.connection_id,
         "updated_at": _fmt(config.updated_at),
-        "custom_properties": [p.model_dump() for p in body.custom_properties],
+        "custom_properties": [
+            {
+                "id": prop_id,
+                "name": prop.name,
+                "path": prop.path,
+                "type": prop.type,
+                "category": prop.category,
+            }
+            for prop_id, prop in zip(saved_props, body.custom_properties, strict=False)
+        ],
     }
 
 
@@ -435,7 +447,13 @@ def _schema_config_response(config: ConnectionSchemaConfig) -> dict:
         "date_of_birth_field": config.date_of_birth_field,
         "phone_field": config.phone_field,
         "custom_properties": [
-            {"name": p.name, "path": p.path, "type": p.type, "category": p.category}
+            {
+                "id": p.id,
+                "name": p.name,
+                "path": p.path,
+                "type": p.type,
+                "category": p.category,
+            }
             for p in sorted(config.custom_properties, key=lambda x: x.sort_order)
         ],
         "updated_at": _fmt(config.updated_at),

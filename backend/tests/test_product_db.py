@@ -316,3 +316,71 @@ async def test_lifespan_calls_close_product_db():
             pass
         mock_init.assert_awaited_once()
         mock_close.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# Custom property ID stability
+# ---------------------------------------------------------------------------
+
+
+@pytest_asyncio.fixture
+async def async_client(tmp_path):
+    """AsyncClient backed by a real async SQLite product DB (no pre-seeded connection)."""
+    import httpx
+
+    from backend.main import app
+    from backend.product_db.deps import get_db
+
+    db_url = f"sqlite+aiosqlite:///{tmp_path / 'product.db'}"
+    engine = create_async_engine(db_url)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async def override_get_db():
+        async with factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+    app.dependency_overrides.clear()
+    await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_custom_property_id_preserved_across_upserts(async_client):
+    """Upserting schema config preserves custom property IDs sent by the client."""
+    conn_resp = await async_client.post(
+        "/api/connections",
+        json={
+            "name": "id-stable-test",
+            "db_type": "duckdb",
+            "credentials": {"file_path": ":memory:"},
+        },
+    )
+    conn_id = conn_resp.json()["id"]
+
+    # First save — send a custom prop without an id; expect backend to assign one
+    body = {
+        "user_id_field": "user_id",
+        "event_name_field": "event_name",
+        "timestamp_field": "timestamp",
+        "events_table": "events",
+        "custom_properties": [
+            {"name": "country", "path": "context.country", "type": "string"}
+        ],
+        "session_timeout_minutes": 30,
+    }
+    r1 = await async_client.put(f"/api/connections/{conn_id}/schema", json=body)
+    assert r1.status_code == 200
+    first_id = r1.json()["custom_properties"][0]["id"]
+    assert first_id  # backend assigned a UUID
+
+    # Second save — send the same prop back WITH its id; expect same id preserved
+    body["custom_properties"][0]["id"] = first_id
+    r2 = await async_client.put(f"/api/connections/{conn_id}/schema", json=body)
+    assert r2.status_code == 200
+    second_id = r2.json()["custom_properties"][0]["id"]
+    assert second_id == first_id, "ID should be preserved when client sends it back"
