@@ -2,9 +2,14 @@
   "name": "@stratif-io/web",
   "version": "0.35.1",
   "description": "stratif.io Analytics — open source analytics dashboard",
-  "main": "./frontend/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./frontend/index.ts"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
   "files": [
     "frontend",
