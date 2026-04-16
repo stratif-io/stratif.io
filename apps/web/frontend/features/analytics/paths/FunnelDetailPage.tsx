@@ -52,7 +52,10 @@ export function FunnelDetailPage() {
 
   const { data: eventsResponse } = useQuery({
     queryKey: ['events', activeConnectionId],
-    queryFn: () => fetchEvents(activeConnectionId ?? undefined),
+    queryFn: () =>
+      fetchEvents(activeConnectionId ?? undefined, {
+        meta: { cardName: 'Funnel', querySnippet: 'event list', auxiliary: true },
+      }),
   })
   const availableEvents = eventsResponse?.events || []
 

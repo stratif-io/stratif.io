@@ -1,30 +1,11 @@
 import { useState } from 'react'
-import {
-  Timer,
-  Activity,
-  CircleUserRound,
-  Globe2,
-  Laptop,
-  Target,
-  MoreHorizontal,
-  BarChart2,
-  type LucideIcon,
-} from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { CATEGORY_ICON_MAP } from '@/lib/utils/categoryIconMap'
 import dimensionCategories from '@/config/dimension-categories.json'
 import type { DimensionCategoryConfig } from '@/types'
 
-const ICON_MAP: Record<string, LucideIcon> = {
-  Timer,
-  Activity,
-  CircleUserRound,
-  Globe2,
-  Laptop,
-  Target,
-  MoreHorizontal,
-  BarChart2,
-}
+const ICON_MAP = CATEGORY_ICON_MAP
 
 // Colour per category id — extend as needed
 const CAT_COLOURS: Record<string, string> = {

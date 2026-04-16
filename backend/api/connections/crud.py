@@ -266,7 +266,7 @@ async def upsert_schema_config(
                 "type": prop.type,
                 "category": prop.category,
             }
-            for prop_id, prop in zip(saved_props, body.custom_properties, strict=False)
+            for prop_id, prop in zip(saved_props, body.custom_properties, strict=True)
         ],
     }
 
@@ -291,7 +291,7 @@ async def get_filter_config(conn_id: str, session: DBSession):
         "id": config.id,
         "connection_id": config.connection_id,
         "filter_fields": [
-            {"field": f.field, "label": f.label, "icon": f.icon}
+            {"ref": f.ref, "field": f.field, "label": f.label, "icon": f.icon}
             for f in sorted(config.filter_fields, key=lambda x: x.sort_order)
         ],
         "updated_at": _fmt(config.updated_at),
@@ -331,6 +331,7 @@ async def upsert_filter_config(
                 id=str(uuid.uuid4()),
                 filter_config_id=config.id,
                 field=field.field,
+                ref=field.ref,
                 label=field.label,
                 icon=field.icon,
                 sort_order=i,

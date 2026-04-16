@@ -10,6 +10,9 @@ export function QueryStatusIndicator() {
   const queuedQueries = useAppStore((s) => s.queuedQueries)
   const queryEverActive = useAppStore((s) => s.queryEverActive)
   const lastCompletedName = useAppStore((s) => s.lastCompletedName)
+  const queryHistory = useAppStore((s) => s.queryHistory)
+
+  const runningEntry = queryHistory.find((e) => e.status === 'running')
 
   const isActive = runningQueries > 0 || queuedQueries > 0
   const isDone = queryEverActive && !isActive
@@ -61,19 +64,17 @@ export function QueryStatusIndicator() {
           aria-label="Show query history"
           className="relative rounded-full border border-border bg-muted px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {/* Ghost: fixed max-width content — drives the container width */}
-          <span className="invisible flex items-center gap-1.5 whitespace-nowrap" aria-hidden>
-            <span className="inline-block h-1.5 w-1.5 rounded-full" />
-            <span className="font-semibold">99 running</span>
-            <span>·</span>
-            <span>99 queued</span>
-          </span>
-
-          {/* Real content — overlaid absolutely */}
-          <span className="absolute inset-0 flex items-center justify-center gap-1.5 px-3">
+          {/* Real content */}
+          <span className="flex items-center gap-1.5">
             {isActive ? (
               <>
                 <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary shrink-0" />
+                {runningEntry && (
+                  <span className="text-muted-foreground whitespace-nowrap">
+                    {runningEntry.cardName}
+                  </span>
+                )}
+                {runningEntry && <span className="text-muted-foreground">·</span>}
                 <span className="text-primary/70 font-semibold whitespace-nowrap">
                   {runningQueries} running
                 </span>

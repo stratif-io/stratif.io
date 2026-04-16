@@ -4,6 +4,16 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConnectionDetailPage } from '../ConnectionDetailPage'
 
+const mockSetActiveConnectionId = vi.fn()
+vi.mock('@/stores', () => ({
+  useAppStore: (
+    selector?: (s: { setActiveConnectionId: typeof mockSetActiveConnectionId }) => unknown
+  ) =>
+    selector
+      ? selector({ setActiveConnectionId: mockSetActiveConnectionId })
+      : { setActiveConnectionId: mockSetActiveConnectionId },
+}))
+
 vi.mock('../hooks/useConnectionsData', () => ({
   useConnection: vi.fn(),
   useTestConnection: vi.fn(() => ({
@@ -146,6 +156,13 @@ describe('ConnectionDetailPage — default step routing', () => {
     } as ReturnType<typeof useSchemaConfig>)
     renderPage('advanced')
     expect(screen.getByTestId('step-nav-advanced')).toHaveAttribute('data-active', 'true')
+  })
+})
+
+describe('ConnectionDetailPage — sets active connection', () => {
+  it('sets activeConnectionId to the connection being edited so GlobalFilters shows its filters', () => {
+    renderPage('fieldmap')
+    expect(mockSetActiveConnectionId).toHaveBeenCalledWith('conn-1')
   })
 })
 

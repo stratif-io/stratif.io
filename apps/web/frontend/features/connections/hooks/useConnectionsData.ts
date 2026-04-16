@@ -27,7 +27,10 @@ import type {
 export function useConnections() {
   return useQuery({
     queryKey: ['connections'],
-    queryFn: fetchConnections,
+    queryFn: () =>
+      fetchConnections({
+        meta: { cardName: 'Connection', querySnippet: 'connection list', auxiliary: true },
+      }),
     staleTime: QUERY_STALE_TIME.default,
   })
 }
@@ -35,7 +38,10 @@ export function useConnections() {
 export function useConnection(id: string) {
   return useQuery({
     queryKey: ['connections', id],
-    queryFn: () => fetchConnection(id),
+    queryFn: () =>
+      fetchConnection(id, {
+        meta: { cardName: 'Connection', querySnippet: 'connection details', auxiliary: true },
+      }),
     enabled: !!id,
     staleTime: QUERY_STALE_TIME.default,
   })
@@ -70,14 +76,20 @@ export function useDeleteConnection() {
 
 export function useTestConnection() {
   return useMutation({
-    mutationFn: (id: string) => testConnection(id),
+    mutationFn: (id: string) =>
+      testConnection(id, {
+        meta: { cardName: 'Connection', querySnippet: 'testing connection', auxiliary: true },
+      }),
   })
 }
 
 export function useSchemaConfig(connId: string) {
   return useQuery({
     queryKey: ['connections', connId, 'schema'],
-    queryFn: () => fetchSchemaConfig(connId),
+    queryFn: () =>
+      fetchSchemaConfig(connId, {
+        meta: { cardName: 'Connection', querySnippet: 'schema config', auxiliary: true },
+      }),
     enabled: !!connId,
     retry: false,
     staleTime: QUERY_STALE_TIME.default,
@@ -95,7 +107,10 @@ export function useUpsertSchemaConfig(connId: string) {
 export function useFilterConfig(connId: string) {
   return useQuery({
     queryKey: ['connections', connId, 'filters'],
-    queryFn: () => fetchFilterConfig(connId),
+    queryFn: () =>
+      fetchFilterConfig(connId, {
+        meta: { cardName: 'Connection', querySnippet: 'filter config', auxiliary: true },
+      }),
     enabled: !!connId,
     retry: false,
     staleTime: QUERY_STALE_TIME.default,
@@ -116,7 +131,10 @@ export function useUpsertFilterConfig(connId: string) {
 export function useFilterOptions(connId: string) {
   return useQuery({
     queryKey: ['connections', connId, 'filter-options'],
-    queryFn: () => fetchFilterOptions(connId),
+    queryFn: () =>
+      fetchFilterOptions(connId, {
+        meta: { cardName: 'Connection', querySnippet: 'filter options', auxiliary: true },
+      }),
     enabled: !!connId,
     retry: false,
     staleTime: QUERY_STALE_TIME.default,
@@ -126,7 +144,10 @@ export function useFilterOptions(connId: string) {
 export function useConnectionString(connId: string) {
   return useQuery({
     queryKey: ['connections', connId, 'string'],
-    queryFn: () => fetchConnectionString(connId),
+    queryFn: () =>
+      fetchConnectionString(connId, {
+        meta: { cardName: 'Connection', querySnippet: 'connection string', auxiliary: true },
+      }),
     enabled: !!connId,
     staleTime: QUERY_STALE_TIME.default,
   })
@@ -141,7 +162,10 @@ export function useDetectSchema(connId: string) {
 export function useConnectionCredentials(connId: string) {
   return useQuery({
     queryKey: ['connections', connId, 'credentials'],
-    queryFn: () => fetchConnectionCredentials(connId),
+    queryFn: () =>
+      fetchConnectionCredentials(connId, {
+        meta: { cardName: 'Connection', querySnippet: 'credentials', auxiliary: true },
+      }),
     enabled: !!connId,
     staleTime: QUERY_STALE_TIME.never,
   })
@@ -150,7 +174,10 @@ export function useConnectionCredentials(connId: string) {
 export function useConnectionTables(connId: string, enabled = false) {
   return useQuery({
     queryKey: ['connections', connId, 'tables'],
-    queryFn: () => fetchConnectionTables(connId),
+    queryFn: () =>
+      fetchConnectionTables(connId, {
+        meta: { cardName: 'Connection', querySnippet: 'loading tables', auxiliary: true },
+      }),
     enabled: !!connId && enabled,
     staleTime: QUERY_STALE_TIME.default,
     retry: false,
