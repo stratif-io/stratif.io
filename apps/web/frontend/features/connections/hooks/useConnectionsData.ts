@@ -144,7 +144,10 @@ export function useFilterOptions(connId: string) {
 export function useConnectionString(connId: string) {
   return useQuery({
     queryKey: ['connections', connId, 'string'],
-    queryFn: () => fetchConnectionString(connId),
+    queryFn: () =>
+      fetchConnectionString(connId, {
+        meta: { cardName: 'Connection', querySnippet: 'connection string', auxiliary: true },
+      }),
     enabled: !!connId,
     staleTime: QUERY_STALE_TIME.default,
   })
@@ -159,7 +162,10 @@ export function useDetectSchema(connId: string) {
 export function useConnectionCredentials(connId: string) {
   return useQuery({
     queryKey: ['connections', connId, 'credentials'],
-    queryFn: () => fetchConnectionCredentials(connId),
+    queryFn: () =>
+      fetchConnectionCredentials(connId, {
+        meta: { cardName: 'Connection', querySnippet: 'credentials', auxiliary: true },
+      }),
     enabled: !!connId,
     staleTime: QUERY_STALE_TIME.never,
   })

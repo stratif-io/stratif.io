@@ -465,8 +465,12 @@ export const testConnection = (id: string, opts?: TaskOpts) => {
   ).finally(() => clearTimeout(timer))
 }
 
-export const fetchConnectionString = (connId: string) =>
-  fetchApi<{ connection_string: string | null }>(`/api/connections/${connId}/string`)
+export const fetchConnectionString = (connId: string, opts?: TaskOpts) =>
+  fetchApi<{ connection_string: string | null }>(
+    `/api/connections/${connId}/string`,
+    undefined,
+    opts
+  )
 
 export const fetchSchemaConfig = (connId: string, opts?: TaskOpts) =>
   fetchApi<SchemaConfig>(`/api/connections/${connId}/schema`, undefined, opts)
@@ -523,8 +527,12 @@ export const fetchBrowse = (connId: string, catalog?: string, schema?: string, o
   )
 }
 
-export const fetchConnectionCredentials = (connId: string) =>
-  fetchApi<{ fields: Record<string, string | null> }>(`/api/connections/${connId}/credentials`)
+export const fetchConnectionCredentials = (connId: string, opts?: TaskOpts) =>
+  fetchApi<{ fields: Record<string, string | null> }>(
+    `/api/connections/${connId}/credentials`,
+    undefined,
+    opts
+  )
 
 export const fetchMissionControl = (
   params: {
