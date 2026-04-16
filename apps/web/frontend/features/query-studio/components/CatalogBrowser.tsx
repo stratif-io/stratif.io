@@ -22,7 +22,14 @@ interface ColumnRowProps {
 function ColumnRows({ connId, table, onColumnClick, indent }: ColumnRowProps) {
   const { data, isLoading } = useQuery({
     queryKey: ['columns', connId, table.full_name],
-    queryFn: () => fetchConnectionColumns(connId, table.full_name),
+    queryFn: () =>
+      fetchConnectionColumns(connId, table.full_name, {
+        meta: {
+          cardName: 'SQL Studio',
+          querySnippet: `columns: ${table.full_name}`,
+          auxiliary: true,
+        },
+      }),
     staleTime: QUERY_STALE_TIME.never,
   })
 
@@ -75,7 +82,10 @@ export function CatalogBrowser({ onTableClick, onColumnClick }: CatalogBrowserPr
 
   const { data, isLoading } = useQuery({
     queryKey: ['query-studio-tables', activeConnectionId],
-    queryFn: () => fetchConnectionTables(activeConnectionId ?? ''),
+    queryFn: () =>
+      fetchConnectionTables(activeConnectionId ?? '', {
+        meta: { cardName: 'SQL Studio', querySnippet: 'loading tables', auxiliary: true },
+      }),
     enabled: !!activeConnectionId,
     staleTime: QUERY_STALE_TIME.never,
   })

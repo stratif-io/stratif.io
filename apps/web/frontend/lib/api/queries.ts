@@ -453,12 +453,13 @@ export const updateConnection = (id: string, body: ConnectionUpdate) =>
 export const deleteConnection = (id: string) =>
   fetchApi<void>(`/api/connections/${id}`, { method: 'DELETE' })
 
-export const testConnection = (id: string) => {
+export const testConnection = (id: string, opts?: TaskOpts) => {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(new Error('Connection timed out')), 11_000)
   return fetchApi<{ ok: boolean; db_type?: string; error?: string }>(
     `/api/connections/${id}/test`,
-    { method: 'POST', signal: controller.signal }
+    { method: 'POST', signal: controller.signal },
+    opts
   ).finally(() => clearTimeout(timer))
 }
 
@@ -498,21 +499,25 @@ export const fetchSchemaDetect = (connId: string, eventsTable?: string) => {
   return fetchApi<SchemaDetectResponse>(`/api/connections/${connId}/schema/detect${qs}`)
 }
 
-export const fetchConnectionTables = (connId: string) =>
-  fetchApi<TablesResponse>(`/api/connections/${connId}/tables`)
+export const fetchConnectionTables = (connId: string, opts?: TaskOpts) =>
+  fetchApi<TablesResponse>(`/api/connections/${connId}/tables`, undefined, opts)
 
-export const fetchConnectionColumns = (connId: string, table: string) =>
+export const fetchConnectionColumns = (connId: string, table: string, opts?: TaskOpts) =>
   fetchApi<{ columns: string[] }>(
-    `/api/connections/${connId}/columns?table=${encodeURIComponent(table)}`
+    `/api/connections/${connId}/columns?table=${encodeURIComponent(table)}`,
+    undefined,
+    opts
   )
 
-export const fetchBrowse = (connId: string, catalog?: string, schema?: string) => {
+export const fetchBrowse = (connId: string, catalog?: string, schema?: string, opts?: TaskOpts) => {
   const params = new URLSearchParams()
   if (catalog) params.set('catalog', catalog)
   if (schema) params.set('schema', schema)
   const qs = params.size ? `?${params}` : ''
   return fetchApi<{ items: Array<{ name: string; full_name: string; kind: string }> }>(
-    `/api/connections/${connId}/browse${qs}`
+    `/api/connections/${connId}/browse${qs}`,
+    undefined,
+    opts
   )
 }
 

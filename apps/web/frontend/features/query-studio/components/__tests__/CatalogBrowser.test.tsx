@@ -96,7 +96,7 @@ describe('CatalogBrowser', () => {
     await screen.findByText('events')
     fireEvent.click(screen.getAllByTitle('Expand columns')[0])
     await waitFor(() => {
-      expect(mockFetchColumns).toHaveBeenCalledWith('conn-1', 'main.events')
+      expect(mockFetchColumns).toHaveBeenCalledWith('conn-1', 'main.events', expect.anything())
       expect(screen.getByText('user_id')).toBeInTheDocument()
       expect(screen.getByText('timestamp')).toBeInTheDocument()
     })

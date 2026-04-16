@@ -70,7 +70,10 @@ export function useDeleteConnection() {
 
 export function useTestConnection() {
   return useMutation({
-    mutationFn: (id: string) => testConnection(id),
+    mutationFn: (id: string) =>
+      testConnection(id, {
+        meta: { cardName: 'Connection', querySnippet: 'testing connection', auxiliary: true },
+      }),
   })
 }
 
@@ -150,7 +153,10 @@ export function useConnectionCredentials(connId: string) {
 export function useConnectionTables(connId: string, enabled = false) {
   return useQuery({
     queryKey: ['connections', connId, 'tables'],
-    queryFn: () => fetchConnectionTables(connId),
+    queryFn: () =>
+      fetchConnectionTables(connId, {
+        meta: { cardName: 'Connection', querySnippet: 'loading tables', auxiliary: true },
+      }),
     enabled: !!connId && enabled,
     staleTime: QUERY_STALE_TIME.default,
     retry: false,
