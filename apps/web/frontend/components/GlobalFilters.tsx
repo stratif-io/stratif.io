@@ -4,36 +4,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DateRangePicker } from '@/components/DateRangePicker'
-import {
-  ChevronDown,
-  X,
-  Timer,
-  Activity,
-  CircleUserRound,
-  Globe2,
-  Laptop,
-  Target,
-  MoreHorizontal,
-  type LucideIcon,
-} from 'lucide-react'
+import { ChevronDown, X, MoreHorizontal, type LucideIcon } from 'lucide-react'
 import { useFilterConfig, useFilterOptions } from '@/features/connections/hooks/useConnectionsData'
 import { cn } from '@/lib/utils'
+import { CATEGORY_ICON_MAP } from '@/lib/utils/categoryIconMap'
 import type { DimensionCategoryConfig, FilterField, Granularity } from '@/types'
 import dimensionCategories from '@/config/dimension-categories.json'
 
 function pluralize(word: string): string {
   if (word.endsWith('y')) return word.slice(0, -1) + 'ies'
   return word + 's'
-}
-
-const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
-  Timer,
-  Activity,
-  CircleUserRound,
-  Globe2,
-  Laptop,
-  Target,
-  MoreHorizontal,
 }
 
 const compiledCategories = (dimensionCategories as DimensionCategoryConfig[]).map((cat) => ({

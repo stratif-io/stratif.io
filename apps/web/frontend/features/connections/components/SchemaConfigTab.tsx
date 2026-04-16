@@ -11,14 +11,6 @@ import {
   Search,
   X,
   Sparkles,
-  Timer,
-  Activity,
-  CircleUserRound,
-  Globe2,
-  Laptop,
-  Target,
-  MoreHorizontal,
-  type LucideIcon,
 } from 'lucide-react'
 import { SaveStatus } from '@/components/ui/save-status'
 import { Button } from '@/components/ui/button'
@@ -51,6 +43,7 @@ import {
 import { TableBrowserPicker } from './TableBrowserPicker'
 import dimensionCategories from '@/config/dimension-categories.json'
 import { groupDimensionsByCategory } from '@/lib/utils/dimensionCategories'
+import { CATEGORY_ICON_MAP } from '@/lib/utils/categoryIconMap'
 import { cn } from '@/lib/utils'
 import type { CustomProperty, PropertyType, DimensionCategoryConfig, FilterField } from '@/types'
 
@@ -67,16 +60,6 @@ const USER_IDENTITY_FIELDS = [
   { key: 'date_of_birth_field' as const, label: 'Date of Birth', icon: 'Calendar' },
   { key: 'phone_field' as const, label: 'Phone', icon: 'Phone' },
 ] as const
-
-const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
-  Timer,
-  Activity,
-  CircleUserRound,
-  Globe2,
-  Laptop,
-  Target,
-  MoreHorizontal,
-}
 
 type UserIdentityKey = (typeof USER_IDENTITY_FIELDS)[number]['key']
 
@@ -1004,7 +987,9 @@ export function SchemaConfigTab({ connId }: Props) {
                       categoryId === '__uncategorized__'
                         ? 'Uncategorized'
                         : (cat?.label ?? categoryId)
-                    const CatIcon = cat ? (CATEGORY_ICON_MAP[cat.icon] ?? MoreHorizontal) : null
+                    const CatIcon = cat
+                      ? (CATEGORY_ICON_MAP[cat.icon] ?? CATEGORY_ICON_MAP.MoreHorizontal)
+                      : null
                     return (
                       <div key={categoryId}>
                         <div className="px-3 py-1.5 bg-muted/20 border-b text-xs font-medium text-muted-foreground flex items-center gap-1.5">

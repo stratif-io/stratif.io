@@ -341,6 +341,41 @@ describe('FieldMapStep', () => {
     )
   })
 
+  // ── Bug C: Category change → icon staleness ──────────────────────────────────
+
+  it('calls setEnabledFields with updated icon when category changes for a prop with active filter', async () => {
+    const setEnabledFields = vi.fn()
+    // Prop p1 is in category 'user' (CircleUserRound) and has an active filter
+    renderStep({
+      ...expandCards,
+      setEnabledFields,
+      enabledFields: { p1: { label: 'Plan', icon: 'CircleUserRound' } },
+      form: {
+        ...baseHookReturn.form,
+        customProps: [
+          { id: 'p1', name: 'Plan', path: 'traits.plan', type: 'string', category: 'user' },
+        ],
+      },
+    })
+    // CategoryCard has a CategoryBadge that triggers onChangeCategory
+    // The badge renders as a button with the category label; clicking it opens a picker
+    // We can find and click the "User" badge to open the picker, but let's use
+    // aria to find the change-category control. In practice we verify setEnabledFields
+    // is called with a function that updates the icon when applied.
+    // CategoryBadge trigger has title="User" (the category label); pick first match
+    const categoryBadge = screen.getAllByTitle('User')[0]
+    await userEvent.click(categoryBadge)
+    // Popover items are plain buttons; pick Geography
+    const geoOption = await screen.findByRole('button', { name: /geography/i })
+    await userEvent.click(geoOption)
+    // setEnabledFields must be called
+    expect(setEnabledFields).toHaveBeenCalled()
+    // Call the updater with the current enabledFields to verify the icon changed
+    const updater = setEnabledFields.mock.calls[0][0]
+    const result = updater({ p1: { label: 'Plan', icon: 'CircleUserRound' } })
+    expect(result.p1.icon).toBe('Globe2')
+  })
+
   it('calls setForm with uncategorized prop when "add to Other" is clicked', async () => {
     const setForm = vi.fn()
     const prevForm = {

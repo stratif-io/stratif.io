@@ -18,6 +18,7 @@ import { FieldRow } from './fieldmap/FieldRow'
 import { CategoryCard } from './fieldmap/CategoryCard'
 import dimensionCategories from '@/config/dimension-categories.json'
 
+// icon name string (e.g. "Globe2") keyed by category id (e.g. "geography")
 const CATEGORY_ICON: Record<string, string> = Object.fromEntries(
   dimensionCategories.map((c) => [c.id, c.icon])
 )
@@ -380,6 +381,17 @@ export function FieldMapStep({ connId }: Props) {
                       idxSet.has(i) ? { ...p, category: newCat ?? undefined } : p
                     ),
                   }))
+                  // Sync icon for any active filters in this group
+                  const newIcon = CATEGORY_ICON[newCat ?? ''] ?? 'MoreHorizontal'
+                  setEnabledFields((prev) => {
+                    const updated = { ...prev }
+                    for (const { prop } of groupProps) {
+                      if (prop.id && updated[prop.id]) {
+                        updated[prop.id] = { ...updated[prop.id], icon: newIcon }
+                      }
+                    }
+                    return updated
+                  })
                 }}
                 onChangeProp={(idx, patch) => updateProp(idx, patch)}
                 onRemoveProp={(idx) => removeProp(idx)}
