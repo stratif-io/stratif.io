@@ -1,10 +1,16 @@
 {
   "name": "@stratif-io/web",
-  "version": "0.36.0",
+  "version": "0.36.2",
   "description": "stratif.io Analytics — open source analytics dashboard",
-  "main": "./frontend/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./frontend/index.ts"
+    ".": {
+      "development": "./frontend/index.ts",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
   "files": [
     "frontend",
@@ -29,7 +35,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "bundle:analyze": "vite-bundle-visualizer"
+    "bundle:analyze": "vite-bundle-visualizer",
+    "build:lib": "bunx tsc --project tsconfig.lib.json && vite build --config vite.config.lib.ts",
+    "build:lib:watch": "vite build --config vite.config.lib.ts --watch"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",
