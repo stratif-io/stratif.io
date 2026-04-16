@@ -14,6 +14,8 @@
     "test": "bun run --filter @stratif-io/web test",
     "test:run": "bun run --filter @stratif-io/web test:run",
     "test:coverage": "bun run --filter @stratif-io/web test:coverage",
+    "build:lib": "bun run --filter @stratif-io/web build:lib",
+    "build:lib:watch": "bun run --filter @stratif-io/web build:lib:watch",
     "prepare": "husky"
   },
   "devDependencies": {

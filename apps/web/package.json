@@ -29,7 +29,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "bundle:analyze": "vite-bundle-visualizer"
+    "bundle:analyze": "vite-bundle-visualizer",
+    "build:lib": "bunx tsc --project tsconfig.lib.json && vite build --config vite.config.lib.ts",
+    "build:lib:watch": "vite build --config vite.config.lib.ts --watch"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",
