@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.36.0](https://github.com/stratif-io/stratif.io/compare/v0.35.1...v0.36.0) (2026-04-16)
+
+
+### Features
+
+* **connections:** add ref column to connection_filter_fields for stable ID-based filter refs ([593138b](https://github.com/stratif-io/stratif.io/commit/593138b7c477e3f9b06f063392ddf62aff9905a5))
+* **connections:** db type first in new connection form, add advanced setting descriptions ([f2cbcb6](https://github.com/stratif-io/stratif.io/commit/f2cbcb66640aa8006e146800e2757b518b075aed))
+* **connections:** filter refs by ID — backend resolves \$schema_key and UUID refs, legacy field fallback ([68b7875](https://github.com/stratif-io/stratif.io/commit/68b787521459f4fe8943582c05968b0fe7d01dca))
+* **connections:** stable custom property IDs — preserve on upsert, include in API response ([a6b82ab](https://github.com/stratif-io/stratif.io/commit/a6b82ab365cb06e14ea4586794ccf2723a1603cf))
+* key enabledFields by ref in useSchemaForm, add migrateFilterFields ([cef503e](https://github.com/stratif-io/stratif.io/commit/cef503e9511c529bccf78921c9eec6409ffb5909))
+* pass stable refs to toggleFilter in FieldMapStep ([d281c81](https://github.com/stratif-io/stratif.io/commit/d281c81d3d6249452d0c74d8ebbd5194335cc44c))
+* show active query name in QueryStatusIndicator ([025db95](https://github.com/stratif-io/stratif.io/commit/025db95d781369a35749cf84c0b0dd36a6923df3))
+* use field.ref || field.field as filter key in GlobalFilters ([dbd9019](https://github.com/stratif-io/stratif.io/commit/dbd9019069e4344949677ac76ed2c5887055c5ab))
+
+
+### Bug Fixes
+
+* CategoryCard filterEnabled uses prop.id not prop.path ([93a1ff2](https://github.com/stratif-io/stratif.io/commit/93a1ff26f041b3d4fa648c363b94e14fc6744a2e))
+* Connection page UX fixes ([51e563d](https://github.com/stratif-io/stratif.io/commit/51e563d3f53162c10e668e0cbeb572809d5c7d98))
+* **connections:** strict=True in zip, UUID validation for custom property id ([20ead66](https://github.com/stratif-io/stratif.io/commit/20ead66b4d97a66218945108bca76b3a511c8fa0))
+* **fieldmap:** sync filter icon on category change; consolidate CATEGORY_ICON_MAP ([eedb0c6](https://github.com/stratif-io/stratif.io/commit/eedb0c6d8560ec54383eada9df9db829e4688b65))
+* **fieldmap:** sync icon when per-row category badge changes ([e942a3e](https://github.com/stratif-io/stratif.io/commit/e942a3e9ffc51ece7dfdbffbcfd7f6a7a74e8a1f))
+* filter pills visible while options loading; show testing state before ping result ([1a384ca](https://github.com/stratif-io/stratif.io/commit/1a384ca384aede5090c00ef578dc39df412c3a87))
+* no-connection screen navigates directly to /connections/new ([9e483cb](https://github.com/stratif-io/stratif.io/commit/9e483cb6f1205b4ec246bc7c1882225b8aa91855))
+* **query-log:** log all connection metadata fetches ([5e39732](https://github.com/stratif-io/stratif.io/commit/5e3973287c75007a13ad2b564a9497c541afa046))
+* **query-log:** log all queries so panel is never empty while queries run ([7642568](https://github.com/stratif-io/stratif.io/commit/76425680879afa6c2dbbfddd25462a228d377401))
+* **query-log:** log connection setup queries (tables, browse, test) ([07cae3c](https://github.com/stratif-io/stratif.io/commit/07cae3ca5af3693b04dae3f2aa952e1c35d31ddf))
+* **query-log:** log credentials and connection string fetches ([3de57a5](https://github.com/stratif-io/stratif.io/commit/3de57a5cf3c308273db6ff8328b61710afa148b3))
+* set activeConnectionId when entering a connection detail page ([75fa0f5](https://github.com/stratif-io/stratif.io/commit/75fa0f57827afc7897f88498d181763801b76979))
+* skip stale refs with empty field path in filter expr resolver ([35514f7](https://github.com/stratif-io/stratif.io/commit/35514f70ed794fc5f06fdeade4c475bdbcf8e5fb))
+* use category icon for custom property filter pills instead of MoreHorizontal ([77b6aab](https://github.com/stratif-io/stratif.io/commit/77b6aab721a4f83035eba0d3fb79ddc6791b2ecf))
+* wait for schemaConfig before migrating filter refs in useSchemaForm ([476c9ca](https://github.com/stratif-io/stratif.io/commit/476c9ca4d2e22733fba9a4a1c9fe7cf83c957177))
+
 ## [0.35.1](https://github.com/stratif-io/stratif.io/compare/v0.35.0...v0.35.1) (2026-04-15)
 
 
