@@ -44,8 +44,17 @@ The default compose setup runs the app behind a Caddy reverse proxy on port **99
 
 ## Pinning a version
 
+To install a specific version on a **fresh machine** (no existing `~/.stratifio`):
+
 ```bash
-STRATIFIO_VERSION=v0.37.0 curl -fsSL https://stratif.io/install.sh | sh
+STRATIFIO_VERSION=v0.36.0 curl -fsSL https://stratif.io/install.sh | sh
+```
+
+To switch an existing installation to a different version, remove the install directory first:
+
+```bash
+rm -rf ~/.stratifio
+STRATIFIO_VERSION=v0.36.0 curl -fsSL https://stratif.io/install.sh | sh
 ```
 
 ## Updating
