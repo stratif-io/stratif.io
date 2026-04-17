@@ -9,3 +9,8 @@
   --sl-color-accent: #14b8a6;
   --sl-color-accent-high: #5eead4;
 }
+
+table td code,
+table th code {
+  white-space: nowrap;
+}
