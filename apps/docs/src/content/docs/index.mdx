@@ -5,16 +5,32 @@ description: stratif.io — open-source, warehouse-native product analytics
 
 import { LinkCard, CardGrid } from '@astrojs/starlight/components'
 
-stratif.io is an open-source product analytics dashboard that queries your existing data warehouse directly — no event pipelines, no vendor lock-in, no per-event fees.
+![stratif.io](/logo-light.svg)
 
-## What you can do
+stratif.io is an open-source product analytics dashboard that queries your data warehouse directly — no event pipelines to maintain, no vendor lock-in, no per-event pricing. Connect it to DuckDB, PostgreSQL, ClickHouse, Snowflake, or Databricks and start exploring in minutes.
 
-- **Trends** — track how event counts change over time
-- **Funnels** — measure conversion between steps in a user journey
-- **Retention** — see how many users return after a first action
-- **Paths** — explore the routes users take through your product
-- **People** — browse individual user profiles and event history
-- **Query Studio** — write raw SQL against your warehouse
+![Mission Control — stratif.io dashboard overview](/screenshots/mc-light.png)
+
+## How it works
+
+stratif.io runs as a lightweight server alongside your warehouse. You configure a connection, write (or let stratif.io generate) the SQL that defines your events, and every chart, funnel, and retention table executes a live query against your data. There is no intermediate storage and no ingestion delay — the numbers you see are always up to date.
+
+Every metric ships with a **SQL viewer** so you can inspect the exact query behind any chart, adapt it, or run it yourself.
+
+## Features
+
+<CardGrid>
+  <LinkCard title="Mission Control" href="/features/mission-control/" description="Your daily analytics home — active users, top events, session summary, and device breakdown." />
+  <LinkCard title="Trends" href="/features/trends/" description="Track how event counts change over time with daily, weekly, or monthly granularity." />
+  <LinkCard title="Retention" href="/features/retention/" description="Measure how many users return after performing a first action." />
+  <LinkCard title="Funnel" href="/features/funnel/" description="Quantify conversion rates between sequential steps in a user journey." />
+  <LinkCard title="Paths (Journey)" href="/features/paths/" description="Explore the routes users take through your product, forward and backward." />
+  <LinkCard title="People" href="/features/people/" description="Browse individual user profiles, properties, and full event history." />
+  <LinkCard title="Events Explorer" href="/features/events/" description="Inspect raw events, filter by property, and audit your instrumentation." />
+  <LinkCard title="Pivot" href="/features/pivot/" description="Cross-tabulate any two dimensions against a metric for ad-hoc breakdowns." />
+  <LinkCard title="SQL Studio" href="/features/sql-studio/" description="Write and run raw SQL directly against your warehouse from the dashboard." />
+  <LinkCard title="Global Filters" href="/features/global-filters/" description="Apply date range, device, and custom filters across every view simultaneously." />
+</CardGrid>
 
 ## Supported warehouses
 
@@ -23,6 +39,7 @@ DuckDB · PostgreSQL · ClickHouse · Snowflake · Databricks
 ## Get started
 
 <CardGrid>
-  <LinkCard title="Installation" href="/getting-started/installation/" description="Install stratif.io in under 5 minutes." />
-  <LinkCard title="Try the demo" href="https://demo.stratif.io" description="Explore with a sample e-commerce dataset." />
+  <LinkCard title="Installation" href="/getting-started/installation/" description="Install stratif.io on your server or laptop in under 5 minutes." />
+  <LinkCard title="Configuration" href="/getting-started/configuration/" description="Environment variable reference for ports, auth, and encryption." />
+  <LinkCard title="Try the demo" href="https://demo.stratif.io" description="Explore live with a sample e-commerce dataset — no install required." />
 </CardGrid>
