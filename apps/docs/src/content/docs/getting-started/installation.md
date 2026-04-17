@@ -78,8 +78,8 @@ curl -fsSL https://stratif.io/install.sh | sh
 
 ## Updating
 
+Re-run the install script — it updates the code, Python packages, and frontend in one step:
+
 ```bash
-cd stratifio
-git pull
-uv sync --frozen --no-dev
+curl -fsSL https://stratif.io/install.sh | sh
 ```
