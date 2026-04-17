@@ -21,9 +21,15 @@ The raw count of all events fired in the selected time window. Every user action
 
 ### Unique Users
 
-The count of distinct `user_id` values in your events table for the period.
+The count of distinct `user_id` values in your events table for the period. This is your Monthly Active Users (MAU) when the date range spans a full month.
 
 **Why it matters:** Total events can grow because existing users are doing more — or because you have more users. These are very different situations. When Total Events grows but Unique Users stays flat, your existing users are more active. When both grow together, you're acquiring and retaining. Unique Users separates volume from growth.
+
+### Weekly Active Users (WAU)
+
+Distinct users who fired at least one event in the last 7 days of the selected period.
+
+**Why it matters:** WAU sits between the sensitivity of DAU and the smoothness of MAU. It catches weekly-cycle products (tools people use on weekdays but not weekends) better than monthly figures, and it's less noisy than daily counts. Tracking WAU alongside MAU tells you whether engagement is concentrated in a few weeks or distributed across the month.
 
 ---
 
@@ -41,6 +47,24 @@ The average length of a session in minutes and seconds, measured from the first 
 
 **Why it matters:** Duration is a double-edged signal. For content products, long sessions are good — users are reading, watching, exploring. For task-completion products (e-commerce checkout, form filing), long sessions can mean confusion or friction. Know which type your product is before interpreting this number.
 
+### Events / Session
+
+The average number of events fired within a single session.
+
+**Why it matters:** Events per session is a measure of depth. Users who trigger many events in a session are exploring, using multiple features, or completing complex workflows. A low events-per-session number combined with short duration is a strong signal of shallow engagement — users land, look at one thing, and leave. Increasing events per session is often a more actionable goal than increasing session duration.
+
+### Active Days
+
+The average number of distinct calendar days a user was active during the selected period.
+
+**Why it matters:** Active days measures visit frequency per user — not whether they came back (that's Returning Users) but how often. A user active 15 out of 30 days is deeply habituated. A user active 2 out of 30 days may have returned once after a long gap. Low average active days alongside healthy Unique Users can mean users try and then slow down — an early signal of disengagement before it shows up in churn.
+
+### Power Users
+
+The count of users who exceed an activity threshold — by default, users active on more days than the median for the period. The threshold adapts to your date range.
+
+**Why it matters:** Power users disproportionately drive retention, word-of-mouth, and upsell revenue. Tracking this cohort size tells you whether your most engaged users are growing or shrinking as a share of your total base. A product where power users are a declining fraction of MAU is losing depth even as the headline user count stays flat.
+
 ---
 
 ## Acquisition
@@ -53,9 +77,27 @@ Users who appear in your events table for the first time within the selected dat
 
 ### Returning Users
 
-Users whose first event predates the selected window but who fired at least one event within it.
+Users whose first event predates the selected window but who fired at least one event within it, and who were also active in the previous period (not resurrected).
 
 **Why it matters:** Returning users is your retention output. A healthy product has a growing returning-user base. Compare New vs Returning over time: a ratio shifting toward returning means your product is building habits and loyalty. A ratio shifting toward new means you're dependent on acquisition to replace users who stop coming back.
+
+### Resurrected Users
+
+Users who had been inactive long enough to be considered churned — no activity for longer than the resurrection window — but who returned during the selected period.
+
+**Why it matters:** Resurrections are a leading indicator of re-engagement campaign effectiveness. If you run a win-back email and Resurrected goes up next week, it worked. Resurrected users often have lower long-term retention than continuously active users, so track whether they stick around after resurrection or churn again quickly.
+
+### Churned Users
+
+Users who were active in the previous equivalent period but fired no events in the current period.
+
+**Why it matters:** Churn is the denominator that erodes everything else. If New Users = 500 and Churned Users = 480, you're on a treadmill — growing the user base by only 20 net users per period despite significant acquisition. Watch the ratio of Churned to New over time. When churn starts approaching new acquisition, growth stalls.
+
+### Retention Rate
+
+The percentage of last period's active users who also fired an event in the current period: `retained_users / prev_unique_users × 100`.
+
+**Why it matters:** Retention Rate is the single most predictive metric for long-term product health. It answers: "Of the users I had, how many came back?" A product with 70%+ monthly retention is compounding — each cohort mostly stays. Below 20%, the product has a fundamental engagement problem that acquisition cannot fix. The tooltip shows the raw numbers (`retained / previous`) so you can see the exact cohort being measured.
 
 ---
 
