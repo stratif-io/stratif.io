@@ -3,4 +3,26 @@ title: Introduction
 description: stratif.io — open-source, warehouse-native product analytics
 ---
 
-Coming soon.
+import { LinkCard, CardGrid } from '@astrojs/starlight/components'
+
+stratif.io is an open-source product analytics dashboard that queries your existing data warehouse directly — no event pipelines, no vendor lock-in, no per-event fees.
+
+## What you can do
+
+- **Trends** — track how event counts change over time
+- **Funnels** — measure conversion between steps in a user journey
+- **Retention** — see how many users return after a first action
+- **Paths** — explore the routes users take through your product
+- **People** — browse individual user profiles and event history
+- **Query Studio** — write raw SQL against your warehouse
+
+## Supported warehouses
+
+DuckDB · PostgreSQL · ClickHouse · Snowflake · Databricks
+
+## Get started
+
+<CardGrid>
+  <LinkCard title="Installation" href="/getting-started/installation/" description="Install stratif.io in under 5 minutes." />
+  <LinkCard title="Try the demo" href="https://demo.stratif.io" description="Explore with a sample e-commerce dataset." />
+</CardGrid>
