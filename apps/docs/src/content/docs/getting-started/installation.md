@@ -57,6 +57,25 @@ rm -rf ~/.stratifio
 STRATIFIO_VERSION=v0.36.0 curl -fsSL https://stratif.io/install.sh | sh
 ```
 
+## Install script variables
+
+| Variable             | Default               | Description                                                                          |
+| -------------------- | --------------------- | ------------------------------------------------------------------------------------ |
+| `STRATIFIO_VERSION`  | latest                | Version tag to install (e.g. `v0.30.0`)                                              |
+| `STRATIFIO_DIR`      | `~/.stratifio`        | Directory to install stratif.io into                                                 |
+| `STRATIFIO_PORT`     | `6870`                | Port to run the server on                                                            |
+| `STRATIFIO_DATA_DIR` | `$STRATIFIO_DIR/data` | Directory for the DuckDB sample data and product database                            |
+| `GITHUB_TOKEN`       | —                     | GitHub personal access token — set this to avoid API rate limits on slow connections |
+
+Example — install v0.30.0 on a custom port into a custom directory:
+
+```bash
+STRATIFIO_VERSION=v0.30.0 \
+STRATIFIO_DIR=/opt/stratifio \
+STRATIFIO_PORT=8080 \
+curl -fsSL https://stratif.io/install.sh | sh
+```
+
 ## Updating
 
 ```bash
