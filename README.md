@@ -11,7 +11,7 @@
 
 **No event pipelines. No vendor lock-in. Connect directly to your existing warehouse.**
 
-[Website](https://stratif.io) · [Live Demo](https://demo.stratif.io) · [Quick Start](#-quick-start) · [Docs](docs/docs.md) · [Contributing](CONTRIBUTING.md)
+[Website](https://stratif.io) · [Live Demo](https://demo.stratif.io) · [Quick Start](#-quick-start) · [Docs](https://docs.stratif.io) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -40,7 +40,7 @@
 curl -fsSL https://stratif.io/install.sh | sh
 ```
 
-Open **http://localhost:6870** when it's done. For Docker Compose and advanced setup, see [Docs](docs/docs.md).
+Open **http://localhost:6870** when it's done. For Docker Compose and advanced setup, see [docs.stratif.io](https://docs.stratif.io).
 
 ---
 
