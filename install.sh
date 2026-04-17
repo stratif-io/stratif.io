@@ -112,8 +112,14 @@ if [ -n "${STRATIFIO_REPO_DIR:-}" ]; then
     success "Using $INSTALL_DIR"
   fi
 elif [ -d "$INSTALL_DIR/.git" ]; then
-  run_with_spinner "Updating to $LATEST" \
-    git -C "$INSTALL_DIR" fetch --tags --quiet
+  # Unshallow if needed so older tags are reachable for version pinning
+  if git -C "$INSTALL_DIR" rev-parse --is-shallow-repository 2>/dev/null | grep -q true; then
+    run_with_spinner "Fetching full history" \
+      git -C "$INSTALL_DIR" fetch --unshallow --tags --quiet
+  else
+    run_with_spinner "Fetching tags" \
+      git -C "$INSTALL_DIR" fetch --tags --quiet
+  fi
   git -C "$INSTALL_DIR" checkout --quiet "$LATEST"
 else
   run_with_spinner "Downloading stratif.io" \
