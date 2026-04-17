@@ -16,7 +16,21 @@ export default defineConfig({
       social: {
         github: 'https://github.com/stratif-io/stratif.io',
       },
-      sidebar: [],
+      sidebar: [
+        {
+          label: 'Getting Started',
+          items: [
+            { label: 'Introduction', slug: '' },
+            { label: 'Installation', slug: 'getting-started/installation' },
+            { label: 'Configuration', slug: 'getting-started/configuration' },
+            { label: 'Connecting a Warehouse', slug: 'getting-started/connecting-a-warehouse' },
+          ],
+        },
+        {
+          label: 'Demo',
+          items: [{ label: 'Sample Data', slug: 'demo/sample-data' }],
+        },
+      ],
     }),
   ],
 })
