@@ -34,3 +34,11 @@ Click any path row to view its conversion funnel — how many of the users who s
 ## Why paths matter
 
 Funnels tell you where users drop off on a path _you designed_. Paths tell you what path users _actually take_. The difference is often surprising. You might discover that 25% of users reach checkout via a route that bypasses your main navigation — meaning your "optimised" funnel analysis was missing a quarter of your conversions. Paths surface these surprises.
+
+## View the SQL
+
+Every metric and chart on this page has a **SQL** badge. Click it to open the exact query stratif.io ran against your warehouse to produce that number — joins, window functions, filters and all.
+
+![SQL viewer button on a chart](/screenshots/sql-viewer.png)
+
+You can copy the query into [SQL Studio](/features/sql-studio/) to modify it, run variations, or use it as a starting point for your own analysis. This makes stratif.io a learning tool as much as an analytics tool: you can see how product metrics are actually computed in SQL, not just consume the results.

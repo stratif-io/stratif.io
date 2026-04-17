@@ -32,3 +32,11 @@ Global filters apply to the People list. Set **country = UK** and you see only U
 - **Debugging:** a user reports a bug — look up their exact event sequence to reproduce it
 - **Qualitative research:** after finding a retention drop, read the timelines of churned users to see what happened before they stopped coming back
 - **Sales/support:** understand what a specific customer has done in your product before a call
+
+## View the SQL
+
+Every metric and chart on this page has a **SQL** badge. Click it to open the exact query stratif.io ran against your warehouse to produce that number — joins, window functions, filters and all.
+
+![SQL viewer button on a chart](/screenshots/sql-viewer.png)
+
+You can copy the query into [SQL Studio](/features/sql-studio/) to modify it, run variations, or use it as a starting point for your own analysis. This makes stratif.io a learning tool as much as an analytics tool: you can see how product metrics are actually computed in SQL, not just consume the results.

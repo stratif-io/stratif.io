@@ -30,3 +30,11 @@ Combined with global filters, funnels become segmentation tools. Set **country =
 ## When to use Funnels
 
 Use funnels when you have a defined critical path — onboarding, checkout, activation, upgrade — and you want to know exactly which step is causing the most abandonment. Fix the biggest drop first: it has the highest leverage on overall conversion.
+
+## View the SQL
+
+Every metric and chart on this page has a **SQL** badge. Click it to open the exact query stratif.io ran against your warehouse to produce that number — joins, window functions, filters and all.
+
+![SQL viewer button on a chart](/screenshots/sql-viewer.png)
+
+You can copy the query into [SQL Studio](/features/sql-studio/) to modify it, run variations, or use it as a starting point for your own analysis. This makes stratif.io a learning tool as much as an analytics tool: you can see how product metrics are actually computed in SQL, not just consume the results.

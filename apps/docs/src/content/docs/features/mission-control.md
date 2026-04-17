@@ -87,3 +87,11 @@ The ranked list of the most frequently fired events in the period. Each row show
 ## Customise metrics
 
 Click **Customize metrics** at the bottom of the Volume/Engagement panel to add or remove metric cards. You can surface any aggregate across your events table — total revenue, error counts, specific event frequencies — as a first-class metric on this screen.
+
+## View the SQL
+
+Every metric and chart on this page has a **SQL** badge. Click it to open the exact query stratif.io ran against your warehouse to produce that number — joins, window functions, filters and all.
+
+![SQL viewer button on a chart](/screenshots/sql-viewer.png)
+
+You can copy the query into [SQL Studio](/features/sql-studio/) to modify it, run variations, or use it as a starting point for your own analysis. This makes stratif.io a learning tool as much as an analytics tool: you can see how product metrics are actually computed in SQL, not just consume the results.

@@ -31,3 +31,11 @@ Click **CSV** or **XLSX** to export the filtered event stream directly from your
 - **Verify tracking:** after deploying new event instrumentation, check that events are arriving with the right properties
 - **Debug anomalies:** when a metric looks wrong, inspect the raw events that feed it
 - **Data quality:** spot unexpected event names, missing properties, or malformed user IDs before they corrupt your aggregate metrics
+
+## View the SQL
+
+Every metric and chart on this page has a **SQL** badge. Click it to open the exact query stratif.io ran against your warehouse to produce that number — joins, window functions, filters and all.
+
+![SQL viewer button on a chart](/screenshots/sql-viewer.png)
+
+You can copy the query into [SQL Studio](/features/sql-studio/) to modify it, run variations, or use it as a starting point for your own analysis. This makes stratif.io a learning tool as much as an analytics tool: you can see how product metrics are actually computed in SQL, not just consume the results.

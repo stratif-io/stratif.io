@@ -40,3 +40,11 @@ Industry benchmarks vary by product type:
 - **E-commerce:** M1 10–20%, M6 5–15%
 
 The sample dataset in the demo shows ~6–10% M1 retention, typical for a lightweight e-commerce browsing product where most visits are one-off searches.
+
+## View the SQL
+
+Every metric and chart on this page has a **SQL** badge. Click it to open the exact query stratif.io ran against your warehouse to produce that number — joins, window functions, filters and all.
+
+![SQL viewer button on a chart](/screenshots/sql-viewer.png)
+
+You can copy the query into [SQL Studio](/features/sql-studio/) to modify it, run variations, or use it as a starting point for your own analysis. This makes stratif.io a learning tool as much as an analytics tool: you can see how product metrics are actually computed in SQL, not just consume the results.
