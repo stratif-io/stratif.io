@@ -4,7 +4,7 @@
     <img src="docs/logo.svg" alt="stratif.io"/>
   </picture>
 
-[![License: ELv2](https://img.shields.io/badge/License-ELv2-blue.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](package.json)
 [![ghcr.io](https://img.shields.io/badge/ghcr.io-latest-24292e?logo=github)](https://github.com/stratif-io/stratif.io/pkgs/container/stratif.io)
@@ -70,7 +70,7 @@ _\* Mitzu, Kubit, NetSpring, Houseware — all closed-source, cloud-only, paid._
 
 PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-**License:** Elastic License 2.0 © Carlo Abi Chahine
+**License:** Apache-2.0 © Carlo Abi Chahine
 
 ---
 
