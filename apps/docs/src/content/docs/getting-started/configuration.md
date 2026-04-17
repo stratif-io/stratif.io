@@ -28,10 +28,10 @@ Configuration is managed via environment variables loaded from `.env` at the pro
 
 ## Auth
 
-| Variable                 | Default | Description                              |
-| ------------------------ | ------- | ---------------------------------------- |
-| `STRATIFIO_AUTH_ENABLED` | `false` | Enable login and user accounts           |
-| `STRATIFIO_API_KEY`      | —       | Optional API key for programmatic access |
+| Variable                 | Default | Description                                                                                                               |
+| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `STRATIFIO_AUTH_ENABLED` | `false` | When `true`, all API requests must include an `X-API-Key` header matching `STRATIFIO_API_KEY`.                            |
+| `STRATIFIO_API_KEY`      | —       | Required when `STRATIFIO_AUTH_ENABLED=true`. Set to a strong random value — clients must send it as `X-API-Key: <value>`. |
 
 ## Production checklist
 
