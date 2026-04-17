@@ -1,8 +1,31 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+/* ── Fonts ───────────────────────────────────────────────────────────────── */
+
+:root {
+  --sl-font: "Inter", sans-serif;
+  --sl-font-mono: "JetBrains Mono", monospace;
+}
+
+/* ── Brand colors — light ────────────────────────────────────────────────── */
+
 :root {
   --sl-color-accent-low: #ccfbf1;
   --sl-color-accent: #0d9488;
   --sl-color-accent-high: #0f766e;
+
+  /* Neutral scale → brand light neutrals */
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #f8fafc;
+  --sl-color-gray-2: #e5e7eb;
+  --sl-color-gray-3: #94a3b8;
+  --sl-color-gray-4: #6b7280;
+  --sl-color-gray-5: #374151;
+  --sl-color-gray-6: #1a1a2e;
+  --sl-color-black: #0f1117;
 }
+
+/* ── Brand colors — dark ─────────────────────────────────────────────────── */
 
 :root[data-theme="dark"] {
   --sl-color-accent-low: #0f2923;
@@ -10,7 +33,9 @@
   --sl-color-accent-high: #5eead4;
 }
 
-table td code,
-table th code {
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+table td:first-child code,
+table th:first-child code {
   white-space: nowrap;
 }
