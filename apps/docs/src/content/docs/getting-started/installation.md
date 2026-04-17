@@ -29,23 +29,18 @@ Open [http://localhost:6870](http://localhost:6870) when complete.
 
 ## Docker Compose
 
-```yaml
-services:
-  stratifio:
-    image: ghcr.io/stratif-io/stratif.io:latest
-    ports:
-      - "6870:6870"
-    volumes:
-      - ./data:/app/data
-    environment:
-      STRATIFIO_ENCRYPTION_KEY: your-32-char-key-here
-```
-
-Generate an encryption key:
+Clone the repo and start with Docker Compose:
 
 ```bash
-openssl rand -base64 32
+git clone https://github.com/stratif-io/stratif.io.git
+cd stratif.io
+echo "STRATIFIO_ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+docker compose up -d
 ```
+
+Open [http://localhost:9999](http://localhost:9999) when the health check passes (~30 seconds).
+
+The default compose setup runs the app behind a Caddy reverse proxy on port **9999**. To customise the port, set `STRATIFIO_PORT` or edit `docker-compose.yml`.
 
 ## Pinning a version
 
