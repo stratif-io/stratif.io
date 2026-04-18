@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.38.0](https://github.com/stratif-io/stratif.io/compare/v0.37.0...v0.38.0) (2026-04-17)
+
+
+### Features
+
+* add Starlight docs site (docs.stratif.io) ([8323e96](https://github.com/stratif-io/stratif.io/commit/8323e962159dab55984c38eab95ae0c36c1b9b22))
+
+
+### Bug Fixes
+
+* **install:** unshallow repo before checkout so version pinning works on existing installs ([fe6eda1](https://github.com/stratif-io/stratif.io/commit/fe6eda19abe6280ccb6636f9c7228f760704b3a3))
+
 ## [0.37.0](https://github.com/stratif-io/stratif.io/compare/v0.36.0...v0.37.0) (2026-04-16)
 
 
