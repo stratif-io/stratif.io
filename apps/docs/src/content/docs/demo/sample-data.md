@@ -1,6 +1,6 @@
 ---
-title: Sample Data
-description: Explore stratif.io with the built-in e-commerce demo dataset
+title: Sample Data — Learn Product Analytics with ~5000 Realistic Events
+description: stratif.io ships with a realistic synthetic event dataset (~5000 events, 250 users). Explore funnels, retention, and user journeys without connecting your own warehouse.
 ---
 
 The live demo at [demo.stratif.io](https://demo.stratif.io) and the default local installation come pre-loaded with a sample e-commerce dataset.

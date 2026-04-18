@@ -1,6 +1,33 @@
 ---
-title: Introduction
-description: stratif.io — open-source, warehouse-native product analytics
+title: Warehouse-Native Product Analytics Docs
+description: Docs for stratif.io — the open-source, self-hosted product analytics layer that runs funnels, retention, and paths directly on your DuckDB, Snowflake, ClickHouse, Databricks, or Postgres warehouse.
+head:
+  - tag: script
+    attrs:
+      type: application/ld+json
+    content: |
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is warehouse-native product analytics?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Warehouse-native product analytics is a category of tools that run funnel, retention, and path analysis directly on the events already in your data warehouse (DuckDB, Snowflake, ClickHouse, Databricks, Postgres) — with no event ingestion pipeline and no duplication of data into a third-party SaaS."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Who is stratif.io for, and who is it not for?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "stratif.io is for teams whose product events are already in a SQL warehouse and who want self-hosted funnels, retention, and path analysis on that data. It is not a full-stack replacement for Mixpanel or Amplitude — it does not ship SDKs, experimentation, session replay, or push notifications."
+            }
+          }
+        ]
+      }
 ---
 
 import { LinkCard, CardGrid } from '@astrojs/starlight/components'

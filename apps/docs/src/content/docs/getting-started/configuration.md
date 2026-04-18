@@ -1,6 +1,6 @@
 ---
-title: Configuration
-description: Environment variable reference for stratif.io
+title: Configure stratif.io — Environment Variables and Settings
+description: Complete reference for every environment variable and configuration option in stratif.io — auth, encryption keys, CORS, rate limits, product DB path, and more.
 ---
 
 Configuration is managed via environment variables loaded from `.env` at the project root. The install script creates this file automatically.

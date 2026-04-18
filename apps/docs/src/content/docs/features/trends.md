@@ -1,6 +1,6 @@
 ---
-title: Trends
-description: Track how any event or metric changes over time
+title: Event Trends over Time — stratif.io
+description: Visualize event counts and active users across any date range, with daily, weekly, or monthly granularity. Runs on your warehouse events with no ingestion pipeline.
 ---
 
 Trends answers the most fundamental product question: **is this going up or down?**
