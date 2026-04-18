@@ -1,6 +1,6 @@
 ---
-title: Installation
-description: Install stratif.io on your own server or laptop
+title: Install stratif.io — Warehouse-Native Product Analytics Setup
+description: Install self-hosted warehouse-native product analytics in one command. stratif.io runs next to your DuckDB, Snowflake, ClickHouse, Databricks, or Postgres warehouse.
 ---
 
 ## Prerequisites
