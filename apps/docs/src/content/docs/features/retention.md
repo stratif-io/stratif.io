@@ -1,6 +1,6 @@
 ---
-title: Retention
-description: Measure how many users come back after their first action
+title: Retention Cohorts on Your Data Warehouse — stratif.io
+description: Cohort retention tables running directly on warehouse events. Group users by first-action date, then track return rates — day, week, or month cohorts, on your SQL warehouse.
 ---
 
 Retention is the most important metric for any product that depends on repeat usage. It answers: **of the users who did X in month N, what fraction came back and did anything in month N+1, N+2, N+6?**

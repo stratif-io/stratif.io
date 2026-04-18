@@ -5,6 +5,18 @@
     <link rel="icon" type="image/svg+xml" href="/favicon-color.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>stratif.io</title>
+    <script>
+      // SEO: allow the root path to be indexed (landing / live demo). Noindex
+      // every other route so Google doesn't dilute domain authority crawling
+      // thin SPA-shell dashboard pages. Runs synchronously before React mounts,
+      // so the tag is present by the time Googlebot parses the DOM.
+      if (window.location.pathname !== '/' && window.location.pathname !== '') {
+        var meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex,follow';
+        document.head.appendChild(meta);
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

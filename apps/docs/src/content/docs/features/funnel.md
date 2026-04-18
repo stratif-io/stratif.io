@@ -1,6 +1,6 @@
 ---
-title: Funnel
-description: Measure conversion rates between steps in a user journey
+title: Funnel Analysis on Your Data Warehouse — stratif.io
+description: Build conversion funnels across any sequence of events, directly on your DuckDB, Snowflake, ClickHouse, Databricks, or Postgres warehouse. SQL visible, filterable, auditable.
 ---
 
 A funnel measures how many users complete a sequence of steps — and where they drop off.

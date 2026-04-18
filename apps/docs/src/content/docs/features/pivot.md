@@ -1,6 +1,6 @@
 ---
-title: Pivot
-description: Cross-tabulate any event property against any other
+title: Pivot Tables on Warehouse Events — stratif.io
+description: Cross-tabulate any two dimensions against a metric for ad-hoc analysis. Pivot over warehouse-native event data — DuckDB, Snowflake, ClickHouse, Databricks, or Postgres.
 ---
 
 Pivot lets you slice your event data across two dimensions simultaneously — rows and columns — to spot patterns that one-dimensional charts miss.

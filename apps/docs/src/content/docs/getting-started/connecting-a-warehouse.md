@@ -1,6 +1,6 @@
 ---
-title: Connecting a Warehouse
-description: Connect stratif.io to DuckDB, PostgreSQL, ClickHouse, Snowflake, or Databricks
+title: Connect stratif.io to Your Data Warehouse
+description: Point stratif.io at DuckDB, Snowflake, ClickHouse, Databricks, PostgreSQL, or SQLite. One row per event, a timestamp, a user ID — stratif.io does the rest.
 ---
 
 Warehouse credentials are encrypted at rest using your `STRATIFIO_ENCRYPTION_KEY`. Connections are managed in the app under **Connections → New Connection**.

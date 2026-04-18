@@ -1,6 +1,6 @@
 ---
-title: Paths (Journey)
-description: Explore the actual routes users take through your product
+title: User Journey and Path Analysis — stratif.io
+description: Trace the routes users take through your product, forward and backward from any event. Warehouse-native path analysis running directly on DuckDB, Snowflake, ClickHouse, or Postgres events.
 ---
 
 Paths answers: **what do users actually do, in what order?** Unlike funnels — which test a predefined sequence — paths discover sequences from your data.
