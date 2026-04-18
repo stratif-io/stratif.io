@@ -1,6 +1,6 @@
 ---
-title: Mission Control
-description: Your product's vital signs — volume, engagement, acquisition, and stickiness in one view
+title: Mission Control — Product Analytics Dashboard
+description: Your daily analytics home — active users, top events, session summary, device breakdown, and key KPIs (WAU, retention rate, events/session) on warehouse data.
 ---
 
 Mission Control is the home page of stratif.io. It gives you a single-screen overview of the health of your product across four dimensions: how much activity is happening, how engaged users are, whether you're acquiring new users, and how sticky the product is.

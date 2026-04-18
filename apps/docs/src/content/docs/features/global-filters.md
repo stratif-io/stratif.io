@@ -1,6 +1,6 @@
 ---
-title: Global Filters
-description: Filter every analytics view by date range, event property, or warehouse connection
+title: Global Filters — Date Range, Device, and Custom Property Filters
+description: Apply date range, device, and custom property filters across every chart and table in stratif.io simultaneously. Synced state, SQL-visible, consistent across views.
 ---
 
 Every page in stratif.io shares the same filter bar at the top. Filters you set here apply instantly to every chart, table, and metric on screen — you never need to reconfigure the same segment twice.

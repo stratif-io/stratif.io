@@ -1,6 +1,6 @@
 ---
-title: SQL Studio
-description: Write raw SQL directly against your warehouse
+title: SQL Studio — Ad-Hoc Warehouse Queries in stratif.io
+description: Write and run raw SQL directly against your data warehouse from the stratif.io dashboard. Query any table, format results, and copy or download as CSV.
 ---
 
 SQL Studio is a full query editor connected directly to your warehouse. No intermediate layer, no query builder — just SQL against your actual data.

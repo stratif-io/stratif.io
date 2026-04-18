@@ -1,6 +1,6 @@
 ---
-title: People
-description: Browse individual user profiles and their full event history
+title: User Profiles and Event History — stratif.io
+description: Browse individual user profiles, properties, and full event timelines directly from your warehouse data. Search, filter, and audit instrumentation per user.
 ---
 
 People gives you a user-level view of your data — individual profiles, event timelines, and properties for any user in your warehouse.

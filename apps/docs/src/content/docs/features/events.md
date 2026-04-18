@@ -1,6 +1,6 @@
 ---
-title: Events Explorer
-description: Browse and search the raw event stream from your warehouse
+title: Events Explorer — Inspect Raw Warehouse Events
+description: Inspect every raw event in your warehouse, filter by any property, and audit your event taxonomy. stratif.io gives you a read-only SQL event explorer over your data.
 ---
 
 Events Explorer gives you direct access to the raw rows in your events table — the ground truth underneath every chart and metric.
