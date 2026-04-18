@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.39.0](https://github.com/stratif-io/stratif.io/compare/v0.38.0...v0.39.0) (2026-04-18)
+
+
+### Features
+
+* **demo:** noindex SPA deep routes, keep root indexable ([a833f7a](https://github.com/stratif-io/stratif.io/commit/a833f7a242ceb220c2033da5ad4663ffca85143f))
+* **seo:** OSS README honest positioning + docs per-page meta + demo noindex ([4b900a8](https://github.com/stratif-io/stratif.io/commit/4b900a8c9907d163b396a880fde29636de3ace03))
+
 ## [0.38.0](https://github.com/stratif-io/stratif.io/compare/v0.37.0...v0.38.0) (2026-04-17)
 
 
