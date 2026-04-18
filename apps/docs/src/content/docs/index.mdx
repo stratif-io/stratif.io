@@ -5,7 +5,10 @@ description: stratif.io — open-source, warehouse-native product analytics
 
 import { LinkCard, CardGrid } from '@astrojs/starlight/components'
 
-![stratif.io](/logo-light.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="/logo-dark.svg" />
+  <img src="/logo.svg" alt="stratif.io" />
+</picture>
 
 stratif.io is an open-source product analytics dashboard that queries your data warehouse directly — no event pipelines to maintain, no vendor lock-in, no per-event pricing. Connect it to DuckDB, PostgreSQL, ClickHouse, Snowflake, or Databricks and start exploring in minutes.
 
