@@ -42,6 +42,12 @@ class SimulationState:
     monetization_mode: str | None = None  # set by monetization (coerced by domain)
     virality_weight: float = 0.0  # set by virality; 0.0 = no referrals
 
+    # Phase 3 realism fields — populated by realism modules, consumed by Engine/domains.
+    hour_weights_weekday: list[float] | None = None  # 24-element list; sum normalized
+    hour_weights_weekend: list[float] | None = None
+    dow_weights: list[float] | None = None  # 7-element list; Monday=0
+    calendar_multiplier: Any = None  # Callable[[date, country], float]
+
 
 @runtime_checkable
 class AxisModifier(Protocol):
