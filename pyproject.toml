@@ -41,6 +41,7 @@ seed-clickhouse = "seeders.seeder_clickhouse:main"
 seed-snowflake = "seeders.seeder_snowflake:main"
 seed-databricks = "seeders.seeder_databricks:main"
 bootstrap-all-connections = "seeders.bootstrap_all_connections:main"
+seed = "seeders.cli:main"
 
 [build-system]
 requires = ["hatchling"]
