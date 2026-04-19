@@ -180,7 +180,7 @@ def test_engine_monetization_coercion_for_unsupported_domain_value(caplog):
     import logging
 
     cfg = _cfg(monetization="iap_whales")
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.INFO, logger="seeders.simulator.engine"):
         _drain(cfg)
 
     assert any(
@@ -193,9 +193,11 @@ def test_engine_supported_monetization_does_not_warn(caplog):
     import logging
 
     cfg = _cfg(monetization="one_off_purchase")
-    with caplog.at_level(logging.INFO):
-        _drain(cfg)
+    with caplog.at_level(logging.INFO, logger="seeders.simulator.engine"):
+        batches = _drain(cfg)
 
+    # Positive-path guard: the run must actually have produced events.
+    assert sum(_event_names(batches).values()) > 0
     assert not any(
         "coerced" in record.getMessage().lower() for record in caplog.records
     )
