@@ -25,29 +25,38 @@ from seeders.simulator.preset import (
     resolve_config,
 )
 
+_AXIS_NAMES: tuple[str, ...] = (
+    "growth",
+    "stickiness",
+    "engagement_depth",
+    "monetization",
+    "virality",
+    "scale",
+    "geography",
+    "anomalies",
+)
+
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="seed", description="stratif.io parametrized seeder"
     )
-    p.add_argument("--preset", type=str, default=None, help="Named preset or path")
+    # --preset and --describe both pick which preset to load; forbid passing
+    # both to avoid the footgun where --preset is silently ignored.
+    preset_group = p.add_mutually_exclusive_group()
+    preset_group.add_argument(
+        "--preset", type=str, default=None, help="Named preset or path"
+    )
+    preset_group.add_argument(
+        "--describe", type=str, default=None, help="Print resolved config"
+    )
     p.add_argument("--list", action="store_true", help="List available presets")
-    p.add_argument("--describe", type=str, default=None, help="Print resolved config")
     p.add_argument(
         "--seed", type=int, default=None, help="Random seed (reproducibility)"
     )
 
     # Axis overrides — one flag per axis name. Only the values provided are applied.
-    for axis in (
-        "growth",
-        "stickiness",
-        "engagement_depth",
-        "monetization",
-        "virality",
-        "scale",
-        "geography",
-        "anomalies",
-    ):
+    for axis in _AXIS_NAMES:
         p.add_argument(
             f"--{axis}", type=str, default=None, help=f"Override axis {axis!r}"
         )
@@ -58,16 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
 def _axis_overrides_from_args(args: argparse.Namespace) -> dict:  # type: ignore[type-arg]
     return {
         name: value
-        for name in (
-            "growth",
-            "stickiness",
-            "engagement_depth",
-            "monetization",
-            "virality",
-            "scale",
-            "geography",
-            "anomalies",
-        )
+        for name in _AXIS_NAMES
         if (value := getattr(args, name)) is not None
     }
 

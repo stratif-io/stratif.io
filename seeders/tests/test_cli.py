@@ -26,6 +26,21 @@ def test_cli_describe_prints_resolved_config():
 
 
 def test_cli_unknown_preset_errors():
-    result = run_cli("--preset", "imaginary_thing", "--describe", "imaginary_thing")
+    result = run_cli("--describe", "imaginary_thing")
     assert result.returncode != 0
     assert "not found" in (result.stdout + result.stderr).lower()
+
+
+def test_cli_preset_and_describe_are_mutually_exclusive():
+    result = run_cli("--preset", "ecommerce_steady", "--describe", "ecommerce_steady")
+    assert result.returncode != 0
+    # argparse emits "not allowed with argument" for mutually-exclusive flags.
+    assert "not allowed" in (result.stdout + result.stderr).lower()
+
+
+def test_cli_describe_includes_seed_when_flag_passed():
+    """--seed 42 must propagate into the described config (guards Pydantic
+    model_copy from silently dropping/renaming the field)."""
+    result = run_cli("--describe", "ecommerce_steady", "--seed", "42")
+    assert result.returncode == 0
+    assert '"random_seed": 42' in result.stdout
