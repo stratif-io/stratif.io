@@ -36,6 +36,12 @@ class SimulationState:
     # Anomaly list, applied after the base plan is computed.
     anomalies: list = field(default_factory=list)
 
+    # Phase 2b fields — populated by their axes; consumed by Engine/domains in later phases.
+    allowed_countries: set[str] | None = None  # set by geography; None = all countries
+    session_mix_modifier: dict[str, float] | None = None  # set by engagement_depth
+    monetization_mode: str | None = None  # set by monetization (coerced by domain)
+    virality_weight: float = 0.0  # set by virality; 0.0 = no referrals
+
 
 @runtime_checkable
 class AxisModifier(Protocol):

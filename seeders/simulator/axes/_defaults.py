@@ -1,9 +1,4 @@
-"""Default AxisRegistry populated with Phase 2a built-ins (growth, stickiness).
-
-``default_axis_registry()`` returns the cached singleton; Phase 2b+ axes
-register themselves on this same registry by importing their module from
-this package.
-"""
+"""Default AxisRegistry populated with all shipped axes."""
 
 from __future__ import annotations
 
@@ -15,12 +10,30 @@ from seeders.simulator.registry import AxisRegistry
 @lru_cache(maxsize=1)
 def default_axis_registry() -> AxisRegistry:
     reg = AxisRegistry()
-    # Import-and-register pattern: each axis module exposes a module-level
-    # instance that is appended to the registry here. This keeps the registry
-    # module free of axis-implementation imports.
-    from seeders.simulator.axes.growth import GrowthAxis  # type: ignore
-    from seeders.simulator.axes.stickiness import StickinessAxis  # type: ignore
+    # Local imports keep axis-implementation deps out of the registry module.
+    from seeders.simulator.axes.anomalies import (  # type: ignore[import-not-found]
+        AnomaliesAxis,
+    )
+    from seeders.simulator.axes.engagement_depth import (  # type: ignore[import-not-found]
+        EngagementDepthAxis,
+    )
+    from seeders.simulator.axes.geography import (  # type: ignore[import-not-found]
+        GeographyAxis,
+    )
+    from seeders.simulator.axes.growth import GrowthAxis
+    from seeders.simulator.axes.monetization import (  # type: ignore[import-not-found]
+        MonetizationAxis,
+    )
+    from seeders.simulator.axes.stickiness import StickinessAxis
+    from seeders.simulator.axes.virality import (  # type: ignore[import-not-found]
+        ViralityAxis,
+    )
 
     reg.register(GrowthAxis())
     reg.register(StickinessAxis())
+    reg.register(EngagementDepthAxis())
+    reg.register(GeographyAxis())
+    reg.register(MonetizationAxis())
+    reg.register(ViralityAxis())
+    reg.register(AnomaliesAxis())
     return reg
