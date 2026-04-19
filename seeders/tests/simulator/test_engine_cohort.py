@@ -55,32 +55,54 @@ def test_engine_event_vocabulary_matches_ecommerce():
     assert names.keys() <= {"Home", "Search", "ProductView", "AddToCart", "Purchase"}
 
 
-def test_declining_growth_has_fewer_users_late_than_early():
-    batches = _drain(_cfg(growth="declining"))
+def _count_users_in_time_halves(batches) -> tuple[int, int]:
+    """Return (count_first_half, count_second_half) of first-seen timestamps.
+
+    Bucket each user's first-seen timestamp into the earlier or later half of
+    the window — this is a real distribution comparison (unlike slicing a
+    sorted list by position, which yields equal-length buckets by construction).
+    """
     events = [ev for b in batches for ev in b]
     first_seen: dict[str, datetime] = {}
     for ev in events:
         uid, _name, ts, *_ = ev
         if uid not in first_seen or ts < first_seen[uid]:
             first_seen[uid] = ts
-    ts_values = sorted(first_seen.values())
-    first_quartile = ts_values[: len(ts_values) // 4]
-    last_quartile = ts_values[-len(ts_values) // 4 :]
-    assert len(first_quartile) >= len(last_quartile)
+    if not first_seen:
+        return 0, 0
+    ts_values = list(first_seen.values())
+    midpoint = min(ts_values) + (max(ts_values) - min(ts_values)) / 2
+    first_half = sum(1 for t in ts_values if t <= midpoint)
+    second_half = sum(1 for t in ts_values if t > midpoint)
+    return first_half, second_half
+
+
+def _cfg_large(**axes) -> SimulationConfig:
+    """Larger scale for statistical growth-curve tests — gives enough signal
+    to beat the noise from first-seen lagging acquisition day."""
+    defaults = {"scale": "tiny", "growth": "steady", "stickiness": "normal"}
+    defaults.update(axes)
+    return SimulationConfig(
+        name="ecommerce_steady",
+        domain="ecommerce",
+        axes=defaults,
+        scale_config=ScaleOverride(total_users=2000, window_days=60),
+        random_seed=42,
+    )
+
+
+def test_declining_growth_has_fewer_users_late_than_early():
+    first, second = _count_users_in_time_halves(_drain(_cfg_large(growth="declining")))
+    assert first > second, (
+        f"declining should have earlier arrivals: first={first}, second={second}"
+    )
 
 
 def test_explosive_growth_has_more_users_late_than_early():
-    batches = _drain(_cfg(growth="explosive"))
-    events = [ev for b in batches for ev in b]
-    first_seen: dict[str, datetime] = {}
-    for ev in events:
-        uid, _name, ts, *_ = ev
-        if uid not in first_seen or ts < first_seen[uid]:
-            first_seen[uid] = ts
-    ts_values = sorted(first_seen.values())
-    first_quartile = ts_values[: len(ts_values) // 4]
-    last_quartile = ts_values[-len(ts_values) // 4 :]
-    assert len(last_quartile) >= len(first_quartile)
+    first, second = _count_users_in_time_halves(_drain(_cfg_large(growth="explosive")))
+    assert second > first, (
+        f"explosive should have later arrivals: first={first}, second={second}"
+    )
 
 
 def test_churn_heavy_users_have_shorter_active_windows_than_sticky():
