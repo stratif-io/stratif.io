@@ -20,9 +20,25 @@ def test_load_preset_from_path():
 
 
 def test_load_preset_by_name_searches_presets_dir():
-    # This test uses the real presets/ dir — it exists once Task 7 ships
+    # This test uses the real presets/ dir — it exists once Task 6 ships
     # the default preset. We assert the lookup mechanism works.
     cfg = load_preset("ecommerce_steady")
+    assert cfg.name == "ecommerce_steady"
+
+
+def test_list_presets_empty_when_dir_missing(monkeypatch, tmp_path):
+    """When PRESETS_DIR doesn't exist, list_presets returns []."""
+    from seeders.simulator import preset as preset_mod
+
+    monkeypatch.setattr(preset_mod, "PRESETS_DIR", tmp_path / "nonexistent")
+    assert preset_mod.list_presets() == []
+
+
+def test_resolve_config_explicit_preset_beats_env(monkeypatch):
+    """An explicit preset_name argument wins over SEED_PRESET env."""
+    # SEED_PRESET points at something that would fail; the explicit arg wins.
+    monkeypatch.setenv("SEED_PRESET", "does_not_exist")
+    cfg = resolve_config(preset_name="ecommerce_steady", axis_overrides={})
     assert cfg.name == "ecommerce_steady"
 
 
