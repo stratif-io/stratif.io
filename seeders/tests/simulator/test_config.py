@@ -59,3 +59,16 @@ def test_simulation_config_random_seed_is_optional():
         axes={"scale": "tiny"},
     )
     assert cfg.random_seed is None
+
+
+def test_simulation_config_partial_scale_override():
+    """Only ``total_users`` overridden — ``window_days`` falls back to base tier."""
+    cfg = SimulationConfig(
+        name="partial",
+        domain="ecommerce",
+        axes={"scale": "small"},
+        scale_config=ScaleOverride(total_users=2_500),
+    )
+    scale = cfg.resolved_scale()
+    assert scale.total_users == 2_500
+    assert scale.window_days == 90  # base 'small' tier window_days

@@ -67,11 +67,23 @@ class SimulationConfig(BaseModel):
     anomalies: list[dict[str, Any]] = Field(default_factory=list)
 
     def resolved_scale(self) -> ScaleConfig:
-        """Resolve the named ``scale`` axis value + any overrides."""
+        """Resolve the named ``scale`` axis value + any overrides.
+
+        ``None`` means "use the base tier's value"; any non-``None`` override
+        wins (including 0, though ``0`` has no meaningful use today).
+        """
         base = ScaleConfig.from_named(self.axes.get("scale", "small"))
         if self.scale_config is None:
             return base
         return ScaleConfig(
-            total_users=self.scale_config.total_users or base.total_users,
-            window_days=self.scale_config.window_days or base.window_days,
+            total_users=(
+                self.scale_config.total_users
+                if self.scale_config.total_users is not None
+                else base.total_users
+            ),
+            window_days=(
+                self.scale_config.window_days
+                if self.scale_config.window_days is not None
+                else base.window_days
+            ),
         )
