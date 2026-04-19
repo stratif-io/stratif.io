@@ -74,7 +74,7 @@ DuckDB · SQLite · PostgreSQL · ClickHouse · Snowflake · Databricks
 | No usage-based pricing          |     ✅     |          ❌          |   ❌    |           ❌            |
 | Sample data to learn with       |     ✅     |          ❌          |   ❌    |           ❌            |
 
-_\* Mitzu, Kubit, Optimizely Warehouse-native Analytics (ex-NetSpring), LaunchDarkly Product Analytics (ex-Houseware), Statsig — all closed-source, cloud-only, paid._
+_\* Mitzu, Kubit, Optimizely (ex-NetSpring), Statsig — all closed-source, cloud-only, paid._
 
 ---
 
