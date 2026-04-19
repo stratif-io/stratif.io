@@ -1,0 +1,5 @@
+name: fixture_minimal
+description: Minimal fixture for loader tests.
+domain: ecommerce
+axes:
+  scale: tiny
