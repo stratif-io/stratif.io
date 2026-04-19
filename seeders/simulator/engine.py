@@ -31,6 +31,9 @@ from seeders.simulator.cohort import (
 from seeders.simulator.config import SimulationConfig
 from seeders.simulator.domains._defaults import default_domain_registry
 from seeders.simulator.protocols import SimulationState
+from seeders.simulator.realism.calendars import calendar_multiplier
+from seeders.simulator.realism.time_curves import get_dow_weights, get_hour_weights
+from seeders.simulator.realism.timezones import build_session_start
 
 if TYPE_CHECKING:
     from seeders.seeder import BaseSeeder
@@ -133,9 +136,13 @@ class Engine:
 
         rng = random.Random(self.config.random_seed or 0)
 
+        dow_weights = get_dow_weights(self.config.domain)
         users_by_day: dict[int, list[dict]] = {}
         for d in range(state.window_days):
-            lam = arrival_curve(d)
+            local_date_d = (day_0 + timedelta(days=d)).date()
+            dow_mult = dow_weights[local_date_d.weekday()]
+            cal_mult = calendar_multiplier(local_date_d, "US", self.config.domain)
+            lam = arrival_curve(d) * dow_mult * cal_mult
             n = _poisson(rng, lam)
             day_users: list[dict] = []
             for _ in range(n):
@@ -182,10 +189,13 @@ class Engine:
                             user["_archetype"],
                             modifier=state.session_mix_modifier,
                         )
-                        session_start = day_0 + timedelta(
-                            days=active_d,
-                            hours=rng.randint(8, 22),
-                            minutes=rng.randint(0, 59),
+                        local_date = (day_0 + timedelta(days=active_d)).date()
+                        is_weekend = local_date.weekday() >= 5
+                        hour_weights = get_hour_weights(
+                            self.config.domain, is_weekend=is_weekend
+                        )
+                        session_start = build_session_start(
+                            rng, local_date, hour_weights, user["timezone"]
                         )
                         events = domain.build_session(
                             user, session_start, arch, state, rng

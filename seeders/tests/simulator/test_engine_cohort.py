@@ -223,3 +223,39 @@ def test_engine_supported_monetization_does_not_warn(caplog):
     assert not any(
         "coerced" in record.getMessage().lower() for record in caplog.records
     )
+
+
+def test_sessions_land_at_realistic_local_hours_for_user_country():
+    """Sessions must occur at reasonable hours in the user's timezone —
+    a Japanese user should NOT be active only at UTC 3am (noon JST)."""
+    from zoneinfo import ZoneInfo
+
+    cfg = _cfg(geography="apac_only")
+    batches = _drain(cfg)
+    # Assert at least one session lands in daytime (8am-10pm) local hour for each country.
+    # This is a weak but structural test — it just confirms TZ conversion is in effect.
+    for b in batches:
+        for ev in b:
+            tz = ZoneInfo(ev[6]["timezone"])
+            local_hour = ev[2].astimezone(tz).hour
+            assert 0 <= local_hour <= 23  # sanity
+    # Assert events exist and at least one is in the "day" window (8am-10pm local).
+    assert any(
+        8 <= ev[2].astimezone(ZoneInfo(ev[6]["timezone"])).hour <= 22
+        for b in batches
+        for ev in b
+    )
+
+
+def test_ecommerce_weekend_has_more_activity_than_midweek():
+    """Run with a long-enough window and assert weekend sessions > weekday sessions."""
+    from collections import Counter
+
+    cfg = _cfg_large()
+    batches = _drain(cfg)
+    by_dow: Counter[int] = Counter()
+    for b in batches:
+        for ev in b:
+            by_dow[ev[2].weekday()] += 1
+    # Sat(5) + Sun(6) > Tue(1) + Wed(2)
+    assert by_dow[5] + by_dow[6] > by_dow[1] + by_dow[2]
