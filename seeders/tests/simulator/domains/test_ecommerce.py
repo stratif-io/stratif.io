@@ -59,15 +59,17 @@ def test_ecommerce_pack_metadata():
 
 
 def test_bounce_archetype_emits_one_home_event():
-    random.seed(1)
-    events = EcommercePack().build_session(_user(), _now(), "bounce", _state())
+    rng = random.Random(1)
+    events = EcommercePack().build_session(_user(), _now(), "bounce", _state(), rng=rng)
     assert len(events) == 1
     assert events[0][1] == "Home"
 
 
 def test_browser_archetype_emits_home_search_productviews():
-    random.seed(1)
-    events = EcommercePack().build_session(_user(), _now(), "browser", _state())
+    rng = random.Random(1)
+    events = EcommercePack().build_session(
+        _user(), _now(), "browser", _state(), rng=rng
+    )
     names = [ev[1] for ev in events]
     assert names[0] == "Home"
     assert "Search" in names
@@ -78,23 +80,27 @@ def test_browser_archetype_emits_home_search_productviews():
 def test_researcher_archetype_never_purchases():
     pack = EcommercePack()
     for i in range(20):
-        random.seed(i)
-        events = pack.build_session(_user(), _now(), "researcher", _state())
+        rng = random.Random(i)
+        events = pack.build_session(_user(), _now(), "researcher", _state(), rng=rng)
         names = [ev[1] for ev in events]
         assert "Purchase" not in names
 
 
 def test_converter_archetype_always_purchases():
-    random.seed(1)
-    events = EcommercePack().build_session(_user(), _now(), "converter", _state())
+    rng = random.Random(1)
+    events = EcommercePack().build_session(
+        _user(), _now(), "converter", _state(), rng=rng
+    )
     names = [ev[1] for ev in events]
     assert names[0] == "Home"
     assert "Purchase" in names
 
 
 def test_event_tuples_have_7_fields():
-    random.seed(1)
-    events = EcommercePack().build_session(_user(), _now(), "converter", _state())
+    rng = random.Random(1)
+    events = EcommercePack().build_session(
+        _user(), _now(), "converter", _state(), rng=rng
+    )
     for ev in events:
         assert isinstance(ev, tuple)
         assert len(ev) == 7
@@ -108,12 +114,16 @@ def test_event_tuples_have_7_fields():
 
 def test_unknown_archetype_raises():
     with pytest.raises(ValueError, match="unknown archetype"):
-        EcommercePack().build_session(_user(), _now(), "typist", _state())
+        EcommercePack().build_session(
+            _user(), _now(), "typist", _state(), rng=random.Random(1)
+        )
 
 
 def test_converter_purchase_has_total_amount_and_currency():
-    random.seed(1)
-    events = EcommercePack().build_session(_user(), _now(), "converter", _state())
+    rng = random.Random(1)
+    events = EcommercePack().build_session(
+        _user(), _now(), "converter", _state(), rng=rng
+    )
     purchase = next(ev for ev in events if ev[1] == "Purchase")
     props = purchase[3]
     assert "total_amount" in props
@@ -124,8 +134,10 @@ def test_converter_purchase_has_total_amount_and_currency():
 
 def test_converter_addtocart_precedes_purchase():
     """Funnel ordering: AddToCart must appear before Purchase in the event stream."""
-    random.seed(1)
-    events = EcommercePack().build_session(_user(), _now(), "converter", _state())
+    rng = random.Random(1)
+    events = EcommercePack().build_session(
+        _user(), _now(), "converter", _state(), rng=rng
+    )
     names = [ev[1] for ev in events]
     assert names.index("AddToCart") < names.index("Purchase")
 
@@ -133,26 +145,28 @@ def test_converter_addtocart_precedes_purchase():
 def test_converter_sets_completed_purchase_on_user():
     """build_session mutates user['completed_purchase'] = True for converter sessions.
     The cohort engine (Phase 2a Task 6) depends on this mutation."""
-    random.seed(1)
+    rng = random.Random(1)
     user = _user()
     assert user["completed_purchase"] is False
-    EcommercePack().build_session(user, _now(), "converter", _state())
+    EcommercePack().build_session(user, _now(), "converter", _state(), rng=rng)
     assert user["completed_purchase"] is True
 
 
 def test_non_converter_archetypes_do_not_set_completed_purchase():
     for archetype in ("bounce", "browser", "researcher"):
-        random.seed(1)
+        rng = random.Random(1)
         user = _user()
-        EcommercePack().build_session(user, _now(), archetype, _state())
+        EcommercePack().build_session(user, _now(), archetype, _state(), rng=rng)
         assert user["completed_purchase"] is False, archetype
 
 
 def test_converter_purchase_always_includes_cart_product():
     """The AddToCart product must appear in the Purchase's item list."""
     for seed in range(10):
-        random.seed(seed)
-        events = EcommercePack().build_session(_user(), _now(), "converter", _state())
+        rng = random.Random(seed)
+        events = EcommercePack().build_session(
+            _user(), _now(), "converter", _state(), rng=rng
+        )
         cart_event = next(ev for ev in events if ev[1] == "AddToCart")
         purchase_event = next(ev for ev in events if ev[1] == "Purchase")
         cart_product_id = cart_event[3]["product_id"]

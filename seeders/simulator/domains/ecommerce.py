@@ -24,10 +24,10 @@ from seeders.simulator.protocols import DomainPack, SimulationState
 _ARCHETYPES = ("bounce", "browser", "researcher", "converter")
 
 
-def _pick_referrer() -> str:
+def _pick_referrer(rng: random.Random) -> str:
     items = [c[0] for c in REFERRERS]
     weights = [c[1] for c in REFERRERS]
-    return random.choices(items, weights=weights, k=1)[0]
+    return rng.choices(items, weights=weights, k=1)[0]
 
 
 def _product_cache() -> list[dict]:
@@ -50,17 +50,18 @@ def _product_cache() -> list[dict]:
 _PRODUCTS: list[dict] = _product_cache()
 
 
-def _pick_product() -> dict:
+def _pick_product(rng: random.Random) -> dict:
     weights = [p["weight"] for p in _PRODUCTS]
-    return random.choices(_PRODUCTS, weights=weights, k=1)[0]
+    return rng.choices(_PRODUCTS, weights=weights, k=1)[0]
 
 
-def _server(country: str) -> str:
+def _server(rng: random.Random, country: str) -> str:
     region = COUNTRY_TO_SERVER_REGION.get(country, "us")
-    return f"server.{region}.{random.choice(('1', '2'))}"
+    return f"server.{region}.{rng.choice(('1', '2'))}"
 
 
 def _event_tuple(
+    rng: random.Random,
     user: dict,
     event_name: str,
     timestamp: datetime,
@@ -83,7 +84,7 @@ def _event_tuple(
         event_name,
         timestamp,
         props,
-        _server(user["country"]),
+        _server(rng, user["country"]),
         traits,
         context,
     )
@@ -97,8 +98,8 @@ def _home_props(session_id: str, user: dict) -> dict:
     }
 
 
-def _search_props(session_id: str, user: dict) -> dict:
-    query = random.choice(SEARCH_QUERIES)
+def _search_props(rng: random.Random, session_id: str, user: dict) -> dict:
+    query = rng.choice(SEARCH_QUERIES)
     return {
         "session_id": session_id,
         "is_returning_user": user["is_returning"],
@@ -119,7 +120,9 @@ def _product_view_props(session_id: str, user: dict, product: dict) -> dict:
     }
 
 
-def _add_to_cart_props(session_id: str, user: dict, product: dict) -> dict:
+def _add_to_cart_props(
+    rng: random.Random, session_id: str, user: dict, product: dict
+) -> dict:
     return {
         "session_id": session_id,
         "is_returning_user": user["is_returning"],
@@ -128,11 +131,13 @@ def _add_to_cart_props(session_id: str, user: dict, product: dict) -> dict:
         "product_name": product["product_name"],
         "product_category": product["product_category"],
         "product_price": product["product_price"],
-        "quantity": random.randint(1, 3),
+        "quantity": rng.randint(1, 3),
     }
 
 
-def _purchase_props(session_id: str, user: dict, purchased: list[dict]) -> dict:
+def _purchase_props(
+    rng: random.Random, session_id: str, user: dict, purchased: list[dict]
+) -> dict:
     total = sum(p["product_price"] for p in purchased)
     return {
         "session_id": session_id,
@@ -142,7 +147,7 @@ def _purchase_props(session_id: str, user: dict, purchased: list[dict]) -> dict:
         "total_amount": round(total, 2),
         "currency": user["currency"],
         "item_count": len(purchased),
-        "payment_method": random.choice(
+        "payment_method": rng.choice(
             ["credit_card", "paypal", "apple_pay", "google_pay"]
         ),
     }
@@ -165,38 +170,42 @@ class EcommercePack:
         session_start: datetime,
         archetype: str,
         state: SimulationState,
+        rng: random.Random,
     ) -> list[tuple]:
         if archetype not in _ARCHETYPES:
             raise ValueError(f"unknown archetype {archetype!r}; valid: {_ARCHETYPES}")
 
         session_id = f"{user['id']}_{str(uuid.uuid4())[:6]}"
-        referrer = _pick_referrer()
+        referrer = _pick_referrer(rng)
         t = session_start
         events: list[tuple] = []
 
         # Every archetype starts on Home.
         events.append(
-            _event_tuple(user, "Home", t, _home_props(session_id, user), referrer)
+            _event_tuple(rng, user, "Home", t, _home_props(session_id, user), referrer)
         )
         if archetype == "bounce":
             return events
 
         # Search
-        t += timedelta(minutes=random.randint(1, 3))
+        t += timedelta(minutes=rng.randint(1, 3))
         events.append(
-            _event_tuple(user, "Search", t, _search_props(session_id, user), referrer)
+            _event_tuple(
+                rng, user, "Search", t, _search_props(rng, session_id, user), referrer
+            )
         )
 
         # ProductViews — count depends on archetype
         view_counts = {"browser": (1, 3), "researcher": (3, 6), "converter": (2, 5)}
         lo, hi = view_counts[archetype]
         visited: list[dict] = []
-        for _ in range(random.randint(lo, hi)):
-            t += timedelta(minutes=random.randint(1, 4))
-            product = _pick_product()
+        for _ in range(rng.randint(lo, hi)):
+            t += timedelta(minutes=rng.randint(1, 4))
+            product = _pick_product(rng)
             visited.append(product)
             events.append(
                 _event_tuple(
+                    rng,
                     user,
                     "ProductView",
                     t,
@@ -210,44 +219,47 @@ class EcommercePack:
 
         # Researcher sometimes adds to cart; converter always walks the funnel.
         if archetype == "researcher":
-            if random.random() < 0.5 and visited:
-                t += timedelta(minutes=random.randint(1, 5))
-                product = random.choice(visited)
+            if rng.random() < 0.5 and visited:
+                t += timedelta(minutes=rng.randint(1, 5))
+                product = rng.choice(visited)
                 events.append(
                     _event_tuple(
+                        rng,
                         user,
                         "AddToCart",
                         t,
-                        _add_to_cart_props(session_id, user, product),
+                        _add_to_cart_props(rng, session_id, user, product),
                         referrer,
                     )
                 )
             return events
 
         # Converter — AddToCart then Purchase
-        t += timedelta(minutes=random.randint(1, 4))
-        cart_product = random.choice(visited) if visited else _pick_product()
+        t += timedelta(minutes=rng.randint(1, 4))
+        cart_product = rng.choice(visited) if visited else _pick_product(rng)
         events.append(
             _event_tuple(
+                rng,
                 user,
                 "AddToCart",
                 t,
-                _add_to_cart_props(session_id, user, cart_product),
+                _add_to_cart_props(rng, session_id, user, cart_product),
                 referrer,
             )
         )
 
-        t += timedelta(minutes=random.randint(2, 8))
+        t += timedelta(minutes=rng.randint(2, 8))
         # Purchase always includes the cart item; optionally some other viewed products too.
         extras_pool = [p for p in visited if p is not cart_product]
-        extras_count = min(len(extras_pool), random.randint(0, 2))
-        purchased = [cart_product] + random.sample(extras_pool, extras_count)
+        extras_count = min(len(extras_pool), rng.randint(0, 2))
+        purchased = [cart_product] + rng.sample(extras_pool, extras_count)
         events.append(
             _event_tuple(
+                rng,
                 user,
                 "Purchase",
                 t,
-                _purchase_props(session_id, user, purchased),
+                _purchase_props(rng, session_id, user, purchased),
                 referrer,
             )
         )

@@ -17,7 +17,7 @@ class _FakeDomain:
     events = ("PageView", "Purchase")
     supported_monetization = ("one_off_purchase",)
 
-    def build_session(self, user, session_start, archetype, state):
+    def build_session(self, user, session_start, archetype, state, rng):
         return []
 
 

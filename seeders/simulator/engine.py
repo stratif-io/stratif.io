@@ -38,13 +38,17 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-def _weighted_choice(items_and_weights: list[tuple[str, float]]) -> str:
+def _weighted_choice(
+    rng: random.Random, items_and_weights: list[tuple[str, float]]
+) -> str:
     items = [iw[0] for iw in items_and_weights]
     weights = [iw[1] for iw in items_and_weights]
-    return random.choices(items, weights=weights, k=1)[0]
+    return rng.choices(items, weights=weights, k=1)[0]
 
 
-def _country_and_city(allowed: set[str] | None = None) -> tuple[str, str, dict]:
+def _country_and_city(
+    rng: random.Random, allowed: set[str] | None = None
+) -> tuple[str, str, dict]:
     items = [
         (code, data["weight"])
         for code, data in COUNTRIES.items()
@@ -52,9 +56,9 @@ def _country_and_city(allowed: set[str] | None = None) -> tuple[str, str, dict]:
     ]
     if not items:
         raise ValueError(f"no countries match geography filter {allowed!r}")
-    country_code = _weighted_choice(items)
+    country_code = _weighted_choice(rng, items)
     country_data = COUNTRIES[country_code]
-    city = random.choice(country_data["cities"])
+    city = rng.choice(country_data["cities"])
     return country_code, city, country_data
 
 
@@ -80,9 +84,6 @@ class Engine:
 
     def run(self) -> Iterator[list[tuple]]:
         """Yield batches of event tuples for the dialect seeder to insert."""
-        if self.config.random_seed is not None:
-            random.seed(self.config.random_seed)
-
         scale = self.config.resolved_scale()
         state = SimulationState(
             random_seed=self.config.random_seed or 0,
@@ -130,12 +131,6 @@ class Engine:
             lambda d: state.total_users / state.window_days
         )
 
-        # Two RNG states: `rng` (seeded local) drives arrivals, lifetime, and
-        # session sampling; the global `random` (seeded above) drives
-        # helpers in this module and in the domain pack (_pick_referrer,
-        # _pick_product, etc.). Determinism holds in isolation but any
-        # external code touching `random` between runs breaks it. Phase 3
-        # threads `rng` through every random call to close this gap.
         rng = random.Random(self.config.random_seed or 0)
 
         users_by_day: dict[int, list[dict]] = {}
@@ -144,7 +139,9 @@ class Engine:
             n = _poisson(rng, lam)
             day_users: list[dict] = []
             for _ in range(n):
-                country, city, country_data = _country_and_city(state.allowed_countries)
+                country, city, country_data = _country_and_city(
+                    rng, state.allowed_countries
+                )
                 user = {
                     "id": str(uuid.uuid4()),
                     "country": country,
@@ -190,7 +187,9 @@ class Engine:
                             hours=rng.randint(8, 22),
                             minutes=rng.randint(0, 59),
                         )
-                        events = domain.build_session(user, session_start, arch, state)
+                        events = domain.build_session(
+                            user, session_start, arch, state, rng
+                        )
                         batch.extend(events)
                         if len(batch) >= INSERT_BATCH_SIZE:
                             yield batch

@@ -7,6 +7,7 @@ decoupled from a specific base class — registration is the only contract.
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Protocol, runtime_checkable
@@ -75,6 +76,7 @@ class DomainPack(Protocol):
         session_start: datetime,
         archetype: str,
         state: SimulationState,
+        rng: random.Random,
     ) -> list[tuple]:
         """Produce a list of event tuples for one session."""
         ...

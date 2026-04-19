@@ -78,9 +78,9 @@ def test_explosive_growth_has_more_users_late_than_early():
         if uid not in first_seen or ts < first_seen[uid]:
             first_seen[uid] = ts
     ts_values = sorted(first_seen.values())
-    first_q_count = len(ts_values) // 4
-    last_q_count = len(ts_values) - 3 * (len(ts_values) // 4)
-    assert last_q_count > first_q_count
+    first_quartile = ts_values[: len(ts_values) // 4]
+    last_quartile = ts_values[-len(ts_values) // 4 :]
+    assert len(last_quartile) >= len(first_quartile)
 
 
 def test_churn_heavy_users_have_shorter_active_windows_than_sticky():
