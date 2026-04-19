@@ -49,8 +49,11 @@ def test_legacy_and_engine_produce_identical_event_distribution():
     legacy_users = legacy._generate_users()
     legacy_counts = _event_name_counts(legacy._generate_events_batched(legacy_users))
 
-    # Engine path (seeds random with 123 internally)
-    engine_seeder = _StubSeeder(config=SeedConfig(seed_users=30, seed_days=4))
+    # Engine path — construct the seeder with a BARE SeedConfig on purpose:
+    # the Engine must populate seed_users/seed_days from the SimulationConfig
+    # before the generation methods read them. If the Engine syncs too late,
+    # _generate_users() produces 0 users and this test fails loudly.
+    engine_seeder = _StubSeeder(config=SeedConfig())
     engine_counts = _event_name_counts(Engine(_cfg(123), engine_seeder).run())
 
     assert legacy_counts == engine_counts, (
