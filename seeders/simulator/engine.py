@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class Engine:
     def __init__(self, config: SimulationConfig, base_seeder: BaseSeeder) -> None:
         self.config = config
-        self.base = base_seeder
+        self.base_seeder = base_seeder
 
     def run(self) -> Iterator[list[tuple]]:
         """Yield batches of event tuples for the dialect seeder to insert.
@@ -36,14 +36,20 @@ class Engine:
 
         # Phase 1: mirror BaseSeeder's current two-step flow.
         #   products → users → batched events
-        self.base._generate_products()
-        users = self.base._generate_users()
+        self.base_seeder._generate_products()
+        users = self.base_seeder._generate_users()
 
         # Sync legacy config fields so _generate_events_batched keeps working
         # regardless of whether the caller went through the new CLI or the old
-        # env-var path.
+        # env-var path. This mutation is intentional and order-sensitive: it
+        # must happen after _generate_users (so user counts reflect the config
+        # the caller built users from) and before _generate_events_batched
+        # (which reads seed_days to size the time window). A base_seeder that
+        # is reused across Engine instances will pick up the later Engine's
+        # scale on its next run() — callers should not treat the base_seeder
+        # as immutable with respect to the Engine.
         scale = self.config.resolved_scale()
-        self.base.config.seed_users = scale.total_users
-        self.base.config.seed_days = scale.window_days
+        self.base_seeder.config.seed_users = scale.total_users
+        self.base_seeder.config.seed_days = scale.window_days
 
-        return self.base._generate_events_batched(users)
+        return self.base_seeder._generate_events_batched(users)

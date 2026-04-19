@@ -34,7 +34,6 @@ def _tiny_config() -> SimulationConfig:
 
 
 def test_engine_run_yields_batches_of_event_tuples():
-    random.seed(42)
     base = MagicMock()
     base.config.seed_users = 50
     base.config.seed_days = 5
