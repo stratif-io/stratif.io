@@ -115,13 +115,30 @@ uv run seed --preset ecommerce_steady --growth explosive --stickiness sticky
 
 Both produce ecommerce events with the same vocabulary but qualitatively different cohort and retention shapes.
 
+## Realism layer (Phase 3)
+
+8 of the 14 spec'd realism effects now apply automatically. The rest ship in a later phase.
+
+| Effect                            | Behavior                                                                                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hour-of-day curves (domain-aware) | Ecommerce sessions peak at lunch (11-13) and evenings (19-22); weekends shift later. Other domains fall back to uniform weights.                 |
+| Day-of-week curves                | Ecommerce: Sat + Sun heaviest; Wed slight bump; others moderate.                                                                                 |
+| DST-aware timezones               | Every session lands at a realistic local hour for the user's country via `zoneinfo`. A Japanese user is active at JST evening, not UTC midnight. |
+| Country holidays                  | Christmas, New Year, Golden Week (JP), Carnival (BR), Diwali (IN), etc. — sessions drop on holidays (0.3x, 0.1x for ecommerce on Dec 25).        |
+| US shopping calendar              | Dec 1-24 ramp (1.0x → 2.0x), Dec 25 crash (0.1x), Black Friday (3.0x), Cyber Monday (2.5x), Valentine's / Mother's Day / back-to-school bumps.   |
+| Zipf product popularity           | 20% of products receive ~80% of ProductView events — a realistic long-tail catalog.                                                              |
+| Pareto user activity              | 20% of users generate ~80% of events — heavy-tailed distribution of engagement.                                                                  |
+| Log-normal inter-event gaps       | Realistic micro-timing: rapid clicks (seconds) through checkout, slower dwell time on research/browse steps, lognormal tails.                    |
+
+**Deferred to a later phase:** device-aware behavior (R8), payday effects (R9), marketing micro-bursts (R10), referral clustering (R13 — needs Phase 4 domain support).
+
 ## Status
 
-**Phase 2b shipped.** All 9 axes registered. Two (`geography`, `engagement_depth`) produce visible behavior today; three (`monetization`, `virality`, `anomalies`) are plumbed but inert until Phase 4+ domain packs and Phase 5 anomaly applicator land.
+**Phase 3 shipped.** Realism layer (8 of 14 effects) applied to ecommerce data. Deterministic RNG threaded end-to-end — `--seed 42` produces byte-identical output across runs.
 
 Coming in later phases:
 
-- Phase 3 — realism layer (hour/dow/holiday calendars, Zipf popularity, log-normal timing, TZ-aware sessions)
-- Phase 4 — 9 more domain packs (retail, casual_game, saas, streaming, ...) — this is when monetization + virality start producing varied data per vertical
+- Phase 3b — deferred realism (device-aware, payday, marketing micro-bursts)
+- Phase 4 — 9 more domain packs (retail, casual_game, saas, streaming, ...) — this is when monetization + virality start producing varied data per vertical, and referral clustering gets its consumer
 - Phase 5 — anomaly types + per-preset anomaly blocks
 - Phase 6 — per-preset acceptance assertions + visual plots
