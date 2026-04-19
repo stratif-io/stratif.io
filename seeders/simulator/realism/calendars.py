@@ -12,29 +12,41 @@ from functools import lru_cache
 
 import holidays
 
+_COUNTRY_CODE_MAP: dict[str, str] = {
+    "US": "US",
+    "UK": "GB",
+    "DE": "DE",
+    "FR": "FR",
+    "JP": "JP",
+    "BR": "BR",
+    "IN": "IN",
+    "AU": "AU",
+}
+
+# Wide year range so queries outside 2024-2027 still land on real data; the
+# snapshot below is a plain dict so nothing mutates a cached object.
+_HOLIDAY_YEARS = range(2023, 2035)
+
 
 @lru_cache(maxsize=32)
-def _country_holidays(country: str) -> holidays.HolidayBase:
-    mapping = {
-        "US": "US",
-        "UK": "GB",
-        "DE": "DE",
-        "FR": "FR",
-        "JP": "JP",
-        "BR": "BR",
-        "IN": "IN",
-        "AU": "AU",
-    }
-    code = mapping.get(country, "US")
-    return holidays.country_holidays(code, years=[2024, 2025, 2026, 2027])
+def _country_holidays(country: str) -> dict[date, str]:
+    """Immutable (dict copy) snapshot of public holidays for a country.
+
+    Unmapped country codes return an empty dict — unknown countries get
+    no holiday adjustments (instead of silently falling through to US).
+    """
+    code = _COUNTRY_CODE_MAP.get(country)
+    if code is None:
+        return {}
+    return dict(holidays.country_holidays(code, years=_HOLIDAY_YEARS))
 
 
 def _public_holiday_multiplier(d: date, country: str, domain: str) -> float:
     cal = _country_holidays(country)
-    if d not in cal:
+    name = cal.get(d)
+    if name is None:
         return 1.0
-    name = (cal.get(d, "") or "").lower()
-    if "christmas" in name:
+    if "christmas" in name.lower():
         return 0.1 if domain == "ecommerce" else 0.3
     return 0.3
 
@@ -58,12 +70,6 @@ def _is_cyber_monday(d: date) -> bool:
         return False
     thanksgiving = _nth_weekday(d.year, 11, 3, nth=4)
     return d == thanksgiving + timedelta(days=4)
-
-
-def _is_mothers_day(d: date) -> bool:
-    if d.month != 5:
-        return False
-    return d == _nth_weekday(d.year, 5, 6, nth=2)  # Sunday=6
 
 
 def _shopping_season_multiplier(d: date, country: str, domain: str) -> float:
@@ -99,7 +105,7 @@ def _shopping_season_multiplier(d: date, country: str, domain: str) -> float:
     if d.month == 5:
         mom = _nth_weekday(d.year, 5, 6, nth=2)
         if 0 <= (mom - d).days <= 5:
-            return 1.2
+            return 1.3
 
     # Back-to-school (Aug 20 → Sep 5)
     if d.month == 8 and d.day >= 20:

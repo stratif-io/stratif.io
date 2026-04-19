@@ -46,3 +46,23 @@ def test_back_to_school_ramp():
     # Late August should be elevated.
     m = calendar_multiplier(date(2025, 8, 30), "US", domain="ecommerce")
     assert m > 1.1
+
+
+def test_non_ecommerce_domain_gets_no_shopping_season():
+    # Black Friday in a non-ecommerce domain: no US shopping spike.
+    m = calendar_multiplier(date(2025, 11, 28), "US", domain="saas")
+    assert m < 1.5
+
+
+def test_crash_day_not_double_penalized():
+    """Dec 25 US/ecommerce: holiday would give 0.1, shopping also gives 0.1.
+    Crash-precedence rule must return the single 0.1 — not 0.01."""
+    m = calendar_multiplier(date(2025, 12, 25), "US", domain="ecommerce")
+    assert 0.05 < m < 0.2
+
+
+def test_unmapped_country_falls_back_to_no_holidays():
+    """Country code not in our mapping → no holiday adjustments applied.
+    (Canada's July 1 is Canada Day, but we don't include CA in Phase 3.)"""
+    m = calendar_multiplier(date(2025, 7, 1), "CA", domain="ecommerce")
+    assert abs(m - 1.0) < 0.05
