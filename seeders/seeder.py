@@ -13,7 +13,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from seeders.simulator.config import SimulationConfig
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -1324,3 +1327,14 @@ class BaseSeeder(ABC):
         region = COUNTRY_TO_SERVER_REGION.get(country_code, "us")
         number = random.choice(("1", "2"))
         return f"server.{region}.{number}"
+
+    def events_via_engine(self, config: SimulationConfig) -> Iterator[list[tuple]]:
+        """Phase 1 hook: return event batches via the new Engine.
+
+        Dialect seeders currently call ``_generate_events_batched`` directly.
+        When Phase 2 lands the cohort engine, dialect seeds will be migrated to
+        call this instead. No dialect seeder is changed in Phase 1.
+        """
+        from seeders.simulator.engine import Engine
+
+        return Engine(config, self).run()

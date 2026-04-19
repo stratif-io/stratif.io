@@ -80,6 +80,41 @@ def test_engine_run_yields_batches_of_event_tuples():
     assert batches[1][0][1] == "Purchase"
 
 
+def test_base_seeder_events_via_engine_returns_iterator_of_batches():
+    """The new BaseSeeder.events_via_engine(config) hook returns an iterator
+    that produces event batches — it's the path dialect seeders will flip
+    to in Phase 2."""
+    from seeders.seeder import BaseSeeder, SeedConfig
+    from seeders.simulator.config import ScaleOverride, SimulationConfig
+
+    class _StubSeeder(BaseSeeder):
+        def seed(self):
+            return {}
+
+        def _create_events_table(self):
+            pass
+
+        def _insert_events(self, events):
+            pass
+
+    cfg = SimulationConfig(
+        name="ecommerce_steady",
+        domain="ecommerce",
+        axes={"scale": "tiny"},
+        scale_config=ScaleOverride(total_users=15, window_days=2),
+        random_seed=11,
+    )
+
+    seeder = _StubSeeder(config=SeedConfig(seed_users=15, seed_days=2))
+    batches = list(seeder.events_via_engine(cfg))
+
+    # At least one event produced; each batch is a list of tuples.
+    total = sum(len(b) for b in batches)
+    assert total > 0
+    assert all(isinstance(b, list) for b in batches)
+    assert all(isinstance(ev, tuple) and len(ev) == 7 for b in batches for ev in b)
+
+
 def test_engine_applies_random_seed():
     base = MagicMock()
     base._generate_products = lambda: None
