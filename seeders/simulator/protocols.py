@@ -8,7 +8,7 @@ decoupled from a specific base class — registration is the only contract.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Protocol, runtime_checkable
 
 
@@ -24,7 +24,7 @@ class SimulationState:
     random_seed: int
     total_users: int
     window_days: int
-    now: datetime = field(default_factory=datetime.utcnow)
+    now: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     # Callbacks / curves populated by axes — unused in Phase 1, defined here
     # so later phases can drop them in without touching this module.
