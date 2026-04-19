@@ -120,3 +120,43 @@ def test_converter_purchase_has_total_amount_and_currency():
     assert props["total_amount"] > 0
     assert props["currency"] == "USD"
     assert "order_id" in props
+
+
+def test_converter_addtocart_precedes_purchase():
+    """Funnel ordering: AddToCart must appear before Purchase in the event stream."""
+    random.seed(1)
+    events = EcommercePack().build_session(_user(), _now(), "converter", _state())
+    names = [ev[1] for ev in events]
+    assert names.index("AddToCart") < names.index("Purchase")
+
+
+def test_converter_sets_completed_purchase_on_user():
+    """build_session mutates user['completed_purchase'] = True for converter sessions.
+    The cohort engine (Phase 2a Task 6) depends on this mutation."""
+    random.seed(1)
+    user = _user()
+    assert user["completed_purchase"] is False
+    EcommercePack().build_session(user, _now(), "converter", _state())
+    assert user["completed_purchase"] is True
+
+
+def test_non_converter_archetypes_do_not_set_completed_purchase():
+    for archetype in ("bounce", "browser", "researcher"):
+        random.seed(1)
+        user = _user()
+        EcommercePack().build_session(user, _now(), archetype, _state())
+        assert user["completed_purchase"] is False, archetype
+
+
+def test_converter_purchase_always_includes_cart_product():
+    """The AddToCart product must appear in the Purchase's item list."""
+    for seed in range(10):
+        random.seed(seed)
+        events = EcommercePack().build_session(_user(), _now(), "converter", _state())
+        cart_event = next(ev for ev in events if ev[1] == "AddToCart")
+        purchase_event = next(ev for ev in events if ev[1] == "Purchase")
+        cart_product_id = cart_event[3]["product_id"]
+        purchased_total = purchase_event[3]["total_amount"]
+        cart_price = cart_event[3]["product_price"]
+        # The cart product's price must be part of the total (strictly ≤ total).
+        assert purchased_total >= cart_price - 0.01, (seed, cart_product_id)

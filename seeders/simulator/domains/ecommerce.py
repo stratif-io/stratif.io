@@ -238,11 +238,10 @@ class EcommercePack:
         )
 
         t += timedelta(minutes=random.randint(2, 8))
-        purchased = (
-            random.sample(visited, min(len(visited), random.randint(1, 3)))
-            if visited
-            else [cart_product]
-        )
+        # Purchase always includes the cart item; optionally some other viewed products too.
+        extras_pool = [p for p in visited if p is not cart_product]
+        extras_count = min(len(extras_pool), random.randint(0, 2))
+        purchased = [cart_product] + random.sample(extras_pool, extras_count)
         events.append(
             _event_tuple(
                 user,
@@ -252,6 +251,9 @@ class EcommercePack:
                 referrer,
             )
         )
+        # Intentional side effect: mark the user as converted so the cohort
+        # engine can reference completed_purchase on the same dict without
+        # plumbing a separate return channel.
         user["completed_purchase"] = True
         return events
 
