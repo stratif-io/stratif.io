@@ -128,3 +128,74 @@ def test_engine_ignores_unknown_axes():
     they must be silently ignored, not raise."""
     cfg = _cfg(engagement_depth="moderate", monetization="one_off_purchase")
     _drain(cfg)  # must not raise
+
+
+def test_engine_respects_us_only_geography():
+    cfg = _cfg(geography="us_only")
+    batches = _drain(cfg)
+    countries = {ev[6]["country"] for b in batches for ev in b}
+    assert countries == {"US"}
+
+
+def test_engine_respects_eu_only_geography():
+    cfg = _cfg(geography="eu_only")
+    batches = _drain(cfg)
+    countries = {ev[6]["country"] for b in batches for ev in b}
+    assert countries <= {"UK", "DE", "FR"}
+    assert countries, "no events produced"
+
+
+def test_deep_engagement_has_more_purchases_than_shallow():
+    deep_batches = _drain(_cfg(engagement_depth="deep"))
+    shallow_batches = _drain(_cfg(engagement_depth="shallow"))
+
+    def purchase_count(batches):
+        return sum(1 for b in batches for ev in b if ev[1] == "Purchase")
+
+    assert purchase_count(deep_batches) > purchase_count(shallow_batches)
+
+
+def test_engine_plumbs_anomalies_list_to_state():
+    """Anomalies from the preset are available on state; Phase 2b doesn't
+    process them but the plumbing must be in place for Phase 5."""
+    from seeders.simulator.config import ScaleOverride
+
+    cfg = SimulationConfig(
+        name="ecommerce_steady",
+        domain="ecommerce",
+        axes={"scale": "tiny", "anomalies": "explicit"},
+        anomalies=[
+            {"type": "marketing_campaign", "start": "-10d", "effect": {"arrivals": 2.0}}
+        ],
+        scale_config=ScaleOverride(total_users=10, window_days=5),
+        random_seed=1,
+    )
+    seeder = _StubSeeder(config=SeedConfig())
+    # Must not raise even with explicit anomalies declared.
+    list(Engine(cfg, seeder).run())
+
+
+def test_engine_monetization_coercion_for_unsupported_domain_value(caplog):
+    """Ecommerce only supports one_off_purchase; iap_whales must coerce and log."""
+    import logging
+
+    cfg = _cfg(monetization="iap_whales")
+    with caplog.at_level(logging.INFO):
+        _drain(cfg)
+
+    assert any(
+        "coerced" in record.getMessage().lower() and "iap_whales" in record.getMessage()
+        for record in caplog.records
+    ), [r.getMessage() for r in caplog.records]
+
+
+def test_engine_supported_monetization_does_not_warn(caplog):
+    import logging
+
+    cfg = _cfg(monetization="one_off_purchase")
+    with caplog.at_level(logging.INFO):
+        _drain(cfg)
+
+    assert not any(
+        "coerced" in record.getMessage().lower() for record in caplog.records
+    )

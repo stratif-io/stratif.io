@@ -13,6 +13,7 @@ Flow per ``run()``:
 
 from __future__ import annotations
 
+import logging
 import math
 import random
 import uuid
@@ -34,6 +35,8 @@ from seeders.simulator.protocols import SimulationState
 if TYPE_CHECKING:
     from seeders.seeder import BaseSeeder
 
+_logger = logging.getLogger(__name__)
+
 
 def _weighted_choice(items_and_weights: list[tuple[str, float]]) -> str:
     items = [iw[0] for iw in items_and_weights]
@@ -41,10 +44,15 @@ def _weighted_choice(items_and_weights: list[tuple[str, float]]) -> str:
     return random.choices(items, weights=weights, k=1)[0]
 
 
-def _country_and_city() -> tuple[str, str, dict]:
-    country_code = _weighted_choice(
-        [(code, data["weight"]) for code, data in COUNTRIES.items()]
-    )
+def _country_and_city(allowed: set[str] | None = None) -> tuple[str, str, dict]:
+    items = [
+        (code, data["weight"])
+        for code, data in COUNTRIES.items()
+        if allowed is None or code in allowed
+    ]
+    if not items:
+        raise ValueError(f"no countries match geography filter {allowed!r}")
+    country_code = _weighted_choice(items)
     country_data = COUNTRIES[country_code]
     city = random.choice(country_data["cities"])
     return country_code, city, country_data
@@ -83,6 +91,10 @@ class Engine:
             now=datetime.now(UTC),
         )
 
+        # Plumb anomalies from config to state so the anomalies axis (inside
+        # the loop below) can clear or preserve them as directed.
+        state.anomalies = list(self.config.anomalies)
+
         # Apply every axis declared in the preset. Unknown axes are silently
         # ignored — Phase 2a only ships `growth` and `stickiness`; later
         # phases add the rest. This lets preset YAMLs declare future axes
@@ -97,6 +109,20 @@ class Engine:
 
         # Domain resolution. Unknown domain fails fast.
         domain = default_domain_registry().get(self.config.domain)
+
+        # Coerce monetization if unsupported by the domain.
+        if (
+            state.monetization_mode is not None
+            and state.monetization_mode not in domain.supported_monetization
+        ):
+            coerced = domain.supported_monetization[0]
+            _logger.info(
+                "monetization=%r not supported by domain %r; coerced to %r",
+                state.monetization_mode,
+                domain.name,
+                coerced,
+            )
+            state.monetization_mode = coerced
 
         # Sample per-day arrivals (Poisson around the arrival curve).
         day_0 = state.now - timedelta(days=state.window_days)
@@ -118,7 +144,7 @@ class Engine:
             n = _poisson(rng, lam)
             day_users: list[dict] = []
             for _ in range(n):
-                country, city, country_data = _country_and_city()
+                country, city, country_data = _country_and_city(state.allowed_countries)
                 user = {
                     "id": str(uuid.uuid4()),
                     "country": country,
@@ -154,7 +180,11 @@ class Engine:
                         rng, user["_archetype"], active_d - d
                     )
                     for _ in range(session_count):
-                        arch = sample_session_archetype(rng, user["_archetype"])
+                        arch = sample_session_archetype(
+                            rng,
+                            user["_archetype"],
+                            modifier=state.session_mix_modifier,
+                        )
                         session_start = day_0 + timedelta(
                             days=active_d,
                             hours=rng.randint(8, 22),
