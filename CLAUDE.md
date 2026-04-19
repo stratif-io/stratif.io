@@ -10,6 +10,7 @@ stratif.io is a full-stack product analytics dashboard with a React/TypeScript f
 # Development
 bun run dev              # Frontend dev server (port 5173)
 uv run serve             # Backend server (port 8000)
+uv run seed              # Seed configured connections from a preset (see seeders/README.md)
 
 # Testing
 bun run test:run         # Unit tests once (Vitest)
@@ -33,13 +34,17 @@ bun run build            # TypeScript type-check + production build
 - **Server state**: TanStack Query v5 — all API data goes through custom hooks (`apps/web/frontend/features/*/hooks/useXxxData.ts`). Never use raw `fetch` in components:
   ```typescript
   // CORRECT
-  const { data, isLoading } = useTrendData({ dateRange, selectedEvent, granularity })
+  const { data, isLoading } = useTrendData({
+    dateRange,
+    selectedEvent,
+    granularity,
+  });
   // WRONG — never do this
   useEffect(() => {
-    fetch('/api/trend')
+    fetch("/api/trend")
       .then((r) => r.json())
-      .then(setData)
-  }, [])
+      .then(setData);
+  }, []);
   ```
 - **Client state**: Zustand store (`apps/web/frontend/stores/app-store.ts`) — theme, dateRange, sidebarOpen, selectedEvent, selectedDevice. Persisted to localStorage.
 
