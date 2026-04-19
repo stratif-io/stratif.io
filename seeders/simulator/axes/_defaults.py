@@ -14,10 +14,10 @@ def default_axis_registry() -> AxisRegistry:
     from seeders.simulator.axes.anomalies import (  # type: ignore[import-not-found]
         AnomaliesAxis,
     )
-    from seeders.simulator.axes.engagement_depth import (  # type: ignore[import-not-found]
+    from seeders.simulator.axes.engagement_depth import (
         EngagementDepthAxis,
     )
-    from seeders.simulator.axes.geography import (  # type: ignore[import-not-found]
+    from seeders.simulator.axes.geography import (
         GeographyAxis,
     )
     from seeders.simulator.axes.growth import GrowthAxis

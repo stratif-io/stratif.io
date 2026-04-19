@@ -10,7 +10,7 @@ from seeders.simulator.registry import DomainRegistry
 @lru_cache(maxsize=1)
 def default_domain_registry() -> DomainRegistry:
     reg = DomainRegistry()
-    from seeders.simulator.domains.ecommerce import EcommercePack  # type: ignore
+    from seeders.simulator.domains.ecommerce import EcommercePack
 
     reg.register(EcommercePack())
     return reg

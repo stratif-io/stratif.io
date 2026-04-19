@@ -64,7 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def _axis_overrides_from_args(args: argparse.Namespace) -> dict:  # type: ignore[type-arg]
+def _axis_overrides_from_args(args: argparse.Namespace) -> dict:
     return {
         name: value
         for name in _AXIS_NAMES

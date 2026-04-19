@@ -65,8 +65,16 @@ def sample_daily_session_count(
     return _poisson(rng, base * decay)
 
 
-def sample_session_archetype(rng: random.Random, user_archetype: str) -> str:
+def sample_session_archetype(
+    rng: random.Random,
+    user_archetype: str,
+    modifier: dict[str, float] | None = None,
+) -> str:
     mix = _SESSION_MIX.get(user_archetype, _SESSION_MIX["casual"])
     names = list(mix)
     weights = [mix[n] for n in names]
+    if modifier is not None:
+        weights = [
+            w * modifier.get(n, 1.0) for w, n in zip(weights, names, strict=True)
+        ]
     return rng.choices(names, weights=weights, k=1)[0]
