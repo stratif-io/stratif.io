@@ -104,6 +104,12 @@ class Engine:
             lambda d: state.total_users / state.window_days
         )
 
+        # Two RNG states: `rng` (seeded local) drives arrivals, lifetime, and
+        # session sampling; the global `random` (seeded above) drives
+        # helpers in this module and in the domain pack (_pick_referrer,
+        # _pick_product, etc.). Determinism holds in isolation but any
+        # external code touching `random` between runs breaks it. Phase 3
+        # threads `rng` through every random call to close this gap.
         rng = random.Random(self.config.random_seed or 0)
 
         users_by_day: dict[int, list[dict]] = {}
