@@ -20,6 +20,8 @@ from seeders.seeder import (
     URL_PATHS,
 )
 from seeders.simulator.protocols import DomainPack, SimulationState
+from seeders.simulator.realism.inter_event import sample_inter_event_seconds
+from seeders.simulator.realism.power_law import zipf_sample
 
 _ARCHETYPES = ("bounce", "browser", "researcher", "converter")
 
@@ -48,11 +50,12 @@ def _product_cache() -> list[dict]:
 
 # Built once per process — domain packs are stateless at the session boundary.
 _PRODUCTS: list[dict] = _product_cache()
+_PRODUCTS.sort(key=lambda p: -p["weight"])
 
 
 def _pick_product(rng: random.Random) -> dict:
-    weights = [p["weight"] for p in _PRODUCTS]
-    return rng.choices(_PRODUCTS, weights=weights, k=1)[0]
+    idx = zipf_sample(rng, len(_PRODUCTS))
+    return _PRODUCTS[idx]
 
 
 def _server(rng: random.Random, country: str) -> str:
@@ -188,7 +191,7 @@ class EcommercePack:
             return events
 
         # Search
-        t += timedelta(minutes=rng.randint(1, 3))
+        t += timedelta(seconds=sample_inter_event_seconds(rng, "normal"))
         events.append(
             _event_tuple(
                 rng, user, "Search", t, _search_props(rng, session_id, user), referrer
@@ -199,8 +202,9 @@ class EcommercePack:
         view_counts = {"browser": (1, 3), "researcher": (3, 6), "converter": (2, 5)}
         lo, hi = view_counts[archetype]
         visited: list[dict] = []
-        for _ in range(rng.randint(lo, hi)):
-            t += timedelta(minutes=rng.randint(1, 4))
+        for i, _ in enumerate(range(rng.randint(lo, hi))):
+            kind = "normal" if i == 0 else "slow"
+            t += timedelta(seconds=sample_inter_event_seconds(rng, kind))
             product = _pick_product(rng)
             visited.append(product)
             events.append(
@@ -220,7 +224,7 @@ class EcommercePack:
         # Researcher sometimes adds to cart; converter always walks the funnel.
         if archetype == "researcher":
             if rng.random() < 0.5 and visited:
-                t += timedelta(minutes=rng.randint(1, 5))
+                t += timedelta(seconds=sample_inter_event_seconds(rng, "normal"))
                 product = rng.choice(visited)
                 events.append(
                     _event_tuple(
@@ -235,7 +239,7 @@ class EcommercePack:
             return events
 
         # Converter — AddToCart then Purchase
-        t += timedelta(minutes=rng.randint(1, 4))
+        t += timedelta(seconds=sample_inter_event_seconds(rng, "normal"))
         cart_product = rng.choice(visited) if visited else _pick_product(rng)
         events.append(
             _event_tuple(
@@ -248,7 +252,7 @@ class EcommercePack:
             )
         )
 
-        t += timedelta(minutes=rng.randint(2, 8))
+        t += timedelta(seconds=sample_inter_event_seconds(rng, "rapid"))
         # Purchase always includes the cart item; optionally some other viewed products too.
         extras_pool = [p for p in visited if p is not cart_product]
         extras_count = min(len(extras_pool), rng.randint(0, 2))

@@ -248,14 +248,33 @@ def test_sessions_land_at_realistic_local_hours_for_user_country():
 
 
 def test_ecommerce_weekend_has_more_activity_than_midweek():
-    """Run with a long-enough window and assert weekend sessions > weekday sessions."""
-    from collections import Counter
+    """Run with a long-enough window and assert weekend sessions > weekday sessions.
 
-    cfg = _cfg_large()
+    We count sessions (first event per session_id) rather than raw events, so
+    that log-normal inter-event gaps spreading a session across midnight don't
+    inflate weekday counts when a Saturday session's later events land on Sunday
+    or a Sunday session's later events land on Monday.
+
+    Uses 5000 users for a robust statistical signal against the DOW weight
+    difference (Sat/Sun=1.4 vs Tue/Wed≈1.0).
+    """
+    cfg = SimulationConfig(
+        name="ecommerce_weekend_test",
+        domain="ecommerce",
+        axes={"scale": "tiny", "growth": "steady", "stickiness": "normal"},
+        scale_config=ScaleOverride(total_users=5000, window_days=60),
+        random_seed=42,
+    )
     batches = _drain(cfg)
+    # Count by session start (first event per session_id)
+    seen: set[str] = set()
     by_dow: Counter[int] = Counter()
     for b in batches:
         for ev in b:
-            by_dow[ev[2].weekday()] += 1
+            _uid, _name, ts, props, *_ = ev
+            sid = props.get("session_id", "")
+            if sid and sid not in seen:
+                seen.add(sid)
+                by_dow[ts.weekday()] += 1
     # Sat(5) + Sun(6) > Tue(1) + Wed(2)
     assert by_dow[5] + by_dow[6] > by_dow[1] + by_dow[2]
