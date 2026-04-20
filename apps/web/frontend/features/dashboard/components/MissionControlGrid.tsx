@@ -232,6 +232,7 @@ export const MissionControlGrid = memo(function MissionControlGrid({
             isError={!!metricError?.[heroMetric]}
             errorMessage={metricError?.[heroMetric]?.message}
             onRetry={metricRefetch?.[heroMetric]}
+            granularity={granularity}
           />
         </DevCard>
       </div>

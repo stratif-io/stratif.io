@@ -3,10 +3,11 @@ import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { CardLoadingBar } from '@/components/ui/card-loading-bar'
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { format, parseISO } from 'date-fns'
 import { useReducedMotion } from '@/hooks'
 import { formatMetricValue } from '@/lib/format-metric'
 import { useCountUp, useFormattedCountUp } from '@/hooks/useCountUp'
+import type { Granularity } from '@/types'
+import { formatAxisDate, formatTooltipDate } from './hero-metric-card-formatters'
 
 export interface HeroMetricCardProps {
   label: string
@@ -26,14 +27,7 @@ export interface HeroMetricCardProps {
   onRetry?: () => void
   changeLabel?: string
   prevPeriodLabel?: string
-}
-
-function formatAxisDate(dateStr: string): string {
-  try {
-    return format(parseISO(dateStr), 'MMM d')
-  } catch {
-    return dateStr
-  }
+  granularity: Granularity
 }
 
 interface ChartTooltipProps {
@@ -42,9 +36,17 @@ interface ChartTooltipProps {
   label?: string
   color: string
   metricKey: string
+  granularity: Granularity
 }
 
-function ChartTooltipContent({ active, payload, label, color, metricKey }: ChartTooltipProps) {
+function ChartTooltipContent({
+  active,
+  payload,
+  label,
+  color,
+  metricKey,
+  granularity,
+}: ChartTooltipProps) {
   if (!active || !payload?.length) return null
   const cur = payload.find((p) => p.dataKey === 'value')
   const prev = payload.find((p) => p.dataKey === 'previous')
@@ -54,7 +56,9 @@ function ChartTooltipContent({ active, payload, label, color, metricKey }: Chart
       {cur && (
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-muted-foreground">{formatAxisDate(label ?? '')}:</span>
+          <span className="text-muted-foreground">
+            {formatTooltipDate(label ?? '', granularity)}:
+          </span>
           <span className="font-semibold">{formatMetricValue(metricKey, cur.value)}</span>
         </div>
       )}
@@ -62,7 +66,7 @@ function ChartTooltipContent({ active, payload, label, color, metricKey }: Chart
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
           <span className="text-muted-foreground">
-            {entry?.previousDate ? formatAxisDate(entry.previousDate) : 'Prev'}:
+            {entry?.previousDate ? formatTooltipDate(entry.previousDate, granularity) : 'Prev'}:
           </span>
           <span className="font-semibold text-muted-foreground">
             {formatMetricValue(metricKey, prev.value)}
@@ -91,11 +95,12 @@ export const HeroMetricCard = memo(function HeroMetricCard({
   onRetry,
   changeLabel,
   prevPeriodLabel,
+  granularity,
 }: HeroMetricCardProps) {
   const reducedMotion = useReducedMotion()
   const tooltipContent = useMemo(
-    () => <ChartTooltipContent color={color} metricKey={metricKey} />,
-    [color, metricKey]
+    () => <ChartTooltipContent color={color} metricKey={metricKey} granularity={granularity} />,
+    [color, metricKey, granularity]
   )
 
   const animatedTarget = loading ? 0 : (rawValue ?? 0)
@@ -178,7 +183,7 @@ export const HeroMetricCard = memo(function HeroMetricCard({
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              tickFormatter={formatAxisDate}
+              tickFormatter={(d) => formatAxisDate(d, granularity)}
               padding={{ left: 24, right: 24 }}
               interval={0}
               ticks={chartData.filter((d) => tickDates.has(d.date)).map((d) => d.date)}
