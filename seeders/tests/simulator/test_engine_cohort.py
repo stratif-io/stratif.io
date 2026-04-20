@@ -247,6 +247,38 @@ def test_sessions_land_at_realistic_local_hours_for_user_country():
     )
 
 
+def test_engine_applies_marketing_campaign_anomaly_to_arrivals():
+    """A 3x arrivals multiplier during an active marketing campaign should
+    visibly increase user arrivals during the campaign window."""
+    # Baseline with no anomalies.
+    baseline = _drain(_cfg())
+    baseline_count = sum(1 for b in baseline for ev in b)
+
+    # Same config but with a 3x-arrivals campaign over the full window.
+    cfg = SimulationConfig(
+        name="ecommerce_steady",
+        domain="ecommerce",
+        axes={"scale": "tiny", "anomalies": "explicit"},
+        anomalies=[
+            {
+                "type": "marketing_campaign",
+                "start": "-30d",
+                "duration": "30d",
+                "effect": {"arrivals": 3.0},
+            },
+        ],
+        scale_config=ScaleOverride(total_users=300, window_days=30),
+        random_seed=42,
+    )
+    seeder = _StubSeeder(config=SeedConfig())
+    campaign = list(Engine(cfg, seeder).run())
+    campaign_count = sum(1 for b in campaign for ev in b)
+
+    assert campaign_count >= 2 * baseline_count, (
+        f"campaign={campaign_count}, baseline={baseline_count}"
+    )
+
+
 def test_ecommerce_weekend_has_more_activity_than_midweek():
     """Run with a long-enough window and assert weekend sessions > weekday sessions.
 

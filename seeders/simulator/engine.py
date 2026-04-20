@@ -22,6 +22,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from seeders.seeder import COUNTRIES, INSERT_BATCH_SIZE
+from seeders.simulator.anomalies import arrivals_multiplier, parse_anomalies
 from seeders.simulator.axes._defaults import default_axis_registry
 from seeders.simulator.cohort import (
     assign_user_archetype,
@@ -128,6 +129,8 @@ class Engine:
             )
             state.monetization_mode = coerced
 
+        parsed_anomalies = parse_anomalies(state.anomalies, state.now)
+
         # Sample per-day arrivals (Poisson around the arrival curve).
         day_0 = state.now - timedelta(days=state.window_days)
         arrival_curve = state.arrival_curve or (
@@ -142,7 +145,8 @@ class Engine:
             local_date_d = (day_0 + timedelta(days=d)).date()
             dow_mult = dow_weights[local_date_d.weekday()]
             cal_mult = calendar_multiplier(local_date_d, "US", self.config.domain)
-            lam = arrival_curve(d) * dow_mult * cal_mult
+            anomaly_mult = arrivals_multiplier(parsed_anomalies, local_date_d)
+            lam = arrival_curve(d) * dow_mult * cal_mult * anomaly_mult
             n = _poisson(rng, lam)
             day_users: list[dict] = []
             for _ in range(n):
