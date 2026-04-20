@@ -96,13 +96,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(cfg.model_dump(mode="json"), indent=2, default=str))
         return 0
 
-    # Full run: delegate to the existing per-connection bootstrap so all
-    # configured connections get seeded. ``main`` in bootstrap_all_connections
-    # reads env vars (SEED_USERS / SEED_DAYS) — we export them from the
-    # resolved config so legacy and new invocations agree.
+    # Full run: delegate to the bootstrap function directly (bypassing its own
+    # argparse entry point, which would reject our CLI flags). We still export
+    # env vars for any downstream consumer that reads them.
     import os
 
-    from seeders.bootstrap_all_connections import main as bootstrap_main
+    from seeders.bootstrap_all_connections import bootstrap
 
     scale = cfg.resolved_scale()
     os.environ["SEED_USERS"] = str(scale.total_users)
@@ -111,7 +110,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if cfg.random_seed is not None:
         os.environ["SEED_RANDOM_SEED"] = str(cfg.random_seed)
 
-    bootstrap_main()
+    bootstrap()
     return 0
 
 
