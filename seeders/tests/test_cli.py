@@ -44,3 +44,39 @@ def test_cli_describe_includes_seed_when_flag_passed():
     result = run_cli("--describe", "ecommerce_steady", "--seed", "42")
     assert result.returncode == 0
     assert '"random_seed": 42' in result.stdout
+
+
+def test_derived_db_stem_includes_preset_and_today():
+    from datetime import datetime
+
+    from seeders.cli import _derived_db_stem
+
+    stem = _derived_db_stem("casual_game_addictive")
+    today = datetime.now().strftime("%Y_%m_%d")
+    assert stem == f"casual_game_addictive_{today}"
+
+
+def test_derived_table_name_base_case():
+    from seeders.cli import _derived_table_name
+
+    assert _derived_table_name("ecommerce_steady", {}, None) == "ecommerce_steady"
+
+
+def test_derived_table_name_with_axis_overrides_and_seed():
+    from seeders.cli import _derived_table_name
+
+    name = _derived_table_name(
+        "casual_game_addictive",
+        {"growth": "flat", "stickiness": "churn_heavy"},
+        42,
+    )
+    # Axis overrides are alphabetically sorted; seed suffix applied last.
+    assert name == "casual_game_addictive_growth_flat_stickiness_churn_heavy_seed42"
+
+
+def test_derived_table_name_is_sql_safe_identifier():
+    from seeders.cli import _derived_table_name
+
+    name = _derived_table_name("weird/preset-name", {"growth": "some value"}, None)
+    # Non-alphanumeric chars collapse to underscores.
+    assert all(c.isalnum() or c == "_" for c in name)

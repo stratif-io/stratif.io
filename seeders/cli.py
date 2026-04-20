@@ -16,8 +16,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from collections.abc import Sequence
+from datetime import datetime
 
 from seeders.simulator.preset import (
     PresetNotFoundError,
@@ -78,6 +80,30 @@ def _axis_overrides_from_args(args: argparse.Namespace) -> dict:
     }
 
 
+_IDENT_RE = re.compile(r"[^a-zA-Z0-9_]+")
+
+
+def _derived_db_stem(preset_name: str) -> str:
+    """Stem for the database file: ``<preset>_<YYYY-MM-DD>``."""
+    today = datetime.now().strftime("%Y_%m_%d")
+    return f"{preset_name}_{today}"
+
+
+def _derived_table_name(
+    preset_name: str,
+    axis_overrides: dict[str, str],
+    random_seed: int | None,
+) -> str:
+    """Table name: ``<preset>[_<axis>_<value>]*[_seed<N>]`` as a SQL identifier."""
+    parts: list[str] = [preset_name]
+    for name in sorted(axis_overrides):
+        parts.append(f"{name}_{axis_overrides[name]}")
+    if random_seed is not None:
+        parts.append(f"seed{random_seed}")
+    raw = "_".join(parts)
+    return _IDENT_RE.sub("_", raw)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
@@ -115,6 +141,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     os.environ["SEED_PRESET"] = cfg.name
     if cfg.random_seed is not None:
         os.environ["SEED_RANDOM_SEED"] = str(cfg.random_seed)
+
+    # Derive DB file stem + table name from the preset + overrides.
+    # The dialect seeders + bootstrap's connection upsert both read these
+    # via seeders.connections_config.apply_seed_overrides.
+    axis_overrides = _axis_overrides_from_args(args)
+    os.environ["STRATIFIO_SEED_DB_STEM"] = _derived_db_stem(cfg.name)
+    os.environ["STRATIFIO_SEED_TABLE_NAME"] = _derived_table_name(
+        cfg.name, axis_overrides, cfg.random_seed
+    )
 
     bootstrap(only=args.only)
     return 0
