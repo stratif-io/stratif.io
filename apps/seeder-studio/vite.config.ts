@@ -14,6 +14,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@stratif-io/web": path.resolve(__dirname, "../web/dist/index.js"),
     },
   },
 });
