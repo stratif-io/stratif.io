@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useTwinOutput } from "./useTwinOutput";
 import { KpiChart, type KpiBand } from "./KpiChart";
 import { useSeederStore } from "@/stores/seederStore";
 import { anomalyTypeColor } from "@/lib/twin";
 import { parseDays } from "@/lib/twin/utils";
+import { useHoverGuide } from "./useHoverGuide";
 import type { SimulationConfig } from "@/types/simulation";
 
 type AnomalyList = NonNullable<SimulationConfig["anomalies"]>;
@@ -24,6 +25,10 @@ export function PreviewGrid() {
   const anomalies = useSeederStore(
     (s) => s.config.anomalies ?? EMPTY_ANOMALIES,
   );
+  const guideIndex = useHoverGuide((s) => s.index);
+  const setIndex = useHoverGuide((s) => s.setIndex);
+  const clearIndex = useHoverGuide((s) => s.clear);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const bands: KpiBand[] = useMemo(
     () =>
@@ -53,6 +58,13 @@ export function PreviewGrid() {
     [out],
   );
 
+  const handleMove = (e: React.PointerEvent) => {
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect || out.days <= 0) return;
+    const rel = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setIndex(Math.floor(rel * (out.days - 1)));
+  };
+
   return (
     <section className="flex flex-col gap-2 flex-1 overflow-hidden p-2">
       <header className="flex items-center justify-between">
@@ -61,13 +73,20 @@ export function PreviewGrid() {
           approximate
         </span>
       </header>
-      <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
+      <div
+        ref={gridRef}
+        data-testid="preview-grid-canvas"
+        onPointerMove={handleMove}
+        onPointerLeave={clearIndex}
+        className="grid grid-cols-2 gap-2 flex-1 min-h-0"
+      >
         <KpiChart
           title="Events/day"
           values={out.events}
           headline={stats.events}
           color="#2563eb"
           bands={bands}
+          guideIndex={guideIndex}
         />
         <KpiChart
           title="Active users"
@@ -75,6 +94,7 @@ export function PreviewGrid() {
           headline={stats.active}
           color="#10b981"
           bands={bands}
+          guideIndex={guideIndex}
         />
         <KpiChart
           title="New users/day"
@@ -82,6 +102,7 @@ export function PreviewGrid() {
           headline={stats.news}
           color="#f59e0b"
           bands={bands}
+          guideIndex={guideIndex}
         />
         <KpiChart
           title="Stickiness"
@@ -89,6 +110,7 @@ export function PreviewGrid() {
           headline={stats.stickiness}
           color="#ec4899"
           bands={bands}
+          guideIndex={guideIndex}
         />
       </div>
     </section>
