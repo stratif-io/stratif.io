@@ -1,0 +1,3 @@
+@import "tailwindcss";
+/* @stratif-io/web/dist/index.css is not available until the lib is built.
+   Design-system tokens will be imported once dist/ exists (Plan 02+). */
