@@ -42,15 +42,18 @@ vi.mock('../HeroMetricCard', () => ({
     label,
     changeLabel,
     prevPeriodLabel,
+    granularity,
   }: {
     label: string
     changeLabel?: string
     prevPeriodLabel?: string
+    granularity?: string
   }) => (
     <div
       data-testid="hero-card"
       data-change-label={changeLabel}
       data-prev-period-label={prevPeriodLabel}
+      data-granularity={granularity}
     >
       {label}
     </div>
@@ -272,6 +275,18 @@ describe('MissionControlGrid', () => {
     await userEvent.click(customizeBtn)
     // WAU chip should appear
     expect(screen.getAllByText('WAU').length).toBeGreaterThan(0)
+  })
+
+  it('forwards granularity to HeroMetricCard', () => {
+    render(
+      <MissionControlGrid
+        data={mockData}
+        trends={emptyTrends}
+        metricLoading={noMetricLoading}
+        {...defaultPinProps}
+      />
+    )
+    expect(screen.getByTestId('hero-card').getAttribute('data-granularity')).toBe('day')
   })
 })
 

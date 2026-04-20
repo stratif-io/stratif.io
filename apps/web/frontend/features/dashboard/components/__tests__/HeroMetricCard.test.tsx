@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { HeroMetricCard } from '../HeroMetricCard'
+import { formatAxisDate, formatTooltipDate } from '../hero-metric-card-formatters'
 
 const renderWithTooltip = (ui: React.ReactElement) =>
   render(<TooltipProvider>{ui}</TooltipProvider>)
@@ -13,6 +14,7 @@ const baseProps = {
   previousValue: '1.10M',
   sparklineValues: [100, 110, 120, 130, 140, 150, 160],
   color: 'hsl(var(--chart-1))',
+  granularity: 'day' as const,
 }
 
 describe('HeroMetricCard', () => {
@@ -103,5 +105,67 @@ describe('HeroMetricCard', () => {
     const card = document.querySelector('[data-error="true"]')
     expect(card).toBeTruthy()
     expect(card?.className).toMatch(/destructive/)
+  })
+
+  it('requires granularity and does not crash at day granularity', () => {
+    renderWithTooltip(<HeroMetricCard {...baseProps} granularity="day" />)
+    expect(screen.getByText('Total Events')).toBeInTheDocument()
+  })
+
+  it('requires granularity and does not crash at month granularity', () => {
+    renderWithTooltip(<HeroMetricCard {...baseProps} granularity="month" />)
+    expect(screen.getByText('Total Events')).toBeInTheDocument()
+  })
+})
+
+describe('formatAxisDate', () => {
+  const d = '2026-03-15T15:00:00Z'
+
+  it('formats hour granularity', () => {
+    expect(formatAxisDate(d, 'hour')).toMatch(/Mar 15 \d{1,2}[ap]m/i)
+  })
+  it('formats day granularity with two-digit year', () => {
+    expect(formatAxisDate(d, 'day')).toBe("Mar 15, '26")
+  })
+  it('formats week granularity with two-digit year', () => {
+    expect(formatAxisDate(d, 'week')).toBe("Mar 15, '26")
+  })
+  it('formats month granularity', () => {
+    expect(formatAxisDate(d, 'month')).toBe('Mar 2026')
+  })
+  it('formats quarter granularity', () => {
+    expect(formatAxisDate(d, 'quarter')).toBe('Q1 2026')
+  })
+  it('formats year granularity', () => {
+    expect(formatAxisDate(d, 'year')).toBe('2026')
+  })
+  it('falls back to raw input on invalid date', () => {
+    expect(formatAxisDate('not-a-date', 'day')).toBe('not-a-date')
+  })
+})
+
+describe('formatTooltipDate', () => {
+  const d = '2026-03-15T15:00:00Z'
+
+  it('formats hour granularity with full time', () => {
+    expect(formatTooltipDate(d, 'hour')).toMatch(/Mar 15, 2026, \d{1,2}:\d{2} [AP]M/)
+  })
+  it('formats day granularity with weekday and full year', () => {
+    expect(formatTooltipDate(d, 'day')).toBe('Sun, Mar 15, 2026')
+  })
+  it('formats week granularity with "Week of" prefix', () => {
+    expect(formatTooltipDate(d, 'week')).toBe('Week of Mar 15, 2026')
+  })
+  it('formats month granularity with full month name', () => {
+    expect(formatTooltipDate(d, 'month')).toBe('March 2026')
+  })
+  it('formats quarter granularity', () => {
+    expect(formatTooltipDate(d, 'quarter')).toBe('Q1 2026')
+  })
+  it('formats year granularity', () => {
+    expect(formatTooltipDate(d, 'year')).toBe('2026')
+  })
+  it('falls back to raw input on invalid date', () => {
+    expect(formatTooltipDate('not-a-date', 'day')).toBe('not-a-date')
   })
 })

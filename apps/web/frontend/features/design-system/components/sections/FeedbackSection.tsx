@@ -81,6 +81,7 @@ export function FeedbackSection() {
             color="hsl(var(--chart-1))"
             isError
             onRetry={() => toast('Retrying…')}
+            granularity="day"
           />
         </div>
       </ComponentRow>
