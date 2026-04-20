@@ -20,7 +20,11 @@ from backend.services.sql_builder import (
 )
 
 
-def session_ctes(session_timeout_minutes: int = 30, dialect: str = "duckdb") -> str:
+def session_ctes(
+    session_timeout_minutes: int = 30,
+    dialect: str = "duckdb",
+    events_prefilter: str = "",
+) -> str:
     """CTE chain (without WITH) that defines ``derived_sessions``.
 
     Segments events into sessions based on an inactivity gap.  A new session
@@ -29,6 +33,17 @@ def session_ctes(session_timeout_minutes: int = 30, dialect: str = "duckdb") -> 
 
     Usage:
         db.execute(f"WITH {session_ctes(30, db.get_dialect())} SELECT ... FROM derived_sessions")
+
+    For endpoints that only care about sessions starting within a known time
+    window, pass ``events_prefilter`` to push a WHERE clause into the first
+    CTE stage. Any session starting in ``[T_start, T_end]`` is fully
+    determined by events in ``[T_start - timeout_minutes, T_end]`` — older
+    events can't participate (their gap > timeout → new session by
+    definition). This turns the window-function passes from full-table scans
+    into time-scoped scans. On large tables that's ~10-100x faster.
+
+        events_prefilter = "WHERE timestamp >= ? AND timestamp <= ?"
+        # caller binds ? to [period_start - timeout, period_end]
 
     Columns exposed by ``derived_sessions``:
         session_id  TEXT   — unique per user+session
@@ -40,6 +55,9 @@ def session_ctes(session_timeout_minutes: int = 30, dialect: str = "duckdb") -> 
     Args:
         session_timeout_minutes: Inactivity gap that starts a new session.
         dialect: Target SQL dialect (duckdb | sqlite | postgres | mysql | …)
+        events_prefilter: Optional full ``WHERE ...`` clause applied to the
+            ``events`` scan in the first CTE stage. Empty → full-table scan
+            (backward-compat default).
     """
     interval_check = interval_minutes_exceeded(
         "prev_timestamp", "timestamp", session_timeout_minutes, dialect
@@ -62,6 +80,7 @@ events_with_lag AS (
         timestamp,
         {lag_ts} OVER (PARTITION BY user_id ORDER BY timestamp{lag_frame}) AS prev_timestamp
     FROM events
+    {events_prefilter}
 ),
 session_markers AS (
     SELECT

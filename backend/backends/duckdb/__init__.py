@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import re
+import tempfile
 from typing import Any
 
 import duckdb
@@ -44,7 +46,27 @@ class DuckDBBackend:
 
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         creds = DuckDBCredentials.model_validate(credentials.model_dump())
-        return duckdb.connect(creds.resolved_path, read_only=read_only)
+        conn = duckdb.connect(creds.resolved_path, read_only=read_only)
+        # Isolate each connection so concurrent dashboard queries don't
+        # collectively exhaust system memory. DuckDB's default memory_limit
+        # is 80% of system RAM per connection (~13GB on a 16GB Mac); with 15
+        # parallel queries the process claims tens of GBs, swap starts, and
+        # macOS's memory compressor burns cores.
+        conn.execute("SET memory_limit = '8GB'")
+        conn.execute("SET threads = 2")
+        # Disable insertion-order preservation — DuckDB recommends this for
+        # aggregate-heavy workloads (dashboard queries) since honoring it
+        # adds a merge-sort pass on every window/group-by. Our dashboard
+        # never asks for row order from raw events.
+        conn.execute("SET preserve_insertion_order = false")
+        # Enable disk spilling so window-function sorts on large event
+        # tables don't OOM when intermediate state exceeds memory_limit.
+        # temp_directory is a DATABASE-level setting (not per-connection),
+        # so it can only be set on the first connection; subsequent SET
+        # calls raise NotImplementedException and are safe to ignore.
+        with contextlib.suppress(Exception):
+            conn.execute(f"SET temp_directory = '{tempfile.gettempdir()}/duckdb_spill'")
+        return conn
 
     def pool_key(self, connection_id: str, credentials: BaseModel) -> tuple:
         return (connection_id, "duckdb")
