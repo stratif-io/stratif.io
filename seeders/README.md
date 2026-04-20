@@ -205,12 +205,34 @@ The `anomalies` axis controls whether the list is applied:
 - `anomalies: clean` → the list is ignored (empty).
 - `anomalies: explicit` / `full` / category → the preset's list is used.
 
+## Developer tools
+
+Inspect a preset's output shape without running the full bootstrap:
+
+```bash
+uv run python seeders/tests/visualize_preset.py retail_declining
+uv run python seeders/tests/visualize_preset.py ecommerce_explosive --total-users 2000 --window-days 90
+uv run python seeders/tests/visualize_preset.py --list
+```
+
+Prints: total events, event vocabulary + counts, and a daily-arrivals histogram.
+
 ## Status
 
-**Phase 5 shipped.** Anomaly parser + arrivals applicator wired into the Engine. Only `arrivals` effects are applied; all other effect keys (`conversion`, `all_events`, `funnel_drop_off`, etc.) are parsed but deferred to a later phase.
+**Phase 6 shipped.** Per-preset acceptance tests guard each preset's identity (retail_declining actually declines, casual_game_addictive emits IAP, etc.). Developer `visualize_preset.py` available for eyeballing.
 
-Coming in later phases:
+All six phases complete:
+
+- Phase 1 — Foundation (CLI, preset loader, Engine skeleton)
+- Phase 2a — Cohort engine + growth/stickiness + ecommerce domain
+- Phase 2b — Remaining 5 axes (engagement_depth, geography, monetization, virality, anomalies)
+- Phase 3 — Realism layer (8 effects) + RNG cleanup
+- Phase 4 — 9 more domains + 8 preset YAMLs
+- Phase 5 — Anomaly applicator (arrivals multiplier)
+- Phase 6 — Per-preset acceptance tests + visualize tool
+
+Later work:
 
 - Phase 3b — deferred realism (device-aware, payday, marketing micro-bursts)
-- Phase 5b — non-arrivals anomaly effects (conversion, session_duration, etc.)
-- Phase 6 — per-preset acceptance assertions + visual plots
+- Richer anomaly effects (conversion, funnel_drop_off, all_events)
+- Additional domains / presets as needs arise
