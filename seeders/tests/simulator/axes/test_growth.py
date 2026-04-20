@@ -85,3 +85,59 @@ def test_steady_is_constant():
     GrowthAxis().apply("steady", state)
     values = [state.arrival_curve(d) for d in range(WINDOW)]
     assert len({round(v, 6) for v in values}) == 1
+
+
+def test_hockey_stick_split_fraction_from_growth_config():
+    """growth_config.split_fraction moves the flat/blade inflection point."""
+    state = _state()
+    state.growth_config = {"split_fraction": 0.25}
+    GrowthAxis().apply("hockey_stick", state)
+    flat_end = int(WINDOW * 0.25) - 1
+    # The flat region ends at 25% of the window now (not 40%).
+    assert math.isclose(
+        state.arrival_curve(0), state.arrival_curve(flat_end), rel_tol=0.05
+    )
+    # Day at 40% (which was the old split) should already be in the blade.
+    assert state.arrival_curve(int(WINDOW * 0.4)) > state.arrival_curve(flat_end)
+
+
+def test_hockey_stick_rate_from_growth_config():
+    """growth_config.rate controls how steep the blade is."""
+    steep_state = _state()
+    steep_state.growth_config = {"rate": 0.06}
+    gentle_state = _state()
+    gentle_state.growth_config = {"rate": 0.005}
+    GrowthAxis().apply("hockey_stick", steep_state)
+    GrowthAxis().apply("hockey_stick", gentle_state)
+    # Steep rate → last-day arrivals much higher than gentle rate (both curves
+    # sum to the same TOTAL by construction).
+    assert steep_state.arrival_curve(WINDOW - 1) > gentle_state.arrival_curve(
+        WINDOW - 1
+    )
+
+
+def test_explosive_rate_override_from_growth_config():
+    """growth_config.rate also applies to explosive / strong / declining."""
+    fast_state = _state()
+    fast_state.growth_config = {"rate": 0.2}
+    slow_state = _state()
+    slow_state.growth_config = {"rate": 0.01}
+    GrowthAxis().apply("explosive", fast_state)
+    GrowthAxis().apply("explosive", slow_state)
+    # r=0.2 is steeper than r=0.01 → larger last-day/first-day ratio.
+    fast_ratio = fast_state.arrival_curve(WINDOW - 1) / fast_state.arrival_curve(0)
+    slow_ratio = slow_state.arrival_curve(WINDOW - 1) / slow_state.arrival_curve(0)
+    assert fast_ratio > slow_ratio
+
+
+def test_growth_config_none_uses_defaults():
+    """No growth_config → original defaults (existing tests still pass)."""
+    state = _state()
+    assert state.growth_config is None
+    GrowthAxis().apply("hockey_stick", state)
+    # Default split_fraction=0.4, rate=0.06 — curve at day 0 roughly equals curve
+    # at day (0.4×WINDOW − 1), matching pre-existing test assertions.
+    flat_end = int(WINDOW * 0.4) - 1
+    assert math.isclose(
+        state.arrival_curve(0), state.arrival_curve(flat_end), rel_tol=0.05
+    )

@@ -49,6 +49,10 @@ class SimulationState:
     dow_weights: list[float] | None = None  # 7-element list; Monday=0
     calendar_multiplier: Any = None  # Callable[[date, country], float]
 
+    # Per-axis tuning blocks copied in from SimulationConfig (e.g. growth_config).
+    # Axes read these to parameterize their curves (e.g. hockey_stick split / rate).
+    growth_config: dict[str, Any] | None = None
+
 
 @runtime_checkable
 class AxisModifier(Protocol):

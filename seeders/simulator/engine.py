@@ -103,9 +103,12 @@ class Engine:
             now=datetime.now(UTC),
         )
 
-        # Plumb anomalies from config to state so the anomalies axis (inside
-        # the loop below) can clear or preserve them as directed.
+        # Plumb anomalies + per-axis tuning blocks from config to state so
+        # axes (inside the loop below) can read them.
         state.anomalies = list(self.config.anomalies)
+        state.growth_config = (
+            dict(self.config.growth_config) if self.config.growth_config else None
+        )
 
         # Apply every axis declared in the preset. Unknown axes are silently
         # ignored — Phase 2a only ships `growth` and `stickiness`; later

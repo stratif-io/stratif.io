@@ -39,8 +39,18 @@ def _seasonal(total: int, window: int, amplitude: float = 0.3) -> ArrivalCurve:
     return lambda d: base * (1 + amplitude * math.sin(2 * math.pi * d / 365))
 
 
-def _hockey_stick(total: int, window: int, r: float = 0.06) -> ArrivalCurve:
-    split = int(window * 0.4)
+def _hockey_stick(
+    total: int,
+    window: int,
+    r: float = 0.06,
+    split_fraction: float = 0.4,
+) -> ArrivalCurve:
+    """Flat for the first ``split_fraction`` of the window, then exponential.
+
+    ``split_fraction`` and ``r`` are tunable via a preset's ``growth_config``
+    block (``{"split_fraction": 0.25, "rate": 0.015}``).
+    """
+    split = max(1, int(window * split_fraction))
     # Continuity at the split: post-split day 0 = `a`, growth from there.
     # Flat sum:    a · split
     # Growth sum:  a · (e^(r·(W-split)) − 1) / (e^r − 1)
@@ -55,28 +65,54 @@ def _hockey_stick(total: int, window: int, r: float = 0.06) -> ArrivalCurve:
     return curve
 
 
-_BUILDERS: dict[str, Callable[[int, int], ArrivalCurve]] = {
-    "explosive": lambda t, w: _exponential_growth(t, w, r=0.08),
-    "strong": lambda t, w: _exponential_growth(t, w, r=0.02),
-    "steady": _steady,
-    "flat": _steady,  # Semantic alias — flat = steady for a mature product.
-    "declining": lambda t, w: _exponential_decline(t, w, r=0.015),
-    "seasonal": lambda t, w: _seasonal(t, w),
-    "hockey_stick": _hockey_stick,
-}
+_VALUE_NAMES: tuple[str, ...] = (
+    "explosive",
+    "strong",
+    "steady",
+    "flat",
+    "declining",
+    "seasonal",
+    "hockey_stick",
+)
+
+
+def _build_curve(
+    value: str, total: int, window: int, cfg: dict[str, Any]
+) -> ArrivalCurve:
+    """Construct the arrival curve for ``value``, honoring ``cfg`` overrides."""
+    if value == "explosive":
+        return _exponential_growth(total, window, r=float(cfg.get("rate", 0.08)))
+    if value == "strong":
+        return _exponential_growth(total, window, r=float(cfg.get("rate", 0.02)))
+    if value == "steady" or value == "flat":
+        return _steady(total, window)
+    if value == "declining":
+        return _exponential_decline(total, window, r=float(cfg.get("rate", 0.015)))
+    if value == "seasonal":
+        amplitude = float(cfg.get("amplitude", 0.3))
+        return _seasonal(total, window, amplitude=amplitude)
+    if value == "hockey_stick":
+        return _hockey_stick(
+            total,
+            window,
+            r=float(cfg.get("rate", 0.06)),
+            split_fraction=float(cfg.get("split_fraction", 0.4)),
+        )
+    raise ValueError(f"unknown growth value {value!r}; valid: {list(_VALUE_NAMES)}")
 
 
 class GrowthAxis:
     name: str = "growth"
-    values: dict[str, Any] = dict.fromkeys(_BUILDERS)
+    values: dict[str, Any] = dict.fromkeys(_VALUE_NAMES)
 
     def apply(self, value: str, simulation: SimulationState) -> None:
-        if value not in _BUILDERS:
+        if value not in self.values:
             raise ValueError(
-                f"unknown growth value {value!r}; valid: {sorted(_BUILDERS)}"
+                f"unknown growth value {value!r}; valid: {sorted(self.values)}"
             )
-        simulation.arrival_curve = _BUILDERS[value](
-            simulation.total_users, simulation.window_days
+        cfg = simulation.growth_config or {}
+        simulation.arrival_curve = _build_curve(
+            value, simulation.total_users, simulation.window_days, cfg
         )
 
 
