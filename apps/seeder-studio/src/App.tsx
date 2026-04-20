@@ -8,6 +8,7 @@ import { IdentitySection } from "./features/editor/IdentitySection";
 import { AxesSection } from "./features/editor/AxesSection";
 import { TuningSection } from "./features/editor/TuningSection";
 import { PreviewGrid } from "./features/preview/PreviewGrid";
+import { AnomaliesPane } from "./features/anomalies/AnomaliesPane";
 
 export default function App() {
   const { presets, loading, error } = usePresets();
@@ -63,6 +64,9 @@ export default function App() {
                   <TuningSection />
                 </div>
                 <YamlPanel yaml={yaml} onValidConfig={setConfig} />
+              </div>
+              <div className="border-t">
+                <AnomaliesPane />
               </div>
               <div className="border-t flex-1 min-h-0 overflow-hidden flex">
                 <PreviewGrid />
