@@ -9,4 +9,11 @@ axes:
   virality: weak
   scale: medium
   geography: global
-  anomalies: clean
+  anomalies: explicit
+anomalies:
+  - type: product_launch
+    name: feature_x_launch
+    start: -60d
+    duration: 7d
+    effect:
+      arrivals: 1.8

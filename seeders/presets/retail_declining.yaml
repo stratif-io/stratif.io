@@ -9,4 +9,17 @@ axes:
   virality: none
   scale: medium
   geography: us_only
-  anomalies: clean
+  anomalies: explicit
+anomalies:
+  - type: shopping_season
+    name: black_friday_peak
+    start: -540d
+    duration: 3d
+    effect:
+      arrivals: 3.5
+  - type: outage
+    name: server_downtime
+    start: -400d
+    duration: 6h
+    effect:
+      all_events: 0.0
