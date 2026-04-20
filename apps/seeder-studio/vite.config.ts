@@ -12,9 +12,16 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@stratif-io/web": path.resolve(__dirname, "../web/dist/index.js"),
-    },
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      {
+        find: "@stratif-io/web/styles.css",
+        replacement: path.resolve(__dirname, "../web/dist/index.css"),
+      },
+      {
+        find: "@stratif-io/web",
+        replacement: path.resolve(__dirname, "../web/dist/index.js"),
+      },
+    ],
   },
 });

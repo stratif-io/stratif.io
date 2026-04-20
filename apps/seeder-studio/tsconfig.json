@@ -16,7 +16,11 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] },
+    "paths": {
+      "@/*": ["src/*"],
+      "@stratif-io/web": ["../web/dist/index.d.ts"],
+      "@stratif-io/web/*": ["../web/dist/*"]
+    },
     "types": ["node", "vitest/globals"]
   },
   "include": ["src"],

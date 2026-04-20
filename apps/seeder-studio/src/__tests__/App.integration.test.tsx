@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "../App";
 import { useSeederStore } from "../stores/seederStore";
 
@@ -18,6 +19,15 @@ const PRESETS = {
     },
   ],
 };
+
+function renderApp() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <App />
+    </QueryClientProvider>,
+  );
+}
 
 describe("App shell", () => {
   beforeEach(() => {
@@ -37,7 +47,7 @@ describe("App shell", () => {
 
   it("loads presets and selecting one populates the YAML panel", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    renderApp();
     await waitFor(() =>
       expect(screen.getByText("saas_pmf")).toBeInTheDocument(),
     );
@@ -65,7 +75,7 @@ describe("App editor + preview", () => {
   });
 
   it("renders editor sections and preview grid once presets load", async () => {
-    render(<App />);
+    renderApp();
     await waitFor(() =>
       expect(screen.getByText("saas_pmf")).toBeInTheDocument(),
     );

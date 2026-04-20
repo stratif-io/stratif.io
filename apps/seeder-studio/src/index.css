@@ -1,7 +1,2 @@
 @import "tailwindcss";
-
-/*
- * @stratif-io/web does not expose a CSS subpath export. Design-system token
- * integration is deferred to Plan 02 — either by adding a `./styles` export
- * to the web package, or by re-declaring tokens here.
- */
+@import "@stratif-io/web/styles.css";

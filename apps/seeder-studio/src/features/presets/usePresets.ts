@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { fetchPresets, type PresetEntry } from "@/lib/api/presets";
 
 export interface UsePresetsState {
@@ -8,25 +8,13 @@ export interface UsePresetsState {
 }
 
 export function usePresets(): UsePresetsState {
-  const [state, setState] = useState<UsePresetsState>({
-    presets: [],
-    loading: true,
-    error: null,
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["simulator-presets"],
+    queryFn: fetchPresets,
   });
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchPresets()
-      .then((presets) => {
-        if (!cancelled) setState({ presets, loading: false, error: null });
-      })
-      .catch((err: Error) => {
-        if (!cancelled) setState({ presets: [], loading: false, error: err });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return state;
+  return {
+    presets: data ?? [],
+    loading: isLoading,
+    error: (error as Error | null) ?? null,
+  };
 }
