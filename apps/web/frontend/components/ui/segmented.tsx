@@ -12,9 +12,10 @@ interface SegmentedProps {
   value: string
   onChange: (value: string) => void
   className?: string
+  defaultValue?: string
 }
 
-export function Segmented({ options, value, onChange, className }: SegmentedProps) {
+export function Segmented({ options, value, onChange, className, defaultValue }: SegmentedProps) {
   return (
     <TooltipProvider delayDuration={200}>
       <div
@@ -26,6 +27,7 @@ export function Segmented({ options, value, onChange, className }: SegmentedProp
       >
         {options.map((opt) => {
           const active = opt.value === value
+          const isDefault = defaultValue !== undefined && opt.value === defaultValue && !active
           const button = (
             <button
               type="button"
@@ -37,7 +39,8 @@ export function Segmented({ options, value, onChange, className }: SegmentedProp
                 'rounded px-2 py-1 text-xs transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                isDefault && 'ring-1 ring-muted-foreground/40'
               )}
             >
               {opt.label}

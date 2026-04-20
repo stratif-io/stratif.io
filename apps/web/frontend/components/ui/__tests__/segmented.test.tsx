@@ -29,6 +29,16 @@ describe('Segmented', () => {
     expect(onChange).toHaveBeenCalledWith('viral')
   })
 
+  it('default option (not selected) has ring-1 class', () => {
+    render(<Segmented options={options} value="weak" onChange={() => {}} defaultValue="strong" />)
+    expect(screen.getByRole('radio', { name: 'strong' })).toHaveClass('ring-1')
+  })
+
+  it('selected option does not have ring-1 even if it matches defaultValue', () => {
+    render(<Segmented options={options} value="strong" onChange={() => {}} defaultValue="strong" />)
+    expect(screen.getByRole('radio', { name: 'strong' })).not.toHaveClass('ring-1')
+  })
+
   it('supports an optional tooltip per option', async () => {
     const user = userEvent.setup()
     render(

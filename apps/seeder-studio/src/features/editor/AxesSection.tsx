@@ -19,6 +19,7 @@ export function AxesSection() {
             <div className="text-xs font-medium">{axis.label}</div>
             <Segmented
               value={current}
+              defaultValue={axis.default}
               onChange={(v) => setAxis(axis.id, v)}
               options={axis.values.map((v) => ({
                 value: v.value,

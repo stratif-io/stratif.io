@@ -63,13 +63,15 @@ export default function App() {
                   <AxesSection />
                   <TuningSection />
                 </div>
-                <YamlPanel yaml={yaml} onValidConfig={setConfig} />
+                <div className="w-[360px] border-l overflow-y-auto">
+                  <PreviewGrid />
+                </div>
               </div>
               <div className="border-t">
                 <AnomaliesPane />
               </div>
-              <div className="border-t flex-1 min-h-0 overflow-hidden flex">
-                <PreviewGrid />
+              <div className="border-t h-[220px] flex">
+                <YamlPanel yaml={yaml} onValidConfig={setConfig} />
               </div>
             </section>
           </>

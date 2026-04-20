@@ -32,6 +32,13 @@ describe("AxesSection", () => {
     expect(useSeederStore.getState().config.axes.growth).toBe("hockey_stick");
   });
 
+  it("segment matching axis default has ring-1 when a non-default value is selected", () => {
+    // growth default is "strong"; set it to something else so ring shows on "strong"
+    useSeederStore.getState().setAxis("growth", "weak");
+    render(<AxesSection />);
+    expect(screen.getByRole("radio", { name: "strong" })).toHaveClass("ring-1");
+  });
+
   it("reflects current store value as active", () => {
     useSeederStore.getState().setAxis("stickiness", "addictive");
     render(<AxesSection />);
