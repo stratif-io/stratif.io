@@ -12,7 +12,7 @@ import sqlite3
 from pathlib import Path
 
 from seeders.connections_config import get_sqlite_credentials, load_connections_yaml
-from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
+from seeders.seeder import BaseSeeder, SeedConfig
 
 
 class SQLiteSeeder(BaseSeeder):
@@ -25,6 +25,7 @@ class SQLiteSeeder(BaseSeeder):
         super().__init__(config=config)
         creds = get_sqlite_credentials(load_connections_yaml())
         self._db_path: str = creds["file_path"]
+        self._table_name: str = creds.get("table_name", "events")
         self._conn: sqlite3.Connection
 
     # ------------------------------------------------------------------
@@ -32,9 +33,9 @@ class SQLiteSeeder(BaseSeeder):
     # ------------------------------------------------------------------
 
     def _create_events_table(self) -> None:
-        self._conn.execute("DROP TABLE IF EXISTS events")
-        self._conn.execute("""
-            CREATE TABLE events (
+        self._conn.execute(f"DROP TABLE IF EXISTS {self._table_name}")
+        self._conn.execute(f"""
+            CREATE TABLE {self._table_name} (
                 user_id     TEXT     NOT NULL,
                 event_name  TEXT     NOT NULL,
                 timestamp   DATETIME NOT NULL,
@@ -45,10 +46,12 @@ class SQLiteSeeder(BaseSeeder):
             )
         """)
         self._conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_events_user_id   ON events (user_id)"
+            f"CREATE INDEX IF NOT EXISTS idx_{self._table_name}_user_id "
+            f"ON {self._table_name} (user_id)"
         )
         self._conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events (timestamp)"
+            f"CREATE INDEX IF NOT EXISTS idx_{self._table_name}_timestamp "
+            f"ON {self._table_name} (timestamp)"
         )
         self._conn.commit()
 
@@ -68,55 +71,36 @@ class SQLiteSeeder(BaseSeeder):
             for e in events
         ]
         self._conn.executemany(
-            "INSERT INTO events (user_id, event_name, timestamp, properties, server, traits, context) "
+            f"INSERT INTO {self._table_name} "
+            "(user_id, event_name, timestamp, properties, server, traits, context) "
             "VALUES (?,?,?,?,?,?,?)",
             rows,
         )
         self._conn.commit()
 
     def seed(self) -> dict[str, int]:
-        if self._db_path:
-            out = Path(self._db_path)
-            out.parent.mkdir(parents=True, exist_ok=True)
+        if not self._db_path:
+            raise ValueError("db_path must be provided via connections.yaml")
 
-            n = self.config.seed_users
-            print(f"Seeding {n:,} users → {out}")
+        out = Path(self._db_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
 
-            self._conn = sqlite3.connect(str(out))
-            try:
-                self._generate_products()
-                self._create_events_table()
-                users = self._generate_users()
+        print(f"Seeding → {out} (table {self._table_name})")
 
-                total_events = 0
-                for batch in self._generate_events_batched(users):
-                    self._insert_events(batch)
-                    total_events += len(batch)
-                    if total_events % PROGRESS_INTERVAL < len(batch):
-                        print(f"  {total_events:,} events written…")
-            finally:
-                self._conn.close()
+        self._conn = sqlite3.connect(str(out))
+        try:
+            self._create_events_table()
+            stats = self._run_engine_loop()
+        finally:
+            self._conn.close()
 
-            stats = {
-                "total_events": total_events,
-                "total_users": len(users),
-                "new_users": sum(1 for u in users if not u["is_returning"]),
-                "returning_users": sum(1 for u in users if u["is_returning"]),
-                "power_users": sum(1 for u in users if u["is_power_user"]),
-                "completed_purchases": sum(1 for u in users if u["completed_purchase"]),
-            }
-
-            size_mb = out.stat().st_size / 1_048_576
-            print(
-                f"\nDone — {stats['total_events']:,} events, "
-                f"{stats['total_users']:,} users, "
-                f"{size_mb:.1f} MB"
-            )
-            return stats
-        else:
-            raise ValueError(
-                "db_path must be provided or set via STRATIFIO_DB_PATH environment variable"
-            )
+        size_mb = out.stat().st_size / 1_048_576
+        print(
+            f"\nDone — {stats['total_events']:,} events, "
+            f"{stats['total_users']:,} users, "
+            f"{size_mb:.1f} MB"
+        )
+        return stats
 
 
 def main() -> None:
