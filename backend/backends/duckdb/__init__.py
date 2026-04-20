@@ -52,7 +52,7 @@ class DuckDBBackend:
         # is 80% of system RAM per connection (~13GB on a 16GB Mac); with 15
         # parallel queries the process claims tens of GBs, swap starts, and
         # macOS's memory compressor burns cores.
-        conn.execute("SET memory_limit = '3GB'")
+        conn.execute("SET memory_limit = '8GB'")
         conn.execute("SET threads = 2")
         # Disable insertion-order preservation — DuckDB recommends this for
         # aggregate-heavy workloads (dashboard queries) since honoring it
