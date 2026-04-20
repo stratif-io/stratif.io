@@ -38,8 +38,8 @@ export function PresetLibrary({
   return (
     <aside className="w-[220px] border-r p-3 flex flex-col gap-3 overflow-y-auto">
       <Button
-        variant="outline"
-        className="w-full border-dashed"
+        variant="ghost"
+        className="w-full justify-start text-muted-foreground hover:text-foreground"
         onClick={onNewBlank}
       >
         + New blank

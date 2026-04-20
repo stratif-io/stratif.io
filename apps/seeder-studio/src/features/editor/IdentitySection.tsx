@@ -1,8 +1,4 @@
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Input,
   Label,
   Select,
@@ -37,66 +33,64 @@ export function IdentitySection() {
   const nameValid = NAME_RE.test(config.name);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Identity</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col space-y-3">
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="identity-name" className="text-xs">
-            Name
-          </Label>
-          <Input
-            id="identity-name"
-            aria-label="Name"
-            value={config.name}
-            onChange={(e) => setName(e.target.value)}
+    <section aria-labelledby="identity-heading" className="space-y-3">
+      <h2 id="identity-heading" className="text-sm font-semibold">
+        Identity
+      </h2>
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="identity-name" className="text-xs">
+          Name
+        </Label>
+        <Input
+          id="identity-name"
+          aria-label="Name"
+          value={config.name}
+          onChange={(e) => setName(e.target.value)}
+          className="h-8 text-sm"
+        />
+        {!nameValid && (
+          <span className="text-xs text-destructive">
+            Use lowercase letters, digits, and underscores (must start with a
+            letter).
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="identity-description" className="text-xs">
+          Description
+        </Label>
+        <Textarea
+          id="identity-description"
+          aria-label="Description"
+          value={config.description ?? ""}
+          onChange={(e) => setDescription(e.target.value)}
+          className="text-sm min-h-[56px]"
+          rows={2}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="identity-domain" className="text-xs">
+          Domain
+        </Label>
+        <Select value={config.domain} onValueChange={setDomain}>
+          <SelectTrigger
+            id="identity-domain"
+            aria-label="Domain"
             className="h-8 text-sm"
-          />
-          {!nameValid && (
-            <span className="text-xs text-destructive">
-              Use lowercase letters, digits, and underscores (must start with a
-              letter).
-            </span>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="identity-description" className="text-xs">
-            Description
-          </Label>
-          <Textarea
-            id="identity-description"
-            aria-label="Description"
-            value={config.description ?? ""}
-            onChange={(e) => setDescription(e.target.value)}
-            className="text-sm min-h-[56px]"
-            rows={2}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="identity-domain" className="text-xs">
-            Domain
-          </Label>
-          <Select value={config.domain} onValueChange={setDomain}>
-            <SelectTrigger
-              id="identity-domain"
-              aria-label="Domain"
-              className="h-8 text-sm"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DOMAINS.map((d) => (
-                <SelectItem key={d} value={d}>
-                  {d}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </CardContent>
-    </Card>
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DOMAINS.map((d) => (
+              <SelectItem key={d} value={d}>
+                {d}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </section>
   );
 }

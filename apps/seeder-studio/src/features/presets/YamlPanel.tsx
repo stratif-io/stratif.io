@@ -38,7 +38,7 @@ export function YamlPanel({ yaml, onValidConfig, debounceMs = 150 }: Props) {
   return (
     <section className="h-full w-full flex flex-col">
       <header className="flex items-center justify-between p-2 border-b">
-        <div className="text-sm font-semibold">YAML</div>
+        <h2 className="text-sm font-semibold">YAML</h2>
         <Button
           variant="ghost"
           size="sm"

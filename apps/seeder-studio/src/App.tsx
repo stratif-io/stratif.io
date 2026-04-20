@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Badge } from "@stratif-io/web";
 import { PresetLibrary } from "./features/presets/PresetLibrary";
 import { YamlPanel } from "./features/presets/YamlPanel";
 import { usePresets } from "./features/presets/usePresets";
@@ -39,7 +40,11 @@ export default function App() {
       <header className="border-b p-3 flex items-center gap-3">
         <h1 className="text-lg font-semibold">Seeder Studio</h1>
         <span className="text-xs text-muted-foreground">{config.name}</span>
-        {dirty && <span className="text-xs text-amber-500">● modified</span>}
+        {dirty && (
+          <Badge variant="outline" className="text-xs">
+            Modified
+          </Badge>
+        )}
       </header>
       <main className="flex-1 flex overflow-hidden">
         {loading && <div className="p-4 text-sm">Loading presets…</div>}
@@ -58,7 +63,7 @@ export default function App() {
             />
             <section className="flex-1 flex flex-col">
               <div className="flex-1 flex overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
+                <div className="flex-1 overflow-y-auto px-4 [&>*]:py-6 [&>*:not(:last-child)]:border-b">
                   <IdentitySection />
                   <AxesSection />
                   <TuningSection />

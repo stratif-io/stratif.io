@@ -70,12 +70,12 @@ export function KpiChart({
   return (
     <div className="rounded-lg border bg-card p-3 flex flex-col gap-2">
       <div className="flex items-baseline justify-between">
-        <span className="text-xs font-semibold">{title}</span>
+        <span className="text-[11px] font-semibold">{title}</span>
         {headline && (
           <span className="text-[10px] text-muted-foreground">{headline}</span>
         )}
       </div>
-      <div className="h-24 w-full">
+      <div className="h-32 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={data}
@@ -107,10 +107,10 @@ export function KpiChart({
                 dateFor(idx, startDate, endDate, values.length)
               }
               stroke="currentColor"
-              tick={{ fontSize: 9, fill: "currentColor", opacity: 0.6 }}
+              tick={{ fontSize: 11, fill: "currentColor", opacity: 0.6 }}
               axisLine={false}
               tickLine={false}
-              height={16}
+              height={20}
             />
             <YAxis hide />
             <Tooltip
@@ -120,9 +120,12 @@ export function KpiChart({
                 opacity: 0.4,
               }}
               contentStyle={{
-                fontSize: 11,
-                padding: "4px 8px",
+                fontSize: 12,
+                padding: "6px 10px",
                 borderRadius: 6,
+                background: "hsl(var(--popover))",
+                color: "hsl(var(--popover-foreground))",
+                border: "1px solid hsl(var(--border))",
               }}
               labelFormatter={(idx: number) =>
                 dateFor(idx, startDate, endDate, values.length) || `day ${idx}`

@@ -7,8 +7,10 @@ export function AxesSection() {
   const setAxis = useSeederStore((s) => s.setAxis);
 
   return (
-    <section className="rounded border p-3 flex flex-col gap-2">
-      <h2 className="text-sm font-semibold">Axes</h2>
+    <section aria-labelledby="axes-heading" className="space-y-3">
+      <h2 id="axes-heading" className="text-sm font-semibold">
+        Axes
+      </h2>
       {Object.values(AXIS_SPEC).map((axis) => {
         const current = axes[axis.id] ?? axis.default;
         return (

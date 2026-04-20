@@ -13,8 +13,8 @@ describe("KpiChart", () => {
 
   it("renders the recharts chart container", () => {
     const { container } = render(<KpiChart title="X" values={[0, 1, 2, 3]} />);
-    // Recharts renders inside a div with h-24
-    expect(container.querySelector(".h-24")).not.toBeNull();
+    // Recharts renders inside a div with h-32
+    expect(container.querySelector(".h-32")).not.toBeNull();
   });
 });
 
@@ -29,7 +29,7 @@ describe("KpiChart bands + guide", () => {
     );
     // ResponsiveContainer in jsdom has width=0 so ReferenceArea rects may not render.
     // Assert the component accepted the props without throwing.
-    expect(container.querySelector(".h-24")).not.toBeNull();
+    expect(container.querySelector(".h-32")).not.toBeNull();
   });
 
   it("renders without crashing when guide index is provided", () => {
@@ -52,11 +52,11 @@ describe("KpiChart date tick labels", () => {
         endDate={new Date(2026, 3, 30)}
       />,
     );
-    expect(container.querySelector(".h-24")).not.toBeNull();
+    expect(container.querySelector(".h-32")).not.toBeNull();
   });
 
   it("renders without crashing when dates are not provided", () => {
     const { container } = render(<KpiChart title="X" values={[1, 2, 3]} />);
-    expect(container.querySelector(".h-24")).not.toBeNull();
+    expect(container.querySelector(".h-32")).not.toBeNull();
   });
 });

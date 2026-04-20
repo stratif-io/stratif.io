@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Card, CardContent, Input, Label } from "@stratif-io/web";
+import { Input, Label } from "@stratif-io/web";
 import { useSeederStore } from "@/stores/seederStore";
 
 function numberOrUndef(s: string): number | undefined {
@@ -25,18 +25,21 @@ export function TuningSection() {
   const setUiEndDate = useSeederStore((s) => s.setUiEndDate);
 
   return (
-    <Card>
-      <Button
+    <section aria-labelledby="tuning-heading" className="space-y-3">
+      <button
         type="button"
-        variant="ghost"
         onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between p-3 text-sm font-semibold h-auto rounded-b-none"
+        className="w-full flex items-center justify-between text-sm font-semibold hover:text-primary transition-colors"
+        aria-expanded={expanded}
+        aria-controls="tuning-body"
       >
-        Tuning overrides
-        <span className="text-xs">{expanded ? "−" : "+"}</span>
-      </Button>
+        <h2 id="tuning-heading">Tuning overrides</h2>
+        <span className="text-xs text-muted-foreground">
+          {expanded ? "−" : "+"}
+        </span>
+      </button>
       {expanded && (
-        <CardContent className="pt-0 grid grid-cols-2 gap-3 text-xs">
+        <div id="tuning-body" className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
             <Label htmlFor="tuning-total-users" className="text-xs">
               Total users
@@ -137,8 +140,8 @@ export function TuningSection() {
               className="h-8 text-xs"
             />
           </div>
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </section>
   );
 }

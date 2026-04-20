@@ -79,10 +79,24 @@ export function PreviewGrid() {
   };
 
   return (
-    <section className="flex flex-col gap-2 flex-1 overflow-hidden p-2">
+    <section
+      aria-labelledby="preview-heading"
+      className="flex flex-col gap-2 flex-1 overflow-hidden p-2"
+    >
       <header className="flex items-center justify-between">
-        <span className="text-xs uppercase text-muted-foreground">Preview</span>
-        <span className="rounded bg-amber-100 text-amber-900 px-2 py-0.5 text-[10px]">
+        <h2
+          id="preview-heading"
+          className="text-xs uppercase text-muted-foreground font-semibold"
+        >
+          Preview
+        </h2>
+        <span
+          className="rounded px-2 py-0.5 text-[10px] font-medium"
+          style={{
+            backgroundColor: "hsl(var(--warning) / 0.15)",
+            color: "hsl(var(--warning))",
+          }}
+        >
           approximate
         </span>
       </header>
@@ -91,13 +105,13 @@ export function PreviewGrid() {
         data-testid="preview-grid-canvas"
         onPointerMove={handleMove}
         onPointerLeave={clearIndex}
-        className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto"
+        className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto"
       >
         <KpiChart
           title="Events/day"
           values={out.events}
           headline={stats.events}
-          color="#2563eb"
+          color="hsl(var(--chart-6))"
           bands={bands}
           guideIndex={guideIndex}
           startDate={chartStart}
@@ -107,7 +121,7 @@ export function PreviewGrid() {
           title="Active users"
           values={out.activeUsers}
           headline={stats.active}
-          color="#10b981"
+          color="hsl(var(--chart-8))"
           bands={bands}
           guideIndex={guideIndex}
           startDate={chartStart}
@@ -117,7 +131,7 @@ export function PreviewGrid() {
           title="New users/day"
           values={out.newUsers}
           headline={stats.news}
-          color="#f59e0b"
+          color="hsl(var(--chart-3))"
           bands={bands}
           guideIndex={guideIndex}
           startDate={chartStart}
@@ -127,7 +141,7 @@ export function PreviewGrid() {
           title="Stickiness"
           values={out.stickiness}
           headline={stats.stickiness}
-          color="#ec4899"
+          color="hsl(var(--chart-7))"
           bands={bands}
           guideIndex={guideIndex}
           startDate={chartStart}
