@@ -1,28 +1,40 @@
 import { useMemo } from "react";
 
+export interface KpiBand {
+  start: number;
+  end: number;
+  color: string;
+  alpha?: number;
+}
+
 interface Props {
   title: string;
   values: number[];
   headline?: string;
   color?: string;
+  bands?: KpiBand[];
+  guideIndex?: number | null;
 }
+
+const W = 300;
+const H = 80;
 
 export function KpiChart({
   title,
   values,
   headline,
   color = "currentColor",
+  bands,
+  guideIndex,
 }: Props) {
-  const { path, max } = useMemo(() => {
-    if (values.length === 0) return { path: "", max: 0 };
+  const { path, step, max } = useMemo(() => {
+    if (values.length === 0) return { path: "", step: 0, max: 0 };
     const mx = Math.max(1, ...values);
-    const w = 300;
-    const h = 80;
-    const step = w / Math.max(1, values.length - 1);
+    const st = W / Math.max(1, values.length - 1);
     const points = values
-      .map((v, i) => `${i * step},${h - (v / mx) * h}`)
+      .map((v, i) => `${i * st},${H - (v / mx) * H}`)
       .join(" L ");
-    return { path: `M ${points}`, max: mx };
+    return { path: `M ${points}`, step: st, max: mx };
   }, [values]);
 
   return (
@@ -34,12 +46,24 @@ export function KpiChart({
         )}
       </div>
       <svg
-        viewBox="0 0 300 80"
+        viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
         className="w-full h-20"
         role="img"
         aria-label={`${title} chart`}
       >
+        {bands?.map((b, i) => (
+          <rect
+            key={i}
+            data-testid="kpi-band"
+            x={b.start * step}
+            y={0}
+            width={(b.end - b.start) * step}
+            height={H}
+            fill={b.color}
+            opacity={b.alpha ?? 0.18}
+          />
+        ))}
         <path
           d={path}
           fill="none"
@@ -47,6 +71,19 @@ export function KpiChart({
           strokeWidth="1.5"
           data-testid="kpi-line"
         />
+        {guideIndex != null &&
+          guideIndex >= 0 &&
+          guideIndex < values.length && (
+            <line
+              data-testid="kpi-guide"
+              x1={guideIndex * step}
+              x2={guideIndex * step}
+              y1={0}
+              y2={H}
+              stroke="#999"
+              strokeDasharray="2,2"
+            />
+          )}
       </svg>
       <span className="sr-only">max {max}</span>
     </div>
