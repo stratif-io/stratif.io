@@ -1385,13 +1385,18 @@ class BaseSeeder(ABC):
         Each dialect's ``seed()`` calls this after opening the DB connection
         and creating the events table. Honors every axis the CLI set via env
         vars (SEED_PRESET, SEED_OVERRIDE_*, SEED_RANDOM_SEED, etc).
+        Prints a progress line every ``PROGRESS_INTERVAL`` events so that
+        long seeds at `scale=large` don't look hung.
         """
+        import time as _time
+
         cfg = self._prepare_engine_cfg()
 
         total_events = 0
         user_ids: set[str] = set()
         purchase_users: set[str] = set()
         last_progress = 0
+        t0 = _time.monotonic()
 
         for batch in self.events_via_engine(cfg):
             self._insert_events(batch)
@@ -1401,6 +1406,15 @@ class BaseSeeder(ABC):
                 if ev[1] in self._CONVERSION_EVENTS:
                     purchase_users.add(ev[0])
             if total_events - last_progress >= PROGRESS_INTERVAL:
+                elapsed = _time.monotonic() - t0
+                rate = total_events / elapsed if elapsed > 0 else 0
+                print(
+                    f"  {total_events:>10,} events "
+                    f"({len(user_ids):>8,} users, "
+                    f"{rate:>7,.0f} ev/s, "
+                    f"{elapsed:>5.1f}s elapsed)",
+                    flush=True,
+                )
                 last_progress = total_events
 
         return {
