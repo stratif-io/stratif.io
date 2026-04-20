@@ -164,12 +164,53 @@ Both produce ecommerce events with the same vocabulary but qualitatively differe
 
 **Deferred to a later phase:** device-aware behavior (R8), payday effects (R9), marketing micro-bursts (R10), referral clustering (R13 — needs Phase 4 domain support).
 
+## Anomalies (Phase 5)
+
+Presets can declare dated spikes/dips that modulate arrivals (other effect types are parsed but not yet applied).
+
+```yaml
+anomalies:
+  - type: marketing_campaign
+    name: viral_launch
+    start: -45d # relative to "now" (seed run time)
+    duration: 14d
+    effect:
+      arrivals: 2.5 # 2.5x arrivals during the window
+  - type: shopping_season
+    date: "2024-11-29" # or absolute date
+    duration: 4d
+    effect:
+      arrivals: 3.0
+```
+
+### Supported types
+
+| Type                 | Typical effects (Phase 5 honors `arrivals` only) |
+| -------------------- | ------------------------------------------------ |
+| `marketing_campaign` | `arrivals`, `conversion`                         |
+| `outage`             | `all_events`, `arrivals`                         |
+| `ab_test`            | `funnel_drop_off`, `conversion`                  |
+| `shopping_season`    | `arrivals`, `avg_order_value`                    |
+| `product_launch`     | `arrivals`, `feature_events`                     |
+| `feature_regression` | `conversion`, `session_duration`                 |
+
+### Duration
+
+`"<N>d"` for days, `"<N>h"` for hours (e.g. `"6h"` for an outage).
+
+### Selection
+
+The `anomalies` axis controls whether the list is applied:
+
+- `anomalies: clean` → the list is ignored (empty).
+- `anomalies: explicit` / `full` / category → the preset's list is used.
+
 ## Status
 
-**Phase 4 shipped.** 10 domain packs + 8 preset YAMLs. Any preset can be loaded, described, or seeded end-to-end.
+**Phase 5 shipped.** Anomaly parser + arrivals applicator wired into the Engine. Only `arrivals` effects are applied; all other effect keys (`conversion`, `all_events`, `funnel_drop_off`, etc.) are parsed but deferred to a later phase.
 
 Coming in later phases:
 
 - Phase 3b — deferred realism (device-aware, payday, marketing micro-bursts)
-- Phase 5 — anomaly applicator (Black Friday spikes, outages, A/B tests, etc.)
+- Phase 5b — non-arrivals anomaly effects (conversion, session_duration, etc.)
 - Phase 6 — per-preset acceptance assertions + visual plots
