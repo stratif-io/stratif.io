@@ -48,7 +48,7 @@ export function IdentitySection() {
           aria-describedby={!nameValid ? "identity-name-error" : undefined}
           value={config.name}
           onChange={(e) => setName(e.target.value)}
-          className="h-8 text-sm"
+          className="h-10 md:h-8 text-base md:text-sm"
         />
         {!nameValid && (
           <span
@@ -74,7 +74,7 @@ export function IdentitySection() {
           aria-label="Description"
           value={config.description ?? ""}
           onChange={(e) => setDescription(e.target.value)}
-          className="text-sm min-h-[56px]"
+          className="text-base md:text-sm min-h-[72px] md:min-h-[56px]"
           rows={2}
         />
       </div>
@@ -87,7 +87,7 @@ export function IdentitySection() {
           <SelectTrigger
             id="identity-domain"
             aria-label="Domain"
-            className="h-8 text-sm"
+            className="h-10 md:h-8 text-base md:text-sm"
           >
             <SelectValue />
           </SelectTrigger>

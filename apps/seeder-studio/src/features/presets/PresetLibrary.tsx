@@ -51,7 +51,7 @@ export function PresetLibrary({
         aria-label="Search presets"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="h-8 text-sm"
+        className="h-10 md:h-8 text-base md:text-sm"
       />
 
       <div className="flex flex-wrap gap-1">
@@ -60,7 +60,7 @@ export function PresetLibrary({
           variant="outline"
           onClick={() => setDomain(null)}
           data-active={domain === null}
-          className="rounded-full h-6 px-2 py-0 text-xs data-[active=true]:bg-accent"
+          className="rounded-full h-8 md:h-6 px-3 md:px-2 py-0 text-xs data-[active=true]:bg-accent"
         >
           all
         </Button>
@@ -71,7 +71,7 @@ export function PresetLibrary({
             variant="outline"
             onClick={() => setDomain(d)}
             data-active={domain === d}
-            className="rounded-full h-6 px-2 py-0 text-xs data-[active=true]:bg-accent"
+            className="rounded-full h-8 md:h-6 px-3 md:px-2 py-0 text-xs data-[active=true]:bg-accent"
           >
             {d}
           </Button>

@@ -69,7 +69,7 @@ export function TuningSection() {
                   total_users: numberOrUndef(e.target.value),
                 })
               }
-              className="h-8 text-xs"
+              className="h-10 md:h-8 text-base md:text-xs"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -91,7 +91,7 @@ export function TuningSection() {
                   window_days: numberOrUndef(e.target.value),
                 })
               }
-              className="h-8 text-xs"
+              className="h-10 md:h-8 text-base md:text-xs"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -118,7 +118,7 @@ export function TuningSection() {
                   split_fraction: numberOrUndef(e.target.value),
                 })
               }
-              className="h-8 text-xs"
+              className="h-10 md:h-8 text-base md:text-xs"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -145,7 +145,7 @@ export function TuningSection() {
                   rate: numberOrUndef(e.target.value),
                 })
               }
-              className="h-8 text-xs"
+              className="h-10 md:h-8 text-base md:text-xs"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -161,7 +161,7 @@ export function TuningSection() {
               type="date"
               value={uiStartDate ?? ""}
               onChange={(e) => setUiStartDate(e.target.value || null)}
-              className="h-8 text-xs"
+              className="h-10 md:h-8 text-base md:text-xs"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -177,7 +177,7 @@ export function TuningSection() {
               type="date"
               value={uiEndDate ?? ""}
               onChange={(e) => setUiEndDate(e.target.value || null)}
-              className="h-8 text-xs"
+              className="h-10 md:h-8 text-base md:text-xs"
             />
           </div>
         </div>

@@ -67,6 +67,9 @@ export function PreviewGrid() {
     [anomalies, out.days],
   );
 
+  const allZero =
+    out.events.every((v) => v === 0) && out.activeUsers.every((v) => v === 0);
+
   const stats = useMemo(
     () => ({
       events: headlineStat(out.events, "count"),
@@ -116,54 +119,61 @@ export function PreviewGrid() {
           </Tooltip>
         </TooltipProvider>
       </header>
-      <div
-        ref={gridRef}
-        data-testid="preview-grid-canvas"
-        onPointerMove={handleMove}
-        onPointerLeave={clearIndex}
-        className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto"
-      >
-        <KpiChart
-          title="Events/day"
-          values={out.events}
-          headline={stats.events}
-          color="hsl(var(--chart-6))"
-          bands={bands}
-          guideIndex={guideIndex}
-          startDate={chartStart}
-          endDate={chartEnd}
-        />
-        <KpiChart
-          title="Active users"
-          values={out.activeUsers}
-          headline={stats.active}
-          color="hsl(var(--chart-8))"
-          bands={bands}
-          guideIndex={guideIndex}
-          startDate={chartStart}
-          endDate={chartEnd}
-        />
-        <KpiChart
-          title="New users/day"
-          values={out.newUsers}
-          headline={stats.news}
-          color="hsl(var(--chart-3))"
-          bands={bands}
-          guideIndex={guideIndex}
-          startDate={chartStart}
-          endDate={chartEnd}
-        />
-        <KpiChart
-          title="Stickiness"
-          values={out.stickiness}
-          headline={stats.stickiness}
-          color="hsl(var(--chart-7))"
-          bands={bands}
-          guideIndex={guideIndex}
-          startDate={chartStart}
-          endDate={chartEnd}
-        />
-      </div>
+      {allZero ? (
+        <div className="flex-1 flex items-center justify-center text-[13px] text-muted-foreground p-6 text-center">
+          Preview is empty. Try a non-zero scale tier or increase total users in
+          Tuning overrides.
+        </div>
+      ) : (
+        <div
+          ref={gridRef}
+          data-testid="preview-grid-canvas"
+          onPointerMove={handleMove}
+          onPointerLeave={clearIndex}
+          className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto"
+        >
+          <KpiChart
+            title="Events/day"
+            values={out.events}
+            headline={stats.events}
+            color="hsl(var(--chart-6))"
+            bands={bands}
+            guideIndex={guideIndex}
+            startDate={chartStart}
+            endDate={chartEnd}
+          />
+          <KpiChart
+            title="Active users"
+            values={out.activeUsers}
+            headline={stats.active}
+            color="hsl(var(--chart-8))"
+            bands={bands}
+            guideIndex={guideIndex}
+            startDate={chartStart}
+            endDate={chartEnd}
+          />
+          <KpiChart
+            title="New users/day"
+            values={out.newUsers}
+            headline={stats.news}
+            color="hsl(var(--chart-3))"
+            bands={bands}
+            guideIndex={guideIndex}
+            startDate={chartStart}
+            endDate={chartEnd}
+          />
+          <KpiChart
+            title="Stickiness"
+            values={out.stickiness}
+            headline={stats.stickiness}
+            color="hsl(var(--chart-7))"
+            bands={bands}
+            guideIndex={guideIndex}
+            startDate={chartStart}
+            endDate={chartEnd}
+          />
+        </div>
+      )}
     </section>
   );
 }

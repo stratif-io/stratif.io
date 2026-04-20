@@ -16,6 +16,13 @@ export function AnomaliesPane() {
 
   return (
     <div className="flex flex-col">
+      {anomalies.length === 0 && (
+        <div className="px-3 py-1.5 text-[13px] text-muted-foreground">
+          No anomalies yet. Click{" "}
+          <strong className="text-foreground">+ Anomaly</strong> to add a
+          marketing spike, outage, or product launch.
+        </div>
+      )}
       <AnomalyTrack onEdit={(i) => setEditingIdx(i)} />
       {current && editingIdx !== null && (
         <div className="p-2">
