@@ -1,0 +1,12 @@
+name: retail_declining
+description: Brick-and-mortar + web retail losing market share.
+domain: retail
+axes:
+  growth: declining
+  stickiness: normal
+  engagement_depth: moderate
+  monetization: one_off_purchase
+  virality: none
+  scale: medium
+  geography: us_only
+  anomalies: clean

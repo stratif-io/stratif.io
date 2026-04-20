@@ -1,0 +1,12 @@
+name: dating_app_churn
+description: Quick activation, high churn.
+domain: dating
+axes:
+  growth: seasonal
+  stickiness: churn_heavy
+  engagement_depth: shallow
+  monetization: subscription
+  virality: weak
+  scale: small
+  geography: global
+  anomalies: clean

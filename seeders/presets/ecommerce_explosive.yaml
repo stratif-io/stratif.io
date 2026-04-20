@@ -1,0 +1,12 @@
+name: ecommerce_explosive
+description: Viral e-commerce growing fast.
+domain: ecommerce
+axes:
+  growth: explosive
+  stickiness: sticky
+  engagement_depth: moderate
+  monetization: one_off_purchase
+  virality: strong_viral
+  scale: medium
+  geography: global
+  anomalies: clean
