@@ -44,7 +44,17 @@ class DuckDBBackend:
 
     def open(self, credentials: BaseModel, read_only: bool = True) -> Any:
         creds = DuckDBCredentials.model_validate(credentials.model_dump())
-        return duckdb.connect(creds.resolved_path, read_only=read_only)
+        conn = duckdb.connect(creds.resolved_path, read_only=read_only)
+        # Isolate each connection so concurrent dashboard queries don't
+        # collectively exhaust system memory. DuckDB's default memory_limit
+        # is 80% of system RAM per connection (~13GB on a 16GB Mac); with 15
+        # parallel queries the process claims tens of GBs, swap starts, and
+        # macOS's memory compressor burns cores. Cap at 1GB + 2 threads per
+        # connection so concurrent load is bounded at ~15GB worst case
+        # (typically a fraction of that, since connections are pooled).
+        conn.execute("SET memory_limit = '1GB'")
+        conn.execute("SET threads = 2")
+        return conn
 
     def pool_key(self, connection_id: str, credentials: BaseModel) -> tuple:
         return (connection_id, "duckdb")
