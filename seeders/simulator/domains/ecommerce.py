@@ -13,23 +13,16 @@ import uuid
 from datetime import datetime, timedelta
 
 from seeders.seeder import (
-    COUNTRY_TO_SERVER_REGION,
     PRODUCT_CATEGORIES,
-    REFERRERS,
     SEARCH_QUERIES,
     URL_PATHS,
 )
+from seeders.simulator.domains._shared import event_tuple, pick_referrer
 from seeders.simulator.protocols import DomainPack, SimulationState
 from seeders.simulator.realism.inter_event import sample_inter_event_seconds
 from seeders.simulator.realism.power_law import zipf_sample
 
 _ARCHETYPES = ("bounce", "browser", "researcher", "converter")
-
-
-def _pick_referrer(rng: random.Random) -> str:
-    items = [c[0] for c in REFERRERS]
-    weights = [c[1] for c in REFERRERS]
-    return rng.choices(items, weights=weights, k=1)[0]
 
 
 def _product_cache() -> list[dict]:
@@ -56,41 +49,6 @@ _PRODUCTS.sort(key=lambda p: -p["weight"])
 def _pick_product(rng: random.Random) -> dict:
     idx = zipf_sample(rng, len(_PRODUCTS))
     return _PRODUCTS[idx]
-
-
-def _server(rng: random.Random, country: str) -> str:
-    region = COUNTRY_TO_SERVER_REGION.get(country, "us")
-    return f"server.{region}.{rng.choice(('1', '2'))}"
-
-
-def _event_tuple(
-    rng: random.Random,
-    user: dict,
-    event_name: str,
-    timestamp: datetime,
-    props: dict,
-    referrer: str,
-) -> tuple:
-    traits = user["traits"]
-    context = {
-        "country": user["country"],
-        "city": user["city"],
-        "timezone": user["timezone"],
-        "device_type": user["device_type"],
-        "browser": user["browser"],
-        "os": user["os"],
-        "screen_resolution": user["screen_resolution"],
-        "referrer": referrer,
-    }
-    return (
-        user["id"],
-        event_name,
-        timestamp,
-        props,
-        _server(rng, user["country"]),
-        traits,
-        context,
-    )
 
 
 def _home_props(session_id: str, user: dict) -> dict:
@@ -179,13 +137,13 @@ class EcommercePack:
             raise ValueError(f"unknown archetype {archetype!r}; valid: {_ARCHETYPES}")
 
         session_id = f"{user['id']}_{str(uuid.uuid4())[:6]}"
-        referrer = _pick_referrer(rng)
+        referrer = pick_referrer(rng)
         t = session_start
         events: list[tuple] = []
 
         # Every archetype starts on Home.
         events.append(
-            _event_tuple(rng, user, "Home", t, _home_props(session_id, user), referrer)
+            event_tuple(rng, user, "Home", t, _home_props(session_id, user), referrer)
         )
         if archetype == "bounce":
             return events
@@ -193,7 +151,7 @@ class EcommercePack:
         # Search
         t += timedelta(seconds=sample_inter_event_seconds(rng, "normal"))
         events.append(
-            _event_tuple(
+            event_tuple(
                 rng, user, "Search", t, _search_props(rng, session_id, user), referrer
             )
         )
@@ -208,7 +166,7 @@ class EcommercePack:
             product = _pick_product(rng)
             visited.append(product)
             events.append(
-                _event_tuple(
+                event_tuple(
                     rng,
                     user,
                     "ProductView",
@@ -227,7 +185,7 @@ class EcommercePack:
                 t += timedelta(seconds=sample_inter_event_seconds(rng, "normal"))
                 product = rng.choice(visited)
                 events.append(
-                    _event_tuple(
+                    event_tuple(
                         rng,
                         user,
                         "AddToCart",
@@ -242,7 +200,7 @@ class EcommercePack:
         t += timedelta(seconds=sample_inter_event_seconds(rng, "normal"))
         cart_product = rng.choice(visited) if visited else _pick_product(rng)
         events.append(
-            _event_tuple(
+            event_tuple(
                 rng,
                 user,
                 "AddToCart",
@@ -258,7 +216,7 @@ class EcommercePack:
         extras_count = min(len(extras_pool), rng.randint(0, 2))
         purchased = [cart_product] + rng.sample(extras_pool, extras_count)
         events.append(
-            _event_tuple(
+            event_tuple(
                 rng,
                 user,
                 "Purchase",
