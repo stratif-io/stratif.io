@@ -1,8 +1,10 @@
 export interface SimulationAnomaly {
   type: string;
-  name: string;
-  start: string;
-  duration: string;
+  name?: string;
+  // Python loader accepts either `start` (relative like "-45d" or ISO date) or `date` (ISO date)
+  start?: string;
+  date?: string;
+  duration?: string;
   effect: Record<string, number>;
 }
 

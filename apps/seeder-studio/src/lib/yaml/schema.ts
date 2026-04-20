@@ -1,12 +1,18 @@
 import { z } from "zod";
 
-export const SimulationAnomalySchema = z.object({
-  type: z.string().min(1),
-  name: z.string().min(1),
-  start: z.string().min(1),
-  duration: z.string().min(1),
-  effect: z.record(z.number()),
-});
+export const SimulationAnomalySchema = z
+  .object({
+    type: z.string().min(1),
+    name: z.string().min(1).optional(),
+    // Python loader accepts either `start` (relative like "-45d" or ISO date) or `date` (ISO date)
+    start: z.string().min(1).optional(),
+    date: z.string().min(1).optional(),
+    duration: z.string().min(1).optional(),
+    effect: z.record(z.number()),
+  })
+  .refine((v) => v.start !== undefined || v.date !== undefined, {
+    message: "anomaly must have either start or date",
+  });
 
 export const SimulationScaleOverrideSchema = z.object({
   total_users: z.number().int().positive().optional(),
