@@ -41,7 +41,7 @@ from backend.product_db.models import (
     ConnectionSchemaConfig,
 )
 from backend.services.crypto import encrypt_credentials
-from seeders.connections_config import load_connections_yaml
+from seeders.connections_config import apply_seed_overrides, load_connections_yaml
 
 AUTO_FILTER_NAMES = ("country", "city")
 AUTO_FILTER_ICONS = {"country": "globe", "city": "map-pin"}
@@ -277,7 +277,9 @@ async def _bootstrap(
             print(f"[stratifio] Skipping '{db_type}': no registered backend")
             continue
 
-        creds = entry.get("credentials") or {}
+        # Apply seed-time overrides so the stored Connection points at the
+        # same file + table the seeder writes to.
+        creds = apply_seed_overrides(db_type, entry.get("credentials") or {})
 
         if not skip_seed:
             try:

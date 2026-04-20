@@ -13,7 +13,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from seeders.simulator.config import SimulationConfig
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -1324,3 +1327,102 @@ class BaseSeeder(ABC):
         region = COUNTRY_TO_SERVER_REGION.get(country_code, "us")
         number = random.choice(("1", "2"))
         return f"server.{region}.{number}"
+
+    def events_via_engine(self, config: SimulationConfig) -> Iterator[list[tuple]]:
+        """Return event batches via the cohort Engine (honors axes + realism)."""
+        from seeders.simulator.engine import Engine
+
+        return Engine(config, self).run()
+
+    # Conversion event names per domain — used for per-user `completed_purchases`
+    # stats, a carry-over from the legacy seeder's stats dict. Any user emitting
+    # any of these is counted as "converted".
+    _CONVERSION_EVENTS: frozenset[str] = frozenset(
+        {
+            "Purchase",  # ecommerce, retail, marketplace
+            "IAPPurchase",  # casual_game, gaming_hardcore
+            "PlanUpgraded",  # saas, streaming
+            "PlayCompleted",  # streaming engagement
+            "DateScheduled",  # dating
+            "Deposit",  # fintech (one of several converter events)
+        }
+    )
+
+    def _prepare_engine_cfg(self):
+        """Resolve the SimulationConfig, applying legacy SeedConfig overrides.
+
+        If the seeder was constructed with an explicit ``SeedConfig`` holding
+        ``seed_users`` / ``seed_days`` (the legacy API — used by tests that
+        bypass the CLI and env-var plumbing), those values override the
+        preset's scale.
+        """
+        from seeders.simulator import resolve_config
+        from seeders.simulator.config import ScaleOverride
+
+        cfg = resolve_config(preset_name=None, axis_overrides={})
+
+        legacy_override: dict[str, int] = {}
+        if self.config.seed_users is not None:
+            legacy_override["total_users"] = self.config.seed_users
+        if self.config.seed_days is not None:
+            legacy_override["window_days"] = self.config.seed_days
+        if legacy_override:
+            existing = (
+                cfg.scale_config.model_dump(exclude_none=True)
+                if cfg.scale_config
+                else {}
+            )
+            cfg = cfg.model_copy(
+                update={
+                    "scale_config": ScaleOverride(**{**existing, **legacy_override})
+                }
+            )
+        return cfg
+
+    def _run_engine_loop(self) -> dict[str, int]:
+        """Drive the cohort Engine, insert event batches, return stats.
+
+        Each dialect's ``seed()`` calls this after opening the DB connection
+        and creating the events table. Honors every axis the CLI set via env
+        vars (SEED_PRESET, SEED_OVERRIDE_*, SEED_RANDOM_SEED, etc).
+        Prints a progress line every ``PROGRESS_INTERVAL`` events so that
+        long seeds at `scale=large` don't look hung.
+        """
+        import time as _time
+
+        cfg = self._prepare_engine_cfg()
+
+        total_events = 0
+        user_ids: set[str] = set()
+        purchase_users: set[str] = set()
+        last_progress = 0
+        t0 = _time.monotonic()
+
+        for batch in self.events_via_engine(cfg):
+            self._insert_events(batch)
+            total_events += len(batch)
+            for ev in batch:
+                user_ids.add(ev[0])
+                if ev[1] in self._CONVERSION_EVENTS:
+                    purchase_users.add(ev[0])
+            if total_events - last_progress >= PROGRESS_INTERVAL:
+                elapsed = _time.monotonic() - t0
+                rate = total_events / elapsed if elapsed > 0 else 0
+                print(
+                    f"  {total_events:>10,} events "
+                    f"({len(user_ids):>8,} users, "
+                    f"{rate:>7,.0f} ev/s, "
+                    f"{elapsed:>5.1f}s elapsed)",
+                    flush=True,
+                )
+                last_progress = total_events
+
+        return {
+            "total_events": total_events,
+            "total_users": len(user_ids),
+            "new_users": len(user_ids),
+            "returning_users": 0,
+            "power_users": 0,
+            "browser_only": 0,
+            "completed_purchases": len(purchase_users),
+        }

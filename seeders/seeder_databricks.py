@@ -25,7 +25,7 @@ import structlog
 from databricks import sql
 
 from seeders.connections_config import get_databricks_credentials, load_connections_yaml
-from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
+from seeders.seeder import BaseSeeder, SeedConfig
 
 log = structlog.get_logger(__name__)
 
@@ -258,8 +258,7 @@ class DatabricksSeeder(BaseSeeder):
             mode="parquet" if staging_volume else "insert",
         )
 
-        self._generate_products()
-        users = self._generate_users()
+        cfg = self._prepare_engine_cfg()
 
         connect_kwargs: dict[str, Any] = {
             "server_hostname": host,
@@ -270,32 +269,40 @@ class DatabricksSeeder(BaseSeeder):
             connect_kwargs["staging_allowed_local_path"] = tempfile.gettempdir()
 
         total_events = 0
+        user_ids: set[str] = set()
+        purchase_users: set[str] = set()
+
+        def _count(batch: list[tuple]) -> None:
+            nonlocal total_events
+            total_events += len(batch)
+            for ev in batch:
+                user_ids.add(ev[0])
+                if ev[1] in BaseSeeder._CONVERSION_EVENTS:
+                    purchase_users.add(ev[0])
+
         with sql.connect(**connect_kwargs) as self._conn:
             if self._overwrite_schema:
                 self._create_events_table()
 
             if staging_volume:
                 all_events: list[tuple] = []
-                for batch in self._generate_events_batched(users):
+                for batch in self.events_via_engine(cfg):
                     all_events.extend(batch)
-                    total_events += len(batch)
-                    if total_events % PROGRESS_INTERVAL < len(batch):
-                        log.info("seeding_progress", total_events=total_events)
+                    _count(batch)
                 self._bulk_load_parquet(all_events)
             else:
-                for batch in self._generate_events_batched(users):
+                for batch in self.events_via_engine(cfg):
                     self._insert_events(batch)
-                    total_events += len(batch)
-                    if total_events % PROGRESS_INTERVAL < len(batch):
-                        log.info("seeding_progress", total_events=total_events)
+                    _count(batch)
 
         stats = {
             "total_events": total_events,
-            "total_users": len(users),
-            "new_users": sum(1 for u in users if not u["is_returning"]),
-            "returning_users": sum(1 for u in users if u["is_returning"]),
-            "power_users": sum(1 for u in users if u["is_power_user"]),
-            "completed_purchases": sum(1 for u in users if u["completed_purchase"]),
+            "total_users": len(user_ids),
+            "new_users": len(user_ids),
+            "returning_users": 0,
+            "power_users": 0,
+            "browser_only": 0,
+            "completed_purchases": len(purchase_users),
         }
         log.info("seeding_complete", **stats)
         return stats

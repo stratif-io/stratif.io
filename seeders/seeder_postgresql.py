@@ -17,7 +17,7 @@ import psycopg2.extras
 import structlog
 
 from seeders.connections_config import get_postgresql_credentials, load_connections_yaml
-from seeders.seeder import PROGRESS_INTERVAL, BaseSeeder, SeedConfig
+from seeders.seeder import BaseSeeder, SeedConfig
 
 log = structlog.get_logger(__name__)
 
@@ -98,10 +98,6 @@ class PostgreSQLSeeder(BaseSeeder):
             database=creds.get("database"),
         )
 
-        self._generate_products()
-        users = self._generate_users()
-
-        total_events = 0
         self._conn = psycopg2.connect(
             host=creds["host"],
             port=creds.get("port", 5432),
@@ -111,23 +107,10 @@ class PostgreSQLSeeder(BaseSeeder):
         )
         try:
             self._create_events_table()
-
-            for batch in self._generate_events_batched(users):
-                self._insert_events(batch)
-                total_events += len(batch)
-                if total_events % PROGRESS_INTERVAL < len(batch):
-                    log.info("seeding_progress", total_events=total_events)
+            stats = self._run_engine_loop()
         finally:
             self._conn.close()
 
-        stats = {
-            "total_events": total_events,
-            "total_users": len(users),
-            "new_users": sum(1 for u in users if not u["is_returning"]),
-            "returning_users": sum(1 for u in users if u["is_returning"]),
-            "power_users": sum(1 for u in users if u["is_power_user"]),
-            "completed_purchases": sum(1 for u in users if u["completed_purchase"]),
-        }
         log.info("seeding_complete", **stats)
         return stats
 

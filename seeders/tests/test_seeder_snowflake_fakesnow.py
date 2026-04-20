@@ -66,7 +66,8 @@ def test_snowflake_seeder_e2e_against_fakesnow(fakesnow_patched):
             seeder = SnowflakeSeeder()
             stats = seeder.seed()
 
-        assert stats["total_users"] == 5
+        # SeedConfig(seed_users=5) is the Poisson target; actual count wobbles.
+        assert 1 <= stats["total_users"] <= 15
         assert stats["total_events"] > 0
 
         # Reconnect from a fresh cursor to verify rows landed in events
