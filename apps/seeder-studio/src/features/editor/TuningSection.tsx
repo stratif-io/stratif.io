@@ -16,8 +16,12 @@ export function TuningSection() {
         | { split_fraction?: number; rate?: number }
         | undefined,
   );
+  const uiStartDate = useSeederStore((s) => s.uiStartDate);
+  const uiEndDate = useSeederStore((s) => s.uiEndDate);
   const setScaleConfig = useSeederStore((s) => s.setScaleConfig);
   const setGrowthConfig = useSeederStore((s) => s.setGrowthConfig);
+  const setUiStartDate = useSeederStore((s) => s.setUiStartDate);
+  const setUiEndDate = useSeederStore((s) => s.setUiEndDate);
 
   return (
     <section className="rounded border">
@@ -90,6 +94,26 @@ export function TuningSection() {
                   rate: numberOrUndef(e.target.value),
                 })
               }
+              className="rounded border px-2 py-1"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            Start date (optional)
+            <input
+              aria-label="start date"
+              type="date"
+              value={uiStartDate ?? ""}
+              onChange={(e) => setUiStartDate(e.target.value || null)}
+              className="rounded border px-2 py-1"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            End date (defaults to today)
+            <input
+              aria-label="end date"
+              type="date"
+              value={uiEndDate ?? ""}
+              onChange={(e) => setUiEndDate(e.target.value || null)}
               className="rounded border px-2 py-1"
             />
           </label>

@@ -14,6 +14,17 @@ interface Props {
   color?: string;
   bands?: KpiBand[];
   guideIndex?: number | null;
+  startDate?: Date;
+  endDate?: Date;
+}
+
+const fmt = (d: Date) =>
+  new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(
+    d,
+  );
+
+function midDate(a: Date, b: Date): Date {
+  return new Date(Math.floor((a.getTime() + b.getTime()) / 2));
 }
 
 const W = 300;
@@ -26,6 +37,8 @@ export function KpiChart({
   color = "currentColor",
   bands,
   guideIndex,
+  startDate,
+  endDate,
 }: Props) {
   const { path, step, max } = useMemo(() => {
     if (values.length === 0) return { path: "", step: 0, max: 0 };
@@ -85,6 +98,16 @@ export function KpiChart({
             />
           )}
       </svg>
+      {startDate && endDate && (
+        <div
+          data-testid="kpi-date-ticks"
+          className="flex justify-between text-[9px] text-muted-foreground pt-0.5"
+        >
+          <span>{fmt(startDate)}</span>
+          <span>{fmt(midDate(startDate, endDate))}</span>
+          <span>{fmt(endDate)}</span>
+        </div>
+      )}
       <span className="sr-only">max {max}</span>
     </div>
   );

@@ -38,4 +38,20 @@ describe("TuningSection", () => {
       0.05,
     );
   });
+
+  it("edits uiStartDate via start date input", async () => {
+    const user = userEvent.setup();
+    render(<TuningSection />);
+    await user.click(screen.getByRole("button", { name: /tuning/i }));
+    await user.type(screen.getByLabelText(/start date/i), "2026-01-15");
+    expect(useSeederStore.getState().uiStartDate).toBe("2026-01-15");
+  });
+
+  it("edits uiEndDate via end date input", async () => {
+    const user = userEvent.setup();
+    render(<TuningSection />);
+    await user.click(screen.getByRole("button", { name: /tuning/i }));
+    await user.type(screen.getByLabelText(/end date/i), "2026-04-30");
+    expect(useSeederStore.getState().uiEndDate).toBe("2026-04-30");
+  });
 });

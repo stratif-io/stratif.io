@@ -3,7 +3,8 @@ import { useTwinOutput } from "./useTwinOutput";
 import { KpiChart, type KpiBand } from "./KpiChart";
 import { useSeederStore } from "@/stores/seederStore";
 import { anomalyTypeColor } from "@/lib/twin";
-import { parseDays } from "@/lib/twin/utils";
+import { parseDays, resolveScale } from "@/lib/twin/utils";
+import { resolveDateRange } from "@/lib/time/dateRange";
 import { useHoverGuide } from "./useHoverGuide";
 import type { SimulationConfig } from "@/types/simulation";
 
@@ -24,6 +25,18 @@ export function PreviewGrid() {
   const out = useTwinOutput();
   const anomalies = useSeederStore(
     (s) => s.config.anomalies ?? EMPTY_ANOMALIES,
+  );
+  const uiStartDate = useSeederStore((s) => s.uiStartDate);
+  const uiEndDate = useSeederStore((s) => s.uiEndDate);
+  const scaleOverride = useSeederStore((s) => s.config.scale_config);
+  const scaleAxis = useSeederStore((s) => s.config.axes.scale ?? "small");
+  const { window_days } = useMemo(
+    () => resolveScale(scaleAxis, scaleOverride),
+    [scaleAxis, scaleOverride],
+  );
+  const { start: chartStart, end: chartEnd } = useMemo(
+    () => resolveDateRange(uiStartDate, uiEndDate, window_days),
+    [uiStartDate, uiEndDate, window_days],
   );
   const guideIndex = useHoverGuide((s) => s.index);
   const setIndex = useHoverGuide((s) => s.setIndex);
@@ -87,6 +100,8 @@ export function PreviewGrid() {
           color="#2563eb"
           bands={bands}
           guideIndex={guideIndex}
+          startDate={chartStart}
+          endDate={chartEnd}
         />
         <KpiChart
           title="Active users"
@@ -95,6 +110,8 @@ export function PreviewGrid() {
           color="#10b981"
           bands={bands}
           guideIndex={guideIndex}
+          startDate={chartStart}
+          endDate={chartEnd}
         />
         <KpiChart
           title="New users/day"
@@ -103,6 +120,8 @@ export function PreviewGrid() {
           color="#f59e0b"
           bands={bands}
           guideIndex={guideIndex}
+          startDate={chartStart}
+          endDate={chartEnd}
         />
         <KpiChart
           title="Stickiness"
@@ -111,6 +130,8 @@ export function PreviewGrid() {
           color="#ec4899"
           bands={bands}
           guideIndex={guideIndex}
+          startDate={chartStart}
+          endDate={chartEnd}
         />
       </div>
     </section>

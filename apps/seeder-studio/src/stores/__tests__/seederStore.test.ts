@@ -46,4 +46,18 @@ describe("seederStore", () => {
     expect(s.config.name).toBe("other");
     expect(s.dirty).toBe(true);
   });
+
+  it("setUiStartDate sets the value and does NOT mark dirty", () => {
+    useSeederStore.getState().setUiStartDate("2026-01-01");
+    const s = useSeederStore.getState();
+    expect(s.uiStartDate).toBe("2026-01-01");
+    expect(s.dirty).toBe(false);
+  });
+
+  it("setUiEndDate sets the value and does NOT mark dirty", () => {
+    useSeederStore.getState().setUiEndDate("2026-12-31");
+    const s = useSeederStore.getState();
+    expect(s.uiEndDate).toBe("2026-12-31");
+    expect(s.dirty).toBe(false);
+  });
 });

@@ -13,6 +13,8 @@ export function blankConfig(): SimulationConfig {
 interface SeederState {
   config: SimulationConfig;
   dirty: boolean;
+  uiStartDate: string | null;
+  uiEndDate: string | null;
   loadPreset: (config: SimulationConfig) => void;
   setConfig: (config: SimulationConfig) => void;
   setName: (name: string) => void;
@@ -22,11 +24,15 @@ interface SeederState {
   setScaleConfig: (scaleConfig: SimulationConfig["scale_config"]) => void;
   setGrowthConfig: (growthConfig: SimulationConfig["growth_config"]) => void;
   setAnomalies: (anomalies: SimulationConfig["anomalies"]) => void;
+  setUiStartDate: (iso: string | null) => void;
+  setUiEndDate: (iso: string | null) => void;
 }
 
 export const useSeederStore = create<SeederState>((set) => ({
   config: blankConfig(),
   dirty: false,
+  uiStartDate: null,
+  uiEndDate: null,
 
   loadPreset: (config) => set({ config, dirty: false }),
 
@@ -64,4 +70,7 @@ export const useSeederStore = create<SeederState>((set) => ({
       config: { ...s.config, anomalies },
       dirty: true,
     })),
+
+  setUiStartDate: (iso) => set({ uiStartDate: iso }),
+  setUiEndDate: (iso) => set({ uiEndDate: iso }),
 }));

@@ -42,3 +42,31 @@ describe("KpiChart bands + guide", () => {
     expect(guide).not.toBeNull();
   });
 });
+
+describe("KpiChart date tick labels", () => {
+  it("renders start and end date labels when both provided", () => {
+    const { container } = render(
+      <KpiChart
+        title="X"
+        values={[1, 2, 3]}
+        startDate={new Date(2026, 3, 1)}
+        endDate={new Date(2026, 3, 30)}
+      />,
+    );
+    const text = container.textContent ?? "";
+    const fmtDate = (d: Date) =>
+      new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+      }).format(d);
+    expect(text).toContain(fmtDate(new Date(2026, 3, 1)));
+    expect(text).toContain(fmtDate(new Date(2026, 3, 30)));
+  });
+
+  it("renders no tick labels when dates are not provided", () => {
+    const { container } = render(<KpiChart title="X" values={[1, 2, 3]} />);
+    // No date-tick div present
+    const divs = container.querySelectorAll('[data-testid="kpi-date-ticks"]');
+    expect(divs).toHaveLength(0);
+  });
+});
