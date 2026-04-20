@@ -54,6 +54,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--seed", type=int, default=None, help="Random seed (reproducibility)"
     )
+    p.add_argument(
+        "--only",
+        type=str,
+        default=None,
+        help="Seed only this backend (e.g. duckdb, sqlite, postgresql, clickhouse, snowflake, databricks)",
+    )
 
     # Axis overrides — one flag per axis name. Only the values provided are applied.
     for axis in _AXIS_NAMES:
@@ -110,7 +116,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if cfg.random_seed is not None:
         os.environ["SEED_RANDOM_SEED"] = str(cfg.random_seed)
 
-    bootstrap()
+    bootstrap(only=args.only)
     return 0
 
 
