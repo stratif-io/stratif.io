@@ -1,0 +1,34 @@
+import { Segmented } from "@stratif-io/web";
+import { useSeederStore } from "@/stores/seederStore";
+import { AXIS_SPEC } from "@/lib/twin";
+
+export function AxesSection() {
+  const axes = useSeederStore((s) => s.config.axes);
+  const setAxis = useSeederStore((s) => s.setAxis);
+
+  return (
+    <section className="rounded border p-3 flex flex-col gap-2">
+      <h2 className="text-sm font-semibold">Axes</h2>
+      {Object.values(AXIS_SPEC).map((axis) => {
+        const current = axes[axis.id] ?? axis.default;
+        return (
+          <div
+            key={axis.id}
+            className="grid grid-cols-[70px_1fr] gap-3 items-center"
+          >
+            <div className="text-xs font-medium">{axis.label}</div>
+            <Segmented
+              value={current}
+              onChange={(v) => setAxis(axis.id, v)}
+              options={axis.values.map((v) => ({
+                value: v.value,
+                label: v.label,
+                tooltip: v.description || undefined,
+              }))}
+            />
+          </div>
+        );
+      })}
+    </section>
+  );
+}
