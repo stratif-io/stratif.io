@@ -33,6 +33,38 @@ Legacy env vars `SEED_USERS` and `SEED_DAYS` still work as overrides on the
 
 Drop a YAML into `seeders/presets/`. See `seeders/presets/ecommerce_steady.yaml`.
 
+## Domain catalog (Phase 4)
+
+10 domains shipped; each defines its event vocabulary + session archetypes + supported monetization modes.
+
+| Domain            | Events                                                                                       | Supported monetization             |
+| ----------------- | -------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `ecommerce`       | 5 funnel events                                                                              | one_off_purchase                   |
+| `retail`          | ecommerce + StoreLocator/InStorePickup/LoyaltyRedemption                                     | one_off_purchase                   |
+| `casual_game`     | LevelStart/Complete/Fail, IAPOffer/Purchase, AdShown/Clicked, DailyBonus                     | iap_whales, ad_supported, freemium |
+| `gaming_hardcore` | casual_game + Matchmaking/MatchStart/End, ClanJoin, Chat                                     | iap_whales, ad_supported           |
+| `saas`            | SignUp, EmailVerified, Onboarded, ProjectCreated, ItemCreated, Invite*, Upgrade*             | subscription, freemium             |
+| `streaming`       | Browse, TitlePageView, Play\* (Started/Paused/Completed), Rated, AddedToList                 | subscription, ad_supported         |
+| `social`          | FeedLoaded, Post\* (Viewed/Liked/Shared), CommentPosted, FollowAdded, MessageSent            | ad_supported                       |
+| `marketplace`     | Listing\* (View/Created/Sold), MessageToSeller, Offer, Purchase                              | marketplace_fee                    |
+| `dating`          | ProfileView, Swipe, Match, MessageSent/Read, DateScheduled, SubscriptionUpgraded             | subscription                       |
+| `fintech`         | AccountOpened, Deposit/Withdrawal, Transfer\*, CardPurchase, BalanceChecked, StatementViewed | one_off_purchase                   |
+
+## Preset catalog
+
+8 presets shipped. Each pairs a domain with axis values.
+
+| Preset                  | Domain      | Dynamic                          |
+| ----------------------- | ----------- | -------------------------------- |
+| `ecommerce_steady`      | ecommerce   | baseline, default                |
+| `ecommerce_explosive`   | ecommerce   | viral growth                     |
+| `retail_declining`      | retail      | losing market share              |
+| `casual_game_addictive` | casual_game | whale-heavy IAP, high stickiness |
+| `saas_pmf`              | saas        | steady growth, low churn         |
+| `streaming_mature`      | streaming   | binge sessions, high retention   |
+| `marketplace_scaling`   | marketplace | GMV growth                       |
+| `dating_app_churn`      | dating      | quick activation, high churn     |
+
 ## Axis reference (Phase 2a)
 
 Two axes are implemented today; all others are declared in presets but silently ignored until later phases.
@@ -134,11 +166,10 @@ Both produce ecommerce events with the same vocabulary but qualitatively differe
 
 ## Status
 
-**Phase 3 shipped.** Realism layer (8 of 14 effects) applied to ecommerce data. Deterministic RNG threaded end-to-end — `--seed 42` produces byte-identical output across runs.
+**Phase 4 shipped.** 10 domain packs + 8 preset YAMLs. Any preset can be loaded, described, or seeded end-to-end.
 
 Coming in later phases:
 
 - Phase 3b — deferred realism (device-aware, payday, marketing micro-bursts)
-- Phase 4 — 9 more domain packs (retail, casual_game, saas, streaming, ...) — this is when monetization + virality start producing varied data per vertical, and referral clustering gets its consumer
-- Phase 5 — anomaly types + per-preset anomaly blocks
+- Phase 5 — anomaly applicator (Black Friday spikes, outages, A/B tests, etc.)
 - Phase 6 — per-preset acceptance assertions + visual plots
