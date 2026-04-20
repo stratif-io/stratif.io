@@ -39,7 +39,7 @@ export function TuningSection() {
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between text-sm font-semibold hover:text-primary transition-colors"
+        className="w-full flex items-center justify-between text-base font-semibold hover:text-primary transition-colors"
         aria-expanded={expanded}
         aria-controls="tuning-body"
       >
@@ -51,7 +51,10 @@ export function TuningSection() {
       {expanded && (
         <div id="tuning-body" className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="tuning-total-users" className="text-xs">
+            <Label
+              htmlFor="tuning-total-users"
+              className="text-[13px] font-medium"
+            >
               Total users
             </Label>
             <Input
@@ -70,7 +73,10 @@ export function TuningSection() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="tuning-window-days" className="text-xs">
+            <Label
+              htmlFor="tuning-window-days"
+              className="text-[13px] font-medium"
+            >
               Window days
             </Label>
             <Input
@@ -89,7 +95,10 @@ export function TuningSection() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="tuning-split-fraction" className="text-xs">
+            <Label
+              htmlFor="tuning-split-fraction"
+              className="text-[13px] font-medium"
+            >
               Growth split fraction
             </Label>
             <Input
@@ -113,7 +122,10 @@ export function TuningSection() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="tuning-growth-rate" className="text-xs">
+            <Label
+              htmlFor="tuning-growth-rate"
+              className="text-[13px] font-medium"
+            >
               Growth rate
             </Label>
             <Input
@@ -137,7 +149,10 @@ export function TuningSection() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="tuning-start-date" className="text-xs">
+            <Label
+              htmlFor="tuning-start-date"
+              className="text-[13px] font-medium"
+            >
               Start date (optional)
             </Label>
             <Input
@@ -150,7 +165,10 @@ export function TuningSection() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="tuning-end-date" className="text-xs">
+            <Label
+              htmlFor="tuning-end-date"
+              className="text-[13px] font-medium"
+            >
               End date (defaults to today)
             </Label>
             <Input

@@ -34,11 +34,11 @@ export function IdentitySection() {
 
   return (
     <section aria-labelledby="identity-heading" className="space-y-3">
-      <h2 id="identity-heading" className="text-sm font-semibold">
+      <h2 id="identity-heading" className="text-base font-semibold">
         Identity
       </h2>
       <div className="flex flex-col gap-1">
-        <Label htmlFor="identity-name" className="text-xs">
+        <Label htmlFor="identity-name" className="text-[13px] font-medium">
           Name
         </Label>
         <Input
@@ -63,7 +63,10 @@ export function IdentitySection() {
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor="identity-description" className="text-xs">
+        <Label
+          htmlFor="identity-description"
+          className="text-[13px] font-medium"
+        >
           Description
         </Label>
         <Textarea
@@ -77,7 +80,7 @@ export function IdentitySection() {
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor="identity-domain" className="text-xs">
+        <Label htmlFor="identity-domain" className="text-[13px] font-medium">
           Domain
         </Label>
         <Select value={config.domain} onValueChange={setDomain}>

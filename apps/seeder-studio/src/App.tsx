@@ -77,7 +77,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="border-b p-3 flex items-center gap-3">
-        <h1 className="text-lg font-semibold">Seeder Studio</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Seeder Studio</h1>
         <span className="text-xs text-muted-foreground">{config.name}</span>
         {dirty && (
           <Badge variant="outline" className="text-xs">

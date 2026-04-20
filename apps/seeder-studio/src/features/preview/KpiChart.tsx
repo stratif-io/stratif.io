@@ -70,9 +70,18 @@ export function KpiChart({
   return (
     <div className="rounded-lg border bg-card p-3 flex flex-col gap-2">
       <div className="flex items-baseline justify-between">
-        <span className="text-[11px] font-semibold">{title}</span>
+        <div className="flex items-baseline gap-2">
+          <span
+            className="inline-block w-2 h-2 rounded-full"
+            style={{ backgroundColor: color }}
+            aria-hidden="true"
+          />
+          <span className="text-xs font-semibold">{title}</span>
+        </div>
         {headline && (
-          <span className="text-[10px] text-muted-foreground">{headline}</span>
+          <span className="text-[11px] text-muted-foreground tabular-nums">
+            {headline}
+          </span>
         )}
       </div>
       <div className="h-32 w-full">

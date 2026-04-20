@@ -8,7 +8,7 @@ export function AxesSection() {
 
   return (
     <section aria-labelledby="axes-heading" className="space-y-3">
-      <h2 id="axes-heading" className="text-sm font-semibold">
+      <h2 id="axes-heading" className="text-base font-semibold">
         Axes
       </h2>
       {Object.values(AXIS_SPEC).map((axis) => {
@@ -18,7 +18,7 @@ export function AxesSection() {
             key={axis.id}
             className="grid grid-cols-[70px_1fr] gap-3 items-center"
           >
-            <div className="text-xs font-medium">{axis.label}</div>
+            <div className="text-[13px] font-medium">{axis.label}</div>
             <Segmented
               value={current}
               defaultValue={axis.default}
