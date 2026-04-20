@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button, Card, CardContent, Input, Label } from "@stratif-io/web";
 import { useSeederStore } from "@/stores/seederStore";
 
 function numberOrUndef(s: string): number | undefined {
@@ -24,20 +25,24 @@ export function TuningSection() {
   const setUiEndDate = useSeederStore((s) => s.setUiEndDate);
 
   return (
-    <section className="rounded border">
-      <button
+    <Card>
+      <Button
         type="button"
+        variant="ghost"
         onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between p-3 text-sm font-semibold"
+        className="w-full flex items-center justify-between p-3 text-sm font-semibold h-auto rounded-b-none"
       >
         Tuning overrides
         <span className="text-xs">{expanded ? "−" : "+"}</span>
-      </button>
+      </Button>
       {expanded && (
-        <div className="p-3 pt-0 grid grid-cols-2 gap-3 text-xs">
-          <label className="flex flex-col gap-1">
-            Total users
-            <input
+        <CardContent className="pt-0 grid grid-cols-2 gap-3 text-xs">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="tuning-total-users" className="text-xs">
+              Total users
+            </Label>
+            <Input
+              id="tuning-total-users"
               aria-label="total users"
               type="number"
               value={scale?.total_users ?? ""}
@@ -47,12 +52,15 @@ export function TuningSection() {
                   total_users: numberOrUndef(e.target.value),
                 })
               }
-              className="rounded border px-2 py-1"
+              className="h-8 text-xs"
             />
-          </label>
-          <label className="flex flex-col gap-1">
-            Window days
-            <input
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="tuning-window-days" className="text-xs">
+              Window days
+            </Label>
+            <Input
+              id="tuning-window-days"
               aria-label="window days"
               type="number"
               value={scale?.window_days ?? ""}
@@ -62,12 +70,15 @@ export function TuningSection() {
                   window_days: numberOrUndef(e.target.value),
                 })
               }
-              className="rounded border px-2 py-1"
+              className="h-8 text-xs"
             />
-          </label>
-          <label className="flex flex-col gap-1">
-            Growth split fraction
-            <input
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="tuning-split-fraction" className="text-xs">
+              Growth split fraction
+            </Label>
+            <Input
+              id="tuning-split-fraction"
               aria-label="growth split fraction"
               type="number"
               step="0.01"
@@ -78,12 +89,15 @@ export function TuningSection() {
                   split_fraction: numberOrUndef(e.target.value),
                 })
               }
-              className="rounded border px-2 py-1"
+              className="h-8 text-xs"
             />
-          </label>
-          <label className="flex flex-col gap-1">
-            Growth rate
-            <input
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="tuning-growth-rate" className="text-xs">
+              Growth rate
+            </Label>
+            <Input
+              id="tuning-growth-rate"
               aria-label="growth rate"
               type="number"
               step="0.001"
@@ -94,31 +108,37 @@ export function TuningSection() {
                   rate: numberOrUndef(e.target.value),
                 })
               }
-              className="rounded border px-2 py-1"
+              className="h-8 text-xs"
             />
-          </label>
-          <label className="flex flex-col gap-1">
-            Start date (optional)
-            <input
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="tuning-start-date" className="text-xs">
+              Start date (optional)
+            </Label>
+            <Input
+              id="tuning-start-date"
               aria-label="start date"
               type="date"
               value={uiStartDate ?? ""}
               onChange={(e) => setUiStartDate(e.target.value || null)}
-              className="rounded border px-2 py-1"
+              className="h-8 text-xs"
             />
-          </label>
-          <label className="flex flex-col gap-1">
-            End date (defaults to today)
-            <input
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="tuning-end-date" className="text-xs">
+              End date (defaults to today)
+            </Label>
+            <Input
+              id="tuning-end-date"
               aria-label="end date"
               type="date"
               value={uiEndDate ?? ""}
               onChange={(e) => setUiEndDate(e.target.value || null)}
-              className="rounded border px-2 py-1"
+              className="h-8 text-xs"
             />
-          </label>
-        </div>
+          </div>
+        </CardContent>
       )}
-    </section>
+    </Card>
   );
 }

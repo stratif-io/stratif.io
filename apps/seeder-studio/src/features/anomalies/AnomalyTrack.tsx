@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Button } from "@stratif-io/web";
 import { AnomalyPill } from "./AnomalyPill";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveScale } from "@/lib/twin/utils";
@@ -57,13 +58,15 @@ export function AnomalyTrack({ onEdit }: Props) {
           />
         ))}
       </svg>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         onClick={addAnomaly}
-        className="shrink-0 rounded border border-dashed px-2 py-1 text-xs"
+        className="shrink-0 border-dashed"
       >
         + Anomaly
-      </button>
+      </Button>
     </div>
   );
 }

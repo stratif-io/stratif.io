@@ -1,3 +1,17 @@
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from "@stratif-io/web";
 import { useSeederStore } from "@/stores/seederStore";
 
 const DOMAINS = [
@@ -23,48 +37,66 @@ export function IdentitySection() {
   const nameValid = NAME_RE.test(config.name);
 
   return (
-    <section className="rounded border p-3 flex flex-col gap-3">
-      <h2 className="text-sm font-semibold">Identity</h2>
-      <label className="flex flex-col gap-1 text-xs">
-        Name
-        <input
-          aria-label="Name"
-          value={config.name}
-          onChange={(e) => setName(e.target.value)}
-          className="rounded border px-2 py-1 text-sm"
-        />
-        {!nameValid && (
-          <span className="text-destructive">
-            Use lowercase letters, digits, and underscores (must start with a
-            letter).
-          </span>
-        )}
-      </label>
-      <label className="flex flex-col gap-1 text-xs">
-        Description
-        <textarea
-          aria-label="Description"
-          value={config.description ?? ""}
-          onChange={(e) => setDescription(e.target.value)}
-          className="rounded border px-2 py-1 text-sm"
-          rows={2}
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-xs">
-        Domain
-        <select
-          aria-label="Domain"
-          value={config.domain}
-          onChange={(e) => setDomain(e.target.value)}
-          className="rounded border px-2 py-1 text-sm"
-        >
-          {DOMAINS.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
-      </label>
-    </section>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Identity</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col space-y-3">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="identity-name" className="text-xs">
+            Name
+          </Label>
+          <Input
+            id="identity-name"
+            aria-label="Name"
+            value={config.name}
+            onChange={(e) => setName(e.target.value)}
+            className="h-8 text-sm"
+          />
+          {!nameValid && (
+            <span className="text-xs text-destructive">
+              Use lowercase letters, digits, and underscores (must start with a
+              letter).
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="identity-description" className="text-xs">
+            Description
+          </Label>
+          <Textarea
+            id="identity-description"
+            aria-label="Description"
+            value={config.description ?? ""}
+            onChange={(e) => setDescription(e.target.value)}
+            className="text-sm min-h-[56px]"
+            rows={2}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="identity-domain" className="text-xs">
+            Domain
+          </Label>
+          <Select value={config.domain} onValueChange={setDomain}>
+            <SelectTrigger
+              id="identity-domain"
+              aria-label="Domain"
+              className="h-8 text-sm"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DOMAINS.map((d) => (
+                <SelectItem key={d} value={d}>
+                  {d}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

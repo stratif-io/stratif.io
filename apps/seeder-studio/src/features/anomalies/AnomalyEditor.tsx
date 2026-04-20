@@ -1,4 +1,16 @@
 import { useState, useEffect } from "react";
+import {
+  Button,
+  Card,
+  CardContent,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@stratif-io/web";
 import type { SimulationAnomaly } from "@/types/simulation";
 import { ANOMALY_SPEC } from "@/lib/twin";
 
@@ -28,89 +40,117 @@ export function AnomalyEditor({ anomaly, onChange, onDelete, onClose }: Props) {
   };
 
   return (
-    <div className="rounded border bg-background shadow-md p-3 flex flex-col gap-2 w-[280px]">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Anomaly</h3>
-        <button type="button" onClick={onClose} className="text-xs">
-          close
-        </button>
-      </div>
+    <Card className="w-[280px] shadow-md">
+      <CardContent className="p-3 flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Anomaly</h3>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-6 text-xs px-2"
+          >
+            close
+          </Button>
+        </div>
 
-      <label className="flex flex-col gap-1 text-xs">
-        Type
-        <select
-          aria-label="type"
-          value={local.type}
-          onChange={(e) => setType(e.target.value)}
-          className="rounded border px-2 py-1"
+        <div className="flex flex-col gap-1 text-xs">
+          <Label htmlFor="anomaly-type" className="text-xs">
+            Type
+          </Label>
+          <Select value={local.type} onValueChange={setType}>
+            <SelectTrigger
+              id="anomaly-type"
+              aria-label="type"
+              className="h-8 text-xs"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(ANOMALY_SPEC).map((s) => (
+                <SelectItem key={s.type} value={s.type}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="anomaly-name" className="text-xs">
+            Name
+          </Label>
+          <Input
+            id="anomaly-name"
+            aria-label="name"
+            value={local.name ?? ""}
+            onChange={(e) => emit({ ...local, name: e.target.value })}
+            className="h-8 text-xs"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="anomaly-start" className="text-xs">
+              Start (e.g. 10d, -30d)
+            </Label>
+            <Input
+              id="anomaly-start"
+              aria-label="start"
+              value={local.start ?? ""}
+              onChange={(e) => emit({ ...local, start: e.target.value })}
+              className="h-8 text-xs"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="anomaly-duration" className="text-xs">
+              Duration (e.g. 5d)
+            </Label>
+            <Input
+              id="anomaly-duration"
+              aria-label="duration"
+              value={local.duration ?? ""}
+              onChange={(e) => emit({ ...local, duration: e.target.value })}
+              className="h-8 text-xs"
+            />
+          </div>
+        </div>
+
+        {spec.effectFields.map((f) => (
+          <div key={f.key} className="flex flex-col gap-1">
+            <Label htmlFor={`anomaly-effect-${f.key}`} className="text-xs">
+              {f.label}
+            </Label>
+            <Input
+              id={`anomaly-effect-${f.key}`}
+              aria-label={f.label}
+              type="number"
+              step="0.1"
+              min={f.min}
+              max={f.max}
+              value={local.effect[f.key] ?? f.default}
+              onChange={(e) =>
+                emit({
+                  ...local,
+                  effect: { ...local.effect, [f.key]: Number(e.target.value) },
+                })
+              }
+              className="h-8 text-xs"
+            />
+          </div>
+        ))}
+
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          onClick={onDelete}
+          className="mt-1"
         >
-          {Object.values(ANOMALY_SPEC).map((s) => (
-            <option key={s.type} value={s.type}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="flex flex-col gap-1 text-xs">
-        Name
-        <input
-          aria-label="name"
-          value={local.name ?? ""}
-          onChange={(e) => emit({ ...local, name: e.target.value })}
-          className="rounded border px-2 py-1"
-        />
-      </label>
-
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <label className="flex flex-col gap-1">
-          Start (e.g. 10d, -30d)
-          <input
-            aria-label="start"
-            value={local.start ?? ""}
-            onChange={(e) => emit({ ...local, start: e.target.value })}
-            className="rounded border px-2 py-1"
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          Duration (e.g. 5d)
-          <input
-            aria-label="duration"
-            value={local.duration ?? ""}
-            onChange={(e) => emit({ ...local, duration: e.target.value })}
-            className="rounded border px-2 py-1"
-          />
-        </label>
-      </div>
-
-      {spec.effectFields.map((f) => (
-        <label key={f.key} className="flex flex-col gap-1 text-xs">
-          {f.label}
-          <input
-            aria-label={f.label}
-            type="number"
-            step="0.1"
-            min={f.min}
-            max={f.max}
-            value={local.effect[f.key] ?? f.default}
-            onChange={(e) =>
-              emit({
-                ...local,
-                effect: { ...local.effect, [f.key]: Number(e.target.value) },
-              })
-            }
-            className="rounded border px-2 py-1"
-          />
-        </label>
-      ))}
-
-      <button
-        type="button"
-        onClick={onDelete}
-        className="rounded border border-destructive text-destructive text-xs px-2 py-1"
-      >
-        Delete
-      </button>
-    </div>
+          Delete
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

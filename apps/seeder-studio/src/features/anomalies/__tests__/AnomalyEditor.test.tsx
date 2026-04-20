@@ -56,7 +56,8 @@ describe("AnomalyEditor", () => {
         onClose={() => {}}
       />,
     );
-    await user.selectOptions(screen.getByLabelText(/type/i), "outage");
+    await user.click(screen.getByRole("combobox", { name: /type/i }));
+    await user.click(await screen.findByRole("option", { name: /outage/i }));
     const last = onChange.mock.calls.at(-1)![0];
     expect(last.type).toBe("outage");
     expect(last.effect.arrivals).toBe(0.2);

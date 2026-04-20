@@ -28,7 +28,10 @@ describe("IdentitySection", () => {
   it("edits domain via select", async () => {
     const user = userEvent.setup();
     render(<IdentitySection />);
-    await user.selectOptions(screen.getByLabelText(/domain/i), "casual_game");
+    await user.click(screen.getByRole("combobox", { name: /domain/i }));
+    await user.click(
+      await screen.findByRole("option", { name: "casual_game" }),
+    );
     expect(useSeederStore.getState().config.domain).toBe("casual_game");
   });
 

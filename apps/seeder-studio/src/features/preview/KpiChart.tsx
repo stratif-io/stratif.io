@@ -1,4 +1,15 @@
 import { useMemo } from "react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceArea,
+  ReferenceLine,
+  CartesianGrid,
+} from "recharts";
 
 export interface KpiBand {
   start: number;
@@ -23,92 +34,122 @@ const fmt = (d: Date) =>
     d,
   );
 
-function midDate(a: Date, b: Date): Date {
-  return new Date(Math.floor((a.getTime() + b.getTime()) / 2));
+function dateFor(
+  idx: number,
+  startDate?: Date,
+  endDate?: Date,
+  total?: number,
+) {
+  if (!startDate || !endDate || !total || total < 2) return "";
+  const rel = idx / (total - 1);
+  const ms =
+    startDate.getTime() + rel * (endDate.getTime() - startDate.getTime());
+  return fmt(new Date(ms));
 }
-
-const W = 300;
-const H = 80;
 
 export function KpiChart({
   title,
   values,
   headline,
-  color = "currentColor",
+  color = "#2563eb",
   bands,
   guideIndex,
   startDate,
   endDate,
 }: Props) {
-  const { path, step, max } = useMemo(() => {
-    if (values.length === 0) return { path: "", step: 0, max: 0 };
-    const mx = Math.max(1, ...values);
-    const st = W / Math.max(1, values.length - 1);
-    const points = values
-      .map((v, i) => `${i * st},${H - (v / mx) * H}`)
-      .join(" L ");
-    return { path: `M ${points}`, step: st, max: mx };
-  }, [values]);
+  const data = useMemo(
+    () => values.map((v, i) => ({ idx: i, value: v })),
+    [values],
+  );
+
+  const ticks = useMemo(() => {
+    if (values.length === 0) return [];
+    return [0, Math.floor((values.length - 1) / 2), values.length - 1];
+  }, [values.length]);
 
   return (
-    <div className="rounded border p-2 flex flex-col gap-1">
+    <div className="rounded-lg border bg-card p-3 flex flex-col gap-2">
       <div className="flex items-baseline justify-between">
         <span className="text-xs font-semibold">{title}</span>
         {headline && (
           <span className="text-[10px] text-muted-foreground">{headline}</span>
         )}
       </div>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
-        className="w-full h-20"
-        role="img"
-        aria-label={`${title} chart`}
-      >
-        {bands?.map((b, i) => (
-          <rect
-            key={i}
-            data-testid="kpi-band"
-            x={b.start * step}
-            y={0}
-            width={(b.end - b.start) * step}
-            height={H}
-            fill={b.color}
-            opacity={b.alpha ?? 0.18}
-          />
-        ))}
-        <path
-          d={path}
-          fill="none"
-          stroke={color}
-          strokeWidth="1.5"
-          data-testid="kpi-line"
-        />
-        {guideIndex != null &&
-          guideIndex >= 0 &&
-          guideIndex < values.length && (
-            <line
-              data-testid="kpi-guide"
-              x1={guideIndex * step}
-              x2={guideIndex * step}
-              y1={0}
-              y2={H}
-              stroke="#999"
-              strokeDasharray="2,2"
+      <div className="h-24 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={data}
+            margin={{ top: 4, right: 4, left: 4, bottom: 4 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="currentColor"
+              opacity={0.08}
+              vertical={false}
             />
-          )}
-      </svg>
-      {startDate && endDate && (
-        <div
-          data-testid="kpi-date-ticks"
-          className="flex justify-between text-[9px] text-muted-foreground pt-0.5"
-        >
-          <span>{fmt(startDate)}</span>
-          <span>{fmt(midDate(startDate, endDate))}</span>
-          <span>{fmt(endDate)}</span>
-        </div>
-      )}
-      <span className="sr-only">max {max}</span>
+            {bands?.map((b, i) => (
+              <ReferenceArea
+                key={i}
+                x1={b.start}
+                x2={b.end}
+                fill={b.color}
+                fillOpacity={b.alpha ?? 0.18}
+                stroke="none"
+                data-testid="kpi-band"
+              />
+            ))}
+            <XAxis
+              dataKey="idx"
+              type="number"
+              domain={[0, Math.max(0, values.length - 1)]}
+              ticks={ticks}
+              tickFormatter={(idx: number) =>
+                dateFor(idx, startDate, endDate, values.length)
+              }
+              stroke="currentColor"
+              tick={{ fontSize: 9, fill: "currentColor", opacity: 0.6 }}
+              axisLine={false}
+              tickLine={false}
+              height={16}
+            />
+            <YAxis hide />
+            <Tooltip
+              cursor={{
+                stroke: "currentColor",
+                strokeDasharray: "2 2",
+                opacity: 0.4,
+              }}
+              contentStyle={{
+                fontSize: 11,
+                padding: "4px 8px",
+                borderRadius: 6,
+              }}
+              labelFormatter={(idx: number) =>
+                dateFor(idx, startDate, endDate, values.length) || `day ${idx}`
+              }
+              formatter={(v: number) => [v, title]}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={1.5}
+              dot={false}
+              isAnimationActive={false}
+            />
+            {guideIndex != null &&
+              guideIndex >= 0 &&
+              guideIndex < values.length && (
+                <ReferenceLine
+                  x={guideIndex}
+                  stroke="currentColor"
+                  strokeDasharray="2 2"
+                  opacity={0.6}
+                />
+              )}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

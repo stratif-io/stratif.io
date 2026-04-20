@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@stratif-io/web";
 import { parseConfigYaml } from "@/lib/yaml/roundTrip";
 import type { SimulationConfig } from "@/types/simulation";
 
@@ -38,12 +39,14 @@ export function YamlPanel({ yaml, onValidConfig, debounceMs = 150 }: Props) {
     <section className="h-full w-full flex flex-col">
       <header className="flex items-center justify-between p-2 border-b">
         <div className="text-sm font-semibold">YAML</div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => navigator.clipboard.writeText(value)}
-          className="text-xs rounded border px-2 py-0.5 hover:bg-accent"
+          className="h-6 text-xs px-2"
         >
           Copy
-        </button>
+        </Button>
       </header>
       <div className="flex-1 overflow-auto" data-testid="yaml-editor">
         <textarea
