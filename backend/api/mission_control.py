@@ -118,15 +118,31 @@ def _fetch_period_metrics(
     avg_active_days = round(float(prow[3] or 0.0), 2)
     power_users = int(prow[4] or 0)
 
-    # --- 2. Sessions summary (unchanged — already one query) ---
+    # --- 2. Sessions summary ---
+    # Push the time window into the session CTE's first stage so window
+    # functions (LAG, SUM OVER) scan only the period of interest plus a
+    # ``timeout_minutes`` buffer behind ``period_start`` — enough to
+    # correctly detect session boundaries. On large event tables this turns
+    # a full-table scan into a period-scoped scan (10-100x faster).
+    timeout = db.get_session_timeout_minutes()
+    dialect = db.get_dialect()
+    prefilter_start = period_start - timedelta(minutes=timeout)
+    prefilter_start_ts = f"{prefilter_start} 00:00:00"
+
     ev_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
     ev_params: list = [ps, pe]
     ev_where.extend(filter_clauses)
     ev_params.extend(filter_params)
     ev_where_sql = "WHERE " + " AND ".join(ev_where)
 
+    events_prefilter_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+    events_prefilter_params: list = [prefilter_start_ts, pe]
+    events_prefilter_where.extend(filter_clauses)
+    events_prefilter_params.extend(filter_params)
+    events_prefilter_sql = "WHERE " + " AND ".join(events_prefilter_where)
+
     sess_where: list[str] = ["ds.start_time >= ?", "ds.start_time <= ?"]
-    sess_params: list = [ps, pe]
+    sess_params: list = list(events_prefilter_params) + [ps, pe]
     if filter_clauses:
         sess_where.append(
             f"ds.user_id IN (SELECT DISTINCT user_id FROM events {ev_where_sql})"
@@ -134,12 +150,10 @@ def _fetch_period_metrics(
         sess_params.extend(ev_params)
 
     sess_where_sql = "WHERE " + " AND ".join(sess_where)
-    timeout = db.get_session_timeout_minutes()
-    dialect = db.get_dialect()
 
     sess_rows = db.execute(
         f"""
-        WITH {session_ctes(timeout, dialect)}
+        WITH {session_ctes(timeout, dialect, events_prefilter=events_prefilter_sql)}
         SELECT COUNT(*), AVG(ds.duration_sec), AVG(ds.event_count)
         FROM derived_sessions ds
         {sess_where_sql}
@@ -298,16 +312,25 @@ def _fetch_single_metric(
         "avg_session_duration_sec",
         "avg_events_per_session",
     ):
+        timeout = db.get_session_timeout_minutes()
+        dialect = db.get_dialect()
+        prefilter_start = period_start - timedelta(minutes=timeout)
+        pfs = f"{prefilter_start} 00:00:00"
+
+        events_prefilter_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+        events_prefilter_params: list = [pfs, pe]
+        events_prefilter_where.extend(filter_clauses)
+        events_prefilter_params.extend(filter_params)
+        events_prefilter_sql = "WHERE " + " AND ".join(events_prefilter_where)
+
         sess_where: list[str] = ["ds.start_time >= ?", "ds.start_time <= ?"]
-        sess_params: list = [ps, pe]
+        sess_params: list = list(events_prefilter_params) + [ps, pe]
         if filter_clauses:
             sess_where.append(
                 f"ds.user_id IN (SELECT DISTINCT user_id FROM events {ev_where_sql})"
             )
             sess_params.extend(ev_params)
         sess_where_sql = "WHERE " + " AND ".join(sess_where)
-        timeout = db.get_session_timeout_minutes()
-        dialect = db.get_dialect()
 
         if metric == "total_sessions":
             agg = "COUNT(*)"
@@ -317,7 +340,7 @@ def _fetch_single_metric(
             agg = "AVG(ds.event_count)"
 
         sql = f"""
-            WITH {session_ctes(timeout, dialect)}
+            WITH {session_ctes(timeout, dialect, events_prefilter=events_prefilter_sql)}
             SELECT {agg} FROM derived_sessions ds {sess_where_sql}
             """
         rows = db.execute(sql, sess_params)
@@ -893,8 +916,17 @@ def get_mission_control_trend(
         "avg_session_duration_sec",
         "avg_events_per_session",
     ):
+        prefilter_start = start - timedelta(minutes=timeout)
+        pfs = f"{prefilter_start} 00:00:00"
+
+        events_prefilter_where: list[str] = ["timestamp >= ?", "timestamp <= ?"]
+        events_prefilter_params: list = [pfs, pe]
+        events_prefilter_where.extend(filter_clauses)
+        events_prefilter_params.extend(filter_params)
+        events_prefilter_sql = "WHERE " + " AND ".join(events_prefilter_where)
+
         sess_where: list[str] = ["ds.start_time >= ?", "ds.start_time <= ?"]
-        sess_params: list = [ps, pe]
+        sess_params: list = list(events_prefilter_params) + [ps, pe]
         if filter_clauses:
             sess_where.append(
                 f"ds.user_id IN (SELECT DISTINCT user_id FROM events {ev_where_sql})"
@@ -911,7 +943,7 @@ def get_mission_control_trend(
 
         trunc_expr = date_trunc(granularity, "ds.start_time", dialect)
         trend_sql = f"""
-            WITH {session_ctes(timeout, dialect)}
+            WITH {session_ctes(timeout, dialect, events_prefilter=events_prefilter_sql)}
             SELECT {trunc_expr}, {agg}
             FROM derived_sessions ds
             {sess_where_sql}
