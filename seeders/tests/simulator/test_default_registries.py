@@ -21,11 +21,23 @@ def test_default_axis_registry_has_phase_2ab_axes():
         assert axis in names, axis
 
 
-def test_default_domain_registry_has_ecommerce():
+def test_default_domain_registry_has_all_phase_4_domains():
     from seeders.simulator.domains._defaults import default_domain_registry
 
     names = default_domain_registry().all_names()
-    assert "ecommerce" in names
+    for domain in [
+        "ecommerce",
+        "retail",
+        "casual_game",
+        "gaming_hardcore",
+        "saas",
+        "streaming",
+        "social",
+        "marketplace",
+        "dating",
+        "fintech",
+    ]:
+        assert domain in names, domain
 
 
 def test_default_registries_are_cached_singletons():
