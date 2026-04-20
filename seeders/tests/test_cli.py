@@ -46,16 +46,6 @@ def test_cli_describe_includes_seed_when_flag_passed():
     assert '"random_seed": 42' in result.stdout
 
 
-def test_derived_db_stem_includes_preset_and_today():
-    from datetime import datetime
-
-    from seeders.cli import _derived_db_stem
-
-    stem = _derived_db_stem("casual_game_addictive")
-    today = datetime.now().strftime("%Y_%m_%d")
-    assert stem == f"casual_game_addictive_{today}"
-
-
 def test_derived_table_name_base_case():
     from seeders.cli import _derived_table_name
 

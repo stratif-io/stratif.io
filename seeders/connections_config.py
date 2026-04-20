@@ -9,34 +9,16 @@ import yaml
 
 _DEFAULT_PATH = Path(__file__).parent.parent / "connections.yaml"
 
-# Backends whose "database" is a local file — these get their file_path
-# rewritten when STRATIFIO_SEED_DB_STEM is set.
-_FILE_BACKENDS_EXT: dict[str, str] = {
-    "duckdb": ".duckdb",
-    "duckdb_fr": ".duckdb",
-    "sqlite": ".sqlite",
-}
-
 
 def apply_seed_overrides(backend: str, creds: dict) -> dict:
     """Rewrite ``creds`` with seed-time overrides from env vars.
 
-    - ``STRATIFIO_SEED_DB_STEM`` → rewrites ``file_path`` for file-based
-      backends to ``<dir>/<stem><ext>``, preserving the directory that was
-      configured in connections.yaml.
     - ``STRATIFIO_SEED_TABLE_NAME`` → sets ``table_name``, overriding any
       value declared in connections.yaml.
 
     Returns a shallow-copied dict; the input is not mutated.
     """
     result = dict(creds)
-    stem = os.environ.get("STRATIFIO_SEED_DB_STEM")
-    if stem and backend in _FILE_BACKENDS_EXT:
-        original = result.get("file_path", "")
-        parent = (
-            Path(original).parent if original else Path("db/my_user_seeded_event_dbs")
-        )
-        result["file_path"] = str(parent / f"{stem}{_FILE_BACKENDS_EXT[backend]}")
     if table := os.environ.get("STRATIFIO_SEED_TABLE_NAME"):
         result["table_name"] = table
     return result

@@ -19,7 +19,6 @@ import json
 import re
 import sys
 from collections.abc import Sequence
-from datetime import datetime
 
 from seeders.simulator.preset import (
     PresetNotFoundError,
@@ -83,12 +82,6 @@ def _axis_overrides_from_args(args: argparse.Namespace) -> dict:
 _IDENT_RE = re.compile(r"[^a-zA-Z0-9_]+")
 
 
-def _derived_db_stem(preset_name: str) -> str:
-    """Stem for the database file: ``<preset>_<YYYY-MM-DD>``."""
-    today = datetime.now().strftime("%Y_%m_%d")
-    return f"{preset_name}_{today}"
-
-
 def _derived_table_name(
     preset_name: str,
     axis_overrides: dict[str, str],
@@ -142,11 +135,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     if cfg.random_seed is not None:
         os.environ["SEED_RANDOM_SEED"] = str(cfg.random_seed)
 
-    # Derive DB file stem + table name from the preset + overrides.
-    # The dialect seeders + bootstrap's connection upsert both read these
+    # Derive the events table name from the preset + axis overrides + seed.
+    # Both the dialect seeder and bootstrap's connection upsert pick it up
     # via seeders.connections_config.apply_seed_overrides.
     axis_overrides = _axis_overrides_from_args(args)
-    os.environ["STRATIFIO_SEED_DB_STEM"] = _derived_db_stem(cfg.name)
     os.environ["STRATIFIO_SEED_TABLE_NAME"] = _derived_table_name(
         cfg.name, axis_overrides, cfg.random_seed
     )
