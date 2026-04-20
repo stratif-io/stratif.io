@@ -4,6 +4,10 @@ import { YamlPanel } from "./features/presets/YamlPanel";
 import { usePresets } from "./features/presets/usePresets";
 import { useSeederStore, blankConfig } from "./stores/seederStore";
 import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
+import { IdentitySection } from "./features/editor/IdentitySection";
+import { AxesSection } from "./features/editor/AxesSection";
+import { TuningSection } from "./features/editor/TuningSection";
+import { PreviewGrid } from "./features/preview/PreviewGrid";
 
 export default function App() {
   const { presets, loading, error } = usePresets();
@@ -51,11 +55,18 @@ export default function App() {
               onSelect={handleSelect}
               onNewBlank={handleNewBlank}
             />
-            <section className="flex-1 flex">
-              <div className="flex-1 p-4 text-sm text-muted-foreground">
-                Editor coming in Plan 02.
+            <section className="flex-1 flex flex-col">
+              <div className="flex-1 flex overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
+                  <IdentitySection />
+                  <AxesSection />
+                  <TuningSection />
+                </div>
+                <YamlPanel yaml={yaml} onValidConfig={setConfig} />
               </div>
-              <YamlPanel yaml={yaml} onValidConfig={setConfig} />
+              <div className="border-t flex-1 min-h-0 overflow-hidden flex">
+                <PreviewGrid />
+              </div>
             </section>
           </>
         )}

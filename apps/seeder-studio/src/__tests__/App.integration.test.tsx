@@ -47,3 +47,30 @@ describe("App shell", () => {
     expect(panel).toHaveTextContent("growth: strong");
   });
 });
+
+describe("App editor + preview", () => {
+  beforeEach(() => {
+    useSeederStore.setState(useSeederStore.getInitialState(), true);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => PRESETS,
+      }),
+    );
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("renders editor sections and preview grid once presets load", async () => {
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByText("saas_pmf")).toBeInTheDocument(),
+    );
+    expect(screen.getByText("Identity")).toBeInTheDocument();
+    expect(screen.getByText("Axes")).toBeInTheDocument();
+    expect(screen.getByText(/Events\/day/i)).toBeInTheDocument();
+  });
+});
