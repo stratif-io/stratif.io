@@ -1,3 +1,7 @@
 @import "tailwindcss";
-/* @stratif-io/web/dist/index.css is not available until the lib is built.
-   Design-system tokens will be imported once dist/ exists (Plan 02+). */
+
+/*
+ * @stratif-io/web does not expose a CSS subpath export. Design-system token
+ * integration is deferred to Plan 02 — either by adding a `./styles` export
+ * to the web package, or by re-declaring tokens here.
+ */
