@@ -67,10 +67,17 @@ def _country_and_city(
 
 
 def _poisson(rng: random.Random, lam: float) -> int:
-    """Knuth's small-λ Poisson (duplicated from cohort module to avoid a
-    circular import; worth extracting to a math util in Phase 3)."""
+    """Poisson sampler.
+
+    Uses Knuth's algorithm for small λ; switches to a Gaussian approximation
+    for λ > 30 because ``math.exp(-λ)`` underflows to 0 around λ ≈ 709, which
+    turns Knuth's loop into an infinite spin. Normal(λ, √λ) is a well-known
+    and accurate approximation for Poisson at those scales.
+    """
     if lam <= 0:
         return 0
+    if lam > 30:
+        return max(0, int(rng.gauss(lam, math.sqrt(lam)) + 0.5))
     limit = math.exp(-lam)
     k = 0
     p = 1.0

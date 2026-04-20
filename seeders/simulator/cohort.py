@@ -39,9 +39,16 @@ def assign_user_archetype(rng: random.Random) -> str:
 
 
 def _poisson(rng: random.Random, lam: float) -> int:
-    """Small-lambda Poisson via Knuth; acceptable for our ``lam < ~10``."""
+    """Poisson sampler — Knuth for small λ, Gaussian approximation for λ > 30.
+
+    ``math.exp(-λ)`` underflows to 0 around λ ≈ 709, so Knuth's algorithm
+    spins forever once the tail kicks in. Normal(λ, √λ) is an accurate
+    approximation for Poisson at moderate-to-large λ.
+    """
     if lam <= 0:
         return 0
+    if lam > 30:
+        return max(0, int(rng.gauss(lam, math.sqrt(lam)) + 0.5))
     limit = math.exp(-lam)
     k = 0
     p = 1.0
