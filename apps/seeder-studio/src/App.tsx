@@ -1,5 +1,15 @@
 import { useMemo, useState } from "react";
-import { Badge } from "@stratif-io/web";
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Skeleton,
+} from "@stratif-io/web";
 import { PresetLibrary } from "./features/presets/PresetLibrary";
 import { YamlPanel } from "./features/presets/YamlPanel";
 import { usePresets } from "./features/presets/usePresets";
@@ -18,22 +28,51 @@ export default function App() {
   const loadPreset = useSeederStore((s) => s.loadPreset);
   const setConfig = useSeederStore((s) => s.setConfig);
   const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [pendingIntent, setPendingIntent] = useState<
+    { kind: "load"; name: string } | { kind: "blank" } | null
+  >(null);
 
   const yaml = useMemo(() => stringifyConfigYaml(config), [config]);
 
+  const confirmAndRun = (
+    intent: { kind: "load"; name: string } | { kind: "blank" },
+  ) => {
+    if (intent.kind === "load") {
+      const preset = presets.find((p) => p.name === intent.name);
+      if (!preset) return;
+      loadPreset(preset.config);
+      setSelectedName(intent.name);
+    } else {
+      loadPreset(blankConfig());
+      setSelectedName(null);
+    }
+  };
+
   const handleSelect = (name: string) => {
-    if (dirty && !confirm("Discard unsaved changes?")) return;
-    const preset = presets.find((p) => p.name === name);
-    if (!preset) return;
-    loadPreset(preset.config);
-    setSelectedName(name);
+    const intent = { kind: "load" as const, name };
+    if (dirty) {
+      setPendingIntent(intent);
+      return;
+    }
+    confirmAndRun(intent);
   };
 
   const handleNewBlank = () => {
-    if (dirty && !confirm("Discard unsaved changes?")) return;
-    loadPreset(blankConfig());
-    setSelectedName(null);
+    const intent = { kind: "blank" as const };
+    if (dirty) {
+      setPendingIntent(intent);
+      return;
+    }
+    confirmAndRun(intent);
   };
+
+  const handleConfirmDiscard = () => {
+    if (!pendingIntent) return;
+    confirmAndRun(pendingIntent);
+    setPendingIntent(null);
+  };
+
+  const handleCancelDiscard = () => setPendingIntent(null);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -47,7 +86,22 @@ export default function App() {
         )}
       </header>
       <main className="flex-1 flex overflow-hidden">
-        {loading && <div className="p-4 text-sm">Loading presets…</div>}
+        {loading && (
+          <aside className="hidden md:flex w-[200px] lg:w-[220px] border-r p-3 flex-col gap-3">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <div className="flex gap-1 flex-wrap">
+              <Skeleton className="h-6 w-12 rounded-full" />
+              <Skeleton className="h-6 w-16 rounded-full" />
+              <Skeleton className="h-6 w-14 rounded-full" />
+            </div>
+            <div className="space-y-2 mt-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </aside>
+        )}
         {error && (
           <div className="p-4 text-sm text-destructive">
             Error: {error.message}
@@ -61,14 +115,14 @@ export default function App() {
               onSelect={handleSelect}
               onNewBlank={handleNewBlank}
             />
-            <section className="flex-1 flex flex-col">
-              <div className="flex-1 flex overflow-hidden">
-                <div className="flex-1 overflow-y-auto px-4 [&>*]:py-6 [&>*:not(:last-child)]:border-b">
+            <section className="flex-1 flex flex-col min-w-0">
+              <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+                <div className="flex-1 min-w-0 overflow-y-auto px-4 [&>*]:py-6 [&>*:not(:last-child)]:border-b">
                   <IdentitySection />
                   <AxesSection />
                   <TuningSection />
                 </div>
-                <div className="w-[360px] border-l overflow-y-auto">
+                <div className="w-full lg:w-[360px] border-t lg:border-t-0 lg:border-l overflow-y-auto">
                   <PreviewGrid />
                 </div>
               </div>
@@ -82,6 +136,30 @@ export default function App() {
           </>
         )}
       </main>
+
+      <Dialog
+        open={pendingIntent !== null}
+        onOpenChange={(open) => !open && setPendingIntent(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Discard unsaved changes?</DialogTitle>
+            <DialogDescription>
+              You&apos;ve made changes to{" "}
+              <span className="font-mono">{config.name}</span>. Copy the YAML
+              first if you want to keep them.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelDiscard}>
+              Keep editing
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDiscard}>
+              Discard
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

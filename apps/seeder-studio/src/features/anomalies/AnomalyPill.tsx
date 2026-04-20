@@ -44,6 +44,7 @@ export function AnomalyPill({
     origDuration: durationDays,
   });
   const [dragging, setDragging] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   const begin = (mode: DragMode) => (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -92,14 +93,25 @@ export function AnomalyPill({
         data-testid="pill-body"
         role="button"
         aria-label={anomaly.name}
+        tabIndex={0}
         x={x}
         y={2}
         width={width}
         height={TRACK_HEIGHT - 4}
         fill={color}
         rx={3}
+        stroke={focused ? "hsl(var(--ring))" : "none"}
+        strokeWidth={focused ? 2 : 0}
         onPointerDown={begin("body")}
         onClick={onSelect}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect();
+          }
+        }}
         style={{ cursor: dragging ? "grabbing" : "grab" }}
       />
       <rect

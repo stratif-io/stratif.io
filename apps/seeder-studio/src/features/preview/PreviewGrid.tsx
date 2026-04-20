@@ -1,4 +1,10 @@
 import { useMemo, useRef } from "react";
+import {
+  Tooltip,
+  TooltipProvider,
+  TooltipContent,
+  TooltipTrigger,
+} from "@stratif-io/web";
 import { useTwinOutput } from "./useTwinOutput";
 import { KpiChart, type KpiBand } from "./KpiChart";
 import { useSeederStore } from "@/stores/seederStore";
@@ -90,15 +96,25 @@ export function PreviewGrid() {
         >
           Preview
         </h2>
-        <span
-          className="rounded px-2 py-0.5 text-[10px] font-medium"
-          style={{
-            backgroundColor: "hsl(var(--warning) / 0.15)",
-            color: "hsl(var(--warning))",
-          }}
-        >
-          approximate
-        </span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className="rounded px-2 py-0.5 text-[10px] font-medium cursor-help"
+                style={{
+                  backgroundColor: "hsl(var(--warning) / 0.15)",
+                  color: "hsl(var(--warning))",
+                }}
+              >
+                approximate
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              Preview uses a coarse TS twin of the axis math. Actual seed output
+              may vary — the twin is directionally correct within ~2× envelope.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </header>
       <div
         ref={gridRef}

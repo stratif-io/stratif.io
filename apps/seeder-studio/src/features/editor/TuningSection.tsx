@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Input, Label } from "@stratif-io/web";
 import { useSeederStore } from "@/stores/seederStore";
+import { AXIS_SPEC } from "@/lib/twin";
 
 function numberOrUndef(s: string): number | undefined {
   if (s === "") return undefined;
@@ -23,6 +24,15 @@ export function TuningSection() {
   const setGrowthConfig = useSeederStore((s) => s.setGrowthConfig);
   const setUiStartDate = useSeederStore((s) => s.setUiStartDate);
   const setUiEndDate = useSeederStore((s) => s.setUiEndDate);
+  const scaleAxis = useSeederStore((s) => s.config.axes.scale ?? "small");
+  const scaleDefaults = AXIS_SPEC.scale.values.find(
+    (v) => v.value === scaleAxis,
+  )?.params ?? { total_users: 10000, window_days: 90 };
+  const growthAxis = useSeederStore((s) => s.config.axes.growth ?? "strong");
+  const hockeyStickDefaults =
+    growthAxis === "hockey_stick"
+      ? { split_fraction: 0.3, rate: 0.04 }
+      : { split_fraction: undefined, rate: undefined };
 
   return (
     <section aria-labelledby="tuning-heading" className="space-y-3">
@@ -49,6 +59,7 @@ export function TuningSection() {
               aria-label="total users"
               type="number"
               value={scale?.total_users ?? ""}
+              placeholder={`${scaleDefaults.total_users}`}
               onChange={(e) =>
                 setScaleConfig({
                   ...scale,
@@ -67,6 +78,7 @@ export function TuningSection() {
               aria-label="window days"
               type="number"
               value={scale?.window_days ?? ""}
+              placeholder={`${scaleDefaults.window_days}`}
               onChange={(e) =>
                 setScaleConfig({
                   ...scale,
@@ -86,6 +98,11 @@ export function TuningSection() {
               type="number"
               step="0.01"
               value={growth?.split_fraction ?? ""}
+              placeholder={
+                hockeyStickDefaults.split_fraction !== undefined
+                  ? `${hockeyStickDefaults.split_fraction}`
+                  : undefined
+              }
               onChange={(e) =>
                 setGrowthConfig({
                   ...growth,
@@ -105,6 +122,11 @@ export function TuningSection() {
               type="number"
               step="0.001"
               value={growth?.rate ?? ""}
+              placeholder={
+                hockeyStickDefaults.rate !== undefined
+                  ? `${hockeyStickDefaults.rate}`
+                  : undefined
+              }
               onChange={(e) =>
                 setGrowthConfig({
                   ...growth,

@@ -44,12 +44,18 @@ export function IdentitySection() {
         <Input
           id="identity-name"
           aria-label="Name"
+          aria-invalid={!nameValid}
+          aria-describedby={!nameValid ? "identity-name-error" : undefined}
           value={config.name}
           onChange={(e) => setName(e.target.value)}
           className="h-8 text-sm"
         />
         {!nameValid && (
-          <span className="text-xs text-destructive">
+          <span
+            id="identity-name-error"
+            role="alert"
+            className="text-xs text-destructive"
+          >
             Use lowercase letters, digits, and underscores (must start with a
             letter).
           </span>

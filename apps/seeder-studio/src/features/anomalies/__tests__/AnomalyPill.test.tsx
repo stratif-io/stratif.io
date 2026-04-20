@@ -66,6 +66,42 @@ describe("AnomalyPill", () => {
     expect(last.duration).toBe("3d");
   });
 
+  it("has tabIndex={0} for keyboard reach", () => {
+    render(
+      <svg>
+        <AnomalyPill
+          anomaly={a}
+          windowDays={30}
+          trackWidth={300}
+          onChange={() => {}}
+          onSelect={() => {}}
+        />
+      </svg>,
+    );
+    const pill = screen.getByRole("button", { name: /viral/i });
+    // SVG elements: tabIndex is a property, not always reflected as an attribute in JSDOM
+    expect(pill.tabIndex).toBe(0);
+  });
+
+  it("Enter key fires onSelect", () => {
+    const onSelect = vi.fn();
+    render(
+      <svg>
+        <AnomalyPill
+          anomaly={a}
+          windowDays={30}
+          trackWidth={300}
+          onChange={() => {}}
+          onSelect={onSelect}
+        />
+      </svg>,
+    );
+    fireEvent.keyDown(screen.getByRole("button", { name: /viral/i }), {
+      key: "Enter",
+    });
+    expect(onSelect).toHaveBeenCalled();
+  });
+
   it("drag right edge → onChange with new duration", () => {
     const onChange = vi.fn();
     render(

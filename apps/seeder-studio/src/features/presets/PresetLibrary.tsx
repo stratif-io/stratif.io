@@ -36,7 +36,7 @@ export function PresetLibrary({
   }, [presets, search, domain]);
 
   return (
-    <aside className="w-[220px] border-r p-3 flex flex-col gap-3 overflow-y-auto">
+    <aside className="hidden md:flex w-[200px] lg:w-[220px] border-r p-3 flex-col gap-3 overflow-y-auto">
       <Button
         variant="ghost"
         className="w-full justify-start text-muted-foreground hover:text-foreground"
@@ -86,6 +86,7 @@ export function PresetLibrary({
                 variant="ghost"
                 onClick={() => onSelect(p.name)}
                 data-selected={selectedName === p.name}
+                aria-label={p.name}
                 className="w-full justify-start h-auto flex-col items-start px-2 py-1 text-left data-[selected=true]:bg-accent"
               >
                 <div className="text-sm">{p.name}</div>
