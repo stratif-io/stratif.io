@@ -52,6 +52,8 @@ class DuckDBBackend:
         # macOS's memory compressor burns cores. Cap at 1GB + 2 threads per
         # connection so concurrent load is bounded at ~15GB worst case
         # (typically a fraction of that, since connections are pooled).
+        import tempfile
+
         conn.execute("SET memory_limit = '3GB'")
         conn.execute("SET threads = 2")
         # Disable insertion-order preservation — DuckDB recommends this for
@@ -59,6 +61,11 @@ class DuckDBBackend:
         # adds a merge-sort pass on every window/group-by. Our dashboard
         # never asks for row order from raw events.
         conn.execute("SET preserve_insertion_order = false")
+        # Enable disk spilling so window-function sorts on large event
+        # tables don't OOM when intermediate state exceeds memory_limit.
+        # Without this, DuckDB raises OutOfMemoryException instead of
+        # paging to temp files.
+        conn.execute(f"SET temp_directory = '{tempfile.gettempdir()}/duckdb_spill'")
         return conn
 
     def pool_key(self, connection_id: str, credentials: BaseModel) -> tuple:
