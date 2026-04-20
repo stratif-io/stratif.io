@@ -52,8 +52,13 @@ class DuckDBBackend:
         # macOS's memory compressor burns cores. Cap at 1GB + 2 threads per
         # connection so concurrent load is bounded at ~15GB worst case
         # (typically a fraction of that, since connections are pooled).
-        conn.execute("SET memory_limit = '1GB'")
+        conn.execute("SET memory_limit = '3GB'")
         conn.execute("SET threads = 2")
+        # Disable insertion-order preservation — DuckDB recommends this for
+        # aggregate-heavy workloads (dashboard queries) since honoring it
+        # adds a merge-sort pass on every window/group-by. Our dashboard
+        # never asks for row order from raw events.
+        conn.execute("SET preserve_insertion_order = false")
         return conn
 
     def pool_key(self, connection_id: str, credentials: BaseModel) -> tuple:
