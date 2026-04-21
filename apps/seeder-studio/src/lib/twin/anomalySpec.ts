@@ -62,6 +62,12 @@ export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
       { key: "arrivals", label: "arrivals ×", default: 1.4, min: 0.1, max: 10 },
     ],
   },
+  total_outage: {
+    type: "total_outage",
+    label: "Total outage",
+    cssVar: "--anomaly-total-outage",
+    effectFields: [],
+  },
 };
 
 export function anomalyTypeColor(type: string): string {
@@ -77,6 +83,10 @@ export function defaultAnomaly(
   const spec = ANOMALY_SPEC[type] ?? ANOMALY_SPEC.marketing_campaign;
   const effect: Record<string, number> = {};
   for (const f of spec.effectFields) effect[f.key] = f.default;
+  if (type === "total_outage") {
+    effect.total_outage = 1;
+    effect.arrivals = 0;
+  }
   return {
     type,
     name: `${type}_${startDay}`,

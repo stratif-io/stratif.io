@@ -16,6 +16,7 @@ describe("ANOMALY_SPEC", () => {
 
   it("every type declares its effect fields", () => {
     for (const spec of Object.values(ANOMALY_SPEC)) {
+      if (spec.type === "total_outage") continue;
       expect(spec.effectFields.length).toBeGreaterThan(0);
     }
   });
@@ -31,5 +32,19 @@ describe("ANOMALY_SPEC", () => {
       /^hsl\(var\(--anomaly-/,
     );
     expect(anomalyTypeColor("unknown")).toBe("hsl(var(--muted-foreground))");
+  });
+
+  it("includes total_outage type", () => {
+    expect(ANOMALY_SPEC["total_outage"]).toBeDefined();
+  });
+
+  it("total_outage has no user-configurable effect fields", () => {
+    expect(ANOMALY_SPEC["total_outage"].effectFields).toHaveLength(0);
+  });
+
+  it("defaultAnomaly for total_outage has effect.total_outage=1 and arrivals=0", () => {
+    const a = defaultAnomaly("total_outage", 5, 3);
+    expect(a.effect.total_outage).toBe(1);
+    expect(a.effect.arrivals).toBe(0);
   });
 });
