@@ -80,6 +80,7 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     if (rawStart === null || rawDuration === null || rawDuration <= 0) continue;
     const start = rawStart < 0 ? days + rawStart : rawStart;
     const end = start + rawDuration;
+    if (end <= 0 || start >= days) continue;
     for (let t = start; t < Math.min(end, days); t++) {
       totalOutageDays.add(t);
     }
