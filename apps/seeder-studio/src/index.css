@@ -123,6 +123,7 @@ body {
   --anomaly-marketing-campaign: 347 83% 61%;
   --anomaly-product-launch: 43 100% 50%;
   --anomaly-outage: 0 68% 50%;
+  --anomaly-total-outage: 0 84% 40%;
   --anomaly-feature-release: 213 82% 61%;
   --anomaly-seasonal: 192 73% 59%;
 }
@@ -165,6 +166,7 @@ body {
   --anomaly-marketing-campaign: 347 85% 70%;
   --anomaly-product-launch: 43 100% 62%;
   --anomaly-outage: 0 72% 62%;
+  --anomaly-total-outage: 0 86% 55%;
   --anomaly-feature-release: 213 85% 70%;
   --anomaly-seasonal: 192 75% 68%;
 }
