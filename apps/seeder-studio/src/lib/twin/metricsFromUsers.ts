@@ -1,14 +1,7 @@
 import type { SimulatedUser } from "./simulate";
+import type { TwinOutput } from "./types";
 
-export interface MetricsOutput {
-  events: number[];
-  activeUsers: number[];
-  newUsers: number[];
-  churnedUsers: number[];
-  reactivatedUsers: number[];
-  stickiness: (number | null)[];
-  totalUsers: number[];
-}
+export type MetricsOutput = Omit<TwinOutput, "days">;
 
 export function metricsFromUsers(
   users: SimulatedUser[],
