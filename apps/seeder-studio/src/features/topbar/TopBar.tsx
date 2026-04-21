@@ -1,4 +1,5 @@
 import { Button, Badge } from "@stratif-io/web";
+import { Save, Users } from "lucide-react";
 import { useSeederStore } from "@/stores/seederStore";
 
 interface Props {
@@ -42,8 +43,8 @@ export function TopBar({ onSave }: Props) {
   };
 
   return (
-    <header className="flex flex-wrap items-center gap-2 border-b px-3 py-1.5 bg-background">
-      <span className="text-sm font-bold tracking-tight mr-1">
+    <header className="flex items-center gap-3 border-b px-4 bg-background h-14 shrink-0">
+      <span className="text-sm font-semibold tracking-tight">
         Seeder Studio
       </span>
 
@@ -53,7 +54,7 @@ export function TopBar({ onSave }: Props) {
         </Badge>
       )}
 
-      <div className="flex items-center gap-1 ml-1">
+      <div className="flex items-center gap-1.5">
         <label htmlFor="start-date" className="sr-only">
           Start date
         </label>
@@ -63,7 +64,7 @@ export function TopBar({ onSave }: Props) {
           placeholder="YYYY-MM-DD"
           value={uiStartDate ?? ""}
           onChange={(e) => handleStartDate(e.target.value)}
-          className="rounded border border-border bg-muted/40 px-1.5 py-0.5 text-xs text-foreground"
+          className="h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground w-28"
         />
         <span className="text-muted-foreground text-xs">→</span>
         <label htmlFor="end-date" className="sr-only">
@@ -75,12 +76,16 @@ export function TopBar({ onSave }: Props) {
           placeholder="YYYY-MM-DD"
           value={uiEndDate ?? ""}
           onChange={(e) => handleEndDate(e.target.value)}
-          className="rounded border border-border bg-muted/40 px-1.5 py-0.5 text-xs text-foreground"
+          className="h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground w-28"
         />
       </div>
 
-      <div className="flex items-center gap-1">
-        <span className="text-[10px] text-muted-foreground">👥</span>
+      <div className="flex items-center gap-1.5">
+        <Users
+          size={13}
+          className="text-muted-foreground shrink-0"
+          aria-hidden="true"
+        />
         <label htmlFor="total-users" className="sr-only">
           Total users
         </label>
@@ -91,7 +96,7 @@ export function TopBar({ onSave }: Props) {
           placeholder="users"
           value={config.scale_config?.total_users ?? ""}
           onChange={(e) => handleTotalUsers(e.target.value)}
-          className="w-24 rounded border border-border bg-muted/40 px-1.5 py-0.5 text-xs text-foreground"
+          className="h-8 w-24 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground"
         />
       </div>
 
@@ -101,11 +106,12 @@ export function TopBar({ onSave }: Props) {
         type="button"
         variant="outline"
         size="sm"
-        className="h-6 text-xs"
+        className="h-8 gap-1.5 text-xs"
         onClick={onSave}
         aria-label="save preset"
       >
-        💾 Save preset
+        <Save size={13} aria-hidden="true" />
+        Save preset
       </Button>
     </header>
   );

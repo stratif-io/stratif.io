@@ -59,4 +59,11 @@ describe("TopBar", () => {
     await user.click(screen.getByRole("button", { name: /save preset/i }));
     expect(onSave).toHaveBeenCalled();
   });
+
+  it("header element has h-14 class for correct height", () => {
+    const { container } = render(<TopBar onSave={vi.fn()} />);
+    const header = container.querySelector("header");
+    expect(header).not.toBeNull();
+    expect(header!.className).toContain("h-14");
+  });
 });
