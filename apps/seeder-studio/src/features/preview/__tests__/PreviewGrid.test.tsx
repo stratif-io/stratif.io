@@ -15,8 +15,8 @@ describe("PreviewGrid", () => {
   it("renders all five KPI titles", () => {
     render(<PreviewGrid />);
     expect(screen.getByText(/Events\/day/i)).toBeInTheDocument();
-    expect(screen.getByText(/Active users/i)).toBeInTheDocument();
-    expect(screen.getByText(/New users/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Active users/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/New users/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Stickiness/i)).toBeInTheDocument();
     expect(screen.getByText(/Total users/i)).toBeInTheDocument();
   });

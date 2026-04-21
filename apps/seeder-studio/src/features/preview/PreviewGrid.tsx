@@ -8,6 +8,7 @@ import type { SimulationConfig } from "@/types/simulation";
 import { headlineStat } from "./headlineStat";
 import { formatNum } from "@/lib/format";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
+import { DayTable } from "./DayTable";
 
 type AnomalyList = NonNullable<SimulationConfig["anomalies"]>;
 
@@ -142,6 +143,14 @@ export function PreviewGrid() {
             color="hsl(var(--chart-2))"
             {...sharedProps}
           />
+        </div>
+      )}
+      {!allZero && (
+        <div className="border-t pt-2">
+          <h3 className="text-xs uppercase text-muted-foreground font-semibold mb-1">
+            First days
+          </h3>
+          <DayTable out={out} />
         </div>
       )}
       {selected !== null && anomalies[selected.idx] && (
