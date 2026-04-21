@@ -145,4 +145,33 @@ describe("runTwin", () => {
     const b = runTwin({ config: base });
     expect(a.activeUsers).toEqual(b.activeUsers);
   });
+
+  it("total_outage zeroes activeUsers and events on outage days", () => {
+    const out = runTwin({
+      config: {
+        ...base,
+        axes: { ...base.axes, scale: "small" },
+        scale_config: { window_days: 30 },
+        anomalies: [
+          {
+            type: "total_outage",
+            name: "total_outage_10",
+            start: "10d",
+            duration: "5d",
+            effect: { arrivals: 0 },
+          },
+        ],
+      },
+    });
+    // Days 10–14 (inclusive) must have activeUsers=0 and events=0
+    for (let t = 10; t <= 14; t++) {
+      expect(out.activeUsers[t]).toBe(0);
+      expect(out.events[t]).toBe(0);
+    }
+    // Days outside the outage window should have non-zero active users in aggregate
+    const outsideActive = out.activeUsers
+      .filter((_, i) => i < 10 || i > 14)
+      .reduce((a, b) => a + b, 0);
+    expect(outsideActive).toBeGreaterThan(0);
+  });
 });

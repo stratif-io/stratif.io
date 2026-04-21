@@ -1,5 +1,5 @@
 import { getAxisValue } from "./axisSpec";
-import { resolveScale } from "./utils";
+import { resolveScale, parseDays } from "./utils";
 import { growthCurve } from "./growth";
 import { applyAnomalies } from "./anomalies";
 import { applyJitter } from "./jitter";
@@ -70,6 +70,27 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     depth,
     seed,
   );
+
+  // Post-process total_outage anomalies: zero activeUsers, events, stickiness
+  const totalOutageDays = new Set<number>();
+  for (const anomaly of config.anomalies ?? []) {
+    if (anomaly.type !== "total_outage") continue;
+    const rawStart = parseDays(anomaly.start);
+    const rawDuration = parseDays(anomaly.duration);
+    if (rawStart === null || rawDuration === null || rawDuration <= 0) continue;
+    const start = rawStart < 0 ? days + rawStart : rawStart;
+    const end = start + rawDuration;
+    for (let t = start; t < Math.min(end, days); t++) {
+      totalOutageDays.add(t);
+    }
+  }
+  if (totalOutageDays.size > 0) {
+    for (const t of totalOutageDays) {
+      metrics.activeUsers[t] = 0;
+      metrics.events[t] = 0;
+      metrics.stickiness[t] = null;
+    }
+  }
 
   return { days, ...metrics };
 }
