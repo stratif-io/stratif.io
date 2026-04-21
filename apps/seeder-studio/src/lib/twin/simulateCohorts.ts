@@ -34,13 +34,11 @@ function buildReactivationKernel(params: RetentionParams): Float64Array {
 export function simulateCohorts(
   arrivals: number[], // fractional arrivals per day, sums ≈ totalUsers
   days: number,
-  totalUsers: number, // informational only — no SIM_CAP scaling
+  _totalUsers: number, // informational only — no SIM_CAP scaling
   params: RetentionParams,
   eventsPerActiveUser: number,
   seed: number,
 ): Omit<TwinOutput, "days"> {
-  void totalUsers; // no cap: each cohort is sampled at its natural scale
-
   const rng = createRng(seed);
   const S = buildSurvival(params, days);
   const R = buildReactivationKernel(params);
@@ -86,8 +84,10 @@ export function simulateCohorts(
     }
   }
 
-  // MAU: exact 28-day window using survival curve (no Poisson — window averaging suffices).
-  // P(cohort-c member active at least once in [t-27, t]) = 1 - Π_{k=wStart}^{wEnd}(1-S[k])
+  // MAU: 28-day window using survival curve (no Poisson — window averaging suffices).
+  // Independence approximation: P(active at least once in [t-27, t]) ≈ 1 - Π(1 - S[k]).
+  // True events are positively correlated (survival chain), so this slightly overestimates MAU
+  // and consequently slightly underestimates stickiness. Acceptable for a simulation display.
   const mauArr = new Float64Array(days);
   for (let t = 28; t < days; t++) {
     let mauSum = 0;

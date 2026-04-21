@@ -14,6 +14,7 @@ export interface TwinOutput {
   events: number[];
   activeUsers: number[];
   newUsers: number[];
+  /** Users who entered the dormant state today (may reactivate). Not permanently churned. */
   churnedUsers: number[];
   reactivatedUsers: number[];
   stickiness: (number | null)[];

@@ -152,4 +152,17 @@ describe("simulateCohorts", () => {
     expect(m.activeUsers[0]).toBeGreaterThan(0);
     expect(m.totalUsers[89]).toBeGreaterThan(100_000);
   });
+
+  it("reactivatedUsers is non-zero with high reactivationRate over sufficient window", () => {
+    const m = simulateCohorts(
+      uniformArrivals(60, 500),
+      60,
+      30000,
+      ADDICTIVE,
+      5,
+      42,
+    );
+    const sum = m.reactivatedUsers.reduce((a, b) => a + b, 0);
+    expect(sum).toBeGreaterThan(0);
+  });
 });
