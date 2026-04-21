@@ -44,4 +44,12 @@ describe("AxisSidebar", () => {
     await user.click(screen.getByRole("button", { name: /expand axes/i }));
     expect(screen.getByText("growth")).toBeInTheDocument();
   });
+
+  it("renders collapsed when defaultOpen is false, hiding axis content", () => {
+    render(<AxisSidebar defaultOpen={false} />);
+    expect(screen.queryByText("growth")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /expand axes/i }),
+    ).toBeInTheDocument();
+  });
 });

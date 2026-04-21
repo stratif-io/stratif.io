@@ -17,7 +17,9 @@ export function AxisSidebar({ defaultOpen = true }: Props) {
   return (
     <aside
       style={{
-        width: open ? "var(--sidebar-expanded)" : "var(--sidebar-collapsed)",
+        width: open
+          ? "var(--sidebar-expanded, 220px)"
+          : "var(--sidebar-collapsed, 60px)",
       }}
       className="flex flex-col border-r bg-background transition-[width] duration-200 shrink-0 overflow-hidden"
     >
