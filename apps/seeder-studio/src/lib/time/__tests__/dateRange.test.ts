@@ -38,4 +38,18 @@ describe("resolveDateRange", () => {
     expect(start).toEqual(new Date(2026, 3, 20));
     expect(end).toEqual(new Date(2026, 3, 20));
   });
+
+  it("partial/invalid start date → falls back to windowDays offset, no crash", () => {
+    const { start, end } = resolveDateRange("2024-0", null, 7, TODAY);
+    expect(end).toEqual(new Date(2026, 3, 20));
+    expect(start).toEqual(new Date(2026, 3, 14)); // 6 days before today
+    expect(isNaN(start.getTime())).toBe(false);
+    expect(isNaN(end.getTime())).toBe(false);
+  });
+
+  it("partial/invalid end date → falls back to today", () => {
+    const { end } = resolveDateRange(null, "2024-0", 7, TODAY);
+    expect(end).toEqual(new Date(2026, 3, 20));
+    expect(isNaN(end.getTime())).toBe(false);
+  });
 });
