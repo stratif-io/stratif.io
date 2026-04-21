@@ -72,7 +72,14 @@ describe("App integration", () => {
   });
 
   it("renders SavePanel in the right sidebar", async () => {
+    const user = userEvent.setup();
     renderApp();
+    await waitFor(() =>
+      screen.getByRole("button", { name: /expand save panel/i }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /expand save panel/i }),
+    );
     await waitFor(() =>
       expect(screen.getByLabelText(/name/i)).toBeInTheDocument(),
     );
@@ -85,7 +92,13 @@ describe("App integration", () => {
     await user.click(screen.getByRole("combobox"));
     await waitFor(() => screen.getByText("saas_growth"));
     await user.click(screen.getByText("saas_growth"));
-    // Name in SavePanel should reflect the loaded preset
+    // Open save panel then check name reflects loaded preset
+    await waitFor(() =>
+      screen.getByRole("button", { name: /expand save panel/i }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /expand save panel/i }),
+    );
     await waitFor(() => {
       const input = screen.getByLabelText(/name/i) as HTMLInputElement;
       expect(input.value).toBe("saas_growth");

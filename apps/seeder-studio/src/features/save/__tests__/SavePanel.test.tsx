@@ -19,13 +19,13 @@ beforeEach(() => {
 
 describe("SavePanel", () => {
   it("renders the name from the store", () => {
-    render(<SavePanel yaml="name: my-preset" />);
+    render(<SavePanel yaml="name: my-preset" defaultOpen />);
     const input = screen.getByLabelText(/name/i) as HTMLInputElement;
     expect(input.value).toBe("my-preset");
   });
 
   it("renders the description from the store", () => {
-    render(<SavePanel yaml="name: my-preset" />);
+    render(<SavePanel yaml="name: my-preset" defaultOpen />);
     const textarea = screen.getByLabelText(
       /description/i,
     ) as HTMLTextAreaElement;
@@ -34,7 +34,7 @@ describe("SavePanel", () => {
 
   it("calls setName when name input changes", async () => {
     const user = userEvent.setup();
-    render(<SavePanel yaml="name: my-preset" />);
+    render(<SavePanel yaml="name: my-preset" defaultOpen />);
     const input = screen.getByLabelText(/name/i);
     await user.clear(input);
     await user.type(input, "new-name");
@@ -43,7 +43,7 @@ describe("SavePanel", () => {
 
   it("calls setDescription when description textarea changes", async () => {
     const user = userEvent.setup();
-    render(<SavePanel yaml="name: my-preset" />);
+    render(<SavePanel yaml="name: my-preset" defaultOpen />);
     const textarea = screen.getByLabelText(/description/i);
     await user.clear(textarea);
     await user.type(textarea, "new description");
@@ -53,7 +53,7 @@ describe("SavePanel", () => {
   });
 
   it("renders the yaml prop in the pre block", () => {
-    render(<SavePanel yaml="name: foo" />);
+    render(<SavePanel yaml="name: foo" defaultOpen />);
     expect(screen.getByText("name: foo")).toBeInTheDocument();
   });
 
@@ -65,7 +65,7 @@ describe("SavePanel", () => {
       writable: true,
       configurable: true,
     });
-    render(<SavePanel yaml="some: yaml" />);
+    render(<SavePanel yaml="some: yaml" defaultOpen />);
     const btn = screen.getByRole("button", { name: /copy yaml/i });
     await user.click(btn);
     expect(writeText).toHaveBeenCalledWith("some: yaml");

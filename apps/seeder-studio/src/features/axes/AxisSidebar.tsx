@@ -40,7 +40,6 @@ export function AxisSidebar({ defaultOpen = true }: Props) {
           <div className="flex items-center justify-between px-2 pt-2 pb-0.5">
             <button
               type="button"
-              aria-label="collapse axes"
               onClick={() => setSidebarOpen(false)}
               className="text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
             >
