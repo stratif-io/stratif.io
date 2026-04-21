@@ -5,6 +5,7 @@ export interface TwinOutput {
   events: number[];
   activeUsers: number[];
   newUsers: number[];
+  churnedUsers: number[];
   stickiness: (number | null)[];
   totalUsers: number[];
 }

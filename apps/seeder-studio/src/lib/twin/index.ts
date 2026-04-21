@@ -91,6 +91,12 @@ export function runTwin({ config }: TwinInput): TwinOutput {
   // Events must come from whole-number activeUsers to stay consistent.
   const events = activeUsers.map((v) => Math.floor(v * depth));
 
+  // Churned = users active yesterday but not today: dau[t-1] * (1 - r).
+  // Day 0 has no prior day so churn is 0.
+  const churnedUsers = dau.map((_, t) =>
+    t === 0 ? 0 : Math.floor(dau[t - 1] * (1 - r)),
+  );
+
   const target =
     (getAxisValue("stickiness", config.axes.stickiness ?? "sticky")?.params
       .dau_mau_target as number | undefined) ?? 0.3;
@@ -118,6 +124,7 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     events,
     activeUsers,
     newUsers,
+    churnedUsers,
     stickiness,
     totalUsers,
   };

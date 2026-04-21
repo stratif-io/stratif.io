@@ -67,6 +67,7 @@ export function PreviewGrid() {
       events: headlineStat(out.events, "count"),
       active: headlineStat(out.activeUsers, "count"),
       news: headlineStat(out.newUsers, "count"),
+      churned: headlineStat(out.churnedUsers, "count"),
       stickiness: headlineStat(out.stickiness, "percent"),
     }),
     [out],
@@ -141,6 +142,13 @@ export function PreviewGrid() {
             values={out.totalUsers}
             headline={`total ${formatNum(out.totalUsers.at(-1) ?? 0)}`}
             color="hsl(var(--chart-2))"
+            {...sharedProps}
+          />
+          <KpiChart
+            title="Churned/day"
+            values={out.churnedUsers}
+            headline={stats.churned}
+            color="hsl(var(--destructive))"
             {...sharedProps}
           />
         </div>

@@ -96,6 +96,30 @@ describe("runTwin", () => {
     expect(strongSecond).toBeGreaterThanOrEqual(weakSecond);
   });
 
+  it("returns churnedUsers of length window_days", () => {
+    const out = runTwin({ config: base });
+    expect(out.churnedUsers).toHaveLength(90);
+  });
+
+  it("churnedUsers[0] is 0 (no one to churn on day 0)", () => {
+    const out = runTwin({ config: base });
+    expect(out.churnedUsers[0]).toBe(0);
+  });
+
+  it("churnedUsers are non-negative", () => {
+    const out = runTwin({ config: base });
+    expect(out.churnedUsers.every((v) => v >= 0)).toBe(true);
+  });
+
+  it("churned increases with higher churn (churny axis)", () => {
+    const sticky = runTwin({ config: base });
+    const churny = runTwin({
+      config: { ...base, axes: { ...base.axes, stickiness: "churny" } },
+    });
+    const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+    expect(sum(churny.churnedUsers)).toBeGreaterThan(sum(sticky.churnedUsers));
+  });
+
   it("honors scale_config overrides", () => {
     const out = runTwin({
       config: { ...base, scale_config: { window_days: 30 } },
