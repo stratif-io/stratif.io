@@ -61,7 +61,21 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     (getAxisValue("engagement_depth", config.axes.engagement_depth ?? "medium")
       ?.params.events_per_user as number | undefined) ?? 10;
 
-  const events = dau.map((v) => Math.floor(v * depth));
+  // Accumulate fractional arrivals and emit whole users so that e.g. 30 users
+  // over 90 days still shows ~30 new-user events distributed across days
+  // rather than all zeros.
+  let arrivalAcc = 0;
+  const newUsers = arrivals.map((v) => {
+    arrivalAcc += v;
+    const whole = Math.floor(arrivalAcc);
+    arrivalAcc -= whole;
+    return whole;
+  });
+
+  const activeUsers = dau.map((v) => Math.floor(v));
+  // Events must come from whole-number activeUsers to stay consistent.
+  const events = activeUsers.map((v) => Math.floor(v * depth));
+
   const stickiness = dau.map((d, t) => {
     const m = Math.max(1, mau[t]);
     return Math.min(1, Math.max(0, d / m));
@@ -70,8 +84,8 @@ export function runTwin({ config }: TwinInput): TwinOutput {
   return {
     days,
     events,
-    activeUsers: dau.map((v) => Math.floor(v)),
-    newUsers: arrivals.map((v) => Math.floor(v)),
+    activeUsers,
+    newUsers,
     stickiness,
   };
 }
