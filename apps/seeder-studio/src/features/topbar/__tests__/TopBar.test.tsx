@@ -64,6 +64,6 @@ describe("TopBar", () => {
     const { container } = render(<TopBar onSave={vi.fn()} />);
     const header = container.querySelector("header");
     expect(header).not.toBeNull();
-    expect(header!.className).toContain("h-14");
+    expect(header).toHaveClass("h-14");
   });
 });
