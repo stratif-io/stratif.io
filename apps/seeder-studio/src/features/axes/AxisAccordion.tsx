@@ -68,7 +68,6 @@ export function AxisAccordion({
         <span className="text-muted-foreground w-16 shrink-0 text-left">
           {axisDisplay.label}
         </span>
-        <Spark points={currentDisplay.sparkPoints} active={!open} />
         {!open && (
           <span className="flex-1 text-left font-medium text-foreground truncate">
             {currentDisplay.label}
