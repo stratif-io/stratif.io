@@ -12,7 +12,7 @@ describe("PreviewGrid", () => {
       .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
   });
 
-  it("renders all five KPI titles", () => {
+  it("renders all seven KPI titles", () => {
     render(<PreviewGrid />);
     expect(screen.getByText(/Events\/day/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Active users/i).length).toBeGreaterThan(0);
@@ -31,8 +31,12 @@ describe("PreviewGrid formula captions", () => {
   it("renders formula captions for each KPI chart", () => {
     render(<PreviewGrid />);
     expect(screen.getByText(/DAU.*Poisson/)).toBeInTheDocument();
-    expect(screen.getByText(/DAU.*MAU/)).toBeInTheDocument();
-    expect(screen.getByText(/churn.*S\[k/)).toBeInTheDocument();
+    expect(screen.getByText(/DAU \/ MAU/)).toBeInTheDocument();
+    expect(screen.getByText(/S\[k−1\] − S\[k\]/)).toBeInTheDocument();
+    expect(screen.getByText(/events.*events_per_user/)).toBeInTheDocument();
+    expect(screen.getByText(/N꜀\s*=\s*Poisson/)).toBeInTheDocument();
+    expect(screen.getByText(/Σ꜀≤t/)).toBeInTheDocument();
+    expect(screen.getByText(/churned꜀/)).toBeInTheDocument();
   });
 });
 
