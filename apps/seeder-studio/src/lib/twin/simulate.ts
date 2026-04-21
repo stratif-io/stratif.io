@@ -82,7 +82,8 @@ export function simulateUsers(
           activeDays.push(t);
         }
       } else {
-        // dormant
+        // dormant — dormantDays starts at 1 (set on entry).
+        // Churn fires when dormantDays reaches maxDormantDays (inclusive).
         if (dormantDays >= params.maxDormantDays) {
           churnDay = t;
           break;

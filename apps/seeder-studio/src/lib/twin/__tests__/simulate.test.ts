@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { simulateUsers } from "../simulate";
+import { simulateUsers, SIM_CAP } from "../simulate";
 import type { RetentionParams } from "../simulate";
 
 const STICKY: RetentionParams = {
@@ -27,7 +27,7 @@ describe("simulateUsers", () => {
   it("returns at most SIM_CAP users", () => {
     const arrivals = new Array(90).fill(100_000 / 90);
     const users = simulateUsers(arrivals, 90, 100_000, STICKY, 42);
-    expect(users.length).toBeLessThanOrEqual(5000);
+    expect(users.length).toBeLessThanOrEqual(SIM_CAP);
   });
 
   it("every user's joinDay is in [0, days-1]", () => {
