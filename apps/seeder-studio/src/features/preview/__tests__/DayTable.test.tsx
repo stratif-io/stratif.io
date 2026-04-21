@@ -49,12 +49,16 @@ describe("DayTable", () => {
 
   it("renders Churned and Reactivated column headers", () => {
     render(<DayTable out={mkOut(5)} />);
-    expect(screen.getByText(/churned/i)).toBeInTheDocument();
-    expect(screen.getByText(/reactivated/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /churned/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /reactivated/i }),
+    ).toBeInTheDocument();
   });
 
-  it("renders churned value for day 1", () => {
+  it("renders churned cell for day 1 (index 0)", () => {
     render(<DayTable out={mkOut(5)} />);
-    expect(screen.getByTestId("cell-churned-1")).toBeInTheDocument();
+    expect(screen.getByTestId("cell-churned-0")).toBeInTheDocument();
   });
 });
