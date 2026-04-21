@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { runTwin } from "..";
+import { runTwin, resolveSimParams } from "..";
 import type { SimulationConfig } from "@/types/simulation";
 
 const base: SimulationConfig = {
@@ -175,5 +175,35 @@ describe("runTwin", () => {
       .filter((_, i) => i < 10 || i > 14)
       .reduce((a, b) => a + b, 0);
     expect(outsideActive).toBeGreaterThan(0);
+  });
+});
+
+describe("resolveSimParams", () => {
+  it("returns depth from engagement_depth axis", () => {
+    const p = resolveSimParams(base);
+    // base uses engagement_depth: "medium" → events_per_user: 10
+    expect(p.depth).toBe(10);
+  });
+
+  it("returns retentionParams from stickiness axis", () => {
+    const p = resolveSimParams(base);
+    // base uses stickiness: "sticky"
+    expect(p.retentionParams.peakChurnRate).toBe(0.5);
+    expect(p.retentionParams.baseChurnRate).toBe(0.05);
+    expect(p.retentionParams.churnDecayDays).toBe(10);
+    expect(p.retentionParams.reactivationRate).toBe(0.05);
+    expect(p.retentionParams.reactivationDecay).toBe(0.8);
+  });
+
+  it("returns totalUsers and windowDays from scale axis", () => {
+    const p = resolveSimParams(base);
+    // base uses scale: "tiny" → 1000 users, 30 days
+    expect(p.totalUsers).toBe(1000);
+    expect(p.windowDays).toBe(30);
+  });
+
+  it("respects scale_config overrides", () => {
+    const p = resolveSimParams({ ...base, scale_config: { window_days: 60 } });
+    expect(p.windowDays).toBe(60);
   });
 });

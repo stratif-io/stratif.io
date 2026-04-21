@@ -11,13 +11,51 @@ export * from "./types";
 export { AXIS_SPEC, getAxis, getAxisValue } from "./axisSpec";
 export { ANOMALY_SPEC, anomalyTypeColor, defaultAnomaly } from "./anomalySpec";
 
-export function runTwin({ config }: TwinInput): TwinOutput {
+export function resolveSimParams(config: TwinInput["config"]): {
+  depth: number;
+  retentionParams: RetentionParams;
+  totalUsers: number;
+  windowDays: number;
+} {
   const scaleAxis = config.axes.scale ?? "small";
   const { total_users, window_days } = resolveScale(
     scaleAxis,
     config.scale_config,
   );
-  const days = window_days;
+
+  const stickinessParams = getAxisValue(
+    "stickiness",
+    config.axes.stickiness ?? "sticky",
+  )?.params as RetentionParams | undefined;
+
+  const retentionParams: RetentionParams = stickinessParams ?? {
+    peakChurnRate: 0.5,
+    baseChurnRate: 0.05,
+    churnDecayDays: 10,
+    reactivationRate: 0.05,
+    reactivationDecay: 0.8,
+    maxDormantDays: 45,
+  };
+
+  const depth =
+    (getAxisValue("engagement_depth", config.axes.engagement_depth ?? "medium")
+      ?.params.events_per_user as number | undefined) ?? 10;
+
+  return {
+    depth,
+    retentionParams,
+    totalUsers: total_users,
+    windowDays: window_days,
+  };
+}
+
+export function runTwin({ config }: TwinInput): TwinOutput {
+  const {
+    depth,
+    retentionParams,
+    totalUsers: total_users,
+    windowDays: days,
+  } = resolveSimParams(config);
   const seed = config.random_seed ?? 42;
 
   const growthAxis = config.axes.growth ?? "strong";
@@ -43,24 +81,6 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     rawSum > 0
       ? rawArrivals.map((v) => (v * total_users) / rawSum)
       : rawArrivals;
-
-  const stickinessParams = getAxisValue(
-    "stickiness",
-    config.axes.stickiness ?? "sticky",
-  )?.params as RetentionParams | undefined;
-
-  const retentionParams: RetentionParams = stickinessParams ?? {
-    peakChurnRate: 0.5,
-    baseChurnRate: 0.05,
-    churnDecayDays: 10,
-    reactivationRate: 0.05,
-    reactivationDecay: 0.8,
-    maxDormantDays: 45,
-  };
-
-  const depth =
-    (getAxisValue("engagement_depth", config.axes.engagement_depth ?? "medium")
-      ?.params.events_per_user as number | undefined) ?? 10;
 
   const metrics = simulateCohorts(
     arrivals,
