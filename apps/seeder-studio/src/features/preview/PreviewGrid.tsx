@@ -114,6 +114,7 @@ export function PreviewGrid() {
             color="hsl(var(--chart-6))"
             className="col-span-2"
             chartHeight="h-40"
+            formula="events[t] = dau[t] × depth"
             {...sharedProps}
           />
           <KpiChart
@@ -121,6 +122,7 @@ export function PreviewGrid() {
             values={out.activeUsers}
             headline={stats.active}
             color="hsl(var(--chart-8))"
+            formula="dau[t] = Σ arrivals[c] × r^(t−c)"
             {...sharedProps}
           />
           <KpiChart
@@ -128,6 +130,7 @@ export function PreviewGrid() {
             values={out.newUsers}
             headline={stats.news}
             color="hsl(var(--chart-3))"
+            formula="arrivals[t] = growth[t] × (1 + k × dau[t−1])"
             {...sharedProps}
           />
           <KpiChart
@@ -136,6 +139,7 @@ export function PreviewGrid() {
             headline={stats.stickiness}
             color="hsl(var(--chart-7))"
             valueSuffix="%"
+            formula="stickiness[t] = dau[t] ÷ mau[t]"
             {...sharedProps}
           />
           <KpiChart
@@ -143,6 +147,7 @@ export function PreviewGrid() {
             values={out.totalUsers}
             headline={`total ${formatNum(out.totalUsers.at(-1) ?? 0)}`}
             color="hsl(var(--chart-2))"
+            formula="total_users[t] = Σ arrivals[c]"
             {...sharedProps}
           />
           <KpiChart
@@ -150,6 +155,7 @@ export function PreviewGrid() {
             values={out.churnedUsers}
             headline={stats.churned}
             color="hsl(var(--destructive))"
+            formula="churned[t] = dau[t] × (1 − r)"
             {...sharedProps}
           />
           <KpiChart
@@ -157,6 +163,7 @@ export function PreviewGrid() {
             values={out.reactivatedUsers}
             headline={stats.reactivated}
             color="hsl(var(--chart-4))"
+            formula="reactivated[t] = Σ inactive[c] × p"
             {...sharedProps}
           />
         </div>

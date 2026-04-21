@@ -17,13 +17,50 @@ describe("PreviewGrid", () => {
     expect(screen.getByText(/Events\/day/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Active users/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/New users/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Stickiness/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Stickiness/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Total users/i)).toBeInTheDocument();
   });
 
   it("renders the preview heading", () => {
     render(<PreviewGrid />);
     expect(screen.getByText(/preview/i)).toBeInTheDocument();
+  });
+});
+
+describe("PreviewGrid formula captions", () => {
+  it("passes formula prop to Events/day KpiChart", () => {
+    render(<PreviewGrid />);
+    expect(screen.getByText(/events\[t\]\s*=\s*dau\[t\]/i)).toBeInTheDocument();
+  });
+
+  it("passes formula prop to Active users KpiChart", () => {
+    render(<PreviewGrid />);
+    expect(screen.getByText(/dau\[t\]\s*=/i)).toBeInTheDocument();
+  });
+
+  it("passes formula prop to New users KpiChart", () => {
+    render(<PreviewGrid />);
+    expect(screen.getByText(/arrivals\[t\]\s*=/i)).toBeInTheDocument();
+  });
+
+  it("passes formula prop to Stickiness KpiChart", () => {
+    render(<PreviewGrid />);
+    expect(screen.getByText(/stickiness\[t\]\s*=/i)).toBeInTheDocument();
+  });
+
+  it("passes formula prop to Total users KpiChart", () => {
+    render(<PreviewGrid />);
+    expect(screen.getByText(/total_users\[t\]\s*=/i)).toBeInTheDocument();
+  });
+
+  it("passes formula prop to Churned users KpiChart", () => {
+    render(<PreviewGrid />);
+    expect(screen.getByText(/churned\[t\]\s*=/i)).toBeInTheDocument();
+  });
+
+  it("passes formula prop to Reactivated users KpiChart", () => {
+    render(<PreviewGrid />);
+    expect(screen.getByText(/reactivated\[t\]\s*=/i)).toBeInTheDocument();
   });
 });
 
