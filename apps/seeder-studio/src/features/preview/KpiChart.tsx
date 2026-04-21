@@ -8,8 +8,11 @@ import {
   Tooltip,
   ReferenceArea,
   CartesianGrid,
+  Customized,
 } from "recharts";
 import { formatNum } from "@/lib/format";
+import type { SimulationAnomaly } from "@/types/simulation";
+import { AnomalyChartOverlay } from "@/features/anomalies/AnomalyChartOverlay";
 
 export interface KpiBand {
   start: number;
@@ -24,6 +27,9 @@ interface Props {
   headline?: string;
   color?: string;
   bands?: KpiBand[];
+  anomalies?: SimulationAnomaly[];
+  windowDays?: number;
+  onAnomalyChange?: (index: number, next: SimulationAnomaly) => void;
   startDate?: Date;
   endDate?: Date;
   valueSuffix?: string;
@@ -55,6 +61,9 @@ export function KpiChart({
   headline,
   color = "#2563eb",
   bands,
+  anomalies,
+  windowDays,
+  onAnomalyChange,
   startDate,
   endDate,
   valueSuffix = "",
@@ -159,6 +168,30 @@ export function KpiChart({
               dot={false}
               isAnimationActive={false}
             />
+            {anomalies &&
+              anomalies.length > 0 &&
+              windowDays &&
+              onAnomalyChange && (
+                <Customized
+                  component={(props: Record<string, unknown>) =>
+                    props.offset ? (
+                      <AnomalyChartOverlay
+                        offset={
+                          props.offset as {
+                            left: number;
+                            top: number;
+                            width: number;
+                            height: number;
+                          }
+                        }
+                        anomalies={anomalies}
+                        windowDays={windowDays}
+                        onAnomalyChange={onAnomalyChange}
+                      />
+                    ) : null
+                  }
+                />
+              )}
           </LineChart>
         </ResponsiveContainer>
       </div>

@@ -24,6 +24,7 @@ export function PreviewGrid() {
   const anomalies = useSeederStore(
     (s) => s.config.anomalies ?? EMPTY_ANOMALIES,
   );
+  const setAnomalies = useSeederStore((s) => s.setAnomalies);
   const uiStartDate = useSeederStore((s) => s.uiStartDate);
   const uiEndDate = useSeederStore((s) => s.uiEndDate);
   const scaleOverride = useSeederStore((s) => s.config.scale_config);
@@ -52,6 +53,15 @@ export function PreviewGrid() {
         return [{ start, end, color: anomalyTypeColor(a.type) }];
       }),
     [anomalies, out.days],
+  );
+
+  const handleAnomalyChange = useMemo(
+    () => (idx: number, next: (typeof anomalies)[number]) => {
+      const copy = anomalies.slice();
+      copy[idx] = next;
+      setAnomalies(copy);
+    },
+    [anomalies, setAnomalies],
   );
 
   const allZero =
@@ -115,6 +125,9 @@ export function PreviewGrid() {
             headline={stats.events}
             color="hsl(var(--chart-6))"
             bands={bands}
+            anomalies={anomalies}
+            windowDays={window_days}
+            onAnomalyChange={handleAnomalyChange}
             startDate={chartStart}
             endDate={chartEnd}
             className="col-span-2"
@@ -126,6 +139,9 @@ export function PreviewGrid() {
             headline={stats.active}
             color="hsl(var(--chart-8))"
             bands={bands}
+            anomalies={anomalies}
+            windowDays={window_days}
+            onAnomalyChange={handleAnomalyChange}
             startDate={chartStart}
             endDate={chartEnd}
           />
@@ -135,6 +151,9 @@ export function PreviewGrid() {
             headline={stats.news}
             color="hsl(var(--chart-3))"
             bands={bands}
+            anomalies={anomalies}
+            windowDays={window_days}
+            onAnomalyChange={handleAnomalyChange}
             startDate={chartStart}
             endDate={chartEnd}
           />
@@ -144,6 +163,9 @@ export function PreviewGrid() {
             headline={stats.stickiness}
             color="hsl(var(--chart-7))"
             bands={bands}
+            anomalies={anomalies}
+            windowDays={window_days}
+            onAnomalyChange={handleAnomalyChange}
             startDate={chartStart}
             endDate={chartEnd}
             valueSuffix="%"
@@ -154,6 +176,9 @@ export function PreviewGrid() {
             headline={`total ${formatNum(out.totalUsers.at(-1) ?? 0)}`}
             color="hsl(var(--chart-2))"
             bands={bands}
+            anomalies={anomalies}
+            windowDays={window_days}
+            onAnomalyChange={handleAnomalyChange}
             startDate={chartStart}
             endDate={chartEnd}
           />
