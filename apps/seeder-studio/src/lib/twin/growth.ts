@@ -14,6 +14,11 @@ export function growthCurve(
         out[t] = totalUsers * rate * Math.exp(-t / (days * 0.5));
       break;
     }
+    case "flat": {
+      const base = totalUsers / days;
+      for (let t = 0; t < days; t++) out[t] = base;
+      break;
+    }
     case "weak": {
       const base = totalUsers / days;
       for (let t = 0; t < days; t++) out[t] = base * (0.5 + t / days);

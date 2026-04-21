@@ -49,7 +49,6 @@ export function AxisAccordion({
 
   const handleSelect = (value: string) => {
     onChange(value);
-    onOpenChange(false);
   };
 
   return (

@@ -2,7 +2,6 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import { AnomalyPill } from "./AnomalyPill";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveScale } from "@/lib/twin/utils";
-import { defaultAnomaly, ANOMALY_SPEC } from "@/lib/twin";
 
 interface Props {
   onEdit: (index: number) => void;
@@ -38,19 +37,11 @@ export function AnomalyTrack({ onEdit }: Props) {
     setAnomalies(copy);
   };
 
-  const addAnomaly = (type: string) => {
-    const duration = Math.max(5, Math.floor(window_days * 0.1));
-    const maxStart = Math.max(0, window_days - duration - 1);
-    const start = Math.floor(Math.random() * maxStart);
-    const next = defaultAnomaly(type, start, duration);
-    setAnomalies([...anomalies, next]);
-  };
-
   return (
-    <div className="flex items-center gap-2 p-1 border-y min-w-0 overflow-hidden">
+    <div className="p-1 border-y min-w-0 overflow-hidden">
       <div
         ref={containerRef}
-        className="flex-1 min-w-0 overflow-hidden"
+        className="w-full overflow-hidden"
         style={{ height: TRACK_HEIGHT }}
       >
         <svg
@@ -76,18 +67,6 @@ export function AnomalyTrack({ onEdit }: Props) {
             />
           ))}
         </svg>
-      </div>
-      <div className="flex flex-col gap-1 shrink-0">
-        {Object.values(ANOMALY_SPEC).map((spec) => (
-          <button
-            key={spec.type}
-            type="button"
-            onClick={() => addAnomaly(spec.type)}
-            className="text-[10px] px-1.5 py-0.5 rounded border border-dashed border-border text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors text-left"
-          >
-            + {spec.label}
-          </button>
-        ))}
       </div>
     </div>
   );

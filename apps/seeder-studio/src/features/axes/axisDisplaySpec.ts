@@ -23,6 +23,12 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
         sparkPoints: "0,4 14,8 28,14 40,20 52,26",
       },
       {
+        value: "flat",
+        label: "Flat",
+        description: "Constant acquisition — no growth, no decline",
+        sparkPoints: "0,14 14,14 28,14 40,14 52,14",
+      },
+      {
         value: "weak",
         label: "Weak growth",
         description: "Slow, linear — early-stage or niche product",

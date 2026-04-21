@@ -45,6 +45,22 @@ describe("AxisSidebar", () => {
     expect(screen.getByText("growth")).toBeInTheDocument();
   });
 
+  it("renders anomaly add buttons in the sidebar", () => {
+    render(<AxisSidebar />);
+    expect(
+      screen.getAllByRole("button", { name: /^\+ /i }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("clicking an anomaly add button adds an anomaly to the store", async () => {
+    const user = userEvent.setup();
+    render(<AxisSidebar />);
+    await user.click(screen.getAllByRole("button", { name: /^\+ /i })[0]);
+    expect(
+      (useSeederStore.getState().config.anomalies ?? []).length,
+    ).toBeGreaterThan(0);
+  });
+
   it("renders collapsed when defaultOpen is false, hiding axis content", () => {
     render(<AxisSidebar defaultOpen={false} />);
     expect(screen.queryByText("growth")).not.toBeInTheDocument();

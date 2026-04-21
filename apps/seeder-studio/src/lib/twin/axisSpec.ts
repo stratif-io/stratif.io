@@ -26,6 +26,12 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
         params: { shape: 0, rate: -0.01 },
       },
       {
+        value: "flat",
+        label: "flat",
+        description: "Constant acquisition — no growth, no decline.",
+        params: { shape: 0, rate: 0 },
+      },
+      {
         value: "weak",
         label: "weak",
         description: "Slow linear growth.",

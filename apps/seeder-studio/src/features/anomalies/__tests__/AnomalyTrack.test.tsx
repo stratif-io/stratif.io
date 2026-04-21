@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { AnomalyTrack } from "../AnomalyTrack";
 import { useSeederStore, blankConfig } from "@/stores/seederStore";
 
@@ -27,11 +26,9 @@ describe("AnomalyTrack", () => {
     expect(screen.getByRole("button", { name: /viral/i })).toBeInTheDocument();
   });
 
-  it("anomaly type buttons add a new anomaly at a random position", async () => {
-    const user = userEvent.setup();
-    render(<AnomalyTrack onEdit={() => {}} />);
-    await user.click(screen.getAllByRole("button", { name: /^\+ /i })[0]);
-    expect(useSeederStore.getState().config.anomalies).toHaveLength(2);
+  it("renders the SVG track container", () => {
+    const { container } = render(<AnomalyTrack onEdit={() => {}} />);
+    expect(container.querySelector("svg")).not.toBeNull();
   });
 
   it("emits onEdit(index) when a pill is clicked", () => {

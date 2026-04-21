@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { SimulationAnomaly } from "@/types/simulation";
+
+const EMPTY_ANOMALIES: SimulationAnomaly[] = [];
 import { ChevronRight } from "lucide-react";
 import { AXIS_DISPLAY, STRIP_AXIS_IDS } from "./axisDisplaySpec";
 import { AxisAccordion } from "./AxisAccordion";
 import { useSeederStore } from "@/stores/seederStore";
-import { AXIS_SPEC } from "@/lib/twin";
+import { AXIS_SPEC, ANOMALY_SPEC, defaultAnomaly } from "@/lib/twin";
+import { resolveScale } from "@/lib/twin/utils";
 
 interface Props {
   defaultOpen?: boolean;
@@ -14,6 +18,23 @@ export function AxisSidebar({ defaultOpen = true }: Props) {
   const [openAxes, setOpenAxes] = useState<Set<string>>(new Set());
   const axes = useSeederStore((s) => s.config.axes);
   const setAxis = useSeederStore((s) => s.setAxis);
+  const anomalies = useSeederStore(
+    (s) => s.config.anomalies ?? EMPTY_ANOMALIES,
+  );
+  const setAnomalies = useSeederStore((s) => s.setAnomalies);
+  const scaleAxis = useSeederStore((s) => s.config.axes.scale ?? "small");
+  const scaleOverride = useSeederStore((s) => s.config.scale_config);
+  const { window_days } = useMemo(
+    () => resolveScale(scaleAxis, scaleOverride),
+    [scaleAxis, scaleOverride],
+  );
+
+  const addAnomaly = (type: string) => {
+    const duration = Math.max(5, Math.floor(window_days * 0.1));
+    const maxStart = Math.max(0, window_days - duration - 1);
+    const start = Math.floor(Math.random() * maxStart);
+    setAnomalies([...anomalies, defaultAnomaly(type, start, duration)]);
+  };
 
   const allExpanded = openAxes.size === STRIP_AXIS_IDS.length;
 
@@ -72,6 +93,23 @@ export function AxisSidebar({ defaultOpen = true }: Props) {
                 />
               );
             })}
+            <div className="mt-2 pt-2 border-t border-border/50">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-2 block mb-1">
+                Anomalies
+              </span>
+              <div className="flex flex-col gap-0.5">
+                {Object.values(ANOMALY_SPEC).map((spec) => (
+                  <button
+                    key={spec.type}
+                    type="button"
+                    onClick={() => addAnomaly(spec.type)}
+                    className="text-[10px] px-2 py-1 rounded-md text-left text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                  >
+                    + {spec.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

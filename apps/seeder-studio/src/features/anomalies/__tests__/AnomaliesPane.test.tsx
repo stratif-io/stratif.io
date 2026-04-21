@@ -25,9 +25,6 @@ describe("AnomaliesPane", () => {
   it("renders the track and no editor by default", () => {
     render(<AnomaliesPane />);
     expect(
-      screen.getAllByRole("button", { name: /^\+ /i }).length,
-    ).toBeGreaterThan(0);
-    expect(
       screen.queryByRole("heading", { name: /^Anomaly$/i }),
     ).not.toBeInTheDocument();
   });
