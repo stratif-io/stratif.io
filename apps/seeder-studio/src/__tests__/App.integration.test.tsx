@@ -44,7 +44,7 @@ describe("App integration", () => {
     );
   });
 
-  it("renders 6 axis chips in the axis strip", async () => {
+  it("renders 6 axis dropdowns in the left sidebar", async () => {
     renderApp();
     await waitFor(() =>
       expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(6),
@@ -78,11 +78,18 @@ describe("App integration", () => {
     expect(screen.getByLabelText(/preset name/i)).toBeInTheDocument();
   });
 
-  it("shows preset picker dropdown and loads a preset", async () => {
+  it("shows preset list in right sidebar and loads a preset", async () => {
     const user = userEvent.setup();
     renderApp();
-    await waitFor(() => screen.getByRole("button", { name: "preset" }));
-    await user.click(screen.getByRole("button", { name: "preset" }));
+    // Preset sidebar is collapsed by default — expand it
+    await waitFor(() =>
+      screen.getByRole("button", { name: /expand presets/i }),
+    );
+    await user.click(screen.getByRole("button", { name: /expand presets/i }));
+    // Preset should now be visible
+    await waitFor(() =>
+      expect(screen.getByText("saas_growth")).toBeInTheDocument(),
+    );
     await user.click(screen.getByText("saas_growth"));
     expect(screen.getByText("saas_growth")).toBeInTheDocument();
   });
@@ -90,15 +97,18 @@ describe("App integration", () => {
   it("shows discard dialog when switching preset with unsaved changes", async () => {
     const user = userEvent.setup();
     renderApp();
-    await waitFor(() => screen.getByRole("button", { name: "preset" }));
+    // Expand preset sidebar
+    await waitFor(() =>
+      screen.getByRole("button", { name: /expand presets/i }),
+    );
+    await user.click(screen.getByRole("button", { name: /expand presets/i }));
     // Load a preset first
-    await user.click(screen.getByRole("button", { name: "preset" }));
+    await waitFor(() => screen.getByText("saas_growth"));
     await user.click(screen.getByText("saas_growth"));
     // Change an axis to mark dirty
     await user.click(screen.getByRole("button", { name: "growth" }));
     await user.click(screen.getByRole("option", { name: /Hockey stick/i }));
-    // Now try to switch preset
-    await user.click(screen.getByRole("button", { name: "preset" }));
+    // Now try to switch preset again
     await user.click(screen.getAllByText("saas_growth").at(-1)!);
     expect(screen.getByText(/discard unsaved changes/i)).toBeInTheDocument();
   });

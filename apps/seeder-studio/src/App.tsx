@@ -11,10 +11,11 @@ import {
   Skeleton,
 } from "@stratif-io/web";
 import { TopBar } from "./features/topbar/TopBar";
-import { AxisStrip } from "./features/axes/AxisStrip";
+import { AxisSidebar } from "./features/axes/AxisSidebar";
 import { AnomaliesPane } from "./features/anomalies/AnomaliesPane";
 import { PreviewGrid } from "./features/preview/PreviewGrid";
 import { SaveModal } from "./features/save/SaveModal";
+import { PresetSidebar } from "./features/presets/PresetSidebar";
 import { usePresets } from "./features/presets/usePresets";
 import { useSeederStore, blankConfig } from "./stores/seederStore";
 import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
@@ -105,13 +106,7 @@ export default function App() {
           <Skeleton className="h-5 w-40" />
         </div>
       ) : (
-        <TopBar
-          presets={presets}
-          selectedName={selectedName}
-          onSelectPreset={handleSelectPreset}
-          onNewBlank={handleNewBlank}
-          onSave={() => setSaveOpen(true)}
-        />
+        <TopBar onSave={() => setSaveOpen(true)} />
       )}
 
       {error && (
@@ -120,14 +115,24 @@ export default function App() {
         </div>
       )}
 
-      {!loading && !error && <AxisStrip />}
+      {/* 3-column body */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <AxisSidebar />
 
-      <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <AnomaliesPane />
-        <div className="flex-1 min-h-0">
-          <PreviewGrid />
-        </div>
-      </main>
+        <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <AnomaliesPane />
+          <div className="flex-1 min-h-0">
+            <PreviewGrid />
+          </div>
+        </main>
+
+        <PresetSidebar
+          presets={presets}
+          selectedName={selectedName}
+          onSelect={handleSelectPreset}
+          onNewBlank={handleNewBlank}
+        />
+      </div>
 
       <SaveModal
         open={saveOpen}

@@ -1,23 +1,11 @@
 import { Button, Badge } from "@stratif-io/web";
-import { PresetPicker } from "./PresetPicker";
 import { useSeederStore } from "@/stores/seederStore";
-import type { PresetEntry } from "@/lib/api/presets";
 
 interface Props {
-  presets: PresetEntry[];
-  selectedName: string | null;
-  onSelectPreset: (name: string) => void;
-  onNewBlank: () => void;
   onSave: () => void;
 }
 
-export function TopBar({
-  presets,
-  selectedName,
-  onSelectPreset,
-  onNewBlank,
-  onSave,
-}: Props) {
+export function TopBar({ onSave }: Props) {
   const dirty = useSeederStore((s) => s.dirty);
   const uiStartDate = useSeederStore((s) => s.uiStartDate);
   const uiEndDate = useSeederStore((s) => s.uiEndDate);
@@ -58,13 +46,6 @@ export function TopBar({
       <span className="text-sm font-bold tracking-tight mr-1">
         Seeder Studio
       </span>
-
-      <PresetPicker
-        presets={presets}
-        selectedName={selectedName}
-        onSelect={onSelectPreset}
-        onNewBlank={onNewBlank}
-      />
 
       {dirty && (
         <Badge variant="outline" className="text-[10px] h-5">
