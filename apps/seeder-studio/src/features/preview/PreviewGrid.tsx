@@ -90,7 +90,7 @@ export function PreviewGrid() {
   return (
     <section
       aria-labelledby="preview-heading"
-      className="flex flex-col gap-2 flex-1 overflow-hidden p-2"
+      className="flex flex-col gap-2 lg:flex-1 lg:overflow-hidden p-2"
     >
       <header className="flex items-center justify-between">
         <h2
@@ -130,7 +130,7 @@ export function PreviewGrid() {
           data-testid="preview-grid-canvas"
           onPointerMove={handleMove}
           onPointerLeave={clearIndex}
-          className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto"
+          className="flex flex-col gap-4 lg:flex-1 lg:min-h-0 lg:overflow-y-auto"
         >
           <KpiChart
             title="Events/day"

@@ -135,7 +135,7 @@ export default function App() {
           </div>
         )}
       </header>
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex lg:overflow-hidden">
         {loading && (
           <aside className="hidden md:flex w-[200px] lg:w-[220px] border-r p-3 flex-col gap-3">
             <Skeleton className="h-8 w-full" />
@@ -166,8 +166,8 @@ export default function App() {
               onNewBlank={handleNewBlank}
             />
             <section className="flex-1 flex flex-col min-w-0">
-              <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-                <div className="flex-1 min-w-0 overflow-y-auto px-4 [&>*]:py-6 [&>*:not(:last-child)]:border-b">
+              <div className="flex flex-col lg:flex-1 lg:flex-row lg:overflow-hidden">
+                <div className="flex-1 min-w-0 lg:overflow-y-auto px-4 [&>*]:py-6 [&>*:not(:last-child)]:border-b">
                   {selectedName === null && (
                     <div className="bg-muted/40 border-b px-4 py-2 text-[13px] text-muted-foreground -mx-4 !py-2">
                       <strong className="text-foreground">New preset.</strong>{" "}
@@ -179,7 +179,7 @@ export default function App() {
                   <AxesSection />
                   <TuningSection />
                 </div>
-                <div className="w-full lg:w-[360px] border-t lg:border-t-0 lg:border-l overflow-y-auto">
+                <div className="w-full lg:w-[360px] border-t lg:border-t-0 lg:border-l lg:overflow-y-auto">
                   <PreviewGrid />
                 </div>
               </div>
