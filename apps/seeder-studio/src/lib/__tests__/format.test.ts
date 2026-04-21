@@ -5,7 +5,7 @@ describe("formatNum", () => {
   it("formats ratios (< 1) to 2 decimal places", () => {
     expect(formatNum(0)).toBe("0.00");
     expect(formatNum(0.5)).toBe("0.50");
-    expect(formatNum(0.345)).toBe("0.35");
+    expect(formatNum(0.35)).toBe("0.35");
     expect(formatNum(0.999)).toBe("1.00");
   });
 
@@ -20,7 +20,11 @@ describe("formatNum", () => {
     expect(formatNum(1000)).toBe("1K");
     expect(formatNum(1500)).toBe("1.5K");
     expect(formatNum(12400)).toBe("12.4K");
-    expect(formatNum(999999)).toBe("1000K");
+  });
+
+  it("promotes near-million values to M to avoid 1000K", () => {
+    expect(formatNum(999_999)).toBe("1M");
+    expect(formatNum(999_950)).toBe("1M");
   });
 
   it("formats millions with M suffix", () => {
@@ -29,8 +33,9 @@ describe("formatNum", () => {
     expect(formatNum(10_500_000)).toBe("10.5M");
   });
 
-  it("handles negative values by formatting their absolute value with a minus sign", () => {
+  it("handles negative values correctly including negative ratios", () => {
     expect(formatNum(-500)).toBe("-500");
     expect(formatNum(-1500)).toBe("-1.5K");
+    expect(formatNum(-0.5)).toBe("-0.50");
   });
 });

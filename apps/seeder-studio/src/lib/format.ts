@@ -2,24 +2,37 @@ export function formatNum(n: number): string {
   const abs = Math.abs(n);
   const sign = n < 0 ? "-" : "";
 
-  if (abs < 1) {
-    const rounded = Math.round(abs * 100) / 100;
-    return rounded.toFixed(2);
-  }
+  if (abs < 1) return sign + abs.toFixed(2);
 
   if (abs < 1_000) return sign + Math.round(abs).toString();
 
   if (abs < 1_000_000) {
     const k = abs / 1_000;
+    const rounded = Math.round(k * 10) / 10;
+    if (rounded >= 1_000) {
+      // promote to M to avoid "1000K"
+      const m = abs / 1_000_000;
+      const mRounded = Math.round(m * 10) / 10;
+      return (
+        sign +
+        (Number.isInteger(mRounded)
+          ? mRounded.toFixed(0)
+          : mRounded.toFixed(1)) +
+        "M"
+      );
+    }
     return (
       sign +
-      (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1).replace(/\.0$/, "")) +
+      (Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)) +
       "K"
     );
   }
 
   const m = abs / 1_000_000;
+  const mRounded = Math.round(m * 10) / 10;
   return (
-    sign + (m % 1 === 0 ? m.toFixed(0) : m.toFixed(1).replace(/\.0$/, "")) + "M"
+    sign +
+    (Number.isInteger(mRounded) ? mRounded.toFixed(0) : mRounded.toFixed(1)) +
+    "M"
   );
 }
