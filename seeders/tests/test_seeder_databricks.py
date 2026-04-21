@@ -226,8 +226,23 @@ _FAKE_EVENT = (
     "2024-01-01T00:00:00",
     {"page": "/"},
     "srv",
-    {"first_name": "A", "last_name": "B", "phone": "", "email": "a@b.com", "date_of_birth": ""},
-    {"country": "US", "city": "NY", "timezone": "EST", "device_type": "desktop", "browser": "Chrome", "os": "macOS", "screen_resolution": "1920x1080", "referrer": ""},
+    {
+        "first_name": "A",
+        "last_name": "B",
+        "phone": "",
+        "email": "a@b.com",
+        "date_of_birth": "",
+    },
+    {
+        "country": "US",
+        "city": "NY",
+        "timezone": "EST",
+        "device_type": "desktop",
+        "browser": "Chrome",
+        "os": "macOS",
+        "screen_resolution": "1920x1080",
+        "referrer": "",
+    },
 )
 
 
@@ -238,7 +253,9 @@ def test_seed_uses_parquet_mode_when_staging_volume_set(
 
     with (
         patch.object(seeder_with_volume, "_bulk_load_parquet") as mock_bulk,
-        patch.object(seeder_with_volume, "events_via_engine", return_value=iter([[_FAKE_EVENT]])),
+        patch.object(
+            seeder_with_volume, "events_via_engine", return_value=iter([[_FAKE_EVENT]])
+        ),
     ):
         seeder_with_volume.seed()
 
