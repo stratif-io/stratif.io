@@ -130,7 +130,7 @@ export function PreviewGrid() {
           data-testid="preview-grid-canvas"
           onPointerMove={handleMove}
           onPointerLeave={clearIndex}
-          className="flex flex-col gap-4 lg:flex-1 lg:min-h-0 lg:overflow-y-auto"
+          className="grid grid-cols-2 gap-4 lg:flex-1 lg:min-h-0 lg:overflow-y-auto"
         >
           <KpiChart
             title="Events/day"
