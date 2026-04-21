@@ -76,6 +76,27 @@ describe("TopBar", () => {
     expect(useSeederStore.getState().uiStartDate).toBe("2024-01-01");
   });
 
+  it("computes window_days when both dates are set", async () => {
+    const user = userEvent.setup();
+    render(
+      <TopBar
+        presets={presets}
+        selectedName={null}
+        onSelectPreset={vi.fn()}
+        onNewBlank={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+    const startInput = screen.getByLabelText(/start date/i);
+    const endInput = screen.getByLabelText(/end date/i);
+    await user.clear(startInput);
+    await user.type(startInput, "2024-01-01");
+    await user.clear(endInput);
+    await user.type(endInput, "2024-04-10");
+    const { window_days } = useSeederStore.getState().config.scale_config;
+    expect(window_days).toBeGreaterThan(0);
+  });
+
   it("calls onSave when Save preset button is clicked", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();

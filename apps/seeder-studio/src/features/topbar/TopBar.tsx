@@ -29,13 +29,9 @@ export function TopBar({
   const handleStartDate = (value: string) => {
     setUiStartDate(value);
     if (value && uiEndDate) {
-      const days = Math.max(
-        1,
-        Math.round(
-          (new Date(uiEndDate).getTime() - new Date(value).getTime()) /
-            86_400_000,
-        ),
-      );
+      const delta = new Date(uiEndDate).getTime() - new Date(value).getTime();
+      if (delta <= 0) return;
+      const days = Math.max(1, Math.round(delta / 86_400_000));
       setScaleConfig({ ...config.scale_config, window_days: days });
     }
   };
@@ -43,13 +39,9 @@ export function TopBar({
   const handleEndDate = (value: string) => {
     setUiEndDate(value);
     if (uiStartDate && value) {
-      const days = Math.max(
-        1,
-        Math.round(
-          (new Date(value).getTime() - new Date(uiStartDate).getTime()) /
-            86_400_000,
-        ),
-      );
+      const delta = new Date(value).getTime() - new Date(uiStartDate).getTime();
+      if (delta <= 0) return;
+      const days = Math.max(1, Math.round(delta / 86_400_000));
       setScaleConfig({ ...config.scale_config, window_days: days });
     }
   };
@@ -86,7 +78,6 @@ export function TopBar({
         </label>
         <input
           id="start-date"
-          aria-label="start date"
           type="text"
           placeholder="YYYY-MM-DD"
           value={uiStartDate ?? ""}
@@ -99,7 +90,6 @@ export function TopBar({
         </label>
         <input
           id="end-date"
-          aria-label="end date"
           type="text"
           placeholder="YYYY-MM-DD"
           value={uiEndDate ?? ""}
