@@ -157,6 +157,14 @@ body {
   --success-foreground: 138 76% 97%;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
 @layer base {
   * {
     border-color: hsl(var(--border));
