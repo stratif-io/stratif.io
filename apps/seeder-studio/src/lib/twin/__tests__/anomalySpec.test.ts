@@ -14,10 +14,12 @@ describe("ANOMALY_SPEC", () => {
     }
   });
 
-  it("every type declares its effect fields", () => {
+  it("every type has at least one configurable or fixed effect field", () => {
     for (const spec of Object.values(ANOMALY_SPEC)) {
-      if (spec.type === "total_outage") continue;
-      expect(spec.effectFields.length).toBeGreaterThan(0);
+      const hasEffect =
+        spec.effectFields.length > 0 ||
+        Object.keys(spec.fixedEffect ?? {}).length > 0;
+      expect(hasEffect).toBe(true);
     }
   });
 
@@ -42,9 +44,9 @@ describe("ANOMALY_SPEC", () => {
     expect(ANOMALY_SPEC["total_outage"].effectFields).toHaveLength(0);
   });
 
-  it("defaultAnomaly for total_outage has effect.total_outage=1 and arrivals=0", () => {
+  it("defaultAnomaly for total_outage has arrivals=0 in effect", () => {
     const a = defaultAnomaly("total_outage", 5, 3);
-    expect(a.effect.total_outage).toBe(1);
     expect(a.effect.arrivals).toBe(0);
+    expect(a.effect.total_outage).toBeUndefined();
   });
 });

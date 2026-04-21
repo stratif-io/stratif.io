@@ -13,6 +13,7 @@ export interface AnomalyTypeSpec {
   label: string;
   cssVar: string;
   effectFields: AnomalyEffectField[];
+  fixedEffect?: Record<string, number>;
 }
 
 export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
@@ -67,6 +68,7 @@ export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
     label: "Total outage",
     cssVar: "--anomaly-total-outage",
     effectFields: [],
+    fixedEffect: { arrivals: 0 },
   },
 };
 
@@ -83,10 +85,7 @@ export function defaultAnomaly(
   const spec = ANOMALY_SPEC[type] ?? ANOMALY_SPEC.marketing_campaign;
   const effect: Record<string, number> = {};
   for (const f of spec.effectFields) effect[f.key] = f.default;
-  if (type === "total_outage") {
-    effect.total_outage = 1;
-    effect.arrivals = 0;
-  }
+  if (spec.fixedEffect) Object.assign(effect, spec.fixedEffect);
   return {
     type,
     name: `${type}_${startDay}`,
