@@ -1,5 +1,6 @@
 import { getAxisValue } from "./axisSpec";
 
+/** Lightweight geometric approximation for virality seeding only. Not the authoritative retention model. */
 function approxDau(arrivals: number[], stickinessAxis: string): number[] {
   const params = getAxisValue("stickiness", stickinessAxis)?.params;
   const r = params ? 1 - (params.baseChurnRate as number) : 0.8;
