@@ -89,9 +89,13 @@ describe("runTwin", () => {
     const strong = runTwin({
       config: { ...base, axes: { ...base.axes, virality: "strong_viral" } },
     });
+    // Arrivals are re-normalised to total_users before cohort sampling.
+    // Each cohort size is a Poisson draw, so the cumulative total has
+    // std-dev ≈ sqrt(total_users) ≈ 31 for the "tiny" scale (1 000 users).
+    // Allow 3 sigma (~100) so the assertion is meaningful without being brittle.
     expect(
       Math.abs(weak.totalUsers.at(-1)! - strong.totalUsers.at(-1)!),
-    ).toBeLessThanOrEqual(2);
+    ).toBeLessThanOrEqual(100);
   });
 
   it("honors scale_config overrides", () => {

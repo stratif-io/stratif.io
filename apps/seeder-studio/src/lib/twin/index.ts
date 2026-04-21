@@ -4,10 +4,8 @@ import { growthCurve } from "./growth";
 import { applyAnomalies } from "./anomalies";
 import { applyJitter } from "./jitter";
 import { applyVirality } from "./virality";
-import { simulateUsers } from "./simulate";
-import type { RetentionParams } from "./simulate";
-import { metricsFromUsers } from "./metricsFromUsers";
-import type { TwinInput, TwinOutput } from "./types";
+import { simulateCohorts } from "./simulateCohorts";
+import type { RetentionParams, TwinInput, TwinOutput } from "./types";
 
 export * from "./types";
 export { AXIS_SPEC, getAxis, getAxisValue } from "./axisSpec";
@@ -60,19 +58,18 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     maxDormantDays: 45,
   };
 
-  const users = simulateUsers(
-    arrivals,
-    days,
-    total_users,
-    retentionParams,
-    seed,
-  );
-
   const depth =
     (getAxisValue("engagement_depth", config.axes.engagement_depth ?? "medium")
       ?.params.events_per_user as number | undefined) ?? 10;
 
-  const metrics = metricsFromUsers(users, days, total_users, depth);
+  const metrics = simulateCohorts(
+    arrivals,
+    days,
+    total_users,
+    retentionParams,
+    depth,
+    seed,
+  );
 
   return { days, ...metrics };
 }
