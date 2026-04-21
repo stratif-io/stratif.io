@@ -58,7 +58,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  --sidebar-expanded: 220px;
+  --sidebar-expanded: 260px;
   --sidebar-collapsed: 60px;
 
   --content-max-width: 1600px;
