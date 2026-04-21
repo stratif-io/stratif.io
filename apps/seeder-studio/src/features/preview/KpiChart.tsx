@@ -39,6 +39,7 @@ interface Props {
   valueSuffix?: string;
   className?: string;
   chartHeight?: string;
+  formula?: string;
 }
 
 const fmt = (d: Date) =>
@@ -74,6 +75,7 @@ export function KpiChart({
   valueSuffix = "",
   className = "",
   chartHeight = "h-32",
+  formula = "",
 }: Props) {
   const data = useMemo(
     () => values.map((v, i) => ({ idx: i, value: v })),
@@ -227,6 +229,15 @@ export function KpiChart({
           </svg>
         )}
       </div>
+      {formula && (
+        <p
+          data-testid="kpi-formula"
+          className="text-[10px] text-muted-foreground/60 font-mono leading-tight mt-1 truncate"
+          title={formula}
+        >
+          {formula}
+        </p>
+      )}
     </div>
   );
 }

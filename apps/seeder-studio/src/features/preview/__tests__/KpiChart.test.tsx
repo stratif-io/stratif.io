@@ -81,3 +81,23 @@ describe("KpiChart date tick labels", () => {
     expect(container.querySelector(".h-32")).not.toBeNull();
   });
 });
+
+describe("KpiChart formula caption", () => {
+  it("renders formula caption when formula prop is provided", () => {
+    render(
+      <KpiChart
+        title="Test"
+        values={[1, 2, 3]}
+        formula="DAU(t) = Σ Poisson(N꜀ × S[t−c])"
+      />,
+    );
+    expect(
+      screen.getByText("DAU(t) = Σ Poisson(N꜀ × S[t−c])"),
+    ).toBeInTheDocument();
+  });
+
+  it("does not render formula caption when formula prop is absent", () => {
+    render(<KpiChart title="Test" values={[1, 2, 3]} />);
+    expect(screen.queryByTestId("kpi-formula")).not.toBeInTheDocument();
+  });
+});
