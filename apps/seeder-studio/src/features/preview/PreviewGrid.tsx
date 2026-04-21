@@ -1,10 +1,4 @@
 import { useMemo } from "react";
-import {
-  Tooltip,
-  TooltipProvider,
-  TooltipContent,
-  TooltipTrigger,
-} from "@stratif-io/web";
 import { useTwinOutput } from "./useTwinOutput";
 import { KpiChart, type KpiBand } from "./KpiChart";
 import { useSeederStore } from "@/stores/seederStore";
@@ -82,32 +76,13 @@ export function PreviewGrid() {
       aria-labelledby="preview-heading"
       className="flex flex-col gap-2 lg:flex-1 lg:overflow-hidden p-2"
     >
-      <header className="flex items-center justify-between">
+      <header>
         <h2
           id="preview-heading"
           className="text-xs uppercase text-muted-foreground font-semibold"
         >
           Preview
         </h2>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span
-                className="rounded px-2 py-0.5 text-[10px] font-medium cursor-help"
-                style={{
-                  backgroundColor: "hsl(var(--warning) / 0.15)",
-                  color: "hsl(var(--warning))",
-                }}
-              >
-                approximate
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              Preview uses a coarse TS twin of the axis math. Actual seed output
-              may vary — the twin is directionally correct within ~2× envelope.
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </header>
       {allZero ? (
         <div className="flex-1 flex items-center justify-center text-[13px] text-muted-foreground p-6 text-center">

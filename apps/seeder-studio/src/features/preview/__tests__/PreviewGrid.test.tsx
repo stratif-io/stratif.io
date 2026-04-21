@@ -21,9 +21,9 @@ describe("PreviewGrid", () => {
     expect(screen.getByText(/Total users/i)).toBeInTheDocument();
   });
 
-  it("shows the approximate-preview badge", () => {
+  it("renders the preview heading", () => {
     render(<PreviewGrid />);
-    expect(screen.getByText(/approximate/i)).toBeInTheDocument();
+    expect(screen.getByText(/preview/i)).toBeInTheDocument();
   });
 });
 

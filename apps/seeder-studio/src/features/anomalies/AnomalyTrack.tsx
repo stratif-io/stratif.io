@@ -3,13 +3,9 @@ import { AnomalyPill } from "./AnomalyPill";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveScale } from "@/lib/twin/utils";
 
-interface Props {
-  onEdit: (index: number) => void;
-}
-
 const TRACK_HEIGHT = 32;
 
-export function AnomalyTrack({ onEdit }: Props) {
+export function AnomalyTrack() {
   const config = useSeederStore((s) => s.config);
   const setAnomalies = useSeederStore((s) => s.setAnomalies);
   const anomalies = config.anomalies ?? [];
@@ -63,7 +59,7 @@ export function AnomalyTrack({ onEdit }: Props) {
               windowDays={window_days}
               trackWidth={trackWidth}
               onChange={(next) => updateAnomaly(i, next)}
-              onSelect={() => onEdit(i)}
+              onSelect={() => {}}
             />
           ))}
         </svg>
