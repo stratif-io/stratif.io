@@ -9,9 +9,11 @@ import {
   ReferenceArea,
   CartesianGrid,
 } from "recharts";
+import { Popover, PopoverTrigger, PopoverContent } from "@stratif-io/web";
 import { formatNum } from "@/lib/format";
 import type { SimulationAnomaly } from "@/types/simulation";
 import { AnomalyChartOverlay } from "@/features/anomalies/AnomalyChartOverlay";
+import { MathFormula } from "@/lib/math/MathFormula";
 
 export interface KpiBand {
   start: number;
@@ -39,7 +41,9 @@ interface Props {
   valueSuffix?: string;
   className?: string;
   chartHeight?: string;
-  formula?: string;
+  formulaLatex?: string;
+  formulaWhere?: string;
+  formulaExplanation?: string;
 }
 
 const fmt = (d: Date) =>
@@ -75,7 +79,9 @@ export function KpiChart({
   valueSuffix = "",
   className = "",
   chartHeight = "h-32",
-  formula = "",
+  formulaLatex = "",
+  formulaWhere = "",
+  formulaExplanation = "",
 }: Props) {
   const data = useMemo(
     () => values.map((v, i) => ({ idx: i, value: v })),
@@ -121,13 +127,62 @@ export function KpiChart({
       className={`rounded-lg border bg-card p-3 flex flex-col gap-2 ${className}`}
     >
       <div className="flex items-baseline justify-between">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-1.5">
           <span
             className="inline-block w-2 h-2 rounded-full"
             style={{ backgroundColor: color }}
             aria-hidden="true"
           />
           <span className="text-xs font-semibold">{title}</span>
+          {formulaExplanation && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  aria-label="info"
+                  className="text-muted-foreground/50 hover:text-muted-foreground transition-colors leading-none"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle cx="6" cy="6" r="5.5" stroke="currentColor" />
+                    <path
+                      d="M6 5.5v3M6 3.5v.5"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-80 p-4 flex flex-col gap-3"
+                side="top"
+                align="start"
+              >
+                <p className="text-xs font-semibold">{title}</p>
+                {formulaLatex && (
+                  <MathFormula
+                    latex={formulaLatex}
+                    display
+                    className="overflow-x-auto"
+                  />
+                )}
+                {formulaWhere && (
+                  <p className="text-[11px] text-muted-foreground font-mono">
+                    {formulaWhere}
+                  </p>
+                )}
+                {formulaExplanation && (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    {formulaExplanation}
+                  </p>
+                )}
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
         {headline && (
           <span className="text-[11px] text-muted-foreground tabular-nums">
@@ -229,14 +284,21 @@ export function KpiChart({
           </svg>
         )}
       </div>
-      {formula && (
-        <p
-          data-testid="kpi-formula"
-          className="text-[10px] text-muted-foreground/60 font-mono leading-tight mt-1 truncate"
-          title={formula}
-        >
-          {formula}
-        </p>
+      {formulaLatex && (
+        <div className="flex flex-col gap-0.5 mt-1">
+          <MathFormula
+            latex={formulaLatex}
+            className="text-[11px] text-muted-foreground/70 overflow-x-auto"
+          />
+          {formulaWhere && (
+            <p
+              data-testid="kpi-formula-where"
+              className="text-[10px] text-muted-foreground/50 font-mono leading-tight"
+            >
+              {formulaWhere}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

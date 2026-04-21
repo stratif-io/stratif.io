@@ -82,22 +82,49 @@ describe("KpiChart date tick labels", () => {
   });
 });
 
-describe("KpiChart formula caption", () => {
-  it("renders formula caption when formula prop is provided", () => {
+describe("KpiChart formula display", () => {
+  it("renders inline KaTeX formula when formulaLatex is provided", () => {
     render(
       <KpiChart
         title="Test"
         values={[1, 2, 3]}
-        formula="DAU(t) = Σ Poisson(N꜀ × S[t−c])"
+        formulaLatex="\text{DAU}(t)"
+        formulaWhere="where: d = 10"
+        formulaExplanation="Daily active users."
       />,
     );
-    expect(
-      screen.getByText("DAU(t) = Σ Poisson(N꜀ × S[t−c])"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("math-formula")).toBeInTheDocument();
   });
 
-  it("does not render formula caption when formula prop is absent", () => {
+  it("renders where line when formulaWhere is provided", () => {
+    render(
+      <KpiChart
+        title="Test"
+        values={[1, 2, 3]}
+        formulaLatex="\text{DAU}(t)"
+        formulaWhere="where: d = 10"
+        formulaExplanation="Daily active users."
+      />,
+    );
+    expect(screen.getByText("where: d = 10")).toBeInTheDocument();
+  });
+
+  it("renders info button when formulaExplanation is provided", () => {
+    render(
+      <KpiChart
+        title="Test"
+        values={[1, 2, 3]}
+        formulaLatex="\text{DAU}(t)"
+        formulaWhere="where: d = 10"
+        formulaExplanation="Daily active users."
+      />,
+    );
+    expect(screen.getByRole("button", { name: /info/i })).toBeInTheDocument();
+  });
+
+  it("renders nothing extra when no formula props are given", () => {
     render(<KpiChart title="Test" values={[1, 2, 3]} />);
-    expect(screen.queryByTestId("kpi-formula")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("math-formula")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("kpi-formula-where")).not.toBeInTheDocument();
   });
 });
