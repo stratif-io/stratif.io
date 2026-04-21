@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Button } from "@stratif-io/web";
 import { AnomalyPill } from "./AnomalyPill";
 import { useSeederStore } from "@/stores/seederStore";
@@ -20,6 +20,19 @@ export function AnomalyTrack({ onEdit }: Props) {
     [config.axes.scale, config.scale_config],
   );
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [trackWidth, setTrackWidth] = useState(600);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setTrackWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const updateAnomaly = (idx: number, next: (typeof anomalies)[number]) => {
     const copy = anomalies.slice();
     copy[idx] = next;
@@ -35,19 +48,19 @@ export function AnomalyTrack({ onEdit }: Props) {
   return (
     <div className="flex items-center gap-2 p-1 border-y min-w-0 overflow-hidden">
       <div
+        ref={containerRef}
         className="flex-1 min-w-0 overflow-hidden"
         style={{ height: TRACK_HEIGHT }}
       >
         <svg
-          viewBox={`0 0 300 ${TRACK_HEIGHT}`}
-          preserveAspectRatio="none"
-          width="100%"
+          viewBox={`0 0 ${trackWidth} ${TRACK_HEIGHT}`}
+          width={trackWidth}
           height={TRACK_HEIGHT}
         >
           <rect
             x={0}
             y={0}
-            width={300}
+            width={trackWidth}
             height={TRACK_HEIGHT}
             fill="rgba(0,0,0,0.04)"
           />
@@ -56,7 +69,7 @@ export function AnomalyTrack({ onEdit }: Props) {
               key={`${a.name}-${i}`}
               anomaly={a}
               windowDays={window_days}
-              trackWidth={300}
+              trackWidth={trackWidth}
               onChange={(next) => updateAnomaly(i, next)}
               onSelect={() => onEdit(i)}
             />
