@@ -119,7 +119,7 @@ export function TopBar({
           type="number"
           min={1}
           placeholder="users"
-          defaultValue={config.scale_config?.total_users ?? ""}
+          value={config.scale_config?.total_users ?? ""}
           onChange={(e) => handleTotalUsers(e.target.value)}
           className="w-24 rounded border border-border bg-muted/40 px-1.5 py-0.5 text-xs text-foreground"
         />
