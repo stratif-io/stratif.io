@@ -12,7 +12,6 @@ import {
 } from "@stratif-io/web";
 import { TopBar } from "./features/topbar/TopBar";
 import { AxisSidebar } from "./features/axes/AxisSidebar";
-import { AnomaliesPane } from "./features/anomalies/AnomaliesPane";
 import { PreviewGrid } from "./features/preview/PreviewGrid";
 import { SavePanel } from "./features/save/SavePanel";
 import { usePresets } from "./features/presets/usePresets";
@@ -141,9 +140,6 @@ export default function App() {
         </ErrorBoundary>
 
         <main className="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden">
-          <ErrorBoundary>
-            <AnomaliesPane />
-          </ErrorBoundary>
           <div className="flex-1 min-h-0">
             <ErrorBoundary>
               <PreviewGrid />
