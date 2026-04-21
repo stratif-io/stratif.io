@@ -1,9 +1,8 @@
 import { useMemo, useRef, useState, useEffect } from "react";
-import { Button } from "@stratif-io/web";
 import { AnomalyPill } from "./AnomalyPill";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveScale } from "@/lib/twin/utils";
-import { defaultAnomaly } from "@/lib/twin";
+import { defaultAnomaly, ANOMALY_SPEC } from "@/lib/twin";
 
 interface Props {
   onEdit: (index: number) => void;
@@ -39,9 +38,11 @@ export function AnomalyTrack({ onEdit }: Props) {
     setAnomalies(copy);
   };
 
-  const addAnomaly = () => {
-    const start = Math.floor(window_days / 3);
-    const next = defaultAnomaly("marketing_campaign", start, 10);
+  const addAnomaly = (type: string) => {
+    const duration = Math.max(5, Math.floor(window_days * 0.1));
+    const maxStart = Math.max(0, window_days - duration - 1);
+    const start = Math.floor(Math.random() * maxStart);
+    const next = defaultAnomaly(type, start, duration);
     setAnomalies([...anomalies, next]);
   };
 
@@ -76,15 +77,18 @@ export function AnomalyTrack({ onEdit }: Props) {
           ))}
         </svg>
       </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={addAnomaly}
-        className="shrink-0 border-dashed"
-      >
-        + Anomaly
-      </Button>
+      <div className="flex flex-col gap-1 shrink-0">
+        {Object.values(ANOMALY_SPEC).map((spec) => (
+          <button
+            key={spec.type}
+            type="button"
+            onClick={() => addAnomaly(spec.type)}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-dashed border-border text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors text-left"
+          >
+            + {spec.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

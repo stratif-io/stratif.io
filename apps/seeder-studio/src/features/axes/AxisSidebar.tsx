@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { AXIS_DISPLAY, STRIP_AXIS_IDS } from "./axisDisplaySpec";
 import { AxisAccordion } from "./AxisAccordion";
 import { useSeederStore } from "@/stores/seederStore";
@@ -40,6 +40,7 @@ export function AxisSidebar({ defaultOpen = true }: Props) {
           <div className="flex items-center justify-between px-2 pt-2 pb-0.5">
             <button
               type="button"
+              aria-label="collapse axes"
               onClick={() => setSidebarOpen(false)}
               className="text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -75,14 +76,16 @@ export function AxisSidebar({ defaultOpen = true }: Props) {
         </div>
       )}
 
-      <button
-        type="button"
-        aria-label={sidebarOpen ? "collapse axes" : "expand axes"}
-        onClick={() => setSidebarOpen((o) => !o)}
-        className="flex items-center justify-center h-9 w-full border-t text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors shrink-0"
-      >
-        {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-      </button>
+      {!sidebarOpen && (
+        <button
+          type="button"
+          aria-label="expand axes"
+          onClick={() => setSidebarOpen(true)}
+          className="flex items-center justify-center flex-1 w-full text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+        >
+          <ChevronRight size={14} />
+        </button>
+      )}
     </aside>
   );
 }

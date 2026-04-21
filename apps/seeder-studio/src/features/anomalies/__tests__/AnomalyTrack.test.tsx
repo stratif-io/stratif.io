@@ -27,10 +27,10 @@ describe("AnomalyTrack", () => {
     expect(screen.getByRole("button", { name: /viral/i })).toBeInTheDocument();
   });
 
-  it("+ Anomaly button adds a new anomaly", async () => {
+  it("anomaly type buttons add a new anomaly at a random position", async () => {
     const user = userEvent.setup();
     render(<AnomalyTrack onEdit={() => {}} />);
-    await user.click(screen.getByRole("button", { name: /\+ anomaly/i }));
+    await user.click(screen.getAllByRole("button", { name: /^\+ /i })[0]);
     expect(useSeederStore.getState().config.anomalies).toHaveLength(2);
   });
 
