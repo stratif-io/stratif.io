@@ -4,91 +4,169 @@ Parametrized seeder for the stratif.io analytics warehouse. Picks a preset
 (e.g. `ecommerce_steady`, `casual_game_addictive`) and produces a realistic
 events dataset for the configured connections.
 
-## Quickstart
+---
+
+## Quick-start
 
 ```bash
 uv run seed                             # default preset (ecommerce_steady)
-uv run seed --preset ecommerce_steady   # explicit
-uv run seed --list                      # list presets
-uv run seed --describe <preset>         # show resolved config (JSON)
+uv run seed --preset saas_pmf           # specific preset
+uv run seed --list                      # list all available presets
+uv run seed --describe saas_pmf         # print resolved config as JSON
 uv run seed --seed 42                   # reproducible run
 ```
 
-## Axis overrides
+Override one or more axes inline:
 
 ```bash
-uv run seed --preset ecommerce_steady --scale tiny --growth flat
+uv run seed --preset ecommerce_steady --scale tiny --growth declining
 ```
 
-Or via env vars:
+Seed only one backend when you have multiple connections configured:
 
 ```bash
-SEED_PRESET=ecommerce_steady SEED_OVERRIDE_SCALE=tiny uv run seed
+uv run seed --only duckdb
+uv run seed --only databricks
 ```
 
-Legacy env vars `SEED_USERS` and `SEED_DAYS` still work as overrides on the
-`scale` axis's `total_users` / `window_days`.
+---
 
-## Authoring a custom preset
+## Options reference
 
-Drop a YAML into `seeders/presets/`. See `seeders/presets/ecommerce_steady.yaml`.
+### CLI flags
 
-## Domain catalog (Phase 4)
+| Flag                         | Type   | Description                                                                                                                |
+| ---------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `--preset <name\|path>`      | string | Named preset from `seeders/presets/` or a path to a YAML file. Defaults to `SEED_PRESET` env var, then `ecommerce_steady`. |
+| `--describe <name>`          | string | Print the fully-resolved config JSON and exit (mutually exclusive with `--preset`).                                        |
+| `--list`                     | flag   | List available preset names and exit.                                                                                      |
+| `--seed <N>`                 | int    | Pin the random seed for reproducible output.                                                                               |
+| `--only <backend>`           | string | Seed only one connection backend (`duckdb`, `sqlite`, `postgresql`, `clickhouse`, `snowflake`, `databricks`).              |
+| `--growth <value>`           | string | Override the `growth` axis.                                                                                                |
+| `--stickiness <value>`       | string | Override the `stickiness` axis.                                                                                            |
+| `--engagement_depth <value>` | string | Override the `engagement_depth` axis.                                                                                      |
+| `--monetization <value>`     | string | Override the `monetization` axis.                                                                                          |
+| `--virality <value>`         | string | Override the `virality` axis.                                                                                              |
+| `--scale <value>`            | string | Override the `scale` axis (`tiny` / `small` / `medium` / `large`).                                                         |
+| `--geography <value>`        | string | Override the `geography` axis.                                                                                             |
+| `--anomalies <value>`        | string | Override the `anomalies` axis.                                                                                             |
 
-10 domains shipped; each defines its event vocabulary + session archetypes + supported monetization modes.
+### Environment variables
 
-| Domain            | Events                                                                                       | Supported monetization             |
-| ----------------- | -------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `ecommerce`       | 5 funnel events                                                                              | one_off_purchase                   |
-| `retail`          | ecommerce + StoreLocator/InStorePickup/LoyaltyRedemption                                     | one_off_purchase                   |
-| `casual_game`     | LevelStart/Complete/Fail, IAPOffer/Purchase, AdShown/Clicked, DailyBonus                     | iap_whales, ad_supported, freemium |
-| `gaming_hardcore` | casual_game + Matchmaking/MatchStart/End, ClanJoin, Chat                                     | iap_whales, ad_supported           |
-| `saas`            | SignUp, EmailVerified, Onboarded, ProjectCreated, ItemCreated, Invite*, Upgrade*             | subscription, freemium             |
-| `streaming`       | Browse, TitlePageView, Play\* (Started/Paused/Completed), Rated, AddedToList                 | subscription, ad_supported         |
-| `social`          | FeedLoaded, Post\* (Viewed/Liked/Shared), CommentPosted, FollowAdded, MessageSent            | ad_supported                       |
-| `marketplace`     | Listing\* (View/Created/Sold), MessageToSeller, Offer, Purchase                              | marketplace_fee                    |
-| `dating`          | ProfileView, Swipe, Match, MessageSent/Read, DateScheduled, SubscriptionUpgraded             | subscription                       |
-| `fintech`         | AccountOpened, Deposit/Withdrawal, Transfer\*, CardPurchase, BalanceChecked, StatementViewed | one_off_purchase                   |
+| Variable                    | Description                                                                                                 |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `SEED_PRESET`               | Default preset name when `--preset` is not passed.                                                          |
+| `SEED_USERS`                | Override `total_users` from the scale tier (legacy; prefer `--scale`).                                      |
+| `SEED_DAYS`                 | Override `window_days` from the scale tier (legacy; prefer `--scale`).                                      |
+| `SEED_OVERRIDE_<AXIS>`      | Override any axis by name, e.g. `SEED_OVERRIDE_GROWTH=declining`. Equivalent to the corresponding CLI flag. |
+| `STRATIFIO_SEED_TABLE_NAME` | Override the destination events table name. Set automatically by the CLI; rarely needed manually.           |
 
-## Preset catalog
+### Precedence order
 
-8 presets shipped. Each pairs a domain with axis values.
+Later entries win:
 
-| Preset                  | Domain      | Dynamic                          |
-| ----------------------- | ----------- | -------------------------------- |
-| `ecommerce_steady`      | ecommerce   | baseline, default                |
-| `ecommerce_explosive`   | ecommerce   | viral growth                     |
-| `retail_declining`      | retail      | losing market share              |
-| `casual_game_addictive` | casual_game | whale-heavy IAP, high stickiness |
-| `saas_pmf`              | saas        | steady growth, low churn         |
-| `streaming_mature`      | streaming   | binge sessions, high retention   |
-| `marketplace_scaling`   | marketplace | GMV growth                       |
-| `dating_app_churn`      | dating      | quick activation, high churn     |
+1. Preset YAML (`axes:` block + `scale_config:` block)
+2. `SEED_USERS` / `SEED_DAYS` env vars (scale only)
+3. `SEED_OVERRIDE_*` env vars
+4. CLI flags (`--growth`, `--scale`, etc.)
+5. `--seed` flag (random seed only)
 
-## Axis reference (Phase 2a)
+---
 
-Two axes are implemented today; all others are declared in presets but silently ignored until later phases.
+## Presets
+
+Presets are YAML files in `seeders/presets/`. Each one is a self-contained
+simulation scenario: a domain, a full set of axis values, and optionally
+anomalies.
+
+### Preset catalog
+
+| Preset                         | Domain      | Character                                      |
+| ------------------------------ | ----------- | ---------------------------------------------- |
+| `ecommerce_steady`             | ecommerce   | Stable site, no growth trend — **default**     |
+| `ecommerce_explosive`          | ecommerce   | Viral launch, rapid growth                     |
+| `retail_declining`             | retail      | Losing market share, declining arrivals        |
+| `casual_game_addictive`        | casual_game | Whale-heavy IAP, high stickiness               |
+| `casual_game_flash_in_the_pan` | casual_game | Spike then drop-off                            |
+| `saas_pmf`                     | saas        | Steady growth, low churn, subscription revenue |
+| `streaming_mature`             | streaming   | Binge sessions, high retention                 |
+| `marketplace_scaling`          | marketplace | GMV growth, rising listings                    |
+| `dating_app_churn`             | dating      | Quick activation, high churn                   |
+
+### Preset YAML schema
+
+```yaml
+name: my_preset # required; used as table name prefix
+description: | # optional; shown in --describe output
+  Free-form text.
+
+domain: ecommerce # required; see Domain catalog below
+
+axes:
+  growth: steady # required; one value per axis
+  stickiness: normal
+  engagement_depth: moderate
+  monetization: one_off_purchase
+  virality: weak
+  scale: small # tiny | small | medium | large
+  geography: global
+  anomalies: clean
+
+# Optional: pin exact user/day counts, overriding the named scale tier
+scale_config:
+  total_users: 5000 # omit to use the tier's default
+  window_days: 60 # omit to use the tier's default
+
+# Optional: fine-grained growth curve parameters
+growth_config:
+  rate: 0.04 # used by exponential_growth / exponential_decline shapes
+
+# Optional: dated spikes/dips — only active when anomalies axis ≠ clean
+anomalies:
+  - type: marketing_campaign
+    name: viral_launch
+    start: -45d # relative to seed run time; or "YYYY-MM-DD"
+    duration: 14d
+    effect:
+      arrivals: 2.5 # arrivals multiplier during the window
+```
+
+---
+
+## Axes reference
+
+### `scale` — data volume
+
+| Value    | Users     | Days |
+| -------- | --------- | ---- |
+| `tiny`   | 1 000     | 30   |
+| `small`  | 10 000    | 90   |
+| `medium` | 100 000   | 180  |
+| `large`  | 1 000 000 | 365  |
+
+Use `scale_config` in the YAML (or `SEED_USERS` / `SEED_DAYS`) to set exact
+values that don't map to a named tier.
 
 ### `growth` — shape of new-user arrivals
 
-| Value             | Behavior                                                                |
-| ----------------- | ----------------------------------------------------------------------- |
-| `explosive`       | Exponential (r=0.08/day) — new users cluster at the end of the window   |
-| `strong`          | Exponential (r=0.02/day) — steady strong growth                         |
-| `steady` / `flat` | Constant daily rate                                                     |
-| `declining`       | Exponential decline (r=0.015/day) — cohort peaks early, arrivals dry up |
-| `seasonal`        | Sine wave (30% amplitude, 365-day period) with no net growth            |
-| `hockey_stick`    | Flat for the first 40% of the window, exponential thereafter            |
+| Value             | Behavior                                                          |
+| ----------------- | ----------------------------------------------------------------- |
+| `explosive`       | Exponential (r=0.08/day) — users cluster at the end of the window |
+| `strong`          | Exponential (r=0.02/day) — steady strong growth                   |
+| `steady` / `flat` | Constant daily rate                                               |
+| `declining`       | Exponential decline (r=0.015/day) — arrivals dry up over time     |
+| `seasonal`        | Sine wave (30% amplitude, 365-day period), no net growth          |
+| `hockey_stick`    | Flat for first 40% of window, exponential thereafter              |
 
 ### `stickiness` — user lifetime distribution
 
-| Value         | Distribution              | Median lifetime           |
-| ------------- | ------------------------- | ------------------------- |
-| `addictive`   | Weibull(k=0.5, λ=120)     | ~60 d with heavy fat tail |
-| `sticky`      | Weibull(k=1.0, λ=180)     | ~125 d                    |
-| `normal`      | Exponential(mean=90)      | ~62 d                     |
-| `churn_heavy` | Exponential(mean=20)      | ~14 d                     |
-| `one_shot`    | Degenerate (lifetime = 0) | 0 d                       |
+| Value         | Distribution            | Median lifetime           |
+| ------------- | ----------------------- | ------------------------- |
+| `addictive`   | Weibull(k=0.5, λ=120)   | ~60 d, heavy fat tail     |
+| `sticky`      | Weibull(k=1.0, λ=180)   | ~125 d                    |
+| `normal`      | Exponential(mean=90)    | ~62 d                     |
+| `churn_heavy` | Exponential(mean=20)    | ~14 d                     |
+| `one_shot`    | Degenerate (lifetime=0) | 0 d — single session only |
 
 ### `engagement_depth` — per-session depth
 
@@ -98,116 +176,145 @@ Two axes are implemented today; all others are declared in presets but silently 
 | `moderate` | Baseline — no modifier                                        |
 | `deep`     | Sessions skew toward researcher / converter (more conversion) |
 
-### `geography` — country filter
+### `geography` — country distribution
 
-| Value       | Countries                                   |
-| ----------- | ------------------------------------------- |
-| `global`    | All (US / UK / DE / FR / JP / BR / IN / AU) |
-| `us_only`   | US only                                     |
-| `eu_only`   | UK, DE, FR                                  |
-| `apac_only` | JP, IN, AU                                  |
+| Value       | Countries                      |
+| ----------- | ------------------------------ |
+| `global`    | US, UK, DE, FR, JP, BR, IN, AU |
+| `us_only`   | US only                        |
+| `eu_only`   | UK, DE, FR                     |
+| `apac_only` | JP, IN, AU                     |
 
-### `monetization` — revenue model (with domain coercion)
+### `monetization` — revenue model
 
-| Value              | Domains that support it        |
-| ------------------ | ------------------------------ |
-| `one_off_purchase` | ecommerce, retail, marketplace |
-| `subscription`     | saas, streaming, dating        |
-| `iap_whales`       | casual_game, gaming_hardcore   |
-| `ad_supported`     | social, gaming_casual          |
-| `freemium`         | saas                           |
-| `marketplace_fee`  | marketplace                    |
+| Value              | Supported domains                               |
+| ------------------ | ----------------------------------------------- |
+| `one_off_purchase` | ecommerce, retail, marketplace                  |
+| `subscription`     | saas, streaming, dating                         |
+| `iap_whales`       | casual_game, gaming_hardcore                    |
+| `ad_supported`     | social, casual_game, gaming_hardcore, streaming |
+| `freemium`         | saas                                            |
+| `marketplace_fee`  | marketplace                                     |
 
-If a preset requests a value the domain doesn't support, the Engine logs at INFO and coerces to the domain's default.
+If a preset requests a value the domain doesn't support, the engine logs at
+INFO and coerces to the domain's first supported mode.
 
 ### `virality` — referral weight
 
-| Value          | Weight | Behavior                                          |
-| -------------- | ------ | ------------------------------------------------- |
-| `none`         | 0.0    | No referral events                                |
-| `weak`         | 0.3    | Occasional referrals (Phase 4 domains emit these) |
-| `strong_viral` | 1.0    | Heavy referrals (Phase 4)                         |
+| Value          | Weight | Behavior             |
+| -------------- | ------ | -------------------- |
+| `none`         | 0.0    | No referral events   |
+| `weak`         | 0.3    | Occasional referrals |
+| `strong_viral` | 1.0    | Heavy referrals      |
 
-### `anomalies` — dated spikes/dips
+### `anomalies` — whether the anomalies list is applied
 
-| Value                                         | Behavior                                                 |
-| --------------------------------------------- | -------------------------------------------------------- |
-| `clean`                                       | No anomalies (default)                                   |
-| `campaigns` / `outages` / `ab_tests` / `full` | Preserve the preset's `anomalies:` list; Phase 5 applies |
-| `explicit`                                    | Use the preset's `anomalies:` list as-is                 |
+| Value                                         | Behavior                                                                     |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
+| `clean`                                       | Ignore the preset's `anomalies:` list                                        |
+| `explicit`                                    | Apply the preset's `anomalies:` list as-is                                   |
+| `full` / `campaigns` / `outages` / `ab_tests` | Apply preset list (same as `explicit` today; category filtering lands later) |
 
-Anomaly application lands in Phase 5.
+---
 
-### Try it
+## Domain catalog
 
-```bash
-uv run seed --preset ecommerce_steady --growth declining --stickiness churn_heavy
-uv run seed --preset ecommerce_steady --growth explosive --stickiness sticky
-```
+Each domain defines its event vocabulary, session archetypes, and which
+monetization modes it supports.
 
-Both produce ecommerce events with the same vocabulary but qualitatively different cohort and retention shapes.
+| Domain            | Sample events                                                                    | Monetization                       |
+| ----------------- | -------------------------------------------------------------------------------- | ---------------------------------- |
+| `ecommerce`       | ProductView, AddToCart, CheckoutStarted, Purchase, SearchQuery                   | one_off_purchase                   |
+| `retail`          | ecommerce events + StoreLocator, InStorePickup, LoyaltyRedemption                | one_off_purchase                   |
+| `casual_game`     | LevelStart/Complete/Fail, IAPOffer/Purchase, AdShown/Clicked, DailyBonus         | iap_whales, ad_supported, freemium |
+| `gaming_hardcore` | casual_game events + Matchmaking, MatchStart/End, ClanJoin, Chat                 | iap_whales, ad_supported           |
+| `saas`            | SignUp, EmailVerified, Onboarded, ProjectCreated, ItemCreated, Invite, Upgrade   | subscription, freemium             |
+| `streaming`       | Browse, TitlePageView, PlayStarted/Paused/Completed, Rated, AddedToList          | subscription, ad_supported         |
+| `social`          | FeedLoaded, PostViewed/Liked/Shared, CommentPosted, FollowAdded, MessageSent     | ad_supported                       |
+| `marketplace`     | ListingView/Created/Sold, MessageToSeller, Offer, Purchase                       | marketplace_fee                    |
+| `dating`          | ProfileView, Swipe, Match, MessageSent/Read, DateScheduled, SubscriptionUpgraded | subscription                       |
+| `fintech`         | AccountOpened, Deposit/Withdrawal, Transfer, CardPurchase, BalanceChecked        | one_off_purchase                   |
 
-## Realism layer (Phase 3)
+---
 
-8 of the 14 spec'd realism effects now apply automatically. The rest ship in a later phase.
+## Anomalies
 
-| Effect                            | Behavior                                                                                                                                         |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Hour-of-day curves (domain-aware) | Ecommerce sessions peak at lunch (11-13) and evenings (19-22); weekends shift later. Other domains fall back to uniform weights.                 |
-| Day-of-week curves                | Ecommerce: Sat + Sun heaviest; Wed slight bump; others moderate.                                                                                 |
-| DST-aware timezones               | Every session lands at a realistic local hour for the user's country via `zoneinfo`. A Japanese user is active at JST evening, not UTC midnight. |
-| Country holidays                  | Christmas, New Year, Golden Week (JP), Carnival (BR), Diwali (IN), etc. — sessions drop on holidays (0.3x, 0.1x for ecommerce on Dec 25).        |
-| US shopping calendar              | Dec 1-24 ramp (1.0x → 2.0x), Dec 25 crash (0.1x), Black Friday (3.0x), Cyber Monday (2.5x), Valentine's / Mother's Day / back-to-school bumps.   |
-| Zipf product popularity           | 20% of products receive ~80% of ProductView events — a realistic long-tail catalog.                                                              |
-| Pareto user activity              | 20% of users generate ~80% of events — heavy-tailed distribution of engagement.                                                                  |
-| Log-normal inter-event gaps       | Realistic micro-timing: rapid clicks (seconds) through checkout, slower dwell time on research/browse steps, lognormal tails.                    |
-
-**Deferred to a later phase:** device-aware behavior (R8), payday effects (R9), marketing micro-bursts (R10), referral clustering (R13 — needs Phase 4 domain support).
-
-## Anomalies (Phase 5)
-
-Presets can declare dated spikes/dips that modulate arrivals (other effect types are parsed but not yet applied).
+Presets can declare dated spikes or dips that modulate arrival rates.
 
 ```yaml
 anomalies:
-  - type: marketing_campaign
+  - type: marketing_campaign # see types below
     name: viral_launch
-    start: -45d # relative to "now" (seed run time)
-    duration: 14d
+    start: -45d # relative to seed run time ("YYYY-MM-DD" also works)
+    duration: 14d # "<N>d" for days, "<N>h" for hours
     effect:
-      arrivals: 2.5 # 2.5x arrivals during the window
-  - type: shopping_season
-    date: "2024-11-29" # or absolute date
-    duration: 4d
-    effect:
-      arrivals: 3.0
+      arrivals: 2.5 # multiplier — 2.5 = 2.5× arrivals during window
 ```
 
-### Supported types
+Supported types and their recognized effects:
 
-| Type                 | Typical effects (Phase 5 honors `arrivals` only) |
-| -------------------- | ------------------------------------------------ |
-| `marketing_campaign` | `arrivals`, `conversion`                         |
-| `outage`             | `all_events`, `arrivals`                         |
-| `ab_test`            | `funnel_drop_off`, `conversion`                  |
-| `shopping_season`    | `arrivals`, `avg_order_value`                    |
-| `product_launch`     | `arrivals`, `feature_events`                     |
-| `feature_regression` | `conversion`, `session_duration`                 |
+| Type                 | Effects                          |
+| -------------------- | -------------------------------- |
+| `marketing_campaign` | `arrivals`, `conversion`         |
+| `outage`             | `all_events`, `arrivals`         |
+| `ab_test`            | `funnel_drop_off`, `conversion`  |
+| `shopping_season`    | `arrivals`, `avg_order_value`    |
+| `product_launch`     | `arrivals`, `feature_events`     |
+| `feature_regression` | `conversion`, `session_duration` |
 
-### Duration
+Only `arrivals` is applied today; other effect keys are parsed and stored but
+not yet acted on.
 
-`"<N>d"` for days, `"<N>h"` for hours (e.g. `"6h"` for an outage).
+The anomaly list is only active when `anomalies` axis ≠ `clean`.
 
-### Selection
+---
 
-The `anomalies` axis controls whether the list is applied:
+## Realism layer
 
-- `anomalies: clean` → the list is ignored (empty).
-- `anomalies: explicit` / `full` / category → the preset's list is used.
+These effects apply automatically on every run — no configuration needed.
 
-## Developer tools
+| Effect                      | Behavior                                                                         |
+| --------------------------- | -------------------------------------------------------------------------------- |
+| Hour-of-day curves          | Domain-aware peaks (ecommerce: lunch + evening; others: uniform)                 |
+| Day-of-week weights         | Ecommerce heaviest on weekends; moderate mid-week bump                           |
+| DST-aware timezones         | Each user's sessions land at a realistic local hour via `zoneinfo`               |
+| Country holidays            | Sessions drop on public holidays (Christmas, Golden Week, Diwali, etc.)          |
+| US shopping calendar        | Black Friday 3×, Cyber Monday 2.5×, Dec ramp, Valentine's / Mother's Day bumps   |
+| Zipf product popularity     | 20% of products get ~80% of ProductView events                                   |
+| Pareto user activity        | 20% of users generate ~80% of events                                             |
+| Log-normal inter-event gaps | Realistic micro-timing from rapid clicks through checkout to slow research dwell |
 
-Inspect a preset's output shape without running the full bootstrap:
+Deferred to a later phase: device-aware behavior, payday effects, marketing
+micro-bursts, referral clustering.
+
+---
+
+## Authoring a custom preset
+
+1. Copy an existing preset as a starting point:
+
+   ```bash
+   cp seeders/presets/ecommerce_steady.yaml seeders/presets/my_scenario.yaml
+   ```
+
+2. Edit the YAML — set `name`, `domain`, `axes`, and optionally `scale_config`
+   and `anomalies`.
+
+3. Preview before seeding:
+
+   ```bash
+   uv run seed --describe my_scenario        # prints resolved config
+   uv run python seeders/tests/visualize_preset.py my_scenario
+   ```
+
+4. Run it:
+
+   ```bash
+   uv run seed --preset my_scenario
+   ```
+
+The visualizer prints total events, event vocabulary counts, and a
+daily-arrivals histogram — useful for sanity-checking growth curves.
 
 ```bash
 uv run python seeders/tests/visualize_preset.py retail_declining
@@ -215,24 +322,50 @@ uv run python seeders/tests/visualize_preset.py ecommerce_explosive --total-user
 uv run python seeders/tests/visualize_preset.py --list
 ```
 
-Prints: total events, event vocabulary + counts, and a daily-arrivals histogram.
+---
 
-## Status
+## Seeder Studio
 
-**Phase 6 shipped.** Per-preset acceptance tests guard each preset's identity (retail_declining actually declines, casual_game_addictive emits IAP, etc.). Developer `visualize_preset.py` available for eyeballing.
+Seeder Studio is a browser-based editor that produces preset YAML without
+requiring any knowledge of the schema.
 
-All six phases complete:
+```bash
+uv run serve              # backend (exposes /api/simulator/presets)
+bun run dev:studio        # frontend at http://localhost:5180
+```
 
-- Phase 1 — Foundation (CLI, preset loader, Engine skeleton)
-- Phase 2a — Cohort engine + growth/stickiness + ecommerce domain
-- Phase 2b — Remaining 5 axes (engagement_depth, geography, monetization, virality, anomalies)
-- Phase 3 — Realism layer (8 effects) + RNG cleanup
-- Phase 4 — 9 more domains + 8 preset YAMLs
-- Phase 5 — Anomaly applicator (arrivals multiplier)
-- Phase 6 — Per-preset acceptance tests + visualize tool
+The Studio lets you:
 
-Later work:
+- Load any shipped preset as a starting point
+- Tune all axes via dropdowns (with plain-English labels and sparkline previews)
+- Add and configure anomalies
+- Preview four KPIs (users, events, sessions, conversions) live as you change axes
+- Copy the generated YAML from the right-rail panel
 
-- Phase 3b — deferred realism (device-aware, payday, marketing micro-bursts)
-- Richer anomaly effects (conversion, funnel_drop_off, all_events)
-- Additional domains / presets as needs arise
+To use the output: copy the YAML into `seeders/presets/<name>.yaml`, then run
+`uv run seed --preset <name>`. The Studio does not write to the presets
+directory itself.
+
+---
+
+## Examples
+
+```bash
+# Tiny dataset for local testing (fast)
+uv run seed --preset ecommerce_steady --scale tiny
+
+# Reproducible run for screenshot fixtures
+uv run seed --preset saas_pmf --seed 42
+
+# Ecommerce with high churn to stress-test retention charts
+uv run seed --preset ecommerce_steady --stickiness churn_heavy
+
+# Viral launch scenario on a medium dataset
+uv run seed --preset ecommerce_explosive --scale medium --seed 1
+
+# Only seed the DuckDB connection (skip remote warehouses)
+uv run seed --only duckdb
+
+# Inspect what a preset resolves to before running
+uv run seed --describe casual_game_addictive
+```
