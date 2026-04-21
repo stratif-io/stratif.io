@@ -13,6 +13,7 @@ import { parseDays, resolveScale } from "@/lib/twin/utils";
 import { resolveDateRange } from "@/lib/time/dateRange";
 import type { SimulationConfig } from "@/types/simulation";
 import { headlineStat } from "./headlineStat";
+import { formatNum } from "@/lib/format";
 
 type AnomalyList = NonNullable<SimulationConfig["anomalies"]>;
 
@@ -140,6 +141,15 @@ export function PreviewGrid() {
             values={out.stickiness}
             headline={stats.stickiness}
             color="hsl(var(--chart-7))"
+            bands={bands}
+            startDate={chartStart}
+            endDate={chartEnd}
+          />
+          <KpiChart
+            title="Total users"
+            values={out.totalUsers}
+            headline={`total ${formatNum(out.totalUsers.at(-1) ?? 0)}`}
+            color="hsl(var(--chart-2))"
             bands={bands}
             startDate={chartStart}
             endDate={chartEnd}

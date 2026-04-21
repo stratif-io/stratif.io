@@ -72,6 +72,14 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     return whole;
   });
 
+  // Total users = cumulative unique users (running sum of newUsers)
+  const totalUsers: number[] = [];
+  let cumulative = 0;
+  for (const n of newUsers) {
+    cumulative += n;
+    totalUsers.push(cumulative);
+  }
+
   const activeUsers = dau.map((v) => Math.floor(v));
   // Events must come from whole-number activeUsers to stay consistent.
   const events = activeUsers.map((v) => Math.floor(v * depth));
@@ -87,5 +95,6 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     activeUsers,
     newUsers,
     stickiness,
+    totalUsers,
   };
 }

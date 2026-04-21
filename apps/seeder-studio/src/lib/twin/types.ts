@@ -6,6 +6,7 @@ export interface TwinOutput {
   activeUsers: number[];
   newUsers: number[];
   stickiness: number[];
+  totalUsers: number[];
 }
 
 export interface TwinInput {

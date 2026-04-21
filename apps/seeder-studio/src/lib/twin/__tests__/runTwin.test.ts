@@ -26,6 +26,7 @@ describe("runTwin", () => {
     expect(out.activeUsers).toHaveLength(90);
     expect(out.newUsers).toHaveLength(90);
     expect(out.stickiness).toHaveLength(90);
+    expect(out.totalUsers).toHaveLength(90);
   });
 
   it("stickiness is in [0, 1]", () => {
@@ -74,5 +75,19 @@ describe("runTwin", () => {
       config: { ...base, scale_config: { window_days: 30 } },
     });
     expect(out.days).toBe(30);
+  });
+
+  it("totalUsers is monotonically non-decreasing and equals cumulative sum of newUsers", () => {
+    const out = runTwin({ config: base });
+    // Check monotonicity
+    for (let i = 1; i < out.totalUsers.length; i++) {
+      expect(out.totalUsers[i]).toBeGreaterThanOrEqual(out.totalUsers[i - 1]);
+    }
+    // Check that totalUsers equals cumulative sum of newUsers
+    let cumulative = 0;
+    for (let i = 0; i < out.newUsers.length; i++) {
+      cumulative += out.newUsers[i];
+      expect(out.totalUsers[i]).toBe(cumulative);
+    }
   });
 });

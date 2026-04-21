@@ -12,12 +12,13 @@ describe("PreviewGrid", () => {
       .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
   });
 
-  it("renders all four KPI titles", () => {
+  it("renders all five KPI titles", () => {
     render(<PreviewGrid />);
     expect(screen.getByText(/Events\/day/i)).toBeInTheDocument();
     expect(screen.getByText(/Active users/i)).toBeInTheDocument();
     expect(screen.getByText(/New users/i)).toBeInTheDocument();
     expect(screen.getByText(/Stickiness/i)).toBeInTheDocument();
+    expect(screen.getByText(/Total users/i)).toBeInTheDocument();
   });
 
   it("shows the approximate-preview badge", () => {
