@@ -27,6 +27,8 @@ interface Props {
   startDate?: Date;
   endDate?: Date;
   valueSuffix?: string;
+  className?: string;
+  chartHeight?: string;
 }
 
 const fmt = (d: Date) =>
@@ -56,6 +58,8 @@ export function KpiChart({
   startDate,
   endDate,
   valueSuffix = "",
+  className = "",
+  chartHeight = "h-32",
 }: Props) {
   const data = useMemo(
     () => values.map((v, i) => ({ idx: i, value: v })),
@@ -68,7 +72,9 @@ export function KpiChart({
   }, [values.length]);
 
   return (
-    <div className="rounded-lg border bg-card p-3 flex flex-col gap-2">
+    <div
+      className={`rounded-lg border bg-card p-3 flex flex-col gap-2 ${className}`}
+    >
       <div className="flex items-baseline justify-between">
         <div className="flex items-baseline gap-2">
           <span
@@ -84,7 +90,7 @@ export function KpiChart({
           </span>
         )}
       </div>
-      <div className="h-32 w-full">
+      <div className={`${chartHeight} w-full`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={data}

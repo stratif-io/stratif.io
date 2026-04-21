@@ -98,7 +98,7 @@ export function AnomalyPill({
         y={2}
         width={width}
         height={TRACK_HEIGHT - 4}
-        fill={color}
+        style={{ fill: color }}
         rx={3}
         stroke={focused ? "hsl(var(--ring))" : "none"}
         strokeWidth={focused ? 2 : 0}
@@ -137,9 +137,9 @@ export function AnomalyPill({
       <text
         x={x + width / 2}
         y={TRACK_HEIGHT / 2 + 3}
-        fontSize={9}
+        fontSize={10}
         textAnchor="middle"
-        fill="white"
+        fill="hsl(var(--primary-foreground))"
         pointerEvents="none"
       >
         {anomaly.name}

@@ -9,6 +9,7 @@ import {
 import { Users } from "lucide-react";
 import { useSeederStore } from "@/stores/seederStore";
 import type { PresetEntry } from "@/lib/api/presets";
+import { cn } from "@/lib/cn";
 
 interface Props {
   presets: PresetEntry[];
@@ -25,11 +26,17 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
   const setScaleConfig = useSeederStore((s) => s.setScaleConfig);
   const config = useSeederStore((s) => s.config);
 
+  const dateRangeInvalid = !!(
+    uiStartDate &&
+    uiEndDate &&
+    new Date(uiStartDate + "T00:00:00") >= new Date(uiEndDate + "T00:00:00")
+  );
+
   const handleStartDate = (value: string) => {
     setUiStartDate(value);
     if (value && uiEndDate) {
-      const start = new Date(value);
-      const end = new Date(uiEndDate);
+      const start = new Date(value + "T00:00:00");
+      const end = new Date(uiEndDate + "T00:00:00");
       if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
       const delta = end.getTime() - start.getTime();
       if (delta <= 0) return;
@@ -41,8 +48,8 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
   const handleEndDate = (value: string) => {
     setUiEndDate(value);
     if (uiStartDate && value) {
-      const start = new Date(uiStartDate);
-      const end = new Date(value);
+      const start = new Date(uiStartDate + "T00:00:00");
+      const end = new Date(value + "T00:00:00");
       if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
       const delta = end.getTime() - start.getTime();
       if (delta <= 0) return;
@@ -57,6 +64,11 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
       setScaleConfig({ ...config.scale_config, total_users: n });
     }
   };
+
+  const inputBase =
+    "h-8 rounded-md border bg-muted/40 px-2 text-xs text-foreground transition-colors";
+  const inputInvalid = "border-destructive focus:ring-destructive";
+  const inputNormal = "border-border";
 
   return (
     <header className="flex items-center gap-3 border-b px-4 bg-background h-14 shrink-0">
@@ -101,7 +113,15 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
           type="date"
           value={uiStartDate ?? ""}
           onChange={(e) => handleStartDate(e.target.value)}
-          className="h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground w-32"
+          aria-invalid={dateRangeInvalid}
+          title={
+            dateRangeInvalid ? "Start date must be before end date" : undefined
+          }
+          className={cn(
+            inputBase,
+            "w-32",
+            dateRangeInvalid ? inputInvalid : inputNormal,
+          )}
         />
         <span className="text-muted-foreground text-xs">→</span>
         <label htmlFor="end-date" className="sr-only">
@@ -112,7 +132,15 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
           type="date"
           value={uiEndDate ?? ""}
           onChange={(e) => handleEndDate(e.target.value)}
-          className="h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground w-32"
+          aria-invalid={dateRangeInvalid}
+          title={
+            dateRangeInvalid ? "End date must be after start date" : undefined
+          }
+          className={cn(
+            inputBase,
+            "w-32",
+            dateRangeInvalid ? inputInvalid : inputNormal,
+          )}
         />
       </div>
 
@@ -132,7 +160,7 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
           placeholder="users"
           value={config.scale_config?.total_users ?? ""}
           onChange={(e) => handleTotalUsers(e.target.value)}
-          className="h-8 w-24 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground"
+          className={cn(inputBase, "w-24")}
         />
       </div>
 

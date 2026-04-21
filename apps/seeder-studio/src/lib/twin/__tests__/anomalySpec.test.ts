@@ -26,8 +26,10 @@ describe("ANOMALY_SPEC", () => {
     expect(a.effect.arrivals).toBeDefined();
   });
 
-  it("anomalyTypeColor returns a hex string per type", () => {
-    expect(anomalyTypeColor("marketing_campaign")).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(anomalyTypeColor("unknown")).toMatch(/^#[0-9a-f]{6}$/i);
+  it("anomalyTypeColor returns a CSS color string per type", () => {
+    expect(anomalyTypeColor("marketing_campaign")).toMatch(
+      /^hsl\(var\(--anomaly-/,
+    );
+    expect(anomalyTypeColor("unknown")).toBe("hsl(var(--muted-foreground))");
   });
 });

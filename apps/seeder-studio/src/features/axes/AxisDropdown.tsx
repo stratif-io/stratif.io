@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { AxisDisplay } from "./axisDisplaySpec";
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
-}
+import { cn } from "@/lib/cn";
 
 interface Props {
   axisDisplay: AxisDisplay;
@@ -14,6 +11,7 @@ interface Props {
 export function AxisDropdown({ axisDisplay, currentValue, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const currentDisplay =
     axisDisplay.values.find((v) => v.value === currentValue) ??
@@ -21,7 +19,7 @@ export function AxisDropdown({ axisDisplay, currentValue, onChange }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
@@ -29,8 +27,8 @@ export function AxisDropdown({ axisDisplay, currentValue, onChange }: Props) {
         setOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
   }, [open]);
 
   const handleSelect = (value: string) => {
@@ -38,9 +36,17 @@ export function AxisDropdown({ axisDisplay, currentValue, onChange }: Props) {
     setOpen(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setOpen(false);
+      triggerRef.current?.focus();
+    }
+  };
+
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative" onKeyDown={handleKeyDown}>
       <button
+        ref={triggerRef}
         type="button"
         aria-label={axisDisplay.label}
         aria-expanded={open}

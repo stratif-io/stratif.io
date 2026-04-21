@@ -6,21 +6,26 @@ interface SavePanelProps {
   yaml: string;
 }
 
+type CopyState = "idle" | "copied" | "error";
+
 export function SavePanel({ yaml }: SavePanelProps) {
   const name = useSeederStore((s) => s.config.name);
   const description = useSeederStore((s) => s.config.description ?? "");
   const setName = useSeederStore((s) => s.setName);
   const setDescription = useSeederStore((s) => s.setDescription);
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>("idle");
 
   function handleCopy() {
-    navigator.clipboard
-      .writeText(yaml)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      })
-      .catch(() => {});
+    navigator.clipboard.writeText(yaml).then(
+      () => {
+        setCopyState("copied");
+        setTimeout(() => setCopyState("idle"), 1500);
+      },
+      () => {
+        setCopyState("error");
+        setTimeout(() => setCopyState("idle"), 3000);
+      },
+    );
   }
 
   return (
@@ -58,11 +63,15 @@ export function SavePanel({ yaml }: SavePanelProps) {
         </pre>
         <Button
           size="sm"
-          variant="outline"
+          variant={copyState === "error" ? "destructive" : "outline"}
           className="h-7 text-xs"
           onClick={handleCopy}
         >
-          {copied ? "✓ Copied" : "Copy YAML"}
+          {copyState === "copied"
+            ? "✓ Copied"
+            : copyState === "error"
+              ? "✕ Copy failed"
+              : "Copy YAML"}
         </Button>
       </div>
     </aside>

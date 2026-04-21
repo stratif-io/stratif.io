@@ -119,6 +119,12 @@ body {
   --warning-foreground: 240 39% 14%;
   --success: 142 72% 29%;
   --success-foreground: 138 76% 97%;
+
+  --anomaly-marketing-campaign: 347 83% 61%;
+  --anomaly-product-launch: 43 100% 50%;
+  --anomaly-outage: 0 68% 50%;
+  --anomaly-feature-release: 213 82% 61%;
+  --anomaly-seasonal: 192 73% 59%;
 }
 
 .dark {
@@ -155,6 +161,12 @@ body {
   --warning-foreground: 240 39% 14%;
   --success: 142 71% 45%;
   --success-foreground: 138 76% 97%;
+
+  --anomaly-marketing-campaign: 347 85% 70%;
+  --anomaly-product-launch: 43 100% 62%;
+  --anomaly-outage: 0 72% 62%;
+  --anomaly-feature-release: 213 85% 70%;
+  --anomaly-seasonal: 192 75% 68%;
 }
 
 html.dark {
@@ -236,6 +248,7 @@ textarea {
 * {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  scrollbar-gutter: stable;
 }
 
 @media (prefers-reduced-motion: reduce) {

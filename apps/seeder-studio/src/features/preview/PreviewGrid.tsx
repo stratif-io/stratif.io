@@ -117,6 +117,8 @@ export function PreviewGrid() {
             bands={bands}
             startDate={chartStart}
             endDate={chartEnd}
+            className="col-span-2"
+            chartHeight="h-40"
           />
           <KpiChart
             title="Active users"

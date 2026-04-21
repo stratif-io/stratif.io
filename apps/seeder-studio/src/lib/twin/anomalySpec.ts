@@ -11,7 +11,7 @@ export interface AnomalyEffectField {
 export interface AnomalyTypeSpec {
   type: string;
   label: string;
-  color: string;
+  cssVar: string;
   effectFields: AnomalyEffectField[];
 }
 
@@ -19,7 +19,7 @@ export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
   marketing_campaign: {
     type: "marketing_campaign",
     label: "Marketing campaign",
-    color: "#ef476f",
+    cssVar: "--anomaly-marketing-campaign",
     effectFields: [
       { key: "arrivals", label: "arrivals ×", default: 2.0, min: 0.1, max: 20 },
     ],
@@ -27,7 +27,7 @@ export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
   product_launch: {
     type: "product_launch",
     label: "Product launch",
-    color: "#ffb703",
+    cssVar: "--anomaly-product-launch",
     effectFields: [
       { key: "arrivals", label: "arrivals ×", default: 1.5, min: 0.1, max: 20 },
     ],
@@ -35,7 +35,7 @@ export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
   outage: {
     type: "outage",
     label: "Outage",
-    color: "#d62828",
+    cssVar: "--anomaly-outage",
     effectFields: [
       { key: "arrivals", label: "arrivals ×", default: 0.2, min: 0, max: 1 },
     ],
@@ -43,7 +43,7 @@ export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
   feature_release: {
     type: "feature_release",
     label: "Feature release",
-    color: "#4895ef",
+    cssVar: "--anomaly-feature-release",
     effectFields: [
       {
         key: "arrivals",
@@ -57,7 +57,7 @@ export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
   seasonal: {
     type: "seasonal",
     label: "Seasonal",
-    color: "#48cae4",
+    cssVar: "--anomaly-seasonal",
     effectFields: [
       { key: "arrivals", label: "arrivals ×", default: 1.4, min: 0.1, max: 10 },
     ],
@@ -65,7 +65,8 @@ export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
 };
 
 export function anomalyTypeColor(type: string): string {
-  return ANOMALY_SPEC[type]?.color ?? "#888888";
+  const spec = ANOMALY_SPEC[type];
+  return spec ? `hsl(var(${spec.cssVar}))` : "hsl(var(--muted-foreground))";
 }
 
 export function defaultAnomaly(

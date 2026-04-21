@@ -1,5 +1,5 @@
-// apps/seeder-studio/src/App.tsx
-import { useMemo, useState, useEffect, useRef } from "react";
+import { Component, useMemo, useState, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import {
   Button,
   Dialog,
@@ -18,6 +18,30 @@ import { SavePanel } from "./features/save/SavePanel";
 import { usePresets } from "./features/presets/usePresets";
 import { useSeederStore, blankConfig } from "./stores/seederStore";
 import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
+
+class ErrorBoundary extends Component<
+  { children: ReactNode; fallback?: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        this.props.fallback ?? (
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-6 text-center">
+            Something went wrong. Reload the page or pick a different preset.
+          </div>
+        )
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   const { presets, loading, error } = usePresets();
@@ -65,7 +89,6 @@ export default function App() {
 
   const urlSyncedRef = useRef(false);
 
-  // Sync from URL on initial load
   useEffect(() => {
     if (loading || presets.length === 0 || urlSyncedRef.current) return;
     urlSyncedRef.current = true;
@@ -80,7 +103,6 @@ export default function App() {
     }
   }, [loading, presets, loadPreset]);
 
-  // Keep URL in sync
   useEffect(() => {
     const url = new URL(window.location.href);
     if (selectedName) {
@@ -113,14 +135,19 @@ export default function App() {
         </div>
       )}
 
-      {/* 3-column body */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        <AxisSidebar />
+        <ErrorBoundary>
+          <AxisSidebar />
+        </ErrorBoundary>
 
         <main className="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden">
-          <AnomaliesPane />
+          <ErrorBoundary>
+            <AnomaliesPane />
+          </ErrorBoundary>
           <div className="flex-1 min-h-0">
-            <PreviewGrid />
+            <ErrorBoundary>
+              <PreviewGrid />
+            </ErrorBoundary>
           </div>
         </main>
 
