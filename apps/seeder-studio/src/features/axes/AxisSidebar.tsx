@@ -37,7 +37,15 @@ export function AxisSidebar({ defaultOpen = true }: Props) {
     >
       {sidebarOpen && (
         <div className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex items-center justify-end px-2 pt-2 pb-0.5">
+          <div className="flex items-center justify-between px-2 pt-2 pb-0.5">
+            <button
+              type="button"
+              aria-label="collapse axes"
+              onClick={() => setSidebarOpen(false)}
+              className="text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Axes
+            </button>
             <button
               type="button"
               onClick={() =>
