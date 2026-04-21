@@ -1,14 +1,18 @@
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AxisStrip } from "../AxisStrip";
-import { useSeederStore } from "@/stores/seederStore";
+import { useSeederStore, blankConfig } from "@/stores/seederStore";
 
 function renderStrip() {
   render(<AxisStrip />);
 }
 
 describe("AxisStrip", () => {
+  beforeEach(() => {
+    useSeederStore.setState({ config: blankConfig(), dirty: false });
+  });
+
   it("renders 6 axis chips", () => {
     renderStrip();
     expect(screen.getAllByRole("button").length).toBe(6);
