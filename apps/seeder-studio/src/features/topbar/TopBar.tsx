@@ -105,7 +105,6 @@ export function TopBar({
         </label>
         <input
           id="total-users"
-          aria-label="total users"
           type="number"
           min={1}
           placeholder="users"
