@@ -50,9 +50,15 @@ export function runTwin({ config }: TwinInput): TwinOutput {
   // MAU = unique users active at least once in the 28-day window.
   // Cohorts that joined in the window are counted once each (arrivals[c]).
   // Cohorts from before the window are counted by how many survived to window start (arrivals[c] * r^gap).
-  const r =
-    (getAxisValue("stickiness", config.axes.stickiness ?? "sticky")?.params
-      .retention_day as number | undefined) ?? 0.8;
+  // Derive retention_day from baseChurnRate (survival = 1 - baseChurnRate).
+  // Task 5 replaces this block with the full per-user simulation.
+  const stickinessParams = getAxisValue(
+    "stickiness",
+    config.axes.stickiness ?? "sticky",
+  )?.params;
+  const r = stickinessParams
+    ? 1 - (stickinessParams.baseChurnRate as number)
+    : 0.8;
   const mau = new Array(days).fill(0);
   const MAU_WINDOW = 28;
   for (let t = 0; t < days; t++) {
@@ -97,9 +103,14 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     t === 0 ? 0 : Math.floor(dau[t - 1] * (1 - r)),
   );
 
-  const target =
-    (getAxisValue("stickiness", config.axes.stickiness ?? "sticky")?.params
-      .dau_mau_target as number | undefined) ?? 0.3;
+  // Approximate DAU/MAU target from the retention profile.
+  // Task 5 replaces this with the full simulation output.
+  const dauMauByAxis: Record<string, number> = {
+    churny: 0.12,
+    sticky: 0.3,
+    addictive: 0.55,
+  };
+  const target = dauMauByAxis[config.axes.stickiness ?? "sticky"] ?? 0.3;
 
   const rawStickiness = dau.map((d, t) =>
     Math.min(1, Math.max(0, d / Math.max(1, mau[t]))),
@@ -125,6 +136,7 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     activeUsers,
     newUsers,
     churnedUsers,
+    reactivatedUsers: new Array(days).fill(0), // temporary — Task 5 replaces this
     stickiness,
     totalUsers,
   };

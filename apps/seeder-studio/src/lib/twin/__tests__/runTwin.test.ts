@@ -87,8 +87,10 @@ describe("runTwin", () => {
     const strong = runTwin({
       config: { ...base, axes: { ...base.axes, virality: "strong_viral" } },
     });
-    // Both end at the same total (within rounding)
-    expect(weak.totalUsers.at(-1)).toBeCloseTo(strong.totalUsers.at(-1)!, 0);
+    // Both end at the same total (within integer rounding — arrivals are normalized then floored)
+    expect(
+      Math.abs(weak.totalUsers.at(-1)! - strong.totalUsers.at(-1)!),
+    ).toBeLessThanOrEqual(2);
     // Strong viral is more back-loaded: larger share of arrivals in second half
     const half = Math.floor(weak.days / 2);
     const weakSecond = weak.newUsers.slice(half).reduce((a, b) => a + b, 0);

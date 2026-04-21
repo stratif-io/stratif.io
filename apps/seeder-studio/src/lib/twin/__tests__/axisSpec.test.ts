@@ -32,6 +32,52 @@ describe("AXIS_SPEC", () => {
 
   it("getAxisValue returns the full value entry", () => {
     const v = getAxisValue("stickiness", "addictive");
-    expect(v?.params.dau_mau_target).toBeGreaterThan(0.4);
+    expect(v?.params.peakChurnRate).toBeDefined();
+  });
+});
+
+describe("stickiness axis RetentionParams", () => {
+  it("every stickiness value has required RetentionParams fields", () => {
+    const required = [
+      "peakChurnRate",
+      "baseChurnRate",
+      "churnDecayDays",
+      "reactivationRate",
+      "reactivationDecay",
+      "maxDormantDays",
+    ];
+    const values = AXIS_SPEC.stickiness.values;
+    values.forEach((v) => {
+      required.forEach((key) => {
+        expect(v.params).toHaveProperty(key);
+        expect(typeof (v.params as Record<string, unknown>)[key]).toBe(
+          "number",
+        );
+      });
+    });
+  });
+
+  it("churny has higher peakChurnRate than addictive", () => {
+    const churny = getAxisValue("stickiness", "churny")!.params as Record<
+      string,
+      number
+    >;
+    const addictive = getAxisValue("stickiness", "addictive")!.params as Record<
+      string,
+      number
+    >;
+    expect(churny.peakChurnRate).toBeGreaterThan(addictive.peakChurnRate);
+  });
+
+  it("addictive has higher reactivationRate than churny", () => {
+    const churny = getAxisValue("stickiness", "churny")!.params as Record<
+      string,
+      number
+    >;
+    const addictive = getAxisValue("stickiness", "addictive")!.params as Record<
+      string,
+      number
+    >;
+    expect(addictive.reactivationRate).toBeGreaterThan(churny.reactivationRate);
   });
 });

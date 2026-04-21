@@ -5,7 +5,9 @@ export function dauFromArrivals(
   stickinessAxis: string,
 ): number[] {
   const params = getAxisValue("stickiness", stickinessAxis)?.params;
-  const r = (params?.retention_day as number | undefined) ?? 0.8;
+  // Derive daily retention from baseChurnRate (survival = 1 - baseChurnRate).
+  // Task 5 replaces dauFromArrivals with the full per-user simulation.
+  const r = params ? 1 - (params.baseChurnRate as number) : 0.8;
   const dau = new Array(arrivals.length).fill(0);
   for (let c = 0; c < arrivals.length; c++) {
     const count = arrivals[c];
