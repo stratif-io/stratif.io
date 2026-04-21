@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { PreviewGrid, headlineStat } from "../PreviewGrid";
+import { PreviewGrid } from "../PreviewGrid";
+import { headlineStat } from "../headlineStat";
 import { useSeederStore, blankConfig } from "@/stores/seederStore";
 
 describe("PreviewGrid", () => {
