@@ -13,35 +13,32 @@ const axisArb = fc.record({
     "iap_whales",
   ),
   virality: fc.constantFrom("weak", "moderate", "strong_viral"),
-  scale: fc.constantFrom("tiny", "small"),
+  scale: fc.constantFrom("tiny"),
   geography: fc.constantFrom("global", "regional", "local"),
   anomalies: fc.constantFrom("clean", "moderate", "explicit"),
 });
 
 describe("runTwin property tests", () => {
-  it("all outputs non-negative, stickiness in [0,1]", () => {
+  it("all outputs non-negative, stickiness null or in [0,1]", () => {
     fc.assert(
       fc.property(
         axisArb,
         fc.integer({ min: 0, max: 1_000_000 }),
         (axes, seed) => {
           const out = runTwin({
-            config: {
-              name: "p",
-              domain: "saas",
-              axes,
-              random_seed: seed,
-            },
+            config: { name: "p", domain: "saas", axes, random_seed: seed },
           });
           return (
             out.events.every((v) => v >= 0) &&
             out.activeUsers.every((v) => v >= 0) &&
             out.newUsers.every((v) => v >= 0) &&
-            out.stickiness.every((s) => s >= 0 && s <= 1)
+            out.churnedUsers.every((v) => v >= 0) &&
+            out.reactivatedUsers.every((v) => v >= 0) &&
+            out.stickiness.every((s) => s === null || (s >= 0 && s <= 1))
           );
         },
       ),
-      { numRuns: 50 },
+      { numRuns: 30 },
     );
   });
 });

@@ -4,7 +4,9 @@ import { growthCurve } from "./growth";
 import { applyAnomalies } from "./anomalies";
 import { applyJitter } from "./jitter";
 import { applyVirality } from "./virality";
-import { dauFromArrivals } from "./retention";
+import { simulateUsers } from "./simulate";
+import type { RetentionParams } from "./simulate";
+import { metricsFromUsers } from "./metricsFromUsers";
 import type { TwinInput, TwinOutput } from "./types";
 
 export * from "./types";
@@ -38,106 +40,39 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     config.axes.virality ?? "weak",
     config.axes.stickiness ?? "sticky",
   );
-  // Normalize so arrivals always sum to exactly total_users,
-  // keeping the shape (growth curve + virality) but matching the input count.
   const rawSum = rawArrivals.reduce((a, b) => a + b, 0);
   const arrivals =
     rawSum > 0
       ? rawArrivals.map((v) => (v * total_users) / rawSum)
       : rawArrivals;
-  const dau = dauFromArrivals(arrivals, config.axes.stickiness ?? "sticky");
 
-  // MAU = unique users active at least once in the 28-day window.
-  // Cohorts that joined in the window are counted once each (arrivals[c]).
-  // Cohorts from before the window are counted by how many survived to window start (arrivals[c] * r^gap).
-  // Derive retention_day from baseChurnRate (survival = 1 - baseChurnRate).
-  // Task 5 replaces this block with the full per-user simulation.
   const stickinessParams = getAxisValue(
     "stickiness",
     config.axes.stickiness ?? "sticky",
-  )?.params;
-  const r = stickinessParams
-    ? 1 - (stickinessParams.baseChurnRate as number)
-    : 0.8;
-  const mau = new Array(days).fill(0);
-  const MAU_WINDOW = 28;
-  for (let t = 0; t < days; t++) {
-    const windowStart = Math.max(0, t - MAU_WINDOW + 1);
-    let mauCount = 0;
-    for (let c = windowStart; c <= t; c++) mauCount += arrivals[c];
-    for (let c = 0; c < windowStart; c++)
-      mauCount += arrivals[c] * Math.pow(r, windowStart - c);
-    mau[t] = mauCount;
-  }
+  )?.params as RetentionParams | undefined;
+
+  const retentionParams: RetentionParams = stickinessParams ?? {
+    peakChurnRate: 0.5,
+    baseChurnRate: 0.05,
+    churnDecayDays: 10,
+    reactivationRate: 0.05,
+    reactivationDecay: 0.8,
+    maxDormantDays: 45,
+  };
+
+  const users = simulateUsers(
+    arrivals,
+    days,
+    total_users,
+    retentionParams,
+    seed,
+  );
 
   const depth =
     (getAxisValue("engagement_depth", config.axes.engagement_depth ?? "medium")
       ?.params.events_per_user as number | undefined) ?? 10;
 
-  // Accumulate fractional arrivals and emit whole users so that e.g. 30 users
-  // over 90 days still shows ~30 new-user events distributed across days
-  // rather than all zeros.
-  let arrivalAcc = 0;
-  const newUsers = arrivals.map((v) => {
-    arrivalAcc += v;
-    const whole = Math.floor(arrivalAcc);
-    arrivalAcc -= whole;
-    return whole;
-  });
+  const metrics = metricsFromUsers(users, days, total_users, depth);
 
-  // Total users = cumulative unique users (running sum of newUsers)
-  const totalUsers: number[] = [];
-  let cumulative = 0;
-  for (const n of newUsers) {
-    cumulative += n;
-    totalUsers.push(cumulative);
-  }
-
-  const activeUsers = dau.map((v) => Math.floor(v));
-  // Events must come from whole-number activeUsers to stay consistent.
-  const events = activeUsers.map((v) => Math.floor(v * depth));
-
-  // Churned = users active yesterday but not today: dau[t-1] * (1 - r).
-  // Day 0 has no prior day so churn is 0.
-  const churnedUsers = dau.map((_, t) =>
-    t === 0 ? 0 : Math.floor(dau[t - 1] * (1 - r)),
-  );
-
-  // Approximate DAU/MAU target from the retention profile.
-  // Task 5 replaces this with the full simulation output.
-  const dauMauByAxis: Record<string, number> = {
-    churny: 0.12,
-    sticky: 0.3,
-    addictive: 0.55,
-  };
-  const target = dauMauByAxis[config.axes.stickiness ?? "sticky"] ?? 0.3;
-
-  const rawStickiness = dau.map((d, t) =>
-    Math.min(1, Math.max(0, d / Math.max(1, mau[t]))),
-  );
-
-  // Scale so post-warmup average converges toward the axis dau_mau_target.
-  const postWarmup = rawStickiness.slice(MAU_WINDOW);
-  const postAvg =
-    postWarmup.length > 0
-      ? postWarmup.reduce((a, b) => a + b, 0) / postWarmup.length
-      : 0;
-  const scaleFactor = postAvg > 0 ? target / postAvg : 1;
-
-  // Return null during warmup — MAU window isn't full yet, value is meaningless.
-  const stickiness: (number | null)[] = rawStickiness.map((v, t) => {
-    if (t < MAU_WINDOW) return null;
-    return Math.min(1, Math.max(0, v * scaleFactor));
-  });
-
-  return {
-    days,
-    events,
-    activeUsers,
-    newUsers,
-    churnedUsers,
-    reactivatedUsers: new Array(days).fill(0), // temporary — Task 5 replaces this
-    stickiness,
-    totalUsers,
-  };
+  return { days, ...metrics };
 }

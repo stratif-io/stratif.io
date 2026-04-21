@@ -88,8 +88,10 @@ describe("twin vs python", () => {
     }
 
     // 4. Stickiness scale within a 5× envelope.
-    const avg = (a: number[]) =>
-      a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+    const avg = (a: (number | null)[]) => {
+      const vals = a.filter((v): v is number => v !== null);
+      return vals.reduce((x, y) => x + y, 0) / Math.max(1, vals.length);
+    };
     const refStick = avg(ref.stickiness);
     const twinStick = avg(twin.stickiness);
     const ratio =
