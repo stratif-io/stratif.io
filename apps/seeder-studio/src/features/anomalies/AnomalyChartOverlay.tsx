@@ -17,7 +17,8 @@ interface Props {
   onAnomalyChange: (index: number, next: SimulationAnomaly) => void;
 }
 
-const PILL_H = 14;
+const HANDLE_W = 10;
+const LABEL_FONT = 9;
 
 export function AnomalyChartOverlay({
   offset,
@@ -29,7 +30,7 @@ export function AnomalyChartOverlay({
   return (
     <g>
       {anomalies.map((a, i) => (
-        <ChartPill
+        <ChartBand
           key={i}
           index={i}
           anomaly={a}
@@ -43,7 +44,7 @@ export function AnomalyChartOverlay({
   );
 }
 
-interface PillProps {
+interface BandProps {
   index: number;
   anomaly: SimulationAnomaly;
   offset: ChartOffset;
@@ -54,13 +55,13 @@ interface PillProps {
 
 type DragMode = "body" | "left" | "right" | null;
 
-function ChartPill({
+function ChartBand({
   anomaly,
   offset,
   pxPerDay,
   windowDays,
   onChange,
-}: PillProps) {
+}: BandProps) {
   const parsedStart = parseDays(anomaly.start ?? "0d") ?? 0;
   const startDay = Math.max(
     0,
@@ -69,8 +70,11 @@ function ChartPill({
   const durationDays = Math.max(1, parseDays(anomaly.duration ?? "1d") ?? 1);
 
   const x = offset.left + startDay * pxPerDay;
-  const pillWidth = Math.max(4, durationDays * pxPerDay);
+  const w = Math.max(HANDLE_W * 2 + 2, durationDays * pxPerDay);
   const y = offset.top;
+  const h = offset.height;
+  const hw = Math.min(HANDLE_W, w / 3); // clamp handle width when band is narrow
+
   const color = anomalyTypeColor(anomaly.type);
 
   const dragRef = useRef<{
@@ -84,7 +88,7 @@ function ChartPill({
     origStart: startDay,
     origDuration: durationDays,
   });
-  const [dragging, setDragging] = useState(false);
+  const [dragMode, setDragMode] = useState<DragMode>(null);
 
   const begin = (mode: DragMode) => (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -94,7 +98,7 @@ function ChartPill({
       origStart: startDay,
       origDuration: durationDays,
     };
-    setDragging(true);
+    setDragMode(mode);
     (e.target as Element).setPointerCapture?.(e.pointerId);
   };
 
@@ -122,11 +126,15 @@ function ChartPill({
 
   const end = () => {
     dragRef.current.mode = null;
-    setDragging(false);
+    setDragMode(null);
   };
+
+  const bodyCursor =
+    dragMode === "body" ? "grabbing" : dragMode ? "ew-resize" : "grab";
 
   return (
     <g onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
+      {/* Full-height semi-transparent band (body — drag to slide) */}
       <rect
         data-testid="chart-pill-body"
         role="button"
@@ -134,46 +142,47 @@ function ChartPill({
         tabIndex={0}
         x={x}
         y={y}
-        width={pillWidth}
-        height={PILL_H}
-        rx={3}
-        style={{
-          fill: color,
-          fillOpacity: 0.85,
-          cursor: dragging ? "grabbing" : "grab",
-        }}
+        width={w}
+        height={h}
+        style={{ fill: color, fillOpacity: 0.13, cursor: bodyCursor }}
         onPointerDown={begin("body")}
       />
+
+      {/* Left edge handle */}
       <rect
         data-testid="chart-pill-handle-left"
-        x={x - 3}
+        x={x}
         y={y}
-        width={6}
-        height={PILL_H}
-        fill="transparent"
-        style={{ cursor: "ew-resize" }}
+        width={hw}
+        height={h}
+        style={{ fill: color, fillOpacity: 0.45, cursor: "ew-resize" }}
         onPointerDown={begin("left")}
       />
+
+      {/* Right edge handle */}
       <rect
         data-testid="chart-pill-handle-right"
-        x={x + pillWidth - 3}
+        x={x + w - hw}
         y={y}
-        width={6}
-        height={PILL_H}
-        fill="transparent"
-        style={{ cursor: "ew-resize" }}
+        width={hw}
+        height={h}
+        style={{ fill: color, fillOpacity: 0.45, cursor: "ew-resize" }}
         onPointerDown={begin("right")}
       />
-      <text
-        x={x + pillWidth / 2}
-        y={y + PILL_H / 2 + 3}
-        fontSize={9}
-        textAnchor="middle"
-        fill="hsl(var(--primary-foreground))"
-        pointerEvents="none"
-      >
-        {anomaly.name}
-      </text>
+
+      {/* Label near top */}
+      {w > 24 && (
+        <text
+          x={x + w / 2}
+          y={y + LABEL_FONT + 2}
+          fontSize={LABEL_FONT}
+          textAnchor="middle"
+          style={{ fill: color, fillOpacity: 0.9 }}
+          pointerEvents="none"
+        >
+          {anomaly.name}
+        </text>
+      )}
     </g>
   );
 }

@@ -1,9 +1,8 @@
 import { useMemo } from "react";
 import { useTwinOutput } from "./useTwinOutput";
-import { KpiChart, type KpiBand } from "./KpiChart";
+import { KpiChart } from "./KpiChart";
 import { useSeederStore } from "@/stores/seederStore";
-import { anomalyTypeColor } from "@/lib/twin";
-import { parseDays, resolveScale } from "@/lib/twin/utils";
+import { resolveScale } from "@/lib/twin/utils";
 import { resolveDateRange } from "@/lib/time/dateRange";
 import type { SimulationConfig } from "@/types/simulation";
 import { headlineStat } from "./headlineStat";
@@ -31,23 +30,6 @@ export function PreviewGrid() {
     () => resolveDateRange(uiStartDate, uiEndDate, window_days),
     [uiStartDate, uiEndDate, window_days],
   );
-  const bands: KpiBand[] = useMemo(
-    () =>
-      anomalies.flatMap((a) => {
-        if (!a.start || !a.duration) return [];
-        const rawStart = parseDays(a.start);
-        const rawDur = parseDays(a.duration);
-        if (rawStart == null || rawDur == null || rawDur <= 0) return [];
-        const start =
-          rawStart < 0
-            ? Math.max(0, out.days + rawStart)
-            : Math.max(0, rawStart);
-        const end = Math.min(out.days, start + rawDur);
-        if (end <= start) return [];
-        return [{ start, end, color: anomalyTypeColor(a.type) }];
-      }),
-    [anomalies, out.days],
-  );
 
   const handleAnomalyChange = useMemo(
     () => (idx: number, next: (typeof anomalies)[number]) => {
@@ -70,6 +52,14 @@ export function PreviewGrid() {
     }),
     [out],
   );
+
+  const sharedProps = {
+    anomalies,
+    windowDays: window_days,
+    onAnomalyChange: handleAnomalyChange,
+    startDate: chartStart,
+    endDate: chartEnd,
+  };
 
   return (
     <section
@@ -99,63 +89,38 @@ export function PreviewGrid() {
             values={out.events}
             headline={stats.events}
             color="hsl(var(--chart-6))"
-            bands={bands}
-            anomalies={anomalies}
-            windowDays={window_days}
-            onAnomalyChange={handleAnomalyChange}
-            startDate={chartStart}
-            endDate={chartEnd}
             className="col-span-2"
             chartHeight="h-40"
+            {...sharedProps}
           />
           <KpiChart
             title="Active users"
             values={out.activeUsers}
             headline={stats.active}
             color="hsl(var(--chart-8))"
-            bands={bands}
-            anomalies={anomalies}
-            windowDays={window_days}
-            onAnomalyChange={handleAnomalyChange}
-            startDate={chartStart}
-            endDate={chartEnd}
+            {...sharedProps}
           />
           <KpiChart
             title="New users/day"
             values={out.newUsers}
             headline={stats.news}
             color="hsl(var(--chart-3))"
-            bands={bands}
-            anomalies={anomalies}
-            windowDays={window_days}
-            onAnomalyChange={handleAnomalyChange}
-            startDate={chartStart}
-            endDate={chartEnd}
+            {...sharedProps}
           />
           <KpiChart
             title="Stickiness"
             values={out.stickiness.map((v) => (v === null ? null : v * 100))}
             headline={stats.stickiness}
             color="hsl(var(--chart-7))"
-            bands={bands}
-            anomalies={anomalies}
-            windowDays={window_days}
-            onAnomalyChange={handleAnomalyChange}
-            startDate={chartStart}
-            endDate={chartEnd}
             valueSuffix="%"
+            {...sharedProps}
           />
           <KpiChart
             title="Total users"
             values={out.totalUsers}
             headline={`total ${formatNum(out.totalUsers.at(-1) ?? 0)}`}
             color="hsl(var(--chart-2))"
-            bands={bands}
-            anomalies={anomalies}
-            windowDays={window_days}
-            onAnomalyChange={handleAnomalyChange}
-            startDate={chartStart}
-            endDate={chartEnd}
+            {...sharedProps}
           />
         </div>
       )}
