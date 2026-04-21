@@ -28,14 +28,15 @@ export function resolveSimParams(config: TwinInput["config"]): {
     config.axes.stickiness ?? "sticky",
   )?.params as RetentionParams | undefined;
 
-  const retentionParams: RetentionParams = stickinessParams ?? {
-    peakChurnRate: 0.5,
-    baseChurnRate: 0.05,
-    churnDecayDays: 10,
-    reactivationRate: 0.05,
-    reactivationDecay: 0.8,
-    maxDormantDays: 45,
-  };
+  const retentionParams: RetentionParams = stickinessParams ??
+    (getAxisValue("stickiness", "sticky")?.params as RetentionParams) ?? {
+      peakChurnRate: 0.5,
+      baseChurnRate: 0.05,
+      churnDecayDays: 10,
+      reactivationRate: 0.05,
+      reactivationDecay: 0.8,
+      maxDormantDays: 45,
+    };
 
   const depth =
     (getAxisValue("engagement_depth", config.axes.engagement_depth ?? "medium")

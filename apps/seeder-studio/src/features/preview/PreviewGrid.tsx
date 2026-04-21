@@ -2,7 +2,6 @@ import { useMemo, useState, useCallback } from "react";
 import { useTwinOutput } from "./useTwinOutput";
 import { KpiChart } from "./KpiChart";
 import { useSeederStore } from "@/stores/seederStore";
-import { resolveScale } from "@/lib/twin/utils";
 import { resolveDateRange } from "@/lib/time/dateRange";
 import { resolveSimParams } from "@/lib/twin";
 import type { SimulationConfig } from "@/types/simulation";
@@ -23,13 +22,7 @@ export function PreviewGrid() {
   const setAnomalies = useSeederStore((s) => s.setAnomalies);
   const uiStartDate = useSeederStore((s) => s.uiStartDate);
   const uiEndDate = useSeederStore((s) => s.uiEndDate);
-  const scaleOverride = useSeederStore((s) => s.config.scale_config);
-  const scaleAxis = useSeederStore((s) => s.config.axes.scale ?? "small");
   const config = useSeederStore((s) => s.config);
-  const { window_days } = useMemo(
-    () => resolveScale(scaleAxis, scaleOverride),
-    [scaleAxis, scaleOverride],
-  );
   const {
     depth,
     retentionParams: rp,
@@ -39,8 +32,8 @@ export function PreviewGrid() {
   const pct = (v: number) => `${Math.round(v * 100)}%`;
   const fix1 = (v: number) => v.toFixed(1);
   const { start: chartStart, end: chartEnd } = useMemo(
-    () => resolveDateRange(uiStartDate, uiEndDate, window_days),
-    [uiStartDate, uiEndDate, window_days],
+    () => resolveDateRange(uiStartDate, uiEndDate, windowDays),
+    [uiStartDate, uiEndDate, windowDays],
   );
 
   const handleAnomalyChange = useMemo(
@@ -86,7 +79,7 @@ export function PreviewGrid() {
 
   const sharedProps = {
     anomalies,
-    windowDays: window_days,
+    windowDays,
     onAnomalyChange: handleAnomalyChange,
     onAnomalySelect: handleAnomalySelect,
     startDate: chartStart,
