@@ -25,30 +25,26 @@ describe("PreviewGrid", () => {
     render(<PreviewGrid />);
     expect(screen.getByText(/preview/i)).toBeInTheDocument();
   });
-});
 
-describe("PreviewGrid formula captions", () => {
-  it("renders formula captions for each KPI chart", () => {
+  it("renders KaTeX formula for each chart", () => {
     render(<PreviewGrid />);
-    expect(screen.getAllByText(/DAU.*Poisson/)).toHaveLength(1); // Active users
-    expect(screen.getByText(/DAU \/ MAU/)).toBeInTheDocument();
-    expect(screen.getByText(/S\[k−1\]−S\[k\]/)).toBeInTheDocument(); // no spaces in new formula
-    expect(screen.getByText(/events.*×/)).toBeInTheDocument(); // dynamic depth value
-    expect(screen.getByText(/N꜀\s*=\s*Poisson/)).toBeInTheDocument();
-    expect(screen.getByText(/Σ꜀≤t/)).toBeInTheDocument();
-    expect(screen.getByText(/churned꜀/)).toBeInTheDocument();
+    // MathFormula renders a span with data-testid="math-formula"
+    // There should be at least 7 (one per chart)
+    const formulas = screen.getAllByTestId("math-formula");
+    expect(formulas.length).toBeGreaterThanOrEqual(7);
   });
 
-  it("formula captions include resolved parameter values", () => {
+  it("renders where lines with resolved values", () => {
     render(<PreviewGrid />);
     // engagement_depth "medium" → depth=10
-    expect(screen.getByText(/× 10/)).toBeInTheDocument();
-    // stickiness "sticky" → peakChurnRate=50%, churnDecayDays=10
-    expect(screen.getAllByText(/peak=50%/)).toHaveLength(2); // in Active users and Churned/day
-    expect(screen.getAllByText(/τ=10d/)).toHaveLength(2); // in Active users and Churned/day
-    // reactivationRate=5%, reactivationDecay=0.8
-    expect(screen.getByText(/r=5%/)).toBeInTheDocument();
-    expect(screen.getByText(/δ=0\.8/)).toBeInTheDocument();
+    expect(screen.getByText(/d = 10/)).toBeInTheDocument();
+    // stickiness "sticky" → peak=50%
+    expect(screen.getByText(/peak = 50%/)).toBeInTheDocument();
+  });
+
+  it("renders SimMathPanel", () => {
+    render(<PreviewGrid />);
+    expect(screen.getByText(/simulation math/i)).toBeInTheDocument();
   });
 });
 

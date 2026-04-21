@@ -9,10 +9,23 @@ import { headlineStat } from "./headlineStat";
 import { formatNum } from "@/lib/format";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 import { DayTable } from "./DayTable";
+import { FORMULA_REGISTRY } from "./formulaRegistry";
+import { SimMathPanel } from "./SimMathPanel";
+import type { SimMathEntry } from "./SimMathPanel";
 
 type AnomalyList = NonNullable<SimulationConfig["anomalies"]>;
 
 const EMPTY_ANOMALIES: AnomalyList = [];
+
+const METRIC_LABELS: Record<string, string> = {
+  events: "Events/day",
+  activeUsers: "Active users",
+  newUsers: "New users/day",
+  stickiness: "Stickiness",
+  totalUsers: "Total users",
+  churnedUsers: "Churned/day",
+  reactivatedUsers: "Reactivated/day",
+};
 
 export function PreviewGrid() {
   const out = useTwinOutput();
@@ -29,8 +42,33 @@ export function PreviewGrid() {
     totalUsers,
     windowDays,
   } = useMemo(() => resolveSimParams(config), [config]);
+
   const pct = (v: number) => `${Math.round(v * 100)}%`;
   const fix1 = (v: number) => v.toFixed(1);
+
+  const formulaWhere: Record<string, string> = {
+    events: `where: d = ${depth} events/user/day`,
+    activeUsers: `where: peak churn = ${pct(rp.peakChurnRate)}, τ = ${rp.churnDecayDays}d`,
+    newUsers: `where: target = ${formatNum(totalUsers)} users over ${windowDays}d`,
+    stickiness: `where: 28-day rolling window`,
+    totalUsers: `where: over ${windowDays}d`,
+    churnedUsers: `where: peak = ${pct(rp.peakChurnRate)}, base = ${pct(rp.baseChurnRate)}, τ = ${rp.churnDecayDays}d`,
+    reactivatedUsers: `where: r = ${pct(rp.reactivationRate)}, δ = ${fix1(rp.reactivationDecay)}`,
+  };
+
+  const simMathEntries = useMemo(
+    (): SimMathEntry[] =>
+      Object.entries(FORMULA_REGISTRY).map(([key, entry]) => ({
+        metric: METRIC_LABELS[key] ?? key,
+        latex: entry.latex,
+        where: formulaWhere[key] ?? "",
+        explanation: entry.explanation,
+        variables: entry.variables,
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [depth, rp, totalUsers, windowDays],
+  );
+
   const { start: chartStart, end: chartEnd } = useMemo(
     () => resolveDateRange(uiStartDate, uiEndDate, windowDays),
     [uiStartDate, uiEndDate, windowDays],
@@ -117,7 +155,9 @@ export function PreviewGrid() {
             color="hsl(var(--chart-6))"
             className="col-span-2"
             chartHeight="h-40"
-            formula={`events(t) = DAU(t) × ${depth}`}
+            formulaLatex={FORMULA_REGISTRY.events.latex}
+            formulaWhere={formulaWhere.events}
+            formulaExplanation={FORMULA_REGISTRY.events.explanation}
             {...sharedProps}
           />
           <KpiChart
@@ -125,7 +165,9 @@ export function PreviewGrid() {
             values={out.activeUsers}
             headline={stats.active}
             color="hsl(var(--chart-8))"
-            formula={`DAU(t) = Σ꜀ Poisson(N꜀ × S[t−c])  peak=${pct(rp.peakChurnRate)} τ=${rp.churnDecayDays}d`}
+            formulaLatex={FORMULA_REGISTRY.activeUsers.latex}
+            formulaWhere={formulaWhere.activeUsers}
+            formulaExplanation={FORMULA_REGISTRY.activeUsers.explanation}
             {...sharedProps}
           />
           <KpiChart
@@ -133,7 +175,9 @@ export function PreviewGrid() {
             values={out.newUsers}
             headline={stats.news}
             color="hsl(var(--chart-3))"
-            formula={`N꜀ = Poisson(arrivals[c])  target=${formatNum(totalUsers)} users`}
+            formulaLatex={FORMULA_REGISTRY.newUsers.latex}
+            formulaWhere={formulaWhere.newUsers}
+            formulaExplanation={FORMULA_REGISTRY.newUsers.explanation}
             {...sharedProps}
           />
           <KpiChart
@@ -142,7 +186,9 @@ export function PreviewGrid() {
             headline={stats.stickiness}
             color="hsl(var(--chart-7))"
             valueSuffix="%"
-            formula="DAU / MAU  (28-day window)"
+            formulaLatex={FORMULA_REGISTRY.stickiness.latex}
+            formulaWhere={formulaWhere.stickiness}
+            formulaExplanation={FORMULA_REGISTRY.stickiness.explanation}
             {...sharedProps}
           />
           <KpiChart
@@ -150,7 +196,9 @@ export function PreviewGrid() {
             values={out.totalUsers}
             headline={`total ${formatNum(out.totalUsers.at(-1) ?? 0)}`}
             color="hsl(var(--chart-2))"
-            formula={`total(t) = Σ꜀≤t N꜀  over ${windowDays}d`}
+            formulaLatex={FORMULA_REGISTRY.totalUsers.latex}
+            formulaWhere={formulaWhere.totalUsers}
+            formulaExplanation={FORMULA_REGISTRY.totalUsers.explanation}
             {...sharedProps}
           />
           <KpiChart
@@ -158,7 +206,9 @@ export function PreviewGrid() {
             values={out.churnedUsers}
             headline={stats.churned}
             color="hsl(var(--destructive))"
-            formula={`churn(t) = Σ꜀ Poisson(N꜀×(S[k−1]−S[k]))  peak=${pct(rp.peakChurnRate)} base=${pct(rp.baseChurnRate)} τ=${rp.churnDecayDays}d`}
+            formulaLatex={FORMULA_REGISTRY.churnedUsers.latex}
+            formulaWhere={formulaWhere.churnedUsers}
+            formulaExplanation={FORMULA_REGISTRY.churnedUsers.explanation}
             {...sharedProps}
           />
           <KpiChart
@@ -166,17 +216,22 @@ export function PreviewGrid() {
             values={out.reactivatedUsers}
             headline={stats.reactivated}
             color="hsl(var(--chart-4))"
-            formula={`react(t) = Σ꜀ Poisson(churned꜀×r×δ^(d−1))  r=${pct(rp.reactivationRate)} δ=${fix1(rp.reactivationDecay)}`}
+            formulaLatex={FORMULA_REGISTRY.reactivatedUsers.latex}
+            formulaWhere={formulaWhere.reactivatedUsers}
+            formulaExplanation={FORMULA_REGISTRY.reactivatedUsers.explanation}
             {...sharedProps}
           />
         </div>
       )}
       {!allZero && (
-        <div className="border-t pt-2">
-          <h3 className="text-xs uppercase text-muted-foreground font-semibold mb-1">
-            First days
-          </h3>
-          <DayTable out={out} />
+        <div className="border-t pt-2 flex flex-col gap-4">
+          <div>
+            <h3 className="text-xs uppercase text-muted-foreground font-semibold mb-1">
+              First days
+            </h3>
+            <DayTable out={out} />
+          </div>
+          <SimMathPanel entries={simMathEntries} />
         </div>
       )}
       {selected !== null && anomalies[selected.idx] && (
