@@ -39,3 +39,13 @@ if (!window.matchMedia) {
     }),
   });
 }
+
+// Navigator clipboard API for copy tests - set up as configurable
+// for use by userEvent and test code
+Object.defineProperty(navigator, "clipboard", {
+  configurable: true,
+  writable: true,
+  value: {
+    writeText: () => Promise.resolve(),
+  },
+});
