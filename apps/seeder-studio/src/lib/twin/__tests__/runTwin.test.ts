@@ -167,6 +167,7 @@ describe("runTwin", () => {
     for (let t = 10; t <= 14; t++) {
       expect(out.activeUsers[t]).toBe(0);
       expect(out.events[t]).toBe(0);
+      expect(out.stickiness[t]).toBeNull();
     }
     // Days outside the outage window should have non-zero active users in aggregate
     const outsideActive = out.activeUsers
