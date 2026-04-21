@@ -62,7 +62,7 @@ export function PreviewGrid() {
       events: headlineStat(out.events, "count"),
       active: headlineStat(out.activeUsers, "count"),
       news: headlineStat(out.newUsers, "count"),
-      stickiness: headlineStat(out.stickiness, "ratio"),
+      stickiness: headlineStat(out.stickiness, "percent"),
     }),
     [out],
   );
@@ -138,12 +138,13 @@ export function PreviewGrid() {
           />
           <KpiChart
             title="Stickiness"
-            values={out.stickiness}
+            values={out.stickiness.map((v) => v * 100)}
             headline={stats.stickiness}
             color="hsl(var(--chart-7))"
             bands={bands}
             startDate={chartStart}
             endDate={chartEnd}
+            valueSuffix="%"
           />
           <KpiChart
             title="Total users"

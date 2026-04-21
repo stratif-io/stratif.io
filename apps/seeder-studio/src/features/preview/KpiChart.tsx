@@ -26,6 +26,7 @@ interface Props {
   bands?: KpiBand[];
   startDate?: Date;
   endDate?: Date;
+  valueSuffix?: string;
 }
 
 const fmt = (d: Date) =>
@@ -54,6 +55,7 @@ export function KpiChart({
   bands,
   startDate,
   endDate,
+  valueSuffix = "",
 }: Props) {
   const data = useMemo(
     () => values.map((v, i) => ({ idx: i, value: v })),
@@ -138,7 +140,10 @@ export function KpiChart({
               labelFormatter={(idx: number) =>
                 dateFor(idx, startDate, endDate, values.length) || `day ${idx}`
               }
-              formatter={(v: number) => [formatNum(v), title]}
+              formatter={(v: number) => [
+                `${formatNum(v)}${valueSuffix}`,
+                title,
+              ]}
             />
             <Line
               type="monotone"
