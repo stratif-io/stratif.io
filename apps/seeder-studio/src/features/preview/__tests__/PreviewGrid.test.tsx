@@ -30,13 +30,25 @@ describe("PreviewGrid", () => {
 describe("PreviewGrid formula captions", () => {
   it("renders formula captions for each KPI chart", () => {
     render(<PreviewGrid />);
-    expect(screen.getByText(/DAU.*Poisson/)).toBeInTheDocument();
+    expect(screen.getAllByText(/DAU.*Poisson/)).toHaveLength(1); // Active users
     expect(screen.getByText(/DAU \/ MAU/)).toBeInTheDocument();
-    expect(screen.getByText(/S\[k−1\] − S\[k\]/)).toBeInTheDocument();
-    expect(screen.getByText(/events.*events_per_user/)).toBeInTheDocument();
+    expect(screen.getByText(/S\[k−1\]−S\[k\]/)).toBeInTheDocument(); // no spaces in new formula
+    expect(screen.getByText(/events.*×/)).toBeInTheDocument(); // dynamic depth value
     expect(screen.getByText(/N꜀\s*=\s*Poisson/)).toBeInTheDocument();
     expect(screen.getByText(/Σ꜀≤t/)).toBeInTheDocument();
     expect(screen.getByText(/churned꜀/)).toBeInTheDocument();
+  });
+
+  it("formula captions include resolved parameter values", () => {
+    render(<PreviewGrid />);
+    // engagement_depth "medium" → depth=10
+    expect(screen.getByText(/× 10/)).toBeInTheDocument();
+    // stickiness "sticky" → peakChurnRate=50%, churnDecayDays=10
+    expect(screen.getAllByText(/peak=50%/)).toHaveLength(2); // in Active users and Churned/day
+    expect(screen.getAllByText(/τ=10d/)).toHaveLength(2); // in Active users and Churned/day
+    // reactivationRate=5%, reactivationDecay=0.8
+    expect(screen.getByText(/r=5%/)).toBeInTheDocument();
+    expect(screen.getByText(/δ=0\.8/)).toBeInTheDocument();
   });
 });
 

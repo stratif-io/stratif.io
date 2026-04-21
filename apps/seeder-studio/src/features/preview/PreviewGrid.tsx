@@ -4,6 +4,7 @@ import { KpiChart } from "./KpiChart";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveScale } from "@/lib/twin/utils";
 import { resolveDateRange } from "@/lib/time/dateRange";
+import { resolveSimParams } from "@/lib/twin";
 import type { SimulationConfig } from "@/types/simulation";
 import { headlineStat } from "./headlineStat";
 import { formatNum } from "@/lib/format";
@@ -24,10 +25,19 @@ export function PreviewGrid() {
   const uiEndDate = useSeederStore((s) => s.uiEndDate);
   const scaleOverride = useSeederStore((s) => s.config.scale_config);
   const scaleAxis = useSeederStore((s) => s.config.axes.scale ?? "small");
+  const config = useSeederStore((s) => s.config);
   const { window_days } = useMemo(
     () => resolveScale(scaleAxis, scaleOverride),
     [scaleAxis, scaleOverride],
   );
+  const {
+    depth,
+    retentionParams: rp,
+    totalUsers,
+    windowDays,
+  } = useMemo(() => resolveSimParams(config), [config]);
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
+  const fix1 = (v: number) => v.toFixed(1);
   const { start: chartStart, end: chartEnd } = useMemo(
     () => resolveDateRange(uiStartDate, uiEndDate, window_days),
     [uiStartDate, uiEndDate, window_days],
@@ -114,7 +124,7 @@ export function PreviewGrid() {
             color="hsl(var(--chart-6))"
             className="col-span-2"
             chartHeight="h-40"
-            formula="events(t) = DAU(t) × events_per_user"
+            formula={`events(t) = DAU(t) × ${depth}`}
             {...sharedProps}
           />
           <KpiChart
@@ -122,7 +132,7 @@ export function PreviewGrid() {
             values={out.activeUsers}
             headline={stats.active}
             color="hsl(var(--chart-8))"
-            formula="DAU(t) = Σ꜀ Poisson(N꜀ × S[t−c])"
+            formula={`DAU(t) = Σ꜀ Poisson(N꜀ × S[t−c])  peak=${pct(rp.peakChurnRate)} τ=${rp.churnDecayDays}d`}
             {...sharedProps}
           />
           <KpiChart
@@ -130,7 +140,7 @@ export function PreviewGrid() {
             values={out.newUsers}
             headline={stats.news}
             color="hsl(var(--chart-3))"
-            formula="N꜀ = Poisson(arrivals[c])"
+            formula={`N꜀ = Poisson(arrivals[c])  target=${formatNum(totalUsers)} users`}
             {...sharedProps}
           />
           <KpiChart
@@ -147,7 +157,7 @@ export function PreviewGrid() {
             values={out.totalUsers}
             headline={`total ${formatNum(out.totalUsers.at(-1) ?? 0)}`}
             color="hsl(var(--chart-2))"
-            formula="total(t) = Σ꜀≤t N꜀"
+            formula={`total(t) = Σ꜀≤t N꜀  over ${windowDays}d`}
             {...sharedProps}
           />
           <KpiChart
@@ -155,7 +165,7 @@ export function PreviewGrid() {
             values={out.churnedUsers}
             headline={stats.churned}
             color="hsl(var(--destructive))"
-            formula="churn(t) = Σ꜀ Poisson(N꜀ × (S[k−1] − S[k]))"
+            formula={`churn(t) = Σ꜀ Poisson(N꜀×(S[k−1]−S[k]))  peak=${pct(rp.peakChurnRate)} base=${pct(rp.baseChurnRate)} τ=${rp.churnDecayDays}d`}
             {...sharedProps}
           />
           <KpiChart
@@ -163,7 +173,7 @@ export function PreviewGrid() {
             values={out.reactivatedUsers}
             headline={stats.reactivated}
             color="hsl(var(--chart-4))"
-            formula="react(t) = Σ꜀ Poisson(churned꜀ × r × δ^(d−1))"
+            formula={`react(t) = Σ꜀ Poisson(churned꜀×r×δ^(d−1))  r=${pct(rp.reactivationRate)} δ=${fix1(rp.reactivationDecay)}`}
             {...sharedProps}
           />
         </div>
