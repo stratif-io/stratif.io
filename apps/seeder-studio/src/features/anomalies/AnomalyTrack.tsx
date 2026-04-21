@@ -33,31 +33,36 @@ export function AnomalyTrack({ onEdit }: Props) {
   };
 
   return (
-    <div className="flex items-center gap-2 p-1 border-y">
-      <svg
-        viewBox={`0 0 300 ${TRACK_HEIGHT}`}
-        preserveAspectRatio="none"
-        className="flex-1 min-w-0"
+    <div className="flex items-center gap-2 p-1 border-y min-w-0 overflow-hidden">
+      <div
+        className="flex-1 min-w-0 overflow-hidden"
         style={{ height: TRACK_HEIGHT }}
       >
-        <rect
-          x={0}
-          y={0}
-          width={300}
+        <svg
+          viewBox={`0 0 300 ${TRACK_HEIGHT}`}
+          preserveAspectRatio="none"
+          width="100%"
           height={TRACK_HEIGHT}
-          fill="rgba(0,0,0,0.04)"
-        />
-        {anomalies.map((a, i) => (
-          <AnomalyPill
-            key={`${a.name}-${i}`}
-            anomaly={a}
-            windowDays={window_days}
-            trackWidth={300}
-            onChange={(next) => updateAnomaly(i, next)}
-            onSelect={() => onEdit(i)}
+        >
+          <rect
+            x={0}
+            y={0}
+            width={300}
+            height={TRACK_HEIGHT}
+            fill="rgba(0,0,0,0.04)"
           />
-        ))}
-      </svg>
+          {anomalies.map((a, i) => (
+            <AnomalyPill
+              key={`${a.name}-${i}`}
+              anomaly={a}
+              windowDays={window_days}
+              trackWidth={300}
+              onChange={(next) => updateAnomaly(i, next)}
+              onSelect={() => onEdit(i)}
+            />
+          ))}
+        </svg>
+      </div>
       <Button
         type="button"
         variant="outline"
