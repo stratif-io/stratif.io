@@ -37,7 +37,7 @@ describe("KpiChart bands + guide", () => {
     const { container } = render(
       <KpiChart title="X" values={[0, 1, 2, 3]} guideIndex={2} />,
     );
-    expect(container).not.toBeNull();
+    expect(container.querySelector(".h-32")).not.toBeNull();
   });
 });
 

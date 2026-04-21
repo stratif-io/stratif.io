@@ -97,9 +97,9 @@ export function KpiChart({
               opacity={0.08}
               vertical={false}
             />
-            {bands?.map((b, i) => (
+            {bands?.map((b) => (
               <ReferenceArea
-                key={i}
+                key={`${b.start}-${b.end}-${b.color}`}
                 x1={b.start}
                 x2={b.end}
                 fill={b.color}
