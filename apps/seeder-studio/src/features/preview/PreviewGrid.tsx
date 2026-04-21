@@ -12,17 +12,21 @@ import { anomalyTypeColor } from "@/lib/twin";
 import { parseDays, resolveScale } from "@/lib/twin/utils";
 import { resolveDateRange } from "@/lib/time/dateRange";
 import { useHoverGuide } from "./useHoverGuide";
+import { formatNum } from "@/lib/format";
 import type { SimulationConfig } from "@/types/simulation";
 
 type AnomalyList = NonNullable<SimulationConfig["anomalies"]>;
 
-function headlineStat(values: number[], kind: "count" | "ratio"): string {
+export function headlineStat(
+  values: number[],
+  kind: "count" | "ratio",
+): string {
   if (values.length === 0) return "";
   const max = Math.max(...values);
   const min = Math.min(...values);
   const avg = values.reduce((a, b) => a + b, 0) / values.length;
-  if (kind === "ratio") return `avg ${avg.toFixed(2)}`;
-  return `peak ${Math.round(max)} · avg ${Math.round(avg)} · min ${Math.round(min)}`;
+  if (kind === "ratio") return `avg ${formatNum(avg)}`;
+  return `peak ${formatNum(max)} · avg ${formatNum(avg)} · min ${formatNum(min)}`;
 }
 
 const EMPTY_ANOMALIES: AnomalyList = [];

@@ -10,6 +10,7 @@ import {
   ReferenceLine,
   CartesianGrid,
 } from "recharts";
+import { formatNum } from "@/lib/format";
 
 export interface KpiBand {
   start: number;
@@ -139,7 +140,7 @@ export function KpiChart({
               labelFormatter={(idx: number) =>
                 dateFor(idx, startDate, endDate, values.length) || `day ${idx}`
               }
-              formatter={(v: number) => [v, title]}
+              formatter={(v: number) => [formatNum(v), title]}
             />
             <Line
               type="monotone"

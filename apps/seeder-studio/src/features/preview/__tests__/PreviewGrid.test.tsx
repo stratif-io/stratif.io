@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { PreviewGrid } from "../PreviewGrid";
+import { PreviewGrid, headlineStat } from "../PreviewGrid";
 import { useSeederStore, blankConfig } from "@/stores/seederStore";
 
 describe("PreviewGrid", () => {
@@ -22,5 +22,27 @@ describe("PreviewGrid", () => {
   it("shows the approximate-preview badge", () => {
     render(<PreviewGrid />);
     expect(screen.getByText(/approximate/i)).toBeInTheDocument();
+  });
+});
+
+describe("headlineStat formatting", () => {
+  it("formats count values using formatNum (thousands → K)", () => {
+    expect(headlineStat([12400, 8000, 500], "count")).toBe(
+      "peak 12.4K · avg 7K · min 500",
+    );
+  });
+
+  it("formats count values using formatNum (millions → M)", () => {
+    expect(headlineStat([2_000_000, 1_500_000, 500_000], "count")).toBe(
+      "peak 2M · avg 1.3M · min 500K",
+    );
+  });
+
+  it("formats ratio values using formatNum (< 1 → 2dp)", () => {
+    expect(headlineStat([0.35, 0.2], "ratio")).toBe("avg 0.28");
+  });
+
+  it("returns empty string for empty values array", () => {
+    expect(headlineStat([], "count")).toBe("");
   });
 });

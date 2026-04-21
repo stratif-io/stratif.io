@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { KpiChart } from "../KpiChart";
+import { formatNum } from "@/lib/format";
 
 describe("KpiChart", () => {
   it("renders title and headline stat", () => {
@@ -37,6 +38,28 @@ describe("KpiChart bands + guide", () => {
       <KpiChart title="X" values={[0, 1, 2, 3]} guideIndex={2} />,
     );
     expect(container).not.toBeNull();
+  });
+});
+
+describe("KpiChart tooltip formatter via formatNum", () => {
+  it("formatNum formats thousands values for tooltip display", () => {
+    // Validates the formatter logic used in the Tooltip: formatNum(v)
+    expect(formatNum(12400)).toBe("12.4K");
+    expect(formatNum(0.35)).toBe("0.35");
+    expect(formatNum(2_000_000)).toBe("2M");
+  });
+
+  it("renders formatted headline string with K suffix", () => {
+    render(
+      <KpiChart
+        title="Events/day"
+        values={[12400, 8000, 500]}
+        headline="peak 12.4K · avg 7K · min 500"
+      />,
+    );
+    expect(
+      screen.getByText("peak 12.4K · avg 7K · min 500"),
+    ).toBeInTheDocument();
   });
 });
 
