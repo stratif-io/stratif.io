@@ -15,7 +15,7 @@ export function AnomaliesPane() {
   const current = editingIdx !== null ? anomalies[editingIdx] : null;
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-w-0">
       {anomalies.length === 0 && (
         <div className="px-3 py-1.5 text-[13px] text-muted-foreground">
           No anomalies yet. Click{" "}
