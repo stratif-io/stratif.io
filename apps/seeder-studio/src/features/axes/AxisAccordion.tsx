@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { AxisDisplay } from "./axisDisplaySpec";
 import { cn } from "@/lib/cn";
@@ -7,6 +6,8 @@ interface Props {
   axisDisplay: AxisDisplay;
   currentValue: string;
   onChange: (value: string) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 function Spark({
@@ -35,31 +36,30 @@ function Spark({
   );
 }
 
-export function AxisAccordion({ axisDisplay, currentValue, onChange }: Props) {
-  const [open, setOpen] = useState(false);
-
+export function AxisAccordion({
+  axisDisplay,
+  currentValue,
+  onChange,
+  open,
+  onOpenChange,
+}: Props) {
   const currentDisplay =
     axisDisplay.values.find((v) => v.value === currentValue) ??
     axisDisplay.values[0];
 
   const handleSelect = (value: string) => {
     onChange(value);
-    setOpen(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") setOpen(false);
+    onOpenChange(false);
   };
 
   return (
-    <div onKeyDown={handleKeyDown}>
-      {/* Collapsed row */}
+    <div onKeyDown={(e) => e.key === "Escape" && onOpenChange(false)}>
       <button
         type="button"
         aria-label={axisDisplay.label}
         aria-expanded={open}
         aria-controls={`axis-options-${axisDisplay.id}`}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => onOpenChange(!open)}
         className={cn(
           "w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-muted/60",
           open ? "bg-muted/60" : "bg-transparent",
@@ -83,7 +83,6 @@ export function AxisAccordion({ axisDisplay, currentValue, onChange }: Props) {
         />
       </button>
 
-      {/* Expanded options */}
       {open && (
         <ul
           id={`axis-options-${axisDisplay.id}`}
@@ -106,7 +105,6 @@ export function AxisAccordion({ axisDisplay, currentValue, onChange }: Props) {
                     : "hover:bg-muted/60 text-foreground",
                 )}
               >
-                <span className="w-16 shrink-0" />
                 <Spark points={opt.sparkPoints} active={selected} size="md" />
                 <span
                   className={cn(
