@@ -65,7 +65,7 @@ export function AxisAccordion({
           open ? "bg-muted/60" : "bg-transparent",
         )}
       >
-        <span className="text-muted-foreground w-16 shrink-0 text-left">
+        <span className="text-muted-foreground w-24 shrink-0 text-left">
           {axisDisplay.label}
         </span>
         {!open && (
