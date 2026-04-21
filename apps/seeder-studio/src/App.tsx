@@ -1,5 +1,5 @@
 // apps/seeder-studio/src/App.tsx
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Button,
   Dialog,
@@ -63,20 +63,22 @@ export default function App() {
     setPendingIntent(null);
   };
 
+  const urlSyncedRef = useRef(false);
+
   // Sync from URL on initial load
   useEffect(() => {
-    if (loading || presets.length === 0) return;
+    if (loading || presets.length === 0 || urlSyncedRef.current) return;
+    urlSyncedRef.current = true;
     const params = new URLSearchParams(window.location.search);
     const urlName = params.get("preset");
-    if (urlName && !selectedName && presets.some((p) => p.name === urlName)) {
+    if (urlName && presets.some((p) => p.name === urlName)) {
       const preset = presets.find((p) => p.name === urlName);
       if (preset) {
         loadPreset(preset.config);
         setSelectedName(urlName);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, presets.length]);
+  }, [loading, presets, loadPreset]);
 
   // Keep URL in sync
   useEffect(() => {
