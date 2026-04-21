@@ -33,10 +33,13 @@ export { Popover, PopoverTrigger, PopoverContent } from './components/ui/popover
 export { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from './components/ui/tooltip'
 export {
   Dialog,
+  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
+  DialogClose,
 } from './components/ui/dialog'
 export { Textarea } from './components/ui/textarea'
 export { Collapsible, CollapsibleTrigger, CollapsibleContent } from './components/ui/collapsible'
