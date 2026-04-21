@@ -93,7 +93,7 @@ describe("TopBar", () => {
     await user.type(startInput, "2024-01-01");
     await user.clear(endInput);
     await user.type(endInput, "2024-04-10");
-    const { window_days } = useSeederStore.getState().config.scale_config;
+    const { window_days } = useSeederStore.getState().config.scale_config ?? {};
     expect(window_days).toBeGreaterThan(0);
   });
 
