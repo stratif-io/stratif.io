@@ -220,12 +220,43 @@ def seeder_with_volume():
         return DatabricksSeeder(config=SeedConfig(seed_users=2, seed_days=1))
 
 
+_FAKE_EVENT = (
+    "user-1",
+    "PageView",
+    "2024-01-01T00:00:00",
+    {"page": "/"},
+    "srv",
+    {
+        "first_name": "A",
+        "last_name": "B",
+        "phone": "",
+        "email": "a@b.com",
+        "date_of_birth": "",
+    },
+    {
+        "country": "US",
+        "city": "NY",
+        "timezone": "EST",
+        "device_type": "desktop",
+        "browser": "Chrome",
+        "os": "macOS",
+        "screen_resolution": "1920x1080",
+        "referrer": "",
+    },
+)
+
+
 def test_seed_uses_parquet_mode_when_staging_volume_set(
     seeder_with_volume, mock_connect
 ):
     mock_sql, mock_conn, mock_cursor = mock_connect
 
-    with patch.object(seeder_with_volume, "_bulk_load_parquet") as mock_bulk:
+    with (
+        patch.object(seeder_with_volume, "_bulk_load_parquet") as mock_bulk,
+        patch.object(
+            seeder_with_volume, "events_via_engine", return_value=iter([[_FAKE_EVENT]])
+        ),
+    ):
         seeder_with_volume.seed()
 
     mock_bulk.assert_called_once()
@@ -294,16 +325,9 @@ def test_bulk_load_volume_path_uses_catalog_schema_volume(
 
 
 def test_seed_returns_stats(seeder, mock_connect):
-    mock_sql, mock_conn, mock_cursor = mock_connect
-
-    stats = seeder.seed()
-
-    assert "total_events" in stats
-    assert "total_users" in stats
-    assert "new_users" in stats
-    assert "returning_users" in stats
-    assert "power_users" in stats
-    assert "completed_purchases" in stats
-    # SeedConfig(seed_users=2) sets the arrival-curve target to 2; Poisson
-    # noise means the actual count wobbles around 2. Accept any small count.
-    assert 1 <= stats["total_users"] <= 10
+    fake_events = [_FAKE_EVENT, (_FAKE_EVENT[0], "Purchase") + _FAKE_EVENT[2:]]
+    with patch.object(seeder, "events_via_engine", return_value=iter([fake_events])):
+        stats = seeder.seed()
+    assert stats["total_events"] == 2
+    assert stats["total_users"] == 1
+    assert stats["completed_purchases"] == 1
