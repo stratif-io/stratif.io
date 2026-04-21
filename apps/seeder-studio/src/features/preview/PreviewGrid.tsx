@@ -68,6 +68,7 @@ export function PreviewGrid() {
       active: headlineStat(out.activeUsers, "count"),
       news: headlineStat(out.newUsers, "count"),
       churned: headlineStat(out.churnedUsers, "count"),
+      reactivated: headlineStat(out.reactivatedUsers, "count"),
       stickiness: headlineStat(out.stickiness, "percent"),
     }),
     [out],
@@ -149,6 +150,13 @@ export function PreviewGrid() {
             values={out.churnedUsers}
             headline={stats.churned}
             color="hsl(var(--destructive))"
+            {...sharedProps}
+          />
+          <KpiChart
+            title="Reactivated/day"
+            values={out.reactivatedUsers}
+            headline={stats.reactivated}
+            color="hsl(var(--chart-4))"
             {...sharedProps}
           />
         </div>
