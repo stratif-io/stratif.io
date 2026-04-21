@@ -17,7 +17,7 @@ describe("AxisDropdown", () => {
     );
     expect(screen.getByText("growth")).toBeInTheDocument();
     expect(screen.getByText("Strong growth")).toBeInTheDocument();
-    expect(screen.queryByRole("list")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
   it("opens dropdown on trigger click, shows all options", async () => {
@@ -30,7 +30,7 @@ describe("AxisDropdown", () => {
       />,
     );
     await user.click(screen.getByRole("button", { name: /growth/i }));
-    expect(screen.getByRole("list")).toBeInTheDocument();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
     for (const v of growthDisplay.values) {
       expect(screen.getByText(v.label)).toBeInTheDocument();
     }
@@ -62,7 +62,7 @@ describe("AxisDropdown", () => {
     );
     await user.click(screen.getByRole("button", { name: /growth/i }));
     await user.click(screen.getByRole("option", { name: /Hockey stick/i }));
-    expect(screen.queryByRole("list")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
   it("highlights the currently selected option", async () => {

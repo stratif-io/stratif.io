@@ -53,7 +53,7 @@ export function AxisDropdown({ axisDisplay, currentValue, onChange }: Props) {
       >
         <span className="text-muted-foreground">{axisDisplay.label}</span>
         <svg
-          viewBox="0 0 28 14"
+          viewBox="0 0 52 28"
           className="w-7 h-3.5 flex-shrink-0"
           aria-hidden
         >
@@ -75,7 +75,7 @@ export function AxisDropdown({ axisDisplay, currentValue, onChange }: Props) {
 
       {open && (
         <ul
-          role="list"
+          role="listbox"
           aria-label={axisDisplay.label}
           className="absolute left-0 top-full z-50 mt-1 min-w-[220px] rounded-lg border border-border bg-popover p-1 shadow-lg"
         >
@@ -93,7 +93,7 @@ export function AxisDropdown({ axisDisplay, currentValue, onChange }: Props) {
             >
               <svg
                 viewBox="0 0 52 28"
-                className="w-13 h-7 flex-shrink-0"
+                className="w-14 h-7 flex-shrink-0"
                 aria-hidden
               >
                 <polyline
