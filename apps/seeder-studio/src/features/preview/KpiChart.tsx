@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -8,7 +8,6 @@ import {
   Tooltip,
   ReferenceArea,
   CartesianGrid,
-  Customized,
 } from "recharts";
 import { formatNum } from "@/lib/format";
 import type { SimulationAnomaly } from "@/types/simulation";
@@ -20,6 +19,10 @@ export interface KpiBand {
   color: string;
   alpha?: number;
 }
+
+// Must match the LineChart margin and XAxis height below.
+const CM = { top: 4, right: 4, left: 4, bottom: 4 } as const;
+const X_AXIS_H = 20;
 
 interface Props {
   title: string;
@@ -80,6 +83,35 @@ export function KpiChart({
     return [0, Math.floor((values.length - 1) / 2), values.length - 1];
   }, [values.length]);
 
+  // Track chart container pixel size for the overlay.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setContainerSize({ w: width, h: height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const showOverlay =
+    !!anomalies?.length &&
+    !!windowDays &&
+    !!onAnomalyChange &&
+    containerSize.w > 0 &&
+    containerSize.h > 0;
+
+  const overlayOffset = {
+    left: CM.left,
+    top: CM.top,
+    width: containerSize.w - CM.left - CM.right,
+    height: containerSize.h - CM.top - CM.bottom - X_AXIS_H,
+  };
+
   return (
     <div
       className={`rounded-lg border bg-card p-3 flex flex-col gap-2 ${className}`}
@@ -99,13 +131,11 @@ export function KpiChart({
           </span>
         )}
       </div>
-      <div className={`${chartHeight} w-full`}>
+
+      {/* position:relative wrapper so the overlay can be positioned absolutely */}
+      <div ref={containerRef} className={`${chartHeight} w-full relative`}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            margin={{ top: 4, right: 4, left: 4, bottom: 4 }}
-            syncId="preview"
-          >
+          <LineChart data={data} margin={CM} syncId="preview">
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="currentColor"
@@ -135,7 +165,7 @@ export function KpiChart({
               tick={{ fontSize: 11, fill: "currentColor", opacity: 0.6 }}
               axisLine={false}
               tickLine={false}
-              height={20}
+              height={X_AXIS_H}
             />
             <YAxis hide />
             <Tooltip
@@ -168,32 +198,31 @@ export function KpiChart({
               dot={false}
               isAnimationActive={false}
             />
-            {anomalies &&
-              anomalies.length > 0 &&
-              windowDays &&
-              onAnomalyChange && (
-                <Customized
-                  component={(props: Record<string, unknown>) =>
-                    props.offset ? (
-                      <AnomalyChartOverlay
-                        offset={
-                          props.offset as {
-                            left: number;
-                            top: number;
-                            width: number;
-                            height: number;
-                          }
-                        }
-                        anomalies={anomalies}
-                        windowDays={windowDays}
-                        onAnomalyChange={onAnomalyChange}
-                      />
-                    ) : null
-                  }
-                />
-              )}
           </LineChart>
         </ResponsiveContainer>
+
+        {/* Direct SVG overlay — sits on top of the chart, not inside Recharts */}
+        {showOverlay && (
+          <svg
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              pointerEvents: "none",
+            }}
+            width={containerSize.w}
+            height={containerSize.h}
+          >
+            <g style={{ pointerEvents: "all" }}>
+              <AnomalyChartOverlay
+                offset={overlayOffset}
+                anomalies={anomalies!}
+                windowDays={windowDays!}
+                onAnomalyChange={onAnomalyChange!}
+              />
+            </g>
+          </svg>
+        )}
       </div>
     </div>
   );
