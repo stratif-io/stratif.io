@@ -33,6 +33,7 @@ interface Props {
   anomalies?: SimulationAnomaly[];
   windowDays?: number;
   onAnomalyChange?: (index: number, next: SimulationAnomaly) => void;
+  onAnomalySelect?: (index: number, x: number, y: number) => void;
   startDate?: Date;
   endDate?: Date;
   valueSuffix?: string;
@@ -67,6 +68,7 @@ export function KpiChart({
   anomalies,
   windowDays,
   onAnomalyChange,
+  onAnomalySelect,
   startDate,
   endDate,
   valueSuffix = "",
@@ -219,6 +221,7 @@ export function KpiChart({
                 anomalies={anomalies!}
                 windowDays={windowDays!}
                 onAnomalyChange={onAnomalyChange!}
+                onSelect={onAnomalySelect}
               />
             </g>
           </svg>

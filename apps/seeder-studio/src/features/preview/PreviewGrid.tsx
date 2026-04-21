@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useTwinOutput } from "./useTwinOutput";
 import { KpiChart } from "./KpiChart";
 import { useSeederStore } from "@/stores/seederStore";
@@ -7,6 +7,7 @@ import { resolveDateRange } from "@/lib/time/dateRange";
 import type { SimulationConfig } from "@/types/simulation";
 import { headlineStat } from "./headlineStat";
 import { formatNum } from "@/lib/format";
+import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 
 type AnomalyList = NonNullable<SimulationConfig["anomalies"]>;
 
@@ -40,6 +41,23 @@ export function PreviewGrid() {
     [anomalies, setAnomalies],
   );
 
+  const [selected, setSelected] = useState<{
+    idx: number;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const handleAnomalySelect = useCallback(
+    (idx: number, x: number, y: number) => {
+      setSelected((prev) =>
+        prev?.idx === idx && prev.x === x && prev.y === y
+          ? null
+          : { idx, x, y },
+      );
+    },
+    [],
+  );
+
   const allZero =
     out.events.every((v) => v === 0) && out.activeUsers.every((v) => v === 0);
 
@@ -57,6 +75,7 @@ export function PreviewGrid() {
     anomalies,
     windowDays: window_days,
     onAnomalyChange: handleAnomalyChange,
+    onAnomalySelect: handleAnomalySelect,
     startDate: chartStart,
     endDate: chartEnd,
   };
@@ -65,6 +84,7 @@ export function PreviewGrid() {
     <section
       aria-labelledby="preview-heading"
       className="flex flex-col gap-2 lg:flex-1 lg:overflow-hidden p-2"
+      onClick={() => setSelected(null)}
     >
       <header>
         <h2
@@ -123,6 +143,20 @@ export function PreviewGrid() {
             {...sharedProps}
           />
         </div>
+      )}
+      {selected !== null && anomalies[selected.idx] && (
+        <AnomalyFloatingEditor
+          anomaly={anomalies[selected.idx]}
+          x={selected.x}
+          y={selected.y}
+          onChange={(next) => handleAnomalyChange(selected.idx, next)}
+          onDelete={() => {
+            const copy = anomalies.filter((_, i) => i !== selected.idx);
+            setAnomalies(copy);
+            setSelected(null);
+          }}
+          onClose={() => setSelected(null)}
+        />
       )}
     </section>
   );

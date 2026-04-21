@@ -15,6 +15,7 @@ interface Props {
   anomalies: SimulationAnomaly[];
   windowDays: number;
   onAnomalyChange: (index: number, next: SimulationAnomaly) => void;
+  onSelect?: (index: number, x: number, y: number) => void;
 }
 
 const HANDLE_W = 10;
@@ -25,6 +26,7 @@ export function AnomalyChartOverlay({
   anomalies,
   windowDays,
   onAnomalyChange,
+  onSelect,
 }: Props) {
   const pxPerDay = offset.width / Math.max(1, windowDays);
   return (
@@ -38,6 +40,7 @@ export function AnomalyChartOverlay({
           pxPerDay={pxPerDay}
           windowDays={windowDays}
           onChange={(next) => onAnomalyChange(i, next)}
+          onSelect={onSelect}
         />
       ))}
     </g>
@@ -51,16 +54,21 @@ interface BandProps {
   pxPerDay: number;
   windowDays: number;
   onChange: (next: SimulationAnomaly) => void;
+  onSelect?: (index: number, x: number, y: number) => void;
 }
 
 type DragMode = "body" | "left" | "right" | null;
 
+const CLICK_THRESHOLD = 4;
+
 function ChartBand({
+  index,
   anomaly,
   offset,
   pxPerDay,
   windowDays,
   onChange,
+  onSelect,
 }: BandProps) {
   const parsedStart = parseDays(anomaly.start ?? "0d") ?? 0;
   const startDay = Math.max(
@@ -80,13 +88,19 @@ function ChartBand({
   const dragRef = useRef<{
     mode: DragMode;
     startX: number;
+    startClientX: number;
+    startClientY: number;
     origStart: number;
     origDuration: number;
+    hasDragged: boolean;
   }>({
     mode: null,
     startX: 0,
+    startClientX: 0,
+    startClientY: 0,
     origStart: startDay,
     origDuration: durationDays,
+    hasDragged: false,
   });
   const [dragMode, setDragMode] = useState<DragMode>(null);
 
@@ -95,8 +109,11 @@ function ChartBand({
     dragRef.current = {
       mode,
       startX: e.clientX,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
       origStart: startDay,
       origDuration: durationDays,
+      hasDragged: false,
     };
     setDragMode(mode);
     (e.target as Element).setPointerCapture?.(e.pointerId);
@@ -104,6 +121,9 @@ function ChartBand({
 
   const move = (e: React.PointerEvent) => {
     if (!dragRef.current.mode) return;
+    const dx = Math.abs(e.clientX - dragRef.current.startClientX);
+    if (dx > CLICK_THRESHOLD) dragRef.current.hasDragged = true;
+    if (!dragRef.current.hasDragged) return;
     const deltaDays = Math.round(
       (e.clientX - dragRef.current.startX) / pxPerDay,
     );
@@ -124,16 +144,25 @@ function ChartBand({
     }
   };
 
-  const end = () => {
+  const end = (_e: React.PointerEvent) => {
+    const { mode, hasDragged, startClientX, startClientY } = dragRef.current;
     dragRef.current.mode = null;
     setDragMode(null);
+    if (mode === "body" && !hasDragged) {
+      onSelect?.(index, startClientX, startClientY);
+    }
   };
 
   const bodyCursor =
     dragMode === "body" ? "grabbing" : dragMode ? "ew-resize" : "grab";
 
+  const cancel = () => {
+    dragRef.current.mode = null;
+    setDragMode(null);
+  };
+
   return (
-    <g onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
+    <g onPointerMove={move} onPointerUp={end} onPointerCancel={cancel}>
       {/* Full-height semi-transparent band (body — drag to slide) */}
       <rect
         data-testid="chart-pill-body"

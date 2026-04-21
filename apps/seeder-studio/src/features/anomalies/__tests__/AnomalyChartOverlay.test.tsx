@@ -66,6 +66,45 @@ describe("AnomalyChartOverlay", () => {
     expect(next.start).toBe("20d");
   });
 
+  it("click without drag calls onSelect with index and coordinates", () => {
+    const onSelect = vi.fn();
+    render(
+      <svg>
+        <AnomalyChartOverlay
+          offset={mockOffset}
+          anomalies={[anomaly]}
+          windowDays={90}
+          onAnomalyChange={() => {}}
+          onSelect={onSelect}
+        />
+      </svg>,
+    );
+    const body = screen.getByTestId("chart-pill-body");
+    fireEvent.pointerDown(body, { clientX: 40, clientY: 50, pointerId: 1 });
+    fireEvent.pointerUp(body, { clientX: 40, clientY: 50, pointerId: 1 });
+    expect(onSelect).toHaveBeenCalledWith(0, 40, 50);
+  });
+
+  it("drag does not call onSelect", () => {
+    const onSelect = vi.fn();
+    render(
+      <svg>
+        <AnomalyChartOverlay
+          offset={mockOffset}
+          anomalies={[anomaly]}
+          windowDays={90}
+          onAnomalyChange={() => {}}
+          onSelect={onSelect}
+        />
+      </svg>,
+    );
+    const body = screen.getByTestId("chart-pill-body");
+    fireEvent.pointerDown(body, { clientX: 40, clientY: 50, pointerId: 1 });
+    fireEvent.pointerMove(body, { clientX: 73, clientY: 50, pointerId: 1 });
+    fireEvent.pointerUp(body, { clientX: 73, clientY: 50, pointerId: 1 });
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
   it("drag right handle resizes duration", () => {
     const onChange = vi.fn();
     render(
