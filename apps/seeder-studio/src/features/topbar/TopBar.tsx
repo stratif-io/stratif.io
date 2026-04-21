@@ -28,7 +28,10 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
   const handleStartDate = (value: string) => {
     setUiStartDate(value);
     if (value && uiEndDate) {
-      const delta = new Date(uiEndDate).getTime() - new Date(value).getTime();
+      const start = new Date(value);
+      const end = new Date(uiEndDate);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
+      const delta = end.getTime() - start.getTime();
       if (delta <= 0) return;
       const days = Math.max(1, Math.round(delta / 86_400_000));
       setScaleConfig({ ...config.scale_config, window_days: days });
@@ -38,7 +41,10 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
   const handleEndDate = (value: string) => {
     setUiEndDate(value);
     if (uiStartDate && value) {
-      const delta = new Date(value).getTime() - new Date(uiStartDate).getTime();
+      const start = new Date(uiStartDate);
+      const end = new Date(value);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
+      const delta = end.getTime() - start.getTime();
       if (delta <= 0) return;
       const days = Math.max(1, Math.round(delta / 86_400_000));
       setScaleConfig({ ...config.scale_config, window_days: days });

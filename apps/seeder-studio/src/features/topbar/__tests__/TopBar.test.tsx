@@ -118,6 +118,19 @@ describe("TopBar", () => {
     expect(onSelectPreset).toHaveBeenCalledWith("saas-growth");
   });
 
+  it("does not crash when a partial/invalid start date is typed", async () => {
+    const user = userEvent.setup();
+    render(
+      <TopBar presets={PRESETS} selectedName={null} onSelectPreset={vi.fn()} />,
+    );
+    const startInput = screen.getByLabelText(/start date/i);
+    await user.clear(startInput);
+    await user.type(startInput, "2024-0");
+    // window_days must remain a valid number — not NaN
+    const { window_days } = useSeederStore.getState().config.scale_config ?? {};
+    expect(Number.isFinite(window_days ?? 90)).toBe(true);
+  });
+
   it("Select is disabled and shows 'Loading…' placeholder when presets is empty", () => {
     render(
       <TopBar presets={[]} selectedName={null} onSelectPreset={vi.fn()} />,
