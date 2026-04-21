@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AXIS_DISPLAY, STRIP_AXIS_IDS } from "./axisDisplaySpec";
-import { AxisDropdown } from "./AxisDropdown";
+import { AxisAccordion } from "./AxisAccordion";
 import { useSeederStore } from "@/stores/seederStore";
 import { AXIS_SPEC } from "@/lib/twin";
 
@@ -30,7 +30,7 @@ export function AxisSidebar({ defaultOpen = true }: Props) {
             const current =
               axes[id] ?? AXIS_SPEC[id]?.default ?? display.values[0].value;
             return (
-              <AxisDropdown
+              <AxisAccordion
                 key={id}
                 axisDisplay={display}
                 currentValue={current}
