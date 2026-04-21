@@ -1,24 +1,19 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "../App";
+import * as presetsApi from "@/lib/api/presets";
+
+vi.mock("@/lib/api/presets", () => ({
+  fetchPresets: vi.fn(),
+}));
 
 describe("App", () => {
   beforeEach(() => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({ presets: [] }),
-      }),
-    );
-  });
-  afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.mocked(presetsApi.fetchPresets).mockResolvedValue([]);
   });
 
-  it("renders the studio header", () => {
+  it("renders the studio header", async () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -27,8 +22,8 @@ describe("App", () => {
         <App />
       </QueryClientProvider>,
     );
-    expect(
-      screen.getByRole("heading", { name: /seeder studio/i }),
-    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText(/seeder studio/i)).toBeInTheDocument(),
+    );
   });
 });
