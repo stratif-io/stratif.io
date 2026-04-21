@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { PresetEntry } from "@/lib/api/presets";
 
 interface Props {
@@ -20,21 +21,13 @@ export function PresetSidebar({
 
   return (
     <aside
-      className={[
-        "flex flex-col border-l bg-muted/10 transition-all duration-200 shrink-0",
-        open ? "w-52" : "w-8",
-      ].join(" ")}
+      style={{
+        width: open
+          ? "var(--sidebar-expanded, 220px)"
+          : "var(--sidebar-collapsed, 60px)",
+      }}
+      className="flex flex-col border-l bg-background transition-[width] duration-200 shrink-0 overflow-hidden"
     >
-      {/* Toggle button */}
-      <button
-        type="button"
-        aria-label={open ? "collapse presets" : "expand presets"}
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center justify-center h-8 w-full border-b text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors text-xs shrink-0"
-      >
-        {open ? "presets ›" : "‹"}
-      </button>
-
       {open && (
         <div className="flex flex-col overflow-y-auto flex-1">
           <button
@@ -69,6 +62,15 @@ export function PresetSidebar({
           </ul>
         </div>
       )}
+
+      <button
+        type="button"
+        aria-label={open ? "collapse presets" : "expand presets"}
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center justify-center h-9 w-full border-t text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors shrink-0"
+      >
+        {open ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
     </aside>
   );
 }
