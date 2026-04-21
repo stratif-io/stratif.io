@@ -20,7 +20,7 @@ export interface KpiBand {
 
 interface Props {
   title: string;
-  values: number[];
+  values: (number | null)[];
   headline?: string;
   color?: string;
   bands?: KpiBand[];

@@ -138,7 +138,7 @@ export function PreviewGrid() {
           />
           <KpiChart
             title="Stickiness"
-            values={out.stickiness.map((v) => v * 100)}
+            values={out.stickiness.map((v) => (v === null ? null : v * 100))}
             headline={stats.stickiness}
             color="hsl(var(--chart-7))"
             bands={bands}

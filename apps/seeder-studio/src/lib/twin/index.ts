@@ -107,11 +107,10 @@ export function runTwin({ config }: TwinInput): TwinOutput {
       : 0;
   const scaleFactor = postAvg > 0 ? target / postAvg : 1;
 
-  // During warmup the MAU window isn't full — ramp from 0 to avoid noise.
-  const stickiness = rawStickiness.map((v, t) => {
-    const scaled = Math.min(1, Math.max(0, v * scaleFactor));
-    const warmupFactor = t < MAU_WINDOW ? t / MAU_WINDOW : 1;
-    return scaled * warmupFactor;
+  // Return null during warmup — MAU window isn't full yet, value is meaningless.
+  const stickiness: (number | null)[] = rawStickiness.map((v, t) => {
+    if (t < MAU_WINDOW) return null;
+    return Math.min(1, Math.max(0, v * scaleFactor));
   });
 
   return {

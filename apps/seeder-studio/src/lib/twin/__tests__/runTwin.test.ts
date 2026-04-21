@@ -29,9 +29,17 @@ describe("runTwin", () => {
     expect(out.totalUsers).toHaveLength(90);
   });
 
-  it("stickiness is in [0, 1]", () => {
+  it("stickiness is null during warmup and in [0,1] after", () => {
     const out = runTwin({ config: base });
-    expect(out.stickiness.every((s) => s >= 0 && s <= 1)).toBe(true);
+    const MAU_WINDOW = 28;
+    expect(out.stickiness.slice(0, MAU_WINDOW).every((s) => s === null)).toBe(
+      true,
+    );
+    expect(
+      out.stickiness
+        .slice(MAU_WINDOW)
+        .every((s) => s !== null && s >= 0 && s <= 1),
+    ).toBe(true);
   });
 
   it("stickiness converges toward dau_mau_target for each axis value", () => {
