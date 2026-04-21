@@ -53,11 +53,13 @@ export function AxisDropdown({ axisDisplay, currentValue, onChange }: Props) {
         aria-haspopup="listbox"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs transition-colors hover:bg-muted",
+          "w-full flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs transition-colors hover:bg-muted",
           open && "bg-muted border-ring",
         )}
       >
-        <span className="text-muted-foreground">{axisDisplay.label}</span>
+        <span className="text-muted-foreground w-16 shrink-0 text-left">
+          {axisDisplay.label}
+        </span>
         <svg
           viewBox="0 0 52 28"
           className="w-7 h-3.5 flex-shrink-0"
@@ -72,11 +74,11 @@ export function AxisDropdown({ axisDisplay, currentValue, onChange }: Props) {
           />
         </svg>
         {!open && (
-          <span className="font-medium text-foreground">
+          <span className="font-medium text-foreground flex-1 text-left truncate">
             {currentDisplay.label}
           </span>
         )}
-        <span className="text-muted-foreground/50 text-[10px]">▾</span>
+        <span className="text-muted-foreground/50 text-[10px] shrink-0">▾</span>
       </button>
 
       {open && (
