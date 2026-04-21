@@ -61,55 +61,52 @@ describe("App integration", () => {
     }
   });
 
-  it("renders Save preset button", async () => {
-    renderApp();
-    await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: /save preset/i }),
-      ).toBeInTheDocument(),
-    );
-  });
-
-  it("opens save modal when Save preset is clicked", async () => {
+  it("renders preset Select dropdown with preset options", async () => {
     const user = userEvent.setup();
     renderApp();
-    await waitFor(() => screen.getByRole("button", { name: /save preset/i }));
-    await user.click(screen.getByRole("button", { name: /save preset/i }));
-    expect(screen.getByLabelText(/preset name/i)).toBeInTheDocument();
-  });
-
-  it("shows preset list in right sidebar and loads a preset", async () => {
-    const user = userEvent.setup();
-    renderApp();
-    // Preset sidebar is collapsed by default — expand it
-    await waitFor(() =>
-      screen.getByRole("button", { name: /expand presets/i }),
-    );
-    await user.click(screen.getByRole("button", { name: /expand presets/i }));
-    // Preset should now be visible
+    await waitFor(() => screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
     await waitFor(() =>
       expect(screen.getByText("saas_growth")).toBeInTheDocument(),
     );
+  });
+
+  it("renders SavePanel in the right sidebar", async () => {
+    renderApp();
+    await waitFor(() =>
+      expect(screen.getByLabelText(/name/i)).toBeInTheDocument(),
+    );
+  });
+
+  it("loads a preset when selected from dropdown", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await waitFor(() => screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
+    await waitFor(() => screen.getByText("saas_growth"));
     await user.click(screen.getByText("saas_growth"));
-    expect(screen.getByText("saas_growth")).toBeInTheDocument();
+    // Name in SavePanel should reflect the loaded preset
+    await waitFor(() => {
+      const input = screen.getByLabelText(/name/i) as HTMLInputElement;
+      expect(input.value).toBe("saas_growth");
+    });
   });
 
   it("shows discard dialog when switching preset with unsaved changes", async () => {
     const user = userEvent.setup();
     renderApp();
-    // Expand preset sidebar
-    await waitFor(() =>
-      screen.getByRole("button", { name: /expand presets/i }),
-    );
-    await user.click(screen.getByRole("button", { name: /expand presets/i }));
     // Load a preset first
+    await waitFor(() => screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox"));
     await waitFor(() => screen.getByText("saas_growth"));
     await user.click(screen.getByText("saas_growth"));
     // Change an axis to mark dirty
     await user.click(screen.getByRole("button", { name: "growth" }));
     await user.click(screen.getByRole("option", { name: /Hockey stick/i }));
-    // Now try to switch preset again
-    await user.click(screen.getAllByText("saas_growth").at(-1)!);
+    // Now try to switch to New blank
+    await user.click(screen.getByRole("combobox"));
+    await waitFor(() => screen.getAllByText("New blank"));
+    await user.click(screen.getAllByText("New blank")[0]);
     expect(screen.getByText(/discard unsaved changes/i)).toBeInTheDocument();
   });
 });

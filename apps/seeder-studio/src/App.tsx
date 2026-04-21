@@ -14,8 +14,7 @@ import { TopBar } from "./features/topbar/TopBar";
 import { AxisSidebar } from "./features/axes/AxisSidebar";
 import { AnomaliesPane } from "./features/anomalies/AnomaliesPane";
 import { PreviewGrid } from "./features/preview/PreviewGrid";
-import { SaveModal } from "./features/save/SaveModal";
-import { PresetSidebar } from "./features/presets/PresetSidebar";
+import { SavePanel } from "./features/save/SavePanel";
 import { usePresets } from "./features/presets/usePresets";
 import { useSeederStore, blankConfig } from "./stores/seederStore";
 import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
@@ -29,7 +28,6 @@ export default function App() {
   const [pendingIntent, setPendingIntent] = useState<
     { kind: "load"; name: string } | { kind: "blank" } | null
   >(null);
-  const [saveOpen, setSaveOpen] = useState(false);
 
   const yaml = useMemo(() => stringifyConfigYaml(config), [config]);
 
@@ -47,17 +45,11 @@ export default function App() {
     }
   };
 
-  const handleSelectPreset = (name: string) => {
-    const intent = { kind: "load" as const, name };
-    if (dirty) {
-      setPendingIntent(intent);
-      return;
-    }
-    confirmAndRun(intent);
-  };
-
-  const handleNewBlank = () => {
-    const intent = { kind: "blank" as const };
+  const handleSelectPreset = (name: string | null) => {
+    const intent =
+      name === null
+        ? { kind: "blank" as const }
+        : { kind: "load" as const, name };
     if (dirty) {
       setPendingIntent(intent);
       return;
@@ -106,7 +98,11 @@ export default function App() {
           <Skeleton className="h-5 w-40" />
         </div>
       ) : (
-        <TopBar onSave={() => setSaveOpen(true)} />
+        <TopBar
+          presets={presets}
+          selectedName={selectedName}
+          onSelectPreset={handleSelectPreset}
+        />
       )}
 
       {error && (
@@ -126,19 +122,8 @@ export default function App() {
           </div>
         </main>
 
-        <PresetSidebar
-          presets={presets}
-          selectedName={selectedName}
-          onSelect={handleSelectPreset}
-          onNewBlank={handleNewBlank}
-        />
+        <SavePanel yaml={yaml} />
       </div>
-
-      <SaveModal
-        open={saveOpen}
-        yaml={yaml}
-        onClose={() => setSaveOpen(false)}
-      />
 
       <Dialog
         open={pendingIntent !== null}
@@ -150,7 +135,7 @@ export default function App() {
             <DialogDescription>
               You&apos;ve made changes to{" "}
               <span className="font-mono">{config.name}</span>. Copy the YAML
-              from the save modal first if you want to keep them.
+              from the save panel first if you want to keep them.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

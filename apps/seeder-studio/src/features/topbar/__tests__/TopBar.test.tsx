@@ -4,6 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { TopBar } from "../TopBar";
 import { useSeederStore, blankConfig } from "@/stores/seederStore";
 
+const PRESETS = [
+  { name: "saas-growth", description: "SaaS growth scenario" },
+  { name: "e-commerce", description: "E-commerce scenario" },
+];
+
 beforeEach(() => {
   useSeederStore.setState({
     config: blankConfig(),
@@ -15,24 +20,32 @@ beforeEach(() => {
 
 describe("TopBar", () => {
   it("renders the app title", () => {
-    render(<TopBar onSave={vi.fn()} />);
+    render(
+      <TopBar presets={PRESETS} selectedName={null} onSelectPreset={vi.fn()} />,
+    );
     expect(screen.getByText("Seeder Studio")).toBeInTheDocument();
   });
 
   it("renders start and end date inputs", () => {
-    render(<TopBar onSave={vi.fn()} />);
+    render(
+      <TopBar presets={PRESETS} selectedName={null} onSelectPreset={vi.fn()} />,
+    );
     expect(screen.getByLabelText(/start date/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/end date/i)).toBeInTheDocument();
   });
 
   it("renders total users input", () => {
-    render(<TopBar onSave={vi.fn()} />);
+    render(
+      <TopBar presets={PRESETS} selectedName={null} onSelectPreset={vi.fn()} />,
+    );
     expect(screen.getByLabelText(/total users/i)).toBeInTheDocument();
   });
 
   it("updates uiStartDate in store when start date changes", async () => {
     const user = userEvent.setup();
-    render(<TopBar onSave={vi.fn()} />);
+    render(
+      <TopBar presets={PRESETS} selectedName={null} onSelectPreset={vi.fn()} />,
+    );
     const input = screen.getByLabelText(/start date/i);
     await user.clear(input);
     await user.type(input, "2024-01-01");
@@ -41,7 +54,9 @@ describe("TopBar", () => {
 
   it("computes window_days when both dates are set", async () => {
     const user = userEvent.setup();
-    render(<TopBar onSave={vi.fn()} />);
+    render(
+      <TopBar presets={PRESETS} selectedName={null} onSelectPreset={vi.fn()} />,
+    );
     const startInput = screen.getByLabelText(/start date/i);
     const endInput = screen.getByLabelText(/end date/i);
     await user.clear(startInput);
@@ -52,18 +67,63 @@ describe("TopBar", () => {
     expect(window_days).toBeGreaterThan(0);
   });
 
-  it("calls onSave when Save preset button is clicked", async () => {
-    const user = userEvent.setup();
-    const onSave = vi.fn();
-    render(<TopBar onSave={onSave} />);
-    await user.click(screen.getByRole("button", { name: /save preset/i }));
-    expect(onSave).toHaveBeenCalled();
-  });
-
   it("header element has h-14 class for correct height", () => {
-    const { container } = render(<TopBar onSave={vi.fn()} />);
+    const { container } = render(
+      <TopBar presets={PRESETS} selectedName={null} onSelectPreset={vi.fn()} />,
+    );
     const header = container.querySelector("header");
     expect(header).not.toBeNull();
     expect(header).toHaveClass("h-14");
+  });
+
+  it("renders 'New blank' option and preset names in Select", async () => {
+    const user = userEvent.setup();
+    render(
+      <TopBar presets={PRESETS} selectedName={null} onSelectPreset={vi.fn()} />,
+    );
+    // Open the select
+    await user.click(screen.getByRole("combobox"));
+    expect(screen.getAllByText("New blank").length).toBeGreaterThan(0);
+    expect(screen.getByText("saas-growth")).toBeInTheDocument();
+    expect(screen.getByText("e-commerce")).toBeInTheDocument();
+  });
+
+  it("calls onSelectPreset(null) when 'New blank' is selected", async () => {
+    const user = userEvent.setup();
+    const onSelectPreset = vi.fn();
+    render(
+      <TopBar
+        presets={PRESETS}
+        selectedName="saas-growth"
+        onSelectPreset={onSelectPreset}
+      />,
+    );
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByText("New blank"));
+    expect(onSelectPreset).toHaveBeenCalledWith(null);
+  });
+
+  it("calls onSelectPreset with preset name when a preset is selected", async () => {
+    const user = userEvent.setup();
+    const onSelectPreset = vi.fn();
+    render(
+      <TopBar
+        presets={PRESETS}
+        selectedName={null}
+        onSelectPreset={onSelectPreset}
+      />,
+    );
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByText("saas-growth"));
+    expect(onSelectPreset).toHaveBeenCalledWith("saas-growth");
+  });
+
+  it("Select is disabled and shows 'Loading…' placeholder when presets is empty", () => {
+    render(
+      <TopBar presets={[]} selectedName={null} onSelectPreset={vi.fn()} />,
+    );
+    const trigger = screen.getByRole("combobox");
+    expect(trigger).toBeDisabled();
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
   });
 });

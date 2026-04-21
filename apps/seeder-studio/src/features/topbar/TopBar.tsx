@@ -1,12 +1,22 @@
-import { Button, Badge } from "@stratif-io/web";
-import { Save, Users } from "lucide-react";
+import {
+  Badge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@stratif-io/web";
+import { Users } from "lucide-react";
 import { useSeederStore } from "@/stores/seederStore";
+import type { PresetEntry } from "@/lib/api/presets";
 
 interface Props {
-  onSave: () => void;
+  presets: PresetEntry[];
+  selectedName: string | null;
+  onSelectPreset: (name: string | null) => void;
 }
 
-export function TopBar({ onSave }: Props) {
+export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
   const dirty = useSeederStore((s) => s.dirty);
   const uiStartDate = useSeederStore((s) => s.uiStartDate);
   const uiEndDate = useSeederStore((s) => s.uiEndDate);
@@ -44,6 +54,28 @@ export function TopBar({ onSave }: Props) {
 
   return (
     <header className="flex items-center gap-3 border-b px-4 bg-background h-14 shrink-0">
+      <Select
+        value={presets.length === 0 ? undefined : (selectedName ?? "__blank__")}
+        onValueChange={(val) =>
+          onSelectPreset(val === "__blank__" ? null : val)
+        }
+        disabled={presets.length === 0}
+      >
+        <SelectTrigger className="w-40 h-8 text-xs">
+          <SelectValue
+            placeholder={presets.length === 0 ? "Loading…" : "Select preset…"}
+          />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__blank__">New blank</SelectItem>
+          {presets.map((p) => (
+            <SelectItem key={p.name} value={p.name}>
+              {p.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
       <span className="text-sm font-semibold tracking-tight">
         Seeder Studio
       </span>
@@ -101,18 +133,6 @@ export function TopBar({ onSave }: Props) {
       </div>
 
       <div className="flex-1" />
-
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="h-8 gap-1.5 text-xs"
-        onClick={onSave}
-        aria-label="save preset"
-      >
-        <Save size={13} aria-hidden="true" />
-        Save preset
-      </Button>
     </header>
   );
 }
