@@ -60,14 +60,20 @@ describe("runTwin", () => {
     expect(ratio(deep)).toBeGreaterThan(ratio(shallow) * 2);
   });
 
-  it("stronger virality yields more total arrivals", () => {
-    const weakSum = runTwin({
+  it("virality does not change total arrivals (normalized to total_users)", () => {
+    const weak = runTwin({
       config: { ...base, axes: { ...base.axes, virality: "weak" } },
-    }).newUsers.reduce((a, b) => a + b, 0);
-    const strongSum = runTwin({
+    });
+    const strong = runTwin({
       config: { ...base, axes: { ...base.axes, virality: "strong_viral" } },
-    }).newUsers.reduce((a, b) => a + b, 0);
-    expect(strongSum).toBeGreaterThan(weakSum);
+    });
+    // Both end at the same total (within rounding)
+    expect(weak.totalUsers.at(-1)).toBeCloseTo(strong.totalUsers.at(-1)!, 0);
+    // Strong viral is more back-loaded: larger share of arrivals in second half
+    const half = Math.floor(weak.days / 2);
+    const weakSecond = weak.newUsers.slice(half).reduce((a, b) => a + b, 0);
+    const strongSecond = strong.newUsers.slice(half).reduce((a, b) => a + b, 0);
+    expect(strongSecond).toBeGreaterThanOrEqual(weakSecond);
   });
 
   it("honors scale_config overrides", () => {

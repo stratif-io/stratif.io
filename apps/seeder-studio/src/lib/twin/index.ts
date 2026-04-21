@@ -33,11 +33,18 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     config.axes.anomalies ?? "moderate",
     seed,
   );
-  const arrivals = applyVirality(
+  const rawArrivals = applyVirality(
     jittered,
     config.axes.virality ?? "weak",
     config.axes.stickiness ?? "sticky",
   );
+  // Normalize so arrivals always sum to exactly total_users,
+  // keeping the shape (growth curve + virality) but matching the input count.
+  const rawSum = rawArrivals.reduce((a, b) => a + b, 0);
+  const arrivals =
+    rawSum > 0
+      ? rawArrivals.map((v) => (v * total_users) / rawSum)
+      : rawArrivals;
   const dau = dauFromArrivals(arrivals, config.axes.stickiness ?? "sticky");
 
   // MAU = unique users active at least once in the 28-day window.
