@@ -246,7 +246,6 @@ _FAKE_EVENT = (
 )
 
 
-
 def test_seed_uses_parquet_mode_when_staging_volume_set(
     seeder_with_volume, mock_connect
 ):
