@@ -3,6 +3,7 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -35,6 +36,10 @@ export function SaveModal({ open, yaml, onClose }: Props) {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Save preset</DialogTitle>
+          <DialogDescription className="sr-only">
+            Set a name and description for your preset, then copy the generated
+            YAML.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
