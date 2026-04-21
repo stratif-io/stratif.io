@@ -163,9 +163,10 @@ describe("runTwin", () => {
         ],
       },
     });
-    // Days 10–14 (inclusive) must have activeUsers=0 and events=0
+    // Days 10–14 (inclusive) must have all user/event metrics zeroed
     for (let t = 10; t <= 14; t++) {
       expect(out.activeUsers[t]).toBe(0);
+      expect(out.newUsers[t]).toBe(0);
       expect(out.events[t]).toBe(0);
       expect(out.stickiness[t]).toBeNull();
     }

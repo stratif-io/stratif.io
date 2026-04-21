@@ -88,6 +88,7 @@ export function runTwin({ config }: TwinInput): TwinOutput {
   if (totalOutageDays.size > 0) {
     for (const t of totalOutageDays) {
       metrics.activeUsers[t] = 0;
+      metrics.newUsers[t] = 0;
       metrics.events[t] = 0;
       metrics.stickiness[t] = null;
     }
