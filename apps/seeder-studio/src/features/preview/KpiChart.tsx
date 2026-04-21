@@ -7,7 +7,6 @@ import {
   YAxis,
   Tooltip,
   ReferenceArea,
-  ReferenceLine,
   CartesianGrid,
 } from "recharts";
 import { formatNum } from "@/lib/format";
@@ -25,7 +24,6 @@ interface Props {
   headline?: string;
   color?: string;
   bands?: KpiBand[];
-  guideIndex?: number | null;
   startDate?: Date;
   endDate?: Date;
 }
@@ -54,7 +52,6 @@ export function KpiChart({
   headline,
   color = "#2563eb",
   bands,
-  guideIndex,
   startDate,
   endDate,
 }: Props) {
@@ -90,6 +87,7 @@ export function KpiChart({
           <LineChart
             data={data}
             margin={{ top: 4, right: 4, left: 4, bottom: 4 }}
+            syncId="preview"
           >
             <CartesianGrid
               strokeDasharray="3 3"
@@ -150,16 +148,6 @@ export function KpiChart({
               dot={false}
               isAnimationActive={false}
             />
-            {guideIndex != null &&
-              guideIndex >= 0 &&
-              guideIndex < values.length && (
-                <ReferenceLine
-                  x={guideIndex}
-                  stroke="currentColor"
-                  strokeDasharray="2 2"
-                  opacity={0.6}
-                />
-              )}
           </LineChart>
         </ResponsiveContainer>
       </div>

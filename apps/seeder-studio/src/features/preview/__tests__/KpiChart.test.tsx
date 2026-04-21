@@ -33,10 +33,8 @@ describe("KpiChart bands + guide", () => {
     expect(container.querySelector(".h-32")).not.toBeNull();
   });
 
-  it("renders without crashing when guide index is provided", () => {
-    const { container } = render(
-      <KpiChart title="X" values={[0, 1, 2, 3]} guideIndex={2} />,
-    );
+  it("renders without crashing (no guideIndex prop)", () => {
+    const { container } = render(<KpiChart title="X" values={[0, 1, 2, 3]} />);
     expect(container.querySelector(".h-32")).not.toBeNull();
   });
 });

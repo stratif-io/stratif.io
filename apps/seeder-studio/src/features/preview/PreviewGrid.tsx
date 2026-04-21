@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import {
   Tooltip,
   TooltipProvider,
@@ -11,7 +11,6 @@ import { useSeederStore } from "@/stores/seederStore";
 import { anomalyTypeColor } from "@/lib/twin";
 import { parseDays, resolveScale } from "@/lib/twin/utils";
 import { resolveDateRange } from "@/lib/time/dateRange";
-import { useHoverGuide } from "./useHoverGuide";
 import type { SimulationConfig } from "@/types/simulation";
 import { headlineStat } from "./headlineStat";
 
@@ -36,11 +35,6 @@ export function PreviewGrid() {
     () => resolveDateRange(uiStartDate, uiEndDate, window_days),
     [uiStartDate, uiEndDate, window_days],
   );
-  const guideIndex = useHoverGuide((s) => s.index);
-  const setIndex = useHoverGuide((s) => s.setIndex);
-  const clearIndex = useHoverGuide((s) => s.clear);
-  const gridRef = useRef<HTMLDivElement>(null);
-
   const bands: KpiBand[] = useMemo(
     () =>
       anomalies.flatMap((a) => {
@@ -71,13 +65,6 @@ export function PreviewGrid() {
     }),
     [out],
   );
-
-  const handleMove = (e: React.PointerEvent) => {
-    const rect = gridRef.current?.getBoundingClientRect();
-    if (!rect || out.days <= 0) return;
-    const rel = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    setIndex(Math.floor(rel * (out.days - 1)));
-  };
 
   return (
     <section
@@ -118,10 +105,7 @@ export function PreviewGrid() {
         </div>
       ) : (
         <div
-          ref={gridRef}
           data-testid="preview-grid-canvas"
-          onPointerMove={handleMove}
-          onPointerLeave={clearIndex}
           className="grid grid-cols-2 gap-4 lg:flex-1 lg:min-h-0 lg:overflow-y-auto"
         >
           <KpiChart
@@ -130,7 +114,6 @@ export function PreviewGrid() {
             headline={stats.events}
             color="hsl(var(--chart-6))"
             bands={bands}
-            guideIndex={guideIndex}
             startDate={chartStart}
             endDate={chartEnd}
           />
@@ -140,7 +123,6 @@ export function PreviewGrid() {
             headline={stats.active}
             color="hsl(var(--chart-8))"
             bands={bands}
-            guideIndex={guideIndex}
             startDate={chartStart}
             endDate={chartEnd}
           />
@@ -150,7 +132,6 @@ export function PreviewGrid() {
             headline={stats.news}
             color="hsl(var(--chart-3))"
             bands={bands}
-            guideIndex={guideIndex}
             startDate={chartStart}
             endDate={chartEnd}
           />
@@ -160,7 +141,6 @@ export function PreviewGrid() {
             headline={stats.stickiness}
             color="hsl(var(--chart-7))"
             bands={bands}
-            guideIndex={guideIndex}
             startDate={chartStart}
             endDate={chartEnd}
           />
