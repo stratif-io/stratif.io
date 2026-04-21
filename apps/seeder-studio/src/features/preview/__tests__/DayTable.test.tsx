@@ -8,6 +8,8 @@ const mkOut = (n: number) => ({
   activeUsers: Array.from({ length: n }, (_, i) => (i + 1) * 50),
   newUsers: Array.from({ length: n }, (_, i) => (i + 1) * 10),
   totalUsers: Array.from({ length: n }, (_, i) => (i + 1) * 10),
+  churnedUsers: Array.from({ length: n }, (_, i) => (i + 1) * 100),
+  reactivatedUsers: Array.from({ length: n }, (_, i) => (i + 1) * 5),
   stickiness: Array.from({ length: n }, () => 0.5),
 });
 
@@ -43,5 +45,16 @@ describe("DayTable", () => {
     render(<DayTable out={mkOut(5)} />);
     // day 1 events = 100
     expect(screen.getByTestId("cell-events-0")).toHaveTextContent("100");
+  });
+
+  it("renders Churned and Reactivated column headers", () => {
+    render(<DayTable out={mkOut(5)} />);
+    expect(screen.getByText(/churned/i)).toBeInTheDocument();
+    expect(screen.getByText(/reactivated/i)).toBeInTheDocument();
+  });
+
+  it("renders churned value for day 1", () => {
+    render(<DayTable out={mkOut(5)} />);
+    expect(screen.getByTestId("cell-churned-1")).toBeInTheDocument();
   });
 });
