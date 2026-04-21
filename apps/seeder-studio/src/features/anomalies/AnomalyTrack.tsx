@@ -37,7 +37,7 @@ export function AnomalyTrack({ onEdit }: Props) {
       <svg
         viewBox={`0 0 300 ${TRACK_HEIGHT}`}
         preserveAspectRatio="none"
-        className="w-full"
+        className="flex-1 min-w-0"
         style={{ height: TRACK_HEIGHT }}
       >
         <rect
