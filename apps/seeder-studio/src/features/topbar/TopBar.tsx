@@ -98,11 +98,10 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
         </label>
         <input
           id="start-date"
-          type="text"
-          placeholder="YYYY-MM-DD"
+          type="date"
           value={uiStartDate ?? ""}
           onChange={(e) => handleStartDate(e.target.value)}
-          className="h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground w-28"
+          className="h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground w-32"
         />
         <span className="text-muted-foreground text-xs">→</span>
         <label htmlFor="end-date" className="sr-only">
@@ -110,11 +109,10 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
         </label>
         <input
           id="end-date"
-          type="text"
-          placeholder="YYYY-MM-DD"
+          type="date"
           value={uiEndDate ?? ""}
           onChange={(e) => handleEndDate(e.target.value)}
-          className="h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground w-28"
+          className="h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground w-32"
         />
       </div>
 
