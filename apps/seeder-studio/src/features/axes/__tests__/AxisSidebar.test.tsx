@@ -52,13 +52,14 @@ describe("AxisSidebar", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("clicking an anomaly add button adds an anomaly to the store", async () => {
+  it("clicking an anomaly add button adds an anomaly and opens its config", async () => {
     const user = userEvent.setup();
     render(<AxisSidebar />);
     await user.click(screen.getAllByRole("button", { name: /^\+ /i })[0]);
     expect(
       (useSeederStore.getState().config.anomalies ?? []).length,
     ).toBeGreaterThan(0);
+    expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
   });
 
   it("renders collapsed when defaultOpen is false, hiding axis content", () => {

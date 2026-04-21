@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import type { SimulationAnomaly } from "@/types/simulation";
-
-const EMPTY_ANOMALIES: SimulationAnomaly[] = [];
 import { ChevronRight } from "lucide-react";
 import { AXIS_DISPLAY, STRIP_AXIS_IDS } from "./axisDisplaySpec";
 import { AxisAccordion } from "./AxisAccordion";
+import { AnomalySidebarItem } from "@/features/anomalies/AnomalySidebarItem";
 import { useSeederStore } from "@/stores/seederStore";
 import { AXIS_SPEC, ANOMALY_SPEC, defaultAnomaly } from "@/lib/twin";
 import { resolveScale } from "@/lib/twin/utils";
+
+const EMPTY_ANOMALIES: SimulationAnomaly[] = [];
 
 interface Props {
   defaultOpen?: boolean;
@@ -16,6 +17,7 @@ interface Props {
 export function AxisSidebar({ defaultOpen = true }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(defaultOpen);
   const [openAxes, setOpenAxes] = useState<Set<string>>(new Set());
+  const [openAnomalies, setOpenAnomalies] = useState<Set<number>>(new Set());
   const axes = useSeederStore((s) => s.config.axes);
   const setAxis = useSeederStore((s) => s.setAxis);
   const anomalies = useSeederStore(
@@ -33,7 +35,27 @@ export function AxisSidebar({ defaultOpen = true }: Props) {
     const duration = Math.max(5, Math.floor(window_days * 0.1));
     const maxStart = Math.max(0, window_days - duration - 1);
     const start = Math.floor(Math.random() * maxStart);
-    setAnomalies([...anomalies, defaultAnomaly(type, start, duration)]);
+    const next = [...anomalies, defaultAnomaly(type, start, duration)];
+    setAnomalies(next);
+    setOpenAnomalies((prev) => new Set([...prev, next.length - 1]));
+  };
+
+  const updateAnomaly = (idx: number, next: SimulationAnomaly) => {
+    const copy = anomalies.slice();
+    copy[idx] = next;
+    setAnomalies(copy);
+  };
+
+  const deleteAnomaly = (idx: number) => {
+    setAnomalies(anomalies.filter((_, i) => i !== idx));
+    setOpenAnomalies((prev) => {
+      const next = new Set<number>();
+      for (const i of prev) {
+        if (i < idx) next.add(i);
+        else if (i > idx) next.add(i - 1);
+      }
+      return next;
+    });
   };
 
   const allExpanded = openAxes.size === STRIP_AXIS_IDS.length;
@@ -93,21 +115,41 @@ export function AxisSidebar({ defaultOpen = true }: Props) {
                 />
               );
             })}
+
             <div className="mt-2 pt-2 border-t border-border/50">
               <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-2 block mb-1">
                 Anomalies
               </span>
               <div className="flex flex-col gap-0.5">
-                {Object.values(ANOMALY_SPEC).map((spec) => (
-                  <button
-                    key={spec.type}
-                    type="button"
-                    onClick={() => addAnomaly(spec.type)}
-                    className="text-[10px] px-2 py-1 rounded-md text-left text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                  >
-                    + {spec.label}
-                  </button>
+                {anomalies.map((a, i) => (
+                  <AnomalySidebarItem
+                    key={i}
+                    anomaly={a}
+                    open={openAnomalies.has(i)}
+                    onOpenChange={(o) =>
+                      setOpenAnomalies((prev) => {
+                        const next = new Set(prev);
+                        if (o) next.add(i);
+                        else next.delete(i);
+                        return next;
+                      })
+                    }
+                    onChange={(next) => updateAnomaly(i, next)}
+                    onDelete={() => deleteAnomaly(i)}
+                  />
                 ))}
+                <div className="flex flex-col gap-0.5 mt-1">
+                  {Object.values(ANOMALY_SPEC).map((spec) => (
+                    <button
+                      key={spec.type}
+                      type="button"
+                      onClick={() => addAnomaly(spec.type)}
+                      className="text-[10px] px-2 py-1 rounded-md text-left text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                    >
+                      + {spec.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
