@@ -91,10 +91,25 @@ export function runTwin({ config }: TwinInput): TwinOutput {
   // Events must come from whole-number activeUsers to stay consistent.
   const events = activeUsers.map((v) => Math.floor(v * depth));
 
-  const stickiness = dau.map((d, t) => {
-    const m = Math.max(1, mau[t]);
-    return Math.min(1, Math.max(0, d / m));
-  });
+  const target =
+    (getAxisValue("stickiness", config.axes.stickiness ?? "sticky")?.params
+      .dau_mau_target as number | undefined) ?? 0.3;
+
+  const rawStickiness = dau.map((d, t) =>
+    Math.min(1, Math.max(0, d / Math.max(1, mau[t]))),
+  );
+
+  // Scale so post-warmup average converges toward the axis dau_mau_target.
+  const postWarmup = rawStickiness.slice(MAU_WINDOW);
+  const postAvg =
+    postWarmup.length > 0
+      ? postWarmup.reduce((a, b) => a + b, 0) / postWarmup.length
+      : 0;
+  const scaleFactor = postAvg > 0 ? target / postAvg : 1;
+
+  const stickiness = rawStickiness.map((v) =>
+    Math.min(1, Math.max(0, v * scaleFactor)),
+  );
 
   return {
     days,

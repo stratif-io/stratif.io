@@ -34,14 +34,26 @@ describe("runTwin", () => {
     expect(out.stickiness.every((s) => s >= 0 && s <= 1)).toBe(true);
   });
 
-  it("churny stickiness axis produces meaningfully lower stickiness than sticky", () => {
-    const sticky = runTwin({ config: base });
+  it("stickiness converges toward dau_mau_target for each axis value", () => {
+    const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+    const postWarmup = (arr: number[]) => arr.slice(28);
+
     const churny = runTwin({
       config: { ...base, axes: { ...base.axes, stickiness: "churny" } },
     });
-    const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
-    // sticky DAU/MAU should be meaningfully higher than churny DAU/MAU
-    expect(avg(sticky.stickiness)).toBeGreaterThan(avg(churny.stickiness));
+    const sticky = runTwin({ config: base });
+    const addictive = runTwin({
+      config: { ...base, axes: { ...base.axes, stickiness: "addictive" } },
+    });
+
+    // Post-warmup averages should be in the right ballpark (within 30% of target)
+    expect(avg(postWarmup(churny.stickiness))).toBeCloseTo(0.12, 1);
+    expect(avg(postWarmup(sticky.stickiness))).toBeCloseTo(0.3, 1);
+    expect(avg(postWarmup(addictive.stickiness))).toBeCloseTo(0.55, 1);
+
+    // Ordering must hold
+    expect(avg(churny.stickiness)).toBeLessThan(avg(sticky.stickiness));
+    expect(avg(sticky.stickiness)).toBeLessThan(avg(addictive.stickiness));
   });
 
   it("deeper engagement yields more events per DAU", () => {
