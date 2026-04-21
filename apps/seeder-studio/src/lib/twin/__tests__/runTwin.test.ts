@@ -33,6 +33,16 @@ describe("runTwin", () => {
     expect(out.stickiness.every((s) => s >= 0 && s <= 1)).toBe(true);
   });
 
+  it("churny stickiness axis produces meaningfully lower stickiness than sticky", () => {
+    const sticky = runTwin({ config: base });
+    const churny = runTwin({
+      config: { ...base, axes: { ...base.axes, stickiness: "churny" } },
+    });
+    const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+    // sticky DAU/MAU should be meaningfully higher than churny DAU/MAU
+    expect(avg(sticky.stickiness)).toBeGreaterThan(avg(churny.stickiness));
+  });
+
   it("deeper engagement yields more events per DAU", () => {
     const shallow = runTwin({
       config: { ...base, axes: { ...base.axes, engagement_depth: "shallow" } },

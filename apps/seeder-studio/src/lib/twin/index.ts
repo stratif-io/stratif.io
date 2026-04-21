@@ -41,12 +41,12 @@ export function runTwin({ config }: TwinInput): TwinOutput {
   const dau = dauFromArrivals(arrivals, config.axes.stickiness ?? "sticky");
 
   const mau = new Array(days).fill(0);
-  const window = 28;
+  const MAU_WINDOW = 28;
   for (let t = 0; t < days; t++) {
-    const lo = Math.max(0, t - window + 1);
+    const lo = Math.max(0, t - MAU_WINDOW + 1);
     let sum = 0;
     for (let k = lo; k <= t; k++) sum += dau[k];
-    mau[t] = sum / (t - lo + 1);
+    mau[t] = sum;
   }
 
   const depth =
