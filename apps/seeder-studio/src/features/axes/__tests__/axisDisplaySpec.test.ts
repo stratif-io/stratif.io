@@ -29,6 +29,15 @@ describe("AXIS_DISPLAY", () => {
     }
   });
 
+  it("every AXIS_SPEC value for strip axes has a display entry", () => {
+    for (const id of STRIP_AXIS_IDS) {
+      const displayValues = AXIS_DISPLAY[id].values.map((v) => v.value);
+      for (const sv of AXIS_SPEC[id].values) {
+        expect(displayValues).toContain(sv.value);
+      }
+    }
+  });
+
   it("no display label contains raw code values (jargon check)", () => {
     const jargon = [
       "churny",
