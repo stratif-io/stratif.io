@@ -749,6 +749,29 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
             <div className="px-7 py-6 flex flex-col gap-5">
               <SectionLabel step={2} label="The formula" />
 
+              {/* Circular-dependency callout for newUsers / activeUsers */}
+              {(metricKey === "newUsers" || metricKey === "activeUsers") && (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 flex gap-3">
+                  <span className="text-amber-500/80 text-sm leading-none mt-0.5 shrink-0">
+                    ⚠
+                  </span>
+                  <div className="text-[11px] text-muted-foreground leading-relaxed">
+                    <span className="font-semibold text-foreground/80">
+                      Why does N(t) use DAU, and DAU use N(t)?
+                    </span>{" "}
+                    There is no circularity — only a one-day lag. Each day is
+                    computed in two steps:{" "}
+                    <span className="font-mono text-foreground/70">①</span> N(t)
+                    is drawn using <em>yesterday&apos;s</em> DAU(t−1) for viral
+                    amplification.{" "}
+                    <span className="font-mono text-foreground/70">②</span>{" "}
+                    DAU(t) is then updated with today&apos;s N(t).
+                    Yesterday&apos;s value feeds today&apos;s arrival;
+                    today&apos;s arrival feeds today&apos;s headcount.
+                  </div>
+                </div>
+              )}
+
               {pipeline ? (
                 <PipelineFormula
                   ghostLines={ghostLines}
