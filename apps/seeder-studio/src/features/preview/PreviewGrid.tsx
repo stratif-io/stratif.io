@@ -385,17 +385,16 @@ export function PreviewGrid() {
               />
             </div>
           </div>
-        </div>
-      )}
-      {!allZero && (
-        <div className="border-t pt-2 flex flex-col gap-4">
-          <div>
-            <h3 className="text-xs uppercase text-muted-foreground font-semibold mb-1">
-              First days
-            </h3>
-            <DayTable out={out} />
+
+          <div className="border-t pt-2 flex flex-col gap-4">
+            <div>
+              <h3 className="text-xs uppercase text-muted-foreground font-semibold mb-1">
+                First days
+              </h3>
+              <DayTable out={out} />
+            </div>
+            <SimMathPanel entries={simMathEntries} />
           </div>
-          <SimMathPanel entries={simMathEntries} />
         </div>
       )}
       {selected !== null && anomalies[selected.idx] && (
