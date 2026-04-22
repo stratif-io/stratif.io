@@ -7,7 +7,7 @@ import { headlineStat } from "@/features/preview/headlineStat";
 import { formatNum } from "@/lib/format";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 import { KpiCard } from "./KpiCard";
-import { KpiCardExpanded, toBands } from "./KpiCardExpanded";
+import { KpiCardExpanded } from "./KpiCardExpanded";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
 
 const EMPTY_ANOMALIES: NonNullable<SimulationConfig["anomalies"]> = [];
@@ -76,10 +76,6 @@ export function KpiGrid() {
   );
   const setAnomalies = useSeederStore((s) => s.setAnomalies);
   const { windowDays } = useMemo(() => resolveSimParams(config), [config]);
-  const bands = useMemo(
-    () => toBands(config.anomalies, windowDays),
-    [config.anomalies, windowDays],
-  );
 
   // Close floating editor on outside click (composedPath handles portals)
   useEffect(() => {
@@ -145,8 +141,12 @@ export function KpiGrid() {
                 headline={headlineFor(card.key)}
                 color={card.color}
                 valueSuffix={card.valueSuffix}
-                bands={bands}
-                onBandClick={handleBandClick}
+                anomalies={anomalies}
+                windowDays={windowDays}
+                onAnomalyChange={(i, next) =>
+                  setAnomalies(anomalies.map((a, j) => (j === i ? next : a)))
+                }
+                onAnomalySelect={handleBandClick}
                 expanded={expandedKey === card.key}
                 onExpand={() =>
                   setExpandedKey((p) => (p === card.key ? null : card.key))

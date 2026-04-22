@@ -1,6 +1,8 @@
-import { useMemo } from "react";
-import { LineChart, Line, ReferenceArea, ResponsiveContainer } from "recharts";
+import { useMemo, useRef, useState, useEffect } from "react";
+import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/cn";
+import type { SimulationAnomaly } from "@/types/simulation";
+import { AnomalyChartOverlay } from "@/features/anomalies/AnomalyChartOverlay";
 
 export interface Band {
   start: number;
@@ -9,6 +11,8 @@ export interface Band {
   index: number;
 }
 
+const CM = { top: 2, right: 2, left: 2, bottom: 2 } as const;
+
 interface Props {
   title: string;
   values: (number | null)[];
@@ -16,8 +20,10 @@ interface Props {
   color: string;
   expanded: boolean;
   onExpand: () => void;
-  bands?: Band[];
-  onBandClick?: (index: number, x: number, y: number) => void;
+  anomalies?: SimulationAnomaly[];
+  windowDays?: number;
+  onAnomalyChange?: (index: number, next: SimulationAnomaly) => void;
+  onAnomalySelect?: (index: number, x: number, y: number) => void;
   valueSuffix?: string;
   className?: string;
 }
@@ -29,8 +35,10 @@ export function KpiCard({
   color,
   expanded,
   onExpand,
-  bands,
-  onBandClick,
+  anomalies,
+  windowDays,
+  onAnomalyChange,
+  onAnomalySelect,
   valueSuffix: _valueSuffix,
   className,
 }: Props) {
@@ -38,6 +46,34 @@ export function KpiCard({
     () => values.map((v, i) => ({ i, v: v === null ? undefined : v })),
     [values],
   );
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setContainerSize({ w: width, h: height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const showOverlay =
+    !!anomalies?.length &&
+    !!windowDays &&
+    !!onAnomalyChange &&
+    containerSize.w > 0 &&
+    containerSize.h > 0;
+
+  const overlayOffset = {
+    left: CM.left,
+    top: CM.top,
+    width: containerSize.w - CM.left - CM.right,
+    height: containerSize.h - CM.top - CM.bottom,
+  };
 
   return (
     <button
@@ -61,43 +97,9 @@ export function KpiCard({
       <span className="text-[11px] text-muted-foreground font-mono">
         {headline}
       </span>
-      <div className="h-16 w-full mt-1">
+      <div ref={containerRef} className="h-16 w-full mt-1 relative">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            margin={{ top: 2, right: 2, left: 2, bottom: 2 }}
-          >
-            {bands?.map((b) => (
-              <ReferenceArea
-                key={`${b.start}-${b.end}`}
-                x1={b.start}
-                x2={b.end}
-                dataKey="i"
-                fill={b.color}
-                fillOpacity={0.25}
-                stroke={b.color}
-                strokeOpacity={0.5}
-                strokeWidth={1}
-                onClick={
-                  onBandClick
-                    ? (_, e) => {
-                        e?.stopPropagation();
-                        const rect = (
-                          e?.currentTarget as HTMLElement | undefined
-                        )
-                          ?.closest("svg")
-                          ?.getBoundingClientRect();
-                        onBandClick(
-                          b.index,
-                          (e as MouseEvent).clientX,
-                          rect ? rect.top : (e as MouseEvent).clientY,
-                        );
-                      }
-                    : undefined
-                }
-                style={onBandClick ? { cursor: "pointer" } : undefined}
-              />
-            ))}
+          <LineChart data={data} margin={CM}>
             <Line
               type="monotone"
               dataKey="v"
@@ -108,6 +110,29 @@ export function KpiCard({
             />
           </LineChart>
         </ResponsiveContainer>
+
+        {showOverlay && (
+          <svg
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              pointerEvents: "none",
+            }}
+            width={containerSize.w}
+            height={containerSize.h}
+          >
+            <g style={{ pointerEvents: "all" }}>
+              <AnomalyChartOverlay
+                offset={overlayOffset}
+                anomalies={anomalies!}
+                windowDays={windowDays!}
+                onAnomalyChange={onAnomalyChange!}
+                onSelect={onAnomalySelect}
+              />
+            </g>
+          </svg>
+        )}
       </div>
     </button>
   );
