@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/cn";
 
@@ -22,11 +23,13 @@ export function KpiCard({
   _valueSuffix,
   className,
 }: Props) {
-  const data = values.map((v, i) => ({ i, v: v === null ? undefined : v }));
+  const data = useMemo(
+    () => values.map((v, i) => ({ i, v: v === null ? undefined : v })),
+    [values],
+  );
 
   return (
     <button
-      role="button"
       aria-label={title}
       aria-expanded={expanded}
       onClick={onExpand}
@@ -40,7 +43,7 @@ export function KpiCard({
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-foreground">{title}</span>
-        <span className="text-[10px] text-muted-foreground">
+        <span aria-hidden="true" className="text-[10px] text-muted-foreground">
           {expanded ? "▲" : "▼"}
         </span>
       </div>
