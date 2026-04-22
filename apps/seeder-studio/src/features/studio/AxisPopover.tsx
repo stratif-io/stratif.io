@@ -1,4 +1,5 @@
 import type { AxisDisplay } from "@/features/axes/axisDisplaySpec";
+import { cn } from "@/lib/cn";
 
 interface Props {
   axis: AxisDisplay;
@@ -16,26 +17,28 @@ export function AxisPopover({ axis, currentValue, onSelect }: Props) {
         <button
           key={v.value}
           onClick={() => onSelect(v.value)}
-          className={`flex items-center gap-3 px-2 py-1.5 rounded-md text-left transition-colors w-full ${
+          className={cn(
+            "flex items-center gap-3 px-2 py-1.5 rounded-md text-left transition-colors w-full",
             v.value === currentValue
               ? "bg-primary/10 text-primary"
-              : "hover:bg-muted text-foreground"
-          }`}
+              : "hover:bg-muted text-foreground",
+          )}
         >
           <svg
             viewBox="0 0 52 28"
             width={40}
             height={16}
             aria-hidden="true"
-            className="shrink-0"
+            className={cn(
+              "shrink-0",
+              v.value === currentValue
+                ? "text-primary"
+                : "text-muted-foreground",
+            )}
           >
             <polyline
               points={v.sparkPoints}
-              stroke={
-                v.value === currentValue
-                  ? "hsl(var(--primary))"
-                  : "currentColor"
-              }
+              stroke="currentColor"
               strokeWidth={1.5}
               fill="none"
             />
