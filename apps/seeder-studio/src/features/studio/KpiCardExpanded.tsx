@@ -10,6 +10,9 @@ import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveSimParams } from "@/lib/twin";
 import { formatNum } from "@/lib/format";
+import { Popover, PopoverTrigger, PopoverContent } from "@stratif-io/web";
+import { AXIS_DISPLAY } from "@/features/axes/axisDisplaySpec";
+import { AxisPopover } from "@/features/studio/AxisPopover";
 
 const N_DAYS = 7;
 const fn = (v: number) => formatNum(Math.round(v));
@@ -236,6 +239,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   const out = useTwinOutput();
   const config = useSeederStore((s) => s.config);
   const setAnomalies = useSeederStore((s) => s.setAnomalies);
+  const setAxis = useSeederStore((s) => s.setAxis);
   const {
     depth,
     retentionParams: rp,
@@ -447,6 +451,8 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                   onHover={setHoveredLineKey}
                   onClick={handleFormulaClick}
                   latexOverrides={{ g_growth: growthLatex }}
+                  axes={config.axes ?? {}}
+                  onAxisChange={setAxis}
                 />
               ) : (
                 <>
@@ -601,6 +607,13 @@ function SectionLabel({ step, label }: { step: number; label: string }) {
   );
 }
 
+/** Maps a pipeline step's lineKey to the axis it controls */
+const STEP_AXIS_MAP: Record<string, string> = {
+  g_growth: "growth",
+  g_jitter: "anomalies",
+  g_viral: "virality",
+};
+
 interface PipelineStep {
   lineKey: string;
   label: string;
@@ -650,6 +663,8 @@ function PipelineFormula({
   onHover,
   onClick,
   latexOverrides = {},
+  axes = {},
+  onAxisChange,
 }: {
   ghostLines: GhostLine[];
   mainColor: string;
@@ -658,6 +673,8 @@ function PipelineFormula({
   onHover: (key: string | null) => void;
   onClick: (key: string) => void;
   latexOverrides?: Record<string, string>;
+  axes?: Record<string, string>;
+  onAxisChange?: (axisId: string, value: string) => void;
 }) {
   const colorMap: Record<string, string> = { __main__: mainColor };
   for (const g of ghostLines) colorMap[g.key] = g.color;
@@ -715,7 +732,7 @@ function PipelineFormula({
                 )}
               </div>
 
-              {/* Formula + label */}
+              {/* Formula + label + axis chip */}
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-medium text-muted-foreground/60 mb-1 uppercase tracking-wide">
                   {step.label}
@@ -723,6 +740,49 @@ function PipelineFormula({
                 <div className="overflow-x-auto">
                   <MathFormula latex={latex} />
                 </div>
+                {STEP_AXIS_MAP[step.lineKey] &&
+                  onAxisChange &&
+                  (() => {
+                    const axisId = STEP_AXIS_MAP[step.lineKey];
+                    const axisDisplay = AXIS_DISPLAY[axisId];
+                    if (!axisDisplay) return null;
+                    const currentVal =
+                      axes[axisId] ?? axisDisplay.values[0]?.value ?? "";
+                    const currentLabel =
+                      axisDisplay.values.find((v) => v.value === currentVal)
+                        ?.label ?? currentVal;
+                    return (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseEnter={(e) => e.stopPropagation()}
+                            className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-border/60 bg-muted/40 hover:bg-muted transition-colors text-[10px] text-muted-foreground hover:text-foreground"
+                          >
+                            <span
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ backgroundColor: stepColor }}
+                            />
+                            {currentLabel}
+                            <span className="opacity-50">▾</span>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          side="bottom"
+                          align="start"
+                          className="w-64 p-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <AxisPopover
+                            axis={axisDisplay}
+                            currentValue={currentVal}
+                            onSelect={(v) => onAxisChange(axisId, v)}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  })()}
               </div>
             </button>
           </div>
