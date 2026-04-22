@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -125,6 +125,11 @@ export function KpiChart({
     if (values.length === 0) return [];
     return [0, Math.floor((values.length - 1) / 2), values.length - 1];
   }, [values.length]);
+
+  const [focusedKey, setFocusedKey] = useState<string | null>(null);
+  const toggleFocus = useCallback((key: string) => {
+    setFocusedKey((prev) => (prev === key ? null : key));
+  }, []);
 
   // Track chart container pixel size for the overlay.
   const containerRef = useRef<HTMLDivElement>(null);
@@ -289,26 +294,35 @@ export function KpiChart({
                 return [`${formatNum(v)}${valueSuffix}`, title];
               }}
             />
-            {ghostLines?.map((g) => (
-              <Line
-                key={g.key}
-                type="monotone"
-                dataKey={g.key}
-                stroke={g.color}
-                strokeWidth={1}
-                strokeDasharray="4 3"
-                strokeOpacity={0.45}
-                dot={false}
-                isAnimationActive={false}
-                legendType="none"
-                name={g.label}
-              />
-            ))}
+            {ghostLines?.map((g) => {
+              const isFocused = focusedKey === g.key;
+              const isDimmed = focusedKey !== null && !isFocused;
+              return (
+                <Line
+                  key={g.key}
+                  type="monotone"
+                  dataKey={g.key}
+                  stroke={g.color}
+                  strokeWidth={isFocused ? 2 : 1}
+                  strokeDasharray={isFocused ? "none" : "4 3"}
+                  strokeOpacity={isDimmed ? 0.12 : isFocused ? 0.9 : 0.45}
+                  dot={false}
+                  isAnimationActive={false}
+                  legendType="none"
+                  name={g.label}
+                />
+              );
+            })}
             <Line
               type="monotone"
               dataKey="value"
               stroke={color}
-              strokeWidth={1.5}
+              strokeWidth={
+                focusedKey !== null && focusedKey !== "__main__" ? 1 : 1.5
+              }
+              strokeOpacity={
+                focusedKey !== null && focusedKey !== "__main__" ? 0.25 : 1
+              }
               dot={false}
               isAnimationActive={false}
             />
@@ -342,7 +356,11 @@ export function KpiChart({
 
       {ghostLines && ghostLines.length > 0 && (
         <div className="flex flex-wrap gap-x-3 gap-y-1">
-          <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => toggleFocus("__main__")}
+            className={`flex items-center gap-1 transition-opacity ${focusedKey !== null && focusedKey !== "__main__" ? "opacity-30" : "opacity-100"}`}
+          >
             <span
               className="inline-block w-3 h-0.5 rounded"
               style={{ backgroundColor: color }}
@@ -350,26 +368,38 @@ export function KpiChart({
             <span className="text-[10px] text-muted-foreground">
               {title || "value"}
             </span>
-          </div>
-          {ghostLines.map((g) => (
-            <div key={g.key} className="flex items-center gap-1">
-              <svg width="12" height="5" aria-hidden>
-                <line
-                  x1="0"
-                  y1="2.5"
-                  x2="12"
-                  y2="2.5"
-                  stroke={g.color}
-                  strokeWidth="1.5"
-                  strokeDasharray="3 2"
-                  strokeOpacity="0.7"
-                />
-              </svg>
-              <span className="text-[10px] text-muted-foreground/70">
-                {g.label}
-              </span>
-            </div>
-          ))}
+          </button>
+          {ghostLines.map((g) => {
+            const isFocused = focusedKey === g.key;
+            const isDimmed =
+              focusedKey !== null && !isFocused && focusedKey !== "__main__";
+            return (
+              <button
+                key={g.key}
+                type="button"
+                onClick={() => toggleFocus(g.key)}
+                className={`flex items-center gap-1 transition-opacity ${isDimmed ? "opacity-30" : "opacity-100"}`}
+              >
+                <svg width="12" height="5" aria-hidden>
+                  <line
+                    x1="0"
+                    y1="2.5"
+                    x2="12"
+                    y2="2.5"
+                    stroke={g.color}
+                    strokeWidth={isFocused ? "2" : "1.5"}
+                    strokeDasharray={isFocused ? "none" : "3 2"}
+                    strokeOpacity="0.9"
+                  />
+                </svg>
+                <span
+                  className={`text-[10px] ${isFocused ? "text-foreground font-medium" : "text-muted-foreground/70"}`}
+                >
+                  {g.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
