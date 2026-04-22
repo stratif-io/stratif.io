@@ -40,6 +40,18 @@ if (!window.matchMedia) {
   });
 }
 
+// jsdom's getComputedStyle crashes on CSS custom properties (variables) when
+// dom-accessibility-api calls it during getByRole name computation. Patch it
+// to return an empty CSSStyleDeclaration rather than throw.
+const _origGetComputedStyle = window.getComputedStyle.bind(window);
+window.getComputedStyle = (elt: Element, pseudoElt?: string | null) => {
+  try {
+    return _origGetComputedStyle(elt, pseudoElt);
+  } catch {
+    return new CSSStyleDeclaration();
+  }
+};
+
 // Navigator clipboard API for copy tests - set up as configurable
 // for use by userEvent and test code
 Object.defineProperty(navigator, "clipboard", {

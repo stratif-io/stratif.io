@@ -235,6 +235,295 @@ function ghostLinesFor(
   }
 }
 
+// ── Pipeline config types ───────────────────────────────────────────────────
+
+interface PipelineStep {
+  lineKey: string;
+  label: string;
+  latex: string;
+  color: string;
+}
+
+interface IntermediateCol {
+  stepKey: string;
+  label: string;
+  color: string;
+  getValue: (out: ReturnType<typeof useTwinOutput>, i: number) => string;
+}
+
+interface MetricPipelineConfig {
+  steps: PipelineStep[];
+  axisMap: Record<string, string>;
+  intermediateCols: IntermediateCol[];
+  footnote?: string;
+}
+
+// ── Per-metric pipeline configs ─────────────────────────────────────────────
+
+const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
+  newUsers: {
+    steps: [
+      {
+        lineKey: "g_growth",
+        label: "Growth curve",
+        latex: "G(t)",
+        color: "hsl(var(--chart-2))",
+      },
+      {
+        lineKey: "g_anom",
+        label: "Anomaly multipliers",
+        latex: "A(t) = G(t) \\cdot \\prod_k m_k(t)",
+        color: "hsl(var(--chart-5))",
+      },
+      {
+        lineKey: "g_jitter",
+        label: "Stochastic jitter",
+        latex: "J(t) = A(t)\\,(1 + \\sigma Z),\\quad Z \\sim \\mathcal{N}(0,1)",
+        color: "hsl(var(--chart-6))",
+      },
+      {
+        lineKey: "g_viral",
+        label: "Viral amplification",
+        latex: "V(t) = J(t) + K \\cdot \\mathrm{DAU}(t{-}1)",
+        color: "hsl(var(--chart-4))",
+      },
+      {
+        lineKey: "__main__",
+        label: "Poisson draw",
+        latex:
+          "N(t) \\sim \\operatorname{Poisson}\\!\\left(\\frac{V(t)}{\\sum_s V(s)} \\cdot U\\right)",
+        color: "",
+      },
+    ],
+    axisMap: { g_growth: "growth", g_jitter: "anomalies", g_viral: "virality" },
+    intermediateCols: [
+      {
+        stepKey: "g_growth",
+        label: "G(t)",
+        color: "hsl(var(--chart-2))",
+        getValue: (out, i) => out.pipeline.growth[i]?.toFixed(1) ?? "—",
+      },
+      {
+        stepKey: "g_anom",
+        label: "A(t)",
+        color: "hsl(var(--chart-5))",
+        getValue: (out, i) => out.pipeline.anomalies[i]?.toFixed(1) ?? "—",
+      },
+      {
+        stepKey: "g_jitter",
+        label: "J(t)",
+        color: "hsl(var(--chart-6))",
+        getValue: (out, i) => out.pipeline.jitter[i]?.toFixed(1) ?? "—",
+      },
+      {
+        stepKey: "g_viral",
+        label: "DAU(t-1)",
+        color: "hsl(var(--chart-8))",
+        getValue: (out, i) =>
+          i === 0 ? "0" : formatNum(Math.round(out.activeUsers[i - 1])),
+      },
+      {
+        stepKey: "g_viral",
+        label: "V(t)",
+        color: "hsl(var(--chart-4))",
+        getValue: (out, i) => out.pipeline.virality[i]?.toFixed(1) ?? "—",
+      },
+    ],
+    footnote:
+      "DAU = daily active users (estimated from previous day's cohorts)",
+  },
+
+  activeUsers: {
+    steps: [
+      {
+        lineKey: "g_new",
+        label: "New users",
+        latex: "N(t) \\sim \\operatorname{Poisson}(\\lambda(t))",
+        color: "hsl(var(--chart-3))",
+      },
+      {
+        lineKey: "g_churn",
+        label: "Churn",
+        latex:
+          "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
+        color: "hsl(var(--destructive))",
+      },
+      {
+        lineKey: "g_react",
+        label: "Reactivation",
+        latex:
+          "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(\\text{ch}_c \\cdot r \\cdot \\delta^{d-1}\\right)",
+        color: "hsl(var(--chart-4))",
+      },
+      {
+        lineKey: "__main__",
+        label: "DAU update",
+        latex:
+          "\\text{DAU}(t) = \\text{DAU}(t{-}1) + N(t) - \\text{Churn}(t) + \\text{React}(t)",
+        color: "",
+      },
+    ],
+    axisMap: { g_new: "scale", g_churn: "stickiness" },
+    intermediateCols: [
+      {
+        stepKey: "g_new",
+        label: "N(t)",
+        color: "hsl(var(--chart-3))",
+        getValue: (out, i) => fn(out.newUsers[i]),
+      },
+      {
+        stepKey: "g_churn",
+        label: "Churn(t)",
+        color: "hsl(var(--destructive))",
+        getValue: (out, i) => fn(out.churnedUsers[i]),
+      },
+      {
+        stepKey: "g_react",
+        label: "React(t)",
+        color: "hsl(var(--chart-4))",
+        getValue: (out, i) => fn(out.reactivatedUsers[i]),
+      },
+    ],
+  },
+
+  events: {
+    steps: [
+      {
+        lineKey: "g_dau",
+        label: "Active users",
+        latex:
+          "\\text{DAU}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot S[t{-}c]\\right)",
+        color: "hsl(var(--chart-8))",
+      },
+      {
+        lineKey: "__main__",
+        label: "Events",
+        latex: "\\text{Events}(t) = \\text{DAU}(t) \\times d",
+        color: "",
+      },
+    ],
+    axisMap: { g_dau: "stickiness", __main__: "engagement" },
+    intermediateCols: [
+      {
+        stepKey: "g_dau",
+        label: "DAU(t)",
+        color: "hsl(var(--chart-8))",
+        getValue: (out, i) => fn(out.activeUsers[i]),
+      },
+    ],
+  },
+
+  stickiness: {
+    steps: [
+      {
+        lineKey: "g_dau",
+        label: "Active users",
+        latex:
+          "\\text{DAU}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot S[t{-}c]\\right)",
+        color: "hsl(var(--chart-8))",
+      },
+      {
+        lineKey: "__main__",
+        label: "Stickiness",
+        latex:
+          "\\text{stickiness}(t) = \\dfrac{\\text{DAU}(t)}{\\text{MAU}(t)}",
+        color: "",
+      },
+    ],
+    axisMap: { g_dau: "stickiness" },
+    intermediateCols: [
+      {
+        stepKey: "g_dau",
+        label: "DAU(t)",
+        color: "hsl(var(--chart-8))",
+        getValue: (out, i) => fn(out.activeUsers[i]),
+      },
+    ],
+  },
+
+  totalUsers: {
+    steps: [
+      {
+        lineKey: "g_new",
+        label: "New users/day",
+        latex: "N(t) \\sim \\operatorname{Poisson}(\\lambda(t))",
+        color: "hsl(var(--chart-3))",
+      },
+      {
+        lineKey: "__main__",
+        label: "Cumulative total",
+        latex: "\\text{total}(t) = \\text{total}(t{-}1) + N(t)",
+        color: "",
+      },
+    ],
+    axisMap: { g_new: "scale" },
+    intermediateCols: [
+      {
+        stepKey: "g_new",
+        label: "N(t)",
+        color: "hsl(var(--chart-3))",
+        getValue: (out, i) => fn(out.newUsers[i]),
+      },
+    ],
+  },
+
+  churnedUsers: {
+    steps: [
+      {
+        lineKey: "__main__",
+        label: "Churn",
+        latex:
+          "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
+        color: "",
+      },
+      {
+        lineKey: "g_react",
+        label: "Reactivation",
+        latex:
+          "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(\\text{ch}_c \\cdot r \\cdot \\delta^{d-1}\\right)",
+        color: "hsl(var(--chart-4))",
+      },
+    ],
+    axisMap: { __main__: "stickiness" },
+    intermediateCols: [
+      {
+        stepKey: "g_react",
+        label: "React(t)",
+        color: "hsl(var(--chart-4))",
+        getValue: (out, i) => fn(out.reactivatedUsers[i]),
+      },
+    ],
+  },
+
+  reactivatedUsers: {
+    steps: [
+      {
+        lineKey: "g_churn",
+        label: "Churn",
+        latex:
+          "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
+        color: "hsl(var(--destructive))",
+      },
+      {
+        lineKey: "__main__",
+        label: "Reactivation",
+        latex:
+          "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(\\text{ch}_c \\cdot r \\cdot \\delta^{d-1}\\right)",
+        color: "",
+      },
+    ],
+    axisMap: { g_churn: "stickiness" },
+    intermediateCols: [
+      {
+        stepKey: "g_churn",
+        label: "Churn(t)",
+        color: "hsl(var(--destructive))",
+        getValue: (out, i) => fn(out.churnedUsers[i]),
+      },
+    ],
+  },
+};
+
 export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   const out = useTwinOutput();
   const config = useSeederStore((s) => s.config);
@@ -387,6 +676,14 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
 
   const ghostLines = ghostLinesFor(metricKey, out);
 
+  // Resolve pipeline config — fallback to undefined (triggers static formula)
+  const pipeline = METRIC_PIPELINES[metricKey];
+
+  // Intermediate cols filtered by checked steps (only when pipeline exists)
+  const activeCols = pipeline
+    ? pipeline.intermediateCols.filter((c) => checkedSteps.has(c.stepKey))
+    : [];
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
@@ -452,7 +749,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
             <div className="px-7 py-6 flex flex-col gap-5">
               <SectionLabel step={2} label="The formula" />
 
-              {metricKey === "newUsers" ? (
+              {pipeline ? (
                 <PipelineFormula
                   ghostLines={ghostLines}
                   mainColor={color}
@@ -460,7 +757,12 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                   clickedKey={clickedLineKey}
                   onHover={setHoveredLineKey}
                   onClick={handleFormulaClick}
-                  latexOverrides={{ g_growth: growthLatex }}
+                  steps={pipeline.steps}
+                  axisMap={pipeline.axisMap}
+                  footnote={pipeline.footnote}
+                  latexOverrides={
+                    metricKey === "newUsers" ? { g_growth: growthLatex } : {}
+                  }
                   axes={config.axes ?? {}}
                   onAxisChange={setAxis}
                   checkedSteps={checkedSteps}
@@ -553,18 +855,15 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                           <th className="px-3 py-2 text-left font-medium">
                             Day
                           </th>
-                          {metricKey === "newUsers" &&
-                            PIPELINE_INTERMEDIATE_COLS.filter((c) =>
-                              checkedSteps.has(c.stepKey),
-                            ).map((c) => (
-                              <th
-                                key={c.stepKey}
-                                className="px-3 py-2 text-right font-medium whitespace-nowrap"
-                                style={{ color: c.color }}
-                              >
-                                {c.label}
-                              </th>
-                            ))}
+                          {activeCols.map((c, idx) => (
+                            <th
+                              key={`${c.stepKey}-${idx}`}
+                              className="px-3 py-2 text-right font-medium whitespace-nowrap"
+                              style={{ color: c.color }}
+                            >
+                              {c.label}
+                            </th>
+                          ))}
                           <th className="px-3 py-2 text-left font-medium">
                             Inputs
                           </th>
@@ -582,17 +881,14 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                             <td className="px-3 py-2 font-mono text-muted-foreground">
                               d{row.day}
                             </td>
-                            {metricKey === "newUsers" &&
-                              PIPELINE_INTERMEDIATE_COLS.filter((c) =>
-                                checkedSteps.has(c.stepKey),
-                              ).map((c) => (
-                                <td
-                                  key={c.stepKey}
-                                  className="px-3 py-2 text-right font-mono"
-                                >
-                                  {c.getValue(out, i)}
-                                </td>
-                              ))}
+                            {activeCols.map((c, idx) => (
+                              <td
+                                key={`${c.stepKey}-${idx}`}
+                                className="px-3 py-2 text-right font-mono"
+                              >
+                                {c.getValue(out, i)}
+                              </td>
+                            ))}
                             <td
                               className="px-3 py-2 text-muted-foreground font-mono text-[11px] max-w-[140px] truncate"
                               title={row.computation}
@@ -646,95 +942,6 @@ function SectionLabel({ step, label }: { step: number; label: string }) {
   );
 }
 
-interface IntermediateCol {
-  stepKey: string;
-  label: string;
-  color: string;
-  getValue: (out: ReturnType<typeof useTwinOutput>, i: number) => string;
-}
-
-const PIPELINE_INTERMEDIATE_COLS: IntermediateCol[] = [
-  {
-    stepKey: "g_growth",
-    label: "G(t)",
-    color: "hsl(var(--chart-2))",
-    getValue: (out, i) => out.pipeline.growth[i]?.toFixed(1) ?? "—",
-  },
-  {
-    stepKey: "g_anom",
-    label: "A(t)",
-    color: "hsl(var(--chart-5))",
-    getValue: (out, i) => out.pipeline.anomalies[i]?.toFixed(1) ?? "—",
-  },
-  {
-    stepKey: "g_jitter",
-    label: "J(t)",
-    color: "hsl(var(--chart-6))",
-    getValue: (out, i) => out.pipeline.jitter[i]?.toFixed(1) ?? "—",
-  },
-  {
-    stepKey: "g_viral",
-    label: "DAU(t-1)",
-    color: "hsl(var(--chart-8))",
-    getValue: (out, i) =>
-      i === 0 ? "0" : formatNum(Math.round(out.activeUsers[i - 1])),
-  },
-  {
-    stepKey: "g_viral",
-    label: "V(t)",
-    color: "hsl(var(--chart-4))",
-    getValue: (out, i) => out.pipeline.virality[i]?.toFixed(1) ?? "—",
-  },
-];
-
-/** Maps a pipeline step's lineKey to the axis it controls */
-const STEP_AXIS_MAP: Record<string, string> = {
-  g_growth: "growth",
-  g_jitter: "anomalies",
-  g_viral: "virality",
-};
-
-interface PipelineStep {
-  lineKey: string;
-  label: string;
-  latex: string;
-  color: string;
-}
-
-const PIPELINE: PipelineStep[] = [
-  {
-    lineKey: "g_growth",
-    label: "Growth curve",
-    latex: "G(t)",
-    color: "hsl(var(--chart-2))",
-  },
-  {
-    lineKey: "g_anom",
-    label: "Anomaly multipliers",
-    latex: "A(t) = G(t) \\cdot \\prod_k m_k(t)",
-    color: "hsl(var(--chart-5))",
-  },
-  {
-    lineKey: "g_jitter",
-    label: "Stochastic jitter",
-    latex: "J(t) = A(t)\\,(1 + \\sigma Z),\\quad Z \\sim \\mathcal{N}(0,1)",
-    color: "hsl(var(--chart-6))",
-  },
-  {
-    lineKey: "g_viral",
-    label: "Viral amplification",
-    latex: "V(t) = J(t) + K \\cdot \\mathrm{DAU}(t{-}1)",
-    color: "hsl(var(--chart-4))",
-  },
-  {
-    lineKey: "__main__",
-    label: "Poisson draw",
-    latex:
-      "N(t) \\sim \\operatorname{Poisson}\\!\\left(\\frac{V(t)}{\\sum_s V(s)} \\cdot U\\right)",
-    color: "", // filled by mainColor prop
-  },
-];
-
 function PipelineFormula({
   ghostLines,
   mainColor,
@@ -742,6 +949,9 @@ function PipelineFormula({
   clickedKey: _clickedKey,
   onHover,
   onClick,
+  steps,
+  axisMap,
+  footnote,
   latexOverrides = {},
   axes = {},
   onAxisChange,
@@ -754,6 +964,9 @@ function PipelineFormula({
   clickedKey: string | null;
   onHover: (key: string | null) => void;
   onClick: (key: string) => void;
+  steps: PipelineStep[];
+  axisMap: Record<string, string>;
+  footnote?: string;
   latexOverrides?: Record<string, string>;
   axes?: Record<string, string>;
   onAxisChange?: (axisId: string, value: string) => void;
@@ -765,7 +978,7 @@ function PipelineFormula({
 
   return (
     <div className="flex flex-col gap-0.5">
-      {PIPELINE.map((step) => {
+      {steps.map((step) => {
         const stepColor =
           step.lineKey === "__main__"
             ? mainColor
@@ -775,7 +988,7 @@ function PipelineFormula({
         const isDimmed = focusedKey !== null && !isActive;
         const isChecked = checkedSteps?.has(step.lineKey) ?? false;
 
-        const axisId = STEP_AXIS_MAP[step.lineKey];
+        const axisId = axisMap[step.lineKey];
         const axisDisplay = axisId ? AXIS_DISPLAY[axisId] : null;
         const currentVal = axisDisplay
           ? (axes[axisId] ?? axisDisplay.values[0]?.value ?? "")
@@ -867,10 +1080,12 @@ function PipelineFormula({
           </div>
         );
       })}
-      {/* DAU footnote */}
-      <p className="text-[10px] text-muted-foreground/50 px-2 pt-1">
-        DAU = daily active users (estimated from previous day&apos;s cohorts)
-      </p>
+      {/* Optional footnote */}
+      {footnote && (
+        <p className="text-[10px] text-muted-foreground/50 px-2 pt-1">
+          {footnote}
+        </p>
+      )}
     </div>
   );
 }
