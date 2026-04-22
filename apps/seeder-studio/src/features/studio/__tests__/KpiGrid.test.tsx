@@ -1,6 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { KpiCard } from "../KpiCard";
+import { KpiCardExpanded } from "../KpiCardExpanded";
+import { useSeederStore, blankConfig } from "@/stores/seederStore";
 
 const values = Array.from({ length: 30 }, (_, i) => i * 10);
 
@@ -50,5 +52,33 @@ describe("KpiCard", () => {
     expect(
       screen.getByRole("button", { name: /events\/day/i }),
     ).toHaveAttribute("aria-expanded", "true");
+  });
+});
+
+describe("KpiCardExpanded", () => {
+  beforeEach(() => {
+    useSeederStore.setState(useSeederStore.getInitialState(), true);
+    useSeederStore
+      .getState()
+      .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
+  });
+
+  it("renders formula section with MathFormula", () => {
+    render(<KpiCardExpanded metricKey="events" onClose={vi.fn()} />);
+    expect(screen.getAllByTestId("math-formula").length).toBeGreaterThan(0);
+  });
+
+  it("renders 7 day rows in breakdown table", () => {
+    render(<KpiCardExpanded metricKey="events" onClose={vi.fn()} />);
+    for (let d = 1; d <= 7; d++) {
+      expect(screen.getByText(`d${d}`)).toBeInTheDocument();
+    }
+  });
+
+  it("calls onClose when close button clicked", () => {
+    const onClose = vi.fn();
+    render(<KpiCardExpanded metricKey="events" onClose={onClose} />);
+    fireEvent.click(screen.getByRole("button", { name: /close/i }));
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });
