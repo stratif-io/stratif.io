@@ -8,24 +8,11 @@ import type { SimulationConfig } from "@/types/simulation";
 import { headlineStat } from "./headlineStat";
 import { formatNum } from "@/lib/format";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
-import { DayTable } from "./DayTable";
 import { FORMULA_REGISTRY } from "./formulaRegistry";
-import { SimMathPanel } from "./SimMathPanel";
-import type { SimMathEntry } from "./SimMathPanel";
 
 type AnomalyList = NonNullable<SimulationConfig["anomalies"]>;
 
 const EMPTY_ANOMALIES: AnomalyList = [];
-
-const METRIC_LABELS: Record<string, string> = {
-  events: "Events/day",
-  activeUsers: "Active users",
-  newUsers: "New users/day",
-  stickiness: "Stickiness",
-  totalUsers: "Total users",
-  churnedUsers: "Churned/day",
-  reactivatedUsers: "Reactivated/day",
-};
 
 export function PreviewGrid() {
   const out = useTwinOutput();
@@ -67,160 +54,6 @@ export function PreviewGrid() {
     churnedUsers: `where: peak = ${pct(rp.peakChurnRate)}, base = ${pct(rp.baseChurnRate)}, τ = ${rp.churnDecayDays}d`,
     reactivatedUsers: `where: r = ${pct(rp.reactivationRate)}, δ = ${fix1(rp.reactivationDecay)}`,
   };
-
-  const N_DAYS = 7;
-  const fn = (v: number) => formatNum(Math.round(v));
-
-  const simMathEntries = useMemo(
-    (): SimMathEntry[] => {
-      const n = Math.min(N_DAYS, out.activeUsers.length);
-
-      const activeDailyRows = Array.from({ length: n }, (_, i) => {
-        const prev = i === 0 ? 0 : out.activeUsers[i - 1];
-        const newU = out.newUsers[i];
-        const churn = out.churnedUsers[i];
-        const react = out.reactivatedUsers[i];
-        return {
-          day: i + 1,
-          formulaLabeled: `DAU(${i})=${fn(prev)} + N(${i + 1})=${fn(newU)} − C(${i + 1})=${fn(churn)} + R(${i + 1})=${fn(react)}`,
-          formula: `${fn(prev)} + ${fn(newU)} − ${fn(churn)} + ${fn(react)}`,
-          result: fn(out.activeUsers[i]),
-        };
-      });
-
-      const eventsDailyRows = Array.from({ length: n }, (_, i) => ({
-        day: i + 1,
-        formulaLabeled: `DAU(${i + 1})=${fn(out.activeUsers[i])} × d=${depth}`,
-        formula: `${fn(out.activeUsers[i])} × ${depth}`,
-        result: fn(out.events[i]),
-      }));
-
-      const newUsersDailyRows = Array.from({ length: n }, (_, i) => ({
-        day: i + 1,
-        formulaLabeled: `λ(${i + 1})=${out.arrivals[i].toFixed(1)}`,
-        formula: `Poisson(${out.arrivals[i].toFixed(1)})`,
-        result: fn(out.newUsers[i]),
-      }));
-
-      const totalDailyRows = Array.from({ length: n }, (_, i) => {
-        const prev = i === 0 ? 0 : out.totalUsers[i - 1];
-        return {
-          day: i + 1,
-          formulaLabeled: `T(${i})=${fn(prev)} + N(${i + 1})=${fn(out.newUsers[i])}`,
-          formula: `${fn(prev)} + ${fn(out.newUsers[i])}`,
-          result: fn(out.totalUsers[i]),
-        };
-      });
-
-      const churnedDailyRows = Array.from({ length: n }, (_, i) => {
-        const prevActive = i === 0 ? 0 : out.activeUsers[i - 1];
-        const rate =
-          prevActive > 0
-            ? `${((out.churnedUsers[i] / prevActive) * 100).toFixed(1)}%`
-            : "—";
-        return {
-          day: i + 1,
-          formulaLabeled: `DAU(${i})=${fn(prevActive)} × λ(${i + 1})=${rate}`,
-          formula: `${fn(prevActive)} × ${rate}`,
-          result: fn(out.churnedUsers[i]),
-        };
-      });
-
-      const reactivatedDailyRows = Array.from({ length: n }, (_, i) => ({
-        day: i + 1,
-        formulaLabeled: `R(${i + 1})=${fn(out.reactivatedUsers[i])}`,
-        result: fn(out.reactivatedUsers[i]),
-      }));
-
-      const stickinessDailyRows = Array.from({ length: n }, (_, i) => {
-        const s = out.stickiness[i];
-        const val = s === null ? "—" : `${(s * 100).toFixed(1)}%`;
-        return {
-          day: i + 1,
-          formulaLabeled: `DAU(${i + 1})=${fn(out.activeUsers[i])} / MAU(${i + 1})`,
-          formula: `${fn(out.activeUsers[i])} / MAU`,
-          result: val,
-        };
-      });
-
-      return [
-        {
-          metric: METRIC_LABELS.events,
-          ...FORMULA_REGISTRY.events,
-          where: formulaWhere.events,
-          params: [{ name: "d (depth)", value: `${depth} events/user/day` }],
-          outputValue: stats.events,
-          dailyRows: eventsDailyRows,
-        },
-        {
-          metric: METRIC_LABELS.activeUsers,
-          ...FORMULA_REGISTRY.activeUsers,
-          where: formulaWhere.activeUsers,
-          params: [
-            { name: "peak churn rate", value: pct(rp.peakChurnRate) },
-            { name: "churn decay τ", value: `${rp.churnDecayDays}d` },
-            { name: "reactivation r", value: pct(rp.reactivationRate) },
-          ],
-          outputValue: stats.active,
-          dailyRows: activeDailyRows,
-        },
-        {
-          metric: METRIC_LABELS.newUsers,
-          ...FORMULA_REGISTRY.newUsers,
-          where: formulaWhere.newUsers,
-          params: [
-            { name: "target users", value: formatNum(totalUsers) },
-            { name: "window", value: `${windowDays}d` },
-          ],
-          outputValue: stats.news,
-          dailyRows: newUsersDailyRows,
-        },
-        {
-          metric: METRIC_LABELS.stickiness,
-          ...FORMULA_REGISTRY.stickiness,
-          where: formulaWhere.stickiness,
-          params: [{ name: "MAU window", value: "28d" }],
-          outputValue: stats.stickiness,
-          dailyRows: stickinessDailyRows,
-        },
-        {
-          metric: METRIC_LABELS.totalUsers,
-          ...FORMULA_REGISTRY.totalUsers,
-          where: formulaWhere.totalUsers,
-          params: [{ name: "window", value: `${windowDays}d` }],
-          outputValue: `total ${formatNum(out.totalUsers.at(-1) ?? 0)}`,
-          dailyRows: totalDailyRows,
-        },
-        {
-          metric: METRIC_LABELS.churnedUsers,
-          ...FORMULA_REGISTRY.churnedUsers,
-          where: formulaWhere.churnedUsers,
-          params: [
-            { name: "peak churn rate", value: pct(rp.peakChurnRate) },
-            { name: "base churn rate", value: pct(rp.baseChurnRate) },
-            { name: "churn decay τ", value: `${rp.churnDecayDays}d` },
-            { name: "max dormant days", value: `${rp.maxDormantDays}d` },
-          ],
-          outputValue: stats.churned,
-          dailyRows: churnedDailyRows,
-        },
-        {
-          metric: METRIC_LABELS.reactivatedUsers,
-          ...FORMULA_REGISTRY.reactivatedUsers,
-          where: formulaWhere.reactivatedUsers,
-          params: [
-            { name: "reactivation rate r", value: pct(rp.reactivationRate) },
-            { name: "decay factor δ", value: fix1(rp.reactivationDecay) },
-            { name: "max dormant days", value: `${rp.maxDormantDays}d` },
-          ],
-          outputValue: stats.reactivated,
-          dailyRows: reactivatedDailyRows,
-        },
-      ];
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [depth, rp, totalUsers, windowDays, stats, out],
-  );
 
   const { start: chartStart, end: chartEnd } = useMemo(
     () => resolveDateRange(uiStartDate, uiEndDate, windowDays),
@@ -393,19 +226,6 @@ export function PreviewGrid() {
                 {...sharedProps}
               />
             </div>
-          </div>
-
-          <div
-            className="border-t pt-2 flex flex-col gap-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div>
-              <h3 className="text-xs uppercase text-muted-foreground font-semibold mb-1">
-                First days
-              </h3>
-              <DayTable out={out} />
-            </div>
-            <SimMathPanel entries={simMathEntries} />
           </div>
         </div>
       )}

@@ -41,11 +41,6 @@ describe("PreviewGrid", () => {
     // stickiness "sticky" → peak=50%
     expect(screen.getByText(/peak = 50%/)).toBeInTheDocument();
   });
-
-  it("renders SimMathPanel", () => {
-    render(<PreviewGrid />);
-    expect(screen.getByText(/simulation math/i)).toBeInTheDocument();
-  });
 });
 
 describe("headlineStat formatting", () => {
