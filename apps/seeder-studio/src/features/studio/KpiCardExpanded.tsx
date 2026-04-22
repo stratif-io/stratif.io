@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { MathFormula } from "@/lib/math/MathFormula";
 import { FORMULA_REGISTRY } from "@/features/preview/formulaRegistry";
+import type { MetricKey } from "@/features/preview/formulaRegistry";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveSimParams } from "@/lib/twin";
@@ -10,15 +11,6 @@ const N_DAYS = 7;
 const fn = (v: number) => formatNum(Math.round(v));
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const fix1 = (v: number) => v.toFixed(1);
-
-type MetricKey =
-  | "events"
-  | "activeUsers"
-  | "newUsers"
-  | "stickiness"
-  | "totalUsers"
-  | "churnedUsers"
-  | "reactivatedUsers";
 
 interface DailyRow {
   day: number;
@@ -104,6 +96,10 @@ function buildDailyRows(
           computation: `dormant × decay`,
           result: fn(out.reactivatedUsers[i]),
         };
+      default: {
+        const _exhaustive: never = metricKey;
+        throw new Error(`Unhandled metricKey: ${_exhaustive}`);
+      }
     }
   });
 }
@@ -146,12 +142,27 @@ export function KpiCardExpanded({ metricKey, onClose }: Props) {
         return [{ name: "window", value: "28-day rolling" }];
       case "totalUsers":
         return [{ name: "window", value: `${windowDays}d` }];
+      default: {
+        const _exhaustive: never = metricKey;
+        throw new Error(`Unhandled metricKey: ${_exhaustive}`);
+      }
     }
   }, [metricKey, depth, rp, totalUsers, windowDays]);
 
   const dailyRows = useMemo(
     () => buildDailyRows(metricKey, out, depth),
-    [metricKey, out, depth],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      metricKey,
+      depth,
+      out.activeUsers,
+      out.newUsers,
+      out.churnedUsers,
+      out.reactivatedUsers,
+      out.stickiness,
+      out.totalUsers,
+      out.arrivals,
+    ],
   );
 
   return (
@@ -228,7 +239,10 @@ export function KpiCardExpanded({ metricKey, onClose }: Props) {
               {dailyRows.map((row) => (
                 <tr key={row.day} className="border-t border-border/30">
                   <td className="py-0.5 pr-2 font-mono text-muted-foreground">{`d${row.day}`}</td>
-                  <td className="py-0.5 pr-2 text-muted-foreground max-w-[120px] truncate">
+                  <td
+                    className="py-0.5 pr-2 text-muted-foreground max-w-[120px] truncate"
+                    title={row.formula}
+                  >
                     {row.formula}
                   </td>
                   <td className="py-0.5 pr-2 font-mono">{row.computation}</td>

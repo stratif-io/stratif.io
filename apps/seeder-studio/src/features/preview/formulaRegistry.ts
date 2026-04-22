@@ -9,7 +9,16 @@ export interface FormulaEntry {
   variables: FormulaVariable[];
 }
 
-export const FORMULA_REGISTRY: Record<string, FormulaEntry> = {
+export type MetricKey =
+  | "events"
+  | "activeUsers"
+  | "newUsers"
+  | "stickiness"
+  | "totalUsers"
+  | "churnedUsers"
+  | "reactivatedUsers";
+
+export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
   events: {
     latex: "\\text{events}(t) = \\text{DAU}(t) \\times d",
     explanation:

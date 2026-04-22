@@ -81,4 +81,18 @@ describe("KpiCardExpanded", () => {
     fireEvent.click(screen.getByRole("button", { name: /close/i }));
     expect(onClose).toHaveBeenCalledOnce();
   });
+
+  it.each([
+    "activeUsers",
+    "newUsers",
+    "stickiness",
+    "totalUsers",
+    "churnedUsers",
+    "reactivatedUsers",
+  ] as const)("renders 7 rows for %s", (key) => {
+    render(<KpiCardExpanded metricKey={key} onClose={vi.fn()} />);
+    for (let d = 1; d <= 7; d++) {
+      expect(screen.getByText(`d${d}`)).toBeInTheDocument();
+    }
+  });
 });
