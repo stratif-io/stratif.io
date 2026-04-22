@@ -14,7 +14,6 @@ import { Popover, PopoverTrigger, PopoverContent } from "@stratif-io/web";
 import { AXIS_DISPLAY } from "@/features/axes/axisDisplaySpec";
 import { AxisPopover } from "@/features/studio/AxisPopover";
 
-const N_DAYS = 14;
 const fn = (v: number) => formatNum(Math.round(v));
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const fix1 = (v: number) => v.toFixed(1);
@@ -37,7 +36,7 @@ function buildDailyRows(
   out: ReturnType<typeof useTwinOutput>,
   depth: number,
 ): DailyRow[] {
-  const n = Math.min(N_DAYS, out.activeUsers.length);
+  const n = out.activeUsers.length;
   return Array.from({ length: n }, (_, i) => {
     const day = i + 1;
     switch (metricKey) {
@@ -947,7 +946,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
               {/* Daily trace */}
               <div>
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
-                  First {N_DAYS} days — step by step
+                  All {windowDays} days — step by step
                 </p>
                 <div className="rounded-xl border border-border/40 overflow-hidden">
                   <div className="overflow-y-auto max-h-64">
