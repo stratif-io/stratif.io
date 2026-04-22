@@ -128,6 +128,7 @@ export function KpiGrid() {
             {section.cards.some((c) => c.key === expandedKey) && (
               <KpiCardExpanded
                 metricKey={expandedKey!}
+                color={section.cards.find((c) => c.key === expandedKey)!.color}
                 onClose={() => setExpandedKey(null)}
               />
             )}

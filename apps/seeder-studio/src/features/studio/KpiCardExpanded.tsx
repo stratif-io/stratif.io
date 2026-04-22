@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { MathFormula } from "@/lib/math/MathFormula";
 import { FORMULA_REGISTRY } from "@/features/preview/formulaRegistry";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
+import { KpiChart } from "@/features/preview/KpiChart";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveSimParams } from "@/lib/twin";
@@ -21,6 +22,7 @@ interface DailyRow {
 
 interface Props {
   metricKey: MetricKey;
+  color: string;
   onClose: () => void;
 }
 
@@ -104,7 +106,29 @@ function buildDailyRows(
   });
 }
 
-export function KpiCardExpanded({ metricKey, onClose }: Props) {
+function valuesFor(
+  metricKey: MetricKey,
+  out: ReturnType<typeof useTwinOutput>,
+): (number | null)[] {
+  switch (metricKey) {
+    case "events":
+      return out.events;
+    case "activeUsers":
+      return out.activeUsers;
+    case "newUsers":
+      return out.newUsers;
+    case "stickiness":
+      return out.stickiness.map((v) => (v === null ? null : v * 100));
+    case "totalUsers":
+      return out.totalUsers;
+    case "churnedUsers":
+      return out.churnedUsers;
+    case "reactivatedUsers":
+      return out.reactivatedUsers;
+  }
+}
+
+export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   const out = useTwinOutput();
   const config = useSeederStore((s) => s.config);
   const {
@@ -179,6 +203,17 @@ export function KpiCardExpanded({ metricKey, onClose }: Props) {
           ×
         </button>
       </div>
+
+      <KpiChart
+        title=""
+        values={valuesFor(metricKey, out)}
+        color={color}
+        anomalies={config.anomalies}
+        windowDays={windowDays}
+        chartHeight="h-40"
+        className="border-0 p-0 bg-transparent"
+        valueSuffix={metricKey === "stickiness" ? "%" : ""}
+      />
 
       <div className="grid grid-cols-3 gap-6">
         {/* Left: formula + variables */}
