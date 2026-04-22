@@ -14,7 +14,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@stratif-io/web";
 import { AXIS_DISPLAY } from "@/features/axes/axisDisplaySpec";
 import { AxisPopover } from "@/features/studio/AxisPopover";
 
-const N_DAYS = 7;
+const N_DAYS = 14;
 const fn = (v: number) => formatNum(Math.round(v));
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const fix1 = (v: number) => v.toFixed(1);
@@ -283,9 +283,19 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   const [hoveredLineKey, setHoveredLineKey] = useState<string | null>(null);
   const [clickedLineKey, setClickedLineKey] = useState<string | null>(null);
   const focusedLineKey = clickedLineKey ?? hoveredLineKey;
+  const [checkedSteps, setCheckedSteps] = useState<Set<string>>(new Set());
 
   const handleFormulaClick = useCallback((key: string) => {
     setClickedLineKey((prev) => (prev === key ? null : key));
+  }, []);
+
+  const toggleStep = useCallback((key: string) => {
+    setCheckedSteps((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -453,6 +463,8 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                   latexOverrides={{ g_growth: growthLatex }}
                   axes={config.axes ?? {}}
                   onAxisChange={setAxis}
+                  checkedSteps={checkedSteps}
+                  onToggleStep={toggleStep}
                 />
               ) : (
                 <>
@@ -534,40 +546,67 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                   First {N_DAYS} days — step by step
                 </p>
                 <div className="rounded-xl border border-border/40 overflow-hidden">
-                  <table className="text-xs w-full">
-                    <thead>
-                      <tr className="bg-muted/30 text-muted-foreground/70">
-                        <th className="px-3 py-2 text-left font-medium">Day</th>
-                        <th className="px-3 py-2 text-left font-medium">
-                          Inputs
-                        </th>
-                        <th className="px-3 py-2 text-right font-medium">
-                          Result
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dailyRows.map((row, i) => (
-                        <tr
-                          key={row.day}
-                          className={i > 0 ? "border-t border-border/25" : ""}
-                        >
-                          <td className="px-3 py-2 font-mono text-muted-foreground">
-                            d{row.day}
-                          </td>
-                          <td
-                            className="px-3 py-2 text-muted-foreground font-mono text-[11px] max-w-[180px] truncate"
-                            title={row.computation}
-                          >
-                            {row.computation}
-                          </td>
-                          <td className="px-3 py-2 text-right font-mono font-semibold text-foreground">
-                            {row.result}
-                          </td>
+                  <div className="overflow-y-auto max-h-64">
+                    <table className="text-xs w-full">
+                      <thead className="sticky top-0 bg-card z-10">
+                        <tr className="bg-muted/30 text-muted-foreground/70">
+                          <th className="px-3 py-2 text-left font-medium">
+                            Day
+                          </th>
+                          {metricKey === "newUsers" &&
+                            PIPELINE_INTERMEDIATE_COLS.filter((c) =>
+                              checkedSteps.has(c.stepKey),
+                            ).map((c) => (
+                              <th
+                                key={c.stepKey}
+                                className="px-3 py-2 text-right font-medium whitespace-nowrap"
+                                style={{ color: c.color }}
+                              >
+                                {c.label}
+                              </th>
+                            ))}
+                          <th className="px-3 py-2 text-left font-medium">
+                            Inputs
+                          </th>
+                          <th className="px-3 py-2 text-right font-medium">
+                            Result
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {dailyRows.map((row, i) => (
+                          <tr
+                            key={row.day}
+                            className={i > 0 ? "border-t border-border/25" : ""}
+                          >
+                            <td className="px-3 py-2 font-mono text-muted-foreground">
+                              d{row.day}
+                            </td>
+                            {metricKey === "newUsers" &&
+                              PIPELINE_INTERMEDIATE_COLS.filter((c) =>
+                                checkedSteps.has(c.stepKey),
+                              ).map((c) => (
+                                <td
+                                  key={c.stepKey}
+                                  className="px-3 py-2 text-right font-mono"
+                                >
+                                  {c.getValue(out, i)}
+                                </td>
+                              ))}
+                            <td
+                              className="px-3 py-2 text-muted-foreground font-mono text-[11px] max-w-[140px] truncate"
+                              title={row.computation}
+                            >
+                              {row.computation}
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono font-semibold text-foreground">
+                              {row.result}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -606,6 +645,47 @@ function SectionLabel({ step, label }: { step: number; label: string }) {
     </div>
   );
 }
+
+interface IntermediateCol {
+  stepKey: string;
+  label: string;
+  color: string;
+  getValue: (out: ReturnType<typeof useTwinOutput>, i: number) => string;
+}
+
+const PIPELINE_INTERMEDIATE_COLS: IntermediateCol[] = [
+  {
+    stepKey: "g_growth",
+    label: "G(t)",
+    color: "hsl(var(--chart-2))",
+    getValue: (out, i) => out.pipeline.growth[i]?.toFixed(1) ?? "—",
+  },
+  {
+    stepKey: "g_anom",
+    label: "A(t)",
+    color: "hsl(var(--chart-5))",
+    getValue: (out, i) => out.pipeline.anomalies[i]?.toFixed(1) ?? "—",
+  },
+  {
+    stepKey: "g_jitter",
+    label: "J(t)",
+    color: "hsl(var(--chart-6))",
+    getValue: (out, i) => out.pipeline.jitter[i]?.toFixed(1) ?? "—",
+  },
+  {
+    stepKey: "g_viral",
+    label: "DAU(t-1)",
+    color: "hsl(var(--chart-8))",
+    getValue: (out, i) =>
+      i === 0 ? "0" : formatNum(Math.round(out.activeUsers[i - 1])),
+  },
+  {
+    stepKey: "g_viral",
+    label: "V(t)",
+    color: "hsl(var(--chart-4))",
+    getValue: (out, i) => out.pipeline.virality[i]?.toFixed(1) ?? "—",
+  },
+];
 
 /** Maps a pipeline step's lineKey to the axis it controls */
 const STEP_AXIS_MAP: Record<string, string> = {
@@ -659,12 +739,14 @@ function PipelineFormula({
   ghostLines,
   mainColor,
   focusedKey,
-  clickedKey,
+  clickedKey: _clickedKey,
   onHover,
   onClick,
   latexOverrides = {},
   axes = {},
   onAxisChange,
+  checkedSteps,
+  onToggleStep,
 }: {
   ghostLines: GhostLine[];
   mainColor: string;
@@ -675,13 +757,15 @@ function PipelineFormula({
   latexOverrides?: Record<string, string>;
   axes?: Record<string, string>;
   onAxisChange?: (axisId: string, value: string) => void;
+  checkedSteps?: Set<string>;
+  onToggleStep?: (key: string) => void;
 }) {
   const colorMap: Record<string, string> = { __main__: mainColor };
   for (const g of ghostLines) colorMap[g.key] = g.color;
 
   return (
-    <div className="flex flex-col">
-      {PIPELINE.map((step, idx) => {
+    <div className="flex flex-col gap-0.5">
+      {PIPELINE.map((step) => {
         const stepColor =
           step.lineKey === "__main__"
             ? mainColor
@@ -689,105 +773,97 @@ function PipelineFormula({
         const latex = latexOverrides[step.lineKey] ?? step.latex;
         const isActive = focusedKey === step.lineKey;
         const isDimmed = focusedKey !== null && !isActive;
-        const isLocked = clickedKey === step.lineKey;
+        const isChecked = checkedSteps?.has(step.lineKey) ?? false;
+
+        const axisId = STEP_AXIS_MAP[step.lineKey];
+        const axisDisplay = axisId ? AXIS_DISPLAY[axisId] : null;
+        const currentVal = axisDisplay
+          ? (axes[axisId] ?? axisDisplay.values[0]?.value ?? "")
+          : "";
+        const currentLabel = axisDisplay
+          ? (axisDisplay.values.find((v) => v.value === currentVal)?.label ??
+            currentVal)
+          : "";
 
         return (
-          <div key={step.lineKey} className="flex flex-col">
-            {/* Arrow connector (except before first) */}
-            {idx > 0 && (
-              <div className="flex items-center pl-[18px] py-0.5">
-                <div className="w-px h-4 bg-border/50" />
-                <svg
-                  width="8"
-                  height="6"
-                  viewBox="0 0 8 6"
-                  className="text-muted-foreground/40 -ml-[3.5px]"
-                >
-                  <path d="M4 6L0 0h8z" fill="currentColor" />
-                </svg>
-              </div>
+          <div
+            key={step.lineKey}
+            className={[
+              "flex items-center gap-2 rounded-xl px-2 py-2 transition-all",
+              isActive
+                ? "bg-muted/60 ring-1 ring-border/60"
+                : "hover:bg-muted/40",
+              isDimmed ? "opacity-35" : "opacity-100",
+            ].join(" ")}
+            onMouseEnter={() => onHover(step.lineKey)}
+            onMouseLeave={() => onHover(null)}
+          >
+            {/* Checkbox */}
+            {onToggleStep && (
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={() => onToggleStep(step.lineKey)}
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0 accent-primary cursor-pointer"
+                title="Show in table"
+              />
             )}
 
-            {/* Step row */}
+            {/* Color dot */}
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ backgroundColor: stepColor }}
+            />
+
+            {/* Label + formula — click to focus */}
             <button
               type="button"
-              className={[
-                "flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-all",
-                "hover:bg-muted/50 cursor-pointer",
-                isActive ? "bg-muted/60 ring-1 ring-border/60" : "",
-                isDimmed ? "opacity-40" : "opacity-100",
-              ].join(" ")}
-              onMouseEnter={() => onHover(step.lineKey)}
-              onMouseLeave={() => onHover(null)}
+              className="flex-1 min-w-0 text-left cursor-pointer"
               onClick={() => onClick(step.lineKey)}
             >
-              {/* Color bar + lock indicator */}
-              <div className="flex flex-col items-center gap-1 pt-1 shrink-0">
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: stepColor }}
-                />
-                {isLocked && (
-                  <span className="text-[8px] text-muted-foreground/60">●</span>
-                )}
-              </div>
-
-              {/* Formula + label + axis chip */}
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-medium text-muted-foreground/60 mb-1 uppercase tracking-wide">
-                  {step.label}
-                </p>
-                <div className="overflow-x-auto">
-                  <MathFormula latex={latex} />
-                </div>
-                {STEP_AXIS_MAP[step.lineKey] &&
-                  onAxisChange &&
-                  (() => {
-                    const axisId = STEP_AXIS_MAP[step.lineKey];
-                    const axisDisplay = AXIS_DISPLAY[axisId];
-                    if (!axisDisplay) return null;
-                    const currentVal =
-                      axes[axisId] ?? axisDisplay.values[0]?.value ?? "";
-                    const currentLabel =
-                      axisDisplay.values.find((v) => v.value === currentVal)
-                        ?.label ?? currentVal;
-                    return (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={(e) => e.stopPropagation()}
-                            onMouseEnter={(e) => e.stopPropagation()}
-                            className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-border/60 bg-muted/40 hover:bg-muted transition-colors text-[10px] text-muted-foreground hover:text-foreground"
-                          >
-                            <span
-                              className="w-1.5 h-1.5 rounded-full"
-                              style={{ backgroundColor: stepColor }}
-                            />
-                            {currentLabel}
-                            <span className="opacity-50">▾</span>
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          side="bottom"
-                          align="start"
-                          className="w-64 p-2"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <AxisPopover
-                            axis={axisDisplay}
-                            currentValue={currentVal}
-                            onSelect={(v) => onAxisChange(axisId, v)}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    );
-                  })()}
+              <p className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wide mb-0.5">
+                {step.label}
+              </p>
+              <div className="overflow-x-auto text-sm">
+                <MathFormula latex={latex} />
               </div>
             </button>
+
+            {/* Axis chip — right side */}
+            {axisDisplay && onAxisChange && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border/50 bg-muted/30 hover:bg-muted transition-colors text-[10px] text-muted-foreground hover:text-foreground"
+                  >
+                    {currentLabel}
+                    <span className="opacity-40">▾</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="bottom"
+                  align="end"
+                  className="w-64 p-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <AxisPopover
+                    axis={axisDisplay}
+                    currentValue={currentVal}
+                    onSelect={(v) => onAxisChange(axisId, v)}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         );
       })}
+      {/* DAU footnote */}
+      <p className="text-[10px] text-muted-foreground/50 px-2 pt-1">
+        DAU = daily active users (estimated from previous day&apos;s cohorts)
+      </p>
     </div>
   );
 }

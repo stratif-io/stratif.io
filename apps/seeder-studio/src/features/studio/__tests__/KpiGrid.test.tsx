@@ -123,7 +123,7 @@ describe("KpiGrid", () => {
     expect(
       (await screen.findAllByTestId("math-formula")).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText(/d1/)).toBeInTheDocument();
+    expect(screen.getAllByText(/d1/).length).toBeGreaterThan(0);
   });
 
   it("clicking another card collapses the first", async () => {
@@ -132,7 +132,7 @@ describe("KpiGrid", () => {
     await screen.findAllByTestId("math-formula");
     fireEvent.click(screen.getByRole("button", { name: /stickiness/i }));
     // After switching to stickiness, only one expanded panel should exist
-    const expandedPanels = screen.getAllByText(/First 7 days/);
+    const expandedPanels = screen.getAllByText(/First \d+ days/);
     expect(expandedPanels).toHaveLength(1);
   });
 });
