@@ -36,7 +36,7 @@ export const FORMULA_REGISTRY: Record<string, FormulaEntry> = {
   },
   newUsers: {
     latex:
-      "N(t) \\sim \\text{Poisson}(\\lambda(t)), \\quad \\lambda(t) = \\frac{\\tilde{\\lambda}(t)}{\\sum_s \\tilde{\\lambda}(s)} \\cdot U",
+      "P(N(t)=k) = \\frac{\\lambda(t)^k\\, e^{-\\lambda(t)}}{k!}, \\quad \\lambda(t) = \\frac{\\tilde{\\lambda}(t)}{\\sum_s \\tilde{\\lambda}(s)} \\cdot U",
     explanation:
       "New users on day t are a Poisson draw with rate λ(t). The raw rate λ̃(t) flows through a four-stage pipeline: growth curve G(t), anomaly multipliers A, day-level jitter J, and viral amplification V. The result is rescaled so the expected total equals the target U.",
     variables: [
