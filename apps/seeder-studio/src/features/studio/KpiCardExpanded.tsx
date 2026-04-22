@@ -8,7 +8,7 @@ import type { GhostLine } from "@/features/preview/KpiChart";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
-import { resolveSimParams } from "@/lib/twin";
+import { resolveSimParams, getAxisValue } from "@/lib/twin";
 import { formatNum } from "@/lib/format";
 import { Popover, PopoverTrigger, PopoverContent } from "@stratif-io/web";
 import { AXIS_DISPLAY } from "@/features/axes/axisDisplaySpec";
@@ -659,38 +659,80 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     [],
   );
 
-  const params: { name: string; value: string }[] = useMemo(() => {
+  const params: { sym: string; name: string; value: string }[] = useMemo(() => {
+    const axes = config.axes ?? {};
+    const k =
+      (getAxisValue("virality", axes.virality ?? "weak")?.params.k as
+        | number
+        | undefined) ?? 0.1;
+    const sigma =
+      (getAxisValue("anomalies", axes.anomalies ?? "moderate")?.params.sigma as
+        | number
+        | undefined) ?? 0.05;
     switch (metricKey) {
       case "events":
-        return [{ name: "d (depth)", value: `${depth} events/user/day` }];
+        return [{ sym: "d", name: "events / user / day", value: `${depth}` }];
       case "activeUsers":
+        return [
+          { sym: "θ₀", name: "peak churn rate", value: pct(rp.peakChurnRate) },
+          { sym: "θ∞", name: "base churn rate", value: pct(rp.baseChurnRate) },
+          { sym: "τ", name: "churn decay", value: `${rp.churnDecayDays} d` },
+          {
+            sym: "r",
+            name: "reactivation rate",
+            value: pct(rp.reactivationRate),
+          },
+          {
+            sym: "δ",
+            name: "reactivation decay",
+            value: fix1(rp.reactivationDecay),
+          },
+        ];
       case "churnedUsers":
         return [
-          { name: "peak churn", value: pct(rp.peakChurnRate) },
-          { name: "base churn", value: pct(rp.baseChurnRate) },
-          { name: "τ (decay)", value: `${rp.churnDecayDays}d` },
+          { sym: "θ₀", name: "peak churn rate", value: pct(rp.peakChurnRate) },
+          { sym: "θ∞", name: "base churn rate", value: pct(rp.baseChurnRate) },
+          { sym: "τ", name: "churn decay", value: `${rp.churnDecayDays} d` },
         ];
       case "newUsers":
         return [
-          { name: "target users (U)", value: formatNum(totalUsers) },
-          { name: "window", value: `${windowDays}d` },
+          {
+            sym: "U",
+            name: "target total users",
+            value: formatNum(totalUsers),
+          },
+          { sym: "T", name: "window", value: `${windowDays} d` },
+          { sym: "K", name: "viral K-factor", value: k.toFixed(2) },
+          { sym: "σ", name: "jitter noise", value: sigma.toFixed(2) },
         ];
       case "reactivatedUsers":
         return [
-          { name: "r (base rate)", value: pct(rp.reactivationRate) },
-          { name: "δ (decay)", value: fix1(rp.reactivationDecay) },
-          { name: "max dormant", value: `${rp.maxDormantDays}d` },
+          {
+            sym: "r",
+            name: "base reactivation rate",
+            value: pct(rp.reactivationRate),
+          },
+          {
+            sym: "δ",
+            name: "decay per dormant day",
+            value: fix1(rp.reactivationDecay),
+          },
+          {
+            sym: "D",
+            name: "max dormant days",
+            value: `${rp.maxDormantDays} d`,
+          },
         ];
       case "stickiness":
-        return [{ name: "window", value: "28-day rolling" }];
+        return [{ sym: "W", name: "MAU rolling window", value: "28 d" }];
       case "totalUsers":
-        return [{ name: "window", value: `${windowDays}d` }];
+        return [{ sym: "T", name: "window", value: `${windowDays} d` }];
       default: {
         const _exhaustive: never = metricKey;
         throw new Error(`Unhandled metricKey: ${_exhaustive}`);
       }
     }
-  }, [metricKey, depth, rp, totalUsers, windowDays]);
+  }, [metricKey, depth, rp, totalUsers, windowDays, config.axes]);
 
   const dailyRows = useMemo(
     () => buildDailyRows(metricKey, out, depth),
@@ -883,13 +925,16 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                     <tbody>
                       {params.map((p, i) => (
                         <tr
-                          key={p.name}
+                          key={p.sym}
                           className={i > 0 ? "border-t border-border/30" : ""}
                         >
-                          <td className="px-4 py-2 text-muted-foreground">
+                          <td className="px-3 py-2 font-mono font-semibold text-primary text-sm w-10 shrink-0">
+                            {p.sym}
+                          </td>
+                          <td className="px-2 py-2 text-muted-foreground">
                             {p.name}
                           </td>
-                          <td className="px-4 py-2 font-mono font-semibold text-foreground text-right">
+                          <td className="px-3 py-2 font-mono font-semibold text-foreground text-right">
                             {p.value}
                           </td>
                         </tr>
