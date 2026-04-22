@@ -144,8 +144,8 @@ export default function App() {
             <DialogTitle>Discard unsaved changes?</DialogTitle>
             <DialogDescription>
               You&apos;ve made changes to{" "}
-              <span className="font-mono">{config.name}</span>. Copy the YAML
-              from the save panel first if you want to keep them.
+              <span className="font-mono">{config.name}</span>. These changes
+              will be lost.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
