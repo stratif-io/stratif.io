@@ -61,6 +61,11 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
       { symbol: "J", meaning: "day-level stochastic jitter" },
       { symbol: "V", meaning: "viral amplification (K-factor)" },
       { symbol: "U", meaning: "target total users over the window" },
+      {
+        symbol: "s",
+        meaning:
+          "summation index over all days in the window (normalisation denominator)",
+      },
     ],
   },
   stickiness: {
