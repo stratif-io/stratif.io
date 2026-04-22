@@ -8,8 +8,7 @@ import type { GhostLine } from "@/features/preview/KpiChart";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
-import { resolveSimParams, anomalyTypeColor } from "@/lib/twin";
-import { parseDays } from "@/lib/twin/utils";
+import { resolveSimParams } from "@/lib/twin";
 import { formatNum } from "@/lib/format";
 
 const N_DAYS = 7;
@@ -231,23 +230,6 @@ function ghostLinesFor(
         },
       ];
   }
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function toBands(
-  anomalies: SimulationAnomaly[] | undefined,
-  days: number,
-): (KpiBand & { index: number })[] {
-  if (!anomalies?.length) return [];
-  return anomalies.flatMap((a, i) => {
-    const rawStart = parseDays(a.start);
-    const rawDur = parseDays(a.duration);
-    if (rawStart === null || rawDur === null || rawDur <= 0) return [];
-    const start = rawStart < 0 ? days + rawStart : rawStart;
-    return [
-      { start, end: start + rawDur, color: anomalyTypeColor(a.type), index: i },
-    ];
-  });
 }
 
 export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
