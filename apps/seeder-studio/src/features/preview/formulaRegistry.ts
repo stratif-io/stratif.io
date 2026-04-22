@@ -35,15 +35,23 @@ export const FORMULA_REGISTRY: Record<string, FormulaEntry> = {
     ],
   },
   newUsers: {
-    latex: "N_c = \\text{Poisson}(\\lambda_c)",
+    latex:
+      "N(t) \\sim \\text{Poisson}(\\lambda(t)), \\quad \\lambda(t) = \\frac{\\tilde{\\lambda}(t)}{\\sum_s \\tilde{\\lambda}(s)} \\cdot U",
     explanation:
-      "New users arriving on day c, sampled from a Poisson distribution. λ_c is the rescaled arrival rate from the growth curve, anomalies, jitter, and virality pipeline.",
+      "New users on day t are a Poisson draw with rate λ(t). The raw rate λ̃(t) flows through a four-stage pipeline: growth curve G(t), anomaly multipliers A, day-level jitter J, and viral amplification V. The result is rescaled so the expected total equals the target U.",
     variables: [
       {
-        symbol: "\\lambda_c",
-        meaning:
-          "expected arrivals on day c (growth × anomaly × jitter × virality, rescaled to target users)",
+        symbol: "\\tilde{\\lambda}(t) = V(J(A(G(t))))",
+        meaning: "raw rate: growth → anomalies → jitter → virality",
       },
+      {
+        symbol: "G(t)",
+        meaning: "growth curve (flat / strong / hockey-stick / …)",
+      },
+      { symbol: "A", meaning: "anomaly multipliers (spike / dip / outage)" },
+      { symbol: "J", meaning: "day-level stochastic jitter" },
+      { symbol: "V", meaning: "viral amplification (K-factor)" },
+      { symbol: "U", meaning: "target total users over the window" },
     ],
   },
   stickiness: {

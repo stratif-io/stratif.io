@@ -97,7 +97,8 @@ export function PreviewGrid() {
 
       const newUsersDailyRows = Array.from({ length: n }, (_, i) => ({
         day: i + 1,
-        formulaLabeled: `N(${i + 1})=${fn(out.newUsers[i])}`,
+        formulaLabeled: `λ(${i + 1})=${out.arrivals[i].toFixed(1)}`,
+        formula: `Poisson(${out.arrivals[i].toFixed(1)})`,
         result: fn(out.newUsers[i]),
       }));
 

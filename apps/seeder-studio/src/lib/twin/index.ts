@@ -115,5 +115,5 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     }
   }
 
-  return { days, ...metrics };
+  return { days, arrivals, ...metrics };
 }

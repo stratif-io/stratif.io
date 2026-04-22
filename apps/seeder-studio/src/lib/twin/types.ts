@@ -11,6 +11,7 @@ export interface RetentionParams {
 
 export interface TwinOutput {
   days: number;
+  arrivals: number[];
   events: number[];
   activeUsers: number[];
   newUsers: number[];
