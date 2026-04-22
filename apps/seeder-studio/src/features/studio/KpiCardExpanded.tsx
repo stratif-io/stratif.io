@@ -14,6 +14,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@stratif-io/web";
 import { AXIS_DISPLAY } from "@/features/axes/axisDisplaySpec";
 import { AxisPopover } from "@/features/studio/AxisPopover";
 
+const N_DAYS = 14;
 const fn = (v: number) => formatNum(Math.round(v));
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const fix1 = (v: number) => v.toFixed(1);
@@ -36,7 +37,7 @@ function buildDailyRows(
   out: ReturnType<typeof useTwinOutput>,
   depth: number,
 ): DailyRow[] {
-  const n = out.activeUsers.length;
+  const n = Math.min(N_DAYS, out.activeUsers.length);
   return Array.from({ length: n }, (_, i) => {
     const day = i + 1;
     switch (metricKey) {
@@ -605,8 +606,19 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   const [hoveredLineKey, setHoveredLineKey] = useState<string | null>(null);
   const [clickedLineKey, setClickedLineKey] = useState<string | null>(null);
   const focusedLineKey = clickedLineKey ?? hoveredLineKey;
+  const [checkedSteps, setCheckedSteps] = useState<Set<string>>(new Set());
+
   const handleFormulaClick = useCallback((key: string) => {
     setClickedLineKey((prev) => (prev === key ? null : key));
+  }, []);
+
+  const toggleStep = useCallback((key: string) => {
+    setCheckedSteps((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -743,8 +755,10 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   // Resolve pipeline config — fallback to undefined (triggers static formula)
   const pipeline = METRIC_PIPELINES[metricKey];
 
-  // All intermediate cols — always shown
-  const activeCols = pipeline ? pipeline.intermediateCols : [];
+  // Intermediate cols filtered by checked steps (only when pipeline exists)
+  const activeCols = pipeline
+    ? pipeline.intermediateCols.filter((c) => checkedSteps.has(c.stepKey))
+    : [];
 
   return (
     <div
@@ -805,71 +819,11 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
             />
           </section>
 
-          {/* STEP 2 & 3 — Daily table (left) + Formula & params (right) */}
-          <section className="grid grid-cols-[1fr_380px] divide-x divide-border/40">
-            {/* LEFT: Daily trace — all days, all values */}
-            <div className="flex flex-col overflow-hidden">
-              <div className="px-6 pt-5 pb-2 shrink-0">
-                <SectionLabel step={2} label="Day by day" />
-              </div>
-              <div className="overflow-auto flex-1 min-h-0 max-h-[420px]">
-                <table className="text-xs w-full">
-                  <thead className="sticky top-0 bg-card z-10">
-                    <tr className="bg-muted/30 text-muted-foreground/70">
-                      <th className="px-3 py-2 text-left font-medium">Day</th>
-                      {activeCols.map((c, idx) => (
-                        <th
-                          key={`${c.stepKey}-${idx}`}
-                          className="px-3 py-2 text-right font-medium whitespace-nowrap"
-                          style={{ color: c.color }}
-                        >
-                          {c.label}
-                        </th>
-                      ))}
-                      <th className="px-3 py-2 text-left font-medium whitespace-nowrap">
-                        Inputs
-                      </th>
-                      <th className="px-3 py-2 text-right font-medium">
-                        Result
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dailyRows.map((row, i) => (
-                      <tr
-                        key={row.day}
-                        className={i > 0 ? "border-t border-border/25" : ""}
-                      >
-                        <td className="px-3 py-2 font-mono text-muted-foreground">
-                          d{row.day}
-                        </td>
-                        {activeCols.map((c, idx) => (
-                          <td
-                            key={`${c.stepKey}-${idx}`}
-                            className="px-3 py-2 text-right font-mono"
-                          >
-                            {c.getValue(out, i)}
-                          </td>
-                        ))}
-                        <td
-                          className="px-3 py-2 text-muted-foreground font-mono text-[11px] max-w-[160px] truncate"
-                          title={row.computation}
-                        >
-                          {row.computation}
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono font-semibold text-foreground">
-                          {row.result}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* RIGHT: Formula + parameters */}
-            <div className="px-6 py-5 flex flex-col gap-5 overflow-y-auto max-h-[420px]">
-              <SectionLabel step={3} label="The formula" />
+          {/* STEP 2 & 3 — Math + Practice (two columns) */}
+          <section className="grid grid-cols-2 divide-x divide-border/40">
+            {/* LEFT: The formula */}
+            <div className="px-7 py-6 flex flex-col gap-5">
+              <SectionLabel step={2} label="The formula" />
 
               {/* Circular-dependency callout for newUsers / activeUsers */}
               {(metricKey === "newUsers" || metricKey === "activeUsers") && (
@@ -910,12 +864,17 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                   }
                   axes={config.axes ?? {}}
                   onAxisChange={setAxis}
+                  checkedSteps={checkedSteps}
+                  onToggleStep={toggleStep}
                 />
               ) : (
                 <>
+                  {/* Main formula — large display math */}
                   <div className="rounded-xl bg-muted/40 px-5 py-4 overflow-x-auto">
                     <MathFormula latex={entry.latex} display />
                   </div>
+
+                  {/* Where clause — also math */}
                   {entry.where && (
                     <div className="rounded-lg bg-muted/20 px-4 py-3 overflow-x-auto">
                       <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
@@ -924,6 +883,8 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                       <MathFormula latex={entry.where} />
                     </div>
                   )}
+
+                  {/* Symbol legend */}
                   <div>
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
                       Variables
@@ -948,6 +909,11 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                   </div>
                 </>
               )}
+            </div>
+
+            {/* RIGHT: In practice */}
+            <div className="px-7 py-6 flex flex-col gap-5">
+              <SectionLabel step={3} label="In practice" />
 
               {/* Current params */}
               <div>
@@ -975,6 +941,70 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              {/* Daily trace */}
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
+                  First {N_DAYS} days — step by step
+                </p>
+                <div className="rounded-xl border border-border/40 overflow-hidden">
+                  <div className="overflow-y-auto max-h-64">
+                    <table className="text-xs w-full">
+                      <thead className="sticky top-0 bg-card z-10">
+                        <tr className="bg-muted/30 text-muted-foreground/70">
+                          <th className="px-3 py-2 text-left font-medium">
+                            Day
+                          </th>
+                          {activeCols.map((c, idx) => (
+                            <th
+                              key={`${c.stepKey}-${idx}`}
+                              className="px-3 py-2 text-right font-medium whitespace-nowrap"
+                              style={{ color: c.color }}
+                            >
+                              {c.label}
+                            </th>
+                          ))}
+                          <th className="px-3 py-2 text-left font-medium">
+                            Inputs
+                          </th>
+                          <th className="px-3 py-2 text-right font-medium">
+                            Result
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dailyRows.map((row, i) => (
+                          <tr
+                            key={row.day}
+                            className={i > 0 ? "border-t border-border/25" : ""}
+                          >
+                            <td className="px-3 py-2 font-mono text-muted-foreground">
+                              d{row.day}
+                            </td>
+                            {activeCols.map((c, idx) => (
+                              <td
+                                key={`${c.stepKey}-${idx}`}
+                                className="px-3 py-2 text-right font-mono"
+                              >
+                                {c.getValue(out, i)}
+                              </td>
+                            ))}
+                            <td
+                              className="px-3 py-2 text-muted-foreground font-mono text-[11px] max-w-[140px] truncate"
+                              title={row.computation}
+                            >
+                              {row.computation}
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono font-semibold text-foreground">
+                              {row.result}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1027,6 +1057,8 @@ function PipelineFormula({
   latexOverrides = {},
   axes = {},
   onAxisChange,
+  checkedSteps,
+  onToggleStep,
 }: {
   ghostLines: GhostLine[];
   mainColor: string;
@@ -1040,6 +1072,8 @@ function PipelineFormula({
   latexOverrides?: Record<string, string>;
   axes?: Record<string, string>;
   onAxisChange?: (axisId: string, value: string) => void;
+  checkedSteps?: Set<string>;
+  onToggleStep?: (key: string) => void;
 }) {
   const colorMap: Record<string, string> = { __main__: mainColor };
   for (const g of ghostLines) colorMap[g.key] = g.color;
@@ -1054,6 +1088,8 @@ function PipelineFormula({
         const latex = latexOverrides[step.lineKey] ?? step.latex;
         const isActive = focusedKey === step.lineKey;
         const isDimmed = focusedKey !== null && !isActive;
+        const isChecked = checkedSteps?.has(step.lineKey) ?? false;
+
         const axisId = axisMap[step.lineKey];
         const axisDisplay = axisId ? AXIS_DISPLAY[axisId] : null;
         const currentVal = axisDisplay
@@ -1077,6 +1113,18 @@ function PipelineFormula({
             onMouseEnter={() => onHover(step.lineKey)}
             onMouseLeave={() => onHover(null)}
           >
+            {/* Checkbox */}
+            {onToggleStep && (
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={() => onToggleStep(step.lineKey)}
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0 accent-primary cursor-pointer"
+                title="Show in table"
+              />
+            )}
+
             {/* Color dot */}
             <span
               className="w-2 h-2 rounded-full shrink-0"

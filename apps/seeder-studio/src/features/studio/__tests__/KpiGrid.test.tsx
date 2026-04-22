@@ -132,7 +132,7 @@ describe("KpiGrid", () => {
     await screen.findAllByTestId("math-formula");
     fireEvent.click(screen.getByRole("button", { name: /stickiness/i }));
     // After switching to stickiness, only one expanded panel should exist
-    const expandedPanels = screen.getAllByText(/Day by day/i);
+    const expandedPanels = screen.getAllByText(/First \d+ days/);
     expect(expandedPanels).toHaveLength(1);
   });
 });
