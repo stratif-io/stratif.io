@@ -386,7 +386,10 @@ export function PreviewGrid() {
             </div>
           </div>
 
-          <div className="border-t pt-2 flex flex-col gap-4">
+          <div
+            className="border-t pt-2 flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div>
               <h3 className="text-xs uppercase text-muted-foreground font-semibold mb-1">
                 First days
