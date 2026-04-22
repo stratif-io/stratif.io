@@ -245,6 +245,31 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
 
   const anomalies = useMemo(() => config.anomalies ?? [], [config.anomalies]);
 
+  const growthLatex = useMemo(() => {
+    const axis = config.axes?.growth ?? "strong";
+    const split =
+      (config.growth_config?.split_fraction as number | undefined) ?? 0.3;
+    const rate = (config.growth_config?.rate as number | undefined) ?? 0.04;
+    const splitPct = Math.round(split * 100);
+    switch (axis) {
+      case "flat":
+        return "G(t) = \\dfrac{U}{T}";
+      case "weak":
+        return "G(t) = \\dfrac{U}{T}\\left(0.5 + \\dfrac{t}{T}\\right)";
+      case "strong":
+        return `G(t) = C\\,e^{${rate}\\,t},\\quad C = \\dfrac{${rate}\\,U}{e^{${rate}T}-1}`;
+      case "decline":
+        return "G(t) = 0.03\\,U\\,e^{-t\\,/\\,(0.5\\,T)}";
+      case "hockey_stick":
+        return (
+          `G(t) = \\begin{cases} \\tfrac{0.05U}{t_0} & t < t_0 \\\\ C\\,e^{${rate}(t-t_0)} & t \\ge t_0 \\end{cases}` +
+          `,\\quad t_0 = ${splitPct}\\%\\,T`
+        );
+      default:
+        return "G(t)";
+    }
+  }, [config.axes?.growth, config.growth_config]);
+
   const [floatingEditor, setFloatingEditor] = useState<{
     index: number;
     x: number;
@@ -421,6 +446,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                   clickedKey={clickedLineKey}
                   onHover={setHoveredLineKey}
                   onClick={handleFormulaClick}
+                  latexOverrides={{ g_growth: growthLatex }}
                 />
               ) : (
                 <>
@@ -623,6 +649,7 @@ function PipelineFormula({
   clickedKey,
   onHover,
   onClick,
+  latexOverrides = {},
 }: {
   ghostLines: GhostLine[];
   mainColor: string;
@@ -630,6 +657,7 @@ function PipelineFormula({
   clickedKey: string | null;
   onHover: (key: string | null) => void;
   onClick: (key: string) => void;
+  latexOverrides?: Record<string, string>;
 }) {
   const colorMap: Record<string, string> = { __main__: mainColor };
   for (const g of ghostLines) colorMap[g.key] = g.color;
@@ -641,6 +669,7 @@ function PipelineFormula({
           step.lineKey === "__main__"
             ? mainColor
             : (colorMap[step.lineKey] ?? step.color);
+        const latex = latexOverrides[step.lineKey] ?? step.latex;
         const isActive = focusedKey === step.lineKey;
         const isDimmed = focusedKey !== null && !isActive;
         const isLocked = clickedKey === step.lineKey;
@@ -692,7 +721,7 @@ function PipelineFormula({
                   {step.label}
                 </p>
                 <div className="overflow-x-auto">
-                  <MathFormula latex={step.latex} />
+                  <MathFormula latex={latex} />
                 </div>
               </div>
             </button>
