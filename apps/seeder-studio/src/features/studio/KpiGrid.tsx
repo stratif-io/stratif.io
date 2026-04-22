@@ -1,7 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
-import { useSeederStore } from "@/stores/seederStore";
-import { resolveSimParams } from "@/lib/twin";
 import { headlineStat } from "@/features/preview/headlineStat";
 import { formatNum } from "@/lib/format";
 import { KpiCard } from "./KpiCard";
@@ -71,11 +69,6 @@ const SECTIONS: { label: string; cards: CardDef[] }[] = [
 export function KpiGrid() {
   const [expandedKey, setExpandedKey] = useState<MetricKey | null>(null);
   const out = useTwinOutput();
-  const config = useSeederStore((s) => s.config);
-  const { windowDays: _windowDays } = useMemo(
-    () => resolveSimParams(config),
-    [config],
-  );
 
   const valuesFor = (key: MetricKey): (number | null)[] => {
     switch (key) {

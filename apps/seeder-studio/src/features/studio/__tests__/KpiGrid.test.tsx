@@ -120,7 +120,9 @@ describe("KpiGrid", () => {
   it("clicking a card opens its expanded view", async () => {
     render(<KpiGrid />);
     fireEvent.click(screen.getByRole("button", { name: /events\/day/i }));
-    expect(await screen.findAllByTestId("math-formula")).toBeDefined();
+    expect(
+      (await screen.findAllByTestId("math-formula")).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText(/d1/)).toBeInTheDocument();
   });
 
