@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import type { SimulationAnomaly } from "@/types/simulation";
 import { MathFormula } from "@/lib/math/MathFormula";
 import { FORMULA_REGISTRY } from "@/features/preview/formulaRegistry";
@@ -168,6 +168,17 @@ export function KpiCardExpanded({ metricKey, color, bands, onClose }: Props) {
     x: number;
     y: number;
   } | null>(null);
+
+  useEffect(() => {
+    if (!floatingEditor) return;
+    const handler = (e: MouseEvent) => {
+      const path = e.composedPath() as Element[];
+      const inside = path.some((el) => el?.closest?.("[data-floating-editor]"));
+      if (!inside) setFloatingEditor(null);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [floatingEditor]);
 
   const entry = FORMULA_REGISTRY[metricKey];
 

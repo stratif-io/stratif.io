@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { SimulationConfig } from "@/types/simulation";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
@@ -79,8 +79,6 @@ export function KpiGrid() {
     x: number;
     y: number;
   } | null>(null);
-  const floatingRef = useRef<HTMLDivElement>(null);
-
   const out = useTwinOutput();
   const config = useSeederStore((s) => s.config);
   const anomalies = useSeederStore(
@@ -93,16 +91,13 @@ export function KpiGrid() {
     [config.anomalies, windowDays],
   );
 
-  // Close floating editor on outside click
+  // Close floating editor on outside click (composedPath handles portals)
   useEffect(() => {
     if (!floatingEditor) return;
     const handler = (e: MouseEvent) => {
-      if (
-        floatingRef.current &&
-        !floatingRef.current.contains(e.target as Node)
-      ) {
-        setFloatingEditor(null);
-      }
+      const path = e.composedPath() as Element[];
+      const inside = path.some((el) => el?.closest?.("[data-floating-editor]"));
+      if (!inside) setFloatingEditor(null);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -182,27 +177,23 @@ export function KpiGrid() {
       ))}
 
       {floatingEditor !== null && anomalies[floatingEditor.index] && (
-        <div ref={floatingRef}>
-          <AnomalyFloatingEditor
-            anomaly={anomalies[floatingEditor.index]}
-            x={floatingEditor.x}
-            y={floatingEditor.y}
-            onChange={(next) => {
-              setAnomalies(
-                anomalies.map((a, i) =>
-                  i === floatingEditor.index ? next : a,
-                ),
-              );
-            }}
-            onDelete={() => {
-              setAnomalies(
-                anomalies.filter((_, i) => i !== floatingEditor.index),
-              );
-              setFloatingEditor(null);
-            }}
-            onClose={() => setFloatingEditor(null)}
-          />
-        </div>
+        <AnomalyFloatingEditor
+          anomaly={anomalies[floatingEditor.index]}
+          x={floatingEditor.x}
+          y={floatingEditor.y}
+          onChange={(next) => {
+            setAnomalies(
+              anomalies.map((a, i) => (i === floatingEditor.index ? next : a)),
+            );
+          }}
+          onDelete={() => {
+            setAnomalies(
+              anomalies.filter((_, i) => i !== floatingEditor.index),
+            );
+            setFloatingEditor(null);
+          }}
+          onClose={() => setFloatingEditor(null)}
+        />
       )}
     </div>
   );

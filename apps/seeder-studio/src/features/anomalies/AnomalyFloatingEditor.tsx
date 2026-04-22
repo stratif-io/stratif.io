@@ -51,6 +51,7 @@ export function AnomalyFloatingEditor({
 
   return (
     <div
+      data-floating-editor
       style={{ position: "fixed", left: x, top: y, zIndex: 50 }}
       className="rounded-lg border bg-popover text-popover-foreground shadow-md p-3 w-56 flex flex-col gap-2"
     >
