@@ -375,6 +375,9 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
         chartHeight="h-40"
         className="border-0 p-0 bg-transparent"
         valueSuffix={metricKey === "stickiness" ? "%" : ""}
+        formulaLatex={entry.latex}
+        formulaWhere={entry.where}
+        formulaExplanation={entry.explanation}
       />
 
       {floatingEditor !== null && anomalies[floatingEditor.index] && (

@@ -5,6 +5,7 @@ export interface FormulaVariable {
 
 export interface FormulaEntry {
   latex: string;
+  where?: string;
   explanation: string;
   variables: FormulaVariable[];
 }
@@ -45,7 +46,9 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
   },
   newUsers: {
     latex:
-      "P(N(t)=k) = \\frac{\\lambda(t)^k\\, e^{-\\lambda(t)}}{k!}, \\quad \\lambda(t) = \\frac{\\tilde{\\lambda}(t)}{\\sum_s \\tilde{\\lambda}(s)} \\cdot U",
+      "N(t) \\sim \\operatorname{Poisson}(\\lambda(t)),\\quad \\lambda(t) = \\frac{V(J(A(G(t))))}{\\sum_s V(J(A(G(s))))} \\cdot U",
+    where:
+      "J(t) = A(t)\\,(1 + \\sigma Z),\\; Z \\sim \\mathcal{N}(0,1),\\; \\sigma = 0.05",
     explanation:
       "New users on day t are a Poisson draw with rate λ(t). The raw rate λ̃(t) flows through a four-stage pipeline: growth curve G(t), anomaly multipliers A, day-level jitter J, and viral amplification V. The result is rescaled so the expected total equals the target U.",
     variables: [
