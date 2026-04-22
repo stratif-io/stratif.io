@@ -178,15 +178,26 @@ function ghostLinesFor(
           color: "hsl(var(--chart-3))",
         },
       ];
-    case "stickiness":
+    case "stickiness": {
+      const mauValues = out.activeUsers.map((dau, i) => {
+        const s = out.stickiness[i];
+        return s !== null && s > 0 ? dau / s : null;
+      });
       return [
         {
           key: "g_dau",
-          label: "Active users",
+          label: "DAU — daily active users",
           values: out.activeUsers,
           color: "hsl(var(--chart-8))",
         },
+        {
+          key: "g_mau",
+          label: "MAU — monthly active users",
+          values: mauValues,
+          color: "hsl(var(--chart-2))",
+        },
       ];
+    }
     case "churnedUsers":
       return [
         {
@@ -295,7 +306,12 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         color: "",
       },
     ],
-    axisMap: { g_growth: "growth", g_jitter: "anomalies", g_viral: "virality" },
+    axisMap: {
+      g_growth: "growth",
+      g_jitter: "anomalies",
+      g_viral: "virality",
+      __main__: "scale",
+    },
     intermediateCols: [
       {
         stepKey: "g_growth",
@@ -417,26 +433,44 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
     steps: [
       {
         lineKey: "g_dau",
-        label: "Active users",
+        label: "Daily active users",
         latex:
           "\\text{DAU}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot S[t{-}c]\\right)",
         color: "hsl(var(--chart-8))",
       },
       {
+        lineKey: "g_mau",
+        label: "Monthly active users",
+        latex:
+          "\\text{MAU}(t) = \\sum_c N_c \\cdot \\left(1 - \\prod_{k=0}^{27}(1-S[t{-}c{-}k])\\right)",
+        color: "hsl(var(--chart-2))",
+      },
+      {
         lineKey: "__main__",
-        label: "Stickiness",
+        label: "Stickiness ratio",
         latex:
           "\\text{stickiness}(t) = \\dfrac{\\text{DAU}(t)}{\\text{MAU}(t)}",
         color: "",
       },
     ],
-    axisMap: { g_dau: "stickiness" },
+    axisMap: { g_dau: "stickiness", g_mau: "stickiness" },
     intermediateCols: [
       {
         stepKey: "g_dau",
         label: "DAU(t)",
         color: "hsl(var(--chart-8))",
         getValue: (out, i) => fn(out.activeUsers[i]),
+      },
+      {
+        stepKey: "g_mau",
+        label: "MAU(t)",
+        color: "hsl(var(--chart-2))",
+        getValue: (out, i) => {
+          const s = out.stickiness[i];
+          return s !== null && s > 0
+            ? fn(Math.round(out.activeUsers[i] / s))
+            : "—";
+        },
       },
     ],
   },
