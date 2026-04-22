@@ -115,5 +115,15 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     }
   }
 
-  return { days, arrivals, ...metrics };
+  return {
+    days,
+    arrivals,
+    pipeline: {
+      growth: baseline,
+      anomalies: withAnomalies,
+      jitter: jittered,
+      virality: rawArrivals,
+    },
+    ...metrics,
+  };
 }

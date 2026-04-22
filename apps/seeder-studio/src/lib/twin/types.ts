@@ -12,6 +12,13 @@ export interface RetentionParams {
 export interface TwinOutput {
   days: number;
   arrivals: number[];
+  /** Pipeline stages for new-user arrival rate (each normalized to [0,1] relative scale) */
+  pipeline: {
+    growth: number[]; // G(t) — raw growth curve
+    anomalies: number[]; // A(G(t)) — after anomaly multipliers
+    jitter: number[]; // J(A(G(t))) — after day-level jitter
+    virality: number[]; // V(J(A(G(t)))) — after viral amplification
+  };
   events: number[];
   activeUsers: number[];
   newUsers: number[];

@@ -207,10 +207,28 @@ function ghostLinesFor(
     case "newUsers":
       return [
         {
-          key: "g_arr",
-          label: "Arrival rate λ",
-          values: out.arrivals,
-          color: "hsl(var(--chart-3))",
+          key: "g_growth",
+          label: "G(t) — growth curve",
+          values: out.pipeline.growth,
+          color: "hsl(var(--chart-2))",
+        },
+        {
+          key: "g_anom",
+          label: "A — after anomalies",
+          values: out.pipeline.anomalies,
+          color: "hsl(var(--chart-5))",
+        },
+        {
+          key: "g_jitter",
+          label: "J — after jitter",
+          values: out.pipeline.jitter,
+          color: "hsl(var(--chart-6))",
+        },
+        {
+          key: "g_viral",
+          label: "V — after virality",
+          values: out.pipeline.virality,
+          color: "hsl(var(--chart-4))",
         },
       ];
   }
