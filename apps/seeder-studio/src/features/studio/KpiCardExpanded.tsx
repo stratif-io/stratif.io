@@ -251,6 +251,14 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     y: number;
   } | null>(null);
 
+  const [hoveredLineKey, setHoveredLineKey] = useState<string | null>(null);
+  const [clickedLineKey, setClickedLineKey] = useState<string | null>(null);
+  const focusedLineKey = clickedLineKey ?? hoveredLineKey;
+
+  const handleFormulaClick = useCallback((key: string) => {
+    setClickedLineKey((prev) => (prev === key ? null : key));
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -391,6 +399,11 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
               chartHeight="h-56"
               className="border-0 p-0 bg-transparent mt-3"
               valueSuffix={metricKey === "stickiness" ? "%" : ""}
+              focusedLineKey={focusedLineKey}
+              onFocusedLineKeyChange={(k) => {
+                setClickedLineKey(k);
+                setHoveredLineKey(null);
+              }}
             />
           </section>
 
@@ -400,41 +413,57 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
             <div className="px-7 py-6 flex flex-col gap-5">
               <SectionLabel step={2} label="The formula" />
 
-              {/* Main formula — large display math */}
-              <div className="rounded-xl bg-muted/40 px-5 py-4 overflow-x-auto">
-                <MathFormula latex={entry.latex} display />
-              </div>
+              {metricKey === "newUsers" ? (
+                <PipelineFormula
+                  ghostLines={ghostLines}
+                  mainColor={color}
+                  focusedKey={focusedLineKey}
+                  clickedKey={clickedLineKey}
+                  onHover={setHoveredLineKey}
+                  onClick={handleFormulaClick}
+                />
+              ) : (
+                <>
+                  {/* Main formula — large display math */}
+                  <div className="rounded-xl bg-muted/40 px-5 py-4 overflow-x-auto">
+                    <MathFormula latex={entry.latex} display />
+                  </div>
 
-              {/* Where clause — also math */}
-              {entry.where && (
-                <div className="rounded-lg bg-muted/20 px-4 py-3 overflow-x-auto">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
-                    where
-                  </p>
-                  <MathFormula latex={entry.where} />
-                </div>
+                  {/* Where clause — also math */}
+                  {entry.where && (
+                    <div className="rounded-lg bg-muted/20 px-4 py-3 overflow-x-auto">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
+                        where
+                      </p>
+                      <MathFormula latex={entry.where} />
+                    </div>
+                  )}
+
+                  {/* Symbol legend */}
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
+                      Variables
+                    </p>
+                    <table className="text-xs w-full">
+                      <tbody>
+                        {entry.variables.map((v) => (
+                          <tr
+                            key={v.symbol}
+                            className="border-t border-border/30"
+                          >
+                            <td className="py-1.5 pr-4 text-primary align-middle whitespace-nowrap w-0">
+                              <MathFormula latex={v.symbol} />
+                            </td>
+                            <td className="py-1.5 text-muted-foreground leading-snug">
+                              {v.meaning}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
-
-              {/* Symbol legend */}
-              <div>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
-                  Variables
-                </p>
-                <table className="text-xs w-full">
-                  <tbody>
-                    {entry.variables.map((v) => (
-                      <tr key={v.symbol} className="border-t border-border/30">
-                        <td className="py-1.5 pr-4 text-primary align-middle whitespace-nowrap w-0">
-                          <MathFormula latex={v.symbol} />
-                        </td>
-                        <td className="py-1.5 text-muted-foreground leading-snug">
-                          {v.meaning}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             </div>
 
             {/* RIGHT: In practice */}
@@ -542,6 +571,134 @@ function SectionLabel({ step, label }: { step: number; label: string }) {
       <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground/70">
         {label}
       </span>
+    </div>
+  );
+}
+
+interface PipelineStep {
+  lineKey: string;
+  label: string;
+  latex: string;
+  color: string;
+}
+
+const PIPELINE: PipelineStep[] = [
+  {
+    lineKey: "g_growth",
+    label: "Growth curve",
+    latex: "G(t)",
+    color: "hsl(var(--chart-2))",
+  },
+  {
+    lineKey: "g_anom",
+    label: "Anomaly multipliers",
+    latex: "A(t) = G(t) \\cdot \\prod_k m_k(t)",
+    color: "hsl(var(--chart-5))",
+  },
+  {
+    lineKey: "g_jitter",
+    label: "Stochastic jitter",
+    latex: "J(t) = A(t)\\,(1 + \\sigma Z),\\quad Z \\sim \\mathcal{N}(0,1)",
+    color: "hsl(var(--chart-6))",
+  },
+  {
+    lineKey: "g_viral",
+    label: "Viral amplification",
+    latex: "V(t) = J(t) + K \\cdot \\mathrm{DAU}(t{-}1)",
+    color: "hsl(var(--chart-4))",
+  },
+  {
+    lineKey: "__main__",
+    label: "Poisson draw",
+    latex:
+      "N(t) \\sim \\operatorname{Poisson}\\!\\left(\\frac{V(t)}{\\sum_s V(s)} \\cdot U\\right)",
+    color: "", // filled by mainColor prop
+  },
+];
+
+function PipelineFormula({
+  ghostLines,
+  mainColor,
+  focusedKey,
+  clickedKey,
+  onHover,
+  onClick,
+}: {
+  ghostLines: GhostLine[];
+  mainColor: string;
+  focusedKey: string | null;
+  clickedKey: string | null;
+  onHover: (key: string | null) => void;
+  onClick: (key: string) => void;
+}) {
+  const colorMap: Record<string, string> = { __main__: mainColor };
+  for (const g of ghostLines) colorMap[g.key] = g.color;
+
+  return (
+    <div className="flex flex-col">
+      {PIPELINE.map((step, idx) => {
+        const stepColor =
+          step.lineKey === "__main__"
+            ? mainColor
+            : (colorMap[step.lineKey] ?? step.color);
+        const isActive = focusedKey === step.lineKey;
+        const isDimmed = focusedKey !== null && !isActive;
+        const isLocked = clickedKey === step.lineKey;
+
+        return (
+          <div key={step.lineKey} className="flex flex-col">
+            {/* Arrow connector (except before first) */}
+            {idx > 0 && (
+              <div className="flex items-center pl-[18px] py-0.5">
+                <div className="w-px h-4 bg-border/50" />
+                <svg
+                  width="8"
+                  height="6"
+                  viewBox="0 0 8 6"
+                  className="text-muted-foreground/40 -ml-[3.5px]"
+                >
+                  <path d="M4 6L0 0h8z" fill="currentColor" />
+                </svg>
+              </div>
+            )}
+
+            {/* Step row */}
+            <button
+              type="button"
+              className={[
+                "flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-all",
+                "hover:bg-muted/50 cursor-pointer",
+                isActive ? "bg-muted/60 ring-1 ring-border/60" : "",
+                isDimmed ? "opacity-40" : "opacity-100",
+              ].join(" ")}
+              onMouseEnter={() => onHover(step.lineKey)}
+              onMouseLeave={() => onHover(null)}
+              onClick={() => onClick(step.lineKey)}
+            >
+              {/* Color bar + lock indicator */}
+              <div className="flex flex-col items-center gap-1 pt-1 shrink-0">
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: stepColor }}
+                />
+                {isLocked && (
+                  <span className="text-[8px] text-muted-foreground/60">●</span>
+                )}
+              </div>
+
+              {/* Formula + label */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-medium text-muted-foreground/60 mb-1 uppercase tracking-wide">
+                  {step.label}
+                </p>
+                <div className="overflow-x-auto">
+                  <MathFormula latex={step.latex} />
+                </div>
+              </div>
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

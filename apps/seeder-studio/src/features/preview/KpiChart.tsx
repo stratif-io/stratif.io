@@ -53,6 +53,9 @@ interface Props {
   formulaLatex?: string;
   formulaWhere?: string;
   formulaExplanation?: string;
+  /** Controlled focused line key — when provided, overrides internal state */
+  focusedLineKey?: string | null;
+  onFocusedLineKeyChange?: (key: string | null) => void;
 }
 
 const fmt = (d: Date) =>
@@ -92,11 +95,24 @@ export function KpiChart({
   formulaLatex = "",
   formulaWhere = "",
   formulaExplanation = "",
+  focusedLineKey,
+  onFocusedLineKeyChange,
 }: Props) {
-  const [focusedKey, setFocusedKey] = useState<string | null>(null);
-  const toggleFocus = useCallback((key: string) => {
-    setFocusedKey((prev) => (prev === key ? null : key));
-  }, []);
+  const [internalFocusedKey, setInternalFocusedKey] = useState<string | null>(
+    null,
+  );
+  const focusedKey =
+    focusedLineKey !== undefined ? focusedLineKey : internalFocusedKey;
+  const toggleFocus = useCallback(
+    (key: string) => {
+      if (onFocusedLineKeyChange) {
+        onFocusedLineKeyChange(focusedKey === key ? null : key);
+      } else {
+        setInternalFocusedKey((prev) => (prev === key ? null : key));
+      }
+    },
+    [focusedKey, onFocusedLineKeyChange],
+  );
 
   const mainMax = useMemo(
     () => Math.max(...values.filter((v): v is number => v !== null), 1),
