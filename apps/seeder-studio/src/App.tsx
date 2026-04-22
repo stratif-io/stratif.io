@@ -1,4 +1,4 @@
-import { Component, useMemo, useState, useEffect, useRef } from "react";
+import { Component, useState, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import {
   Button,
@@ -11,12 +11,9 @@ import {
   Skeleton,
 } from "@stratif-io/web";
 import { TopBar } from "./features/topbar/TopBar";
-import { AxisSidebar } from "./features/axes/AxisSidebar";
-import { PreviewGrid } from "./features/preview/PreviewGrid";
-import { SavePanel } from "./features/save/SavePanel";
+import { StudioLayout } from "./features/studio/StudioLayout";
 import { usePresets } from "./features/presets/usePresets";
 import { useSeederStore, blankConfig } from "./stores/seederStore";
-import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
 
 class ErrorBoundary extends Component<
   { children: ReactNode; fallback?: ReactNode },
@@ -51,8 +48,6 @@ export default function App() {
   const [pendingIntent, setPendingIntent] = useState<
     { kind: "load"; name: string } | { kind: "blank" } | null
   >(null);
-
-  const yaml = useMemo(() => stringifyConfigYaml(config), [config]);
 
   const confirmAndRun = (
     intent: { kind: "load"; name: string } | { kind: "blank" },
@@ -136,18 +131,8 @@ export default function App() {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <ErrorBoundary>
-          <AxisSidebar />
+          <StudioLayout />
         </ErrorBoundary>
-
-        <main className="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden">
-          <div className="flex-1 min-h-0 flex flex-col">
-            <ErrorBoundary>
-              <PreviewGrid />
-            </ErrorBoundary>
-          </div>
-        </main>
-
-        <SavePanel yaml={yaml} />
       </div>
 
       <Dialog
