@@ -101,6 +101,13 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
     label: "virality",
     values: [
       {
+        value: "none",
+        label: "No virality",
+        description:
+          "Purely organic — K = 0, no existing users pull in new ones",
+        sparkPoints: "0,26 16,24 32,22 52,20",
+      },
+      {
         value: "weak",
         label: "No word-of-mouth",
         description: "Growth purely from acquisition channels (k ≈ 0.1)",

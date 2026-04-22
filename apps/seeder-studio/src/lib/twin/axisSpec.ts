@@ -151,6 +151,12 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
     description: "Existing-user-driven arrivals (k-factor).",
     values: [
       {
+        value: "none",
+        label: "none",
+        description: "k = 0 — purely organic, no viral loop.",
+        params: { k: 0 },
+      },
+      {
         value: "weak",
         label: "weak",
         description: "k ≈ 0.1.",
