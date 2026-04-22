@@ -29,35 +29,13 @@ const SECTIONS: { label: string; cards: CardDef[] }[] = [
     ],
   },
   {
-    label: "Engagement",
+    label: "Retention",
     cards: [
-      {
-        key: "stickiness",
-        title: "Stickiness",
-        color: "hsl(var(--chart-7))",
-        valueSuffix: "%",
-      },
       {
         key: "activeUsers",
         title: "Active users",
         color: "hsl(var(--chart-8))",
       },
-    ],
-  },
-  {
-    label: "Activity",
-    cards: [
-      {
-        key: "events",
-        title: "Events/day",
-        color: "hsl(var(--chart-6))",
-        colSpan: 3,
-      },
-    ],
-  },
-  {
-    label: "Health",
-    cards: [
       {
         key: "churnedUsers",
         title: "Churned/day",
@@ -68,6 +46,18 @@ const SECTIONS: { label: string; cards: CardDef[] }[] = [
         title: "Reactivated/day",
         color: "hsl(var(--chart-4))",
       },
+    ],
+  },
+  {
+    label: "Engagement",
+    cards: [
+      {
+        key: "stickiness",
+        title: "Stickiness",
+        color: "hsl(var(--chart-7))",
+        valueSuffix: "%",
+      },
+      { key: "events", title: "Events/day", color: "hsl(var(--chart-6))" },
     ],
   },
 ];
