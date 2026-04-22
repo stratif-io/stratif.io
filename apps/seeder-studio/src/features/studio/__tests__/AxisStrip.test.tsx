@@ -31,8 +31,10 @@ describe("AxisStrip", () => {
   it("selecting a value calls setAxis and closes the popover", async () => {
     render(<AxisStrip />);
     fireEvent.click(screen.getByText("growth"));
-    fireEvent.click(await screen.findByText("Decline"));
-    expect(useSeederStore.getState().config.axes.growth).toBe("decline");
-    expect(screen.queryByText("Strong growth")).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByText("Hockey stick"));
+    expect(useSeederStore.getState().config.axes.growth).toBe("hockey_stick");
+    // popover should be closed — Hockey stick label moves to chip, popover gone
+    // verify only 1 instance of "Hockey stick" (in chip, not popover)
+    expect(screen.getAllByText("Hockey stick").length).toBe(1);
   });
 });

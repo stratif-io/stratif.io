@@ -45,6 +45,9 @@ export function AxisChip({ axis, currentValue, onSelect }: Props) {
                 className="text-primary"
               />
             </svg>
+            <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">
+              {current.label}
+            </span>
           </div>
         </button>
       </PopoverTrigger>
