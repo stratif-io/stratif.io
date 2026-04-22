@@ -1,11 +1,14 @@
 import { useMemo } from "react";
+import type { SimulationAnomaly } from "@/types/simulation";
 import { MathFormula } from "@/lib/math/MathFormula";
 import { FORMULA_REGISTRY } from "@/features/preview/formulaRegistry";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
 import { KpiChart } from "@/features/preview/KpiChart";
+import type { KpiBand } from "@/features/preview/KpiChart";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
-import { resolveSimParams } from "@/lib/twin";
+import { resolveSimParams, anomalyTypeColor } from "@/lib/twin";
+import { parseDays } from "@/lib/twin/utils";
 import { formatNum } from "@/lib/format";
 
 const N_DAYS = 7;
@@ -106,6 +109,20 @@ function buildDailyRows(
   });
 }
 
+function toBands(
+  anomalies: SimulationAnomaly[] | undefined,
+  days: number,
+): KpiBand[] {
+  if (!anomalies?.length) return [];
+  return anomalies.flatMap((a) => {
+    const rawStart = parseDays(a.start);
+    const rawDur = parseDays(a.duration);
+    if (rawStart === null || rawDur === null || rawDur <= 0) return [];
+    const start = rawStart < 0 ? days + rawStart : rawStart;
+    return [{ start, end: start + rawDur, color: anomalyTypeColor(a.type) }];
+  });
+}
+
 function valuesFor(
   metricKey: MetricKey,
   out: ReturnType<typeof useTwinOutput>,
@@ -139,6 +156,11 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   } = useMemo(() => resolveSimParams(config), [config]);
 
   const entry = FORMULA_REGISTRY[metricKey];
+
+  const bands = useMemo(
+    () => toBands(config.anomalies, windowDays),
+    [config.anomalies, windowDays],
+  );
 
   const params: { name: string; value: string }[] = useMemo(() => {
     switch (metricKey) {
@@ -208,8 +230,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
         title=""
         values={valuesFor(metricKey, out)}
         color={color}
-        anomalies={config.anomalies}
-        windowDays={windowDays}
+        bands={bands}
         chartHeight="h-40"
         className="border-0 p-0 bg-transparent"
         valueSuffix={metricKey === "stickiness" ? "%" : ""}
