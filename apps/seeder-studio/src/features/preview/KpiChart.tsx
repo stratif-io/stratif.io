@@ -25,6 +25,7 @@ export interface KpiBand {
 // Must match the LineChart margin and XAxis height below.
 const CM = { top: 4, right: 4, left: 4, bottom: 4 } as const;
 const X_AXIS_H = 20;
+const Y_AXIS_W = 48; // matches width prop on YAxis when ghost lines are shown
 
 export interface GhostLine {
   key: string;
@@ -171,10 +172,12 @@ export function KpiChart({
     containerSize.w > 0 &&
     containerSize.h > 0;
 
+  const hasYAxis = !!ghostLines && ghostLines.length > 0;
+  const yAxisW = hasYAxis ? Y_AXIS_W : 0;
   const overlayOffset = {
-    left: CM.left,
+    left: CM.left + yAxisW,
     top: CM.top,
-    width: containerSize.w - CM.left - CM.right,
+    width: containerSize.w - CM.left - CM.right - yAxisW,
     height: containerSize.h - CM.top - CM.bottom - X_AXIS_H,
   };
 
