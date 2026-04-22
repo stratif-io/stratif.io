@@ -28,7 +28,10 @@ export default defineConfig({
         },
         {
           label: 'Demo',
-          items: [{ label: 'Sample Data', slug: 'demo/sample-data' }],
+          items: [
+            { label: 'Sample Data', slug: 'demo/sample-data' },
+            { label: 'Generating Sample Data', slug: 'demo/seeding' },
+          ],
         },
         {
           label: 'Features',
