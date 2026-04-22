@@ -45,7 +45,10 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
     const duration = Math.max(5, Math.floor(window_days * 0.1));
     const maxStart = Math.max(0, window_days - duration - 1);
     const start = Math.floor(Math.random() * maxStart);
-    setAnomalies([...anomalies, defaultAnomaly("spike", start, duration)]);
+    setAnomalies([
+      ...anomalies,
+      defaultAnomaly("product_launch", start, duration),
+    ]);
   };
 
   const handleExport = () => {

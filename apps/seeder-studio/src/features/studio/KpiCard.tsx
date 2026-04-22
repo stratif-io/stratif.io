@@ -6,6 +6,7 @@ export interface Band {
   start: number;
   end: number;
   color: string;
+  index: number;
 }
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
   expanded: boolean;
   onExpand: () => void;
   bands?: Band[];
+  onBandClick?: (index: number, x: number, y: number) => void;
   valueSuffix?: string;
   className?: string;
 }
@@ -28,6 +30,7 @@ export function KpiCard({
   expanded,
   onExpand,
   bands,
+  onBandClick,
   valueSuffix: _valueSuffix,
   className,
 }: Props) {
@@ -71,8 +74,28 @@ export function KpiCard({
                 x2={b.end}
                 dataKey="i"
                 fill={b.color}
-                fillOpacity={0.18}
-                stroke="none"
+                fillOpacity={0.25}
+                stroke={b.color}
+                strokeOpacity={0.5}
+                strokeWidth={1}
+                onClick={
+                  onBandClick
+                    ? (_, e) => {
+                        e?.stopPropagation();
+                        const rect = (
+                          e?.currentTarget as HTMLElement | undefined
+                        )
+                          ?.closest("svg")
+                          ?.getBoundingClientRect();
+                        onBandClick(
+                          b.index,
+                          (e as MouseEvent).clientX,
+                          rect ? rect.top : (e as MouseEvent).clientY,
+                        );
+                      }
+                    : undefined
+                }
+                style={onBandClick ? { cursor: "pointer" } : undefined}
               />
             ))}
             <Line

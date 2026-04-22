@@ -1,12 +1,16 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import type { SimulationConfig } from "@/types/simulation";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveSimParams } from "@/lib/twin";
 import { headlineStat } from "@/features/preview/headlineStat";
 import { formatNum } from "@/lib/format";
+import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 import { KpiCard } from "./KpiCard";
 import { KpiCardExpanded, toBands } from "./KpiCardExpanded";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
+
+const EMPTY_ANOMALIES: NonNullable<SimulationConfig["anomalies"]> = [];
 
 interface CardDef {
   key: MetricKey;
@@ -70,13 +74,45 @@ const SECTIONS: { label: string; cards: CardDef[] }[] = [
 
 export function KpiGrid() {
   const [expandedKey, setExpandedKey] = useState<MetricKey | null>(null);
+  const [floatingEditor, setFloatingEditor] = useState<{
+    index: number;
+    x: number;
+    y: number;
+  } | null>(null);
+  const floatingRef = useRef<HTMLDivElement>(null);
+
   const out = useTwinOutput();
   const config = useSeederStore((s) => s.config);
+  const anomalies = useSeederStore(
+    (s) => s.config.anomalies ?? EMPTY_ANOMALIES,
+  );
+  const setAnomalies = useSeederStore((s) => s.setAnomalies);
   const { windowDays } = useMemo(() => resolveSimParams(config), [config]);
   const bands = useMemo(
     () => toBands(config.anomalies, windowDays),
     [config.anomalies, windowDays],
   );
+
+  // Close floating editor on outside click
+  useEffect(() => {
+    if (!floatingEditor) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        floatingRef.current &&
+        !floatingRef.current.contains(e.target as Node)
+      ) {
+        setFloatingEditor(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [floatingEditor]);
+
+  const handleBandClick = (index: number, x: number, y: number) => {
+    setFloatingEditor((prev) =>
+      prev?.index === index ? null : { index, x, y },
+    );
+  };
 
   const valuesFor = (key: MetricKey): (number | null)[] => {
     switch (key) {
@@ -108,10 +144,6 @@ export function KpiGrid() {
     }
   };
 
-  const handleExpand = (key: MetricKey) => {
-    setExpandedKey((prev) => (prev === key ? null : key));
-  };
-
   return (
     <div className="flex flex-col gap-6 p-4 overflow-y-auto flex-1 min-h-0">
       {SECTIONS.map((section) => (
@@ -129,8 +161,11 @@ export function KpiGrid() {
                 color={card.color}
                 valueSuffix={card.valueSuffix}
                 bands={bands}
+                onBandClick={handleBandClick}
                 expanded={expandedKey === card.key}
-                onExpand={() => handleExpand(card.key)}
+                onExpand={() =>
+                  setExpandedKey((p) => (p === card.key ? null : card.key))
+                }
                 className={card.colSpan === 3 ? "col-span-3" : undefined}
               />
             ))}
@@ -145,6 +180,30 @@ export function KpiGrid() {
           </div>
         </div>
       ))}
+
+      {floatingEditor !== null && anomalies[floatingEditor.index] && (
+        <div ref={floatingRef}>
+          <AnomalyFloatingEditor
+            anomaly={anomalies[floatingEditor.index]}
+            x={floatingEditor.x}
+            y={floatingEditor.y}
+            onChange={(next) => {
+              setAnomalies(
+                anomalies.map((a, i) =>
+                  i === floatingEditor.index ? next : a,
+                ),
+              );
+            }}
+            onDelete={() => {
+              setAnomalies(
+                anomalies.filter((_, i) => i !== floatingEditor.index),
+              );
+              setFloatingEditor(null);
+            }}
+            onClose={() => setFloatingEditor(null)}
+          />
+        </div>
+      )}
     </div>
   );
 }

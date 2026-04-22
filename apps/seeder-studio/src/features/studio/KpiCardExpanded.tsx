@@ -137,14 +137,16 @@ function valuesFor(
 export function toBands(
   anomalies: SimulationAnomaly[] | undefined,
   days: number,
-): KpiBand[] {
+): (KpiBand & { index: number })[] {
   if (!anomalies?.length) return [];
-  return anomalies.flatMap((a) => {
+  return anomalies.flatMap((a, i) => {
     const rawStart = parseDays(a.start);
     const rawDur = parseDays(a.duration);
     if (rawStart === null || rawDur === null || rawDur <= 0) return [];
     const start = rawStart < 0 ? days + rawStart : rawStart;
-    return [{ start, end: start + rawDur, color: anomalyTypeColor(a.type) }];
+    return [
+      { start, end: start + rawDur, color: anomalyTypeColor(a.type), index: i },
+    ];
   });
 }
 
