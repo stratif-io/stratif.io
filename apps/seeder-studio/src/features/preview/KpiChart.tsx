@@ -277,13 +277,13 @@ export function KpiChart({
               labelFormatter={(idx: number) =>
                 dateFor(idx, startDate, endDate, values.length) || `day ${idx}`
               }
-              formatter={(v: number, dataKey: string, item) => {
-                const ghost = ghostLines?.find((g) => g.key === dataKey);
+              formatter={(v: number, _name: string, item) => {
+                const dk = String(item.dataKey ?? "");
+                const ghost = ghostLines?.find((g) => g.key === dk);
                 if (ghost) {
-                  // Show the real un-normalized value from the _raw field
                   const raw = (
                     item.payload as Record<string, number | undefined>
-                  )[`${dataKey}_raw`];
+                  )[`${dk}_raw`];
                   return [`${formatNum(raw ?? v)}`, ghost.label];
                 }
                 return [`${formatNum(v)}${valueSuffix}`, title];
