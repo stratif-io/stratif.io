@@ -356,141 +356,179 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     ],
   );
 
+  const ghostLines = ghostLinesFor(metricKey, out);
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative bg-card border border-primary/40 rounded-xl shadow-2xl flex flex-col gap-0 w-[min(90vw,860px)] max-h-[88vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-start justify-between px-6 pt-5 pb-3 border-b border-border/40">
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">
-              {entry.explanation.split(".")[0]}.
-            </h2>
-            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed max-w-xl">
-              {entry.explanation.split(".").slice(1).join(".").trim()}
-            </p>
+      <div className="relative bg-card border border-border rounded-2xl shadow-2xl flex flex-col w-[min(92vw,980px)] max-h-[90vh] overflow-hidden">
+        {/* ── HEADER ─────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between px-7 pt-6 pb-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <span
+              className="w-3 h-3 rounded-full shrink-0"
+              style={{ backgroundColor: color }}
+              aria-hidden
+            />
+            <div>
+              <h2 className="text-base font-semibold text-foreground leading-tight">
+                {entry.explanation.split(".")[0]}.
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                {entry.explanation.split(".").slice(1).join(".").trim()}
+              </p>
+            </div>
           </div>
           <button
             aria-label="close"
             onClick={onClose}
-            className="ml-4 text-muted-foreground hover:text-foreground text-xl leading-none px-1 shrink-0"
+            className="ml-6 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
           >
             ×
           </button>
         </div>
 
-        {/* Scrollable body */}
-        <div className="overflow-y-auto flex flex-col gap-5 px-6 py-5">
-          {/* Chart */}
-          <KpiChart
-            title=""
-            values={valuesFor(metricKey, out)}
-            color={color}
-            ghostLines={ghostLinesFor(metricKey, out)}
-            anomalies={anomalies}
-            windowDays={windowDays}
-            onAnomalyChange={handleAnomalyChange}
-            onAnomalySelect={handleAnomalySelect}
-            chartHeight="h-52"
-            className="border-0 p-0 bg-transparent"
-            valueSuffix={metricKey === "stickiness" ? "%" : ""}
-            formulaLatex={entry.latex}
-            formulaWhere={entry.where}
-          />
+        {/* ── SCROLLABLE BODY ─────────────────────────────────────── */}
+        <div className="overflow-y-auto flex flex-col divide-y divide-border/40">
+          {/* STEP 1 — Visualise */}
+          <section className="px-7 py-5">
+            <SectionLabel step={1} label="Visualise" />
+            <KpiChart
+              title=""
+              values={valuesFor(metricKey, out)}
+              color={color}
+              ghostLines={ghostLines}
+              anomalies={anomalies}
+              windowDays={windowDays}
+              onAnomalyChange={handleAnomalyChange}
+              onAnomalySelect={handleAnomalySelect}
+              chartHeight="h-56"
+              className="border-0 p-0 bg-transparent mt-3"
+              valueSuffix={metricKey === "stickiness" ? "%" : ""}
+            />
+          </section>
 
-          {/* Bottom grid: formula | params | daily rows */}
-          <div className="grid grid-cols-3 gap-6 border-t border-border/30 pt-5">
-            {/* Formula + variables */}
-            <div className="flex flex-col gap-4">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-                Formula
-              </p>
-              <div className="overflow-x-auto">
+          {/* STEP 2 & 3 — Math + Practice (two columns) */}
+          <section className="grid grid-cols-2 divide-x divide-border/40">
+            {/* LEFT: The formula */}
+            <div className="px-7 py-6 flex flex-col gap-5">
+              <SectionLabel step={2} label="The formula" />
+
+              {/* Main formula — large display math */}
+              <div className="rounded-xl bg-muted/40 px-5 py-4 overflow-x-auto">
                 <MathFormula latex={entry.latex} display />
               </div>
+
+              {/* Where clause — also math */}
               {entry.where && (
-                <MathFormula
-                  latex={entry.where}
-                  className="text-[11px] text-muted-foreground/70 overflow-x-auto"
-                />
+                <div className="rounded-lg bg-muted/20 px-4 py-3 overflow-x-auto">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
+                    where
+                  </p>
+                  <MathFormula latex={entry.where} />
+                </div>
               )}
-              <table className="text-[11px] w-full mt-1">
-                <tbody>
-                  {entry.variables.map((v) => (
-                    <tr key={v.symbol} className="border-t border-border/40">
-                      <td className="py-1 pr-3 font-mono text-primary align-top whitespace-nowrap">
-                        <MathFormula latex={v.symbol} />
-                      </td>
-                      <td className="py-1 text-muted-foreground leading-snug">
-                        {v.meaning}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+              {/* Symbol legend */}
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
+                  Variables
+                </p>
+                <table className="text-xs w-full">
+                  <tbody>
+                    {entry.variables.map((v) => (
+                      <tr key={v.symbol} className="border-t border-border/30">
+                        <td className="py-1.5 pr-4 text-primary align-middle whitespace-nowrap w-0">
+                          <MathFormula latex={v.symbol} />
+                        </td>
+                        <td className="py-1.5 text-muted-foreground leading-snug">
+                          {v.meaning}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            {/* Current params */}
-            <div className="flex flex-col gap-3">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-                Current params
-              </p>
-              <table className="text-[11px] w-full">
-                <tbody>
-                  {params.map((p) => (
-                    <tr key={p.name} className="border-t border-border/40">
-                      <td className="py-1 pr-3 text-muted-foreground">
-                        {p.name}
-                      </td>
-                      <td className="py-1 font-mono font-semibold text-foreground">
-                        {p.value}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {/* RIGHT: In practice */}
+            <div className="px-7 py-6 flex flex-col gap-5">
+              <SectionLabel step={3} label="In practice" />
 
-            {/* Daily breakdown */}
-            <div className="flex flex-col gap-3">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-                First {N_DAYS} days
-              </p>
-              <table className="text-[11px] w-full">
-                <thead>
-                  <tr className="text-muted-foreground/60">
-                    <th className="text-left font-normal pb-2 pr-2">day</th>
-                    <th className="text-left font-normal pb-2 pr-2">formula</th>
-                    <th className="text-left font-normal pb-2 pr-2">
-                      computation
-                    </th>
-                    <th className="text-right font-normal pb-2">=</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dailyRows.map((row) => (
-                    <tr key={row.day} className="border-t border-border/30">
-                      <td className="py-1 pr-2 font-mono text-muted-foreground">{`d${row.day}`}</td>
-                      <td
-                        className="py-1 pr-2 text-muted-foreground max-w-[110px] truncate"
-                        title={row.formula}
-                      >
-                        {row.formula}
-                      </td>
-                      <td className="py-1 pr-2 font-mono">{row.computation}</td>
-                      <td className="py-1 text-right font-mono font-semibold text-foreground">
-                        {row.result}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {/* Current params */}
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
+                  Current parameters
+                </p>
+                <div className="rounded-xl border border-border/40 overflow-hidden">
+                  <table className="text-xs w-full">
+                    <tbody>
+                      {params.map((p, i) => (
+                        <tr
+                          key={p.name}
+                          className={i > 0 ? "border-t border-border/30" : ""}
+                        >
+                          <td className="px-4 py-2 text-muted-foreground">
+                            {p.name}
+                          </td>
+                          <td className="px-4 py-2 font-mono font-semibold text-foreground text-right">
+                            {p.value}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Daily trace */}
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
+                  First {N_DAYS} days — step by step
+                </p>
+                <div className="rounded-xl border border-border/40 overflow-hidden">
+                  <table className="text-xs w-full">
+                    <thead>
+                      <tr className="bg-muted/30 text-muted-foreground/70">
+                        <th className="px-3 py-2 text-left font-medium">Day</th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          Inputs
+                        </th>
+                        <th className="px-3 py-2 text-right font-medium">
+                          Result
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dailyRows.map((row, i) => (
+                        <tr
+                          key={row.day}
+                          className={i > 0 ? "border-t border-border/25" : ""}
+                        >
+                          <td className="px-3 py-2 font-mono text-muted-foreground">
+                            d{row.day}
+                          </td>
+                          <td
+                            className="px-3 py-2 text-muted-foreground font-mono text-[11px] max-w-[180px] truncate"
+                            title={row.computation}
+                          >
+                            {row.computation}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono font-semibold text-foreground">
+                            {row.result}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
         </div>
       </div>
 
@@ -509,6 +547,19 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
           onClose={() => setFloatingEditor(null)}
         />
       )}
+    </div>
+  );
+}
+
+function SectionLabel({ step, label }: { step: number; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
+        {step}
+      </span>
+      <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground/70">
+        {label}
+      </span>
     </div>
   );
 }
