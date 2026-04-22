@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
-import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
 import { cn } from "@/lib/cn";
+import { formatNum } from "@/lib/format";
 import type { SimulationAnomaly } from "@/types/simulation";
 import { AnomalyChartOverlay } from "@/features/anomalies/AnomalyChartOverlay";
 
@@ -39,7 +40,7 @@ export function KpiCard({
   windowDays,
   onAnomalyChange,
   onAnomalySelect,
-  valueSuffix: _valueSuffix,
+  valueSuffix = "",
   className,
 }: Props) {
   const data = useMemo(
@@ -100,6 +101,26 @@ export function KpiCard({
       <div ref={containerRef} className="h-16 w-full mt-1 relative">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={CM}>
+            <Tooltip
+              cursor={{
+                stroke: "currentColor",
+                strokeDasharray: "2 2",
+                opacity: 0.4,
+              }}
+              contentStyle={{
+                fontSize: 11,
+                padding: "4px 8px",
+                borderRadius: 5,
+                background: "hsl(var(--popover))",
+                color: "hsl(var(--popover-foreground))",
+                border: "1px solid hsl(var(--border))",
+              }}
+              formatter={(v: number) => [
+                `${formatNum(v)}${valueSuffix}`,
+                title,
+              ]}
+              labelFormatter={() => ""}
+            />
             <Line
               type="monotone"
               dataKey="v"

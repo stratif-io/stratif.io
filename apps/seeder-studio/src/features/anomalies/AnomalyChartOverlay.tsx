@@ -103,6 +103,7 @@ function ChartBand({
     hasDragged: false,
   });
   const [dragMode, setDragMode] = useState<DragMode>(null);
+  const [hovered, setHovered] = useState(false);
 
   const begin = (mode: DragMode) => (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -175,6 +176,8 @@ function ChartBand({
         height={h}
         style={{ fill: color, fillOpacity: 0.13, cursor: bodyCursor }}
         onPointerDown={begin("body")}
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
       />
 
       {/* Left edge handle */}
@@ -212,6 +215,78 @@ function ChartBand({
           {anomaly.name}
         </text>
       )}
+
+      {/* Hover tooltip */}
+      {hovered && !dragMode && (
+        <AnomalyTooltip
+          anomaly={anomaly}
+          color={color}
+          x={x + w / 2}
+          y={y}
+          height={h}
+        />
+      )}
+    </g>
+  );
+}
+
+const TOOLTIP_PAD = 5;
+const TOOLTIP_LINE_H = 12;
+const TOOLTIP_FONT = 9;
+
+function AnomalyTooltip({
+  anomaly,
+  color,
+  x,
+  y,
+  height,
+}: {
+  anomaly: SimulationAnomaly;
+  color: string;
+  x: number;
+  y: number;
+  height: number;
+}) {
+  const lines = [anomaly.name, anomaly.type.replace(/_/g, " ")];
+  if (anomaly.effect) {
+    for (const [k, v] of Object.entries(anomaly.effect)) {
+      if (v !== undefined && v !== null)
+        lines.push(`${k.replace(/_/g, " ")}: ${v}`);
+    }
+  }
+
+  const tw = Math.max(...lines.map((l) => l.length)) * 5.5 + TOOLTIP_PAD * 2;
+  const th = lines.length * TOOLTIP_LINE_H + TOOLTIP_PAD * 2;
+  const ty = y + height / 2 - th / 2;
+
+  return (
+    <g pointerEvents="none">
+      <rect
+        x={x - tw / 2}
+        y={ty}
+        width={tw}
+        height={th}
+        rx={3}
+        fill="hsl(var(--popover))"
+        stroke={color}
+        strokeOpacity={0.4}
+        strokeWidth={1}
+        opacity={0.95}
+      />
+      {lines.map((line, i) => (
+        <text
+          key={i}
+          x={x}
+          y={ty + TOOLTIP_PAD + (i + 1) * TOOLTIP_LINE_H - 2}
+          fontSize={TOOLTIP_FONT}
+          textAnchor="middle"
+          fill="hsl(var(--popover-foreground))"
+          opacity={i === 0 ? 1 : 0.7}
+          fontWeight={i === 0 ? "600" : "400"}
+        >
+          {line}
+        </text>
+      ))}
     </g>
   );
 }
