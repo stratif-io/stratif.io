@@ -146,81 +146,113 @@ export function PreviewGrid() {
       ) : (
         <div
           data-testid="preview-grid-canvas"
-          className="grid grid-cols-2 gap-4 lg:flex-1 lg:min-h-0 lg:overflow-y-auto"
+          className="flex flex-col gap-5 lg:flex-1 lg:min-h-0 lg:overflow-y-auto"
         >
-          <KpiChart
-            title="Events/day"
-            values={out.events}
-            headline={stats.events}
-            color="hsl(var(--chart-6))"
-            className="col-span-2"
-            chartHeight="h-40"
-            formulaLatex={FORMULA_REGISTRY.events.latex}
-            formulaWhere={formulaWhere.events}
-            formulaExplanation={FORMULA_REGISTRY.events.explanation}
-            {...sharedProps}
-          />
-          <KpiChart
-            title="Active users"
-            values={out.activeUsers}
-            headline={stats.active}
-            color="hsl(var(--chart-8))"
-            formulaLatex={FORMULA_REGISTRY.activeUsers.latex}
-            formulaWhere={formulaWhere.activeUsers}
-            formulaExplanation={FORMULA_REGISTRY.activeUsers.explanation}
-            {...sharedProps}
-          />
-          <KpiChart
-            title="New users/day"
-            values={out.newUsers}
-            headline={stats.news}
-            color="hsl(var(--chart-3))"
-            formulaLatex={FORMULA_REGISTRY.newUsers.latex}
-            formulaWhere={formulaWhere.newUsers}
-            formulaExplanation={FORMULA_REGISTRY.newUsers.explanation}
-            {...sharedProps}
-          />
-          <KpiChart
-            title="Stickiness"
-            values={out.stickiness.map((v) => (v === null ? null : v * 100))}
-            headline={stats.stickiness}
-            color="hsl(var(--chart-7))"
-            valueSuffix="%"
-            formulaLatex={FORMULA_REGISTRY.stickiness.latex}
-            formulaWhere={formulaWhere.stickiness}
-            formulaExplanation={FORMULA_REGISTRY.stickiness.explanation}
-            {...sharedProps}
-          />
-          <KpiChart
-            title="Total users"
-            values={out.totalUsers}
-            headline={`total ${formatNum(out.totalUsers.at(-1) ?? 0)}`}
-            color="hsl(var(--chart-2))"
-            formulaLatex={FORMULA_REGISTRY.totalUsers.latex}
-            formulaWhere={formulaWhere.totalUsers}
-            formulaExplanation={FORMULA_REGISTRY.totalUsers.explanation}
-            {...sharedProps}
-          />
-          <KpiChart
-            title="Churned/day"
-            values={out.churnedUsers}
-            headline={stats.churned}
-            color="hsl(var(--destructive))"
-            formulaLatex={FORMULA_REGISTRY.churnedUsers.latex}
-            formulaWhere={formulaWhere.churnedUsers}
-            formulaExplanation={FORMULA_REGISTRY.churnedUsers.explanation}
-            {...sharedProps}
-          />
-          <KpiChart
-            title="Reactivated/day"
-            values={out.reactivatedUsers}
-            headline={stats.reactivated}
-            color="hsl(var(--chart-4))"
-            formulaLatex={FORMULA_REGISTRY.reactivatedUsers.latex}
-            formulaWhere={formulaWhere.reactivatedUsers}
-            formulaExplanation={FORMULA_REGISTRY.reactivatedUsers.explanation}
-            {...sharedProps}
-          />
+          {/* Acquisition */}
+          <div className="flex flex-col gap-2">
+            <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground/50">
+              Acquisition
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <KpiChart
+                title="New users/day"
+                values={out.newUsers}
+                headline={stats.news}
+                color="hsl(var(--chart-3))"
+                className="col-span-2"
+                chartHeight="h-32"
+                formulaLatex={FORMULA_REGISTRY.newUsers.latex}
+                formulaWhere={formulaWhere.newUsers}
+                formulaExplanation={FORMULA_REGISTRY.newUsers.explanation}
+                {...sharedProps}
+              />
+              <KpiChart
+                title="Total users"
+                values={out.totalUsers}
+                headline={`total ${formatNum(out.totalUsers.at(-1) ?? 0)}`}
+                color="hsl(var(--chart-2))"
+                formulaLatex={FORMULA_REGISTRY.totalUsers.latex}
+                formulaWhere={formulaWhere.totalUsers}
+                formulaExplanation={FORMULA_REGISTRY.totalUsers.explanation}
+                {...sharedProps}
+              />
+            </div>
+          </div>
+
+          {/* Engagement */}
+          <div className="flex flex-col gap-2">
+            <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground/50">
+              Engagement
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <KpiChart
+                title="Events/day"
+                values={out.events}
+                headline={stats.events}
+                color="hsl(var(--chart-6))"
+                className="col-span-2"
+                chartHeight="h-40"
+                formulaLatex={FORMULA_REGISTRY.events.latex}
+                formulaWhere={formulaWhere.events}
+                formulaExplanation={FORMULA_REGISTRY.events.explanation}
+                {...sharedProps}
+              />
+              <KpiChart
+                title="Active users"
+                values={out.activeUsers}
+                headline={stats.active}
+                color="hsl(var(--chart-8))"
+                formulaLatex={FORMULA_REGISTRY.activeUsers.latex}
+                formulaWhere={formulaWhere.activeUsers}
+                formulaExplanation={FORMULA_REGISTRY.activeUsers.explanation}
+                {...sharedProps}
+              />
+              <KpiChart
+                title="Stickiness"
+                values={out.stickiness.map((v) =>
+                  v === null ? null : v * 100,
+                )}
+                headline={stats.stickiness}
+                color="hsl(var(--chart-7))"
+                valueSuffix="%"
+                formulaLatex={FORMULA_REGISTRY.stickiness.latex}
+                formulaWhere={formulaWhere.stickiness}
+                formulaExplanation={FORMULA_REGISTRY.stickiness.explanation}
+                {...sharedProps}
+              />
+            </div>
+          </div>
+
+          {/* Retention */}
+          <div className="flex flex-col gap-2">
+            <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground/50">
+              Retention
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <KpiChart
+                title="Churned/day"
+                values={out.churnedUsers}
+                headline={stats.churned}
+                color="hsl(var(--destructive))"
+                formulaLatex={FORMULA_REGISTRY.churnedUsers.latex}
+                formulaWhere={formulaWhere.churnedUsers}
+                formulaExplanation={FORMULA_REGISTRY.churnedUsers.explanation}
+                {...sharedProps}
+              />
+              <KpiChart
+                title="Reactivated/day"
+                values={out.reactivatedUsers}
+                headline={stats.reactivated}
+                color="hsl(var(--chart-4))"
+                formulaLatex={FORMULA_REGISTRY.reactivatedUsers.latex}
+                formulaWhere={formulaWhere.reactivatedUsers}
+                formulaExplanation={
+                  FORMULA_REGISTRY.reactivatedUsers.explanation
+                }
+                {...sharedProps}
+              />
+            </div>
+          </div>
         </div>
       )}
       {!allZero && (
