@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TopBar } from "../TopBar";
 import { useSeederStore, blankConfig } from "@/stores/seederStore";
@@ -138,5 +138,53 @@ describe("TopBar", () => {
     const trigger = screen.getByRole("combobox");
     expect(trigger).toBeDisabled();
     expect(screen.getByText("Loading…")).toBeInTheDocument();
+  });
+});
+
+const mockPresets = [{ name: "Viral", config: blankConfig() }];
+
+describe("TopBar + Event button", () => {
+  beforeEach(() => {
+    useSeederStore.setState(useSeederStore.getInitialState(), true);
+    useSeederStore
+      .getState()
+      .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
+  });
+
+  it("renders + Event button", () => {
+    render(
+      <TopBar
+        presets={mockPresets}
+        selectedName={null}
+        onSelectPreset={() => {}}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: /\+ Event/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("clicking + Event adds an anomaly to the store", () => {
+    render(
+      <TopBar
+        presets={mockPresets}
+        selectedName={null}
+        onSelectPreset={() => {}}
+      />,
+    );
+    expect(useSeederStore.getState().config.anomalies?.length ?? 0).toBe(0);
+    fireEvent.click(screen.getByRole("button", { name: /\+ Event/i }));
+    expect(useSeederStore.getState().config.anomalies?.length).toBe(1);
+  });
+
+  it("renders Export button", () => {
+    render(
+      <TopBar
+        presets={mockPresets}
+        selectedName={null}
+        onSelectPreset={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /Export/i })).toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 import {
   Badge,
+  Button,
   Select,
   SelectContent,
   SelectItem,
@@ -7,9 +8,13 @@ import {
   SelectValue,
 } from "@stratif-io/web";
 import { Users } from "lucide-react";
+import { useMemo } from "react";
 import { useSeederStore } from "@/stores/seederStore";
 import type { PresetEntry } from "@/lib/api/presets";
 import { cn } from "@/lib/cn";
+import { defaultAnomaly } from "@/lib/twin";
+import { resolveScale } from "@/lib/twin/utils";
+import { useTwinOutput } from "@/features/preview/useTwinOutput";
 
 interface Props {
   presets: PresetEntry[];
@@ -25,6 +30,50 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
   const setUiEndDate = useSeederStore((s) => s.setUiEndDate);
   const setScaleConfig = useSeederStore((s) => s.setScaleConfig);
   const config = useSeederStore((s) => s.config);
+
+  const anomalies = useSeederStore((s) => s.config.anomalies) ?? [];
+  const setAnomalies = useSeederStore((s) => s.setAnomalies);
+  const scaleAxis = useSeederStore((s) => s.config.axes.scale ?? "small");
+  const scaleOverride = useSeederStore((s) => s.config.scale_config);
+  const { window_days } = useMemo(
+    () => resolveScale(scaleAxis, scaleOverride),
+    [scaleAxis, scaleOverride],
+  );
+  const out = useTwinOutput();
+
+  const handleAddEvent = () => {
+    const duration = Math.max(5, Math.floor(window_days * 0.1));
+    const maxStart = Math.max(0, window_days - duration - 1);
+    const start = Math.floor(Math.random() * maxStart);
+    setAnomalies([...anomalies, defaultAnomaly("spike", start, duration)]);
+  };
+
+  const handleExport = () => {
+    const rows = [
+      "day,newUsers,totalUsers,activeUsers,events,stickiness,churnedUsers,reactivatedUsers",
+      ...Array.from({ length: out.days }, (_, i) =>
+        [
+          i + 1,
+          Math.round(out.newUsers[i] ?? 0),
+          Math.round(out.totalUsers[i] ?? 0),
+          Math.round(out.activeUsers[i] ?? 0),
+          Math.round(out.events[i] ?? 0),
+          out.stickiness[i] !== null
+            ? (out.stickiness[i]! * 100).toFixed(2)
+            : "",
+          Math.round(out.churnedUsers[i] ?? 0),
+          Math.round(out.reactivatedUsers[i] ?? 0),
+        ].join(","),
+      ),
+    ];
+    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `seeder-export-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const dateRangeInvalid = !!(
     uiStartDate &&
@@ -165,6 +214,12 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
       </div>
 
       <div className="flex-1" />
+      <Button size="sm" variant="outline" onClick={handleAddEvent}>
+        + Event
+      </Button>
+      <Button size="sm" variant="outline" onClick={handleExport}>
+        Export ↓
+      </Button>
     </header>
   );
 }
