@@ -92,44 +92,62 @@ export function KpiChart({
   formulaWhere = "",
   formulaExplanation = "",
 }: Props) {
+  const [focusedKey, setFocusedKey] = useState<string | null>(null);
+  const toggleFocus = useCallback((key: string) => {
+    setFocusedKey((prev) => (prev === key ? null : key));
+  }, []);
+
+  const mainMax = useMemo(
+    () => Math.max(...values.filter((v): v is number => v !== null), 1),
+    [values],
+  );
+
+  // Per-ghost max, used for normalization and Y-axis remapping
+  const ghostMaxMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const g of ghostLines ?? []) {
+      m[g.key] = Math.max(
+        ...g.values.filter((x): x is number => x !== null),
+        1,
+      );
+    }
+    return m;
+  }, [ghostLines]);
+
   const data = useMemo(() => {
-    const mainMax = Math.max(
-      ...values.filter((v): v is number => v !== null),
-      1,
-    );
     return values.map((v, i) => {
       const row: Record<string, number | undefined> = {
         idx: i,
         value: v ?? undefined,
       };
       for (const g of ghostLines ?? []) {
-        const gMax = Math.max(
-          ...g.values.filter((x): x is number => x !== null),
-          1,
-        );
+        const gMax = ghostMaxMap[g.key] ?? 1;
         const raw = g.values[i];
         const normalized =
           raw !== null && raw !== undefined
             ? (raw / gMax) * mainMax
             : undefined;
         row[g.key] = normalized;
-        // Keep the raw value so the tooltip can display real numbers
         row[`${g.key}_raw`] =
           raw !== null && raw !== undefined ? raw : undefined;
       }
       return row;
     });
-  }, [values, ghostLines]);
+  }, [values, ghostLines, mainMax, ghostMaxMap]);
+
+  // Y-axis tick formatter: when a ghost is focused, remap normalized→raw scale
+  const yTickFormatter = useMemo(() => {
+    if (!focusedKey || focusedKey === "__main__" || !ghostMaxMap[focusedKey]) {
+      return (v: number) => formatNum(Math.round(v));
+    }
+    const gMax = ghostMaxMap[focusedKey];
+    return (v: number) => formatNum(Math.round((v / mainMax) * gMax));
+  }, [focusedKey, ghostMaxMap, mainMax]);
 
   const ticks = useMemo(() => {
     if (values.length === 0) return [];
     return [0, Math.floor((values.length - 1) / 2), values.length - 1];
   }, [values.length]);
-
-  const [focusedKey, setFocusedKey] = useState<string | null>(null);
-  const toggleFocus = useCallback((key: string) => {
-    setFocusedKey((prev) => (prev === key ? null : key));
-  }, []);
 
   // Track chart container pixel size for the overlay.
   const containerRef = useRef<HTMLDivElement>(null);
@@ -264,7 +282,19 @@ export function KpiChart({
               tickLine={false}
               height={X_AXIS_H}
             />
-            <YAxis hide />
+            {ghostLines && ghostLines.length > 0 ? (
+              <YAxis
+                domain={[0, mainMax]}
+                tickFormatter={yTickFormatter}
+                tick={{ fontSize: 10, fill: "currentColor", opacity: 0.5 }}
+                axisLine={false}
+                tickLine={false}
+                width={48}
+                tickCount={4}
+              />
+            ) : (
+              <YAxis hide />
+            )}
             <Tooltip
               cursor={{
                 stroke: "currentColor",
