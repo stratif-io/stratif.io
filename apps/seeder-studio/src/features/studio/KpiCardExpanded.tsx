@@ -4,7 +4,7 @@ import { MathFormula } from "@/lib/math/MathFormula";
 import { FORMULA_REGISTRY } from "@/features/preview/formulaRegistry";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
 import { KpiChart } from "@/features/preview/KpiChart";
-import type { KpiBand, GhostLine } from "@/features/preview/KpiChart";
+import type { GhostLine } from "@/features/preview/KpiChart";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
@@ -27,7 +27,6 @@ interface DailyRow {
 interface Props {
   metricKey: MetricKey;
   color: string;
-  bands: KpiBand[];
   onClose: () => void;
 }
 
@@ -251,7 +250,7 @@ export function toBands(
   });
 }
 
-export function KpiCardExpanded({ metricKey, color, bands, onClose }: Props) {
+export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   const out = useTwinOutput();
   const config = useSeederStore((s) => s.config);
   const setAnomalies = useSeederStore((s) => s.setAnomalies);
@@ -368,7 +367,6 @@ export function KpiCardExpanded({ metricKey, color, bands, onClose }: Props) {
         title=""
         values={valuesFor(metricKey, out)}
         color={color}
-        bands={bands}
         ghostLines={ghostLinesFor(metricKey, out)}
         anomalies={anomalies}
         windowDays={windowDays}

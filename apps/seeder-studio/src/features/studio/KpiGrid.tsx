@@ -168,7 +168,6 @@ export function KpiGrid() {
               <KpiCardExpanded
                 metricKey={expandedKey!}
                 color={section.cards.find((c) => c.key === expandedKey)!.color}
-                bands={bands}
                 onClose={() => setExpandedKey(null)}
               />
             )}
