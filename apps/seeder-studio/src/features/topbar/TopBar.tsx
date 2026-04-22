@@ -30,11 +30,11 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
   const setUiEndDate = useSeederStore((s) => s.setUiEndDate);
   const setScaleConfig = useSeederStore((s) => s.setScaleConfig);
   const config = useSeederStore((s) => s.config);
-
-  const anomalies = useSeederStore((s) => s.config.anomalies) ?? [];
   const setAnomalies = useSeederStore((s) => s.setAnomalies);
-  const scaleAxis = useSeederStore((s) => s.config.axes.scale ?? "small");
-  const scaleOverride = useSeederStore((s) => s.config.scale_config);
+
+  const anomalies = config.anomalies ?? [];
+  const scaleAxis = config.axes.scale ?? "small";
+  const scaleOverride = config.scale_config;
   const { window_days } = useMemo(
     () => resolveScale(scaleAxis, scaleOverride),
     [scaleAxis, scaleOverride],
@@ -68,11 +68,14 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
     ];
     const blob = new Blob([rows.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `seeder-export-${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `seeder-export-${Date.now()}.csv`;
+      a.click();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   };
 
   const dateRangeInvalid = !!(
