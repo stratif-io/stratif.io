@@ -4,6 +4,8 @@ import { useSeederStore } from "@/stores/seederStore";
 import { resolveSimParams } from "@/lib/twin";
 import { headlineStat } from "@/features/preview/headlineStat";
 import { formatNum } from "@/lib/format";
+import { AnomalySidebarItem } from "@/features/anomalies/AnomalySidebarItem";
+import { AnomalyTrack } from "@/features/anomalies/AnomalyTrack";
 import { KpiCard } from "./KpiCard";
 import { KpiCardExpanded, toBands } from "./KpiCardExpanded";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
@@ -70,8 +72,11 @@ const SECTIONS: { label: string; cards: CardDef[] }[] = [
 
 export function KpiGrid() {
   const [expandedKey, setExpandedKey] = useState<MetricKey | null>(null);
+  const [openAnomalyIndex, setOpenAnomalyIndex] = useState<number | null>(null);
   const out = useTwinOutput();
   const config = useSeederStore((s) => s.config);
+  const setAnomalies = useSeederStore((s) => s.setAnomalies);
+  const anomalies = useMemo(() => config.anomalies ?? [], [config.anomalies]);
   const { windowDays } = useMemo(() => resolveSimParams(config), [config]);
   const bands = useMemo(
     () => toBands(config.anomalies, windowDays),
@@ -145,6 +150,33 @@ export function KpiGrid() {
           </div>
         </div>
       ))}
+
+      {anomalies.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground/50">
+            Anomalies
+          </p>
+          <AnomalyTrack />
+          <div className="flex flex-col gap-1">
+            {anomalies.map((a, i) => (
+              <AnomalySidebarItem
+                key={i}
+                anomaly={a}
+                open={openAnomalyIndex === i}
+                onOpenChange={(open) => setOpenAnomalyIndex(open ? i : null)}
+                onChange={(next) => {
+                  const updated = anomalies.map((x, j) => (j === i ? next : x));
+                  setAnomalies(updated);
+                }}
+                onDelete={() => {
+                  setAnomalies(anomalies.filter((_, j) => j !== i));
+                  if (openAnomalyIndex === i) setOpenAnomalyIndex(null);
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
