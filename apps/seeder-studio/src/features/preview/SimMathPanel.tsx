@@ -12,6 +12,8 @@ export interface SimMathEntry {
   where: string;
   explanation: string;
   variables: { symbol: string; meaning: string }[];
+  params?: { name: string; value: string }[];
+  outputValue?: string;
 }
 
 interface Props {
@@ -49,20 +51,51 @@ export function SimMathPanel({ entries }: Props) {
       <CollapsibleContent>
         <div className="flex flex-col divide-y divide-border">
           {entries.map((entry) => (
-            <div key={entry.metric} className="py-3 flex flex-col gap-1.5">
+            <div key={entry.metric} className="py-3 flex flex-col gap-2">
               <p className="text-[11px] font-semibold">{entry.metric}</p>
               <MathFormula
                 latex={entry.latex}
                 display
                 className="overflow-x-auto"
               />
-              <p className="text-[10px] text-muted-foreground font-mono leading-tight">
-                {entry.where}
-              </p>
+              {(entry.params?.length || entry.outputValue) && (
+                <table className="w-full text-[10px] border-collapse">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left font-semibold text-muted-foreground py-0.5 pr-3 w-1/3">
+                        Parameter
+                      </th>
+                      <th className="text-right font-semibold text-muted-foreground py-0.5 font-mono">
+                        Value
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entry.params?.map((p) => (
+                      <tr key={p.name} className="border-b border-border/40">
+                        <td className="py-0.5 pr-3 text-muted-foreground">
+                          {p.name}
+                        </td>
+                        <td className="py-0.5 text-right font-mono tabular-nums">
+                          {p.value}
+                        </td>
+                      </tr>
+                    ))}
+                    {entry.outputValue && (
+                      <tr>
+                        <td className="pt-1 pr-3 font-semibold">→ output</td>
+                        <td className="pt-1 text-right font-mono tabular-nums font-semibold">
+                          {entry.outputValue}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 {entry.explanation}
               </p>
-              <div className="flex flex-col gap-0.5 mt-0.5">
+              <div className="flex flex-col gap-0.5">
                 {entry.variables.map((v) => (
                   <div key={v.symbol} className="flex gap-1.5 text-[10px]">
                     <span className="font-mono text-muted-foreground shrink-0">

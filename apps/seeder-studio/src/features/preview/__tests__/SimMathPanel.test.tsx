@@ -85,6 +85,11 @@ const entries = [
     where: "where: peak = 50%, τ = 10d",
     explanation: "Active users per day.",
     variables: [{ symbol: "N_c", meaning: "cohort size on day c" }],
+    params: [
+      { name: "peak churn rate", value: "50%" },
+      { name: "churn decay τ", value: "10d" },
+    ],
+    outputValue: "avg 251",
   },
 ];
 
@@ -106,11 +111,13 @@ describe("SimMathPanel", () => {
     expect(screen.getByText("Active users")).toBeInTheDocument();
   });
 
-  it("shows where line for each entry when open", async () => {
+  it("shows param values and output in a table when open", async () => {
     const user = userEvent.setup();
     render(<SimMathPanel entries={entries} />);
     await user.click(screen.getByRole("button", { name: /simulation math/i }));
-    expect(screen.getByText("where: peak = 50%, τ = 10d")).toBeInTheDocument();
+    expect(screen.getByText("peak churn rate")).toBeInTheDocument();
+    expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(screen.getByText("avg 251")).toBeInTheDocument();
   });
 
   it("shows explanation for each entry when open", async () => {

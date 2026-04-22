@@ -46,6 +46,18 @@ export function PreviewGrid() {
   const pct = (v: number) => `${Math.round(v * 100)}%`;
   const fix1 = (v: number) => v.toFixed(1);
 
+  const stats = useMemo(
+    () => ({
+      events: headlineStat(out.events, "count"),
+      active: headlineStat(out.activeUsers, "count"),
+      news: headlineStat(out.newUsers, "count"),
+      churned: headlineStat(out.churnedUsers, "count"),
+      reactivated: headlineStat(out.reactivatedUsers, "count"),
+      stickiness: headlineStat(out.stickiness, "percent"),
+    }),
+    [out],
+  );
+
   const formulaWhere: Record<string, string> = {
     events: `where: d = ${depth} events/user/day`,
     activeUsers: `where: peak churn = ${pct(rp.peakChurnRate)}, τ = ${rp.churnDecayDays}d`,
@@ -57,16 +69,75 @@ export function PreviewGrid() {
   };
 
   const simMathEntries = useMemo(
-    (): SimMathEntry[] =>
-      Object.entries(FORMULA_REGISTRY).map(([key, entry]) => ({
-        metric: METRIC_LABELS[key] ?? key,
-        latex: entry.latex,
-        where: formulaWhere[key] ?? "",
-        explanation: entry.explanation,
-        variables: entry.variables,
-      })),
+    (): SimMathEntry[] => [
+      {
+        metric: METRIC_LABELS.events,
+        ...FORMULA_REGISTRY.events,
+        where: formulaWhere.events,
+        params: [{ name: "d (depth)", value: `${depth} events/user/day` }],
+        outputValue: stats.events,
+      },
+      {
+        metric: METRIC_LABELS.activeUsers,
+        ...FORMULA_REGISTRY.activeUsers,
+        where: formulaWhere.activeUsers,
+        params: [
+          { name: "peak churn rate", value: pct(rp.peakChurnRate) },
+          { name: "churn decay τ", value: `${rp.churnDecayDays}d` },
+          { name: "reactivation r", value: pct(rp.reactivationRate) },
+        ],
+        outputValue: stats.active,
+      },
+      {
+        metric: METRIC_LABELS.newUsers,
+        ...FORMULA_REGISTRY.newUsers,
+        where: formulaWhere.newUsers,
+        params: [
+          { name: "target users", value: formatNum(totalUsers) },
+          { name: "window", value: `${windowDays}d` },
+        ],
+        outputValue: stats.news,
+      },
+      {
+        metric: METRIC_LABELS.stickiness,
+        ...FORMULA_REGISTRY.stickiness,
+        where: formulaWhere.stickiness,
+        params: [{ name: "MAU window", value: "28d" }],
+        outputValue: stats.stickiness,
+      },
+      {
+        metric: METRIC_LABELS.totalUsers,
+        ...FORMULA_REGISTRY.totalUsers,
+        where: formulaWhere.totalUsers,
+        params: [{ name: "window", value: `${windowDays}d` }],
+        outputValue: `total ${formatNum(out.totalUsers.at(-1) ?? 0)}`,
+      },
+      {
+        metric: METRIC_LABELS.churnedUsers,
+        ...FORMULA_REGISTRY.churnedUsers,
+        where: formulaWhere.churnedUsers,
+        params: [
+          { name: "peak churn rate", value: pct(rp.peakChurnRate) },
+          { name: "base churn rate", value: pct(rp.baseChurnRate) },
+          { name: "churn decay τ", value: `${rp.churnDecayDays}d` },
+          { name: "max dormant days", value: `${rp.maxDormantDays}d` },
+        ],
+        outputValue: stats.churned,
+      },
+      {
+        metric: METRIC_LABELS.reactivatedUsers,
+        ...FORMULA_REGISTRY.reactivatedUsers,
+        where: formulaWhere.reactivatedUsers,
+        params: [
+          { name: "reactivation rate r", value: pct(rp.reactivationRate) },
+          { name: "decay factor δ", value: fix1(rp.reactivationDecay) },
+          { name: "max dormant days", value: `${rp.maxDormantDays}d` },
+        ],
+        outputValue: stats.reactivated,
+      },
+    ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [depth, rp, totalUsers, windowDays],
+    [depth, rp, totalUsers, windowDays, stats, out],
   );
 
   const { start: chartStart, end: chartEnd } = useMemo(
@@ -102,18 +173,6 @@ export function PreviewGrid() {
 
   const allZero =
     out.events.every((v) => v === 0) && out.activeUsers.every((v) => v === 0);
-
-  const stats = useMemo(
-    () => ({
-      events: headlineStat(out.events, "count"),
-      active: headlineStat(out.activeUsers, "count"),
-      news: headlineStat(out.newUsers, "count"),
-      churned: headlineStat(out.churnedUsers, "count"),
-      reactivated: headlineStat(out.reactivatedUsers, "count"),
-      stickiness: headlineStat(out.stickiness, "percent"),
-    }),
-    [out],
-  );
 
   const sharedProps = {
     anomalies,
