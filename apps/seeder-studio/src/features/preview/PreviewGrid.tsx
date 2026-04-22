@@ -68,74 +68,147 @@ export function PreviewGrid() {
     reactivatedUsers: `where: r = ${pct(rp.reactivationRate)}, δ = ${fix1(rp.reactivationDecay)}`,
   };
 
+  const N_DAYS = 7;
+  const fn = (v: number) => formatNum(Math.round(v));
+
   const simMathEntries = useMemo(
-    (): SimMathEntry[] => [
-      {
-        metric: METRIC_LABELS.events,
-        ...FORMULA_REGISTRY.events,
-        where: formulaWhere.events,
-        params: [{ name: "d (depth)", value: `${depth} events/user/day` }],
-        outputValue: stats.events,
-      },
-      {
-        metric: METRIC_LABELS.activeUsers,
-        ...FORMULA_REGISTRY.activeUsers,
-        where: formulaWhere.activeUsers,
-        params: [
-          { name: "peak churn rate", value: pct(rp.peakChurnRate) },
-          { name: "churn decay τ", value: `${rp.churnDecayDays}d` },
-          { name: "reactivation r", value: pct(rp.reactivationRate) },
-        ],
-        outputValue: stats.active,
-      },
-      {
-        metric: METRIC_LABELS.newUsers,
-        ...FORMULA_REGISTRY.newUsers,
-        where: formulaWhere.newUsers,
-        params: [
-          { name: "target users", value: formatNum(totalUsers) },
-          { name: "window", value: `${windowDays}d` },
-        ],
-        outputValue: stats.news,
-      },
-      {
-        metric: METRIC_LABELS.stickiness,
-        ...FORMULA_REGISTRY.stickiness,
-        where: formulaWhere.stickiness,
-        params: [{ name: "MAU window", value: "28d" }],
-        outputValue: stats.stickiness,
-      },
-      {
-        metric: METRIC_LABELS.totalUsers,
-        ...FORMULA_REGISTRY.totalUsers,
-        where: formulaWhere.totalUsers,
-        params: [{ name: "window", value: `${windowDays}d` }],
-        outputValue: `total ${formatNum(out.totalUsers.at(-1) ?? 0)}`,
-      },
-      {
-        metric: METRIC_LABELS.churnedUsers,
-        ...FORMULA_REGISTRY.churnedUsers,
-        where: formulaWhere.churnedUsers,
-        params: [
-          { name: "peak churn rate", value: pct(rp.peakChurnRate) },
-          { name: "base churn rate", value: pct(rp.baseChurnRate) },
-          { name: "churn decay τ", value: `${rp.churnDecayDays}d` },
-          { name: "max dormant days", value: `${rp.maxDormantDays}d` },
-        ],
-        outputValue: stats.churned,
-      },
-      {
-        metric: METRIC_LABELS.reactivatedUsers,
-        ...FORMULA_REGISTRY.reactivatedUsers,
-        where: formulaWhere.reactivatedUsers,
-        params: [
-          { name: "reactivation rate r", value: pct(rp.reactivationRate) },
-          { name: "decay factor δ", value: fix1(rp.reactivationDecay) },
-          { name: "max dormant days", value: `${rp.maxDormantDays}d` },
-        ],
-        outputValue: stats.reactivated,
-      },
-    ],
+    (): SimMathEntry[] => {
+      const n = Math.min(N_DAYS, out.activeUsers.length);
+
+      const activeDailyRows = Array.from({ length: n }, (_, i) => {
+        const prev = i === 0 ? 0 : out.activeUsers[i - 1];
+        const newU = out.newUsers[i];
+        const churn = out.churnedUsers[i];
+        const react = out.reactivatedUsers[i];
+        return {
+          day: i + 1,
+          formula: `${fn(prev)} + ${fn(newU)} − ${fn(churn)} + ${fn(react)}`,
+          result: fn(out.activeUsers[i]),
+        };
+      });
+
+      const eventsDailyRows = Array.from({ length: n }, (_, i) => ({
+        day: i + 1,
+        formula: `${fn(out.activeUsers[i])} × ${depth}`,
+        result: fn(out.events[i]),
+      }));
+
+      const newUsersDailyRows = Array.from({ length: n }, (_, i) => ({
+        day: i + 1,
+        result: fn(out.newUsers[i]),
+      }));
+
+      const totalDailyRows = Array.from({ length: n }, (_, i) => {
+        const prev = i === 0 ? 0 : out.totalUsers[i - 1];
+        return {
+          day: i + 1,
+          formula: `${fn(prev)} + ${fn(out.newUsers[i])}`,
+          result: fn(out.totalUsers[i]),
+        };
+      });
+
+      const churnedDailyRows = Array.from({ length: n }, (_, i) => {
+        const prevActive = i === 0 ? 0 : out.activeUsers[i - 1];
+        const rate =
+          prevActive > 0
+            ? `${((out.churnedUsers[i] / prevActive) * 100).toFixed(1)}%`
+            : "—";
+        return {
+          day: i + 1,
+          formula: `${fn(prevActive)} × ${rate}`,
+          result: fn(out.churnedUsers[i]),
+        };
+      });
+
+      const reactivatedDailyRows = Array.from({ length: n }, (_, i) => ({
+        day: i + 1,
+        result: fn(out.reactivatedUsers[i]),
+      }));
+
+      const stickinessDailyRows = Array.from({ length: n }, (_, i) => {
+        const s = out.stickiness[i];
+        return {
+          day: i + 1,
+          formula: `${fn(out.activeUsers[i])} / MAU`,
+          result: s === null ? "—" : `${(s * 100).toFixed(1)}%`,
+        };
+      });
+
+      return [
+        {
+          metric: METRIC_LABELS.events,
+          ...FORMULA_REGISTRY.events,
+          where: formulaWhere.events,
+          params: [{ name: "d (depth)", value: `${depth} events/user/day` }],
+          outputValue: stats.events,
+          dailyRows: eventsDailyRows,
+        },
+        {
+          metric: METRIC_LABELS.activeUsers,
+          ...FORMULA_REGISTRY.activeUsers,
+          where: formulaWhere.activeUsers,
+          params: [
+            { name: "peak churn rate", value: pct(rp.peakChurnRate) },
+            { name: "churn decay τ", value: `${rp.churnDecayDays}d` },
+            { name: "reactivation r", value: pct(rp.reactivationRate) },
+          ],
+          outputValue: stats.active,
+          dailyRows: activeDailyRows,
+        },
+        {
+          metric: METRIC_LABELS.newUsers,
+          ...FORMULA_REGISTRY.newUsers,
+          where: formulaWhere.newUsers,
+          params: [
+            { name: "target users", value: formatNum(totalUsers) },
+            { name: "window", value: `${windowDays}d` },
+          ],
+          outputValue: stats.news,
+          dailyRows: newUsersDailyRows,
+        },
+        {
+          metric: METRIC_LABELS.stickiness,
+          ...FORMULA_REGISTRY.stickiness,
+          where: formulaWhere.stickiness,
+          params: [{ name: "MAU window", value: "28d" }],
+          outputValue: stats.stickiness,
+          dailyRows: stickinessDailyRows,
+        },
+        {
+          metric: METRIC_LABELS.totalUsers,
+          ...FORMULA_REGISTRY.totalUsers,
+          where: formulaWhere.totalUsers,
+          params: [{ name: "window", value: `${windowDays}d` }],
+          outputValue: `total ${formatNum(out.totalUsers.at(-1) ?? 0)}`,
+          dailyRows: totalDailyRows,
+        },
+        {
+          metric: METRIC_LABELS.churnedUsers,
+          ...FORMULA_REGISTRY.churnedUsers,
+          where: formulaWhere.churnedUsers,
+          params: [
+            { name: "peak churn rate", value: pct(rp.peakChurnRate) },
+            { name: "base churn rate", value: pct(rp.baseChurnRate) },
+            { name: "churn decay τ", value: `${rp.churnDecayDays}d` },
+            { name: "max dormant days", value: `${rp.maxDormantDays}d` },
+          ],
+          outputValue: stats.churned,
+          dailyRows: churnedDailyRows,
+        },
+        {
+          metric: METRIC_LABELS.reactivatedUsers,
+          ...FORMULA_REGISTRY.reactivatedUsers,
+          where: formulaWhere.reactivatedUsers,
+          params: [
+            { name: "reactivation rate r", value: pct(rp.reactivationRate) },
+            { name: "decay factor δ", value: fix1(rp.reactivationDecay) },
+            { name: "max dormant days", value: `${rp.maxDormantDays}d` },
+          ],
+          outputValue: stats.reactivated,
+          dailyRows: reactivatedDailyRows,
+        },
+      ];
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [depth, rp, totalUsers, windowDays, stats, out],
   );
