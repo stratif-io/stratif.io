@@ -20,7 +20,7 @@ export function KpiCard({
   color,
   expanded,
   onExpand,
-  _valueSuffix,
+  valueSuffix: _valueSuffix,
   className,
 }: Props) {
   const data = useMemo(
