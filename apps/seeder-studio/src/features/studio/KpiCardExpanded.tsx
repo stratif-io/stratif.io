@@ -837,10 +837,17 @@ function PipelineFormula({
                   <button
                     type="button"
                     onClick={(e) => e.stopPropagation()}
-                    className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border/50 bg-muted/30 hover:bg-muted transition-colors text-[10px] text-muted-foreground hover:text-foreground"
+                    className="shrink-0 flex flex-col items-start px-2.5 py-1.5 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted transition-colors text-left"
                   >
-                    {currentLabel}
-                    <span className="opacity-40">▾</span>
+                    <span className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-medium leading-none mb-0.5">
+                      {axisDisplay.label}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground leading-none">
+                      {currentLabel}
+                      <span className="text-muted-foreground/40 font-normal">
+                        ▾
+                      </span>
+                    </span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
