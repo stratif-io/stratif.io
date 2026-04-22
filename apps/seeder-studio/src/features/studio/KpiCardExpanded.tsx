@@ -270,6 +270,14 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   } | null>(null);
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  useEffect(() => {
     if (!floatingEditor) return;
     const handler = (e: MouseEvent) => {
       const path = e.composedPath() as Element[];
@@ -349,36 +357,142 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   );
 
   return (
-    <div className="col-span-3 rounded-lg border border-primary/40 bg-card p-4 flex flex-col gap-4">
-      <div className="flex items-start justify-between">
-        <h3 className="text-sm font-semibold text-foreground">
-          {entry.explanation.split(".")[0]}.
-        </h3>
-        <button
-          aria-label="close"
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground text-lg leading-none px-1"
-        >
-          ×
-        </button>
-      </div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="relative bg-card border border-primary/40 rounded-xl shadow-2xl flex flex-col gap-0 w-[min(90vw,860px)] max-h-[88vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 pt-5 pb-3 border-b border-border/40">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">
+              {entry.explanation.split(".")[0]}.
+            </h2>
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed max-w-xl">
+              {entry.explanation.split(".").slice(1).join(".").trim()}
+            </p>
+          </div>
+          <button
+            aria-label="close"
+            onClick={onClose}
+            className="ml-4 text-muted-foreground hover:text-foreground text-xl leading-none px-1 shrink-0"
+          >
+            ×
+          </button>
+        </div>
 
-      <KpiChart
-        title=""
-        values={valuesFor(metricKey, out)}
-        color={color}
-        ghostLines={ghostLinesFor(metricKey, out)}
-        anomalies={anomalies}
-        windowDays={windowDays}
-        onAnomalyChange={handleAnomalyChange}
-        onAnomalySelect={handleAnomalySelect}
-        chartHeight="h-40"
-        className="border-0 p-0 bg-transparent"
-        valueSuffix={metricKey === "stickiness" ? "%" : ""}
-        formulaLatex={entry.latex}
-        formulaWhere={entry.where}
-        formulaExplanation={entry.explanation}
-      />
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex flex-col gap-5 px-6 py-5">
+          {/* Chart */}
+          <KpiChart
+            title=""
+            values={valuesFor(metricKey, out)}
+            color={color}
+            ghostLines={ghostLinesFor(metricKey, out)}
+            anomalies={anomalies}
+            windowDays={windowDays}
+            onAnomalyChange={handleAnomalyChange}
+            onAnomalySelect={handleAnomalySelect}
+            chartHeight="h-52"
+            className="border-0 p-0 bg-transparent"
+            valueSuffix={metricKey === "stickiness" ? "%" : ""}
+            formulaLatex={entry.latex}
+            formulaWhere={entry.where}
+          />
+
+          {/* Bottom grid: formula | params | daily rows */}
+          <div className="grid grid-cols-3 gap-6 border-t border-border/30 pt-5">
+            {/* Formula + variables */}
+            <div className="flex flex-col gap-4">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                Formula
+              </p>
+              <div className="overflow-x-auto">
+                <MathFormula latex={entry.latex} display />
+              </div>
+              {entry.where && (
+                <MathFormula
+                  latex={entry.where}
+                  className="text-[11px] text-muted-foreground/70 overflow-x-auto"
+                />
+              )}
+              <table className="text-[11px] w-full mt-1">
+                <tbody>
+                  {entry.variables.map((v) => (
+                    <tr key={v.symbol} className="border-t border-border/40">
+                      <td className="py-1 pr-3 font-mono text-primary align-top whitespace-nowrap">
+                        <MathFormula latex={v.symbol} />
+                      </td>
+                      <td className="py-1 text-muted-foreground leading-snug">
+                        {v.meaning}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Current params */}
+            <div className="flex flex-col gap-3">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                Current params
+              </p>
+              <table className="text-[11px] w-full">
+                <tbody>
+                  {params.map((p) => (
+                    <tr key={p.name} className="border-t border-border/40">
+                      <td className="py-1 pr-3 text-muted-foreground">
+                        {p.name}
+                      </td>
+                      <td className="py-1 font-mono font-semibold text-foreground">
+                        {p.value}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Daily breakdown */}
+            <div className="flex flex-col gap-3">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                First {N_DAYS} days
+              </p>
+              <table className="text-[11px] w-full">
+                <thead>
+                  <tr className="text-muted-foreground/60">
+                    <th className="text-left font-normal pb-2 pr-2">day</th>
+                    <th className="text-left font-normal pb-2 pr-2">formula</th>
+                    <th className="text-left font-normal pb-2 pr-2">
+                      computation
+                    </th>
+                    <th className="text-right font-normal pb-2">=</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dailyRows.map((row) => (
+                    <tr key={row.day} className="border-t border-border/30">
+                      <td className="py-1 pr-2 font-mono text-muted-foreground">{`d${row.day}`}</td>
+                      <td
+                        className="py-1 pr-2 text-muted-foreground max-w-[110px] truncate"
+                        title={row.formula}
+                      >
+                        {row.formula}
+                      </td>
+                      <td className="py-1 pr-2 font-mono">{row.computation}</td>
+                      <td className="py-1 text-right font-mono font-semibold text-foreground">
+                        {row.result}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {floatingEditor !== null && anomalies[floatingEditor.index] && (
         <AnomalyFloatingEditor
@@ -395,82 +509,6 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
           onClose={() => setFloatingEditor(null)}
         />
       )}
-
-      <div className="grid grid-cols-3 gap-6">
-        {/* Left: formula + variables */}
-        <div className="flex flex-col gap-3">
-          <div className="overflow-x-auto">
-            <MathFormula latex={entry.latex} />
-          </div>
-          <table className="text-[11px] w-full">
-            <tbody>
-              {entry.variables.map((v) => (
-                <tr key={v.symbol} className="border-t border-border/40">
-                  <td className="py-0.5 pr-2 font-mono text-primary align-top">
-                    <MathFormula latex={v.symbol} />
-                  </td>
-                  <td className="py-0.5 text-muted-foreground">{v.meaning}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Center: params */}
-        <div className="flex flex-col gap-2">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-            Current params
-          </p>
-          <table className="text-[11px] w-full">
-            <tbody>
-              {params.map((p) => (
-                <tr key={p.name} className="border-t border-border/40">
-                  <td className="py-0.5 pr-2 text-muted-foreground">
-                    {p.name}
-                  </td>
-                  <td className="py-0.5 font-mono font-semibold text-foreground">
-                    {p.value}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Right: daily breakdown */}
-        <div className="flex flex-col gap-2">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-            First {N_DAYS} days
-          </p>
-          <table className="text-[10px] w-full">
-            <thead>
-              <tr className="text-muted-foreground/60">
-                <th className="text-left font-normal pb-1 pr-2">day</th>
-                <th className="text-left font-normal pb-1 pr-2">formula</th>
-                <th className="text-left font-normal pb-1 pr-2">computation</th>
-                <th className="text-right font-normal pb-1">=</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dailyRows.map((row) => (
-                <tr key={row.day} className="border-t border-border/30">
-                  <td className="py-0.5 pr-2 font-mono text-muted-foreground">{`d${row.day}`}</td>
-                  <td
-                    className="py-0.5 pr-2 text-muted-foreground max-w-[120px] truncate"
-                    title={row.formula}
-                  >
-                    {row.formula}
-                  </td>
-                  <td className="py-0.5 pr-2 font-mono">{row.computation}</td>
-                  <td className="py-0.5 text-right font-mono font-semibold text-foreground">
-                    {row.result}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }
