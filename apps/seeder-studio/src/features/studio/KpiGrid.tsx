@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
+import { useSeederStore } from "@/stores/seederStore";
+import { resolveSimParams } from "@/lib/twin";
 import { headlineStat } from "@/features/preview/headlineStat";
 import { formatNum } from "@/lib/format";
 import { KpiCard } from "./KpiCard";
-import { KpiCardExpanded } from "./KpiCardExpanded";
+import { KpiCardExpanded, toBands } from "./KpiCardExpanded";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
 
 interface CardDef {
@@ -69,6 +71,12 @@ const SECTIONS: { label: string; cards: CardDef[] }[] = [
 export function KpiGrid() {
   const [expandedKey, setExpandedKey] = useState<MetricKey | null>(null);
   const out = useTwinOutput();
+  const config = useSeederStore((s) => s.config);
+  const { windowDays } = useMemo(() => resolveSimParams(config), [config]);
+  const bands = useMemo(
+    () => toBands(config.anomalies, windowDays),
+    [config.anomalies, windowDays],
+  );
 
   const valuesFor = (key: MetricKey): (number | null)[] => {
     switch (key) {
@@ -120,6 +128,7 @@ export function KpiGrid() {
                 headline={headlineFor(card.key)}
                 color={card.color}
                 valueSuffix={card.valueSuffix}
+                bands={bands}
                 expanded={expandedKey === card.key}
                 onExpand={() => handleExpand(card.key)}
                 className={card.colSpan === 3 ? "col-span-3" : undefined}
@@ -129,6 +138,7 @@ export function KpiGrid() {
               <KpiCardExpanded
                 metricKey={expandedKey!}
                 color={section.cards.find((c) => c.key === expandedKey)!.color}
+                bands={bands}
                 onClose={() => setExpandedKey(null)}
               />
             )}

@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import type { SimulationAnomaly } from "@/types/simulation";
 import { MathFormula } from "@/lib/math/MathFormula";
 import { FORMULA_REGISTRY } from "@/features/preview/formulaRegistry";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
 import { KpiChart } from "@/features/preview/KpiChart";
 import type { KpiBand } from "@/features/preview/KpiChart";
+import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveSimParams, anomalyTypeColor } from "@/lib/twin";
@@ -26,6 +27,7 @@ interface DailyRow {
 interface Props {
   metricKey: MetricKey;
   color: string;
+  bands: KpiBand[];
   onClose: () => void;
 }
 
@@ -109,20 +111,6 @@ function buildDailyRows(
   });
 }
 
-function toBands(
-  anomalies: SimulationAnomaly[] | undefined,
-  days: number,
-): KpiBand[] {
-  if (!anomalies?.length) return [];
-  return anomalies.flatMap((a) => {
-    const rawStart = parseDays(a.start);
-    const rawDur = parseDays(a.duration);
-    if (rawStart === null || rawDur === null || rawDur <= 0) return [];
-    const start = rawStart < 0 ? days + rawStart : rawStart;
-    return [{ start, end: start + rawDur, color: anomalyTypeColor(a.type) }];
-  });
-}
-
 function valuesFor(
   metricKey: MetricKey,
   out: ReturnType<typeof useTwinOutput>,
@@ -145,9 +133,25 @@ function valuesFor(
   }
 }
 
-export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
+// eslint-disable-next-line react-refresh/only-export-components
+export function toBands(
+  anomalies: SimulationAnomaly[] | undefined,
+  days: number,
+): KpiBand[] {
+  if (!anomalies?.length) return [];
+  return anomalies.flatMap((a) => {
+    const rawStart = parseDays(a.start);
+    const rawDur = parseDays(a.duration);
+    if (rawStart === null || rawDur === null || rawDur <= 0) return [];
+    const start = rawStart < 0 ? days + rawStart : rawStart;
+    return [{ start, end: start + rawDur, color: anomalyTypeColor(a.type) }];
+  });
+}
+
+export function KpiCardExpanded({ metricKey, color, bands, onClose }: Props) {
   const out = useTwinOutput();
   const config = useSeederStore((s) => s.config);
+  const setAnomalies = useSeederStore((s) => s.setAnomalies);
   const {
     depth,
     retentionParams: rp,
@@ -155,11 +159,31 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     windowDays,
   } = useMemo(() => resolveSimParams(config), [config]);
 
+  const anomalies = useMemo(() => config.anomalies ?? [], [config.anomalies]);
+
+  const [floatingEditor, setFloatingEditor] = useState<{
+    index: number;
+    x: number;
+    y: number;
+  } | null>(null);
+
   const entry = FORMULA_REGISTRY[metricKey];
 
-  const bands = useMemo(
-    () => toBands(config.anomalies, windowDays),
-    [config.anomalies, windowDays],
+  const handleAnomalyChange = useCallback(
+    (index: number, next: SimulationAnomaly) => {
+      const updated = anomalies.map((a, i) => (i === index ? next : a));
+      setAnomalies(updated);
+    },
+    [anomalies, setAnomalies],
+  );
+
+  const handleAnomalySelect = useCallback(
+    (index: number, x: number, y: number) => {
+      setFloatingEditor((prev) =>
+        prev?.index === index ? null : { index, x, y },
+      );
+    },
+    [],
   );
 
   const params: { name: string; value: string }[] = useMemo(() => {
@@ -231,10 +255,30 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
         values={valuesFor(metricKey, out)}
         color={color}
         bands={bands}
+        anomalies={anomalies}
+        windowDays={windowDays}
+        onAnomalyChange={handleAnomalyChange}
+        onAnomalySelect={handleAnomalySelect}
         chartHeight="h-40"
         className="border-0 p-0 bg-transparent"
         valueSuffix={metricKey === "stickiness" ? "%" : ""}
       />
+
+      {floatingEditor !== null && anomalies[floatingEditor.index] && (
+        <AnomalyFloatingEditor
+          anomaly={anomalies[floatingEditor.index]}
+          x={floatingEditor.x}
+          y={floatingEditor.y}
+          onChange={(next) => handleAnomalyChange(floatingEditor.index, next)}
+          onDelete={() => {
+            setAnomalies(
+              anomalies.filter((_, i) => i !== floatingEditor.index),
+            );
+            setFloatingEditor(null);
+          }}
+          onClose={() => setFloatingEditor(null)}
+        />
+      )}
 
       <div className="grid grid-cols-3 gap-6">
         {/* Left: formula + variables */}

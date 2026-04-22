@@ -1,6 +1,12 @@
 import { useMemo } from "react";
-import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { LineChart, Line, ReferenceArea, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/cn";
+
+export interface Band {
+  start: number;
+  end: number;
+  color: string;
+}
 
 interface Props {
   title: string;
@@ -9,6 +15,7 @@ interface Props {
   color: string;
   expanded: boolean;
   onExpand: () => void;
+  bands?: Band[];
   valueSuffix?: string;
   className?: string;
 }
@@ -20,6 +27,7 @@ export function KpiCard({
   color,
   expanded,
   onExpand,
+  bands,
   valueSuffix: _valueSuffix,
   className,
 }: Props) {
@@ -56,6 +64,17 @@ export function KpiCard({
             data={data}
             margin={{ top: 2, right: 2, left: 2, bottom: 2 }}
           >
+            {bands?.map((b) => (
+              <ReferenceArea
+                key={`${b.start}-${b.end}`}
+                x1={b.start}
+                x2={b.end}
+                dataKey="i"
+                fill={b.color}
+                fillOpacity={0.18}
+                stroke="none"
+              />
+            ))}
             <Line
               type="monotone"
               dataKey="v"
