@@ -26,12 +26,20 @@ export interface KpiBand {
 const CM = { top: 4, right: 4, left: 4, bottom: 4 } as const;
 const X_AXIS_H = 20;
 
+export interface GhostLine {
+  key: string;
+  label: string;
+  values: (number | null)[];
+  color: string;
+}
+
 interface Props {
   title: string;
   values: (number | null)[];
   headline?: string;
   color?: string;
   bands?: KpiBand[];
+  ghostLines?: GhostLine[];
   anomalies?: SimulationAnomaly[];
   windowDays?: number;
   onAnomalyChange?: (index: number, next: SimulationAnomaly) => void;
@@ -70,6 +78,7 @@ export function KpiChart({
   headline,
   color = "#2563eb",
   bands,
+  ghostLines,
   anomalies,
   windowDays,
   onAnomalyChange,
@@ -83,10 +92,31 @@ export function KpiChart({
   formulaWhere = "",
   formulaExplanation = "",
 }: Props) {
-  const data = useMemo(
-    () => values.map((v, i) => ({ idx: i, value: v })),
-    [values],
-  );
+  const data = useMemo(() => {
+    const mainMax = Math.max(
+      ...values.filter((v): v is number => v !== null),
+      1,
+    );
+    return values.map((v, i) => {
+      const row: Record<string, number | undefined> = {
+        idx: i,
+        value: v ?? undefined,
+      };
+      for (const g of ghostLines ?? []) {
+        const gMax = Math.max(
+          ...g.values.filter((x): x is number => x !== null),
+          1,
+        );
+        const raw = g.values[i];
+        // Normalize ghost to main series' scale so it fits in the same visual range
+        row[g.key] =
+          raw !== null && raw !== undefined
+            ? (raw / gMax) * mainMax
+            : undefined;
+      }
+      return row;
+    });
+  }, [values, ghostLines]);
 
   const ticks = useMemo(() => {
     if (values.length === 0) return [];
@@ -249,6 +279,21 @@ export function KpiChart({
                 title,
               ]}
             />
+            {ghostLines?.map((g) => (
+              <Line
+                key={g.key}
+                type="monotone"
+                dataKey={g.key}
+                stroke={g.color}
+                strokeWidth={1}
+                strokeDasharray="4 3"
+                strokeOpacity={0.45}
+                dot={false}
+                isAnimationActive={false}
+                legendType="none"
+                name={g.label}
+              />
+            ))}
             <Line
               type="monotone"
               dataKey="value"

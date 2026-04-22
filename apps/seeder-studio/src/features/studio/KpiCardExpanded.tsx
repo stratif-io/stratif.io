@@ -4,7 +4,7 @@ import { MathFormula } from "@/lib/math/MathFormula";
 import { FORMULA_REGISTRY } from "@/features/preview/formulaRegistry";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
 import { KpiChart } from "@/features/preview/KpiChart";
-import type { KpiBand } from "@/features/preview/KpiChart";
+import type { KpiBand, GhostLine } from "@/features/preview/KpiChart";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
@@ -130,6 +130,89 @@ function valuesFor(
       return out.churnedUsers;
     case "reactivatedUsers":
       return out.reactivatedUsers;
+  }
+}
+
+function ghostLinesFor(
+  metricKey: MetricKey,
+  out: ReturnType<typeof useTwinOutput>,
+): GhostLine[] {
+  switch (metricKey) {
+    case "activeUsers":
+      return [
+        {
+          key: "g_new",
+          label: "New users",
+          values: out.newUsers,
+          color: "hsl(var(--chart-3))",
+        },
+        {
+          key: "g_churn",
+          label: "Churned",
+          values: out.churnedUsers,
+          color: "hsl(var(--destructive))",
+        },
+        {
+          key: "g_react",
+          label: "Reactivated",
+          values: out.reactivatedUsers,
+          color: "hsl(var(--chart-4))",
+        },
+      ];
+    case "events":
+      return [
+        {
+          key: "g_dau",
+          label: "Active users",
+          values: out.activeUsers,
+          color: "hsl(var(--chart-8))",
+        },
+      ];
+    case "totalUsers":
+      return [
+        {
+          key: "g_new",
+          label: "New users/day",
+          values: out.newUsers,
+          color: "hsl(var(--chart-3))",
+        },
+      ];
+    case "stickiness":
+      return [
+        {
+          key: "g_dau",
+          label: "Active users",
+          values: out.activeUsers,
+          color: "hsl(var(--chart-8))",
+        },
+      ];
+    case "churnedUsers":
+      return [
+        {
+          key: "g_react",
+          label: "Reactivated",
+          values: out.reactivatedUsers,
+          color: "hsl(var(--chart-4))",
+        },
+      ];
+    case "reactivatedUsers":
+      return [
+        {
+          key: "g_churn",
+          label: "Churned",
+          values: out.churnedUsers,
+          color: "hsl(var(--destructive))",
+        },
+      ];
+    case "newUsers":
+      return [
+        {
+          key: "g_arr",
+          label: "Arrival rate λ",
+          values: out.arrivals,
+          color: "hsl(var(--chart-3))",
+        },
+      ];
   }
 }
 
@@ -268,6 +351,7 @@ export function KpiCardExpanded({ metricKey, color, bands, onClose }: Props) {
         values={valuesFor(metricKey, out)}
         color={color}
         bands={bands}
+        ghostLines={ghostLinesFor(metricKey, out)}
         anomalies={anomalies}
         windowDays={windowDays}
         onAnomalyChange={handleAnomalyChange}
