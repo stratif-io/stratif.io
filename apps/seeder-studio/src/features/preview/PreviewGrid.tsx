@@ -82,6 +82,7 @@ export function PreviewGrid() {
         const react = out.reactivatedUsers[i];
         return {
           day: i + 1,
+          formulaLabeled: `DAU(${i})=${fn(prev)} + N(${i + 1})=${fn(newU)} − C(${i + 1})=${fn(churn)} + R(${i + 1})=${fn(react)}`,
           formula: `${fn(prev)} + ${fn(newU)} − ${fn(churn)} + ${fn(react)}`,
           result: fn(out.activeUsers[i]),
         };
@@ -89,12 +90,14 @@ export function PreviewGrid() {
 
       const eventsDailyRows = Array.from({ length: n }, (_, i) => ({
         day: i + 1,
+        formulaLabeled: `DAU(${i + 1})=${fn(out.activeUsers[i])} × d=${depth}`,
         formula: `${fn(out.activeUsers[i])} × ${depth}`,
         result: fn(out.events[i]),
       }));
 
       const newUsersDailyRows = Array.from({ length: n }, (_, i) => ({
         day: i + 1,
+        formulaLabeled: `N(${i + 1})=${fn(out.newUsers[i])}`,
         result: fn(out.newUsers[i]),
       }));
 
@@ -102,6 +105,7 @@ export function PreviewGrid() {
         const prev = i === 0 ? 0 : out.totalUsers[i - 1];
         return {
           day: i + 1,
+          formulaLabeled: `T(${i})=${fn(prev)} + N(${i + 1})=${fn(out.newUsers[i])}`,
           formula: `${fn(prev)} + ${fn(out.newUsers[i])}`,
           result: fn(out.totalUsers[i]),
         };
@@ -115,6 +119,7 @@ export function PreviewGrid() {
             : "—";
         return {
           day: i + 1,
+          formulaLabeled: `DAU(${i})=${fn(prevActive)} × λ(${i + 1})=${rate}`,
           formula: `${fn(prevActive)} × ${rate}`,
           result: fn(out.churnedUsers[i]),
         };
@@ -122,15 +127,18 @@ export function PreviewGrid() {
 
       const reactivatedDailyRows = Array.from({ length: n }, (_, i) => ({
         day: i + 1,
+        formulaLabeled: `R(${i + 1})=${fn(out.reactivatedUsers[i])}`,
         result: fn(out.reactivatedUsers[i]),
       }));
 
       const stickinessDailyRows = Array.from({ length: n }, (_, i) => {
         const s = out.stickiness[i];
+        const val = s === null ? "—" : `${(s * 100).toFixed(1)}%`;
         return {
           day: i + 1,
+          formulaLabeled: `DAU(${i + 1})=${fn(out.activeUsers[i])} / MAU(${i + 1})`,
           formula: `${fn(out.activeUsers[i])} / MAU`,
-          result: s === null ? "—" : `${(s * 100).toFixed(1)}%`,
+          result: val,
         };
       });
 

@@ -8,6 +8,7 @@ import { MathFormula } from "@/lib/math/MathFormula";
 
 export interface DailyRow {
   day: number;
+  formulaLabeled?: string;
   formula?: string;
   result: string;
 }
@@ -99,42 +100,63 @@ export function SimMathPanel({ entries }: Props) {
                   </tbody>
                 </table>
               )}
-              {entry.dailyRows && entry.dailyRows.length > 0 && (
-                <table className="w-full text-[10px] border-collapse">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left font-semibold text-muted-foreground py-0.5 w-6">
-                        d
-                      </th>
-                      {entry.dailyRows.some((r) => r.formula) && (
-                        <th className="text-left font-semibold text-muted-foreground py-0.5 px-2 font-mono">
-                          computation
-                        </th>
-                      )}
-                      <th className="text-right font-semibold text-muted-foreground py-0.5 font-mono">
-                        =
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entry.dailyRows.map((row) => (
-                      <tr key={row.day} className="border-b border-border/40">
-                        <td className="py-0.5 text-muted-foreground">
-                          {row.day}
-                        </td>
-                        {entry.dailyRows!.some((r) => r.formula) && (
-                          <td className="py-0.5 px-2 font-mono text-muted-foreground">
-                            {row.formula ?? "—"}
-                          </td>
-                        )}
-                        <td className="py-0.5 text-right font-mono tabular-nums font-semibold">
-                          {row.result}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              {entry.dailyRows &&
+                entry.dailyRows.length > 0 &&
+                (() => {
+                  const hasLabeled = entry.dailyRows.some(
+                    (r) => r.formulaLabeled,
+                  );
+                  const hasFormula = entry.dailyRows.some((r) => r.formula);
+                  return (
+                    <table className="w-full text-[10px] border-collapse">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left font-semibold text-muted-foreground py-0.5 w-6">
+                            d
+                          </th>
+                          {hasLabeled && (
+                            <th className="text-left font-semibold text-muted-foreground py-0.5 px-2 font-mono">
+                              formula
+                            </th>
+                          )}
+                          {hasFormula && (
+                            <th className="text-left font-semibold text-muted-foreground py-0.5 px-2 font-mono">
+                              computation
+                            </th>
+                          )}
+                          <th className="text-right font-semibold text-muted-foreground py-0.5 font-mono">
+                            =
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {entry.dailyRows.map((row) => (
+                          <tr
+                            key={row.day}
+                            className="border-b border-border/40"
+                          >
+                            <td className="py-0.5 text-muted-foreground">
+                              {row.day}
+                            </td>
+                            {hasLabeled && (
+                              <td className="py-0.5 px-2 font-mono text-muted-foreground">
+                                {row.formulaLabeled ?? "—"}
+                              </td>
+                            )}
+                            {hasFormula && (
+                              <td className="py-0.5 px-2 font-mono text-muted-foreground">
+                                {row.formula ?? "—"}
+                              </td>
+                            )}
+                            <td className="py-0.5 text-right font-mono tabular-nums font-semibold">
+                              {row.result}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()}
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 {entry.explanation}
               </p>
