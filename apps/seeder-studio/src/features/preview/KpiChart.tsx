@@ -108,11 +108,14 @@ export function KpiChart({
           1,
         );
         const raw = g.values[i];
-        // Normalize ghost to main series' scale so it fits in the same visual range
-        row[g.key] =
+        const normalized =
           raw !== null && raw !== undefined
             ? (raw / gMax) * mainMax
             : undefined;
+        row[g.key] = normalized;
+        // Keep the raw value so the tooltip can display real numbers
+        row[`${g.key}_raw`] =
+          raw !== null && raw !== undefined ? raw : undefined;
       }
       return row;
     });
@@ -274,10 +277,17 @@ export function KpiChart({
               labelFormatter={(idx: number) =>
                 dateFor(idx, startDate, endDate, values.length) || `day ${idx}`
               }
-              formatter={(v: number) => [
-                `${formatNum(v)}${valueSuffix}`,
-                title,
-              ]}
+              formatter={(v: number, dataKey: string, item) => {
+                const ghost = ghostLines?.find((g) => g.key === dataKey);
+                if (ghost) {
+                  // Show the real un-normalized value from the _raw field
+                  const raw = (
+                    item.payload as Record<string, number | undefined>
+                  )[`${dataKey}_raw`];
+                  return [`${formatNum(raw ?? v)}`, ghost.label];
+                }
+                return [`${formatNum(v)}${valueSuffix}`, title];
+              }}
             />
             {ghostLines?.map((g) => (
               <Line
@@ -329,6 +339,40 @@ export function KpiChart({
           </svg>
         )}
       </div>
+
+      {ghostLines && ghostLines.length > 0 && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          <div className="flex items-center gap-1">
+            <span
+              className="inline-block w-3 h-0.5 rounded"
+              style={{ backgroundColor: color }}
+            />
+            <span className="text-[10px] text-muted-foreground">
+              {title || "value"}
+            </span>
+          </div>
+          {ghostLines.map((g) => (
+            <div key={g.key} className="flex items-center gap-1">
+              <svg width="12" height="5" aria-hidden>
+                <line
+                  x1="0"
+                  y1="2.5"
+                  x2="12"
+                  y2="2.5"
+                  stroke={g.color}
+                  strokeWidth="1.5"
+                  strokeDasharray="3 2"
+                  strokeOpacity="0.7"
+                />
+              </svg>
+              <span className="text-[10px] text-muted-foreground/70">
+                {g.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {formulaLatex && (
         <div className="flex flex-col gap-0.5 mt-1">
           <MathFormula
