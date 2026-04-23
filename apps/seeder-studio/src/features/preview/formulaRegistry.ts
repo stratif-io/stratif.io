@@ -33,16 +33,30 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
   activeUsers: {
     latex:
       "\\text{DAU}(t) = \\sum_c \\text{Poisson}\\!\\left(N_c \\cdot S[t{-}c]\\right)",
+    where:
+      "S[k] = \\prod_{i=0}^{k-1}(1 - p(i)),\\quad p(i) = \\theta_\\infty + (\\theta_0 - \\theta_\\infty)\\,e^{-i/\\tau}",
     explanation:
-      "Active users on day t, summed across all cohorts. For each cohort c, we sample the number of survivors at tenure t−c from the survival function S.",
+      "Active users on day t, summed across all cohorts. For each cohort c, we sample survivors at tenure t−c using the survival function S[k], which is the product of daily retention probabilities up to tenure k.",
     variables: [
       { symbol: "t", meaning: "simulation day (1 … T)" },
       { symbol: "c", meaning: "cohort arrival day" },
       { symbol: "N_c", meaning: "number of users who arrived on day c" },
       {
         symbol: "S[k]",
-        meaning:
-          "survival probability at tenure k — probability a user is still active k days after arrival",
+        meaning: "probability a user is still active k days after arrival",
+      },
+      { symbol: "p(i)", meaning: "daily churn probability at tenure i" },
+      {
+        symbol: "\\theta_0",
+        meaning: "peak churn rate on arrival day (Stickiness axis)",
+      },
+      {
+        symbol: "\\theta_\\infty",
+        meaning: "long-run base churn rate (Stickiness axis)",
+      },
+      {
+        symbol: "\\tau",
+        meaning: "churn decay speed in days (Stickiness axis)",
       },
       { symbol: "t - c", meaning: "tenure: days since cohort c arrived" },
     ],
@@ -112,24 +126,35 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
   churnedUsers: {
     latex:
       "\\text{churn}(t) = \\sum_c \\text{Poisson}\\!\\left(N_c \\cdot (S[k{-}1] - S[k])\\right)",
+    where:
+      "S[k] = \\prod_{i=0}^{k-1}(1 - p(i)),\\quad p(i) = \\theta_\\infty + (\\theta_0 - \\theta_\\infty)\\,e^{-i/\\tau}",
     explanation:
-      "Users entering the dormant state today, summed across cohorts. S[k−1]−S[k] is the probability of churning at exactly tenure k.",
+      "Users entering the dormant state today, summed across cohorts. S[k−1]−S[k] is the probability of churning at exactly tenure k — the drop in survival between consecutive days.",
     variables: [
       { symbol: "t", meaning: "simulation day (1 … T)" },
       { symbol: "c", meaning: "cohort arrival day" },
       { symbol: "N_c", meaning: "number of users who arrived on day c" },
       {
-        symbol: "S[k]",
-        meaning:
-          "survival probability at tenure k — derived from the Stickiness axis parameters θ₀, θ∞, τ",
-      },
-      {
         symbol: "k",
         meaning: "tenure: days since cohort c arrived (k = t − c)",
       },
+      { symbol: "S[k]", meaning: "survival probability at tenure k" },
       {
         symbol: "S[k{-}1] - S[k]",
-        meaning: "probability of churning at exactly tenure k",
+        meaning: "churn probability at exactly tenure k",
+      },
+      { symbol: "p(i)", meaning: "daily churn probability at tenure i" },
+      {
+        symbol: "\\theta_0",
+        meaning: "peak churn rate on arrival day (Stickiness axis)",
+      },
+      {
+        symbol: "\\theta_\\infty",
+        meaning: "long-run base churn rate (Stickiness axis)",
+      },
+      {
+        symbol: "\\tau",
+        meaning: "churn decay speed in days (Stickiness axis)",
       },
     ],
   },
