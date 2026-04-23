@@ -162,6 +162,12 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
     label: "noise",
     values: [
       {
+        value: "none",
+        label: "No noise",
+        description: "Perfectly smooth — σ = 0",
+        sparkPoints: "0,14 26,14 52,14",
+      },
+      {
         value: "clean",
         label: "Clean",
         description: "Very smooth curves — minimal variance (σ ≈ 2%)",

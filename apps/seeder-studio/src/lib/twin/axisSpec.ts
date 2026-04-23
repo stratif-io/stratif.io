@@ -227,6 +227,12 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
     description: "Noise level applied to all four KPI curves.",
     values: [
       {
+        value: "none",
+        label: "none",
+        description: "σ = 0 — perfectly smooth curves.",
+        params: { sigma: 0 },
+      },
+      {
         value: "clean",
         label: "clean",
         description: "σ ≈ 2%.",
