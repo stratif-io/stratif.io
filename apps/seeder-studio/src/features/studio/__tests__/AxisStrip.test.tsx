@@ -24,7 +24,10 @@ describe("AxisStrip", () => {
   it("clicking a chip shows its values in a popover", async () => {
     render(<AxisStrip />);
     fireEvent.click(screen.getByText("growth"));
-    expect(await screen.findByText("Strong growth")).toBeInTheDocument();
+    // "Strong growth" may appear in both chip and popover once the popover opens
+    expect(
+      (await screen.findAllByText("Strong growth")).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText("Hockey stick")).toBeInTheDocument();
   });
 

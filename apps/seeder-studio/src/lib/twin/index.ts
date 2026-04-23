@@ -1,4 +1,4 @@
-import { getAxisValue } from "./axisSpec";
+import { getAxisValue, resolveAxes } from "./axisSpec";
 import { resolveScale, parseDays } from "./utils";
 import { growthCurve } from "./growth";
 import { applyAnomalies } from "./anomalies";
@@ -8,7 +8,7 @@ import { simulateCohorts } from "./simulateCohorts";
 import type { RetentionParams, TwinInput, TwinOutput } from "./types";
 
 export * from "./types";
-export { AXIS_SPEC, getAxis, getAxisValue } from "./axisSpec";
+export { AXIS_SPEC, getAxis, getAxisValue, resolveAxes } from "./axisSpec";
 export { ANOMALY_SPEC, anomalyTypeColor, defaultAnomaly } from "./anomalySpec";
 
 export function resolveSimParams(config: TwinInput["config"]): {
@@ -17,16 +17,14 @@ export function resolveSimParams(config: TwinInput["config"]): {
   totalUsers: number;
   windowDays: number;
 } {
-  const scaleAxis = config.axes.scale ?? "small";
+  const axes = resolveAxes(config.axes);
   const { total_users, window_days } = resolveScale(
-    scaleAxis,
+    axes.scale,
     config.scale_config,
   );
 
-  const stickinessParams = getAxisValue(
-    "stickiness",
-    config.axes.stickiness ?? "sticky",
-  )?.params as RetentionParams | undefined;
+  const stickinessParams = getAxisValue("stickiness", axes.stickiness)
+    ?.params as RetentionParams | undefined;
 
   const retentionParams: RetentionParams = stickinessParams ??
     (getAxisValue("stickiness", "sticky")?.params as RetentionParams) ?? {
@@ -39,8 +37,8 @@ export function resolveSimParams(config: TwinInput["config"]): {
     };
 
   const depth =
-    (getAxisValue("engagement_depth", config.axes.engagement_depth ?? "medium")
-      ?.params.events_per_user as number | undefined) ?? 10;
+    (getAxisValue("engagement_depth", axes.engagement_depth)?.params
+      .events_per_user as number | undefined) ?? 10;
 
   return {
     depth,
@@ -57,26 +55,18 @@ export function runTwin({ config }: TwinInput): TwinOutput {
     totalUsers: total_users,
     windowDays: days,
   } = resolveSimParams(config);
+  const axes = resolveAxes(config.axes);
   const seed = config.random_seed ?? 42;
 
-  const growthAxis = config.axes.growth ?? "strong";
   const baseline = growthCurve(
-    growthAxis,
+    axes.growth,
     days,
     total_users,
     config.growth_config,
   );
   const withAnomalies = applyAnomalies(baseline, config.anomalies);
-  const jittered = applyJitter(
-    withAnomalies,
-    config.axes.anomalies ?? "moderate",
-    seed,
-  );
-  const rawArrivals = applyVirality(
-    jittered,
-    config.axes.virality ?? "weak",
-    config.axes.stickiness ?? "sticky",
-  );
+  const jittered = applyJitter(withAnomalies, axes.anomalies, seed);
+  const rawArrivals = applyVirality(jittered, axes.virality, axes.stickiness);
   const rawSum = rawArrivals.reduce((a, b) => a + b, 0);
   const arrivals =
     rawSum > 0

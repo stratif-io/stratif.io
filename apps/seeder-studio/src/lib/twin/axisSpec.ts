@@ -265,3 +265,14 @@ export function getAxisValue(
 ): AxisEnumValue | undefined {
   return AXIS_SPEC[axisId]?.values.find((v) => v.value === value);
 }
+
+/** Fill in any missing axes using the defaults declared in AXIS_SPEC. */
+export function resolveAxes(
+  axes: Record<string, string>,
+): Record<string, string> {
+  const resolved: Record<string, string> = { ...axes };
+  for (const [id, def] of Object.entries(AXIS_SPEC)) {
+    if (!resolved[id]) resolved[id] = def.default;
+  }
+  return resolved;
+}

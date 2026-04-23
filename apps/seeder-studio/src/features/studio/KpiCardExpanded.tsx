@@ -8,7 +8,7 @@ import type { GhostLine } from "@/features/preview/KpiChart";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
-import { resolveSimParams, getAxisValue } from "@/lib/twin";
+import { resolveSimParams, getAxisValue, resolveAxes } from "@/lib/twin";
 import { formatNum } from "@/lib/format";
 import { Popover, PopoverTrigger, PopoverContent } from "@stratif-io/web";
 import { AXIS_DISPLAY } from "@/features/axes/axisDisplaySpec";
@@ -571,8 +571,13 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
 
   const anomalies = useMemo(() => config.anomalies ?? [], [config.anomalies]);
 
+  const resolvedAxes = useMemo(
+    () => resolveAxes(config.axes ?? {}),
+    [config.axes],
+  );
+
   const growthLatex = useMemo(() => {
-    const axis = config.axes?.growth ?? "strong";
+    const axis = resolvedAxes.growth;
     const split =
       (config.growth_config?.split_fraction as number | undefined) ?? 0.3;
     const rate = (config.growth_config?.rate as number | undefined) ?? 0.04;
@@ -594,7 +599,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
       default:
         return "G(t)";
     }
-  }, [config.axes?.growth, config.growth_config]);
+  }, [resolvedAxes.growth, config.growth_config]);
 
   const [floatingEditor, setFloatingEditor] = useState<{
     index: number;
@@ -659,15 +664,14 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   );
 
   const params: { sym: string; name: string; value: string }[] = useMemo(() => {
-    const axes = config.axes ?? {};
     const k =
-      (getAxisValue("virality", axes.virality ?? "weak")?.params.k as
+      (getAxisValue("virality", resolvedAxes.virality)?.params.k as
         | number
-        | undefined) ?? 0.1;
+        | undefined) ?? 0;
     const sigma =
-      (getAxisValue("anomalies", axes.anomalies ?? "moderate")?.params.sigma as
+      (getAxisValue("anomalies", resolvedAxes.anomalies)?.params.sigma as
         | number
-        | undefined) ?? 0.05;
+        | undefined) ?? 0;
     switch (metricKey) {
       case "events":
         return [{ sym: "d", name: "events / user / day", value: `${depth}` }];
@@ -861,7 +865,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                   latexOverrides={
                     metricKey === "newUsers" ? { g_growth: growthLatex } : {}
                   }
-                  axes={config.axes ?? {}}
+                  axes={resolvedAxes}
                   onAxisChange={setAxis}
                   checkedSteps={checkedSteps}
                   onToggleStep={toggleStep}
@@ -1091,9 +1095,7 @@ function PipelineFormula({
 
         const axisId = axisMap[step.lineKey];
         const axisDisplay = axisId ? AXIS_DISPLAY[axisId] : null;
-        const currentVal = axisDisplay
-          ? (axes[axisId] ?? axisDisplay.values[0]?.value ?? "")
-          : "";
+        const currentVal = axisDisplay ? (axes[axisId] ?? "") : "";
         const currentLabel = axisDisplay
           ? (axisDisplay.values.find((v) => v.value === currentVal)?.label ??
             currentVal)
