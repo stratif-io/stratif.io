@@ -367,7 +367,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         lineKey: "g_react",
         label: "Reactivation",
         latex:
-          "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(\\text{ch}_c \\cdot r \\cdot \\delta^{d-1}\\right)",
+          "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "hsl(var(--chart-4))",
       },
       {
@@ -441,7 +441,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         lineKey: "g_mau",
         label: "Monthly active users",
         latex:
-          "\\text{MAU}(t) = \\sum_c N_c \\cdot \\left(1 - \\prod_{k=0}^{27}(1-S[t{-}c{-}k])\\right)",
+          "\\text{MAU}(t) = \\sum_c N_c \\cdot \\left(1 - \\prod_{k=0}^{W-1}(1-S[t{-}c{-}k])\\right)",
         color: "hsl(var(--chart-2))",
       },
       {
@@ -513,7 +513,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         lineKey: "g_react",
         label: "Reactivation",
         latex:
-          "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(\\text{ch}_c \\cdot r \\cdot \\delta^{d-1}\\right)",
+          "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "hsl(var(--chart-4))",
       },
     ],
@@ -541,7 +541,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         lineKey: "__main__",
         label: "Reactivation",
         latex:
-          "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(\\text{ch}_c \\cdot r \\cdot \\delta^{d-1}\\right)",
+          "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "",
       },
     ],

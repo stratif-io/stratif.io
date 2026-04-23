@@ -47,8 +47,7 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
   newUsers: {
     latex:
       "N(t) \\sim \\operatorname{Poisson}(\\lambda(t)),\\quad \\lambda(t) = \\frac{V(J(A(G(t))))}{\\sum_s V(J(A(G(s))))} \\cdot U",
-    where:
-      "J(t) = A(t)\\,(1 + \\sigma Z),\\; Z \\sim \\mathcal{N}(0,1),\\; \\sigma = 0.05",
+    where: "J(t) = A(t)\\,(1 + \\sigma Z),\\; Z \\sim \\mathcal{N}(0,1)",
     explanation:
       "New users on day t are a Poisson draw with rate λ(t). The raw rate λ̃(t) flows through a four-stage pipeline: growth curve G(t), anomaly multipliers A, day-level jitter J, and viral amplification V. The result is rescaled so the expected total equals the target U.",
     variables: [
@@ -69,13 +68,14 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
   stickiness: {
     latex: "\\text{stickiness}(t) = \\frac{\\text{DAU}(t)}{\\text{MAU}(t)}",
     explanation:
-      "Ratio of daily to monthly active users, measuring how habitual usage is. MAU is computed over a 28-day rolling window using an independence approximation on the survival curve.",
+      "Ratio of daily to monthly active users, measuring how habitual usage is. MAU is computed over a W-day rolling window using an independence approximation on the survival curve.",
     variables: [
       { symbol: "\\text{DAU}(t)", meaning: "daily active users on day t" },
       {
         symbol: "\\text{MAU}(t)",
-        meaning: "monthly active users in the 28-day window ending at t",
+        meaning: "monthly active users in the W-day window ending at t",
       },
+      { symbol: "W", meaning: "rolling window length (28 days)" },
     ],
   },
   totalUsers: {
@@ -96,12 +96,12 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
   },
   reactivatedUsers: {
     latex:
-      "\\text{react}(t) = \\sum_c \\text{Poisson}\\!\\left(\\text{ch}_c \\cdot r \\cdot \\delta^{d-1}\\right)",
+      "\\text{react}(t) = \\sum_c \\text{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
     explanation:
-      "Previously dormant users who return today. For each cohort, users who churned d days ago reactivate with probability r·δ^(d−1), a geometrically decaying kernel.",
+      "Previously dormant users who return today. For each cohort, users who churned n days ago reactivate with probability r·δ^(n−1), a geometrically decaying kernel. Users who remain dormant beyond D days are considered permanently churned.",
     variables: [
       {
-        symbol: "\\text{ch}_c",
+        symbol: "C_c",
         meaning: "users who went dormant from cohort c",
       },
       { symbol: "r", meaning: "base reactivation rate (day 1 of dormancy)" },
@@ -109,7 +109,8 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
         symbol: "\\delta",
         meaning: "reactivation decay factor per dormant day",
       },
-      { symbol: "d", meaning: "number of days the user has been dormant" },
+      { symbol: "n", meaning: "number of days the user has been dormant" },
+      { symbol: "D", meaning: "max dormant days before permanent churn" },
     ],
   },
 };
