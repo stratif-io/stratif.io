@@ -852,24 +852,36 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
               )}
 
               {pipeline ? (
-                <PipelineFormula
-                  ghostLines={ghostLines}
-                  mainColor={color}
-                  focusedKey={focusedLineKey}
-                  clickedKey={clickedLineKey}
-                  onHover={setHoveredLineKey}
-                  onClick={handleFormulaClick}
-                  steps={pipeline.steps}
-                  axisMap={pipeline.axisMap}
-                  footnote={pipeline.footnote}
-                  latexOverrides={
-                    metricKey === "newUsers" ? { g_growth: growthLatex } : {}
-                  }
-                  axes={resolvedAxes}
-                  onAxisChange={setAxis}
-                  checkedSteps={checkedSteps}
-                  onToggleStep={toggleStep}
-                />
+                <>
+                  <PipelineFormula
+                    ghostLines={ghostLines}
+                    mainColor={color}
+                    focusedKey={focusedLineKey}
+                    clickedKey={clickedLineKey}
+                    onHover={setHoveredLineKey}
+                    onClick={handleFormulaClick}
+                    steps={pipeline.steps}
+                    axisMap={pipeline.axisMap}
+                    footnote={pipeline.footnote}
+                    latexOverrides={
+                      metricKey === "newUsers" ? { g_growth: growthLatex } : {}
+                    }
+                    axes={resolvedAxes}
+                    onAxisChange={setAxis}
+                    checkedSteps={checkedSteps}
+                    onToggleStep={toggleStep}
+                  />
+
+                  {/* Where clause */}
+                  {entry.where && (
+                    <div className="rounded-lg bg-muted/20 px-4 py-3 overflow-x-auto">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
+                        where
+                      </p>
+                      <MathFormula latex={entry.where} />
+                    </div>
+                  )}
+                </>
               ) : (
                 <>
                   {/* Main formula — large display math */}
