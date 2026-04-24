@@ -1,0 +1,264 @@
+@import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource/jetbrains-mono";
+@import "@stratif-io/web/styles.css";
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --container-center: true;
+  --container-padding: 2rem;
+  --container-screens-2xl: 1400px;
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-chart-6: hsl(var(--chart-6));
+  --color-chart-7: hsl(var(--chart-7));
+  --color-chart-8: hsl(var(--chart-8));
+  --color-chart-9: hsl(var(--chart-9));
+  --color-chart-10: hsl(var(--chart-10));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --sidebar-expanded: 300px;
+  --sidebar-collapsed: 60px;
+
+  --content-max-width: 1600px;
+
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 30;
+  --z-header: 40;
+  --z-sidebar-overlay: 40;
+  --z-sidebar: 50;
+  --z-modal: 50;
+  --z-tooltip: 60;
+
+  --font-sans:
+    "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui,
+    -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+:root {
+  --background: 174 20% 99%;
+  --foreground: 240 39% 14%;
+  --card: 174 15% 100%;
+  --card-foreground: 240 39% 14%;
+  --popover: 174 15% 100%;
+  --popover-foreground: 240 39% 14%;
+  --primary: 174 82% 31%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 174 30% 94%;
+  --secondary-foreground: 174 82% 20%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 9% 46%;
+  --accent: 174 30% 94%;
+  --accent-foreground: 174 82% 20%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 174 82% 31%;
+  --radius: 0.5rem;
+  --chart-1: 174 82% 31%;
+  --chart-2: 174 63% 51%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 12 76% 61%;
+  --chart-6: 215 75% 52%;
+  --chart-7: 345 72% 55%;
+  --chart-8: 160 65% 35%;
+  --chart-9: 250 65% 62%;
+  --chart-10: 25 85% 52%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 240 39% 14%;
+  --success: 142 72% 29%;
+  --success-foreground: 138 76% 97%;
+
+  --anomaly-marketing-campaign: 347 83% 61%;
+  --anomaly-product-launch: 43 100% 50%;
+  --anomaly-outage: 0 68% 50%;
+  --anomaly-total-outage: 0 84% 40%;
+  --anomaly-feature-release: 213 82% 61%;
+  --anomaly-seasonal: 192 73% 59%;
+}
+
+.dark {
+  --background: 232 17% 8%;
+  --foreground: 214 32% 91%;
+  --card: 232 17% 11%;
+  --card-foreground: 214 32% 91%;
+  --popover: 232 17% 13%;
+  --popover-foreground: 214 32% 91%;
+  --primary: 174 63% 51%;
+  --primary-foreground: 178 80% 10%;
+  --secondary: 240 16% 14%;
+  --secondary-foreground: 214 32% 91%;
+  --muted: 240 16% 14%;
+  --muted-foreground: 215 19% 47%;
+  --accent: 240 16% 17%;
+  --accent-foreground: 214 32% 91%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 16% 20%;
+  --input: 240 16% 20%;
+  --ring: 174 63% 51%;
+  --chart-1: 174 63% 51%;
+  --chart-2: 173 75% 64%;
+  --chart-3: 38 92% 58%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 12 76% 65%;
+  --chart-6: 215 75% 58%;
+  --chart-7: 345 72% 62%;
+  --chart-8: 160 65% 42%;
+  --chart-9: 250 65% 68%;
+  --chart-10: 25 85% 58%;
+  --warning: 38 92% 58%;
+  --warning-foreground: 240 39% 14%;
+  --success: 142 71% 45%;
+  --success-foreground: 138 76% 97%;
+
+  --anomaly-marketing-campaign: 347 85% 70%;
+  --anomaly-product-launch: 43 100% 62%;
+  --anomaly-outage: 0 72% 62%;
+  --anomaly-total-outage: 0 86% 55%;
+  --anomaly-feature-release: 213 85% 70%;
+  --anomaly-seasonal: 192 75% 68%;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+  }
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+  }
+}
+
+@media (hover: hover) {
+  a,
+  button,
+  [role="button"] {
+    @apply transition-colors duration-200;
+  }
+}
+
+input,
+select,
+textarea {
+  @apply transition-colors duration-200;
+}
+
+@media screen and (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+:focus-visible {
+  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted/30;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/30 rounded-md;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  scrollbar-gutter: stable;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

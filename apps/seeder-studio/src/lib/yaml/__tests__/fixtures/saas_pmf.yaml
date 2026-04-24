@@ -1,0 +1,12 @@
+name: saas_pmf
+description: B2B SaaS post product-market fit, steady growth, low churn.
+domain: saas
+axes:
+  growth: strong
+  stickiness: sticky
+  engagement_depth: deep
+  monetization: subscription
+  virality: weak
+  scale: small
+  geography: global
+  anomalies: clean

@@ -40,6 +40,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Calendar } from '@/components/ui/calendar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { SaveStatus } from '@/components/ui/save-status'
+import { Segmented } from '@/components/ui/segmented'
 import { ChevronDown } from 'lucide-react'
 
 export function PrimitivesSection() {
@@ -305,6 +306,18 @@ export function PrimitivesSection() {
         <SaveStatus status="saving" />
         <SaveStatus status="saved" />
         <SaveStatus status="error" onRetry={() => {}} />
+      </ComponentRow>
+
+      <ComponentRow label="Segmented">
+        <Segmented
+          options={[
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+            { value: 'c', label: 'C' },
+          ]}
+          value="a"
+          onChange={() => {}}
+        />
       </ComponentRow>
     </ComponentSection>
   )
