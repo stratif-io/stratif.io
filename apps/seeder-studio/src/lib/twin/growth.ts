@@ -8,7 +8,7 @@ export function growthCurve(
 ): number[] {
   const out = new Array(days).fill(0);
   switch (axis) {
-    case "decline": {
+    case "declining": {
       const rate = 0.03;
       for (let t = 0; t < days; t++)
         out[t] = totalUsers * rate * Math.exp(-t / (days * 0.5));

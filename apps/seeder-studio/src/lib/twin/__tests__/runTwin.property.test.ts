@@ -3,7 +3,7 @@ import fc from "fast-check";
 import { runTwin } from "..";
 
 const axisArb = fc.record({
-  growth: fc.constantFrom("weak", "strong", "hockey_stick", "decline"),
+  growth: fc.constantFrom("weak", "strong", "hockey_stick", "declining"),
   stickiness: fc.constantFrom("churny", "sticky", "addictive"),
   engagement_depth: fc.constantFrom("shallow", "medium", "deep"),
   monetization: fc.constantFrom(

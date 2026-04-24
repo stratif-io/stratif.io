@@ -20,8 +20,8 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
     description: "Shape of the new-user arrival curve.",
     values: [
       {
-        value: "decline",
-        label: "decline",
+        value: "declining",
+        label: "declining",
         description: "Arrivals decay over time.",
         params: { shape: 0, rate: -0.01 },
       },

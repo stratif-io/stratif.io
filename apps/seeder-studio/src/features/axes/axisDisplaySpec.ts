@@ -17,7 +17,7 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
     label: "growth",
     values: [
       {
-        value: "decline",
+        value: "declining",
         label: "Decline",
         description: "Churn exceeds acquisition",
         sparkPoints: "0,4 14,8 28,14 40,20 52,26",

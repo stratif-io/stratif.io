@@ -662,7 +662,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
         return "G(t) = \\dfrac{U}{T}\\left(0.5 + \\dfrac{t}{T}\\right)";
       case "strong":
         return `G(t) = C\\,e^{${rate}\\,t},\\quad C = \\dfrac{${rate}\\,U}{e^{${rate}T}-1}`;
-      case "decline":
+      case "declining":
         return "G(t) = 0.03\\,U\\,e^{-t\\,/\\,(0.5\\,T)}";
       case "hockey_stick":
         return (

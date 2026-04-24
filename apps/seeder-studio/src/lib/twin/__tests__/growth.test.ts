@@ -19,7 +19,7 @@ describe("growthCurve", () => {
   });
 
   it("decline produces a monotonically non-increasing curve", () => {
-    const curve = growthCurve("decline", 30, 1000, undefined);
+    const curve = growthCurve("declining", 30, 1000, undefined);
     for (let i = 1; i < curve.length; i++) {
       expect(curve[i]).toBeLessThanOrEqual(curve[i - 1] + 1e-9);
     }
@@ -34,7 +34,7 @@ describe("growthCurve", () => {
   });
 
   it("returns all non-negative values", () => {
-    for (const axis of ["weak", "strong", "hockey_stick", "decline"]) {
+    for (const axis of ["weak", "strong", "hockey_stick", "declining"]) {
       const curve = growthCurve(axis, 60, 1000, {
         split_fraction: 0.3,
         rate: 0.04,
