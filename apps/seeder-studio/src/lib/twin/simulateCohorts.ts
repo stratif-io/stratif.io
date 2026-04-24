@@ -38,7 +38,7 @@ export function simulateCohorts(
   params: RetentionParams,
   eventsPerActiveUser: number,
   seed: number,
-): Omit<TwinOutput, "days" | "arrivals" | "pipeline"> {
+): Omit<TwinOutput, "days"> {
   const rng = createRng(seed);
   const S = buildSurvival(params, days);
   const R = buildReactivationKernel(params);

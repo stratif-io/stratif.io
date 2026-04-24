@@ -1,16 +1,5 @@
 import { z } from "zod";
 
-export const MarkovEventSchema = z.object({
-  name: z.string().min(1),
-  color: z.string().optional(),
-});
-
-export const MarkovConfigSchema = z.object({
-  events: z.array(MarkovEventSchema).min(1),
-  start: z.record(z.number()),
-  transitions: z.record(z.record(z.number())),
-});
-
 export const SimulationAnomalySchema = z
   .object({
     type: z.string().min(1),
@@ -33,8 +22,8 @@ export const SimulationScaleOverrideSchema = z.object({
 export const SimulationConfigSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  domain: z.string().min(1),
   axes: z.record(z.string()),
-  markov: MarkovConfigSchema,
   random_seed: z.number().int().optional(),
   growth_config: z.record(z.unknown()).optional(),
   scale_config: SimulationScaleOverrideSchema.optional(),

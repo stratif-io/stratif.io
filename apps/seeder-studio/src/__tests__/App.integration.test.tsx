@@ -34,7 +34,7 @@ function renderApp() {
 
 describe("App integration", () => {
   beforeEach(() => {
-    vi.mocked(presetsApi.fetchPresets).mockResolvedValue(mockPresets as never);
+    vi.mocked(presetsApi.fetchPresets).mockResolvedValue(mockPresets);
   });
 
   it("renders Seeder Studio title", async () => {

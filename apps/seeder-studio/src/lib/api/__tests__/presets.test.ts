@@ -15,15 +15,7 @@ describe("fetchPresets", () => {
         {
           name: "a",
           domain: "saas",
-          config: {
-            name: "a",
-            axes: {},
-            markov: {
-              events: [{ name: "PageView" }],
-              start: { PageView: 1.0 },
-              transitions: { PageView: { "[end]": 1.0 } },
-            },
-          },
+          config: { name: "a", domain: "saas", axes: {} },
         },
       ],
     };
@@ -34,7 +26,7 @@ describe("fetchPresets", () => {
     });
     const presets = await fetchPresets();
     expect(presets).toHaveLength(1);
-    expect(presets[0].config?.name).toBe("a");
+    expect(presets[0].config.name).toBe("a");
     expect(globalThis.fetch).toHaveBeenCalledWith("/api/simulator/presets");
   });
 

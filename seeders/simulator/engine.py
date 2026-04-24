@@ -3,11 +3,11 @@
 Flow per ``run()``:
   1. seed + build SimulationState
   2. apply every axis declared in config.axes (mutates state)
-  3. create MarkovRunner from config.markov
+  3. resolve domain pack
   4. generate users by day (Poisson around arrival_curve(day)); each user
      gets an archetype + a lifetime via hazard_curve
-  5. for each user day, sample session count, call markov_runner.build_session,
-     collect event tuples
+  5. for each user day, sample session count + session archetypes, call
+     domain.build_session, collect event tuples
   6. yield batches of size INSERT_BATCH_SIZE
 """
 
@@ -27,9 +27,10 @@ from seeders.simulator.axes._defaults import default_axis_registry
 from seeders.simulator.cohort import (
     assign_user_archetype,
     sample_daily_session_count,
+    sample_session_archetype,
 )
 from seeders.simulator.config import SimulationConfig
-from seeders.simulator.markov import MarkovRunner
+from seeders.simulator.domains._defaults import default_domain_registry
 from seeders.simulator.protocols import SimulationState
 from seeders.simulator.realism.calendars import calendar_multiplier
 from seeders.simulator.realism.time_curves import get_dow_weights, get_hour_weights
@@ -110,7 +111,9 @@ class Engine:
         )
 
         # Apply every axis declared in the preset. Unknown axes are silently
-        # ignored — this lets preset YAMLs declare future axes without breaking today.
+        # ignored — Phase 2a only ships `growth` and `stickiness`; later
+        # phases add the rest. This lets preset YAMLs declare future axes
+        # without breaking today.
         axis_reg = default_axis_registry()
         for axis_name, axis_value in self.config.axes.items():
             try:
@@ -119,7 +122,22 @@ class Engine:
                 continue
             axis.apply(axis_value, state)
 
-        markov_runner = MarkovRunner(self.config.markov)
+        # Domain resolution. Unknown domain fails fast.
+        domain = default_domain_registry().get(self.config.domain)
+
+        # Coerce monetization if unsupported by the domain.
+        if (
+            state.monetization_mode is not None
+            and state.monetization_mode not in domain.supported_monetization
+        ):
+            coerced = domain.supported_monetization[0]
+            _logger.info(
+                "monetization=%r not supported by domain %r; coerced to %r",
+                state.monetization_mode,
+                domain.name,
+                coerced,
+            )
+            state.monetization_mode = coerced
 
         parsed_anomalies = parse_anomalies(state.anomalies, state.now)
 
@@ -131,12 +149,12 @@ class Engine:
 
         rng = random.Random(self.config.random_seed or 0)
 
-        dow_weights = get_dow_weights("generic")
+        dow_weights = get_dow_weights(self.config.domain)
         users_by_day: dict[int, list[dict]] = {}
         for d in range(state.window_days):
             local_date_d = (day_0 + timedelta(days=d)).date()
             dow_mult = dow_weights[local_date_d.weekday()]
-            cal_mult = calendar_multiplier(local_date_d, "US", "generic")
+            cal_mult = calendar_multiplier(local_date_d, "US", self.config.domain)
             anomaly_mult = arrivals_multiplier(parsed_anomalies, local_date_d)
             lam = arrival_curve(d) * dow_mult * cal_mult * anomaly_mult
             n = _poisson(rng, lam)
@@ -176,19 +194,25 @@ class Engine:
             for user in users:
                 last_active_day = min(d + user["_lifetime"], state.window_days - 1)
                 for active_d in range(d, last_active_day + 1):
-                    raw_count = sample_daily_session_count(
+                    session_count = sample_daily_session_count(
                         rng, user["_archetype"], active_d - d
                     )
-                    session_count = max(0, round(raw_count * state.session_freq_multiplier))
                     for _ in range(session_count):
+                        arch = sample_session_archetype(
+                            rng,
+                            user["_archetype"],
+                            modifier=state.session_mix_modifier,
+                        )
                         local_date = (day_0 + timedelta(days=active_d)).date()
                         is_weekend = local_date.weekday() >= 5
-                        hour_weights = get_hour_weights("generic", is_weekend=is_weekend)
+                        hour_weights = get_hour_weights(
+                            self.config.domain, is_weekend=is_weekend
+                        )
                         session_start = build_session_start(
                             rng, local_date, hour_weights, user["timezone"]
                         )
-                        events = markov_runner.build_session(
-                            user, session_start, state, rng
+                        events = domain.build_session(
+                            user, session_start, arch, state, rng
                         )
                         batch.extend(events)
                         if len(batch) >= INSERT_BATCH_SIZE:

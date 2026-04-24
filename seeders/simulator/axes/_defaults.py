@@ -11,7 +11,7 @@ from seeders.simulator.registry import AxisRegistry
 def default_axis_registry() -> AxisRegistry:
     reg = AxisRegistry()
     # Local imports keep axis-implementation deps out of the registry module.
-    from seeders.simulator.axes.anomalies import (
+    from seeders.simulator.axes.anomalies import (  # type: ignore[import-not-found]
         AnomaliesAxis,
     )
     from seeders.simulator.axes.engagement_depth import (
@@ -21,11 +21,11 @@ def default_axis_registry() -> AxisRegistry:
         GeographyAxis,
     )
     from seeders.simulator.axes.growth import GrowthAxis
-    from seeders.simulator.axes.monetization import (
+    from seeders.simulator.axes.monetization import (  # type: ignore[import-not-found]
         MonetizationAxis,
     )
     from seeders.simulator.axes.stickiness import StickinessAxis
-    from seeders.simulator.axes.virality import (
+    from seeders.simulator.axes.virality import (  # type: ignore[import-not-found]
         ViralityAxis,
     )
 

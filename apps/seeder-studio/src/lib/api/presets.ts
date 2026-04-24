@@ -5,7 +5,7 @@ import type { SimulationConfig } from "@/types/simulation";
 const PresetEntrySchema = z.object({
   name: z.string(),
   description: z.string().nullable().optional(),
-  domain: z.string().optional(),
+  domain: z.string(),
   config: SimulationConfigSchema,
 });
 
@@ -16,8 +16,8 @@ const PresetsResponseSchema = z.object({
 export interface PresetEntry {
   name: string;
   description?: string | null;
-  domain?: string;
-  config?: SimulationConfig;
+  domain: string;
+  config: SimulationConfig;
 }
 
 export async function fetchPresets(): Promise<PresetEntry[]> {

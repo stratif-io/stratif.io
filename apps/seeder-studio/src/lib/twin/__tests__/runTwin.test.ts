@@ -4,6 +4,7 @@ import type { SimulationConfig } from "@/types/simulation";
 
 const base: SimulationConfig = {
   name: "test",
+  domain: "saas",
   axes: {
     growth: "strong",
     stickiness: "sticky",
@@ -15,11 +16,6 @@ const base: SimulationConfig = {
     anomalies: "clean",
   },
   random_seed: 42,
-  markov: {
-    events: [{ name: "PageView" }],
-    start: { PageView: 1.0 },
-    transitions: { PageView: { "[end]": 1.0 } },
-  },
 };
 
 describe("runTwin", () => {

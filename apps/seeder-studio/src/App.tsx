@@ -54,7 +54,7 @@ export default function App() {
   ) => {
     if (intent.kind === "load") {
       const preset = presets.find((p) => p.name === intent.name);
-      if (!preset || !preset.config) return;
+      if (!preset) return;
       loadPreset(preset.config);
       setSelectedName(intent.name);
     } else {
@@ -90,7 +90,7 @@ export default function App() {
     const urlName = params.get("preset");
     if (urlName && presets.some((p) => p.name === urlName)) {
       const preset = presets.find((p) => p.name === urlName);
-      if (preset && preset.config) {
+      if (preset) {
         loadPreset(preset.config);
         setSelectedName(urlName);
       }

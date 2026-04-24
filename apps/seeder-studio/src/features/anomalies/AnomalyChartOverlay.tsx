@@ -255,8 +255,7 @@ function AnomalyTooltip({
     }
   }
 
-  const tw =
-    Math.max(...lines.map((l) => l?.length ?? 0)) * 5.5 + TOOLTIP_PAD * 2;
+  const tw = Math.max(...lines.map((l) => l.length)) * 5.5 + TOOLTIP_PAD * 2;
   const th = lines.length * TOOLTIP_LINE_H + TOOLTIP_PAD * 2;
   const ty = y + height / 2 - th / 2;
 

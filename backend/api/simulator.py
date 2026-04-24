@@ -34,6 +34,7 @@ def get_presets() -> dict[str, Any]:
             {
                 "name": cfg.name,
                 "description": cfg.description,
+                "domain": cfg.domain,
                 "config": cfg.model_dump(exclude_none=True),
             }
         )

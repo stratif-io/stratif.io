@@ -30,15 +30,7 @@ describe("usePresets", () => {
           {
             name: "a",
             domain: "saas",
-            config: {
-              name: "a",
-              axes: {},
-              markov: {
-                events: [{ name: "PageView" }],
-                start: { PageView: 1.0 },
-                transitions: { PageView: { "[end]": 1.0 } },
-              },
-            },
+            config: { name: "a", domain: "saas", axes: {} },
           },
         ],
       }),

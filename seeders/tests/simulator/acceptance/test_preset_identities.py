@@ -69,7 +69,9 @@ def _user_spans_days(batches) -> list[float]:
 
 def test_ecommerce_steady_identity():
     counts = _event_names(_drain("ecommerce_steady"))
-    assert sum(counts.values()) > 0, "no events produced"
+    for step in ("Home", "Search", "ProductView", "AddToCart", "Purchase"):
+        assert counts[step] > 0, step
+    assert counts["Home"] > counts["Purchase"]
 
 
 def test_ecommerce_explosive_identity():
@@ -96,22 +98,22 @@ def test_retail_declining_identity():
 
 def test_casual_game_addictive_identity():
     counts = _event_names(_drain("casual_game_addictive"))
-    assert sum(counts.values()) > 0, "no events produced"
+    assert counts["IAPPurchase"] > 0
 
 
 def test_saas_pmf_identity():
     counts = _event_names(_drain("saas_pmf"))
-    assert sum(counts.values()) > 0, "no events produced"
+    assert counts["PlanUpgraded"] > 0
 
 
 def test_streaming_mature_identity():
     counts = _event_names(_drain("streaming_mature"))
-    assert sum(counts.values()) > 0, "no events produced"
+    assert counts["PlayCompleted"] > 0
 
 
 def test_marketplace_scaling_identity():
     counts = _event_names(_drain("marketplace_scaling"))
-    assert sum(counts.values()) > 0, "no events produced"
+    assert counts["Purchase"] > 0
 
 
 def test_dating_app_churn_identity():

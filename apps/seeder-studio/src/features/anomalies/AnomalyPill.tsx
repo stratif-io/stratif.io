@@ -98,7 +98,7 @@ export function AnomalyPill({
         y={2}
         width={width}
         height={TRACK_HEIGHT - 4}
-        style={{ fill: color, cursor: dragging ? "grabbing" : "grab" }}
+        style={{ fill: color }}
         rx={3}
         stroke={focused ? "hsl(var(--ring))" : "none"}
         strokeWidth={focused ? 2 : 0}
@@ -112,6 +112,7 @@ export function AnomalyPill({
             onSelect();
           }
         }}
+        style={{ cursor: dragging ? "grabbing" : "grab" }}
       />
       <rect
         data-testid="pill-handle-left"

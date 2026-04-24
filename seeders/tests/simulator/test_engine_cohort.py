@@ -5,22 +5,11 @@ from __future__ import annotations
 from collections import Counter
 from datetime import datetime
 
+import pytest
+
 from seeders.seeder import BaseSeeder, SeedConfig
 from seeders.simulator import Engine, SimulationConfig
 from seeders.simulator.config import ScaleOverride
-from seeders.simulator.markov import MarkovConfig, MarkovEvent
-
-_MINIMAL_MARKOV = MarkovConfig(
-    events=[MarkovEvent(name="PageView")],
-    start={"PageView": 1.0},
-    transitions={"PageView": {"[end]": 1.0}},
-)
-
-_TINY_MARKOV = MarkovConfig(
-    events=[MarkovEvent(name="PageView")],
-    start={"PageView": 1.0},
-    transitions={"PageView": {"[end]": 1.0}},
-)
 
 
 class _StubSeeder(BaseSeeder):
@@ -35,16 +24,12 @@ class _StubSeeder(BaseSeeder):
 
 
 def _cfg(**axes) -> SimulationConfig:
-    defaults = {
-        "scale": "tiny",
-        "growth": "steady",
-        "stickiness": "normal",
-    }
+    defaults = {"scale": "tiny", "growth": "steady", "stickiness": "normal"}
     defaults.update(axes)
     return SimulationConfig(
-        name="test_steady",
+        name="ecommerce_steady",
+        domain="ecommerce",
         axes=defaults,
-        markov=_MINIMAL_MARKOV,
         scale_config=ScaleOverride(total_users=300, window_days=30),
         random_seed=42,
     )
@@ -62,12 +47,12 @@ def _event_names(batches) -> Counter[str]:
 def test_engine_produces_events():
     names = _event_names(_drain(_cfg()))
     assert sum(names.values()) > 0
-    assert "PageView" in names
+    assert "Home" in names
 
 
-def test_engine_event_vocabulary_matches_markov_config():
+def test_engine_event_vocabulary_matches_ecommerce():
     names = _event_names(_drain(_cfg()))
-    assert names.keys() <= {"PageView"}
+    assert names.keys() <= {"Home", "Search", "ProductView", "AddToCart", "Purchase"}
 
 
 def _count_users_in_time_halves(batches) -> tuple[int, int]:
@@ -95,16 +80,12 @@ def _count_users_in_time_halves(batches) -> tuple[int, int]:
 def _cfg_large(**axes) -> SimulationConfig:
     """Larger scale for statistical growth-curve tests — gives enough signal
     to beat the noise from first-seen lagging acquisition day."""
-    defaults = {
-        "scale": "tiny",
-        "growth": "steady",
-        "stickiness": "normal",
-    }
+    defaults = {"scale": "tiny", "growth": "steady", "stickiness": "normal"}
     defaults.update(axes)
     return SimulationConfig(
-        name="test_steady",
+        name="ecommerce_steady",
+        domain="ecommerce",
         axes=defaults,
-        markov=_MINIMAL_MARKOV,
         scale_config=ScaleOverride(total_users=2000, window_days=60),
         random_seed=42,
     )
@@ -151,9 +132,23 @@ def test_engine_is_deterministic_under_fixed_seed():
     assert a == b
 
 
+def test_engine_raises_on_unknown_domain():
+    cfg = SimulationConfig(
+        name="bad",
+        domain="made_up",
+        axes={"scale": "tiny"},
+        scale_config=ScaleOverride(total_users=10, window_days=5),
+        random_seed=1,
+    )
+    seeder = _StubSeeder(config=SeedConfig())
+    with pytest.raises(KeyError, match="unknown domain"):
+        list(Engine(cfg, seeder).run())
+
+
 def test_engine_ignores_unknown_axes():
-    """Unknown axes must be silently ignored, not raise."""
-    cfg = _cfg(engagement_depth="medium", monetization="one_off_purchase")
+    """Phase 2b axes (engagement_depth, monetization, …) are unknown today —
+    they must be silently ignored, not raise."""
+    cfg = _cfg(engagement_depth="moderate", monetization="one_off_purchase")
     _drain(cfg)  # must not raise
 
 
@@ -172,24 +167,25 @@ def test_engine_respects_eu_only_geography():
     assert countries, "no events produced"
 
 
-def test_deep_engagement_has_more_events_than_shallow():
+def test_deep_engagement_has_more_purchases_than_shallow():
     deep_batches = _drain(_cfg(engagement_depth="deep"))
     shallow_batches = _drain(_cfg(engagement_depth="shallow"))
 
-    def event_count(batches):
-        return sum(len(b) for b in batches)
+    def purchase_count(batches):
+        return sum(1 for b in batches for ev in b if ev[1] == "Purchase")
 
-    assert event_count(deep_batches) > event_count(shallow_batches)
+    assert purchase_count(deep_batches) > purchase_count(shallow_batches)
 
 
 def test_engine_plumbs_anomalies_list_to_state():
-    """Anomalies from the preset are available on state."""
+    """Anomalies from the preset are available on state; Phase 2b doesn't
+    process them but the plumbing must be in place for Phase 5."""
     from seeders.simulator.config import ScaleOverride
 
     cfg = SimulationConfig(
-        name="test_steady",
+        name="ecommerce_steady",
+        domain="ecommerce",
         axes={"scale": "tiny", "anomalies": "explicit"},
-        markov=_MINIMAL_MARKOV,
         anomalies=[
             {"type": "marketing_campaign", "start": "-10d", "effect": {"arrivals": 2.0}}
         ],
@@ -201,6 +197,56 @@ def test_engine_plumbs_anomalies_list_to_state():
     list(Engine(cfg, seeder).run())
 
 
+def test_engine_monetization_coercion_for_unsupported_domain_value(caplog):
+    """Ecommerce only supports one_off_purchase; iap_whales must coerce and log."""
+    import logging
+
+    cfg = _cfg(monetization="iap_whales")
+    with caplog.at_level(logging.INFO, logger="seeders.simulator.engine"):
+        _drain(cfg)
+
+    assert any(
+        "coerced" in record.getMessage().lower() and "iap_whales" in record.getMessage()
+        for record in caplog.records
+    ), [r.getMessage() for r in caplog.records]
+
+
+def test_engine_supported_monetization_does_not_warn(caplog):
+    import logging
+
+    cfg = _cfg(monetization="one_off_purchase")
+    with caplog.at_level(logging.INFO, logger="seeders.simulator.engine"):
+        batches = _drain(cfg)
+
+    # Positive-path guard: the run must actually have produced events.
+    assert sum(_event_names(batches).values()) > 0
+    assert not any(
+        "coerced" in record.getMessage().lower() for record in caplog.records
+    )
+
+
+def test_sessions_land_at_realistic_local_hours_for_user_country():
+    """Sessions must occur at reasonable hours in the user's timezone —
+    a Japanese user should NOT be active only at UTC 3am (noon JST)."""
+    from zoneinfo import ZoneInfo
+
+    cfg = _cfg(geography="apac_only")
+    batches = _drain(cfg)
+    # Assert at least one session lands in daytime (8am-10pm) local hour for each country.
+    # This is a weak but structural test — it just confirms TZ conversion is in effect.
+    for b in batches:
+        for ev in b:
+            tz = ZoneInfo(ev[6]["timezone"])
+            local_hour = ev[2].astimezone(tz).hour
+            assert 0 <= local_hour <= 23  # sanity
+    # Assert events exist and at least one is in the "day" window (8am-10pm local).
+    assert any(
+        8 <= ev[2].astimezone(ZoneInfo(ev[6]["timezone"])).hour <= 22
+        for b in batches
+        for ev in b
+    )
+
+
 def test_engine_applies_marketing_campaign_anomaly_to_arrivals():
     """A 3x arrivals multiplier during an active marketing campaign should
     visibly increase user arrivals during the campaign window."""
@@ -210,9 +256,9 @@ def test_engine_applies_marketing_campaign_anomaly_to_arrivals():
 
     # Same config but with a 3x-arrivals campaign over the full window.
     cfg = SimulationConfig(
-        name="test_steady",
+        name="ecommerce_steady",
+        domain="ecommerce",
         axes={"scale": "tiny", "anomalies": "explicit"},
-        markov=_MINIMAL_MARKOV,
         anomalies=[
             {
                 "type": "marketing_campaign",
@@ -233,35 +279,34 @@ def test_engine_applies_marketing_campaign_anomaly_to_arrivals():
     )
 
 
-def test_sessions_land_at_realistic_local_hours_for_user_country():
-    """Sessions must occur at reasonable hours in the user's timezone."""
-    from zoneinfo import ZoneInfo
-
-    cfg = _cfg(geography="apac_only")
-    batches = _drain(cfg)
-    for b in batches:
-        for ev in b:
-            tz = ZoneInfo(ev[6]["timezone"])
-            local_hour = ev[2].astimezone(tz).hour
-            assert 0 <= local_hour <= 23  # sanity
-    assert any(
-        8 <= ev[2].astimezone(ZoneInfo(ev[6]["timezone"])).hour <= 22
-        for b in batches
-        for ev in b
-    )
-
-
 def test_ecommerce_weekend_has_more_activity_than_midweek():
-    """Run with a long-enough window and assert weekend sessions > weekday sessions."""
+    """Run with a long-enough window and assert weekend sessions > weekday sessions.
+
+    We count sessions (first event per session_id) rather than raw events, so
+    that log-normal inter-event gaps spreading a session across midnight don't
+    inflate weekday counts when a Saturday session's later events land on Sunday
+    or a Sunday session's later events land on Monday.
+
+    Uses 5000 users for a robust statistical signal against the DOW weight
+    difference (Sat/Sun=1.4 vs Tue/Wed≈1.0).
+    """
     cfg = SimulationConfig(
-        name="test_weekend",
-        axes={
-            "scale": "tiny",
-            "growth": "steady",
-            "stickiness": "normal",
-        },
-        markov=_MINIMAL_MARKOV,
+        name="ecommerce_weekend_test",
+        domain="ecommerce",
+        axes={"scale": "tiny", "growth": "steady", "stickiness": "normal"},
         scale_config=ScaleOverride(total_users=5000, window_days=60),
         random_seed=42,
     )
-    _drain(cfg)
+    batches = _drain(cfg)
+    # Count by session start (first event per session_id)
+    seen: set[str] = set()
+    by_dow: Counter[int] = Counter()
+    for b in batches:
+        for ev in b:
+            _uid, _name, ts, props, *_ = ev
+            sid = props.get("session_id", "")
+            if sid and sid not in seen:
+                seen.add(sid)
+                by_dow[ts.weekday()] += 1
+    # Sat(5) + Sun(6) > Tue(1) + Wed(2)
+    assert by_dow[5] + by_dow[6] > by_dow[1] + by_dow[2]

@@ -7,10 +7,10 @@ description: |
     Months 13-18 — slow decline, finishing near 0-1 new users / day
   Window is 18 months so you can see the whole arc. Set the dashboard
   date range to "All time" or equivalent to view it end-to-end.
-
+domain: casual_game
 axes:
-  growth: steady             # baseline is flat; anomalies do all the shaping
-  stickiness: normal         # users try it, some stick, many leave
+  growth: steady # baseline is flat; anomalies do all the shaping
+  stickiness: normal # users try it, some stick, many leave
   engagement_depth: moderate
   monetization: iap_whales
   virality: weak
@@ -19,28 +19,27 @@ axes:
   anomalies: explicit
 
 scale_config:
-  window_days: 540           # 18 months
-  total_users: 30000         # baseline * window; anomalies can push actual higher
+  window_days: 540 # 18 months
+  total_users: 30000 # baseline * window; anomalies can push actual higher
 
 # Steady baseline = 30000 / 540 ≈ 56 new users / day.
 # Each anomaly multiplies that baseline within its date window.
 anomalies:
-
   # ─── Month 1: soft launch (~2-3/day) ──────────────────────────────
   - type: marketing_campaign
     name: soft_launch
-    start: -540d             # day 0 of the window
+    start: -540d # day 0 of the window
     duration: 30d
     effect:
-      arrivals: 0.05         # 0.05 × 56 ≈ 2.8/day → Poisson range ~1-5
+      arrivals: 0.05 # 0.05 × 56 ≈ 2.8/day → Poisson range ~1-5
 
   # ─── Month 2 first 2 weeks: marketing push, explosion ─────────────
   - type: marketing_campaign
     name: paid_launch
-    start: -510d             # day 30
+    start: -510d # day 30
     duration: 14d
     effect:
-      arrivals: 20.0         # 20 × 56 ≈ 1100/day → huge visible spike
+      arrivals: 20.0 # 20 × 56 ≈ 1100/day → huge visible spike
 
   # (Day 45 → day 360: baseline only, no anomaly. ≈56/day ⇒ plateau in
   #  the 10–100 range your spec asked for. Poisson noise gives natural
@@ -49,77 +48,23 @@ anomalies:
   # ─── Month 13-14: decline begins ──────────────────────────────────
   - type: feature_regression
     name: decline_early
-    start: -180d             # day 360 (month 13 of the lifecycle)
+    start: -180d # day 360 (month 13 of the lifecycle)
     duration: 60d
     effect:
-      arrivals: 0.3          # ≈17/day → a visible but not dramatic drop
+      arrivals: 0.3 # ≈17/day → a visible but not dramatic drop
 
   # ─── Month 15-16: sharper drop ────────────────────────────────────
   - type: feature_regression
     name: decline_mid
-    start: -120d             # day 420
+    start: -120d # day 420
     duration: 60d
     effect:
-      arrivals: 0.1          # ≈6/day
+      arrivals: 0.1 # ≈6/day
 
   # ─── Month 17-18: end-of-life, near zero ──────────────────────────
   - type: feature_regression
     name: decline_late
-    start: -60d              # day 480
+    start: -60d # day 480
     duration: 60d
     effect:
-      arrivals: 0.02         # ≈1/day ⇒ most days 0, occasional 1-2
-markov:
-  events:
-    - name: SessionStart
-    - name: DailyBonusClaimed
-    - name: LevelStart
-    - name: LevelComplete
-    - name: LevelFail
-    - name: RewardCollected
-    - name: IAPOffer
-    - name: IAPPurchase
-    - name: AdShown
-    - name: AdClicked
-    - name: ShareAchievement
-  start:
-    SessionStart: 1.0
-  transitions:
-    SessionStart:
-      DailyBonusClaimed: 0.55
-      LevelStart: 0.20
-      "[end]": 0.25
-    DailyBonusClaimed:
-      LevelStart: 0.85
-      "[end]": 0.15
-    LevelStart:
-      LevelComplete: 0.60
-      LevelFail: 0.35
-      "[end]": 0.05
-    LevelComplete:
-      RewardCollected: 0.65
-      LevelStart: 0.20
-      IAPOffer: 0.10
-      "[end]": 0.05
-    LevelFail:
-      LevelStart: 0.50
-      AdShown: 0.20
-      "[end]": 0.30
-    RewardCollected:
-      LevelStart: 0.55
-      ShareAchievement: 0.10
-      "[end]": 0.35
-    IAPOffer:
-      IAPPurchase: 0.40
-      "[end]": 0.60
-    IAPPurchase:
-      ShareAchievement: 0.30
-      "[end]": 0.70
-    AdShown:
-      AdClicked: 0.25
-      LevelStart: 0.30
-      "[end]": 0.45
-    AdClicked:
-      "[end]": 1.0
-    ShareAchievement:
-      "[end]": 1.0
+      arrivals: 0.02 # ≈1/day ⇒ most days 0, occasional 1-2

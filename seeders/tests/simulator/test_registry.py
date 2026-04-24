@@ -1,7 +1,7 @@
 import pytest
 
 from seeders.simulator.protocols import SimulationState
-from seeders.simulator.registry import AxisRegistry
+from seeders.simulator.registry import AxisRegistry, DomainRegistry
 
 
 class _FakeAxis:
@@ -12,12 +12,13 @@ class _FakeAxis:
         simulation.arrival_curve = value  # marker
 
 
-class _FakeAxis2:
-    name = "stickiness"
-    values: dict[str, None] = {}
+class _FakeDomain:
+    name = "ecommerce"
+    events = ("PageView", "Purchase")
+    supported_monetization = ("one_off_purchase",)
 
-    def apply(self, value: str, simulation: SimulationState) -> None:
-        pass
+    def build_session(self, user, session_start, archetype, state, rng):
+        return []
 
 
 def test_axis_registry_register_and_lookup():
@@ -38,6 +39,20 @@ def test_axis_registry_missing_raises():
     reg = AxisRegistry()
     with pytest.raises(KeyError, match="unknown axis"):
         reg.get("growth")
+
+
+def test_domain_registry_register_and_lookup():
+    reg = DomainRegistry()
+    reg.register(_FakeDomain())
+    assert reg.get("ecommerce").events == ("PageView", "Purchase")
+
+
+class _FakeAxis2:
+    name = "stickiness"
+    values: dict[str, None] = {}
+
+    def apply(self, value: str, simulation: SimulationState) -> None:
+        pass
 
 
 def test_axis_registry_iterates_in_insertion_order():

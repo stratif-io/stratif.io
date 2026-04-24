@@ -5,12 +5,8 @@ describe("SimulationConfig shape", () => {
   it("accepts a valid minimal config", () => {
     const cfg: SimulationConfig = {
       name: "saas_pmf",
+      domain: "saas",
       axes: { growth: "strong" },
-      markov: {
-        events: [{ name: "PageView" }],
-        start: { PageView: 1.0 },
-        transitions: { PageView: { "[end]": 1.0 } },
-      },
     };
     expect(cfg.name).toBe("saas_pmf");
   });
