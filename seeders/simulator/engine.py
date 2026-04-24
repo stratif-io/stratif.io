@@ -122,7 +122,9 @@ class Engine:
 
         markov_runner = MarkovRunner(self.config.markov)
 
-        parsed_anomalies = parse_anomalies(state.anomalies, state.now)
+        parsed_anomalies = parse_anomalies(
+            state.anomalies, state.now, state.window_days
+        )
 
         # Sample per-day arrivals (Poisson around the arrival curve).
         day_0 = state.now - timedelta(days=state.window_days)

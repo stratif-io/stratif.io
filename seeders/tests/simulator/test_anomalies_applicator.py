@@ -107,6 +107,24 @@ def test_empty_list_returns_1():
     assert arrivals_multiplier([], date(2026, 4, 12)) == 1.0
 
 
+def test_parse_positive_relative_start_is_relative_to_window_start():
+    # "71d" in a 90-day window → day_0 + 71 days = (now - 90d) + 71d = now - 19d
+    recs = parse_anomalies(
+        [
+            {
+                "type": "product_launch",
+                "start": "71d",
+                "duration": "7d",
+                "effect": {"arrivals": 9000},
+            }
+        ],
+        now=_now(),
+        window_days=90,
+    )
+    # day_0 = 2026-04-20 - 90d = 2026-01-20; day_0 + 71d = 2026-04-01
+    assert recs[0].start == date(2026, 4, 1)
+
+
 def test_unparseable_duration_raises():
     with pytest.raises(ValueError, match="unparseable duration"):
         parse_anomalies(
