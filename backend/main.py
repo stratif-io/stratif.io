@@ -47,7 +47,6 @@ from backend.api import (  # noqa: E402
     query_studio_router,
     retention_router,
     sessions_router,
-    simulator_router,
 )
 from backend.product_db import close_product_db, init_product_db  # noqa: E402
 
@@ -113,7 +112,6 @@ app.include_router(connections_router)
 app.include_router(mission_control_router)
 app.include_router(query_studio_router)
 app.include_router(people_router)
-app.include_router(simulator_router)
 
 
 @app.get("/api/reference", include_in_schema=False)

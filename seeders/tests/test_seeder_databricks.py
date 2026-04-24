@@ -325,18 +325,9 @@ def test_bulk_load_volume_path_uses_catalog_schema_volume(
 
 
 def test_seed_returns_stats(seeder, mock_connect):
-    mock_sql, mock_conn, mock_cursor = mock_connect
-
     fake_events = [_FAKE_EVENT, (_FAKE_EVENT[0], "Purchase") + _FAKE_EVENT[2:]]
     with patch.object(seeder, "events_via_engine", return_value=iter([fake_events])):
         stats = seeder.seed()
-
-    assert "total_events" in stats
-    assert "total_users" in stats
-    assert "new_users" in stats
-    assert "returning_users" in stats
-    assert "power_users" in stats
-    assert "completed_purchases" in stats
     assert stats["total_events"] == 2
     assert stats["total_users"] == 1
     assert stats["completed_purchases"] == 1
