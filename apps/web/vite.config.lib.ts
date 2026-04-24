@@ -42,6 +42,7 @@ export default defineConfig({
         '@kanaries/graphic-walker',
       ],
     },
+    cssCodeSplit: false,
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: true,

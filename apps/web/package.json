@@ -10,6 +10,10 @@
       "development": "./frontend/index.ts",
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./styles.css": {
+      "development": "./frontend/index.css",
+      "import": "./dist/index.css"
     }
   },
   "files": [
@@ -36,7 +40,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "bundle:analyze": "vite-bundle-visualizer",
-    "build:lib": "bunx tsc --project tsconfig.lib.json && vite build --config vite.config.lib.ts",
+    "build:lib": "vite build --config vite.config.lib.ts && bunx tsc --project tsconfig.lib.json",
     "build:lib:watch": "vite build --config vite.config.lib.ts --watch"
   },
   "dependencies": {

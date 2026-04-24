@@ -1,0 +1,19 @@
+name: casual_game_addictive
+description: Mobile casual game, whale-heavy IAP, high stickiness.
+domain: casual_game
+axes:
+  growth: strong
+  stickiness: addictive
+  engagement_depth: deep
+  monetization: iap_whales
+  virality: weak
+  scale: medium
+  geography: global
+  anomalies: explicit
+anomalies:
+  - type: product_launch
+    name: feature_x_launch
+    start: -60d
+    duration: 7d
+    effect:
+      arrivals: 1.8
