@@ -8,7 +8,6 @@ description: |
   flags produces data indistinguishable from the seeder prior to Phase 1.
 
 axes:
-  domain: ecommerce
   growth: steady
   stickiness: normal
   engagement_depth: moderate
@@ -20,9 +19,30 @@ axes:
 
 markov:
   events:
-    - name: PageView
+    - name: Home
+    - name: Search
+    - name: ProductView
+    - name: AddToCart
+    - name: Purchase
   start:
-    PageView: 1.0
+    Home: 0.50
+    Search: 0.30
+    ProductView: 0.20
   transitions:
-    PageView:
+    Home:
+      Search: 0.50
+      ProductView: 0.30
+      "[end]": 0.20
+    Search:
+      ProductView: 0.65
+      "[end]": 0.35
+    ProductView:
+      AddToCart: 0.30
+      Search: 0.20
+      "[end]": 0.50
+    AddToCart:
+      Purchase: 0.60
+      ProductView: 0.20
+      "[end]": 0.20
+    Purchase:
       "[end]": 1.0

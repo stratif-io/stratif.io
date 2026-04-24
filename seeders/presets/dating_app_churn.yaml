@@ -1,7 +1,6 @@
 name: dating_app_churn
 description: Quick activation, high churn.
 axes:
-  domain: dating
   growth: seasonal
   stickiness: churn_heavy
   engagement_depth: shallow
@@ -12,9 +11,43 @@ axes:
   anomalies: clean
 markov:
   events:
-    - name: PageView
+    - name: SessionStart
+    - name: ProfileView
+    - name: Swipe
+    - name: Match
+    - name: MessageSent
+    - name: MessageRead
+    - name: DateScheduled
+    - name: SubscriptionUpgraded
+    - name: AccountDeleted
   start:
-    PageView: 1.0
+    SessionStart: 1.0
   transitions:
-    PageView:
+    SessionStart:
+      ProfileView: 0.55
+      Swipe: 0.25
+      "[end]": 0.20
+    ProfileView:
+      Swipe: 0.70
+      "[end]": 0.30
+    Swipe:
+      Swipe: 0.35
+      Match: 0.20
+      "[end]": 0.45
+    Match:
+      MessageSent: 0.60
+      "[end]": 0.40
+    MessageSent:
+      MessageRead: 0.70
+      "[end]": 0.30
+    MessageRead:
+      MessageSent: 0.35
+      DateScheduled: 0.10
+      "[end]": 0.55
+    DateScheduled:
+      SubscriptionUpgraded: 0.20
+      "[end]": 0.80
+    SubscriptionUpgraded:
+      "[end]": 1.0
+    AccountDeleted:
       "[end]": 1.0

@@ -9,7 +9,6 @@ description: |
   date range to "All time" or equivalent to view it end-to-end.
 
 axes:
-  domain: casual_game
   growth: steady             # baseline is flat; anomalies do all the shaping
   stickiness: normal         # users try it, some stick, many leave
   engagement_depth: moderate
@@ -72,9 +71,55 @@ anomalies:
       arrivals: 0.02         # ≈1/day ⇒ most days 0, occasional 1-2
 markov:
   events:
-    - name: PageView
+    - name: SessionStart
+    - name: DailyBonusClaimed
+    - name: LevelStart
+    - name: LevelComplete
+    - name: LevelFail
+    - name: RewardCollected
+    - name: IAPOffer
+    - name: IAPPurchase
+    - name: AdShown
+    - name: AdClicked
+    - name: ShareAchievement
   start:
-    PageView: 1.0
+    SessionStart: 1.0
   transitions:
-    PageView:
+    SessionStart:
+      DailyBonusClaimed: 0.55
+      LevelStart: 0.20
+      "[end]": 0.25
+    DailyBonusClaimed:
+      LevelStart: 0.85
+      "[end]": 0.15
+    LevelStart:
+      LevelComplete: 0.60
+      LevelFail: 0.35
+      "[end]": 0.05
+    LevelComplete:
+      RewardCollected: 0.65
+      LevelStart: 0.20
+      IAPOffer: 0.10
+      "[end]": 0.05
+    LevelFail:
+      LevelStart: 0.50
+      AdShown: 0.20
+      "[end]": 0.30
+    RewardCollected:
+      LevelStart: 0.55
+      ShareAchievement: 0.10
+      "[end]": 0.35
+    IAPOffer:
+      IAPPurchase: 0.40
+      "[end]": 0.60
+    IAPPurchase:
+      ShareAchievement: 0.30
+      "[end]": 0.70
+    AdShown:
+      AdClicked: 0.25
+      LevelStart: 0.30
+      "[end]": 0.45
+    AdClicked:
+      "[end]": 1.0
+    ShareAchievement:
       "[end]": 1.0
