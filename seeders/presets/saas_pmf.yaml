@@ -40,9 +40,10 @@ markov:
       InviteSent: 0.10
       "[end]": 0.15
     ItemCreated:
-      ItemCreated: 0.30
+      ItemCreated: 0.28
       InviteSent: 0.10
       UpgradePromptShown: 0.15
+      Cancelled: 0.02
       "[end]": 0.45
     InviteSent:
       InviteAccepted: 0.50
@@ -53,7 +54,8 @@ markov:
       PlanUpgraded: 0.30
       "[end]": 0.70
     PlanUpgraded:
-      "[end]": 1.0
+      PlanDowngraded: 0.05
+      "[end]": 0.95
     PlanDowngraded:
       "[end]": 1.0
     Cancelled:

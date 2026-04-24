@@ -44,7 +44,8 @@ markov:
       Purchase: 0.40
       "[end]": 0.60
     Purchase:
-      "[end]": 1.0
+      ListingSold: 0.90
+      "[end]": 0.10
     ListingCreated:
       "[end]": 1.0
     ListingSold:

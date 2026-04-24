@@ -26,10 +26,12 @@ markov:
   transitions:
     SessionStart:
       Browse: 0.70
-      "[end]": 0.30
+      Cancelled: 0.01
+      "[end]": 0.29
     Browse:
-      TitlePageView: 0.65
+      TitlePageView: 0.64
       Browse: 0.15
+      PlanUpgraded: 0.01
       "[end]": 0.20
     TitlePageView:
       PlayStarted: 0.60

@@ -19,7 +19,6 @@ markov:
     - name: MessageRead
     - name: DateScheduled
     - name: SubscriptionUpgraded
-    - name: AccountDeleted
   start:
     SessionStart: 1.0
   transitions:
@@ -48,6 +47,4 @@ markov:
       SubscriptionUpgraded: 0.20
       "[end]": 0.80
     SubscriptionUpgraded:
-      "[end]": 1.0
-    AccountDeleted:
       "[end]": 1.0
