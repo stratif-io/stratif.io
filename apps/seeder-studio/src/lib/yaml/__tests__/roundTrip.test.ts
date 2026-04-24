@@ -13,7 +13,7 @@ describe("YAML round-trip", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.config.name).toBeTruthy();
-      expect(result.config.domain).toBeTruthy();
+      expect(result.config.markov).toBeTruthy();
     }
   });
 
@@ -35,8 +35,12 @@ describe("YAML round-trip", () => {
     const yaml = stringifyConfigYaml({
       name: "x",
       description: "d",
-      domain: "saas",
       axes: { growth: "strong" },
+      markov: {
+        events: [{ name: "PageView" }],
+        start: { PageView: 1.0 },
+        transitions: { PageView: { "[end]": 1.0 } },
+      },
       random_seed: 7,
       scale_config: { total_users: 1000 },
       growth_config: { rate: 0.1 },
@@ -47,8 +51,8 @@ describe("YAML round-trip", () => {
     expect(topKeys).toEqual([
       "name",
       "description",
-      "domain",
       "axes",
+      "markov",
       "random_seed",
       "scale_config",
       "growth_config",
@@ -63,7 +67,7 @@ describe("YAML round-trip", () => {
   });
 
   it("returns ok=false on schema-violating YAML", () => {
-    const r = parseConfigYaml("name: x\ndomain: saas\naxes: 123\n");
+    const r = parseConfigYaml("name: x\naxes: 123\n");
     expect(r.ok).toBe(false);
   });
 });

@@ -1,21 +1,41 @@
-name: casual_game_addictive
-description: Mobile casual game, whale-heavy IAP, high stickiness.
+name: casual_game_viral_blowup
+description: |
+  Mobile casual game: ~7 weeks of quiet launch, then a TikTok/influencer
+  moment creates a sharp spike and kicks off sustained exponential
+  growth. Window is 6 months total so the whole arc (flat → spike →
+  blade) fits inside a default 6-month dashboard chart.
 axes:
-  growth: strong
+  growth: hockey_stick
   stickiness: addictive
   engagement_depth: deep
   monetization: iap_whales
-  virality: weak
-  scale: medium
+  virality: strong_viral
+  scale: small
   geography: global
   anomalies: explicit
+
+scale_config:
+  window_days: 180
+  total_users: 15000
+
+growth_config:
+  split_fraction: 0.28
+  rate: 0.04
+
 anomalies:
-  - type: product_launch
-    name: feature_x_launch
-    start: -60d
-    duration: 7d
+  - type: marketing_campaign
+    name: viral_moment
+    start: -130d
+    duration: 10d
     effect:
-      arrivals: 1.8
+      arrivals: 8.0
+  - type: product_launch
+    name: sustained_virality
+    start: -120d
+    duration: 120d
+    effect:
+      arrivals: 2.5
+
 markov:
   events:
     - name: SessionStart

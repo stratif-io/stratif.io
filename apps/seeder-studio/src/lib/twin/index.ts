@@ -27,7 +27,8 @@ export function resolveSimParams(config: TwinInput["config"]): {
     ?.params as RetentionParams | undefined;
 
   const retentionParams: RetentionParams = stickinessParams ??
-    (getAxisValue("stickiness", "sticky")?.params as RetentionParams) ?? {
+    (getAxisValue("stickiness", "sticky")
+      ?.params as unknown as RetentionParams) ?? {
       peakChurnRate: 0.5,
       baseChurnRate: 0.05,
       churnDecayDays: 10,
@@ -86,8 +87,8 @@ export function runTwin({ config }: TwinInput): TwinOutput {
   const totalOutageDays = new Set<number>();
   for (const anomaly of config.anomalies ?? []) {
     if (anomaly.type !== "total_outage") continue;
-    const rawStart = parseDays(anomaly.start);
-    const rawDuration = parseDays(anomaly.duration);
+    const rawStart = parseDays(anomaly.start ?? "");
+    const rawDuration = parseDays(anomaly.duration ?? "");
     if (rawStart === null || rawDuration === null || rawDuration <= 0) continue;
     const start = rawStart < 0 ? days + rawStart : rawStart;
     const end = start + rawDuration;

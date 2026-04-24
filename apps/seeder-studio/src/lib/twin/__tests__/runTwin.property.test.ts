@@ -26,7 +26,16 @@ describe("runTwin property tests", () => {
         fc.integer({ min: 0, max: 1_000_000 }),
         (axes, seed) => {
           const out = runTwin({
-            config: { name: "p", domain: "saas", axes, random_seed: seed },
+            config: {
+              name: "p",
+              axes,
+              random_seed: seed,
+              markov: {
+                events: [{ name: "PageView" }],
+                start: { PageView: 1.0 },
+                transitions: { PageView: { "[end]": 1.0 } },
+              },
+            },
           });
           return (
             out.events.every((v) => v >= 0) &&

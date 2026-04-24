@@ -1,6 +1,5 @@
 name: saas_pmf
 description: B2B SaaS post product-market fit, steady growth, low churn.
-domain: saas
 axes:
   growth: strong
   stickiness: sticky
@@ -10,3 +9,54 @@ axes:
   scale: small
   geography: global
   anomalies: clean
+markov:
+  events:
+    - name: SignUp
+    - name: EmailVerified
+    - name: Onboarded
+    - name: ProjectCreated
+    - name: ItemCreated
+    - name: InviteSent
+    - name: InviteAccepted
+    - name: UpgradePromptShown
+    - name: PlanUpgraded
+    - name: PlanDowngraded
+    - name: Cancelled
+  start:
+    SignUp: 0.60
+    ItemCreated: 0.40
+  transitions:
+    SignUp:
+      EmailVerified: 0.80
+      "[end]": 0.20
+    EmailVerified:
+      Onboarded: 0.85
+      "[end]": 0.15
+    Onboarded:
+      ProjectCreated: 0.70
+      "[end]": 0.30
+    ProjectCreated:
+      ItemCreated: 0.75
+      InviteSent: 0.10
+      "[end]": 0.15
+    ItemCreated:
+      ItemCreated: 0.28
+      InviteSent: 0.10
+      UpgradePromptShown: 0.15
+      Cancelled: 0.02
+      "[end]": 0.45
+    InviteSent:
+      InviteAccepted: 0.50
+      "[end]": 0.50
+    InviteAccepted:
+      "[end]": 1.0
+    UpgradePromptShown:
+      PlanUpgraded: 0.30
+      "[end]": 0.70
+    PlanUpgraded:
+      PlanDowngraded: 0.05
+      "[end]": 0.95
+    PlanDowngraded:
+      "[end]": 1.0
+    Cancelled:
+      "[end]": 1.0

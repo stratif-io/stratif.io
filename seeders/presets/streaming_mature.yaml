@@ -1,6 +1,5 @@
 name: streaming_mature
 description: Flat user base, high stickiness, binge sessions.
-domain: streaming
 axes:
   growth: flat
   stickiness: sticky
@@ -10,3 +9,54 @@ axes:
   scale: medium
   geography: global
   anomalies: clean
+markov:
+  events:
+    - name: SessionStart
+    - name: Browse
+    - name: TitlePageView
+    - name: PlayStarted
+    - name: PlayPaused
+    - name: PlayCompleted
+    - name: Rated
+    - name: AddedToList
+    - name: PlanUpgraded
+    - name: Cancelled
+  start:
+    SessionStart: 1.0
+  transitions:
+    SessionStart:
+      Browse: 0.70
+      Cancelled: 0.01
+      "[end]": 0.29
+    Browse:
+      TitlePageView: 0.64
+      Browse: 0.15
+      PlanUpgraded: 0.01
+      "[end]": 0.20
+    TitlePageView:
+      PlayStarted: 0.60
+      AddedToList: 0.15
+      Browse: 0.15
+      "[end]": 0.10
+    PlayStarted:
+      PlayCompleted: 0.55
+      PlayPaused: 0.30
+      "[end]": 0.15
+    PlayPaused:
+      PlayStarted: 0.60
+      "[end]": 0.40
+    PlayCompleted:
+      Rated: 0.30
+      AddedToList: 0.10
+      Browse: 0.40
+      "[end]": 0.20
+    Rated:
+      Browse: 0.50
+      "[end]": 0.50
+    AddedToList:
+      Browse: 0.50
+      "[end]": 0.50
+    PlanUpgraded:
+      "[end]": 1.0
+    Cancelled:
+      "[end]": 1.0

@@ -47,3 +47,4 @@ export {
 } from './components/ui/dialog'
 export { Segmented, type SegmentedOption } from './components/ui/segmented'
 export { Textarea } from './components/ui/textarea'
+export { Collapsible, CollapsibleTrigger, CollapsibleContent } from './components/ui/collapsible'

@@ -7,14 +7,42 @@ description: |
   This is the default preset; running the seeder with no env vars / no CLI
   flags produces data indistinguishable from the seeder prior to Phase 1.
 
-domain: ecommerce
-
 axes:
   growth: steady
   stickiness: normal
   engagement_depth: moderate
   monetization: one_off_purchase
   virality: weak
-  scale: small # 10 000 users × 90 days — may be overridden by SEED_USERS/SEED_DAYS
+  scale: small           # 10 000 users × 90 days — may be overridden by SEED_USERS/SEED_DAYS
   geography: global
   anomalies: clean
+
+markov:
+  events:
+    - name: Home
+    - name: Search
+    - name: ProductView
+    - name: AddToCart
+    - name: Purchase
+  start:
+    Home: 0.50
+    Search: 0.30
+    ProductView: 0.20
+  transitions:
+    Home:
+      Search: 0.50
+      ProductView: 0.30
+      "[end]": 0.20
+    Search:
+      ProductView: 0.65
+      "[end]": 0.35
+    ProductView:
+      AddToCart: 0.30
+      Search: 0.20
+      "[end]": 0.50
+    AddToCart:
+      Purchase: 0.60
+      ProductView: 0.20
+      "[end]": 0.20
+    Purchase:
+      "[end]": 1.0
