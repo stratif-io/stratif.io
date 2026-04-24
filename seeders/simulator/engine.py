@@ -28,6 +28,7 @@ from seeders.simulator.cohort import (
     assign_user_archetype,
     sample_daily_session_count,
 )
+from seeders.simulator.cohort_model import active_days_for_user
 from seeders.simulator.config import SimulationConfig
 from seeders.simulator.markov import MarkovRunner
 from seeders.simulator.protocols import SimulationState
@@ -174,16 +175,26 @@ class Engine:
         batch: list[tuple] = []
         for d, users in users_by_day.items():
             for user in users:
-                last_active_day = min(d + user["_lifetime"], state.window_days - 1)
-                for active_d in range(d, last_active_day + 1):
+                if state.retention_params is not None:
+                    active_days = active_days_for_user(
+                        rng, state.retention_params, d, state.window_days
+                    )
+                else:
+                    last_active_day = min(d + user["_lifetime"], state.window_days - 1)
+                    active_days = list(range(d, last_active_day + 1))
+                for active_d in active_days:
                     raw_count = sample_daily_session_count(
                         rng, user["_archetype"], active_d - d
                     )
-                    session_count = max(0, round(raw_count * state.session_freq_multiplier))
+                    session_count = max(
+                        0, round(raw_count * state.session_freq_multiplier)
+                    )
                     for _ in range(session_count):
                         local_date = (day_0 + timedelta(days=active_d)).date()
                         is_weekend = local_date.weekday() >= 5
-                        hour_weights = get_hour_weights("generic", is_weekend=is_weekend)
+                        hour_weights = get_hour_weights(
+                            "generic", is_weekend=is_weekend
+                        )
                         session_start = build_session_start(
                             rng, local_date, hour_weights, user["timezone"]
                         )

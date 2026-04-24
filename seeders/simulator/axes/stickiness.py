@@ -1,69 +1,71 @@
-"""Stickiness axis — shapes user lifetime (days active after acquisition).
+"""Stickiness axis — sets RetentionParams on SimulationState.
 
-Each value installs a function ``sample_lifetime(rng) -> int`` on
-``state.hazard_curve``; the cohort engine assigns each user a churn day as
-``d_0 + sample_lifetime()``.
+Each value maps to a RetentionParams instance that mirrors the TypeScript twin's
+axisSpec.ts stickiness presets. The cohort engine uses these params via cohort_model.
 """
 
 from __future__ import annotations
 
-import math
-import random
-from collections.abc import Callable
 from typing import Any
 
+from seeders.simulator.cohort_model import RetentionParams
 from seeders.simulator.protocols import AxisModifier, SimulationState
 
-LifetimeSampler = Callable[[random.Random], int]
-
-
-def _exponential_sampler(mean: float) -> LifetimeSampler:
-    def sample(rng: random.Random) -> int:
-        u = rng.random()
-        if u <= 0.0:
-            return 0
-        return max(0, int(-mean * math.log(u)))
-
-    return sample
-
-
-def _weibull_sampler(k: float, scale: float) -> LifetimeSampler:
-    def sample(rng: random.Random) -> int:
-        u = rng.random()
-        if u <= 0.0:
-            return 0
-        lt = scale * ((-math.log(u)) ** (1 / k))
-        return max(0, int(lt))
-
-    return sample
-
-
-def _one_shot_sampler() -> LifetimeSampler:
-    def sample(rng: random.Random) -> int:
-        return 0
-
-    return sample
-
-
-_BUILDERS: dict[str, Callable[[], LifetimeSampler]] = {
-    "addictive": lambda: _weibull_sampler(k=0.5, scale=120.0),
-    "sticky": lambda: _weibull_sampler(k=1.0, scale=180.0),
-    "normal": lambda: _exponential_sampler(mean=90.0),
-    "churn_heavy": lambda: _exponential_sampler(mean=20.0),
-    "one_shot": lambda: _one_shot_sampler(),
+_PARAMS: dict[str, RetentionParams] = {
+    "one_shot": RetentionParams(
+        peak_churn_rate=0.97,
+        base_churn_rate=0.60,
+        churn_decay_days=2,
+        reactivation_rate=0.005,
+        reactivation_decay=0.5,
+        max_dormant_days=7,
+    ),
+    "churn_heavy": RetentionParams(
+        peak_churn_rate=0.75,
+        base_churn_rate=0.20,
+        churn_decay_days=4,
+        reactivation_rate=0.02,
+        reactivation_decay=0.7,
+        max_dormant_days=20,
+    ),
+    "normal": RetentionParams(
+        peak_churn_rate=0.50,
+        base_churn_rate=0.05,
+        churn_decay_days=10,
+        reactivation_rate=0.05,
+        reactivation_decay=0.8,
+        max_dormant_days=45,
+    ),
+    "sticky": RetentionParams(
+        peak_churn_rate=0.25,
+        base_churn_rate=0.01,
+        churn_decay_days=14,
+        reactivation_rate=0.10,
+        reactivation_decay=0.85,
+        max_dormant_days=90,
+    ),
+    "addictive": RetentionParams(
+        peak_churn_rate=0.05,
+        base_churn_rate=0.001,
+        churn_decay_days=30,
+        reactivation_rate=0.30,
+        reactivation_decay=0.95,
+        max_dormant_days=180,
+    ),
 }
 
 
 class StickinessAxis:
     name: str = "stickiness"
-    values: dict[str, Any] = dict.fromkeys(_BUILDERS)
+    values: dict[str, Any] = dict.fromkeys(_PARAMS)
 
     def apply(self, value: str, simulation: SimulationState) -> None:
-        if value not in _BUILDERS:
+        if value not in _PARAMS:
             raise ValueError(
-                f"unknown stickiness value {value!r}; valid: {sorted(_BUILDERS)}"
+                f"unknown stickiness value {value!r}; valid: {sorted(_PARAMS)}"
             )
-        simulation.hazard_curve = _BUILDERS[value]()
+        simulation.retention_params = _PARAMS[value]
+        simulation.hazard_curve = None
 
 
 assert isinstance(StickinessAxis(), AxisModifier)  # structural Protocol check

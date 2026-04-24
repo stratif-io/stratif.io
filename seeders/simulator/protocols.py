@@ -5,7 +5,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from seeders.simulator.cohort_model import RetentionParams
 
 
 @dataclass
@@ -19,6 +22,7 @@ class SimulationState:
 
     arrival_curve: Any = None
     hazard_curve: Any = None
+    retention_params: RetentionParams | None = None
     session_frequency: Any = None
     monetization_hooks: list = field(default_factory=list)
 
