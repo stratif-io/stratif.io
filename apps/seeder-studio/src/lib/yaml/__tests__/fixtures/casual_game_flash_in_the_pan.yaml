@@ -11,7 +11,7 @@ description: |
 axes:
   growth: steady             # baseline is flat; anomalies do all the shaping
   stickiness: normal         # users try it, some stick, many leave
-  engagement_depth: moderate
+  engagement_depth: medium
   monetization: iap_whales
   virality: weak
   scale: small

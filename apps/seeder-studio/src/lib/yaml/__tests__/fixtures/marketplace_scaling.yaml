@@ -3,7 +3,7 @@ description: Two-sided marketplace with GMV growth.
 axes:
   growth: strong
   stickiness: normal
-  engagement_depth: moderate
+  engagement_depth: medium
   monetization: marketplace_fee
   virality: weak
   scale: medium

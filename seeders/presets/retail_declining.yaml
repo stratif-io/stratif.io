@@ -3,7 +3,7 @@ description: Brick-and-mortar + web retail losing market share.
 axes:
   growth: declining
   stickiness: normal
-  engagement_depth: moderate
+  engagement_depth: medium
   monetization: one_off_purchase
   virality: none
   scale: medium

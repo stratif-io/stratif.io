@@ -1,4 +1,25 @@
 import { z } from "zod";
+import {
+  GROWTH_VALUES,
+  STICKINESS_VALUES,
+  ENGAGEMENT_DEPTH_VALUES,
+  VIRALITY_VALUES,
+  SCALE_VALUES,
+  ANOMALIES_VALUES,
+  MONETIZATION_VALUES,
+  GEOGRAPHY_VALUES,
+} from "./axisContract";
+
+export const AxesSchema = z.object({
+  growth: z.enum(GROWTH_VALUES).optional(),
+  stickiness: z.enum(STICKINESS_VALUES).optional(),
+  engagement_depth: z.enum(ENGAGEMENT_DEPTH_VALUES).optional(),
+  virality: z.enum(VIRALITY_VALUES).optional(),
+  scale: z.enum(SCALE_VALUES).optional(),
+  anomalies: z.enum(ANOMALIES_VALUES).optional(),
+  monetization: z.enum(MONETIZATION_VALUES).optional(),
+  geography: z.enum(GEOGRAPHY_VALUES).optional(),
+});
 
 export const MarkovEventSchema = z.object({
   name: z.string().min(1),
@@ -33,7 +54,7 @@ export const SimulationScaleOverrideSchema = z.object({
 export const SimulationConfigSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  axes: z.record(z.string()),
+  axes: AxesSchema,
   markov: MarkovConfigSchema,
   random_seed: z.number().int().optional(),
   growth_config: z.record(z.unknown()).optional(),

@@ -10,7 +10,7 @@ description: |
 axes:
   growth: steady
   stickiness: normal
-  engagement_depth: moderate
+  engagement_depth: medium
   monetization: one_off_purchase
   virality: weak
   scale: small           # 10 000 users × 90 days — may be overridden by SEED_USERS/SEED_DAYS
