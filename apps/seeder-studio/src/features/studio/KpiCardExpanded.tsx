@@ -882,29 +882,6 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
             <div className="px-7 py-6 flex flex-col gap-5">
               <SectionLabel step={2} label="The formula" />
 
-              {/* Circular-dependency callout for newUsers / activeUsers */}
-              {(metricKey === "newUsers" || metricKey === "activeUsers") && (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 flex gap-3">
-                  <span className="text-amber-500/80 text-sm leading-none mt-0.5 shrink-0">
-                    ⚠
-                  </span>
-                  <div className="text-[11px] text-muted-foreground leading-relaxed">
-                    <span className="font-semibold text-foreground/80">
-                      Why does N(t) use DAU, and DAU use N(t)?
-                    </span>{" "}
-                    There is no circularity — only a one-day lag. Each day is
-                    computed in two steps:{" "}
-                    <span className="font-mono text-foreground/70">①</span> N(t)
-                    is drawn using <em>yesterday&apos;s</em> DAU(t−1) for viral
-                    amplification.{" "}
-                    <span className="font-mono text-foreground/70">②</span>{" "}
-                    DAU(t) is then updated with today&apos;s N(t).
-                    Yesterday&apos;s value feeds today&apos;s arrival;
-                    today&apos;s arrival feeds today&apos;s headcount.
-                  </div>
-                </div>
-              )}
-
               {pipeline ? (
                 <>
                   <PipelineFormula
@@ -1199,7 +1176,7 @@ function PipelineFormula({
               </button>
 
               {hasTooltip && (
-                <div className="absolute left-0 top-full mt-1 z-30 hidden group-hover/formula:block bg-card border border-border/60 rounded-xl shadow-xl px-3 py-2 min-w-56 max-w-xs pointer-events-none">
+                <div className="absolute left-0 top-full mt-1 z-30 hidden group-hover/formula:block bg-card border border-border/60 rounded-xl shadow-xl px-3 py-2 min-w-56 max-w-xs">
                   {stepVars.map((v, i) => (
                     <div
                       key={v.symbol}
@@ -1229,6 +1206,41 @@ function PipelineFormula({
                       </span>
                     </div>
                   ))}
+                  {axisDisplay && onAxisChange && (
+                    <div className="border-t border-border/30 pt-2 mt-1">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted transition-colors text-left"
+                          >
+                            <span className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-medium">
+                              {axisDisplay.label}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground">
+                              {currentLabel}
+                              <span className="text-muted-foreground/40 font-normal">
+                                ▾
+                              </span>
+                            </span>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          side="bottom"
+                          align="start"
+                          className="w-64 p-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <AxisPopover
+                            axis={axisDisplay}
+                            currentValue={currentVal}
+                            onSelect={(v) => onAxisChange(axisId, v)}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
