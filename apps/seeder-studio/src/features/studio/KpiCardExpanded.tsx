@@ -1157,7 +1157,7 @@ function PipelineFormula({
           <div
             key={step.lineKey}
             className={[
-              "group/step flex items-start gap-2 rounded-xl px-2 py-2 transition-all min-h-[52px]",
+              "group/step flex items-start gap-2 rounded-xl px-2 py-2 transition-all min-h-[52px] cursor-pointer",
               isActive
                 ? "bg-muted/60 ring-1 ring-border/60"
                 : "hover:bg-muted/40",
@@ -1165,19 +1165,23 @@ function PipelineFormula({
             ].join(" ")}
             onMouseEnter={() => onHover(step.lineKey)}
             onMouseLeave={() => onHover(null)}
+            onClick={() => onClick(step.lineKey)}
           >
             {/* Color dot */}
             <span
-              className="w-2 h-2 rounded-full shrink-0"
+              className="w-2 h-2 rounded-full shrink-0 mt-1"
               style={{ backgroundColor: stepColor }}
             />
 
-            {/* Label + formula — click to pin tooltip open */}
+            {/* Label + formula */}
             <div className="relative flex-1 min-w-0">
               <button
                 type="button"
-                className="w-full text-left cursor-pointer"
-                onClick={() => onClick(step.lineKey)}
+                className="w-full text-left"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClick(step.lineKey);
+                }}
               >
                 <p className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wide mb-0.5 flex items-center gap-1">
                   {step.label}
