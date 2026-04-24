@@ -21,6 +21,13 @@ export function validateMarkovConfig(config: MarkovConfig): string[] {
     if (Math.abs(rowSum - 1.0) > TOLERANCE) {
       errors.push(`row '${from}' sums to ${rowSum.toFixed(4)}, expected 1.0`);
     }
+    for (const to of Object.keys(row)) {
+      if (to !== "[end]" && !eventNames.has(to)) {
+        errors.push(
+          `transition target '${to}' in row '${from}' is not in the events list`,
+        );
+      }
+    }
   }
 
   return errors;

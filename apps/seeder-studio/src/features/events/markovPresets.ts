@@ -156,7 +156,11 @@ export const MARKOV_PRESETS: Record<string, MarkovConfig> = {
         CouponApplied: 0.1,
         "[end]": 0.25,
       },
-      PurchaseCompleted: { LoyaltyPointsEarned: 0.6, "[end]": 0.4 },
+      PurchaseCompleted: {
+        LoyaltyPointsEarned: 0.55,
+        ReturnInitiated: 0.05,
+        "[end]": 0.4,
+      },
       LoyaltyPointsEarned: { "[end]": 1.0 },
       ReturnInitiated: { "[end]": 1.0 },
     },
