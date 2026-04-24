@@ -38,3 +38,57 @@ describe("SimulationConfigSchema markov field", () => {
     expect(result.success).toBe(true);
   });
 });
+
+import { validateMarkovConfig } from "@/features/events/markovValidation";
+import type { MarkovConfig } from "@/types/simulation";
+
+const VALID: MarkovConfig = {
+  events: [{ name: "A" }, { name: "B" }],
+  start: { A: 1.0 },
+  transitions: {
+    A: { B: 0.5, "[end]": 0.5 },
+    B: { "[end]": 1.0 },
+  },
+};
+
+describe("validateMarkovConfig", () => {
+  it("returns no errors for a valid config", () => {
+    expect(validateMarkovConfig(VALID)).toEqual([]);
+  });
+
+  it("errors when start does not sum to 1", () => {
+    const cfg: MarkovConfig = { ...VALID, start: { A: 0.5 } };
+    const errs = validateMarkovConfig(cfg);
+    expect(errs.some((e) => e.includes("start"))).toBe(true);
+  });
+
+  it("errors when a transition row does not sum to 1", () => {
+    const cfg: MarkovConfig = {
+      ...VALID,
+      transitions: { A: { "[end]": 0.4 }, B: { "[end]": 1.0 } },
+    };
+    const errs = validateMarkovConfig(cfg);
+    expect(errs.some((e) => e.includes("row 'A'"))).toBe(true);
+  });
+
+  it("errors when a transition key is not in events", () => {
+    const cfg: MarkovConfig = {
+      ...VALID,
+      transitions: {
+        ...VALID.transitions,
+        X: { "[end]": 1.0 },
+      },
+    };
+    const errs = validateMarkovConfig(cfg);
+    expect(errs.some((e) => e.includes("'X'"))).toBe(true);
+  });
+
+  it("returns multiple errors for multiple problems", () => {
+    const cfg: MarkovConfig = {
+      events: [{ name: "A" }],
+      start: { A: 0.5 },
+      transitions: { A: { "[end]": 0.3 } },
+    };
+    expect(validateMarkovConfig(cfg).length).toBeGreaterThanOrEqual(2);
+  });
+});
