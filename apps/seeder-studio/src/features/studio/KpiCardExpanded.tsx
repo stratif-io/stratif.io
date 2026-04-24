@@ -2,7 +2,10 @@ import { useMemo, useState, useCallback, useEffect } from "react";
 import type { SimulationAnomaly } from "@/types/simulation";
 import { MathFormula } from "@/lib/math/MathFormula";
 import { FORMULA_REGISTRY } from "@/features/preview/formulaRegistry";
-import type { MetricKey } from "@/features/preview/formulaRegistry";
+import type {
+  MetricKey,
+  FormulaVariable,
+} from "@/features/preview/formulaRegistry";
 import { KpiChart } from "@/features/preview/KpiChart";
 import type { GhostLine } from "@/features/preview/KpiChart";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
@@ -252,6 +255,10 @@ interface PipelineStep {
   label: string;
   latex: string;
   color: string;
+  /** Symbols from entry.variables to show on hover (LaTeX notation) */
+  tooltipVarSymbols?: string[];
+  /** Symbols from the params table to show on hover (plain text, e.g. "σ") */
+  tooltipParamSyms?: string[];
 }
 
 interface IntermediateCol {
@@ -278,31 +285,39 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         label: "Growth curve",
         latex: "G(t)",
         color: "hsl(var(--chart-2))",
+        tooltipVarSymbols: ["t", "G(t)"],
       },
       {
         lineKey: "g_anom",
         label: "Anomaly multipliers",
         latex: "A(t) = G(t) \\cdot \\prod_k m_k(t)",
         color: "hsl(var(--chart-5))",
+        tooltipVarSymbols: ["A(t)"],
       },
       {
         lineKey: "g_jitter",
         label: "Stochastic jitter",
         latex: "J(t) = A(t)\\,(1 + \\sigma Z),\\quad Z \\sim \\mathcal{N}(0,1)",
         color: "hsl(var(--chart-6))",
+        tooltipVarSymbols: ["J(t)", "\\sigma", "Z"],
+        tooltipParamSyms: ["σ"],
       },
       {
         lineKey: "g_viral",
         label: "Viral amplification",
         latex: "V(t) = J(t) + K \\cdot \\mathrm{DAU}(t{-}1)",
         color: "hsl(var(--chart-4))",
+        tooltipVarSymbols: ["V(t)", "K"],
+        tooltipParamSyms: ["K"],
       },
       {
         lineKey: "__main__",
-        label: "Poisson draw",
+        label: "Poisson draw → rescale to U",
         latex:
           "N(t) \\sim \\operatorname{Poisson}\\!\\left(\\frac{V(t)}{\\sum_s V(s)} \\cdot U\\right)",
         color: "",
+        tooltipVarSymbols: ["N(t)", "\\lambda(t)", "U", "T"],
+        tooltipParamSyms: ["U", "T"],
       },
     ],
     axisMap: {
@@ -352,23 +367,35 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
     steps: [
       {
         lineKey: "g_new",
-        label: "New users",
+        label: "New users arrive",
         latex: "N(t) \\sim \\operatorname{Poisson}(\\lambda(t))",
         color: "hsl(var(--chart-3))",
+        tooltipVarSymbols: ["t", "c", "N_c"],
       },
       {
         lineKey: "g_churn",
-        label: "Churn",
+        label: "Churn — survival drop",
         latex:
           "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
         color: "hsl(var(--destructive))",
+        tooltipVarSymbols: [
+          "N_c",
+          "S[k]",
+          "p(i)",
+          "\\theta_0",
+          "\\theta_\\infty",
+          "\\tau",
+        ],
+        tooltipParamSyms: ["θ₀", "θ∞", "τ"],
       },
       {
         lineKey: "g_react",
-        label: "Reactivation",
+        label: "Reactivation — dormant return",
         latex:
           "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "hsl(var(--chart-4))",
+        tooltipVarSymbols: ["t - c"],
+        tooltipParamSyms: ["r", "δ"],
       },
       {
         lineKey: "__main__",
@@ -376,6 +403,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         latex:
           "\\text{DAU}(t) = \\text{DAU}(t{-}1) + N(t) - \\text{Churn}(t) + \\text{React}(t)",
         color: "",
+        tooltipVarSymbols: ["t"],
       },
     ],
     axisMap: { g_new: "scale", g_churn: "stickiness" },
@@ -408,12 +436,15 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         label: "Input — daily active users",
         latex: "\\text{DAU}(t)",
         color: "hsl(var(--chart-8))",
+        tooltipVarSymbols: ["t", "\\text{DAU}(t)"],
       },
       {
         lineKey: "__main__",
         label: "Multiply by engagement depth",
         latex: "\\text{Events}(t) = \\text{DAU}(t) \\times d",
         color: "",
+        tooltipVarSymbols: ["\\text{DAU}(t)", "d"],
+        tooltipParamSyms: ["d"],
       },
     ],
     axisMap: { __main__: "engagement" },
@@ -437,13 +468,16 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         latex:
           "\\text{DAU}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot S[t{-}c]\\right)",
         color: "hsl(var(--chart-8))",
+        tooltipVarSymbols: ["t", "\\text{DAU}(t)"],
       },
       {
         lineKey: "g_mau",
-        label: "Monthly active users",
+        label: "Monthly active users — rolling window",
         latex:
           "\\text{MAU}(t) = \\sum_c N_c \\cdot \\left(1 - \\prod_{k=0}^{W-1}(1-S[t{-}c{-}k])\\right)",
         color: "hsl(var(--chart-2))",
+        tooltipVarSymbols: ["\\text{MAU}(t)", "W"],
+        tooltipParamSyms: ["W"],
       },
       {
         lineKey: "__main__",
@@ -451,6 +485,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         latex:
           "\\text{stickiness}(t) = \\dfrac{\\text{DAU}(t)}{\\text{MAU}(t)}",
         color: "",
+        tooltipVarSymbols: ["\\text{DAU}(t)", "\\text{MAU}(t)"],
       },
     ],
     axisMap: { g_dau: "stickiness", g_mau: "stickiness" },
@@ -482,12 +517,15 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         label: "New users/day",
         latex: "N(t) \\sim \\operatorname{Poisson}(\\lambda(t))",
         color: "hsl(var(--chart-3))",
+        tooltipVarSymbols: ["t", "c", "N_c"],
       },
       {
         lineKey: "__main__",
         label: "Cumulative total",
         latex: "\\text{total}(t) = \\text{total}(t{-}1) + N(t)",
         color: "",
+        tooltipVarSymbols: ["t"],
+        tooltipParamSyms: ["T"],
       },
     ],
     axisMap: { g_new: "scale" },
@@ -505,17 +543,29 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
     steps: [
       {
         lineKey: "__main__",
-        label: "Churn",
+        label: "Churn — survival drop",
         latex:
           "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
         color: "",
+        tooltipVarSymbols: [
+          "N_c",
+          "k",
+          "S[k]",
+          "S[k{-}1] - S[k]",
+          "p(i)",
+          "\\theta_0",
+          "\\theta_\\infty",
+          "\\tau",
+        ],
+        tooltipParamSyms: ["θ₀", "θ∞", "τ"],
       },
       {
         lineKey: "g_react",
-        label: "Reactivation",
+        label: "Reactivation offsets churn",
         latex:
           "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "hsl(var(--chart-4))",
+        tooltipParamSyms: ["r", "δ"],
       },
     ],
     axisMap: { __main__: "stickiness" },
@@ -533,17 +583,20 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
     steps: [
       {
         lineKey: "g_churn",
-        label: "Churn",
+        label: "Churn feeds the dormant pool",
         latex:
           "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
         color: "hsl(var(--destructive))",
+        tooltipParamSyms: ["θ₀", "θ∞", "τ"],
       },
       {
         lineKey: "__main__",
-        label: "Reactivation",
+        label: "Reactivation — geometric decay",
         latex:
           "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "",
+        tooltipVarSymbols: ["C_c", "r", "\\delta", "n", "D"],
+        tooltipParamSyms: ["r", "δ", "D"],
       },
     ],
     axisMap: { g_churn: "stickiness" },
@@ -871,6 +924,8 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                     onAxisChange={setAxis}
                     checkedSteps={checkedSteps}
                     onToggleStep={toggleStep}
+                    allVars={entry.variables}
+                    allParams={params}
                   />
 
                   {/* Where clause */}
@@ -882,36 +937,6 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                       <MathFormula latex={entry.where} />
                     </div>
                   )}
-
-                  {/* Symbol legend — hover to reveal */}
-                  <div className="relative group/vars self-start">
-                    <button
-                      type="button"
-                      className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground/50 font-medium hover:text-muted-foreground/80 transition-colors"
-                    >
-                      <span>Variables</span>
-                      <span className="text-[9px]">▾</span>
-                    </button>
-                    <div className="absolute left-0 top-full mt-1 z-20 hidden group-hover/vars:block bg-card border border-border/60 rounded-xl shadow-xl p-3 min-w-64 max-w-xs">
-                      <table className="text-xs w-full">
-                        <tbody>
-                          {entry.variables.map((v) => (
-                            <tr
-                              key={v.symbol}
-                              className="border-t border-border/30 first:border-0"
-                            >
-                              <td className="py-1.5 pr-4 text-primary align-middle whitespace-nowrap w-0">
-                                <MathFormula latex={v.symbol} />
-                              </td>
-                              <td className="py-1.5 text-muted-foreground leading-snug">
-                                {v.meaning}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
                 </>
               ) : (
                 <>
@@ -960,35 +985,6 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
             {/* RIGHT: In practice */}
             <div className="px-7 py-6 flex flex-col gap-5">
               <SectionLabel step={3} label="In practice" />
-
-              {/* Current params */}
-              <div>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
-                  Current parameters
-                </p>
-                <div className="rounded-xl border border-border/40 overflow-hidden">
-                  <table className="text-xs w-full">
-                    <tbody>
-                      {params.map((p, i) => (
-                        <tr
-                          key={p.sym}
-                          className={i > 0 ? "border-t border-border/30" : ""}
-                        >
-                          <td className="px-3 py-2 font-mono font-semibold text-primary text-sm w-10 shrink-0">
-                            {p.sym}
-                          </td>
-                          <td className="px-2 py-2 text-muted-foreground">
-                            {p.name}
-                          </td>
-                          <td className="px-3 py-2 font-mono font-semibold text-foreground text-right">
-                            {p.value}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
 
               {/* Daily trace */}
               <div>
@@ -1105,6 +1101,8 @@ function PipelineFormula({
   onAxisChange,
   checkedSteps,
   onToggleStep,
+  allVars = [],
+  allParams = [],
 }: {
   ghostLines: GhostLine[];
   mainColor: string;
@@ -1120,6 +1118,8 @@ function PipelineFormula({
   onAxisChange?: (axisId: string, value: string) => void;
   checkedSteps?: Set<string>;
   onToggleStep?: (key: string) => void;
+  allVars?: FormulaVariable[];
+  allParams?: { sym: string; name: string; value: string }[];
 }) {
   const colorMap: Record<string, string> = { __main__: mainColor };
   for (const g of ghostLines) colorMap[g.key] = g.color;
@@ -1143,6 +1143,14 @@ function PipelineFormula({
           ? (axisDisplay.values.find((v) => v.value === currentVal)?.label ??
             currentVal)
           : "";
+
+        const stepVars = step.tooltipVarSymbols
+          ? allVars.filter((v) => step.tooltipVarSymbols!.includes(v.symbol))
+          : [];
+        const stepParams = step.tooltipParamSyms
+          ? allParams.filter((p) => step.tooltipParamSyms!.includes(p.sym))
+          : [];
+        const hasTooltip = stepVars.length > 0 || stepParams.length > 0;
 
         return (
           <div
@@ -1175,19 +1183,55 @@ function PipelineFormula({
               style={{ backgroundColor: stepColor }}
             />
 
-            {/* Label + formula — click to focus */}
-            <button
-              type="button"
-              className="flex-1 min-w-0 text-left cursor-pointer"
-              onClick={() => onClick(step.lineKey)}
-            >
-              <p className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wide mb-0.5">
-                {step.label}
-              </p>
-              <div className="overflow-x-auto text-sm">
-                <MathFormula latex={latex} />
-              </div>
-            </button>
+            {/* Label + formula — click to focus, hover shows tooltip */}
+            <div className="relative group/formula flex-1 min-w-0">
+              <button
+                type="button"
+                className="w-full text-left cursor-pointer"
+                onClick={() => onClick(step.lineKey)}
+              >
+                <p className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wide mb-0.5">
+                  {step.label}
+                </p>
+                <div className="overflow-x-auto text-sm">
+                  <MathFormula latex={latex} />
+                </div>
+              </button>
+
+              {hasTooltip && (
+                <div className="absolute left-0 top-full mt-1 z-30 hidden group-hover/formula:block bg-card border border-border/60 rounded-xl shadow-xl px-3 py-2 min-w-56 max-w-xs pointer-events-none">
+                  {stepVars.map((v, i) => (
+                    <div
+                      key={v.symbol}
+                      className={`flex items-baseline gap-3 py-1 ${i > 0 ? "border-t border-border/20" : ""}`}
+                    >
+                      <span className="text-primary shrink-0 text-xs leading-none">
+                        <MathFormula latex={v.symbol} />
+                      </span>
+                      <span className="text-xs text-muted-foreground leading-snug">
+                        {v.meaning}
+                      </span>
+                    </div>
+                  ))}
+                  {stepParams.map((p, i) => (
+                    <div
+                      key={p.sym}
+                      className={`flex items-baseline gap-3 py-1 border-t border-border/20 ${stepVars.length === 0 && i === 0 ? "border-0" : ""}`}
+                    >
+                      <span className="font-mono text-primary shrink-0 text-xs font-semibold">
+                        {p.sym}
+                      </span>
+                      <span className="text-xs text-muted-foreground flex-1 leading-snug">
+                        {p.name}
+                      </span>
+                      <span className="font-mono text-xs font-bold text-foreground shrink-0">
+                        {p.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Axis chip — right side */}
             {axisDisplay && onAxisChange && (
