@@ -62,7 +62,7 @@ function buildDailyRows(
       case "events":
         return {
           day,
-          formula: `DAU(${day})=${fn(out.activeUsers[i])} × d=${depth}`,
+          formula: `DAU(${day}) × d`,
           computation: `${fn(out.activeUsers[i])} × ${depth}`,
           result: fn(out.events[i]),
         };
@@ -99,7 +99,7 @@ function buildDailyRows(
       case "reactivatedUsers":
         return {
           day,
-          formula: `Σ ch_c · r · δ^(d-1)`,
+          formula: `Σ C_c · r · δ^(n-1)`,
           computation: `dormant × decay`,
           result: fn(out.reactivatedUsers[i]),
         };
@@ -405,19 +405,18 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
     steps: [
       {
         lineKey: "g_dau",
-        label: "Active users",
-        latex:
-          "\\text{DAU}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot S[t{-}c]\\right)",
+        label: "Input — daily active users",
+        latex: "\\text{DAU}(t)",
         color: "hsl(var(--chart-8))",
       },
       {
         lineKey: "__main__",
-        label: "Events",
+        label: "Multiply by engagement depth",
         latex: "\\text{Events}(t) = \\text{DAU}(t) \\times d",
         color: "",
       },
     ],
-    axisMap: { g_dau: "stickiness", __main__: "engagement" },
+    axisMap: { __main__: "engagement" },
     intermediateCols: [
       {
         stepKey: "g_dau",
@@ -426,6 +425,8 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         getValue: (out, i) => fn(out.activeUsers[i]),
       },
     ],
+    footnote:
+      "DAU(t) is computed from cohort survival — open the Active users card for the full derivation.",
   },
 
   stickiness: {
@@ -881,6 +882,30 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                       <MathFormula latex={entry.where} />
                     </div>
                   )}
+
+                  {/* Symbol legend — same as non-pipeline branch */}
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
+                      Variables
+                    </p>
+                    <table className="text-xs w-full">
+                      <tbody>
+                        {entry.variables.map((v) => (
+                          <tr
+                            key={v.symbol}
+                            className="border-t border-border/30"
+                          >
+                            <td className="py-1.5 pr-4 text-primary align-middle whitespace-nowrap w-0">
+                              <MathFormula latex={v.symbol} />
+                            </td>
+                            <td className="py-1.5 text-muted-foreground leading-snug">
+                              {v.meaning}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </>
               ) : (
                 <>
