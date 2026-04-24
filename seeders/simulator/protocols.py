@@ -48,21 +48,3 @@ class AxisModifier(Protocol):
     def apply(self, value: str, simulation: SimulationState) -> None: ...
 
 
-@runtime_checkable
-class DomainPack(Protocol):
-    """A domain — e.g. ecommerce, casual_game."""
-
-    name: str
-    events: tuple[str, ...]
-    supported_monetization: tuple[str, ...]
-
-    def build_session(
-        self,
-        user: dict,
-        session_start: datetime,
-        archetype: str,
-        state: SimulationState,
-        rng: random.Random,
-    ) -> list[tuple]:
-        """Produce a list of event tuples for one session."""
-        ...
