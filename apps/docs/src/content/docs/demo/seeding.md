@@ -23,28 +23,28 @@ Each preset is a named scenario: a business domain, a growth shape, a churn rate
 and a monetization model. Pick the one that most resembles the product you want
 to demo.
 
-| Preset | Domain | What it looks like |
-| --- | --- | --- |
-| `ecommerce_steady` | E-commerce | Stable store, no growth trend — **default** |
-| `ecommerce_explosive` | E-commerce | Viral launch, rapid user growth |
-| `retail_declining` | Retail | Losing market share, arrivals drop over time |
-| `casual_game_addictive` | Casual game | Whale-heavy IAP, very high retention |
-| `casual_game_flash_in_the_pan` | Casual game | Big spike then sharp drop-off |
-| `saas_pmf` | SaaS | Steady growth, low churn, subscription revenue |
-| `streaming_mature` | Streaming | Binge sessions, strong retention |
-| `marketplace_scaling` | Marketplace | GMV growth, rising listings |
-| `dating_app_churn` | Dating app | Quick activation, high churn |
+| Preset                         | Domain      | What it looks like                             |
+| ------------------------------ | ----------- | ---------------------------------------------- |
+| `ecommerce_steady`             | E-commerce  | Stable store, no growth trend — **default**    |
+| `ecommerce_explosive`          | E-commerce  | Viral launch, rapid user growth                |
+| `retail_declining`             | Retail      | Losing market share, arrivals drop over time   |
+| `casual_game_addictive`        | Casual game | Whale-heavy IAP, very high retention           |
+| `casual_game_flash_in_the_pan` | Casual game | Big spike then sharp drop-off                  |
+| `saas_pmf`                     | SaaS        | Steady growth, low churn, subscription revenue |
+| `streaming_mature`             | Streaming   | Binge sessions, strong retention               |
+| `marketplace_scaling`          | Marketplace | GMV growth, rising listings                    |
+| `dating_app_churn`             | Dating app  | Quick activation, high churn                   |
 
 ## Data volume
 
 Control how much data is generated with the `--scale` flag:
 
-| Scale | Users | Days | Typical use |
-| --- | --- | --- | --- |
-| `tiny` | 1 000 | 30 | Local dev, fast iteration |
-| `small` | 10 000 | 90 | Default for most presets |
-| `medium` | 100 000 | 180 | Load testing, perf demos |
-| `large` | 1 000 000 | 365 | Full-scale warehouse testing |
+| Scale    | Users     | Days | Typical use                  |
+| -------- | --------- | ---- | ---------------------------- |
+| `tiny`   | 1 000     | 30   | Local dev, fast iteration    |
+| `small`  | 10 000    | 90   | Default for most presets     |
+| `medium` | 100 000   | 180  | Load testing, perf demos     |
+| `large`  | 1 000 000 | 365  | Full-scale warehouse testing |
 
 ```bash
 uv run seed --preset ecommerce_steady --scale tiny    # fast
@@ -140,7 +140,7 @@ For use cases not covered by the built-in presets, drop a YAML file into
 ```yaml
 name: my_scenario
 description: My custom scenario.
-domain: saas          # ecommerce | retail | saas | streaming | casual_game | …
+domain: saas # ecommerce | retail | saas | streaming | casual_game | …
 
 axes:
   growth: strong

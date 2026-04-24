@@ -1,0 +1,25 @@
+name: ecommerce_explosive
+description: Viral e-commerce growing fast.
+domain: ecommerce
+axes:
+  growth: explosive
+  stickiness: sticky
+  engagement_depth: moderate
+  monetization: one_off_purchase
+  virality: strong_viral
+  scale: medium
+  geography: global
+  anomalies: explicit
+anomalies:
+  - type: marketing_campaign
+    name: viral_launch
+    start: -45d
+    duration: 14d
+    effect:
+      arrivals: 2.5
+  - type: shopping_season
+    name: black_friday_2025
+    date: "2025-11-28"
+    duration: 3d
+    effect:
+      arrivals: 3.0

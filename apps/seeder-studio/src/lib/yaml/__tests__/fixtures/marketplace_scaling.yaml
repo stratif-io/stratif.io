@@ -1,0 +1,12 @@
+name: marketplace_scaling
+description: Two-sided marketplace with GMV growth.
+domain: marketplace
+axes:
+  growth: strong
+  stickiness: normal
+  engagement_depth: moderate
+  monetization: marketplace_fee
+  virality: weak
+  scale: medium
+  geography: global
+  anomalies: clean
