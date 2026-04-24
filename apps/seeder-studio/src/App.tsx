@@ -12,8 +12,10 @@ import {
 } from "@stratif-io/web";
 import { TopBar } from "./features/topbar/TopBar";
 import { StudioLayout } from "./features/studio/StudioLayout";
+import { SavePanel } from "./features/save/SavePanel";
 import { usePresets } from "./features/presets/usePresets";
 import { useSeederStore, blankConfig } from "./stores/seederStore";
+import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
 
 class ErrorBoundary extends Component<
   { children: ReactNode; fallback?: ReactNode },
@@ -133,6 +135,7 @@ export default function App() {
         <ErrorBoundary>
           <StudioLayout />
         </ErrorBoundary>
+        <SavePanel yaml={stringifyConfigYaml(config)} />
       </div>
 
       <Dialog
