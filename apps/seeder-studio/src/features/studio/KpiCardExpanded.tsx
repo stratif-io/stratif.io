@@ -21,6 +21,16 @@ const fn = (v: number) => formatNum(Math.round(v));
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const fix1 = (v: number) => v.toFixed(1);
 
+const METRIC_LABELS: Record<MetricKey, string> = {
+  events: "Events",
+  activeUsers: "Active users",
+  newUsers: "New users",
+  stickiness: "Stickiness",
+  totalUsers: "Total users",
+  churnedUsers: "Churned users",
+  reactivatedUsers: "Reactivated",
+};
+
 interface DailyRow {
   day: number;
   formula: string;
@@ -312,7 +322,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
       },
       {
         lineKey: "__main__",
-        label: "Poisson draw → rescale to U",
+        label: "Poisson draw",
         latex:
           "N(t) \\sim \\operatorname{Poisson}\\!\\left(\\frac{V(t)}{\\sum_s V(s)} \\cdot U\\right)",
         color: "",
@@ -367,14 +377,14 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
     steps: [
       {
         lineKey: "g_new",
-        label: "New users arrive",
+        label: "New users",
         latex: "N(t) \\sim \\operatorname{Poisson}(\\lambda(t))",
         color: "hsl(var(--chart-3))",
         tooltipVarSymbols: ["t", "c", "N_c"],
       },
       {
         lineKey: "g_churn",
-        label: "Churn — survival drop",
+        label: "Churn",
         latex:
           "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
         color: "hsl(var(--destructive))",
@@ -390,7 +400,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
       },
       {
         lineKey: "g_react",
-        label: "Reactivation — dormant return",
+        label: "Reactivation",
         latex:
           "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "hsl(var(--chart-4))",
@@ -399,7 +409,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
       },
       {
         lineKey: "__main__",
-        label: "DAU update",
+        label: "DAU net change",
         latex:
           "\\text{DAU}(t) = \\text{DAU}(t{-}1) + N(t) - \\text{Churn}(t) + \\text{React}(t)",
         color: "",
@@ -433,14 +443,14 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
     steps: [
       {
         lineKey: "g_dau",
-        label: "Input — daily active users",
+        label: "Daily active users",
         latex: "\\text{DAU}(t)",
         color: "hsl(var(--chart-8))",
         tooltipVarSymbols: ["t", "\\text{DAU}(t)"],
       },
       {
         lineKey: "__main__",
-        label: "Multiply by engagement depth",
+        label: "Total events",
         latex: "\\text{Events}(t) = \\text{DAU}(t) \\times d",
         color: "",
         tooltipVarSymbols: ["\\text{DAU}(t)", "d"],
@@ -472,7 +482,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
       },
       {
         lineKey: "g_mau",
-        label: "Monthly active users — rolling window",
+        label: "Monthly active users",
         latex:
           "\\text{MAU}(t) = \\sum_c N_c \\cdot \\left(1 - \\prod_{k=0}^{W-1}(1-S[t{-}c{-}k])\\right)",
         color: "hsl(var(--chart-2))",
@@ -543,7 +553,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
     steps: [
       {
         lineKey: "__main__",
-        label: "Churn — survival drop",
+        label: "Churn",
         latex:
           "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
         color: "",
@@ -561,7 +571,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
       },
       {
         lineKey: "g_react",
-        label: "Reactivation offsets churn",
+        label: "Reactivation",
         latex:
           "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "hsl(var(--chart-4))",
@@ -583,7 +593,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
     steps: [
       {
         lineKey: "g_churn",
-        label: "Churn feeds the dormant pool",
+        label: "Churn",
         latex:
           "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
         color: "hsl(var(--destructive))",
@@ -591,7 +601,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
       },
       {
         lineKey: "__main__",
-        label: "Reactivation — geometric decay",
+        label: "Reactivation",
         latex:
           "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "",
@@ -802,7 +812,15 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
         throw new Error(`Unhandled metricKey: ${_exhaustive}`);
       }
     }
-  }, [metricKey, depth, rp, totalUsers, windowDays, config.axes]);
+  }, [
+    metricKey,
+    depth,
+    rp,
+    totalUsers,
+    windowDays,
+    resolvedAxes.anomalies,
+    resolvedAxes.virality,
+  ]);
 
   const dailyRows = useMemo(
     () => buildDailyRows(metricKey, out, depth),
@@ -868,9 +886,9 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
         <div className="overflow-y-auto flex flex-col divide-y divide-border/40">
           {/* STEP 1 — Visualise */}
           <section className="px-7 py-5">
-            <SectionLabel step={1} label="Visualise" />
+            <SectionLabel label="Visualise" />
             <KpiChart
-              title=""
+              title={METRIC_LABELS[metricKey]}
               values={valuesFor(metricKey, out)}
               color={color}
               ghostLines={ghostLines}
@@ -890,10 +908,10 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
           </section>
 
           {/* STEP 2 & 3 — Math + Practice (two columns) */}
-          <section className="grid grid-cols-2 divide-x divide-border/40">
+          <section className="grid grid-cols-[3fr_2fr] divide-x divide-border/40">
             {/* LEFT: The formula */}
             <div className="px-7 py-6 flex flex-col gap-5">
-              <SectionLabel step={2} label="The formula" />
+              <SectionLabel label="The formula" />
 
               {pipeline ? (
                 <>
@@ -974,21 +992,19 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
 
             {/* RIGHT: In practice */}
             <div className="px-7 py-6 flex flex-col gap-5">
-              <SectionLabel step={3} label="In practice" />
+              <SectionLabel label="In practice" />
 
               {/* Daily trace */}
               <div>
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
-                  All {windowDays} days — step by step
+                  Step by step · {windowDays} days
                 </p>
                 <div className="rounded-xl border border-border/40 overflow-hidden">
                   <div className="overflow-y-auto max-h-64">
                     <table className="text-xs w-full">
                       <thead className="sticky top-0 bg-card z-10">
                         <tr className="bg-muted/30 text-muted-foreground/70">
-                          <th className="px-3 py-2 text-left font-medium">
-                            Day
-                          </th>
+                          <th className="px-3 py-2 text-left font-medium">d</th>
                           {activeCols.map((c, idx) => (
                             <th
                               key={`${c.stepKey}-${idx}`}
@@ -1063,16 +1079,11 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   );
 }
 
-function SectionLabel({ step, label }: { step: number; label: string }) {
+function SectionLabel({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
-        {step}
-      </span>
-      <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground/70">
-        {label}
-      </span>
-    </div>
+    <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground/60">
+      {label}
+    </span>
   );
 }
 
@@ -1146,7 +1157,7 @@ function PipelineFormula({
           <div
             key={step.lineKey}
             className={[
-              "flex items-center gap-2 rounded-xl px-2 py-2 transition-all",
+              "group/step flex items-start gap-2 rounded-xl px-2 py-2 transition-all min-h-[52px]",
               isActive
                 ? "bg-muted/60 ring-1 ring-border/60"
                 : "hover:bg-muted/40",
@@ -1168,8 +1179,13 @@ function PipelineFormula({
                 className="w-full text-left cursor-pointer"
                 onClick={() => onClick(step.lineKey)}
               >
-                <p className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wide mb-0.5">
+                <p className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wide mb-0.5 flex items-center gap-1">
                   {step.label}
+                  {hasTooltip && (
+                    <span className="opacity-0 group-hover/step:opacity-60 transition-opacity text-[8px] font-normal normal-case tracking-normal">
+                      ⓘ
+                    </span>
+                  )}
                 </p>
                 <div className="overflow-x-auto text-sm">
                   <MathFormula latex={latex} />
@@ -1177,7 +1193,7 @@ function PipelineFormula({
               </button>
 
               {hasTooltip && clickedKey === step.lineKey && (
-                <div className="absolute left-0 top-full mt-1 z-30 bg-card border border-border/60 rounded-xl shadow-xl px-3 py-2 min-w-56 max-w-xs">
+                <div className="absolute left-0 bottom-full mb-1 z-30 bg-card border border-border/60 rounded-xl shadow-xl px-3 py-2 min-w-56 max-w-xs">
                   {stepVars.map((v, i) => (
                     <div
                       key={v.symbol}
@@ -1253,7 +1269,7 @@ function PipelineFormula({
                   <button
                     type="button"
                     onClick={(e) => e.stopPropagation()}
-                    className="shrink-0 flex flex-col items-start px-2.5 py-1.5 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted transition-colors text-left"
+                    className="shrink-0 flex flex-col items-start px-2.5 py-2 min-h-[36px] rounded-lg border border-border/50 bg-muted/30 hover:bg-muted transition-colors text-left"
                   >
                     <span className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-medium leading-none mb-0.5">
                       {axisDisplay.label}

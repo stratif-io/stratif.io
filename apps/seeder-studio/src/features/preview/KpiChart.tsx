@@ -429,15 +429,15 @@ export function KpiChart({
                 onClick={() => toggleFocus(g.key)}
                 className={`flex items-center gap-1 transition-opacity ${isDimmed ? "opacity-30" : "opacity-100"}`}
               >
-                <svg width="12" height="5" aria-hidden>
+                <svg width="16" height="5" aria-hidden>
                   <line
                     x1="0"
                     y1="2.5"
-                    x2="12"
+                    x2="16"
                     y2="2.5"
                     stroke={g.color}
                     strokeWidth={isFocused ? "2" : "1.5"}
-                    strokeDasharray={isFocused ? "none" : "3 2"}
+                    strokeDasharray={isFocused ? "none" : "4 2"}
                     strokeOpacity="0.9"
                   />
                 </svg>
