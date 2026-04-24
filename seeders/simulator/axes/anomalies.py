@@ -15,7 +15,16 @@ from typing import Any
 
 from seeders.simulator.protocols import AxisModifier, SimulationState
 
-_VALUES = ("clean", "campaigns", "outages", "ab_tests", "full", "explicit")
+_VALUES = (
+    "none",
+    "clean",
+    "moderate",
+    "campaigns",
+    "outages",
+    "ab_tests",
+    "full",
+    "explicit",
+)
 
 
 class AnomaliesAxis:
@@ -27,7 +36,7 @@ class AnomaliesAxis:
             raise ValueError(
                 f"unknown anomalies value {value!r}; valid: {sorted(_VALUES)}"
             )
-        if value == "clean":
+        if value in ("none", "clean"):
             simulation.anomalies = []
 
 

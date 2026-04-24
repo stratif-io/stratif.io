@@ -29,8 +29,8 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
         sparkPoints: "0,14 14,14 28,14 40,14 52,14",
       },
       {
-        value: "weak",
-        label: "Weak growth",
+        value: "steady",
+        label: "Steady growth",
         description: "Slow linear — early-stage",
         sparkPoints: "0,26 14,24 28,21 40,18 52,15",
       },
@@ -53,13 +53,13 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
     label: "retention",
     values: [
       {
-        value: "everyone_churns",
+        value: "one_shot",
         label: "Everyone churns",
         description: "Near-total daily churn, no recovery",
         sparkPoints: "0,2 4,18 10,24 20,26 52,27",
       },
       {
-        value: "churny",
+        value: "churn_heavy",
         label: "High churn",
         description: "Users leave fast, low reactivation",
         sparkPoints: "0,5 6,12 14,20 24,25 52,27",
@@ -77,7 +77,7 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
         sparkPoints: "0,5 10,6 22,8 36,10 52,11",
       },
       {
-        value: "no_churn",
+        value: "normal",
         label: "No one churns",
         description: "Virtually no churn, users stay forever",
         sparkPoints: "0,3 10,3 22,3 36,3 52,3",

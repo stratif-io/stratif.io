@@ -32,8 +32,8 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
         params: { shape: 0, rate: 0 },
       },
       {
-        value: "weak",
-        label: "weak",
+        value: "steady",
+        label: "steady",
         description: "Slow linear growth.",
         params: { shape: 1, rate: 0.005 },
       },
@@ -60,8 +60,8 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
       "User retention profile: churn rate, reactivation probability, dormancy threshold.",
     values: [
       {
-        value: "everyone_churns",
-        label: "everyone_churns",
+        value: "one_shot",
+        label: "one_shot",
         description: "Near-total churn. Day-1 retention ~5%, no recovery.",
         params: {
           peakChurnRate: 0.97,
@@ -73,8 +73,8 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
         },
       },
       {
-        value: "churny",
-        label: "churny",
+        value: "churn_heavy",
+        label: "churn_heavy",
         description: "High early churn, low reactivation. Day-7 retention ~8%.",
         params: {
           peakChurnRate: 0.75,
@@ -112,8 +112,8 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
         },
       },
       {
-        value: "no_churn",
-        label: "no_churn",
+        value: "normal",
+        label: "normal",
         description: "Virtually no churn. Day-7 retention ~95%.",
         params: {
           peakChurnRate: 0.05,
@@ -159,7 +159,12 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
     description:
       "Revenue model. Categorical — does not affect the twin output.",
     values: [
-      { value: "ads", label: "ads", description: "", params: {} },
+      {
+        value: "ad_supported",
+        label: "ad_supported",
+        description: "",
+        params: {},
+      },
       { value: "freemium", label: "freemium", description: "", params: {} },
       {
         value: "subscription",
@@ -242,8 +247,8 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
       "Timezone distribution. Categorical — does not affect the twin output.",
     values: [
       { value: "global", label: "global", description: "", params: {} },
-      { value: "regional", label: "regional", description: "", params: {} },
-      { value: "local", label: "local", description: "", params: {} },
+      { value: "eu_only", label: "eu_only", description: "", params: {} },
+      { value: "us_only", label: "us_only", description: "", params: {} },
     ],
     default: "global",
   },

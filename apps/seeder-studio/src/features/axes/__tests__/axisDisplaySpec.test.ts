@@ -40,7 +40,7 @@ describe("AXIS_DISPLAY", () => {
 
   it("no display label contains raw code values (jargon check)", () => {
     const jargon = [
-      "churny",
+      "churn_heavy",
       "addictive",
       "hockey_stick",
       "strong_viral",

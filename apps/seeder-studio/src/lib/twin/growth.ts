@@ -19,7 +19,7 @@ export function growthCurve(
       for (let t = 0; t < days; t++) out[t] = base;
       break;
     }
-    case "weak": {
+    case "steady": {
       const base = totalUsers / days;
       for (let t = 0; t < days; t++) out[t] = base * (0.5 + t / days);
       break;

@@ -63,7 +63,7 @@ describe("runTwin", () => {
         scale_config: { window_days: 60 },
       },
     });
-    const churny = runTwin(cfg("churny"));
+    const churny = runTwin(cfg("churn_heavy"));
     const sticky = runTwin(cfg("sticky"));
     const addictive = runTwin(cfg("addictive"));
     expect(avg(churny.stickiness)).toBeLessThan(avg(sticky.stickiness));
@@ -139,7 +139,7 @@ describe("runTwin", () => {
         scale_config: { window_days: 60 },
       },
     });
-    expect(sum(runTwin(cfg("churny")).churnedUsers)).toBeGreaterThan(
+    expect(sum(runTwin(cfg("churn_heavy")).churnedUsers)).toBeGreaterThan(
       sum(runTwin(cfg("addictive")).churnedUsers),
     );
   });

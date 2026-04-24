@@ -58,7 +58,7 @@ describe("stickiness axis RetentionParams", () => {
   });
 
   it("churny has higher peakChurnRate than addictive", () => {
-    const churny = getAxisValue("stickiness", "churny")!.params as Record<
+    const churny = getAxisValue("stickiness", "churn_heavy")!.params as Record<
       string,
       number
     >;
@@ -70,7 +70,7 @@ describe("stickiness axis RetentionParams", () => {
   });
 
   it("addictive has higher reactivationRate than churny", () => {
-    const churny = getAxisValue("stickiness", "churny")!.params as Record<
+    const churny = getAxisValue("stickiness", "churn_heavy")!.params as Record<
       string,
       number
     >;

@@ -44,8 +44,8 @@ describe("AxisAccordion", () => {
         onOpenChange={onOpenChange}
       />,
     );
-    fireEvent.click(screen.getByRole("option", { name: /weak growth/i }));
-    expect(onChange).toHaveBeenCalledWith("weak");
+    fireEvent.click(screen.getByRole("option", { name: /steady growth/i }));
+    expect(onChange).toHaveBeenCalledWith("steady");
     expect(onOpenChange).not.toHaveBeenCalled();
   });
 

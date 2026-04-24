@@ -3,18 +3,18 @@ import fc from "fast-check";
 import { runTwin } from "..";
 
 const axisArb = fc.record({
-  growth: fc.constantFrom("weak", "strong", "hockey_stick", "declining"),
-  stickiness: fc.constantFrom("churny", "sticky", "addictive"),
+  growth: fc.constantFrom("steady", "strong", "hockey_stick", "declining"),
+  stickiness: fc.constantFrom("churn_heavy", "sticky", "addictive"),
   engagement_depth: fc.constantFrom("shallow", "medium", "deep"),
   monetization: fc.constantFrom(
-    "ads",
+    "ad_supported",
     "freemium",
     "subscription",
     "iap_whales",
   ),
   virality: fc.constantFrom("weak", "moderate", "strong_viral"),
   scale: fc.constantFrom("tiny"),
-  geography: fc.constantFrom("global", "regional", "local"),
+  geography: fc.constantFrom("global", "eu_only", "us_only"),
   anomalies: fc.constantFrom("clean", "moderate", "explicit"),
 });
 
