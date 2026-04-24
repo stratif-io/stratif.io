@@ -34,7 +34,7 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
     latex:
       "\\text{DAU}(t) = \\sum_c \\text{Poisson}\\!\\left(N_c \\cdot S[t{-}c]\\right)",
     where:
-      "S[k] = \\prod_{i=0}^{k-1}(1 - p(i)),\\quad p(i) = \\theta_\\infty + (\\theta_0 - \\theta_\\infty)\\,e^{-i/\\tau}",
+      "S[t{-}c] = \\prod_{i=0}^{t-c-1}(1 - p(i)),\\quad p(i) = \\theta_\\infty + (\\theta_0 - \\theta_\\infty)\\,e^{-i/\\tau}",
     explanation:
       "Active users on day t, summed across all cohorts. For each cohort c, we sample survivors at tenure t−c using the survival function S[k], which is the product of daily retention probabilities up to tenure k.",
     variables: [
@@ -42,8 +42,8 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
       { symbol: "c", meaning: "cohort arrival day" },
       { symbol: "N_c", meaning: "number of users who arrived on day c" },
       {
-        symbol: "S[k]",
-        meaning: "probability a user is still active k days after arrival",
+        symbol: "S[t{-}c]",
+        meaning: "survival probability t−c days after arrival",
       },
       { symbol: "p(i)", meaning: "daily churn probability at tenure i" },
       {
@@ -64,7 +64,6 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
   newUsers: {
     latex:
       "N(t) \\sim \\operatorname{Poisson}(\\lambda(t)),\\quad \\lambda(t) = \\frac{V(J(A(G(t))))}{\\sum_s V(J(A(G(s))))} \\cdot U",
-    where: "J(t) = A(t)\\,(1 + \\sigma Z),\\; Z \\sim \\mathcal{N}(0,1)",
     explanation:
       "New users on day t are a Poisson draw with rate λ(t). The raw signal flows through a four-stage pipeline — growth, anomalies, jitter, virality — then rescaled so the expected total equals U.",
     variables: [
@@ -101,6 +100,8 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
   },
   stickiness: {
     latex: "\\text{stickiness}(t) = \\frac{\\text{DAU}(t)}{\\text{MAU}(t)}",
+    where:
+      "S[t{-}c] = \\prod_{i=0}^{t-c-1}(1 - p(i)),\\quad p(i) = \\theta_\\infty + (\\theta_0 - \\theta_\\infty)\\,e^{-i/\\tau}",
     explanation:
       "Ratio of daily to monthly active users, measuring how habitual usage is. MAU is computed over a W-day rolling window using an independence approximation on the survival curve.",
     variables: [
@@ -111,6 +112,10 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
         meaning: "users active at least once in the W days ending at t",
       },
       { symbol: "W", meaning: "rolling window length (28 days)" },
+      {
+        symbol: "S[t{-}c]",
+        meaning: "survival probability t−c days after arrival",
+      },
     ],
   },
   totalUsers: {
@@ -125,23 +130,22 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
   },
   churnedUsers: {
     latex:
-      "\\text{churn}(t) = \\sum_c \\text{Poisson}\\!\\left(N_c \\cdot (S[k{-}1] - S[k])\\right)",
+      "\\text{churn}(t) = \\sum_c \\text{Poisson}\\!\\left(N_c \\cdot (S[t{-}c{-}1] - S[t{-}c])\\right)",
     where:
-      "S[k] = \\prod_{i=0}^{k-1}(1 - p(i)),\\quad p(i) = \\theta_\\infty + (\\theta_0 - \\theta_\\infty)\\,e^{-i/\\tau}",
+      "S[t{-}c] = \\prod_{i=0}^{t-c-1}(1 - p(i)),\\quad p(i) = \\theta_\\infty + (\\theta_0 - \\theta_\\infty)\\,e^{-i/\\tau}",
     explanation:
-      "Users entering the dormant state today, summed across cohorts. S[k−1]−S[k] is the probability of churning at exactly tenure k — the drop in survival between consecutive days.",
+      "Users entering the dormant state today, summed across cohorts. S[t−c−1]−S[t−c] is the churn probability for a user from cohort c on day t.",
     variables: [
       { symbol: "t", meaning: "simulation day (1 … T)" },
       { symbol: "c", meaning: "cohort arrival day" },
       { symbol: "N_c", meaning: "number of users who arrived on day c" },
       {
-        symbol: "k",
-        meaning: "tenure: days since cohort c arrived (k = t − c)",
+        symbol: "S[t{-}c]",
+        meaning: "survival probability t−c days after arrival",
       },
-      { symbol: "S[k]", meaning: "survival probability at tenure k" },
       {
-        symbol: "S[k{-}1] - S[k]",
-        meaning: "churn probability at exactly tenure k",
+        symbol: "S[t{-}c{-}1] - S[t{-}c]",
+        meaning: "churn probability at exactly tenure t−c",
       },
       { symbol: "p(i)", meaning: "daily churn probability at tenure i" },
       {

@@ -45,7 +45,7 @@ export function AxisPopover({ axis, currentValue, onSelect }: Props) {
           </svg>
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-medium">{v.label}</span>
-            <span className="text-[10px] text-muted-foreground truncate">
+            <span className="text-[10px] text-muted-foreground leading-tight">
               {v.description}
             </span>
           </div>

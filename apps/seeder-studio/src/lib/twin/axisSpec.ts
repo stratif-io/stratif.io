@@ -60,6 +60,19 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
       "User retention profile: churn rate, reactivation probability, dormancy threshold.",
     values: [
       {
+        value: "everyone_churns",
+        label: "everyone_churns",
+        description: "Near-total churn. Day-1 retention ~5%, no recovery.",
+        params: {
+          peakChurnRate: 0.97,
+          baseChurnRate: 0.6,
+          churnDecayDays: 2,
+          reactivationRate: 0.005,
+          reactivationDecay: 0.5,
+          maxDormantDays: 7,
+        },
+      },
+      {
         value: "churny",
         label: "churny",
         description: "High early churn, low reactivation. Day-7 retention ~8%.",
@@ -96,6 +109,19 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
           reactivationRate: 0.1,
           reactivationDecay: 0.85,
           maxDormantDays: 90,
+        },
+      },
+      {
+        value: "no_churn",
+        label: "no_churn",
+        description: "Virtually no churn. Day-7 retention ~95%.",
+        params: {
+          peakChurnRate: 0.05,
+          baseChurnRate: 0.001,
+          churnDecayDays: 30,
+          reactivationRate: 0.3,
+          reactivationDecay: 0.95,
+          maxDormantDays: 180,
         },
       },
     ],

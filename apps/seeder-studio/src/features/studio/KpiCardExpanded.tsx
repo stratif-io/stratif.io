@@ -269,6 +269,8 @@ interface PipelineStep {
   tooltipVarSymbols?: string[];
   /** Symbols from the params table to show on hover (plain text, e.g. "σ") */
   tooltipParamSyms?: string[];
+  /** Maps variable symbol → axisId for inline axis selectors */
+  axisVarMap?: Record<string, string>;
 }
 
 interface IntermediateCol {
@@ -295,30 +297,34 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         label: "Growth curve",
         latex: "G(t)",
         color: "hsl(var(--chart-2))",
-        tooltipVarSymbols: ["t", "G(t)"],
+        tooltipVarSymbols: ["t", "G(t)", "U", "T"],
+        tooltipParamSyms: ["U", "T"],
+        axisVarMap: { "G(t)": "growth", U: "scale", T: "scale" },
       },
       {
         lineKey: "g_anom",
         label: "Anomaly multipliers",
         latex: "A(t) = G(t) \\cdot \\prod_k m_k(t)",
         color: "hsl(var(--chart-5))",
-        tooltipVarSymbols: ["A(t)"],
+        tooltipVarSymbols: ["t", "G(t)", "A(t)"],
       },
       {
         lineKey: "g_jitter",
         label: "Stochastic jitter",
         latex: "J(t) = A(t)\\,(1 + \\sigma Z),\\quad Z \\sim \\mathcal{N}(0,1)",
         color: "hsl(var(--chart-6))",
-        tooltipVarSymbols: ["J(t)", "\\sigma", "Z"],
+        tooltipVarSymbols: ["A(t)", "J(t)", "\\sigma", "Z"],
         tooltipParamSyms: ["σ"],
+        axisVarMap: { "\\sigma": "anomalies" },
       },
       {
         lineKey: "g_viral",
         label: "Viral amplification",
         latex: "V(t) = J(t) + K \\cdot \\mathrm{DAU}(t{-}1)",
         color: "hsl(var(--chart-4))",
-        tooltipVarSymbols: ["V(t)", "K"],
+        tooltipVarSymbols: ["J(t)", "V(t)", "K"],
         tooltipParamSyms: ["K"],
+        axisVarMap: { K: "virality" },
       },
       {
         lineKey: "__main__",
@@ -328,6 +334,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         color: "",
         tooltipVarSymbols: ["N(t)", "\\lambda(t)", "U", "T"],
         tooltipParamSyms: ["U", "T"],
+        axisVarMap: { U: "scale", T: "scale" },
       },
     ],
     axisMap: {
@@ -386,17 +393,18 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         lineKey: "g_churn",
         label: "Churn",
         latex:
-          "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
+          "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[t{-}c{-}1]-S[t{-}c])\\right)",
         color: "hsl(var(--destructive))",
         tooltipVarSymbols: [
           "N_c",
-          "S[k]",
+          "S[t{-}c]",
           "p(i)",
           "\\theta_0",
           "\\theta_\\infty",
           "\\tau",
         ],
-        tooltipParamSyms: ["θ₀", "θ∞", "τ"],
+        tooltipParamSyms: ["θ₀", "θ∞", "τ", "r", "δ", "D"],
+        axisVarMap: { "\\theta_0": "stickiness" },
       },
       {
         lineKey: "g_react",
@@ -405,7 +413,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
           "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "hsl(var(--chart-4))",
         tooltipVarSymbols: ["t - c"],
-        tooltipParamSyms: ["r", "δ"],
+        tooltipParamSyms: ["r", "δ", "D"],
       },
       {
         lineKey: "__main__",
@@ -413,7 +421,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         latex:
           "\\text{DAU}(t) = \\text{DAU}(t{-}1) + N(t) - \\text{Churn}(t) + \\text{React}(t)",
         color: "",
-        tooltipVarSymbols: ["t"],
+        tooltipVarSymbols: ["t", "c", "N_c"],
       },
     ],
     axisMap: { g_new: "scale", g_churn: "stickiness" },
@@ -455,6 +463,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         color: "",
         tooltipVarSymbols: ["\\text{DAU}(t)", "d"],
         tooltipParamSyms: ["d"],
+        axisVarMap: { d: "engagement_depth" },
       },
     ],
     axisMap: { __main__: "engagement" },
@@ -534,7 +543,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         label: "Cumulative total",
         latex: "\\text{total}(t) = \\text{total}(t{-}1) + N(t)",
         color: "",
-        tooltipVarSymbols: ["t"],
+        tooltipVarSymbols: ["t", "c", "N_c"],
         tooltipParamSyms: ["T"],
       },
     ],
@@ -555,19 +564,19 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         lineKey: "__main__",
         label: "Churn",
         latex:
-          "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
+          "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[t{-}c{-}1]-S[t{-}c])\\right)",
         color: "",
         tooltipVarSymbols: [
           "N_c",
-          "k",
-          "S[k]",
-          "S[k{-}1] - S[k]",
+          "S[t{-}c]",
+          "S[t{-}c{-}1] - S[t{-}c]",
           "p(i)",
           "\\theta_0",
           "\\theta_\\infty",
           "\\tau",
         ],
-        tooltipParamSyms: ["θ₀", "θ∞", "τ"],
+        tooltipParamSyms: ["θ₀", "θ∞", "τ", "r", "δ", "D"],
+        axisVarMap: { "\\theta_0": "stickiness" },
       },
       {
         lineKey: "g_react",
@@ -575,7 +584,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         latex:
           "\\text{React}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(C_c \\cdot r \\cdot \\delta^{n-1}\\right)",
         color: "hsl(var(--chart-4))",
-        tooltipParamSyms: ["r", "δ"],
+        tooltipParamSyms: ["r", "δ", "D"],
       },
     ],
     axisMap: { __main__: "stickiness" },
@@ -595,7 +604,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
         lineKey: "g_churn",
         label: "Churn",
         latex:
-          "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[k{-}1]-S[k])\\right)",
+          "\\text{Churn}(t) = \\sum_c \\operatorname{Poisson}\\!\\left(N_c \\cdot (S[t{-}c{-}1]-S[t{-}c])\\right)",
         color: "hsl(var(--destructive))",
         tooltipParamSyms: ["θ₀", "θ∞", "τ"],
       },
@@ -693,8 +702,11 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     if (!clickedLineKey) return;
     const handler = (e: MouseEvent) => {
       const path = e.composedPath() as Element[];
-      const inside = path.some((el) =>
-        el?.closest?.("[data-pipeline-formula]"),
+      const inside = path.some(
+        (el) =>
+          el?.closest?.("[data-pipeline-formula]") ||
+          el?.closest?.("[data-radix-popper-content-wrapper]") ||
+          el?.closest?.("[data-radix-portal]"),
       );
       if (!inside) setClickedLineKey(null);
     };
@@ -767,12 +779,32 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
             name: "reactivation decay",
             value: fix1(rp.reactivationDecay),
           },
+          {
+            sym: "D",
+            name: "max dormant days",
+            value: `${rp.maxDormantDays} d`,
+          },
         ];
       case "churnedUsers":
         return [
           { sym: "θ₀", name: "peak churn rate", value: pct(rp.peakChurnRate) },
           { sym: "θ∞", name: "base churn rate", value: pct(rp.baseChurnRate) },
           { sym: "τ", name: "churn decay", value: `${rp.churnDecayDays} d` },
+          {
+            sym: "r",
+            name: "reactivation rate",
+            value: pct(rp.reactivationRate),
+          },
+          {
+            sym: "δ",
+            name: "reactivation decay",
+            value: fix1(rp.reactivationDecay),
+          },
+          {
+            sym: "D",
+            name: "max dormant days",
+            value: `${rp.maxDormantDays} d`,
+          },
         ];
       case "newUsers":
         return [
@@ -787,6 +819,9 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
         ];
       case "reactivatedUsers":
         return [
+          { sym: "θ₀", name: "peak churn rate", value: pct(rp.peakChurnRate) },
+          { sym: "θ∞", name: "base churn rate", value: pct(rp.baseChurnRate) },
+          { sym: "τ", name: "churn decay", value: `${rp.churnDecayDays} d` },
           {
             sym: "r",
             name: "base reactivation rate",
@@ -991,7 +1026,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
             </div>
 
             {/* RIGHT: In practice */}
-            <div className="px-7 py-6 flex flex-col gap-5">
+            <div className="px-7 py-6 flex flex-col gap-5 min-w-0">
               <SectionLabel label="In practice" />
 
               {/* Daily trace */}
@@ -1000,11 +1035,11 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                   Step by step · {windowDays} days
                 </p>
                 <div className="rounded-xl border border-border/40 overflow-hidden">
-                  <div className="overflow-y-auto max-h-64">
-                    <table className="text-xs w-full">
+                  <div className="overflow-auto max-h-64">
+                    <table className="text-xs w-full min-w-[360px]">
                       <thead className="sticky top-0 bg-card z-10">
                         <tr className="bg-muted/30 text-muted-foreground/70">
-                          <th className="px-3 py-2 text-left font-medium">d</th>
+                          <th className="px-3 py-2 text-left font-medium">t</th>
                           {activeCols.map((c, idx) => (
                             <th
                               key={`${c.stepKey}-${idx}`}
@@ -1029,7 +1064,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                             className={i > 0 ? "border-t border-border/25" : ""}
                           >
                             <td className="px-3 py-2 font-mono text-muted-foreground">
-                              d{row.day}
+                              {row.day}
                             </td>
                             {activeCols.map((c, idx) => (
                               <td
@@ -1079,6 +1114,20 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   );
 }
 
+/** Normalize a LaTeX symbol to a plain-text form for param lookup */
+function latexToPlain(sym: string): string {
+  return sym
+    .replace(/\\theta_0/g, "θ₀")
+    .replace(/\\theta_\\infty/g, "θ∞")
+    .replace(/\\sigma/g, "σ")
+    .replace(/\\tau/g, "τ")
+    .replace(/\\delta/g, "δ")
+    .replace(/\\text\{[^}]*\}/g, "")
+    .replace(/\\[a-zA-Z]+/g, "")
+    .replace(/[{}_^]/g, "")
+    .trim();
+}
+
 function SectionLabel({ label }: { label: string }) {
   return (
     <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground/60">
@@ -1095,7 +1144,7 @@ function PipelineFormula({
   onHover,
   onClick,
   steps,
-  axisMap,
+  axisMap: _axisMap,
   footnote,
   latexOverrides = {},
   axes = {},
@@ -1137,14 +1186,6 @@ function PipelineFormula({
         const isDimmed = focusedKey !== null && !isActive;
         const isChecked = checkedSteps?.has(step.lineKey) ?? false;
 
-        const axisId = axisMap[step.lineKey];
-        const axisDisplay = axisId ? AXIS_DISPLAY[axisId] : null;
-        const currentVal = axisDisplay ? (axes[axisId] ?? "") : "";
-        const currentLabel = axisDisplay
-          ? (axisDisplay.values.find((v) => v.value === currentVal)?.label ??
-            currentVal)
-          : "";
-
         const stepVars = step.tooltipVarSymbols
           ? allVars.filter((v) => step.tooltipVarSymbols!.includes(v.symbol))
           : [];
@@ -1157,7 +1198,7 @@ function PipelineFormula({
           <div
             key={step.lineKey}
             className={[
-              "group/step flex items-start gap-2 rounded-xl px-2 py-2 transition-all min-h-[52px] cursor-pointer",
+              "group/step flex items-center gap-2 rounded-xl px-2 py-1.5 transition-all cursor-pointer",
               isActive
                 ? "bg-muted/60 ring-1 ring-border/60"
                 : "hover:bg-muted/40",
@@ -1169,7 +1210,7 @@ function PipelineFormula({
           >
             {/* Color dot */}
             <span
-              className="w-2 h-2 rounded-full shrink-0 mt-1"
+              className="w-2 h-2 rounded-full shrink-0"
               style={{ backgroundColor: stepColor }}
             />
 
@@ -1183,7 +1224,7 @@ function PipelineFormula({
                   onClick(step.lineKey);
                 }}
               >
-                <p className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wide mb-0.5 flex items-center gap-1">
+                <p className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wide mb-0 flex items-center gap-1 leading-none">
                   {step.label}
                   {hasTooltip && (
                     <span className="opacity-0 group-hover/step:opacity-60 transition-opacity text-[8px] font-normal normal-case tracking-normal">
@@ -1191,117 +1232,108 @@ function PipelineFormula({
                     </span>
                   )}
                 </p>
-                <div className="overflow-x-auto text-sm">
+                <div className="overflow-x-auto text-sm leading-none">
                   <MathFormula latex={latex} />
                 </div>
               </button>
 
               {hasTooltip && clickedKey === step.lineKey && (
-                <div className="absolute left-0 bottom-full mb-1 z-30 bg-card border border-border/60 rounded-xl shadow-xl px-3 py-2 min-w-56 max-w-xs">
-                  {stepVars.map((v, i) => (
-                    <div
-                      key={v.symbol}
-                      className={`flex items-baseline gap-3 py-1 ${i > 0 ? "border-t border-border/20" : ""}`}
-                    >
-                      <span className="text-primary shrink-0 text-xs leading-none">
-                        <MathFormula latex={v.symbol} />
-                      </span>
-                      <span className="text-xs text-muted-foreground leading-snug">
-                        {v.meaning}
-                      </span>
-                    </div>
-                  ))}
-                  {stepParams.map((p, i) => (
-                    <div
-                      key={p.sym}
-                      className={`flex items-baseline gap-3 py-1 border-t border-border/20 ${stepVars.length === 0 && i === 0 ? "border-0" : ""}`}
-                    >
-                      <span className="font-mono text-primary shrink-0 text-xs font-semibold">
-                        {p.sym}
-                      </span>
-                      <span className="text-xs text-muted-foreground flex-1 leading-snug">
-                        {p.name}
-                      </span>
-                      <span className="font-mono text-xs font-bold text-foreground shrink-0">
-                        {p.value}
-                      </span>
-                    </div>
-                  ))}
-                  {axisDisplay && onAxisChange && (
-                    <div className="border-t border-border/30 pt-2 mt-1">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted transition-colors text-left"
-                          >
-                            <span className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-medium">
-                              {axisDisplay.label}
+                <div className="absolute left-0 bottom-full mb-1 z-30 bg-card border border-border/60 rounded-xl shadow-xl px-3 py-2 min-w-64 max-w-sm">
+                  {stepVars.map((v, i) => {
+                    const plain = latexToPlain(v.symbol);
+                    const matchedParam = stepParams.find(
+                      (p) => p.sym === plain || p.sym === v.symbol,
+                    );
+                    const varAxisId = step.axisVarMap?.[v.symbol];
+                    const varAxisDisplay = varAxisId
+                      ? AXIS_DISPLAY[varAxisId]
+                      : null;
+                    const varAxisVal = varAxisId ? (axes[varAxisId] ?? "") : "";
+                    const varAxisLabel = varAxisDisplay
+                      ? (varAxisDisplay.values.find(
+                          (av) => av.value === varAxisVal,
+                        )?.label ?? varAxisVal)
+                      : "";
+                    return (
+                      <div
+                        key={v.symbol}
+                        className={`flex items-center gap-2 py-1 ${i > 0 ? "border-t border-border/20" : ""}`}
+                      >
+                        <span className="text-primary shrink-0 text-xs leading-none">
+                          <MathFormula latex={v.symbol} />
+                        </span>
+                        <span className="text-xs text-muted-foreground leading-snug flex-1">
+                          {v.meaning}
+                        </span>
+                        {varAxisDisplay && onAxisChange ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border/50 bg-muted/40 hover:bg-muted transition-colors shrink-0"
+                              >
+                                <span className="font-mono text-[11px] font-bold text-foreground leading-none">
+                                  {matchedParam?.value ?? varAxisLabel}
+                                </span>
+                                <span className="text-muted-foreground/50 text-[10px] leading-none">
+                                  ▾
+                                </span>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              side="bottom"
+                              align="end"
+                              className="w-64 p-2"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <AxisPopover
+                                axis={varAxisDisplay}
+                                currentValue={varAxisVal}
+                                onSelect={(v) => onAxisChange!(varAxisId, v)}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        ) : (
+                          matchedParam && (
+                            <span className="font-mono text-xs font-bold text-foreground shrink-0">
+                              {matchedParam.value}
                             </span>
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground">
-                              {currentLabel}
-                              <span className="text-muted-foreground/40 font-normal">
-                                ▾
-                              </span>
-                            </span>
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          side="bottom"
-                          align="start"
-                          className="w-64 p-2"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <AxisPopover
-                            axis={axisDisplay}
-                            currentValue={currentVal}
-                            onSelect={(v) => onAxisChange(axisId, v)}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  )}
+                          )
+                        )}
+                      </div>
+                    );
+                  })}
+                  {stepParams
+                    .filter((p) => {
+                      const plain = latexToPlain(p.sym);
+                      return !stepVars.some(
+                        (v) =>
+                          latexToPlain(v.symbol) === plain ||
+                          v.symbol === p.sym,
+                      );
+                    })
+                    .map((p, i) => (
+                      <div
+                        key={p.sym}
+                        className={`flex items-center gap-2 py-1 border-t border-border/20 ${stepVars.length === 0 && i === 0 ? "border-0" : ""}`}
+                      >
+                        <span className="font-mono text-primary shrink-0 text-xs font-semibold">
+                          {p.sym}
+                        </span>
+                        <span className="text-xs text-muted-foreground flex-1 leading-snug">
+                          {p.name}
+                        </span>
+                        <span className="font-mono text-xs font-bold text-foreground shrink-0">
+                          {p.value}
+                        </span>
+                      </div>
+                    ))}
                 </div>
               )}
             </div>
 
-            {/* Axis chip — right side */}
-            {axisDisplay && onAxisChange && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={(e) => e.stopPropagation()}
-                    className="shrink-0 flex flex-col items-start px-2.5 py-2 min-h-[36px] rounded-lg border border-border/50 bg-muted/30 hover:bg-muted transition-colors text-left"
-                  >
-                    <span className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-medium leading-none mb-0.5">
-                      {axisDisplay.label}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground leading-none">
-                      {currentLabel}
-                      <span className="text-muted-foreground/40 font-normal">
-                        ▾
-                      </span>
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  side="bottom"
-                  align="end"
-                  className="w-64 p-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <AxisPopover
-                    axis={axisDisplay}
-                    currentValue={currentVal}
-                    onSelect={(v) => onAxisChange(axisId, v)}
-                  />
-                </PopoverContent>
-              </Popover>
-            )}
-
-            {/* Add-column toggle — rightmost */}
+            {/* Add-column toggle — rightmost, icon-only */}
             {onToggleStep && step.lineKey !== "__main__" && (
               <button
                 type="button"
@@ -1313,77 +1345,59 @@ function PipelineFormula({
                   isChecked ? "Remove column from table" : "Add column to table"
                 }
                 className={[
-                  "shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[10px] font-semibold transition-colors",
+                  "shrink-0 w-6 h-6 rounded flex items-center justify-center transition-colors",
                   isChecked
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border/40 bg-transparent text-muted-foreground/50 hover:text-muted-foreground hover:border-border/70",
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground/30 hover:text-muted-foreground/70",
                 ].join(" ")}
               >
                 {isChecked ? (
-                  <>
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 12 12"
-                      fill="none"
-                      className="shrink-0"
-                    >
-                      <rect
-                        x="1"
-                        y="1"
-                        width="4"
-                        height="10"
-                        rx="1"
-                        fill="currentColor"
-                        opacity="0.4"
-                      />
-                      <rect
-                        x="7"
-                        y="1"
-                        width="4"
-                        height="10"
-                        rx="1"
-                        fill="currentColor"
-                      />
-                    </svg>
-                    col
-                  </>
+                  <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
+                    <rect
+                      x="1"
+                      y="1"
+                      width="4"
+                      height="10"
+                      rx="1"
+                      fill="currentColor"
+                      opacity="0.4"
+                    />
+                    <rect
+                      x="7"
+                      y="1"
+                      width="4"
+                      height="10"
+                      rx="1"
+                      fill="currentColor"
+                    />
+                  </svg>
                 ) : (
-                  <>
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 12 12"
-                      fill="none"
-                      className="shrink-0"
-                    >
-                      <rect
-                        x="1"
-                        y="1"
-                        width="4"
-                        height="10"
-                        rx="1"
-                        fill="currentColor"
-                        opacity="0.3"
-                      />
-                      <rect
-                        x="7"
-                        y="1"
-                        width="4"
-                        height="10"
-                        rx="1"
-                        fill="currentColor"
-                        opacity="0.3"
-                      />
-                      <path
-                        d="M9 4v4M7 6h4"
-                        stroke="currentColor"
-                        strokeWidth="1.2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    + col
-                  </>
+                  <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
+                    <rect
+                      x="1"
+                      y="1"
+                      width="4"
+                      height="10"
+                      rx="1"
+                      fill="currentColor"
+                      opacity="0.25"
+                    />
+                    <rect
+                      x="7"
+                      y="1"
+                      width="4"
+                      height="10"
+                      rx="1"
+                      fill="currentColor"
+                      opacity="0.25"
+                    />
+                    <path
+                      d="M9 4v4M7 6h4"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                 )}
               </button>
             )}
