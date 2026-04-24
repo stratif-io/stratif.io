@@ -1155,18 +1155,6 @@ function PipelineFormula({
             onMouseEnter={() => onHover(step.lineKey)}
             onMouseLeave={() => onHover(null)}
           >
-            {/* Checkbox */}
-            {onToggleStep && (
-              <input
-                type="checkbox"
-                checked={isChecked}
-                onChange={() => onToggleStep(step.lineKey)}
-                onClick={(e) => e.stopPropagation()}
-                className="shrink-0 accent-primary cursor-pointer"
-                title="Show in table"
-              />
-            )}
-
             {/* Color dot */}
             <span
               className="w-2 h-2 rounded-full shrink-0"
@@ -1291,6 +1279,93 @@ function PipelineFormula({
                   />
                 </PopoverContent>
               </Popover>
+            )}
+
+            {/* Add-column toggle — rightmost */}
+            {onToggleStep && step.lineKey !== "__main__" && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleStep(step.lineKey);
+                }}
+                title={
+                  isChecked ? "Remove column from table" : "Add column to table"
+                }
+                className={[
+                  "shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[10px] font-semibold transition-colors",
+                  isChecked
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : "border-border/40 bg-transparent text-muted-foreground/50 hover:text-muted-foreground hover:border-border/70",
+                ].join(" ")}
+              >
+                {isChecked ? (
+                  <>
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      className="shrink-0"
+                    >
+                      <rect
+                        x="1"
+                        y="1"
+                        width="4"
+                        height="10"
+                        rx="1"
+                        fill="currentColor"
+                        opacity="0.4"
+                      />
+                      <rect
+                        x="7"
+                        y="1"
+                        width="4"
+                        height="10"
+                        rx="1"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    col
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                      className="shrink-0"
+                    >
+                      <rect
+                        x="1"
+                        y="1"
+                        width="4"
+                        height="10"
+                        rx="1"
+                        fill="currentColor"
+                        opacity="0.3"
+                      />
+                      <rect
+                        x="7"
+                        y="1"
+                        width="4"
+                        height="10"
+                        rx="1"
+                        fill="currentColor"
+                        opacity="0.3"
+                      />
+                      <path
+                        d="M9 4v4M7 6h4"
+                        stroke="currentColor"
+                        strokeWidth="1.2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    + col
+                  </>
+                )}
+              </button>
             )}
           </div>
         );
