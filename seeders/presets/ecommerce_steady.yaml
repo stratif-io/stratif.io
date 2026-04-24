@@ -7,9 +7,8 @@ description: |
   This is the default preset; running the seeder with no env vars / no CLI
   flags produces data indistinguishable from the seeder prior to Phase 1.
 
-domain: ecommerce
-
 axes:
+  domain: ecommerce
   growth: steady
   stickiness: normal
   engagement_depth: moderate
@@ -18,3 +17,12 @@ axes:
   scale: small           # 10 000 users × 90 days — may be overridden by SEED_USERS/SEED_DAYS
   geography: global
   anomalies: clean
+
+markov:
+  events:
+    - name: PageView
+  start:
+    PageView: 1.0
+  transitions:
+    PageView:
+      "[end]": 1.0

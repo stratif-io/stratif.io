@@ -1,7 +1,7 @@
 name: ecommerce_explosive
 description: Viral e-commerce growing fast.
-domain: ecommerce
 axes:
+  domain: ecommerce
   growth: explosive
   stickiness: sticky
   engagement_depth: moderate
@@ -23,3 +23,11 @@ anomalies:
     duration: 3d
     effect:
       arrivals: 3.0
+markov:
+  events:
+    - name: PageView
+  start:
+    PageView: 1.0
+  transitions:
+    PageView:
+      "[end]": 1.0

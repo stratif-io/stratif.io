@@ -1,7 +1,7 @@
 name: streaming_mature
 description: Flat user base, high stickiness, binge sessions.
-domain: streaming
 axes:
+  domain: streaming
   growth: flat
   stickiness: sticky
   engagement_depth: deep
@@ -10,3 +10,11 @@ axes:
   scale: medium
   geography: global
   anomalies: clean
+markov:
+  events:
+    - name: PageView
+  start:
+    PageView: 1.0
+  transitions:
+    PageView:
+      "[end]": 1.0

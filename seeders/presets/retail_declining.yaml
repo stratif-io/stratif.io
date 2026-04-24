@@ -1,7 +1,7 @@
 name: retail_declining
 description: Brick-and-mortar + web retail losing market share.
-domain: retail
 axes:
+  domain: retail
   growth: declining
   stickiness: normal
   engagement_depth: moderate
@@ -23,3 +23,11 @@ anomalies:
     duration: 6h
     effect:
       all_events: 0.0
+markov:
+  events:
+    - name: PageView
+  start:
+    PageView: 1.0
+  transitions:
+    PageView:
+      "[end]": 1.0

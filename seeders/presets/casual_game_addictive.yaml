@@ -1,7 +1,7 @@
 name: casual_game_addictive
 description: Mobile casual game, whale-heavy IAP, high stickiness.
-domain: casual_game
 axes:
+  domain: casual_game
   growth: strong
   stickiness: addictive
   engagement_depth: deep
@@ -17,3 +17,11 @@ anomalies:
     duration: 7d
     effect:
       arrivals: 1.8
+markov:
+  events:
+    - name: PageView
+  start:
+    PageView: 1.0
+  transitions:
+    PageView:
+      "[end]": 1.0

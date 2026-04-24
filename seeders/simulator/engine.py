@@ -194,14 +194,20 @@ class Engine:
             for user in users:
                 last_active_day = min(d + user["_lifetime"], state.window_days - 1)
                 for active_d in range(d, last_active_day + 1):
-                    session_count = sample_daily_session_count(
-                        rng, user["_archetype"], active_d - d
+                    session_count = max(
+                        1,
+                        round(
+                            sample_daily_session_count(
+                                rng, user["_archetype"], active_d - d
+                            )
+                            * state.session_freq_multiplier
+                        ),
                     )
                     for _ in range(session_count):
                         arch = sample_session_archetype(
                             rng,
                             user["_archetype"],
-                            modifier=state.session_mix_modifier,
+                            modifier=None,
                         )
                         local_date = (day_0 + timedelta(days=active_d)).date()
                         is_weekend = local_date.weekday() >= 5

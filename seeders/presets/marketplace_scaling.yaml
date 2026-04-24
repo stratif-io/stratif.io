@@ -1,7 +1,7 @@
 name: marketplace_scaling
 description: Two-sided marketplace with GMV growth.
-domain: marketplace
 axes:
+  domain: marketplace
   growth: strong
   stickiness: normal
   engagement_depth: moderate
@@ -10,3 +10,11 @@ axes:
   scale: medium
   geography: global
   anomalies: clean
+markov:
+  events:
+    - name: PageView
+  start:
+    PageView: 1.0
+  transitions:
+    PageView:
+      "[end]": 1.0

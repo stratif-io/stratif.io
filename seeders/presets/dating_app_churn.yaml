@@ -1,7 +1,7 @@
 name: dating_app_churn
 description: Quick activation, high churn.
-domain: dating
 axes:
+  domain: dating
   growth: seasonal
   stickiness: churn_heavy
   engagement_depth: shallow
@@ -10,3 +10,11 @@ axes:
   scale: small
   geography: global
   anomalies: clean
+markov:
+  events:
+    - name: PageView
+  start:
+    PageView: 1.0
+  transitions:
+    PageView:
+      "[end]": 1.0

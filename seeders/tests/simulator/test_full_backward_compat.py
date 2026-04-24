@@ -13,6 +13,13 @@ from collections import Counter
 from seeders.seeder import BaseSeeder, SeedConfig
 from seeders.simulator import Engine, SimulationConfig
 from seeders.simulator.config import ScaleOverride
+from seeders.simulator.markov import MarkovConfig, MarkovEvent
+
+_TINY_MARKOV = MarkovConfig(
+    events=[MarkovEvent(name="PageView")],
+    start={"PageView": 1.0},
+    transitions={"PageView": {"[end]": 1.0}},
+)
 
 
 class _StubSeeder(BaseSeeder):
@@ -29,8 +36,8 @@ class _StubSeeder(BaseSeeder):
 def _drain_default() -> Counter[str]:
     cfg = SimulationConfig(
         name="ecommerce_steady",
-        domain="ecommerce",
-        axes={"growth": "steady", "stickiness": "normal", "scale": "tiny"},
+        axes={"domain": "ecommerce", "growth": "steady", "stickiness": "normal", "scale": "tiny"},
+        markov=_TINY_MARKOV,
         scale_config=ScaleOverride(total_users=500, window_days=30),
         random_seed=99,
     )

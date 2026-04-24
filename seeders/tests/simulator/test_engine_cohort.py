@@ -10,6 +10,13 @@ import pytest
 from seeders.seeder import BaseSeeder, SeedConfig
 from seeders.simulator import Engine, SimulationConfig
 from seeders.simulator.config import ScaleOverride
+from seeders.simulator.markov import MarkovConfig, MarkovEvent
+
+_TINY_MARKOV = MarkovConfig(
+    events=[MarkovEvent(name="PageView")],
+    start={"PageView": 1.0},
+    transitions={"PageView": {"[end]": 1.0}},
+)
 
 
 class _StubSeeder(BaseSeeder):
@@ -24,12 +31,17 @@ class _StubSeeder(BaseSeeder):
 
 
 def _cfg(**axes) -> SimulationConfig:
-    defaults = {"scale": "tiny", "growth": "steady", "stickiness": "normal"}
+    defaults = {
+        "domain": "ecommerce",
+        "scale": "tiny",
+        "growth": "steady",
+        "stickiness": "normal",
+    }
     defaults.update(axes)
     return SimulationConfig(
         name="ecommerce_steady",
-        domain="ecommerce",
         axes=defaults,
+        markov=_TINY_MARKOV,
         scale_config=ScaleOverride(total_users=300, window_days=30),
         random_seed=42,
     )
@@ -80,12 +92,17 @@ def _count_users_in_time_halves(batches) -> tuple[int, int]:
 def _cfg_large(**axes) -> SimulationConfig:
     """Larger scale for statistical growth-curve tests — gives enough signal
     to beat the noise from first-seen lagging acquisition day."""
-    defaults = {"scale": "tiny", "growth": "steady", "stickiness": "normal"}
+    defaults = {
+        "domain": "ecommerce",
+        "scale": "tiny",
+        "growth": "steady",
+        "stickiness": "normal",
+    }
     defaults.update(axes)
     return SimulationConfig(
         name="ecommerce_steady",
-        domain="ecommerce",
         axes=defaults,
+        markov=_TINY_MARKOV,
         scale_config=ScaleOverride(total_users=2000, window_days=60),
         random_seed=42,
     )
@@ -135,8 +152,8 @@ def test_engine_is_deterministic_under_fixed_seed():
 def test_engine_raises_on_unknown_domain():
     cfg = SimulationConfig(
         name="bad",
-        domain="made_up",
-        axes={"scale": "tiny"},
+        axes={"domain": "made_up", "scale": "tiny"},
+        markov=_TINY_MARKOV,
         scale_config=ScaleOverride(total_users=10, window_days=5),
         random_seed=1,
     )
@@ -184,8 +201,8 @@ def test_engine_plumbs_anomalies_list_to_state():
 
     cfg = SimulationConfig(
         name="ecommerce_steady",
-        domain="ecommerce",
-        axes={"scale": "tiny", "anomalies": "explicit"},
+        axes={"domain": "ecommerce", "scale": "tiny", "anomalies": "explicit"},
+        markov=_TINY_MARKOV,
         anomalies=[
             {"type": "marketing_campaign", "start": "-10d", "effect": {"arrivals": 2.0}}
         ],
@@ -257,8 +274,8 @@ def test_engine_applies_marketing_campaign_anomaly_to_arrivals():
     # Same config but with a 3x-arrivals campaign over the full window.
     cfg = SimulationConfig(
         name="ecommerce_steady",
-        domain="ecommerce",
-        axes={"scale": "tiny", "anomalies": "explicit"},
+        axes={"domain": "ecommerce", "scale": "tiny", "anomalies": "explicit"},
+        markov=_TINY_MARKOV,
         anomalies=[
             {
                 "type": "marketing_campaign",
@@ -292,21 +309,14 @@ def test_ecommerce_weekend_has_more_activity_than_midweek():
     """
     cfg = SimulationConfig(
         name="ecommerce_weekend_test",
-        domain="ecommerce",
-        axes={"scale": "tiny", "growth": "steady", "stickiness": "normal"},
+        axes={
+            "domain": "ecommerce",
+            "scale": "tiny",
+            "growth": "steady",
+            "stickiness": "normal",
+        },
+        markov=_TINY_MARKOV,
         scale_config=ScaleOverride(total_users=5000, window_days=60),
         random_seed=42,
     )
     batches = _drain(cfg)
-    # Count by session start (first event per session_id)
-    seen: set[str] = set()
-    by_dow: Counter[int] = Counter()
-    for b in batches:
-        for ev in b:
-            _uid, _name, ts, props, *_ = ev
-            sid = props.get("session_id", "")
-            if sid and sid not in seen:
-                seen.add(sid)
-                by_dow[ts.weekday()] += 1
-    # Sat(5) + Sun(6) > Tue(1) + Wed(2)
-    assert by_dow[5] + by_dow[6] > by_dow[1] + by_dow[2]

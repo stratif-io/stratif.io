@@ -1,3 +1,4 @@
+# seeders/simulator/config.py
 """Configuration models for the simulation engine."""
 
 from __future__ import annotations
@@ -7,18 +8,20 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-SCALE_PRESETS: dict[str, ScaleConfig] = {}
+from seeders.simulator.markov import MarkovConfig
+
+SCALE_PRESETS: dict[str, "ScaleConfig"] = {}
 
 
 @dataclass(frozen=True)
 class ScaleConfig:
-    """Named scale tier — total_users and window_days. See spec §3.1."""
+    """Named scale tier — total_users and window_days."""
 
     total_users: int
     window_days: int
 
     @classmethod
-    def from_named(cls, name: str) -> ScaleConfig:
+    def from_named(cls, name: str) -> "ScaleConfig":
         try:
             return SCALE_PRESETS[name]
         except KeyError as exc:
@@ -38,8 +41,6 @@ SCALE_PRESETS.update(
 
 
 class ScaleOverride(BaseModel):
-    """Optional override block for the ``scale`` axis."""
-
     model_config = ConfigDict(extra="forbid")
 
     total_users: int | None = None
@@ -47,31 +48,31 @@ class ScaleOverride(BaseModel):
 
 
 class SimulationConfig(BaseModel):
-    """A resolved simulation configuration — the product of a preset YAML +
-    optional axis overrides + env vars + CLI flags.
-    """
+    """A resolved simulation configuration."""
 
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., description="Preset name")
     description: str | None = None
-    domain: str
     axes: dict[str, str]
+    markov: MarkovConfig
     random_seed: int | None = None
 
-    # Optional per-axis tuning blocks (freeform; each axis validates its own).
     growth_config: dict[str, Any] | None = None
     scale_config: ScaleOverride | None = None
-
-    # Anomalies authored in YAML (shape validated in Phase 5).
     anomalies: list[dict[str, Any]] = Field(default_factory=list)
 
-    def resolved_scale(self) -> ScaleConfig:
-        """Resolve the named ``scale`` axis value + any overrides.
+    @property
+    def domain(self) -> str:
+        """Compatibility shim — read domain from the axes dict.
 
-        ``None`` means "use the base tier's value"; any non-``None`` override
-        wins (including 0, though ``0`` has no meaningful use today).
+        Domain packs are still resolved by name during the transition from
+        domain-pack-based to Markov-based session generation (Tasks 3–5).
+        Once domain packs are removed, delete this property.
         """
+        return self.axes.get("domain", "")
+
+    def resolved_scale(self) -> ScaleConfig:
         base = ScaleConfig.from_named(self.axes.get("scale", "small"))
         if self.scale_config is None:
             return base
