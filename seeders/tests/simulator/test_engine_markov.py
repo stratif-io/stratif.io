@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import datetime
 
 import pytest
 
@@ -70,7 +71,7 @@ def test_engine_run_produces_events():
     """Engine run over a 7-day window produces at least 1 event."""
     batches = _drain(_minimal_markov_config())
     events = _all_events(batches)
-    assert len(events) > 0, "engine produced no events at all"
+    assert len(events) > 50, f"engine produced suspiciously few events: {len(events)}"
 
 
 def test_engine_only_emits_declared_events():
@@ -115,7 +116,6 @@ def test_engine_session_structure():
             f"unexpected event name: {event_name!r}"
         )
         # timestamp is a datetime
-        from datetime import datetime
         assert isinstance(timestamp, datetime), (
             f"timestamp is not a datetime: {type(timestamp)}"
         )
