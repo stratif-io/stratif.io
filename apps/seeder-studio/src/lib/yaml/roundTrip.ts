@@ -5,8 +5,8 @@ import type { SimulationConfig } from "@/types/simulation";
 const KEY_ORDER: (keyof SimulationConfig)[] = [
   "name",
   "description",
-  "domain",
   "axes",
+  "markov",
   "random_seed",
   "scale_config",
   "growth_config",

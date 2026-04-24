@@ -4,8 +4,8 @@ Public surface:
     - Engine
     - SimulationConfig
     - load_preset, resolve_config, list_presets
-    - AxisRegistry, DomainRegistry
-    - AxisModifier, DomainPack, SimulationState (protocols)
+    - AxisRegistry
+    - AxisModifier, SimulationState (protocols)
 """
 
 from seeders.simulator.config import ScaleConfig, ScaleOverride, SimulationConfig
@@ -16,14 +16,12 @@ from seeders.simulator.preset import (
     load_preset,
     resolve_config,
 )
-from seeders.simulator.protocols import AxisModifier, DomainPack, SimulationState
-from seeders.simulator.registry import AxisRegistry, DomainRegistry
+from seeders.simulator.protocols import AxisModifier, SimulationState
+from seeders.simulator.registry import AxisRegistry
 
 __all__ = [
     "AxisModifier",
     "AxisRegistry",
-    "DomainPack",
-    "DomainRegistry",
     "Engine",
     "PresetNotFoundError",
     "ScaleConfig",

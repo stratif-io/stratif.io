@@ -40,7 +40,7 @@ interface DailyRow {
 
 interface Props {
   metricKey: MetricKey;
-  color: string;
+  color?: string;
   onClose: () => void;
 }
 
@@ -917,7 +917,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                 <>
                   <PipelineFormula
                     ghostLines={ghostLines}
-                    mainColor={color}
+                    mainColor={color ?? "hsl(var(--chart-1))"}
                     focusedKey={focusedLineKey}
                     clickedKey={clickedLineKey}
                     onHover={setHoveredLineKey}

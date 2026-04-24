@@ -1,4 +1,5 @@
-"""Helpers shared across domain packs."""
+# seeders/simulator/session_shared.py
+"""Helpers shared by session runners."""
 
 from __future__ import annotations
 

@@ -1,12 +1,13 @@
 import { create } from "zustand";
-import type { SimulationConfig } from "@/types/simulation";
+import type { MarkovConfig, SimulationConfig } from "@/types/simulation";
+import { MARKOV_PRESETS } from "@/features/events/markovPresets";
 
 export function blankConfig(): SimulationConfig {
   return {
     name: "new_preset",
     description: "",
-    domain: "saas",
     axes: {},
+    markov: MARKOV_PRESETS["saas"],
   };
 }
 
@@ -19,8 +20,8 @@ interface SeederState {
   setConfig: (config: SimulationConfig) => void;
   setName: (name: string) => void;
   setDescription: (description: string) => void;
-  setDomain: (domain: string) => void;
   setAxis: (axis: string, value: string) => void;
+  setMarkovConfig: (markov: MarkovConfig) => void;
   setScaleConfig: (scaleConfig: SimulationConfig["scale_config"]) => void;
   setGrowthConfig: (growthConfig: SimulationConfig["growth_config"]) => void;
   setAnomalies: (anomalies: SimulationConfig["anomalies"]) => void;
@@ -44,14 +45,14 @@ export const useSeederStore = create<SeederState>((set) => ({
   setDescription: (description) =>
     set((s) => ({ config: { ...s.config, description }, dirty: true })),
 
-  setDomain: (domain) =>
-    set((s) => ({ config: { ...s.config, domain }, dirty: true })),
-
   setAxis: (axis, value) =>
     set((s) => ({
       config: { ...s.config, axes: { ...s.config.axes, [axis]: value } },
       dirty: true,
     })),
+
+  setMarkovConfig: (markov) =>
+    set((s) => ({ config: { ...s.config, markov }, dirty: true })),
 
   setScaleConfig: (scaleConfig) =>
     set((s) => ({

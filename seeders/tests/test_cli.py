@@ -21,7 +21,7 @@ def test_cli_describe_prints_resolved_config():
     result = run_cli("--describe", "ecommerce_steady")
     assert result.returncode == 0
     assert "ecommerce_steady" in result.stdout
-    assert "domain" in result.stdout.lower()
+    assert "markov" in result.stdout.lower()
     assert "scale" in result.stdout.lower()
 
 
