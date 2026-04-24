@@ -1,4 +1,5 @@
-"""Engagement depth axis — adjusts session frequency multiplier."""
+# seeders/simulator/axes/engagement_depth.py
+"""Engagement depth axis — scales daily session frequency."""
 
 from __future__ import annotations
 
@@ -7,9 +8,10 @@ from typing import Any
 from seeders.simulator.protocols import AxisModifier, SimulationState
 
 _FREQ_MULTIPLIERS: dict[str, float] = {
-    "shallow": 0.6,
-    "moderate": 1.0,
-    "deep": 1.5,
+    "shallow": 0.5,
+    "medium": 1.0,
+    "moderate": 1.0,  # alias for medium; kept for backward compatibility
+    "deep": 2.0,
 }
 
 
