@@ -24,24 +24,18 @@ class MarkovConfig(BaseModel):
     transitions: dict[str, dict[str, float]]
 
     @model_validator(mode="after")
-    def _validate_sums(self) -> "MarkovConfig":
+    def _validate_sums(self) -> MarkovConfig:
         errors: list[str] = []
         start_sum = sum(self.start.values())
         if abs(start_sum - 1.0) > 0.001:
-            errors.append(
-                f"start distribution sums to {start_sum:.4f}, expected 1.0"
-            )
+            errors.append(f"start distribution sums to {start_sum:.4f}, expected 1.0")
         event_names = {e.name for e in self.events}
         for from_event, row in self.transitions.items():
             if from_event not in event_names:
-                errors.append(
-                    f"transitions key {from_event!r} not in events list"
-                )
+                errors.append(f"transitions key {from_event!r} not in events list")
             row_sum = sum(row.values())
             if abs(row_sum - 1.0) > 0.001:
-                errors.append(
-                    f"row {from_event!r} sums to {row_sum:.4f}, expected 1.0"
-                )
+                errors.append(f"row {from_event!r} sums to {row_sum:.4f}, expected 1.0")
         if errors:
             raise ValueError("; ".join(errors))
         return self

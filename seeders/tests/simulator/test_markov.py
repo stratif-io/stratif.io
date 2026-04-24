@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -33,9 +33,10 @@ _USER = {
     "traits": {},
 }
 
-_T0 = datetime(2024, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
+_T0 = datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC)
 
 # ── MarkovConfig validation ───────────────────────────────────────────────────
+
 
 def test_valid_config_does_not_raise():
     _ = _MINIMAL  # instantiation succeeded
@@ -81,6 +82,7 @@ def test_color_is_optional():
 
 
 # ── MarkovRunner ──────────────────────────────────────────────────────────────
+
 
 def test_build_session_terminates():
     runner = MarkovRunner(_MINIMAL)

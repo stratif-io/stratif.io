@@ -90,10 +90,12 @@ def test_simulation_config_accepts_markov():
 
 
 def test_simulation_config_rejects_unknown_fields():
-    with pytest.raises(Exception):
-        SimulationConfig(
-            name="test",
-            domain="saas",  # should fail: extra field not allowed
-            axes={"scale": "tiny"},
-            markov=_TINY_MARKOV,
+    with pytest.raises(ValidationError):
+        SimulationConfig.model_validate(
+            {
+                "name": "test",
+                "domain": "saas",  # should fail: extra field not allowed
+                "axes": {"scale": "tiny"},
+                "markov": _TINY_MARKOV.model_dump(),
+            }
         )

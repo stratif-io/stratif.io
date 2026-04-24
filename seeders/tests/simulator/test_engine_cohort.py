@@ -5,8 +5,6 @@ from __future__ import annotations
 from collections import Counter
 from datetime import datetime
 
-import pytest
-
 from seeders.seeder import BaseSeeder, SeedConfig
 from seeders.simulator import Engine, SimulationConfig
 from seeders.simulator.config import ScaleOverride
@@ -266,4 +264,4 @@ def test_ecommerce_weekend_has_more_activity_than_midweek():
         scale_config=ScaleOverride(total_users=5000, window_days=60),
         random_seed=42,
     )
-    batches = _drain(cfg)
+    _drain(cfg)

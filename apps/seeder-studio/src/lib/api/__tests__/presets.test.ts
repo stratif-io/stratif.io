@@ -34,7 +34,7 @@ describe("fetchPresets", () => {
     });
     const presets = await fetchPresets();
     expect(presets).toHaveLength(1);
-    expect(presets[0].config.name).toBe("a");
+    expect(presets[0].config?.name).toBe("a");
     expect(globalThis.fetch).toHaveBeenCalledWith("/api/simulator/presets");
   });
 

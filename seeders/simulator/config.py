@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from seeders.simulator.markov import MarkovConfig
 
-SCALE_PRESETS: dict[str, "ScaleConfig"] = {}
+SCALE_PRESETS: dict[str, ScaleConfig] = {}
 
 
 @dataclass(frozen=True)
@@ -21,7 +21,7 @@ class ScaleConfig:
     window_days: int
 
     @classmethod
-    def from_named(cls, name: str) -> "ScaleConfig":
+    def from_named(cls, name: str) -> ScaleConfig:
         try:
             return SCALE_PRESETS[name]
         except KeyError as exc:
@@ -61,7 +61,6 @@ class SimulationConfig(BaseModel):
     growth_config: dict[str, Any] | None = None
     scale_config: ScaleOverride | None = None
     anomalies: list[dict[str, Any]] = Field(default_factory=list)
-
 
     def resolved_scale(self) -> ScaleConfig:
         base = ScaleConfig.from_named(self.axes.get("scale", "small"))

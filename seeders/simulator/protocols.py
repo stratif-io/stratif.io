@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import random
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Protocol, runtime_checkable
@@ -46,5 +45,3 @@ class AxisModifier(Protocol):
     values: dict[str, Any]
 
     def apply(self, value: str, simulation: SimulationState) -> None: ...
-
-

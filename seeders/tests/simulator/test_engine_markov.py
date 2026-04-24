@@ -1,20 +1,19 @@
 """Integration smoke tests: full engine run with Markov config."""
+
 from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime
-
-import pytest
 
 from seeders.seeder import BaseSeeder, SeedConfig
 from seeders.simulator import Engine, SimulationConfig
 from seeders.simulator.config import ScaleOverride
 from seeders.simulator.markov import MarkovConfig, MarkovEvent
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _minimal_markov_config() -> SimulationConfig:
     """A tiny 2-event Markov config for fast smoke tests."""
@@ -67,6 +66,7 @@ def _all_events(batches: list[list[tuple]]) -> list[tuple]:
 # Tests
 # ---------------------------------------------------------------------------
 
+
 def test_engine_run_produces_events():
     """Engine run over a 7-day window produces at least 1 event."""
     batches = _drain(_minimal_markov_config())
@@ -83,9 +83,7 @@ def test_engine_only_emits_declared_events():
     declared = {"PageView", "SignUp"}
     emitted = {ev[1] for ev in _all_events(batches)}
     assert emitted, "no events emitted — cannot verify vocabulary"
-    assert emitted <= declared, (
-        f"unexpected event names: {emitted - declared}"
-    )
+    assert emitted <= declared, f"unexpected event names: {emitted - declared}"
     assert "[end]" not in emitted, "'[end]' sentinel leaked into output"
 
 
@@ -122,6 +120,4 @@ def test_engine_session_structure():
         # rest[-1] should be a dict (props)
         assert rest, "event tuple has no trailing fields"
         props = rest[-1]
-        assert isinstance(props, dict), (
-            f"last field is not a dict: {type(props)}"
-        )
+        assert isinstance(props, dict), f"last field is not a dict: {type(props)}"
