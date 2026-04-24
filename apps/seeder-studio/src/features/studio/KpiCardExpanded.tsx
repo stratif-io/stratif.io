@@ -883,28 +883,34 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                     </div>
                   )}
 
-                  {/* Symbol legend — same as non-pipeline branch */}
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground/60 font-medium mb-2">
-                      Variables
-                    </p>
-                    <table className="text-xs w-full">
-                      <tbody>
-                        {entry.variables.map((v) => (
-                          <tr
-                            key={v.symbol}
-                            className="border-t border-border/30"
-                          >
-                            <td className="py-1.5 pr-4 text-primary align-middle whitespace-nowrap w-0">
-                              <MathFormula latex={v.symbol} />
-                            </td>
-                            <td className="py-1.5 text-muted-foreground leading-snug">
-                              {v.meaning}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  {/* Symbol legend — hover to reveal */}
+                  <div className="relative group/vars self-start">
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground/50 font-medium hover:text-muted-foreground/80 transition-colors"
+                    >
+                      <span>Variables</span>
+                      <span className="text-[9px]">▾</span>
+                    </button>
+                    <div className="absolute left-0 top-full mt-1 z-20 hidden group-hover/vars:block bg-card border border-border/60 rounded-xl shadow-xl p-3 min-w-64 max-w-xs">
+                      <table className="text-xs w-full">
+                        <tbody>
+                          {entry.variables.map((v) => (
+                            <tr
+                              key={v.symbol}
+                              className="border-t border-border/30 first:border-0"
+                            >
+                              <td className="py-1.5 pr-4 text-primary align-middle whitespace-nowrap w-0">
+                                <MathFormula latex={v.symbol} />
+                              </td>
+                              <td className="py-1.5 text-muted-foreground leading-snug">
+                                {v.meaning}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </>
               ) : (
