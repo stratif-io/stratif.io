@@ -1067,7 +1067,7 @@ function PipelineFormula({
   ghostLines,
   mainColor,
   focusedKey,
-  clickedKey: _clickedKey,
+  clickedKey,
   onHover,
   onClick,
   steps,
@@ -1160,8 +1160,8 @@ function PipelineFormula({
               style={{ backgroundColor: stepColor }}
             />
 
-            {/* Label + formula — click to focus, hover shows tooltip */}
-            <div className="relative group/formula flex-1 min-w-0">
+            {/* Label + formula — click to pin tooltip open */}
+            <div className="relative flex-1 min-w-0">
               <button
                 type="button"
                 className="w-full text-left cursor-pointer"
@@ -1175,8 +1175,8 @@ function PipelineFormula({
                 </div>
               </button>
 
-              {hasTooltip && (
-                <div className="absolute left-0 top-full mt-1 z-30 hidden group-hover/formula:block bg-card border border-border/60 rounded-xl shadow-xl px-3 py-2 min-w-56 max-w-xs">
+              {hasTooltip && clickedKey === step.lineKey && (
+                <div className="absolute left-0 top-full mt-1 z-30 bg-card border border-border/60 rounded-xl shadow-xl px-3 py-2 min-w-56 max-w-xs">
                   {stepVars.map((v, i) => (
                     <div
                       key={v.symbol}
