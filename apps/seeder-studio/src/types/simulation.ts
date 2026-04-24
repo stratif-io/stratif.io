@@ -1,3 +1,14 @@
+export interface MarkovEvent {
+  name: string;
+  color?: string;
+}
+
+export interface MarkovConfig {
+  events: MarkovEvent[];
+  start: Record<string, number>;
+  transitions: Record<string, Record<string, number>>;
+}
+
 export interface SimulationAnomaly {
   type: string;
   name?: string;
@@ -16,8 +27,8 @@ export interface SimulationScaleOverride {
 export interface SimulationConfig {
   name: string;
   description?: string;
-  domain: string;
   axes: Record<string, string>;
+  markov: MarkovConfig;
   random_seed?: number;
   growth_config?: Record<string, unknown>;
   scale_config?: SimulationScaleOverride;

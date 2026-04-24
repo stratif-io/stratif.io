@@ -5,8 +5,12 @@ export function blankConfig(): SimulationConfig {
   return {
     name: "new_preset",
     description: "",
-    domain: "saas",
     axes: {},
+    markov: {
+      events: [{ name: "PageView" }],
+      start: { PageView: 1.0 },
+      transitions: { PageView: { "[end]": 1.0 } },
+    },
   };
 }
 
@@ -19,7 +23,6 @@ interface SeederState {
   setConfig: (config: SimulationConfig) => void;
   setName: (name: string) => void;
   setDescription: (description: string) => void;
-  setDomain: (domain: string) => void;
   setAxis: (axis: string, value: string) => void;
   setScaleConfig: (scaleConfig: SimulationConfig["scale_config"]) => void;
   setGrowthConfig: (growthConfig: SimulationConfig["growth_config"]) => void;
@@ -43,9 +46,6 @@ export const useSeederStore = create<SeederState>((set) => ({
 
   setDescription: (description) =>
     set((s) => ({ config: { ...s.config, description }, dirty: true })),
-
-  setDomain: (domain) =>
-    set((s) => ({ config: { ...s.config, domain }, dirty: true })),
 
   setAxis: (axis, value) =>
     set((s) => ({

@@ -5,8 +5,12 @@ import type { SimulationConfig } from "@/types/simulation";
 const SAMPLE: SimulationConfig = {
   name: "saas_pmf",
   description: "test",
-  domain: "saas",
   axes: { growth: "strong" },
+  markov: {
+    events: [{ name: "PageView" }],
+    start: { PageView: 1.0 },
+    transitions: { PageView: { "[end]": 1.0 } },
+  },
 };
 
 describe("seederStore", () => {
