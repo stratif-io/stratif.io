@@ -680,6 +680,19 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   }, []);
 
   useEffect(() => {
+    if (!clickedLineKey) return;
+    const handler = (e: MouseEvent) => {
+      const path = e.composedPath() as Element[];
+      const inside = path.some((el) =>
+        el?.closest?.("[data-pipeline-formula]"),
+      );
+      if (!inside) setClickedLineKey(null);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [clickedLineKey]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -1102,7 +1115,7 @@ function PipelineFormula({
   for (const g of ghostLines) colorMap[g.key] = g.color;
 
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5" data-pipeline-formula>
       {steps.map((step) => {
         const stepColor =
           step.lineKey === "__main__"
