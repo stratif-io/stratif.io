@@ -15,7 +15,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def test_load_preset_from_path():
     cfg = load_preset(FIXTURES / "minimal_preset.yaml")
     assert cfg.name == "fixture_minimal"
-    assert cfg.domain == "ecommerce"
+    assert cfg.axes["domain"] == "ecommerce"
     assert cfg.axes["scale"] == "tiny"
 
 

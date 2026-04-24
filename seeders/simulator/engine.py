@@ -123,7 +123,7 @@ class Engine:
             axis.apply(axis_value, state)
 
         # Domain resolution. Unknown domain fails fast.
-        domain = default_domain_registry().get(self.config.domain)
+        domain = default_domain_registry().get(self.config.axes.get("domain", ""))
 
         # Coerce monetization if unsupported by the domain.
         if (
@@ -149,12 +149,12 @@ class Engine:
 
         rng = random.Random(self.config.random_seed or 0)
 
-        dow_weights = get_dow_weights(self.config.domain)
+        dow_weights = get_dow_weights(self.config.axes.get("domain", ""))
         users_by_day: dict[int, list[dict]] = {}
         for d in range(state.window_days):
             local_date_d = (day_0 + timedelta(days=d)).date()
             dow_mult = dow_weights[local_date_d.weekday()]
-            cal_mult = calendar_multiplier(local_date_d, "US", self.config.domain)
+            cal_mult = calendar_multiplier(local_date_d, "US", self.config.axes.get("domain", ""))
             anomaly_mult = arrivals_multiplier(parsed_anomalies, local_date_d)
             lam = arrival_curve(d) * dow_mult * cal_mult * anomaly_mult
             n = _poisson(rng, lam)
@@ -212,7 +212,7 @@ class Engine:
                         local_date = (day_0 + timedelta(days=active_d)).date()
                         is_weekend = local_date.weekday() >= 5
                         hour_weights = get_hour_weights(
-                            self.config.domain, is_weekend=is_weekend
+                            self.config.axes.get("domain", ""), is_weekend=is_weekend
                         )
                         session_start = build_session_start(
                             rng, local_date, hour_weights, user["timezone"]

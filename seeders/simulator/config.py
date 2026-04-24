@@ -62,15 +62,6 @@ class SimulationConfig(BaseModel):
     scale_config: ScaleOverride | None = None
     anomalies: list[dict[str, Any]] = Field(default_factory=list)
 
-    @property
-    def domain(self) -> str:
-        """Compatibility shim — read domain from the axes dict.
-
-        Domain packs are still resolved by name during the transition from
-        domain-pack-based to Markov-based session generation (Tasks 3–5).
-        Once domain packs are removed, delete this property.
-        """
-        return self.axes.get("domain", "")
 
     def resolved_scale(self) -> ScaleConfig:
         base = ScaleConfig.from_named(self.axes.get("scale", "small"))
