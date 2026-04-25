@@ -11,19 +11,19 @@ import {
 } from "./axisContract";
 
 export const AxesSchema = z.object({
-  growth: z.enum(GROWTH_VALUES).optional(),
-  stickiness: z.enum(STICKINESS_VALUES).optional(),
-  engagement_depth: z.enum(ENGAGEMENT_DEPTH_VALUES).optional(),
-  virality: z.enum(VIRALITY_VALUES).optional(),
-  scale: z.enum(SCALE_VALUES).optional(),
-  anomalies: z.enum(ANOMALIES_VALUES).optional(),
-  monetization: z.enum(MONETIZATION_VALUES).optional(),
-  geography: z.enum(GEOGRAPHY_VALUES).optional(),
+  growth: z.enum(GROWTH_VALUES).optional().catch(undefined),
+  stickiness: z.enum(STICKINESS_VALUES).optional().catch(undefined),
+  engagement_depth: z.enum(ENGAGEMENT_DEPTH_VALUES).optional().catch(undefined),
+  virality: z.enum(VIRALITY_VALUES).optional().catch(undefined),
+  scale: z.enum(SCALE_VALUES).optional().catch(undefined),
+  anomalies: z.enum(ANOMALIES_VALUES).optional().catch(undefined),
+  monetization: z.enum(MONETIZATION_VALUES).optional().catch(undefined),
+  geography: z.enum(GEOGRAPHY_VALUES).optional().catch(undefined),
 });
 
 export const MarkovEventSchema = z.object({
   name: z.string().min(1),
-  color: z.string().optional(),
+  color: z.string().nullable().optional(),
 });
 
 export const MarkovConfigSchema = z.object({
@@ -56,9 +56,9 @@ export const SimulationConfigSchema = z.object({
   description: z.string().optional(),
   axes: AxesSchema,
   markov: MarkovConfigSchema,
-  random_seed: z.number().int().optional(),
-  growth_config: z.record(z.unknown()).optional(),
-  scale_config: SimulationScaleOverrideSchema.optional(),
+  random_seed: z.number().int().nullable().optional(),
+  growth_config: z.record(z.unknown()).nullable().optional(),
+  scale_config: SimulationScaleOverrideSchema.nullable().optional(),
   anomalies: z.array(SimulationAnomalySchema).optional(),
 });
 
