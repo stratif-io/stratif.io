@@ -1,7 +1,15 @@
 """Preview engine — runs simulation in-memory and returns daily timeseries.
 
-Caps simulated users at _PREVIEW_USER_CAP for performance, then scales
-all counts back to the configured total_users.
+Formula (matches the UI formula panel):
+  G(t) = arrival_curve(t)                           # growth axis shape
+  A(t) = G(t) · dow(t) · cal(t) · Πk mk(t)         # anomaly multipliers
+  J(t) = A(t) · (1 + σZ),  Z ~ N(0,1)              # stochastic jitter
+  V(t) = J(t) + K · (DAU(t-1) / U) · G(t)          # viral amplification
+  N(t) ~ Poisson(V(t) / Σs V(s) · U)               # normalized Poisson draw
+
+Two-pass approach:
+  Pass 1: normalize J → draw N₀ → simulate cohorts → get DAU₀(t)
+  Pass 2: add viral term using DAU₀ → renormalize V → draw final N(t)
 """
 
 from __future__ import annotations
@@ -49,12 +57,37 @@ def _poisson(rng: random.Random, lam: float) -> int:
 
 
 def _avg_events_per_session(config: SimulationConfig) -> float:
-    """Estimate expected events per session from the Markov transition matrix."""
     end_probs = [t.get("[end]", 0.0) for t in config.markov.transitions.values()]
     if not end_probs:
         return 3.0
     avg_end = sum(end_probs) / len(end_probs)
     return min(max(1.0 / avg_end if avg_end > 0 else 5.0, 1.0), 20.0)
+
+
+def _simulate_cohorts(
+    arrivals: list[int],
+    state: SimulationState,
+    rng: random.Random,
+) -> tuple[list[set[int]], dict[int, int]]:
+    """Simulate user cohorts, returning (active_sets, first_day)."""
+    window = len(arrivals)
+    active_sets: list[set[int]] = [set() for _ in range(window)]
+    first_day: dict[int, int] = {}
+    uid = 0
+    for d, n in enumerate(arrivals):
+        for _ in range(n):
+            first_day[uid] = d
+            if state.retention_params is not None:
+                days_active = active_days_for_user(rng, state.retention_params, d, window)
+            elif state.hazard_curve is not None:
+                lifetime = state.hazard_curve(rng)
+                days_active = list(range(d, min(d + lifetime + 1, window)))
+            else:
+                days_active = list(range(d, window))
+            for ad in days_active:
+                active_sets[ad].add(uid)
+            uid += 1
+    return active_sets, first_day
 
 
 def run_preview(config: SimulationConfig) -> PreviewResult:
@@ -74,7 +107,7 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
         try:
             axis = axis_reg.get(name)
         except KeyError:
-            continue  # unknown axis — silently skip
+            continue
         axis.apply(value, state)
 
     parsed_anomalies = parse_anomalies(state.anomalies, state.now, state.window_days)
@@ -85,44 +118,66 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
     rng = random.Random(config.random_seed or 0)
     dow_weights = get_dow_weights("generic")
 
-    # Downsample arrivals for performance; scale reported numbers back up.
+    sigma = state.jitter_sigma
+    K = state.virality_weight
+
     arrival_cap = min(1.0, _PREVIEW_USER_CAP / max(state.total_users, 1))
     report_scale = 1.0 / arrival_cap if arrival_cap > 0 else 1.0
 
-    # --- sample arrivals ---
-    new_users_raw: list[int] = []
-    growth_curve_raw: list[float] = []
+    # ── Pre-compute per-day multipliers ───────────────────────────────────────
+    g_curve: list[float] = []
+    a_curve: list[float] = []  # after anomaly/dow/cal
+
     for d in range(state.window_days):
         local_date = (day_0 + timedelta(days=d)).date()
         dow_mult = dow_weights[local_date.weekday()]
         cal_mult = calendar_multiplier(local_date, "US", "generic")
-        anomaly_mult = arrivals_multiplier(parsed_anomalies, local_date)
-        g = arrival_curve(d) * arrival_cap
-        growth_curve_raw.append(g * report_scale)
-        lam = g * dow_mult * cal_mult * anomaly_mult
-        new_users_raw.append(_poisson(rng, lam))
+        ano_mult = arrivals_multiplier(parsed_anomalies, local_date)
+        g = arrival_curve(d)
+        g_curve.append(g)
+        a_curve.append(g * dow_mult * cal_mult * ano_mult)
 
-    # --- simulate individual users, track active day sets ---
-    active_sets: list[set[int]] = [set() for _ in range(state.window_days)]
-    first_day: dict[int, int] = {}  # uid → acquisition day
-    uid = 0
-    for d, n in enumerate(new_users_raw):
-        for _ in range(n):
-            first_day[uid] = d
-            if state.retention_params is not None:
-                days_active = active_days_for_user(
-                    rng, state.retention_params, d, state.window_days
-                )
-            elif state.hazard_curve is not None:
-                lifetime = state.hazard_curve(rng)
-                days_active = list(range(d, min(d + lifetime + 1, state.window_days)))
-            else:
-                days_active = list(range(d, state.window_days))
-            for ad in days_active:
-                active_sets[ad].add(uid)
-            uid += 1
+    # ── J(t) = A(t) · (1 + σZ) ────────────────────────────────────────────────
+    j_curve: list[float] = [
+        max(0.0, a * (1.0 + sigma * rng.gauss(0.0, 1.0)))
+        for a in a_curve
+    ]
 
-    # --- build aggregates ---
+    # ── Pass 1: normalize J → preliminary arrivals → preliminary DAU ──────────
+    j_sum = sum(j_curve)
+    rng1 = random.Random((config.random_seed or 0) + 1)
+    if j_sum > 0:
+        n0 = [
+            _poisson(rng1, (j / j_sum) * state.total_users * arrival_cap)
+            for j in j_curve
+        ]
+    else:
+        n0 = [0] * state.window_days
+
+    active_sets0, _ = _simulate_cohorts(n0, state, rng1)
+    dau0 = [len(s) for s in active_sets0]
+
+    # ── V(t) = J(t) + K · (DAU(t-1) / U) · G(t) ─────────────────────────────
+    # Scale DAU to uncapped space for proper comparison with G(t)
+    cap_total = state.total_users * arrival_cap
+    v_curve: list[float] = []
+    for d in range(state.window_days):
+        dau_prev = dau0[d - 1] if d > 0 else 0
+        viral = K * (dau_prev / max(cap_total, 1)) * g_curve[d] * arrival_cap
+        v_curve.append(max(0.0, j_curve[d] * arrival_cap + viral))
+
+    # ── Pass 2: normalize V → final Poisson draw ──────────────────────────────
+    v_sum = sum(v_curve)
+    if v_sum > 0:
+        new_users_raw = [
+            _poisson(rng, (v / v_sum) * state.total_users * arrival_cap)
+            for v in v_curve
+        ]
+    else:
+        new_users_raw = [0] * state.window_days
+
+    # ── Final cohort simulation ───────────────────────────────────────────────
+    active_sets, first_day = _simulate_cohorts(new_users_raw, state, rng)
     active_users_raw = [len(s) for s in active_sets]
 
     churned_raw = [0] * state.window_days
@@ -155,5 +210,5 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
             for d in range(state.window_days)
         ],
         stickiness=stickiness,
-        growth_curve=growth_curve_raw,
+        growth_curve=[g * report_scale for g in g_curve],
     )

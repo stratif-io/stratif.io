@@ -32,6 +32,7 @@ class SimulationState:
     session_freq_multiplier: float = 1.0
     monetization_mode: str | None = None
     virality_weight: float = 0.0
+    jitter_sigma: float = 0.0
 
     hour_weights_weekday: list[float] | None = None
     hour_weights_weekend: list[float] | None = None
