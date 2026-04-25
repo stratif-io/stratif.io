@@ -65,13 +65,15 @@ function buildDailyRows(
           result: fn(out.activeUsers[i]),
         };
       }
-      case "newUsers":
+      case "newUsers": {
+        const rate = out.pipeline.virality[i] ?? 0;
         return {
           day,
-          formula: `λ(${day})=${fix1(out.arrivals[i])}`,
-          computation: `Poisson(${fix1(out.arrivals[i])})`,
+          formula: `λ(${day})=${fix1(rate)}`,
+          computation: `Poisson(${fix1(rate)})`,
           result: fn(out.newUsers[i]),
         };
+      }
       case "events":
         return {
           day,
