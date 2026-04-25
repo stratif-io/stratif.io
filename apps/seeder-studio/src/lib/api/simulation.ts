@@ -30,6 +30,9 @@ export interface PreviewResult {
   events: number[];
   stickiness: number[];
   growth_curve: number[];
+  anomaly_curve: number[];
+  jitter_curve: number[];
+  virality_curve: number[];
 }
 
 export function mapToTwinOutput(result: PreviewResult): TwinOutput {
@@ -45,9 +48,9 @@ export function mapToTwinOutput(result: PreviewResult): TwinOutput {
     arrivals: result.new_users,
     pipeline: {
       growth: result.growth_curve,
-      anomalies: [],
-      jitter: [],
-      virality: [],
+      anomalies: result.anomaly_curve,
+      jitter: result.jitter_curve,
+      virality: result.virality_curve,
     },
     events: result.events,
     activeUsers: result.active_users,

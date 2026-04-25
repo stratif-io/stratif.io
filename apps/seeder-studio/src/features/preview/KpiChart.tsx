@@ -343,6 +343,19 @@ export function KpiChart({
                 return [`${formatNum(v)}${valueSuffix}`, title];
               }}
             />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={
+                focusedKey !== null && focusedKey !== "__main__" ? 1 : 1.5
+              }
+              strokeOpacity={
+                focusedKey !== null && focusedKey !== "__main__" ? 0.25 : 0.4
+              }
+              dot={false}
+              isAnimationActive={false}
+            />
             {ghostLines?.map((g) => {
               const isFocused = focusedKey === g.key;
               const isDimmed = focusedKey !== null && !isFocused;
@@ -352,9 +365,9 @@ export function KpiChart({
                   type="monotone"
                   dataKey={g.key}
                   stroke={g.color}
-                  strokeWidth={isFocused ? 2 : 1}
-                  strokeDasharray={isFocused ? "none" : "4 3"}
-                  strokeOpacity={isDimmed ? 0.12 : isFocused ? 0.9 : 0.45}
+                  strokeWidth={isFocused ? 2 : 1.5}
+                  strokeDasharray={isFocused ? "none" : "6 3"}
+                  strokeOpacity={isDimmed ? 0.12 : isFocused ? 1 : 0.75}
                   dot={false}
                   isAnimationActive={false}
                   legendType="none"
@@ -362,19 +375,6 @@ export function KpiChart({
                 />
               );
             })}
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke={color}
-              strokeWidth={
-                focusedKey !== null && focusedKey !== "__main__" ? 1 : 1.5
-              }
-              strokeOpacity={
-                focusedKey !== null && focusedKey !== "__main__" ? 0.25 : 1
-              }
-              dot={false}
-              isAnimationActive={false}
-            />
           </LineChart>
         </ResponsiveContainer>
 

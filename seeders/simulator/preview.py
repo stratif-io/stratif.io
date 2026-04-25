@@ -40,6 +40,9 @@ class PreviewResult:
     events: list[int]
     stickiness: list[float]
     growth_curve: list[float]
+    anomaly_curve: list[float]
+    jitter_curve: list[float]
+    virality_curve: list[float]
 
 
 def _poisson(rng: random.Random, lam: float) -> int:
@@ -199,6 +202,25 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
         cumulative += new_users_raw[d]
         stickiness.append(active_users_raw[d] / max(cumulative, 1))
 
+    def _norm_curve(curve: list[float]) -> list[float]:
+        """Normalize a raw curve to have the same total as new_users (≈ total_users).
+
+        This puts all pipeline stages on the same y-axis scale as new_users
+        so they can be overlaid on the same chart.
+        """
+        total = sum(curve)
+        if total <= 0:
+            return [0.0] * len(curve)
+        scale = state.total_users / total
+        return [v * scale for v in curve]
+
+    # v_curve is already in "normalized" space (v_sum is denominator for new_users),
+    # so just scale to report space.
+    v_norm = [
+        (v / v_sum) * state.total_users if v_sum > 0 else 0.0
+        for v in v_curve
+    ]
+
     return PreviewResult(
         days=list(range(state.window_days)),
         new_users=[_scale(v) for v in new_users_raw],
@@ -210,5 +232,8 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
             for d in range(state.window_days)
         ],
         stickiness=stickiness,
-        growth_curve=[g * report_scale for g in g_curve],
+        growth_curve=_norm_curve(g_curve),
+        anomaly_curve=_norm_curve(a_curve),
+        jitter_curve=_norm_curve(j_curve),
+        virality_curve=v_norm,
     )
