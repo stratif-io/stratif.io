@@ -43,6 +43,7 @@ seed-snowflake = "seeders.seeder_snowflake:main"
 seed-databricks = "seeders.seeder_databricks:main"
 bootstrap-all-connections = "seeders.bootstrap_all_connections:main"
 seed = "seeders.cli:main"
+seed-serve = "seeders.server:main"
 
 [build-system]
 requires = ["hatchling"]
