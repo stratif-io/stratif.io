@@ -29,6 +29,7 @@ export interface PreviewResult {
   reactivated: number[];
   events: number[];
   stickiness: number[];
+  growth_curve: number[];
 }
 
 export function mapToTwinOutput(result: PreviewResult): TwinOutput {
@@ -43,7 +44,7 @@ export function mapToTwinOutput(result: PreviewResult): TwinOutput {
     days: windowDays,
     arrivals: result.new_users,
     pipeline: {
-      growth: result.new_users,
+      growth: result.growth_curve,
       anomalies: [],
       jitter: [],
       virality: [],

@@ -31,6 +31,7 @@ class PreviewResult:
     reactivated: list[int]
     events: list[int]
     stickiness: list[float]
+    growth_curve: list[float]
 
 
 def _poisson(rng: random.Random, lam: float) -> int:
@@ -90,12 +91,15 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
 
     # --- sample arrivals ---
     new_users_raw: list[int] = []
+    growth_curve_raw: list[float] = []
     for d in range(state.window_days):
         local_date = (day_0 + timedelta(days=d)).date()
         dow_mult = dow_weights[local_date.weekday()]
         cal_mult = calendar_multiplier(local_date, "US", "generic")
         anomaly_mult = arrivals_multiplier(parsed_anomalies, local_date)
-        lam = arrival_curve(d) * dow_mult * cal_mult * anomaly_mult * arrival_cap
+        g = arrival_curve(d) * arrival_cap
+        growth_curve_raw.append(g * report_scale)
+        lam = g * dow_mult * cal_mult * anomaly_mult
         new_users_raw.append(_poisson(rng, lam))
 
     # --- simulate individual users, track active day sets ---
@@ -151,4 +155,5 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
             for d in range(state.window_days)
         ],
         stickiness=stickiness,
+        growth_curve=growth_curve_raw,
     )
