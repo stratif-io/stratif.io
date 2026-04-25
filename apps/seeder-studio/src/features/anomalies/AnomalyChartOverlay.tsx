@@ -184,7 +184,7 @@ function ChartBand({
         y={y}
         width={w}
         height={h}
-        style={{ fill: color, fillOpacity: 0.13, cursor: bodyCursor }}
+        style={{ fill: color, fillOpacity: 0.18, cursor: bodyCursor }}
         onPointerDown={readOnly ? undefined : begin("body")}
         onPointerEnter={() => setHovered(true)}
         onPointerLeave={() => setHovered(false)}
