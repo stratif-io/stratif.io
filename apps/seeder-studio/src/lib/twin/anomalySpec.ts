@@ -78,6 +78,14 @@ export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
       { key: "arrivals", label: "arrivals ×", default: 0.05, min: 0, max: 1 },
     ],
   },
+  feature_regression: {
+    type: "feature_regression",
+    label: "Feature regression",
+    cssVar: "--anomaly-outage",
+    effectFields: [
+      { key: "arrivals", label: "arrivals ×", default: 0.3, min: 0, max: 1 },
+    ],
+  },
 };
 
 export function anomalyTypeColor(type: string): string {
