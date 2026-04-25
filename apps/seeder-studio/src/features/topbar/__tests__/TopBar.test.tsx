@@ -186,15 +186,4 @@ describe("TopBar + Event button", () => {
     fireEvent.click(screen.getByRole("button", { name: /\+ Event/i }));
     expect(useSeederStore.getState().config.anomalies?.length).toBe(1);
   });
-
-  it("renders Export button", () => {
-    render(
-      <TopBar
-        presets={mockPresets}
-        selectedName={null}
-        onSelectPreset={() => {}}
-      />,
-    );
-    expect(screen.getByRole("button", { name: /Export/i })).toBeInTheDocument();
-  });
 });

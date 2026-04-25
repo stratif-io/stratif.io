@@ -14,7 +14,6 @@ import type { PresetEntry } from "@/lib/api/presets";
 import { cn } from "@/lib/cn";
 import { defaultAnomaly } from "@/lib/twin";
 import { resolveScale } from "@/lib/twin/utils";
-import { useTwinOutput } from "@/features/preview/useTwinOutput";
 
 interface Props {
   presets: PresetEntry[];
@@ -39,7 +38,6 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
     () => resolveScale(scaleAxis, scaleOverride),
     [scaleAxis, scaleOverride],
   );
-  const out = useTwinOutput();
 
   const handleAddEvent = () => {
     const duration = Math.max(5, Math.floor(window_days * 0.1));
@@ -49,36 +47,6 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
       ...anomalies,
       defaultAnomaly("product_launch", start, duration),
     ]);
-  };
-
-  const handleExport = () => {
-    const rows = [
-      "day,newUsers,totalUsers,activeUsers,events,stickiness,churnedUsers,reactivatedUsers",
-      ...Array.from({ length: out.days }, (_, i) =>
-        [
-          i + 1,
-          Math.round(out.newUsers[i] ?? 0),
-          Math.round(out.totalUsers[i] ?? 0),
-          Math.round(out.activeUsers[i] ?? 0),
-          Math.round(out.events[i] ?? 0),
-          out.stickiness[i] !== null
-            ? (out.stickiness[i]! * 100).toFixed(2)
-            : "",
-          Math.round(out.churnedUsers[i] ?? 0),
-          Math.round(out.reactivatedUsers[i] ?? 0),
-        ].join(","),
-      ),
-    ];
-    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    try {
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `seeder-export-${Date.now()}.csv`;
-      a.click();
-    } finally {
-      URL.revokeObjectURL(url);
-    }
   };
 
   const dateRangeInvalid = !!(
@@ -222,9 +190,6 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
       <div className="flex-1" />
       <Button size="sm" variant="outline" onClick={handleAddEvent}>
         + Event
-      </Button>
-      <Button size="sm" variant="outline" onClick={handleExport}>
-        Export ↓
       </Button>
     </header>
   );
