@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSeederStore } from "@/stores/seederStore";
 import type { TwinOutput } from "@/lib/api/simulation";
 import { fetchSimulation } from "@/lib/api/simulation";
+import { resolveAxes } from "@/lib/twin";
 
 const EMPTY_OUTPUT: TwinOutput = {
   days: 0,
@@ -22,7 +23,10 @@ export function useTwinOutput(): TwinOutput {
 
   useEffect(() => {
     let cancelled = false;
-    fetchSimulation(config)
+    // Resolve axis defaults before sending to the backend so the backend
+    // applies the same axes that the formula panel displays.
+    const resolvedConfig = { ...config, axes: resolveAxes(config.axes ?? {}) };
+    fetchSimulation(resolvedConfig)
       .then((result) => {
         if (!cancelled) setOutput(result);
       })
