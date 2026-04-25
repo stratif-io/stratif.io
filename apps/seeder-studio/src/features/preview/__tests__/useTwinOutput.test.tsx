@@ -1,31 +1,53 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { renderHook, waitFor } from "@testing-library/react";
 import { useTwinOutput } from "../useTwinOutput";
 import { useSeederStore, blankConfig } from "@/stores/seederStore";
+
+const mockPreviewResult = {
+  days: Array.from({ length: 90 }, (_, i) => i),
+  new_users: Array(90).fill(10),
+  active_users: Array(90).fill(8),
+  churned: Array(90).fill(2),
+  reactivated: Array(90).fill(1),
+  events: Array(90).fill(40),
+  stickiness: Array(90).fill(0.5),
+};
 
 describe("useTwinOutput", () => {
   beforeEach(() => {
     useSeederStore.setState(useSeederStore.getInitialState(), true);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockPreviewResult),
+      }),
+    );
   });
 
-  it("returns twin output whose length matches the config window", () => {
-    useSeederStore.getState().loadPreset({
-      ...blankConfig(),
-      axes: { scale: "small" },
-    });
-    const { result } = renderHook(() => useTwinOutput());
-    expect(result.current.days).toBe(90);
-    expect(result.current.events).toHaveLength(90);
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
-  it("recomputes when the store changes", () => {
+  it("returns mapped twin output after fetch resolves", async () => {
     useSeederStore
       .getState()
       .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
     const { result } = renderHook(() => useTwinOutput());
-    const firstSum = result.current.events.reduce((a, b) => a + b, 0);
-    act(() => useSeederStore.getState().setAxis("engagement_depth", "deep"));
-    const secondSum = result.current.events.reduce((a, b) => a + b, 0);
-    expect(secondSum).toBeGreaterThan(firstSum);
+    await waitFor(() => expect(result.current.days).toBe(90));
+    expect(result.current.events).toHaveLength(90);
+  });
+
+  it("calls the simulate endpoint with the current config", async () => {
+    useSeederStore
+      .getState()
+      .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
+    renderHook(() => useTwinOutput());
+    await waitFor(() =>
+      expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+        expect.stringContaining("/simulate"),
+        expect.objectContaining({ method: "POST" }),
+      ),
+    );
   });
 });

@@ -1,9 +1,19 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { KpiCard } from "../KpiCard";
 import { KpiCardExpanded } from "../KpiCardExpanded";
 import { useSeederStore, blankConfig } from "@/stores/seederStore";
 import { KpiGrid } from "../KpiGrid";
+
+const mockPreviewResult = {
+  days: Array.from({ length: 90 }, (_, i) => i),
+  new_users: Array(90).fill(2),
+  active_users: Array(90).fill(2),
+  churned: Array(90).fill(2),
+  reactivated: Array(90).fill(2),
+  events: Array(90).fill(2),
+  stickiness: Array(90).fill(0.5),
+};
 
 const values = Array.from({ length: 30 }, (_, i) => i * 10);
 
@@ -62,16 +72,32 @@ describe("KpiCardExpanded", () => {
     useSeederStore
       .getState()
       .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockPreviewResult),
+      }),
+    );
   });
 
-  it("renders formula section with MathFormula", () => {
-    render(<KpiCardExpanded metricKey="events" onClose={vi.fn()} />);
-    expect(screen.getAllByTestId("math-formula").length).toBeGreaterThan(0);
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
-  it("renders 7 day rows in breakdown table", () => {
+  it("renders formula section with MathFormula", async () => {
     render(<KpiCardExpanded metricKey="events" onClose={vi.fn()} />);
-    for (let d = 1; d <= 7; d++) {
+    await waitFor(() =>
+      expect(screen.getAllByTestId("math-formula").length).toBeGreaterThan(0),
+    );
+  });
+
+  it("renders 7 day rows in breakdown table", async () => {
+    render(<KpiCardExpanded metricKey="events" onClose={vi.fn()} />);
+    await waitFor(() =>
+      expect(screen.getAllByText("1").length).toBeGreaterThan(0),
+    );
+    for (let d = 2; d <= 7; d++) {
       expect(screen.getAllByText(`${d}`).length).toBeGreaterThan(0);
     }
   });
@@ -90,9 +116,12 @@ describe("KpiCardExpanded", () => {
     "totalUsers",
     "churnedUsers",
     "reactivatedUsers",
-  ] as const)("renders 7 rows for %s", (key) => {
+  ] as const)("renders 7 rows for %s", async (key) => {
     render(<KpiCardExpanded metricKey={key} onClose={vi.fn()} />);
-    for (let d = 1; d <= 7; d++) {
+    await waitFor(() =>
+      expect(screen.getAllByText("1").length).toBeGreaterThan(0),
+    );
+    for (let d = 2; d <= 7; d++) {
       expect(screen.getAllByText(`${d}`).length).toBeGreaterThan(0);
     }
   });
@@ -104,6 +133,17 @@ describe("KpiGrid", () => {
     useSeederStore
       .getState()
       .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockPreviewResult),
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("renders all 7 KPI card titles", () => {
@@ -123,7 +163,9 @@ describe("KpiGrid", () => {
     expect(
       (await screen.findAllByTestId("math-formula")).length,
     ).toBeGreaterThan(0);
-    expect(screen.getAllByText("1").length).toBeGreaterThan(0);
+    await waitFor(() =>
+      expect(screen.getAllByText("1").length).toBeGreaterThan(0),
+    );
   });
 
   it("clicking another card collapses the first", async () => {

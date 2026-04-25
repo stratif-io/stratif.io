@@ -1290,7 +1290,7 @@ function PipelineFormula({
                               <AxisPopover
                                 axis={varAxisDisplay}
                                 currentValue={varAxisVal}
-                                onSelect={(v) => onAxisChange!(varAxisId, v)}
+                                onSelect={(v) => onAxisChange!(varAxisId!, v)}
                               />
                             </PopoverContent>
                           </Popover>
