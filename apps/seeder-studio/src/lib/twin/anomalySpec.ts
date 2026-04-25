@@ -70,6 +70,14 @@ export const ANOMALY_SPEC: Record<string, AnomalyTypeSpec> = {
     effectFields: [],
     fixedEffect: { arrivals: 0 },
   },
+  soft_launch: {
+    type: "soft_launch",
+    label: "Soft launch",
+    cssVar: "--anomaly-outage",
+    effectFields: [
+      { key: "arrivals", label: "arrivals ×", default: 0.05, min: 0, max: 1 },
+    ],
+  },
 };
 
 export function anomalyTypeColor(type: string): string {

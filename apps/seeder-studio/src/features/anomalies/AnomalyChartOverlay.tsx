@@ -16,6 +16,7 @@ interface Props {
   windowDays: number;
   onAnomalyChange: (index: number, next: SimulationAnomaly) => void;
   onSelect?: (index: number, x: number, y: number) => void;
+  readOnly?: boolean;
 }
 
 const HANDLE_W = 10;
@@ -27,6 +28,7 @@ export function AnomalyChartOverlay({
   windowDays,
   onAnomalyChange,
   onSelect,
+  readOnly = false,
 }: Props) {
   const pxPerDay = offset.width / Math.max(1, windowDays);
   return (
@@ -41,6 +43,7 @@ export function AnomalyChartOverlay({
           windowDays={windowDays}
           onChange={(next) => onAnomalyChange(i, next)}
           onSelect={onSelect}
+          readOnly={readOnly}
         />
       ))}
     </g>
@@ -55,6 +58,7 @@ interface BandProps {
   windowDays: number;
   onChange: (next: SimulationAnomaly) => void;
   onSelect?: (index: number, x: number, y: number) => void;
+  readOnly?: boolean;
 }
 
 type DragMode = "body" | "left" | "right" | null;
@@ -69,6 +73,7 @@ function ChartBand({
   windowDays,
   onChange,
   onSelect,
+  readOnly = false,
 }: BandProps) {
   const parsedStart = parseDays(anomaly.start ?? "0d") ?? 0;
   const startDay = Math.max(
@@ -154,8 +159,13 @@ function ChartBand({
     }
   };
 
-  const bodyCursor =
-    dragMode === "body" ? "grabbing" : dragMode ? "ew-resize" : "grab";
+  const bodyCursor = readOnly
+    ? "default"
+    : dragMode === "body"
+      ? "grabbing"
+      : dragMode
+        ? "ew-resize"
+        : "grab";
 
   const cancel = () => {
     dragRef.current.mode = null;
@@ -167,40 +177,44 @@ function ChartBand({
       {/* Full-height semi-transparent band (body — drag to slide) */}
       <rect
         data-testid="chart-pill-body"
-        role="button"
+        role={readOnly ? undefined : "button"}
         aria-label={anomaly.name}
-        tabIndex={0}
+        tabIndex={readOnly ? undefined : 0}
         x={x}
         y={y}
         width={w}
         height={h}
         style={{ fill: color, fillOpacity: 0.13, cursor: bodyCursor }}
-        onPointerDown={begin("body")}
+        onPointerDown={readOnly ? undefined : begin("body")}
         onPointerEnter={() => setHovered(true)}
         onPointerLeave={() => setHovered(false)}
       />
 
-      {/* Left edge handle */}
-      <rect
-        data-testid="chart-pill-handle-left"
-        x={x}
-        y={y}
-        width={hw}
-        height={h}
-        style={{ fill: color, fillOpacity: 0.45, cursor: "ew-resize" }}
-        onPointerDown={begin("left")}
-      />
+      {/* Left edge handle — hidden in read-only mode */}
+      {!readOnly && (
+        <rect
+          data-testid="chart-pill-handle-left"
+          x={x}
+          y={y}
+          width={hw}
+          height={h}
+          style={{ fill: color, fillOpacity: 0.45, cursor: "ew-resize" }}
+          onPointerDown={begin("left")}
+        />
+      )}
 
-      {/* Right edge handle */}
-      <rect
-        data-testid="chart-pill-handle-right"
-        x={x + w - hw}
-        y={y}
-        width={hw}
-        height={h}
-        style={{ fill: color, fillOpacity: 0.45, cursor: "ew-resize" }}
-        onPointerDown={begin("right")}
-      />
+      {/* Right edge handle — hidden in read-only mode */}
+      {!readOnly && (
+        <rect
+          data-testid="chart-pill-handle-right"
+          x={x + w - hw}
+          y={y}
+          width={hw}
+          height={h}
+          style={{ fill: color, fillOpacity: 0.45, cursor: "ew-resize" }}
+          onPointerDown={begin("right")}
+        />
+      )}
 
       {/* Label near top */}
       {w > 24 && (

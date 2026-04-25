@@ -65,7 +65,6 @@ export function KpiCard({
   const showOverlay =
     !!anomalies?.length &&
     !!windowDays &&
-    !!onAnomalyChange &&
     containerSize.w > 0 &&
     containerSize.h > 0;
 
@@ -143,13 +142,14 @@ export function KpiCard({
             width={containerSize.w}
             height={containerSize.h}
           >
-            <g style={{ pointerEvents: "all" }}>
+            <g style={{ pointerEvents: onAnomalyChange ? "all" : "none" }}>
               <AnomalyChartOverlay
                 offset={overlayOffset}
                 anomalies={anomalies!}
                 windowDays={windowDays!}
-                onAnomalyChange={onAnomalyChange!}
+                onAnomalyChange={onAnomalyChange ?? (() => {})}
                 onSelect={onAnomalySelect}
+                readOnly={!onAnomalyChange}
               />
             </g>
           </svg>
