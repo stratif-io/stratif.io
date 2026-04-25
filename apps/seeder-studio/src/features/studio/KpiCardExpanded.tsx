@@ -13,7 +13,6 @@ import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
 import { resolveSimParams, getAxisValue, resolveAxes } from "@/lib/twin";
 import { formatNum } from "@/lib/format";
-import { Popover, PopoverTrigger, PopoverContent } from "@stratif-io/web";
 import { AXIS_DISPLAY } from "@/features/axes/axisDisplaySpec";
 import { AxisPopover } from "@/features/studio/AxisPopover";
 
@@ -1175,6 +1174,7 @@ function PipelineFormula({
 }) {
   const colorMap: Record<string, string> = { __main__: mainColor };
   for (const g of ghostLines) colorMap[g.key] = g.color;
+  const [openAxisKey, setOpenAxisKey] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-0.5" data-pipeline-formula>
@@ -1256,52 +1256,60 @@ function PipelineFormula({
                           (av) => av.value === varAxisVal,
                         )?.label ?? varAxisVal)
                       : "";
+                    const axisKey = `${step.lineKey}:${v.symbol}`;
+                    const isAxisOpen = openAxisKey === axisKey;
                     return (
                       <div
                         key={v.symbol}
-                        className={`flex items-center gap-2 py-1 ${i > 0 ? "border-t border-border/20" : ""}`}
+                        className={i > 0 ? "border-t border-border/20" : ""}
                       >
-                        <span className="text-primary shrink-0 text-xs leading-none">
-                          <MathFormula latex={v.symbol} />
-                        </span>
-                        <span className="text-xs text-muted-foreground leading-snug flex-1">
-                          {v.meaning}
-                        </span>
-                        {varAxisDisplay && onAxisChange ? (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button
-                                type="button"
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border/50 bg-muted/40 hover:bg-muted transition-colors shrink-0"
-                              >
-                                <span className="font-mono text-[11px] font-bold text-foreground leading-none">
-                                  {matchedParam?.value ?? varAxisLabel}
-                                </span>
-                                <span className="text-muted-foreground/50 text-[10px] leading-none">
-                                  ▾
-                                </span>
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              side="bottom"
-                              align="end"
-                              className="w-64 p-2"
-                              onClick={(e) => e.stopPropagation()}
+                        <div className="flex items-center gap-2 py-1">
+                          <span className="text-primary shrink-0 text-xs leading-none">
+                            <MathFormula latex={v.symbol} />
+                          </span>
+                          <span className="text-xs text-muted-foreground leading-snug flex-1">
+                            {v.meaning}
+                          </span>
+                          {varAxisDisplay && onAxisChange ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenAxisKey((prev) =>
+                                  prev === axisKey ? null : axisKey,
+                                );
+                              }}
+                              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border/50 bg-muted/40 hover:bg-muted transition-colors shrink-0"
                             >
-                              <AxisPopover
-                                axis={varAxisDisplay}
-                                currentValue={varAxisVal}
-                                onSelect={(v) => onAxisChange!(varAxisId!, v)}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        ) : (
-                          matchedParam && (
-                            <span className="font-mono text-xs font-bold text-foreground shrink-0">
-                              {matchedParam.value}
-                            </span>
-                          )
+                              <span className="font-mono text-[11px] font-bold text-foreground leading-none">
+                                {matchedParam?.value ?? varAxisLabel}
+                              </span>
+                              <span className="text-muted-foreground/50 text-[10px] leading-none">
+                                {isAxisOpen ? "▴" : "▾"}
+                              </span>
+                            </button>
+                          ) : (
+                            matchedParam && (
+                              <span className="font-mono text-xs font-bold text-foreground shrink-0">
+                                {matchedParam.value}
+                              </span>
+                            )
+                          )}
+                        </div>
+                        {isAxisOpen && varAxisDisplay && onAxisChange && (
+                          <div
+                            className="pb-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <AxisPopover
+                              axis={varAxisDisplay}
+                              currentValue={varAxisVal}
+                              onSelect={(val) => {
+                                onAxisChange!(varAxisId!, val);
+                                setOpenAxisKey(null);
+                              }}
+                            />
+                          </div>
                         )}
                       </div>
                     );
