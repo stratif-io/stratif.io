@@ -32,7 +32,6 @@ from seeders.simulator.cohort_model import active_days_for_user
 from seeders.simulator.config import SimulationConfig
 from seeders.simulator.markov import MarkovRunner
 from seeders.simulator.protocols import SimulationState
-from seeders.simulator.realism.calendars import calendar_multiplier
 from seeders.simulator.realism.time_curves import get_dow_weights, get_hour_weights
 from seeders.simulator.realism.timezones import build_session_start
 
@@ -139,7 +138,7 @@ class Engine:
         for d in range(state.window_days):
             local_date_d = (day_0 + timedelta(days=d)).date()
             dow_mult = dow_weights[local_date_d.weekday()]
-            cal_mult = calendar_multiplier(local_date_d, "US", "generic")
+            cal_mult = 1.0  # calendar effects disabled until calendar axis is designed
             anomaly_mult = arrivals_multiplier(parsed_anomalies, local_date_d)
             lam = arrival_curve(d) * dow_mult * cal_mult * anomaly_mult
             n = _poisson(rng, lam)

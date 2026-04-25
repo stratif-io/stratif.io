@@ -24,7 +24,6 @@ from seeders.simulator.axes._defaults import default_axis_registry
 from seeders.simulator.cohort_model import active_days_for_user
 from seeders.simulator.config import SimulationConfig
 from seeders.simulator.protocols import SimulationState
-from seeders.simulator.realism.calendars import calendar_multiplier
 from seeders.simulator.realism.time_curves import get_dow_weights
 
 _PREVIEW_USER_CAP = 5_000
@@ -134,7 +133,7 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
     for d in range(state.window_days):
         local_date = (day_0 + timedelta(days=d)).date()
         dow_mult = dow_weights[local_date.weekday()]
-        cal_mult = calendar_multiplier(local_date, "US", "generic")
+        cal_mult = 1.0
         ano_mult = arrivals_multiplier(parsed_anomalies, local_date)
         g = arrival_curve(d)
         g_curve.append(g)

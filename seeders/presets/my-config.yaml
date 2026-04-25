@@ -1,8 +1,8 @@
 name: my-config
 description: ''
 axes:
-  growth: decline
-  stickiness: no_churn
+  growth: declining
+  stickiness: sticky
   virality: none
 markov:
   events:
