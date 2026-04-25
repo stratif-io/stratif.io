@@ -10,7 +10,6 @@ from .pivot import router as pivot_router
 from .query_studio import router as query_studio_router
 from .retention import router as retention_router
 from .sessions import router as sessions_router
-from .simulator import router as simulator_router
 
 __all__ = [
     "events_router",
@@ -23,5 +22,4 @@ __all__ = [
     "mission_control_router",
     "query_studio_router",
     "people_router",
-    "simulator_router",
 ]
