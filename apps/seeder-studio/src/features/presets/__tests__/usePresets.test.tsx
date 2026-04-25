@@ -25,23 +25,21 @@ describe("usePresets", () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        presets: [
-          {
+      json: async () => [
+        {
+          name: "a",
+          description: "Test preset",
+          config: {
             name: "a",
-            domain: "saas",
-            config: {
-              name: "a",
-              axes: {},
-              markov: {
-                events: [{ name: "PageView" }],
-                start: { PageView: 1.0 },
-                transitions: { PageView: { "[end]": 1.0 } },
-              },
+            axes: {},
+            markov: {
+              events: [{ name: "PageView" }],
+              start: { PageView: 1.0 },
+              transitions: { PageView: { "[end]": 1.0 } },
             },
           },
-        ],
-      }),
+        },
+      ],
     });
     const { result } = renderHook(() => usePresets(), { wrapper: wrapper() });
     expect(result.current.loading).toBe(true);

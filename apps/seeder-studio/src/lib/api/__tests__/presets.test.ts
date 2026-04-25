@@ -9,24 +9,22 @@ describe("fetchPresets", () => {
     vi.unstubAllGlobals();
   });
 
-  it("GETs /api/simulator/presets and returns the parsed list", async () => {
-    const body = {
-      presets: [
-        {
+  it("GETs http://localhost:8001/presets and returns the parsed list", async () => {
+    const body = [
+      {
+        name: "a",
+        description: "Test preset",
+        config: {
           name: "a",
-          domain: "saas",
-          config: {
-            name: "a",
-            axes: {},
-            markov: {
-              events: [{ name: "PageView" }],
-              start: { PageView: 1.0 },
-              transitions: { PageView: { "[end]": 1.0 } },
-            },
+          axes: {},
+          markov: {
+            events: [{ name: "PageView" }],
+            start: { PageView: 1.0 },
+            transitions: { PageView: { "[end]": 1.0 } },
           },
         },
-      ],
-    };
+      },
+    ];
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -35,7 +33,9 @@ describe("fetchPresets", () => {
     const presets = await fetchPresets();
     expect(presets).toHaveLength(1);
     expect(presets[0].config?.name).toBe("a");
-    expect(globalThis.fetch).toHaveBeenCalledWith("/api/simulator/presets");
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "http://localhost:8001/presets",
+    );
   });
 
   it("throws when the response is not ok", async () => {
@@ -52,7 +52,7 @@ describe("fetchPresets", () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({ presets: [{ name: "bad" }] }),
+      json: async () => [{ name: "bad" }],
     });
     await expect(fetchPresets()).rejects.toThrow();
   });

@@ -5,8 +5,16 @@ import { TopBar } from "../TopBar";
 import { useSeederStore, blankConfig } from "@/stores/seederStore";
 
 const PRESETS = [
-  { name: "saas-growth", description: "SaaS growth scenario" },
-  { name: "e-commerce", description: "E-commerce scenario" },
+  {
+    name: "saas-growth",
+    description: "SaaS growth scenario",
+    config: blankConfig(),
+  },
+  {
+    name: "e-commerce",
+    description: "E-commerce scenario",
+    config: blankConfig(),
+  },
 ];
 
 beforeEach(() => {
@@ -141,7 +149,9 @@ describe("TopBar", () => {
   });
 });
 
-const mockPresets = [{ name: "Viral", config: blankConfig() }];
+const mockPresets = [
+  { name: "Viral", description: "Viral scenario", config: blankConfig() },
+];
 
 describe("TopBar + Event button", () => {
   beforeEach(() => {
