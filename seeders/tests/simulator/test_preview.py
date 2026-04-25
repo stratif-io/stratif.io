@@ -76,4 +76,15 @@ def test_preview_events_positive_when_active_users_positive():
     result = run_preview(_minimal_config())
     for d in range(len(result.days)):
         if result.active_users[d] > 0:
-            assert result.events[d] >= 0
+            assert result.events[d] > 0
+
+
+def test_preview_reactivated_never_exceeds_active_users():
+    result = run_preview(_minimal_config())
+    for d in range(len(result.days)):
+        assert result.reactivated[d] <= result.active_users[d]
+
+
+def test_preview_reactivated_day_zero_is_zero():
+    result = run_preview(_minimal_config())
+    assert result.reactivated[0] == 0

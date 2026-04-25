@@ -71,9 +71,10 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
     axis_reg = default_axis_registry()
     for name, value in config.axes.items():
         try:
-            axis_reg.get(name).apply(value, state)
+            axis = axis_reg.get(name)
         except KeyError:
-            continue
+            continue  # unknown axis — silently skip
+        axis.apply(value, state)
 
     parsed_anomalies = parse_anomalies(state.anomalies, state.now, state.window_days)
     day_0 = state.now - timedelta(days=state.window_days)
@@ -83,8 +84,9 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
     rng = random.Random(config.random_seed or 0)
     dow_weights = get_dow_weights("generic")
 
-    # Scale arrivals down for performance; scale results back up at the end.
-    scale_factor = min(1.0, _PREVIEW_USER_CAP / max(state.total_users, 1))
+    # Downsample arrivals for performance; scale reported numbers back up.
+    arrival_cap = min(1.0, _PREVIEW_USER_CAP / max(state.total_users, 1))
+    report_scale = 1.0 / arrival_cap if arrival_cap > 0 else 1.0
 
     # --- sample arrivals ---
     new_users_raw: list[int] = []
@@ -93,7 +95,7 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
         dow_mult = dow_weights[local_date.weekday()]
         cal_mult = calendar_multiplier(local_date, "US", "generic")
         anomaly_mult = arrivals_multiplier(parsed_anomalies, local_date)
-        lam = arrival_curve(d) * dow_mult * cal_mult * anomaly_mult * scale_factor
+        lam = arrival_curve(d) * dow_mult * cal_mult * anomaly_mult * arrival_cap
         new_users_raw.append(_poisson(rng, lam))
 
     # --- simulate individual users, track active day sets ---
@@ -124,13 +126,13 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
     for d in range(1, state.window_days):
         churned_raw[d] = len(active_sets[d - 1] - active_sets[d])
         gap = active_sets[d] - active_sets[d - 1]
-        reactivated_raw[d] = sum(1 for u in gap if first_day.get(u, d) < d)
+        reactivated_raw[d] = sum(1 for u in gap if first_day[u] < d)
 
     avg_eps = _avg_events_per_session(config)
     session_mult = state.session_freq_multiplier
 
     def _scale(v: float) -> int:
-        return round(v / scale_factor) if scale_factor > 0 else 0
+        return round(v * report_scale)
 
     cumulative = 0
     stickiness: list[float] = []
