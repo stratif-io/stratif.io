@@ -80,7 +80,9 @@ def _simulate_cohorts(
         for _ in range(n):
             first_day[uid] = d
             if state.retention_params is not None:
-                days_active = active_days_for_user(rng, state.retention_params, d, window)
+                days_active = active_days_for_user(
+                    rng, state.retention_params, d, window
+                )
             elif state.hazard_curve is not None:
                 lifetime = state.hazard_curve(rng)
                 days_active = list(range(d, min(d + lifetime + 1, window)))
@@ -141,8 +143,7 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
 
     # ── J(t) = A(t) · (1 + σZ) ────────────────────────────────────────────────
     j_curve: list[float] = [
-        max(0.0, a * (1.0 + sigma * rng.gauss(0.0, 1.0)))
-        for a in a_curve
+        max(0.0, a * (1.0 + sigma * rng.gauss(0.0, 1.0))) for a in a_curve
     ]
 
     # ── Pass 1: normalize J → preliminary arrivals → preliminary DAU ──────────
@@ -195,11 +196,11 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
     def _scale(v: float) -> int:
         return round(v * report_scale)
 
-    cumulative = 0
     stickiness: list[float] = []
     for d in range(state.window_days):
-        cumulative += new_users_raw[d]
-        stickiness.append(active_users_raw[d] / max(cumulative, 1))
+        mau_window = active_sets[max(0, d - 29) : d + 1]
+        mau = len(set().union(*mau_window)) if mau_window else 0
+        stickiness.append(active_users_raw[d] / max(mau, 1))
 
     def _norm_curve(curve: list[float]) -> list[float]:
         """Normalize a raw curve to have the same total as new_users (≈ total_users).
@@ -215,10 +216,7 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
 
     # v_curve is already in "normalized" space (v_sum is denominator for new_users),
     # so just scale to report space.
-    v_norm = [
-        (v / v_sum) * state.total_users if v_sum > 0 else 0.0
-        for v in v_curve
-    ]
+    v_norm = [(v / v_sum) * state.total_users if v_sum > 0 else 0.0 for v in v_curve]
 
     return PreviewResult(
         days=list(range(state.window_days)),
