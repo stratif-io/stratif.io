@@ -44,9 +44,9 @@ export function mapToTwinOutput(result: PreviewResult): TwinOutput {
     arrivals: result.new_users,
     pipeline: {
       growth: result.new_users,
-      anomalies: result.new_users,
-      jitter: result.new_users,
-      virality: result.new_users,
+      anomalies: [],
+      jitter: [],
+      virality: [],
     },
     events: result.events,
     activeUsers: result.active_users,
