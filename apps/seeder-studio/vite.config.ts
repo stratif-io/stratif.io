@@ -16,7 +16,7 @@ export default defineConfig({
       { find: "@", replacement: path.resolve(__dirname, "./src") },
       {
         find: "@stratif-io/web/styles.css",
-        replacement: path.resolve(__dirname, "../web/dist/index.css"),
+        replacement: path.resolve(__dirname, "../web/frontend/index.css"),
       },
       {
         find: "@stratif-io/web",
