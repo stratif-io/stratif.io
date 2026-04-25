@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSeederStore } from "@/stores/seederStore";
-import type { TwinOutput } from "@/lib/twin/types";
+import type { TwinOutput } from "@/lib/api/simulation";
 import { fetchSimulation } from "@/lib/api/simulation";
 
 const EMPTY_OUTPUT: TwinOutput = {

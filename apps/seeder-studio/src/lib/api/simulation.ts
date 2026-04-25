@@ -1,5 +1,22 @@
-import type { TwinOutput } from "@/lib/twin/types";
 import type { SimulationConfigOutput } from "@/lib/yaml/schema";
+
+export interface TwinOutput {
+  days: number;
+  arrivals: number[];
+  pipeline: {
+    growth: number[];
+    anomalies: number[];
+    jitter: number[];
+    virality: number[];
+  };
+  events: number[];
+  activeUsers: number[];
+  newUsers: number[];
+  churnedUsers: number[];
+  reactivatedUsers: number[];
+  stickiness: (number | null)[];
+  totalUsers: number[];
+}
 
 const SEED_SERVER_URL =
   import.meta.env.VITE_SEED_SERVER_URL ?? "http://localhost:8001";
