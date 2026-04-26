@@ -2,7 +2,8 @@
   "name": "stratifio-oss",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "dev": "bun run --filter @stratif-io/web dev",
