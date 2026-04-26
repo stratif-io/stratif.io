@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "dev": "bun run --filter @stratif-io/web dev",
-    "dev:studio": "bun run --filter @stratifio/seeder-studio dev",
+    "dev:studio": "bun run build:lib && bun run --filter @stratifio/seeder-studio dev",
     "build": "bun run --filter @stratif-io/web build",
     "build:studio": "bun run --filter @stratifio/seeder-studio build",
     "preview": "bun run --filter @stratif-io/web preview",

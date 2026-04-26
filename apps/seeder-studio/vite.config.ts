@@ -12,7 +12,6 @@ export default defineConfig({
     },
   },
   resolve: {
-    conditions: ["development", "browser", "module", "import", "default"],
     alias: [
       { find: "@", replacement: path.resolve(__dirname, "./src") },
       {
@@ -21,7 +20,7 @@ export default defineConfig({
       },
       {
         find: "@stratif-io/web",
-        replacement: path.resolve(__dirname, "../web/frontend/index.ts"),
+        replacement: path.resolve(__dirname, "../web/dist/index.js"),
       },
     ],
   },
