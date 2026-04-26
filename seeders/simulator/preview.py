@@ -193,10 +193,16 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         return round(v * report_scale)
 
     stickiness: list[float] = []
+    last_active: dict[int, int] = {}
+    mau_set: set[int] = set()
     for d in range(window):
-        mau_window = active_sets[max(0, d - 29) : d + 1]
-        mau = len(set().union(*mau_window)) if mau_window else 0
-        stickiness.append(active_users_raw[d] / max(mau, 1))
+        for uid in active_sets[d]:
+            last_active[uid] = d
+            mau_set.add(uid)
+        to_evict = [uid for uid in mau_set if last_active[uid] < d - 29]
+        for uid in to_evict:
+            mau_set.discard(uid)
+        stickiness.append(active_users_raw[d] / max(len(mau_set), 1))
 
     def _norm_curve(curve: list[float]) -> list[float]:
         """Scale a pipeline curve to the same y-axis as new_users for chart overlay."""
@@ -237,6 +243,8 @@ def _solve_starting_rate(config: SimulationConfig, target_total: int) -> float:
             lo = mid
         else:
             hi = mid
+        if (hi - lo) / max(target_total, 1) < 1e-4:  # converged to <0.01%
+            break
     return (lo + hi) / 2.0
 
 
