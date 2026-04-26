@@ -915,6 +915,42 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   // Resolve pipeline config — fallback to undefined (triggers static formula)
   const pipeline = METRIC_PIPELINES[metricKey];
 
+  // In rate mode, rewrite newUsers pipeline steps to remove U references
+  const effectiveSteps = useMemo(() => {
+    if (!pipeline || metricKey !== "newUsers" || simulationMode !== "rate")
+      return pipeline?.steps;
+    return pipeline.steps.map((step) => {
+      // Growth curve: swap U → λ₀ in tooltip symbols and axis map
+      if (step.lineKey === "g_growth") {
+        return {
+          ...step,
+          tooltipVarSymbols: ["t", "G(t)", "\\lambda_0", "T"],
+          tooltipParamSyms: ["λ₀", "T"],
+          axisVarMap: { "G(t)": "growth" },
+        };
+      }
+      // Poisson draw: no U in rate mode
+      if (step.lineKey === "__main__") {
+        return {
+          ...step,
+          tooltipVarSymbols: ["N(t)", "\\lambda(t)", "V(t)"],
+          tooltipParamSyms: ["λ₀", "T"],
+          axisVarMap: {},
+        };
+      }
+      return step;
+    });
+  }, [pipeline, metricKey, simulationMode]);
+
+  // In rate mode, surface λ₀ and hide the goal-only U variable
+  const effectiveVars = useMemo(() => {
+    if (metricKey !== "newUsers") return entry.variables;
+    if (simulationMode === "rate")
+      return entry.variables.filter((v) => v.symbol !== "U");
+    // goal mode: hide λ₀ (not applicable)
+    return entry.variables.filter((v) => v.symbol !== "\\lambda_0");
+  }, [entry.variables, metricKey, simulationMode]);
+
   // Intermediate cols filtered by checked steps (only when pipeline exists)
   const activeCols = pipeline
     ? pipeline.intermediateCols.filter((c) => checkedSteps.has(c.stepKey))
@@ -994,7 +1030,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                     clickedKey={clickedLineKey}
                     onHover={setHoveredLineKey}
                     onClick={handleFormulaClick}
-                    steps={pipeline.steps}
+                    steps={effectiveSteps ?? pipeline.steps}
                     axisMap={pipeline.axisMap}
                     footnote={pipeline.footnote}
                     latexOverrides={
@@ -1014,7 +1050,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                     onAxisChange={setAxis}
                     checkedSteps={checkedSteps}
                     onToggleStep={toggleStep}
-                    allVars={entry.variables}
+                    allVars={effectiveVars}
                     allParams={params}
                   />
 
@@ -1052,7 +1088,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                     </p>
                     <table className="text-xs w-full">
                       <tbody>
-                        {entry.variables.map((v) => (
+                        {effectiveVars.map((v) => (
                           <tr
                             key={v.symbol}
                             className="border-t border-border/30"

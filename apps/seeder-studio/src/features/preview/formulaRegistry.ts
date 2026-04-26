@@ -71,30 +71,47 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
       { symbol: "N(t)", meaning: "new users arriving on day t" },
       {
         symbol: "\\lambda(t)",
-        meaning: "expected new-user arrival rate on day t",
+        meaning: "expected new-user arrival rate on day t (users/day)",
       },
-      { symbol: "U", meaning: "target total users over the window T" },
+      {
+        symbol: "\\lambda_0",
+        meaning:
+          "starting arrival rate on day 1 (users/day) — set directly; shape(0) = 1 by construction",
+      },
+      {
+        symbol: "U",
+        meaning: "target total users over the window T (goal mode)",
+      },
       { symbol: "T", meaning: "simulation window length in days" },
       {
         symbol: "G(t)",
-        meaning: "growth curve — baseline arrival shape (Growth axis)",
+        meaning:
+          "growth curve — baseline arrival rate shape (Growth axis). G(t) = λ₀ · shape(t) in rate mode, G(t) = (U/T) · shape(t) in goal mode.",
       },
       {
         symbol: "A(t)",
         meaning:
-          "anomaly multipliers applied on day t (spikes / dips / outages)",
+          "after anomaly multipliers: A(t) = G(t) · ∏ₖ mₖ(t), where mₖ is the multiplier for event k on day t",
       },
-      { symbol: "J(t)", meaning: "after stochastic day-level jitter" },
+      {
+        symbol: "J(t)",
+        meaning: "after stochastic jitter: J(t) = A(t) · (1 + σZ), Z ∼ 𝒩(0,1)",
+      },
       {
         symbol: "V(t)",
-        meaning: "after viral amplification: V(t) = J(t) + K·DAU(t−1)",
+        meaning:
+          "after viral amplification: V(t) = J(t) + K · DAU(t−1). In rate mode this is already in users/day; in goal mode it is rescaled by U/ΣV(s).",
       },
       {
         symbol: "K",
         meaning:
-          "viral K-factor — new users brought in per active user (Virality axis)",
+          "viral K-factor — additional new users per daily active user (Virality axis)",
       },
-      { symbol: "\\sigma", meaning: "jitter standard deviation (Noise axis)" },
+      {
+        symbol: "\\sigma",
+        meaning:
+          "jitter amplitude — standard deviation of the day-level noise (Noise axis)",
+      },
       { symbol: "Z", meaning: "standard normal draw — Z ∼ 𝒩(0,1)" },
     ],
   },
