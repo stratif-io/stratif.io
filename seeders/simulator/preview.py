@@ -1,15 +1,19 @@
 """Preview engine — runs simulation in-memory and returns daily timeseries.
 
 Formula (matches the UI formula panel):
-  G(t) = arrival_curve(t)                           # growth axis shape
+  G(t) = starting_rate × s(t)                       # rate × shape multiplier
   A(t) = G(t) · dow(t) · cal(t) · Πk mk(t)         # anomaly multipliers
   J(t) = A(t) · (1 + σZ),  Z ~ N(0,1)              # stochastic jitter
-  V(t) = J(t) + K · (DAU(t-1) / U) · G(t)          # viral amplification
-  N(t) ~ Poisson(V(t) / Σs V(s) · U)               # normalized Poisson draw
+  V(t) = J(t) + K · (DAU(t-1) / cap) · G(t)        # viral amplification
+  N(t) ~ Poisson(V(t) · arrival_cap)               # Poisson draw (capped)
+
+Two modes:
+  Rate-driven: starting_rate is given directly; total users emerges naturally.
+  Goal-driven: binary search finds starting_rate that produces ≈ total_users.
 
 Two-pass approach:
-  Pass 1: normalize J → draw N₀ → simulate cohorts → get DAU₀(t)
-  Pass 2: add viral term using DAU₀ → renormalize V → draw final N(t)
+  Pass 1: compute J → draw N₀ → simulate cohorts → get DAU₀(t) for virality
+  Pass 2: add viral term → draw final N(t) → final cohort simulation
 """
 
 from __future__ import annotations
@@ -94,13 +98,15 @@ def _simulate_cohorts(
     return active_sets, first_day
 
 
-def run_preview(config: SimulationConfig) -> PreviewResult:
-    """Run the simulation engine in preview mode and return daily timeseries."""
+def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewResult:
+    """Core rate-driven engine. Total users emerges naturally from starting_rate."""
     scale = config.resolved_scale()
+    window = scale.window_days
+
     state = SimulationState(
         random_seed=config.random_seed or 0,
-        total_users=scale.total_users,  # type: ignore[arg-type]
-        window_days=scale.window_days,
+        total_users=0,  # unused in rate-driven path
+        window_days=window,
         now=datetime.now(UTC),
     )
     state.anomalies = list(config.anomalies)
@@ -114,78 +120,60 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
             continue
         axis.apply(value, state)
 
-    parsed_anomalies = parse_anomalies(state.anomalies, state.now, state.window_days)
-    day_0 = state.now - timedelta(days=state.window_days)
-    arrival_curve = state.arrival_curve or (
-        lambda d: state.total_users / state.window_days
-    )
+    parsed_anomalies = parse_anomalies(state.anomalies, state.now, window)
+    day_0 = state.now - timedelta(days=window)
+    shape = state.arrival_curve or (lambda d: 1.0)
     rng = random.Random(config.random_seed or 0)
     dow_weights = get_dow_weights("generic")
 
     sigma = state.jitter_sigma
     K = state.virality_weight
 
-    arrival_cap = min(1.0, _PREVIEW_USER_CAP / max(state.total_users, 1))
-    report_scale = 1.0 / arrival_cap if arrival_cap > 0 else 1.0
-
-    # ── Pre-compute per-day multipliers ───────────────────────────────────────
+    # ── G(t) = starting_rate × s(d) ──────────────────────────────────────────
     g_curve: list[float] = []
-    a_curve: list[float] = []  # after anomaly/dow/cal
-
-    for d in range(state.window_days):
+    a_curve: list[float] = []
+    for d in range(window):
         local_date = (day_0 + timedelta(days=d)).date()
         dow_mult = dow_weights[local_date.weekday()]
-        cal_mult = 1.0
         ano_mult = arrivals_multiplier(parsed_anomalies, local_date)
-        g = arrival_curve(d)
+        g = starting_rate * shape(d)
         g_curve.append(g)
-        a_curve.append(g * dow_mult * cal_mult * ano_mult)
+        a_curve.append(g * dow_mult * ano_mult)
 
-    # ── J(t) = A(t) · (1 + σZ) ────────────────────────────────────────────────
+    # ── J(t) = A(t) · (1 + σZ) ───────────────────────────────────────────────
     j_curve: list[float] = [
         max(0.0, a * (1.0 + sigma * rng.gauss(0.0, 1.0))) for a in a_curve
     ]
 
-    # ── Pass 1: normalize J → preliminary arrivals → preliminary DAU ──────────
-    j_sum = sum(j_curve)
-    rng1 = random.Random((config.random_seed or 0) + 1)
-    if j_sum > 0:
-        n0 = [
-            _poisson(rng1, (j / j_sum) * state.total_users * arrival_cap)
-            for j in j_curve
-        ]
-    else:
-        n0 = [0] * state.window_days
+    # Arrival cap: keep simulation under _PREVIEW_USER_CAP for UI performance
+    expected_total = max(sum(j_curve), 1.0)
+    arrival_cap = min(1.0, _PREVIEW_USER_CAP / expected_total)
+    report_scale = 1.0 / arrival_cap
 
+    # ── Pass 1: preliminary arrivals → preliminary DAU ───────────────────────
+    rng1 = random.Random((config.random_seed or 0) + 1)
+    n0 = [_poisson(rng1, j * arrival_cap) for j in j_curve]
     active_sets0, _ = _simulate_cohorts(n0, state, rng1)
     dau0 = [len(s) for s in active_sets0]
 
-    # ── V(t) = J(t) + K · (DAU(t-1) / U) · G(t) ─────────────────────────────
-    # Scale DAU to uncapped space for proper comparison with G(t)
-    cap_total = state.total_users * arrival_cap
+    # ── V(t) = J(t) + K · (DAU(t-1) / expected_cap) · G(t) ──────────────────
+    expected_cap = expected_total * arrival_cap
     v_curve: list[float] = []
-    for d in range(state.window_days):
+    for d in range(window):
         dau_prev = dau0[d - 1] if d > 0 else 0
-        viral = K * (dau_prev / max(cap_total, 1)) * g_curve[d] * arrival_cap
+        viral = K * (dau_prev / max(expected_cap, 1)) * g_curve[d] * arrival_cap
         v_curve.append(max(0.0, j_curve[d] * arrival_cap + viral))
 
-    # ── Pass 2: normalize V → final Poisson draw ──────────────────────────────
-    v_sum = sum(v_curve)
-    if v_sum > 0:
-        new_users_raw = [
-            _poisson(rng, (v / v_sum) * state.total_users * arrival_cap)
-            for v in v_curve
-        ]
-    else:
-        new_users_raw = [0] * state.window_days
+    # ── Pass 2: final Poisson draw ────────────────────────────────────────────
+    new_users_raw = [_poisson(rng, v) for v in v_curve]
 
     # ── Final cohort simulation ───────────────────────────────────────────────
     active_sets, first_day = _simulate_cohorts(new_users_raw, state, rng)
     active_users_raw = [len(s) for s in active_sets]
 
-    churned_raw = [0] * state.window_days
-    reactivated_raw = [0] * state.window_days
-    for d in range(1, state.window_days):
+    churned_raw = [0] * window
+    reactivated_raw = [0] * window
+    for d in range(1, window):
         churned_raw[d] = len(active_sets[d - 1] - active_sets[d])
         gap = active_sets[d] - active_sets[d - 1]
         reactivated_raw[d] = sum(1 for u in gap if first_day[u] < d)
@@ -197,36 +185,29 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
         return round(v * report_scale)
 
     stickiness: list[float] = []
-    for d in range(state.window_days):
+    for d in range(window):
         mau_window = active_sets[max(0, d - 29) : d + 1]
         mau = len(set().union(*mau_window)) if mau_window else 0
         stickiness.append(active_users_raw[d] / max(mau, 1))
 
     def _norm_curve(curve: list[float]) -> list[float]:
-        """Normalize a raw curve to have the same total as new_users (≈ total_users).
-
-        This puts all pipeline stages on the same y-axis scale as new_users
-        so they can be overlaid on the same chart.
-        """
+        """Scale a pipeline curve to the same y-axis as new_users for chart overlay."""
         total = sum(curve)
         if total <= 0:
             return [0.0] * len(curve)
-        scale = state.total_users / total
-        return [v * scale for v in curve]
+        new_users_total = sum(new_users_raw) * report_scale
+        return [v * (new_users_total / total) for v in curve]
 
-    # v_curve is already in "normalized" space (v_sum is denominator for new_users),
-    # so just scale to report space.
-    v_norm = [(v / v_sum) * state.total_users if v_sum > 0 else 0.0 for v in v_curve]
+    v_norm = [v * report_scale for v in v_curve]
 
     return PreviewResult(
-        days=list(range(state.window_days)),
+        days=list(range(window)),
         new_users=[_scale(v) for v in new_users_raw],
         active_users=[_scale(v) for v in active_users_raw],
         churned=[_scale(v) for v in churned_raw],
         reactivated=[_scale(v) for v in reactivated_raw],
         events=[
-            _scale(active_users_raw[d] * session_mult * avg_eps)
-            for d in range(state.window_days)
+            _scale(active_users_raw[d] * session_mult * avg_eps) for d in range(window)
         ],
         stickiness=stickiness,
         growth_curve=_norm_curve(g_curve),
@@ -234,3 +215,26 @@ def run_preview(config: SimulationConfig) -> PreviewResult:
         jitter_curve=_norm_curve(j_curve),
         virality_curve=v_norm,
     )
+
+
+def _solve_starting_rate(config: SimulationConfig, target_total: int) -> float:
+    """Binary search for starting_rate that produces ~target_total new users."""
+    lo, hi = 0.1, float(target_total) * 10.0
+    for _ in range(20):
+        mid = (lo + hi) / 2.0
+        result = _run_with_rate(config, mid)
+        if sum(result.new_users) < target_total:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
+
+
+def run_preview(config: SimulationConfig) -> PreviewResult:
+    """Dispatch to rate-driven or goal-driven mode based on config."""
+    scale = config.resolved_scale()
+    if scale.total_users is not None:
+        starting_rate = _solve_starting_rate(config, scale.total_users)
+        return _run_with_rate(config, starting_rate)
+    starting_rate = scale.starting_rate or 100.0
+    return _run_with_rate(config, starting_rate)
