@@ -46,6 +46,7 @@ class PreviewResult:
     anomaly_curve: list[float]
     jitter_curve: list[float]
     virality_curve: list[float]
+    arrival_cap: float  # fraction applied before each Poisson draw; real λ = virality_curve[d] * arrival_cap
 
 
 def _poisson(rng: random.Random, lam: float) -> int:
@@ -236,6 +237,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         anomaly_curve=_norm_curve(a_curve),
         jitter_curve=_norm_curve(j_curve),
         virality_curve=v_norm,
+        arrival_cap=arrival_cap,
     )
 
 

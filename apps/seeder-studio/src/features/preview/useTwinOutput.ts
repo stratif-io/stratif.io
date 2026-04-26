@@ -15,6 +15,7 @@ const EMPTY_OUTPUT: TwinOutput = {
   reactivatedUsers: [],
   stickiness: [],
   totalUsers: [],
+  arrivalCap: 1,
 };
 
 export interface TwinOutputWithLoading extends TwinOutput {

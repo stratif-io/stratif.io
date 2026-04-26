@@ -16,6 +16,8 @@ export interface TwinOutput {
   reactivatedUsers: number[];
   stickiness: (number | null)[];
   totalUsers: number[];
+  /** Fraction applied before each Poisson draw. Real λ(t) = pipeline.virality[t] × arrivalCap */
+  arrivalCap: number;
 }
 
 const SEED_SERVER_URL =
@@ -33,6 +35,7 @@ export interface PreviewResult {
   anomaly_curve: number[];
   jitter_curve: number[];
   virality_curve: number[];
+  arrival_cap: number;
 }
 
 export function mapToTwinOutput(result: PreviewResult): TwinOutput {
@@ -59,6 +62,7 @@ export function mapToTwinOutput(result: PreviewResult): TwinOutput {
     reactivatedUsers: result.reactivated,
     stickiness: result.stickiness,
     totalUsers,
+    arrivalCap: result.arrival_cap,
   };
 }
 

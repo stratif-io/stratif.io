@@ -70,11 +70,12 @@ function buildDailyRows(
         };
       }
       case "newUsers": {
-        const rate = out.pipeline.virality[i] ?? 0;
+        const displayRate = out.pipeline.virality[i] ?? 0;
+        const realLambda = displayRate * out.arrivalCap;
         return {
           day,
-          formula: `λ(${day})=${fix1(rate)}`,
-          computation: `Poisson(${fix1(rate)})`,
+          formula: `λ(${day})=${fix1(displayRate)}`,
+          computation: `Poisson(${fix1(realLambda)})`,
           result: fn(out.newUsers[i]),
         };
       }
