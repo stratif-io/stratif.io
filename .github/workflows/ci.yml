@@ -44,7 +44,7 @@ jobs:
         run: bun run build
 
       - name: Build design system library
-        run: bun run --filter @stratif-io/web build:lib
+        run: bun run build:lib
 
       - name: Unit tests
         run: bun run test:run
@@ -79,5 +79,5 @@ jobs:
         run: uv run ruff check . && uv run ruff format --check .
 
       - name: Unit tests
-        run: uv run pytest --ignore=backend/tests/e2e -m "not integration and not e2e" -v
+        run: uv run pytest --ignore=services/analytics/tests/e2e -m "not integration and not e2e" -v
 

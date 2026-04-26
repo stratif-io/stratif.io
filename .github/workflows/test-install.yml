@@ -30,10 +30,10 @@ jobs:
 
       - name: Build frontend
         run: bun run build
-        working-directory: apps/web
+        working-directory: apps/analytics
 
       - name: Package frontend tarball
-        run: tar -czf /tmp/frontend.tar.gz -C apps/web dist
+        run: tar -czf /tmp/frontend.tar.gz -C apps/analytics dist
 
       # ── Run install.sh against local artifacts ────────────────────────────
       - name: Run install.sh
@@ -76,4 +76,4 @@ jobs:
       # ── Cleanup ───────────────────────────────────────────────────────────
       - name: Stop server
         if: always()
-        run: pkill -f "uvicorn backend.main:app" 2>/dev/null || true
+        run: pkill -f "uvicorn services.analytics.main:app" 2>/dev/null || true
