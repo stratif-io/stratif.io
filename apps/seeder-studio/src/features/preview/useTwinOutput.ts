@@ -16,6 +16,7 @@ const EMPTY_OUTPUT: TwinOutput = {
   stickiness: [],
   totalUsers: [],
   arrivalCap: 1,
+  reportScale: 1,
 };
 
 export interface TwinOutputWithLoading extends TwinOutput {

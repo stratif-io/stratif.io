@@ -18,6 +18,8 @@ export interface TwinOutput {
   totalUsers: number[];
   /** Fraction applied before each Poisson draw. Real λ(t) = pipeline.virality[t] × arrivalCap */
   arrivalCap: number;
+  /** Multiplier applied after the Poisson draw. Displayed result = k × reportScale */
+  reportScale: number;
 }
 
 const SEED_SERVER_URL =
@@ -36,6 +38,7 @@ export interface PreviewResult {
   jitter_curve: number[];
   virality_curve: number[];
   arrival_cap: number;
+  report_scale: number;
 }
 
 export function mapToTwinOutput(result: PreviewResult): TwinOutput {
@@ -63,6 +66,7 @@ export function mapToTwinOutput(result: PreviewResult): TwinOutput {
     stickiness: result.stickiness,
     totalUsers,
     arrivalCap: result.arrival_cap,
+    reportScale: result.report_scale,
   };
 }
 

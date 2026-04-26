@@ -72,10 +72,15 @@ function buildDailyRows(
       case "newUsers": {
         const displayRate = out.pipeline.virality[i] ?? 0;
         const realLambda = displayRate * out.arrivalCap;
+        const scaled = out.reportScale > 1.01;
+        const k = scaled ? Math.round(out.newUsers[i] / out.reportScale) : null;
+        const computation = scaled
+          ? `Poisson(${fix1(realLambda)}) → k=${k} × ${Math.round(out.reportScale)}`
+          : `Poisson(${fix1(realLambda)})`;
         return {
           day,
           formula: `λ(${day})=${fix1(displayRate)}`,
-          computation: `Poisson(${fix1(realLambda)})`,
+          computation,
           result: fn(out.newUsers[i]),
         };
       }

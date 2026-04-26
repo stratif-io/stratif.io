@@ -47,6 +47,9 @@ class PreviewResult:
     jitter_curve: list[float]
     virality_curve: list[float]
     arrival_cap: float  # fraction applied before each Poisson draw; real λ = virality_curve[d] * arrival_cap
+    report_scale: (
+        float  # multiplier applied after Poisson draw; result = k * report_scale
+    )
 
 
 def _poisson(rng: random.Random, lam: float) -> int:
@@ -238,6 +241,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         jitter_curve=_norm_curve(j_curve),
         virality_curve=v_norm,
         arrival_cap=arrival_cap,
+        report_scale=report_scale,
     )
 
 
