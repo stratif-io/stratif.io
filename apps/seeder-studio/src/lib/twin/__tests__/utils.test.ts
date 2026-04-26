@@ -31,19 +31,51 @@ describe("parseDays", () => {
 });
 
 describe("resolveScale", () => {
-  it("returns the named tier defaults when no override is present", () => {
+  it("returns goal mode with named tier defaults when no override is present", () => {
     expect(resolveScale("small", undefined)).toEqual({
+      mode: "goal",
       total_users: 10000,
       window_days: 90,
     });
   });
-  it("applies overrides where set", () => {
+  it("applies total_users override in goal mode", () => {
     expect(resolveScale("small", { total_users: 5000 })).toEqual({
+      mode: "goal",
       total_users: 5000,
       window_days: 90,
     });
   });
   it("falls back to small when the axis value is unknown", () => {
-    expect(resolveScale("nonesuch", undefined).total_users).toBe(10000);
+    const result = resolveScale("nonesuch", undefined);
+    expect(result.mode).toBe("goal");
+    if (result.mode === "goal") {
+      expect(result.total_users).toBe(10000);
+    }
+  });
+  it("returns rate mode when starting_rate is set", () => {
+    expect(resolveScale("small", { starting_rate: 50 })).toEqual({
+      mode: "rate",
+      starting_rate: 50,
+      window_days: 90,
+    });
+  });
+  it("rate mode respects window_days override", () => {
+    expect(
+      resolveScale("small", { starting_rate: 100, window_days: 30 }),
+    ).toEqual({
+      mode: "rate",
+      starting_rate: 100,
+      window_days: 30,
+    });
+  });
+  it("starting_rate takes precedence over total_users when both set", () => {
+    const result = resolveScale("small", {
+      starting_rate: 75,
+      total_users: 9999,
+    });
+    expect(result.mode).toBe("rate");
+    if (result.mode === "rate") {
+      expect(result.starting_rate).toBe(75);
+    }
   });
 });

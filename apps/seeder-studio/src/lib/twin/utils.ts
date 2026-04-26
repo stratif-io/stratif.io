@@ -18,20 +18,32 @@ export function parseDays(s: string): number | null {
   return parseInt(match[1], 10);
 }
 
+export type ResolvedScale =
+  | { mode: "goal"; total_users: number; window_days: number }
+  | { mode: "rate"; starting_rate: number; window_days: number };
+
 export function resolveScale(
   axisValue: string,
   override: SimulationConfig["scale_config"],
-): { total_users: number; window_days: number } {
+): ResolvedScale {
   const axis = AXIS_SPEC.scale.values.find((v) => v.value === axisValue);
   const base =
     axis?.params ??
     AXIS_SPEC.scale.values.find((v) => v.value === "small")!.params;
+
+  const window_days =
+    (override?.window_days as number | undefined) ??
+    (base.window_days as number);
+
+  if (override?.starting_rate != null) {
+    return { mode: "rate", starting_rate: override.starting_rate, window_days };
+  }
+
   return {
+    mode: "goal",
     total_users:
       (override?.total_users as number | undefined) ??
       (base.total_users as number),
-    window_days:
-      (override?.window_days as number | undefined) ??
-      (base.window_days as number),
+    window_days,
   };
 }

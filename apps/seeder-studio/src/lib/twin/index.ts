@@ -4,7 +4,7 @@ export { ANOMALY_SPEC, anomalyTypeColor, defaultAnomaly } from "./anomalySpec";
 
 export { resolveScale, parseDays } from "./utils";
 
-import { getAxisValue, resolveAxes } from "./axisSpec";
+import { AXIS_SPEC, getAxisValue, resolveAxes } from "./axisSpec";
 import { resolveScale } from "./utils";
 import type { RetentionParams, TwinInput } from "./types";
 
@@ -15,10 +15,16 @@ export function resolveSimParams(config: TwinInput["config"]): {
   windowDays: number;
 } {
   const axes = resolveAxes(config.axes);
-  const { total_users, window_days } = resolveScale(
-    axes.scale,
-    config.scale_config,
-  );
+  const scale = resolveScale(axes.scale, config.scale_config);
+  // In rate-driven mode, totalUsers is not directly specified; fall back to the axis default.
+  const total_users =
+    scale.mode === "goal"
+      ? scale.total_users
+      : ((
+          AXIS_SPEC.scale.values.find((v) => v.value === axes.scale) ??
+          AXIS_SPEC.scale.values.find((v) => v.value === "small")!
+        ).params.total_users as number);
+  const window_days = scale.window_days;
 
   const stickinessParams = getAxisValue("stickiness", axes.stickiness)
     ?.params as RetentionParams | undefined;

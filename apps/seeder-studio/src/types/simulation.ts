@@ -21,6 +21,7 @@ export interface SimulationAnomaly {
 
 export interface SimulationScaleOverride {
   total_users?: number;
+  starting_rate?: number;
   window_days?: number;
 }
 
