@@ -14,16 +14,20 @@ import type { PresetEntry } from "@/lib/api/presets";
 import { cn } from "@/lib/cn";
 import { defaultAnomaly } from "@/lib/twin";
 import { resolveScale } from "@/lib/twin/utils";
-import { useTwinOutput } from "@/features/preview/useTwinOutput";
 
 interface Props {
   presets: PresetEntry[];
   selectedName: string | null;
   onSelectPreset: (name: string | null) => void;
+  isLoading?: boolean;
 }
 
-export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
-  const { isLoading } = useTwinOutput();
+export function TopBar({
+  presets,
+  selectedName,
+  onSelectPreset,
+  isLoading,
+}: Props) {
   const dirty = useSeederStore((s) => s.dirty);
   const uiStartDate = useSeederStore((s) => s.uiStartDate);
   const uiEndDate = useSeederStore((s) => s.uiEndDate);
