@@ -25,6 +25,7 @@ COPY apps/analytics/index.html apps/analytics/tsconfig.json apps/analytics/tscon
 COPY apps/analytics/public ./apps/analytics/public
 COPY apps/analytics/frontend ./apps/analytics/frontend
 COPY packages/design-system ./packages/design-system
+RUN bun run build:lib
 RUN bun run build
 
 # ── Stage 3: Install Python dependencies ──────────────────────────────────────

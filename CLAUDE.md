@@ -4,11 +4,27 @@
 
 stratif.io is a full-stack product analytics dashboard with a React/TypeScript frontend and Python/FastAPI backend. It connects to any SQL analytics warehouse (DuckDB, BigQuery, Snowflake, Redshift, etc.) via SQLGlot for dialect transpilation.
 
+## Monorepo layout
+
+```
+apps/
+  analytics/          # Main analytics frontend (React/Vite)
+  design-docs/        # Design documentation site
+  docs/               # Product documentation
+  event-simulator/    # Event simulation tooling
+packages/
+  design-system/      # Shared UI component library (@stratif-io/design-system)
+services/             # Python/FastAPI backend services
+  analytics/          # Analytics API service
+```
+
 ## Commands
 
 ```bash
 # Development
 bun run dev              # Frontend dev server (port 5173)
+bun run build:lib        # Build design-system library (run before build)
+bun run build            # TypeScript type-check + production bundle
 uv run serve             # Backend server (port 8000)
 uv run seed              # Seed configured connections from a preset (see seeders/README.md)
 
@@ -20,18 +36,19 @@ bun run test:coverage    # Unit tests with coverage
 # Quality checks (run before committing)
 bun run lint             # ESLint (zero warnings allowed)
 bun run format:check     # Prettier check
-bun run build            # TypeScript type-check + production build
 ```
 
 ## Architecture
 
-**Frontend** (`apps/web/frontend/`): React 18, Vite 6, Tailwind CSS v4, shadcn/ui, React Router v6
+**Frontend** (`apps/analytics/frontend/`): React 18, Vite 6, Tailwind CSS v4, shadcn/ui, React Router v6
 
-**Backend** (`stratifio/`): FastAPI, pydantic-settings, SQLGlot for SQL transpilation. Product DB (users, connections, credentials) defaults to SQLite in local/dev but can be any SQL database in production.
+**Design system** (`packages/design-system/`): Shared components, design tokens, and utilities published as `@stratif-io/design-system`. Always run `bun run build:lib` before `bun run build`.
+
+**Backend** (`services/analytics/`): FastAPI, pydantic-settings, SQLGlot for SQL transpilation. Product DB (users, connections, credentials) defaults to SQLite in local/dev but can be any SQL database in production.
 
 ### State management
 
-- **Server state**: TanStack Query v5 — all API data goes through custom hooks (`apps/web/frontend/features/*/hooks/useXxxData.ts`). Never use raw `fetch` in components:
+- **Server state**: TanStack Query v5 — all API data goes through custom hooks (`apps/analytics/frontend/features/*/hooks/useXxxData.ts`). Never use raw `fetch` in components:
   ```typescript
   // CORRECT
   const { data, isLoading } = useTrendData({
@@ -46,27 +63,27 @@ bun run build            # TypeScript type-check + production build
       .then(setData);
   }, []);
   ```
-- **Client state**: Zustand store (`apps/web/frontend/stores/app-store.ts`) — theme, dateRange, sidebarOpen, selectedEvent, selectedDevice. Persisted to localStorage.
+- **Client state**: Zustand store (`apps/analytics/frontend/stores/app-store.ts`) — theme, dateRange, sidebarOpen, selectedEvent, selectedDevice. Persisted to localStorage.
 
 ### Feature structure
 
-Each feature under `apps/web/frontend/features/` is self-contained:
+Each feature under `apps/analytics/frontend/features/` is self-contained:
 
 ```
-apps/web/frontend/features/<feature>/
+apps/analytics/frontend/features/<feature>/
 ├── components/       # Feature-specific UI
 ├── hooks/            # TanStack Query data hooks
 └── <Feature>Page.tsx # Page component
 ```
 
-Shared components live in `apps/web/frontend/components/` (ui/, layout/, charts/, data-table/).
+Shared components live in `packages/design-system/components/` and are imported via `@stratif-io/design-system`.
 
 ### Backend layers
 
-- `stratifio/api/` — FastAPI routers (trend, retention, events, paths, conversion, pivot, sessions)
-- `stratifio/services/` — Business logic (path_analyzer, transpiler)
-- `stratifio/db/` — DuckDB connection management and seeding
-- `stratifio/core/` — Auth (API key verification)
+- `services/analytics/api/` — FastAPI routers (trend, retention, events, paths, conversion, pivot, sessions)
+- `services/analytics/services/` — Business logic (path_analyzer, transpiler)
+- `services/analytics/db/` — DuckDB connection management and seeding
+- `services/analytics/core/` — Auth (API key verification)
 
 ### API endpoints
 
@@ -78,14 +95,14 @@ stratif.io stores encrypted credentials for client analytics databases. Security
 
 ### Credential storage
 
-- Credentials encrypted with Fernet (AES-128-CBC + HMAC-SHA256) via `stratifio/services/crypto.py`
+- Credentials encrypted with Fernet (AES-128-CBC + HMAC-SHA256) via `services/analytics/services/crypto.py`
 - Encryption key: 32+ char string → SHA-256 → Fernet key
 - Key stored in `STRATIFIO_ENCRYPTION_KEY` env var (never in code or git)
 - Product DB: SQLite at `STRATIFIO_PRODUCT_DB_PATH` (never expose this file)
 
 ### Auth
 
-- Passwords: bcrypt + SHA-256 pre-hash (`stratifio/core/password.py`)
+- Passwords: bcrypt + SHA-256 pre-hash (`services/analytics/core/password.py`)
 - Sessions: JWT in HTTP-only, Secure, SameSite=Lax cookie (`sio_session`)
 - Rate limiting on login (10/min) and register (3/min) via slowapi
 
@@ -103,45 +120,45 @@ stratif.io stores encrypted credentials for client analytics databases. Security
 
 ## Code conventions
 
-- **Imports**: Use `@/` path alias for `apps/web/frontend/` imports
-- **Styling**: Tailwind CSS v4 + `cn()` from `apps/web/frontend/lib/utils.ts`
-- **Validation**: Zod schemas in `apps/web/frontend/lib/schemas/`
-- **Types**: `apps/web/frontend/types/index.ts` or co-located with feature
-- **API functions**: `apps/web/frontend/lib/api/queries.ts`
-- **Charts**: Recharts wrappers in `apps/web/frontend/components/charts/`
+- **Imports**: Use `@/` path alias for `apps/analytics/frontend/` imports; use `@stratif-io/design-system` for shared components
+- **Styling**: Tailwind CSS v4 + `cn()` utility
+- **Validation**: Zod schemas in `apps/analytics/frontend/lib/schemas/`
+- **Types**: `apps/analytics/frontend/types/index.ts` or co-located with feature
+- **API functions**: `apps/analytics/frontend/lib/api/queries.ts`
+- **Charts**: Recharts wrappers in `apps/analytics/frontend/components/charts/`
 - **Tests**: Co-located in `__tests__/`, `*.test.ts(x)` pattern
 - **Formatting**: Prettier — single quotes, 2-space indent, 100 char width, trailing commas
-- **Backend config**: Env vars prefixed `STRATIFIO_` via pydantic-settings in `stratifio/config.py`
+- **Backend config**: Env vars prefixed `STRATIFIO_` via pydantic-settings in `services/analytics/config.py`
 
 ## Adding a feature
 
-1. Create `apps/web/frontend/features/<feature>/` with `components/` and `hooks/` subdirectories
-2. Add fetch function in `apps/web/frontend/lib/api/queries.ts`
+1. Create `apps/analytics/frontend/features/<feature>/` with `components/` and `hooks/` subdirectories
+2. Add fetch function in `apps/analytics/frontend/lib/api/queries.ts`
 3. Create TanStack Query hook in `hooks/useXxxData.ts`
 4. Create page component `<Feature>Page.tsx`
-5. Add route in `apps/web/frontend/App.tsx` (lazy-loaded with Suspense)
-6. Add nav item in `apps/web/frontend/components/layout/Sidebar.tsx`
-7. Add types in `apps/web/frontend/types/index.ts` and Zod schema in `apps/web/frontend/lib/schemas/`
+5. Add route in `apps/analytics/frontend/App.tsx` (lazy-loaded with Suspense)
+6. Add nav item in `apps/analytics/frontend/components/layout/Sidebar.tsx`
+7. Add types in `apps/analytics/frontend/types/index.ts` and Zod schema in `apps/analytics/frontend/lib/schemas/`
 
 ## Design system
 
-After creating or modifying any component, update the design system page to reflect the change. This keeps the design system in sync with the actual implementation.
+All shared UI components live in `packages/design-system/`. Every new component must be added there — no standalone one-off components.
 
-The design system lives at `apps/web/frontend/features/design-system/` and is split into sections:
+The design system is split into sections within its component library:
 
-- `components/sections/PrimitivesSection.tsx` — buttons, badges, inputs, selects, checkboxes, switches, sliders, progress, skeleton, spinner, avatar, separator, tooltip, popover, dialog, dropdown, card, scroll area, calendar, collapsible, save status
-- `components/sections/FeedbackSection.tsx` — LoadingState, EmptyState, QueryError, CardLoadingBar, UnderConstruction, NoConnectionScreen, Toast, ErrorBoundary
-- `components/sections/ChartsSection.tsx` — area, bar, line, donut, funnel, heatmap, sparkline, comparison charts
-- `components/sections/DataSection.tsx` — VirtualList, Pagination, DataTable, EventsTable, PivotTable
-- `components/sections/AppComponentsSection.tsx` — DateRangePicker, FilterSelect, DbLogo, FilterBar, GlobalFilters, QueryStatusIndicator
-- `components/sections/LayoutSection.tsx` — DashboardLayout, Header, Sidebar, PageTransition, ConnectionSelector
+- `components/ui/` — primitives: buttons, badges, inputs, selects, checkboxes, switches, progress, skeleton, avatar, separator, tooltip, popover, dialog, dropdown, card, scroll area, collapsible
+- `components/feedback/` — LoadingState, EmptyState, QueryError, Toast, ErrorBoundary
+- `components/charts/` — area, bar, line, donut, funnel, heatmap, sparkline, comparison charts
+- `components/data/` — VirtualList, Pagination, DataTable, EventsTable, PivotTable
+- `components/app/` — DateRangePicker, FilterSelect, DbLogo, FilterBar, GlobalFilters, QueryStatusIndicator
+- `components/layout/` — DashboardLayout, Header, Sidebar, PageTransition, ConnectionSelector
 
 Add new components to the appropriate section, or create a new section if none fits.
 
 ## Adding a chart
 
-- Feature-specific: create in `apps/web/frontend/features/<feature>/components/`
-- Shared/reusable: create in `apps/web/frontend/components/charts/` and export from its `index.ts`
+- Feature-specific: create in `apps/analytics/frontend/features/<feature>/components/`
+- Shared/reusable: create in `packages/design-system/components/charts/` and export from its `index.ts`
 - Use Recharts primitives; follow existing patterns for tooltips and styling
 
 ## Adding a SQL backend feature
