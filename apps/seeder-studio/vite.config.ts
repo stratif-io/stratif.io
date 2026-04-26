@@ -12,6 +12,7 @@ export default defineConfig({
     },
   },
   resolve: {
+    conditions: ["development", "browser", "module", "import", "default"],
     alias: [
       { find: "@", replacement: path.resolve(__dirname, "./src") },
       {
