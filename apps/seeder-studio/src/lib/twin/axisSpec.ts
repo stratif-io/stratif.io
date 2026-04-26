@@ -98,9 +98,9 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
         },
       },
       {
-        value: "sticky",
-        label: "sticky",
-        description: "Moderate retention. Day-7 retention ~22%.",
+        value: "normal",
+        label: "normal",
+        description: "Average retention. Day-7 retention ~15%.",
         params: {
           peakChurnRate: 0.5,
           baseChurnRate: 0.05,
@@ -111,9 +111,9 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
         },
       },
       {
-        value: "addictive",
-        label: "addictive",
-        description: "Low churn, strong reactivation. Day-7 retention ~45%.",
+        value: "sticky",
+        label: "sticky",
+        description: "Healthy retention. Day-7 retention ~30%.",
         params: {
           peakChurnRate: 0.25,
           baseChurnRate: 0.01,
@@ -124,9 +124,9 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
         },
       },
       {
-        value: "normal",
-        label: "normal",
-        description: "Virtually no churn. Day-7 retention ~95%.",
+        value: "addictive",
+        label: "addictive",
+        description: "Low churn, strong reactivation. Day-7 retention ~70%.",
         params: {
           peakChurnRate: 0.05,
           baseChurnRate: 0.001,
@@ -134,6 +134,19 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
           reactivationRate: 0.3,
           reactivationDecay: 0.95,
           maxDormantDays: 180,
+        },
+      },
+      {
+        value: "no_one_churns",
+        label: "no_one_churns",
+        description: "Virtually no churn. Day-7 retention ~99%.",
+        params: {
+          peakChurnRate: 0.001,
+          baseChurnRate: 0.0001,
+          churnDecayDays: 1,
+          reactivationRate: 0.8,
+          reactivationDecay: 0.99,
+          maxDormantDays: 365,
         },
       },
     ],

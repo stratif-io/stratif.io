@@ -52,6 +52,14 @@ _PARAMS: dict[str, RetentionParams] = {
         reactivation_decay=0.95,
         max_dormant_days=180,
     ),
+    "no_one_churns": RetentionParams(
+        peak_churn_rate=0.001,
+        base_churn_rate=0.0001,
+        churn_decay_days=1,
+        reactivation_rate=0.80,
+        reactivation_decay=0.99,
+        max_dormant_days=365,
+    ),
 }
 
 

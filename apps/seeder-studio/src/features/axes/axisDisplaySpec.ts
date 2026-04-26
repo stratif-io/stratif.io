@@ -77,6 +77,12 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
         sparkPoints: "0,5 6,12 14,20 24,25 52,27",
       },
       {
+        value: "normal",
+        label: "Normal",
+        description: "Average retention, moderate churn",
+        sparkPoints: "0,5 6,11 14,17 24,22 52,25",
+      },
+      {
         value: "sticky",
         label: "Sticky",
         description: "Healthy retention, moderate reactivation",
@@ -89,7 +95,7 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
         sparkPoints: "0,5 10,6 22,8 36,10 52,11",
       },
       {
-        value: "normal",
+        value: "no_one_churns",
         label: "No one churns",
         description: "Virtually no churn, users stay forever",
         sparkPoints: "0,3 10,3 22,3 36,3 52,3",
