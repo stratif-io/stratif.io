@@ -161,40 +161,32 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         max(0.0, a * (1.0 + sigma * rng_jitter.gauss(0.0, 1.0))) for a in a_curve
     ]
 
-    # Arrival cap: keep simulation under _PREVIEW_USER_CAP for UI performance
+    # Cap for cohort simulation performance only (never affects displayed values).
     expected_total = max(sum(j_curve), 1.0)
-    arrival_cap = min(1.0, _PREVIEW_USER_CAP / expected_total)
-    report_scale = 1.0 / arrival_cap
+    cohort_cap = min(1.0, _PREVIEW_USER_CAP / expected_total)
+    report_scale = 1.0 / cohort_cap
 
-    # ── Pass 1: preliminary arrivals → preliminary DAU ───────────────────────
-    # Use deterministic rounding (not Poisson) so DAU estimates are stable.
+    # ── Pass 1: preliminary capped arrivals → preliminary DAU (for virality) ──
     rng1 = random.Random(seed + 1)
-    n0 = [round(j * arrival_cap) for j in j_curve]
-    active_sets0, _ = _simulate_cohorts(n0, state, rng1)
-    dau0 = [len(s) for s in active_sets0]
+    n0_capped = [round(j * cohort_cap) for j in j_curve]
+    active_sets0, _ = _simulate_cohorts(n0_capped, state, rng1)
+    dau0_capped = [len(s) for s in active_sets0]
 
-    # ── V(t) = J(t) + K · (DAU(t-1) / expected_cap) · G(t) ──────────────────
-    expected_cap = expected_total * arrival_cap
+    # ── V(t) = J(t) + K · DAU(t-1) / E[J] · G(t)  (full scale) ─────────────
     v_curve: list[float] = []
     for d in range(window):
-        dau_prev = dau0[d - 1] if d > 0 else 0
-        viral = K * (dau_prev / max(expected_cap, 1)) * g_curve[d] * arrival_cap
-        v_curve.append(max(0.0, j_curve[d] * arrival_cap + viral))
+        dau_prev = dau0_capped[d - 1] * report_scale if d > 0 else 0.0
+        viral = K * (dau_prev / max(expected_total, 1)) * g_curve[d]
+        v_curve.append(max(0.0, j_curve[d] + viral))
 
-    # ── Pass 2: Poisson draw at display scale ────────────────────────────────
-    # Draw Poisson(V(t) * report_scale) directly — λ≈200-300, sensible variance.
-    # The old approach drew Poisson(V(t) * arrival_cap) with λ≈1, then scaled
-    # by report_scale, collapsing all values to the same integer (quantization).
+    # ── N(t) ~ Poisson(V(t))  (full scale, as the formula says) ─────────────
     rng_pass2 = random.Random(seed + 2)
-    new_users_display = [_poisson(rng_pass2, v * report_scale) for v in v_curve]
+    new_users = [_poisson(rng_pass2, v) for v in v_curve]
 
-    # Convert back to capped scale for cohort simulation so active_users,
-    # churned, and reactivated stay consistent with new_users.
-    new_users_raw = [round(n / report_scale) for n in new_users_display]
-
-    # ── Final cohort simulation ───────────────────────────────────────────────
+    # ── Cohort simulation at capped scale for DAU/churn/reactivation ─────────
+    new_users_capped = [round(n * cohort_cap) for n in new_users]
     rng_cohort = random.Random(seed + 1)
-    active_sets, first_day = _simulate_cohorts(new_users_raw, state, rng_cohort)
+    active_sets, first_day = _simulate_cohorts(new_users_capped, state, rng_cohort)
     active_users_raw = [len(s) for s in active_sets]
 
     churned_raw = [0] * window
@@ -206,9 +198,6 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
 
     avg_eps = _avg_events_per_session(config)
     session_mult = state.session_freq_multiplier
-
-    def _scale(v: float) -> int:
-        return round(v * report_scale)
 
     stickiness: list[float] = []
     last_active: dict[int, int] = {}
@@ -227,28 +216,25 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         total = sum(curve)
         if total <= 0:
             return [0.0] * len(curve)
-        new_users_total = sum(new_users_raw) * report_scale
+        new_users_total = float(sum(new_users))
         return [v * (new_users_total / total) for v in curve]
-
-    # virality_curve uses raw report_scale (not _norm_curve) because v_curve is already in
-    # arrival-capped units — scaling by report_scale gives the same y-axis as new_users.
-    v_norm = [v * report_scale for v in v_curve]
 
     return PreviewResult(
         days=list(range(window)),
-        new_users=new_users_display,
-        active_users=[_scale(v) for v in active_users_raw],
-        churned=[_scale(v) for v in churned_raw],
-        reactivated=[_scale(v) for v in reactivated_raw],
+        new_users=new_users,
+        active_users=[round(v * report_scale) for v in active_users_raw],
+        churned=[round(v * report_scale) for v in churned_raw],
+        reactivated=[round(v * report_scale) for v in reactivated_raw],
         events=[
-            _scale(active_users_raw[d] * session_mult * avg_eps) for d in range(window)
+            round(active_users_raw[d] * report_scale * session_mult * avg_eps)
+            for d in range(window)
         ],
         stickiness=stickiness,
         growth_curve=_norm_curve(g_curve),
         anomaly_curve=_norm_curve(a_curve),
         jitter_curve=_norm_curve(j_curve),
-        virality_curve=v_norm,
-        arrival_cap=arrival_cap,
+        virality_curve=v_curve,  # V(t) already at full scale
+        arrival_cap=cohort_cap,
         report_scale=report_scale,
     )
 
