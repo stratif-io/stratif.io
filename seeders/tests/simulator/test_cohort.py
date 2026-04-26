@@ -5,12 +5,9 @@ from __future__ import annotations
 import random
 from collections import Counter
 
-import pytest
-
 from seeders.simulator.cohort import (
     assign_user_archetype,
     sample_daily_session_count,
-    sample_session_archetype,
 )
 
 
@@ -44,40 +41,9 @@ def test_session_count_decays_with_age():
     assert late < early * 0.85
 
 
-@pytest.mark.parametrize("user_archetype", ["power", "regular", "casual"])
-def test_session_archetype_always_one_of_four(user_archetype):
-    rng = random.Random(42)
-    valid = {"bounce", "browser", "researcher", "converter"}
-    sampled = {sample_session_archetype(rng, user_archetype) for _ in range(200)}
-    assert sampled <= valid
-
-
-def test_power_users_convert_more_often_than_casuals():
-    rng = random.Random(42)
-    power_converts = sum(
-        sample_session_archetype(rng, "power") == "converter" for _ in range(2000)
-    )
-    casual_converts = sum(
-        sample_session_archetype(rng, "casual") == "converter" for _ in range(2000)
-    )
-    assert power_converts > casual_converts
-
-
 def test_assign_user_archetype_is_deterministic_under_seeded_rng():
     rng1 = random.Random(100)
     rng2 = random.Random(100)
     seq1 = [assign_user_archetype(rng1) for _ in range(10)]
     seq2 = [assign_user_archetype(rng2) for _ in range(10)]
     assert seq1 == seq2
-
-
-def test_sample_session_archetype_respects_modifier():
-    import random
-
-    from seeders.simulator.cohort import sample_session_archetype
-
-    rng = random.Random(42)
-    skew = {"bounce": 0.0, "browser": 0.0, "researcher": 0.0, "converter": 1.0}
-    # With all weight on converter, every draw must be converter.
-    for _ in range(50):
-        assert sample_session_archetype(rng, "casual", modifier=skew) == "converter"

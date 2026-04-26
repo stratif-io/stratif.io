@@ -37,14 +37,20 @@ def _parse_duration(value: str | None) -> float:
     return quantity / 24.0
 
 
-def _parse_start(raw: dict, now: datetime) -> date:
+def _parse_start(raw: dict, now: datetime, window_days: int) -> date:
     if "date" in raw:
         return date.fromisoformat(raw["date"])
     if "start" in raw:
         start = raw["start"]
-        if isinstance(start, str) and start.endswith("d"):
+        if isinstance(start, str) and start.lstrip("-").endswith("d"):
             days = int(start.rstrip("d"))
-            return (now + timedelta(days=days)).date()
+            if days < 0:
+                # negative: relative to now (e.g. "-60d" = 60 days ago)
+                return (now + timedelta(days=days)).date()
+            else:
+                # positive: day N from window start (e.g. "71d" = day 71)
+                day_0 = now - timedelta(days=window_days)
+                return (day_0 + timedelta(days=days)).date()
         if isinstance(start, str):
             return date.fromisoformat(start)
     raise ValueError(f"anomaly missing date/start: {raw!r}")
@@ -53,12 +59,13 @@ def _parse_start(raw: dict, now: datetime) -> date:
 def parse_anomalies(
     raw_list: list[dict],
     now: datetime,
+    window_days: int = 90,
 ) -> list[AnomalyRecord]:
     return [
         AnomalyRecord(
             type=raw["type"],
             name=raw.get("name"),
-            start=_parse_start(raw, now),
+            start=_parse_start(raw, now, window_days),
             duration_days=_parse_duration(raw.get("duration")),
             effects=dict(raw.get("effect", {})),
         )

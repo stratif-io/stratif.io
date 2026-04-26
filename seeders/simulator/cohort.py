@@ -6,7 +6,6 @@ import math
 import random
 
 USER_ARCHETYPES: tuple[str, ...] = ("power", "regular", "casual")
-SESSION_ARCHETYPES: tuple[str, ...] = ("bounce", "browser", "researcher", "converter")
 
 # User archetype distribution — 5% power, 25% regular, 70% casual.
 _USER_ARCHETYPE_WEIGHTS: dict[str, float] = {
@@ -20,14 +19,6 @@ _BASE_DAILY_SESSIONS: dict[str, float] = {
     "power": 1.4,
     "regular": 0.4,
     "casual": 0.15,
-}
-
-# Session-archetype distribution per user archetype. Power users convert much
-# more than casuals; casuals mostly bounce or browse.
-_SESSION_MIX: dict[str, dict[str, float]] = {
-    "power": {"bounce": 0.05, "browser": 0.20, "researcher": 0.35, "converter": 0.40},
-    "regular": {"bounce": 0.10, "browser": 0.35, "researcher": 0.35, "converter": 0.20},
-    "casual": {"bounce": 0.30, "browser": 0.40, "researcher": 0.25, "converter": 0.05},
 }
 
 
@@ -70,18 +61,3 @@ def sample_daily_session_count(
     base = _BASE_DAILY_SESSIONS.get(user_archetype, 0.15)
     decay = 2 ** (-days_since_acquisition / 180.0)
     return _poisson(rng, base * decay)
-
-
-def sample_session_archetype(
-    rng: random.Random,
-    user_archetype: str,
-    modifier: dict[str, float] | None = None,
-) -> str:
-    mix = _SESSION_MIX.get(user_archetype, _SESSION_MIX["casual"])
-    names = list(mix)
-    weights = [mix[n] for n in names]
-    if modifier is not None:
-        weights = [
-            w * modifier.get(n, 1.0) for w, n in zip(weights, names, strict=True)
-        ]
-    return rng.choices(names, weights=weights, k=1)[0]

@@ -6,7 +6,14 @@ import math
 
 import pytest
 
-from seeders.simulator.axes.growth import GrowthAxis
+from seeders.simulator.axes.growth import (
+    GrowthAxis,
+    _exponential_decline_shape,
+    _exponential_growth_shape,
+    _hockey_stick_shape,
+    _seasonal_shape,
+    _steady_shape,
+)
 from seeders.simulator.protocols import SimulationState
 
 TOTAL = 10_000
@@ -30,24 +37,6 @@ def test_growth_axis_values_register(value):
     assert value in ax.values
 
 
-@pytest.mark.parametrize(
-    "value",
-    ["explosive", "strong", "steady", "flat", "declining", "hockey_stick"],
-)
-def test_growth_cumulative_approximates_total_users(value):
-    state = _state()
-    GrowthAxis().apply(value, state)
-    cumulative = _cumulative(state.arrival_curve, WINDOW)
-    assert 0.9 * TOTAL <= cumulative <= 1.1 * TOTAL, (value, cumulative)
-
-
-def test_seasonal_has_zero_net_growth_over_full_year():
-    state = SimulationState(random_seed=1, total_users=TOTAL, window_days=365)
-    GrowthAxis().apply("seasonal", state)
-    cumulative = _cumulative(state.arrival_curve, 365)
-    assert 0.95 * TOTAL <= cumulative <= 1.05 * TOTAL
-
-
 def test_explosive_late_window_much_higher_than_early():
     state = _state()
     GrowthAxis().apply("explosive", state)
@@ -67,7 +56,7 @@ def test_declining_early_window_much_higher_than_late():
 def test_hockey_stick_first_half_is_roughly_flat():
     state = _state()
     GrowthAxis().apply("hockey_stick", state)
-    flat_end = int(WINDOW * 0.4) - 1
+    flat_end = int(WINDOW * 0.35) - 1
     assert math.isclose(
         state.arrival_curve(0), state.arrival_curve(flat_end), rel_tol=0.05
     )
@@ -80,11 +69,15 @@ def test_growth_axis_unknown_value_raises():
         GrowthAxis().apply("galactic", state)
 
 
-def test_steady_is_constant():
+def test_steady_is_linearly_increasing():
     state = _state()
     GrowthAxis().apply("steady", state)
     values = [state.arrival_curve(d) for d in range(WINDOW)]
-    assert len({round(v, 6) for v in values}) == 1
+    assert values[0] == pytest.approx(1.0)
+    assert values[-1] > values[0]
+    # linearity: equal increments
+    diffs = [values[i + 1] - values[i] for i in range(len(values) - 1)]
+    assert max(diffs) == pytest.approx(min(diffs), rel=1e-6)
 
 
 def test_hockey_stick_split_fraction_from_growth_config():
@@ -131,13 +124,67 @@ def test_explosive_rate_override_from_growth_config():
 
 
 def test_growth_config_none_uses_defaults():
-    """No growth_config → original defaults (existing tests still pass)."""
+    """No growth_config → defaults from _hockey_stick_shape signature."""
     state = _state()
     assert state.growth_config is None
     GrowthAxis().apply("hockey_stick", state)
-    # Default split_fraction=0.4, rate=0.06 — curve at day 0 roughly equals curve
-    # at day (0.4×WINDOW − 1), matching pre-existing test assertions.
-    flat_end = int(WINDOW * 0.4) - 1
+    # Default split_fraction=0.35, rate=0.06 — curve at day 0 roughly equals curve
+    # at day (0.35×WINDOW − 1).
+    flat_end = int(WINDOW * 0.35) - 1
     assert math.isclose(
         state.arrival_curve(0), state.arrival_curve(flat_end), rel_tol=0.05
     )
+
+
+# Shape multiplier tests (s(0) = 1.0 always)
+
+
+def test_steady_shape_starts_at_one_and_grows_linearly():
+    s = _steady_shape()
+    assert s(0) == pytest.approx(1.0)
+    assert s(50) > s(0)
+    assert s(100) - s(50) == pytest.approx(s(50) - s(0), rel=1e-6)
+
+
+def test_flat_shape_is_constant():
+    state = _state()
+    GrowthAxis().apply("flat", state)
+    values = [state.arrival_curve(d) for d in range(WINDOW)]
+    assert all(v == pytest.approx(1.0) for v in values)
+
+
+def test_exponential_growth_anchored_at_zero():
+    s = _exponential_growth_shape(r=0.05)
+    assert s(0) == pytest.approx(1.0)
+    assert s(10) > s(5) > s(0)
+
+
+def test_exponential_decline_anchored_at_zero():
+    s = _exponential_decline_shape(r=0.015)
+    assert s(0) == pytest.approx(1.0)
+    assert s(10) < s(5) < s(0)
+    for d in range(100):
+        assert s(d) > 0
+
+
+def test_hockey_stick_flat_before_split():
+    window = 180
+    s = _hockey_stick_shape(r=0.06, split_fraction=0.35, window=window)
+    split = int(window * 0.35)
+    for d in range(split):
+        assert s(d) == pytest.approx(1.0), f"day {d} should be 1.0"
+
+
+def test_hockey_stick_grows_after_split():
+    window = 180
+    s = _hockey_stick_shape(r=0.06, split_fraction=0.35, window=window)
+    split = int(window * 0.35)
+    assert s(split + 10) > s(split + 5) > s(split)
+
+
+def test_seasonal_shape_anchored_at_zero():
+    s = _seasonal_shape(amplitude=0.3)
+    assert s(0) == pytest.approx(1.0)
+    values = [s(d) for d in range(365)]
+    assert min(values) >= 0.7 - 1e-9
+    assert max(values) <= 1.3 + 1e-9
