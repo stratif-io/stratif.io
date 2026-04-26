@@ -45,7 +45,7 @@ export function EventsTab() {
 
       {/* Main split: graph left, matrix right */}
       <div className="flex flex-1 min-h-0 gap-4 overflow-hidden">
-        <div className="flex-1 min-w-0 rounded-lg border border-border overflow-hidden bg-[#111827]">
+        <div className="flex-1 min-w-0 rounded-lg border border-border overflow-hidden bg-muted">
           <MarkovGraph config={markov} />
         </div>
         <div className="flex-1 min-w-0 overflow-auto">

@@ -49,10 +49,19 @@ export function AnomalyFloatingEditor({
     emit({ ...local, type: newType, effect });
   };
 
+  const clampedX = Math.min(
+    x,
+    (typeof window !== "undefined" ? window.innerWidth : 800) - 296,
+  );
+  const clampedY = Math.min(
+    y,
+    (typeof window !== "undefined" ? window.innerHeight : 600) - 296,
+  );
+
   return (
     <div
       data-floating-editor
-      style={{ position: "fixed", left: x, top: y, zIndex: 50 }}
+      style={{ position: "fixed", left: clampedX, top: clampedY, zIndex: 50 }}
       className="rounded-lg border bg-popover text-popover-foreground shadow-md p-3 w-56 flex flex-col gap-2"
     >
       <div className="flex items-center justify-between">
@@ -81,7 +90,7 @@ export function AnomalyFloatingEditor({
           <SelectTrigger
             id="fe-type"
             aria-label="type"
-            className="h-7 text-[11px]"
+            className="h-8 text-[11px]"
           >
             <SelectValue />
           </SelectTrigger>
@@ -104,7 +113,7 @@ export function AnomalyFloatingEditor({
           aria-label="name"
           value={local.name ?? ""}
           onChange={(e) => emit({ ...local, name: e.target.value })}
-          className="h-7 text-[11px]"
+          className="h-8 text-[11px]"
         />
       </div>
 
@@ -121,7 +130,7 @@ export function AnomalyFloatingEditor({
             aria-label="start"
             value={local.start ?? ""}
             onChange={(e) => emit({ ...local, start: e.target.value })}
-            className="h-7 text-[11px]"
+            className="h-8 text-[11px]"
           />
         </div>
         <div className="flex flex-col gap-0.5">
@@ -133,7 +142,7 @@ export function AnomalyFloatingEditor({
             aria-label="duration"
             value={local.duration ?? ""}
             onChange={(e) => emit({ ...local, duration: e.target.value })}
-            className="h-7 text-[11px]"
+            className="h-8 text-[11px]"
           />
         </div>
       </div>
@@ -160,7 +169,7 @@ export function AnomalyFloatingEditor({
                 effect: { ...local.effect, [f.key]: Number(e.target.value) },
               })
             }
-            className="h-7 text-[11px]"
+            className="h-8 text-[11px]"
           />
         </div>
       ))}

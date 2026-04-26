@@ -152,7 +152,14 @@ export function KpiGrid() {
                   setExpandedKey((p) => (p === card.key ? null : card.key))
                 }
                 isLoading={isLoading}
-                className={card.colSpan === 3 ? "col-span-3" : undefined}
+                isPrimary={card.key === "newUsers"}
+                className={
+                  card.colSpan === 3
+                    ? "col-span-3"
+                    : card.key === "newUsers"
+                      ? "col-span-2"
+                      : undefined
+                }
               />
             ))}
             {section.cards.some((c) => c.key === expandedKey) && (

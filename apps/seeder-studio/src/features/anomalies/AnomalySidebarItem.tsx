@@ -89,7 +89,7 @@ export function AnomalySidebarItem({
               <SelectTrigger
                 id={`a-type-${local.name}`}
                 aria-label="type"
-                className="h-7 text-[11px]"
+                className="h-8 text-[11px]"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -115,7 +115,7 @@ export function AnomalySidebarItem({
               aria-label="name"
               value={local.name ?? ""}
               onChange={(e) => emit({ ...local, name: e.target.value })}
-              className="h-7 text-[11px]"
+              className="h-8 text-[11px]"
             />
           </div>
 
@@ -132,7 +132,7 @@ export function AnomalySidebarItem({
                 aria-label="start"
                 value={local.start ?? ""}
                 onChange={(e) => emit({ ...local, start: e.target.value })}
-                className="h-7 text-[11px]"
+                className="h-8 text-[11px]"
               />
             </div>
             <div className="flex flex-col gap-0.5">
@@ -147,7 +147,7 @@ export function AnomalySidebarItem({
                 aria-label="duration"
                 value={local.duration ?? ""}
                 onChange={(e) => emit({ ...local, duration: e.target.value })}
-                className="h-7 text-[11px]"
+                className="h-8 text-[11px]"
               />
             </div>
           </div>
@@ -177,7 +177,7 @@ export function AnomalySidebarItem({
                     },
                   })
                 }
-                className="h-7 text-[11px]"
+                className="h-8 text-[11px]"
               />
             </div>
           ))}

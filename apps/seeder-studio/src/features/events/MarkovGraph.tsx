@@ -169,6 +169,18 @@ function MarkovGraphInner({
 
 export function MarkovGraph({ config, onNodeClick }: Props) {
   const [showEnd, setShowEnd] = useState(false);
+
+  if (config.events.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center text-muted-foreground">
+        <p className="text-sm font-medium">No events yet</p>
+        <p className="text-xs">
+          Add an event in the Events tab to build your user flow.
+        </p>
+      </div>
+    );
+  }
+
   const key =
     config.events.map((e) => e.name).join(",") + (showEnd ? "|end" : "");
   return (

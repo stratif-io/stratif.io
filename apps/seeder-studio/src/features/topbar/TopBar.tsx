@@ -96,7 +96,7 @@ export function TopBar({
   };
 
   const inputBase =
-    "h-8 rounded-md border bg-muted/40 px-2 text-xs text-foreground transition-colors";
+    "h-8 rounded-md border bg-muted/40 px-2 text-xs text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const inputInvalid = "border-destructive focus:ring-destructive";
   const inputNormal = "border-border";
 

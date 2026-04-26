@@ -28,6 +28,7 @@ interface Props {
   valueSuffix?: string;
   className?: string;
   isLoading?: boolean;
+  isPrimary?: boolean;
 }
 
 export function KpiCard({
@@ -44,6 +45,7 @@ export function KpiCard({
   valueSuffix = "",
   className,
   isLoading = false,
+  isPrimary = false,
 }: Props) {
   const data = useMemo(
     () => values.map((v, i) => ({ i, v: v === null ? undefined : v })),
@@ -86,7 +88,9 @@ export function KpiCard({
         "flex flex-col gap-1 p-3 rounded-lg border bg-card text-left cursor-pointer transition-colors w-full overflow-hidden relative",
         expanded
           ? "border-primary ring-1 ring-primary/30"
-          : "border-border hover:border-muted-foreground/40",
+          : isPrimary
+            ? "border-primary/30 hover:border-primary/50"
+            : "border-border hover:border-muted-foreground/40",
         className,
       )}
     >

@@ -80,7 +80,7 @@ export function SavePanel({ yaml, defaultOpen = false }: SavePanelProps) {
               id="preset-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="h-7 text-xs"
+              className="h-8 text-xs focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -103,7 +103,7 @@ export function SavePanel({ yaml, defaultOpen = false }: SavePanelProps) {
             <Button
               size="sm"
               variant={copyState === "error" ? "destructive" : "outline"}
-              className="h-7 text-xs"
+              className="h-8 text-xs"
               onClick={handleCopy}
             >
               {copyState === "copied"
