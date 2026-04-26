@@ -97,7 +97,7 @@ class Engine:
         scale = self.config.resolved_scale()
         state = SimulationState(
             random_seed=self.config.random_seed or 0,
-            total_users=scale.total_users,
+            total_users=scale.total_users,  # type: ignore[arg-type]
             window_days=scale.window_days,
             now=datetime.now(UTC),
         )

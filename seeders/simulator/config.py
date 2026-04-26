@@ -15,10 +15,11 @@ SCALE_PRESETS: dict[str, ScaleConfig] = {}
 
 @dataclass(frozen=True)
 class ScaleConfig:
-    """Named scale tier — total_users and window_days."""
+    """Named scale tier — total_users and window_days, or starting_rate-driven."""
 
-    total_users: int
     window_days: int
+    total_users: int | None = None
+    starting_rate: float | None = None
 
     @classmethod
     def from_named(cls, name: str) -> ScaleConfig:
@@ -45,6 +46,7 @@ class ScaleOverride(BaseModel):
 
     total_users: int | None = None
     window_days: int | None = None
+    starting_rate: float | None = None
 
 
 class SimulationConfig(BaseModel):
@@ -63,18 +65,26 @@ class SimulationConfig(BaseModel):
     anomalies: list[dict[str, Any]] = Field(default_factory=list)
 
     def resolved_scale(self) -> ScaleConfig:
+        override = self.scale_config
+
+        # Rate-driven mode: starting_rate present in override
+        if override is not None and override.starting_rate is not None:
+            return ScaleConfig(
+                starting_rate=override.starting_rate,
+                window_days=override.window_days or 90,
+            )
+
+        # Goal-driven mode: total_users present in override
+        if override is not None and override.total_users is not None:
+            return ScaleConfig(
+                total_users=override.total_users,
+                window_days=override.window_days or 90,
+            )
+
+        # Legacy: scale axis shorthand → goal-driven
         base = ScaleConfig.from_named(self.axes.get("scale", "small"))
-        if self.scale_config is None:
-            return base
+        window = (override.window_days if override else None) or base.window_days
         return ScaleConfig(
-            total_users=(
-                self.scale_config.total_users
-                if self.scale_config.total_users is not None
-                else base.total_users
-            ),
-            window_days=(
-                self.scale_config.window_days
-                if self.scale_config.window_days is not None
-                else base.window_days
-            ),
+            total_users=base.total_users,
+            window_days=window,
         )

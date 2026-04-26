@@ -99,3 +99,53 @@ def test_simulation_config_rejects_unknown_fields():
                 "markov": _TINY_MARKOV.model_dump(),
             }
         )
+
+
+def test_scale_config_accepts_starting_rate():
+    sc = ScaleConfig(window_days=90, starting_rate=50.0)
+    assert sc.starting_rate == 50.0
+    assert sc.total_users is None
+
+
+def test_scale_config_accepts_total_users():
+    sc = ScaleConfig(window_days=90, total_users=10_000)
+    assert sc.total_users == 10_000
+    assert sc.starting_rate is None
+
+
+def test_scale_override_starting_rate_propagates():
+    config = SimulationConfig(
+        name="test",
+        axes={},
+        markov=_TINY_MARKOV,
+        scale_config=ScaleOverride(starting_rate=75.0, window_days=60),
+    )
+    scale = config.resolved_scale()
+    assert scale.starting_rate == pytest.approx(75.0)
+    assert scale.total_users is None
+    assert scale.window_days == 60
+
+
+def test_resolved_scale_goal_driven_via_override():
+    config = SimulationConfig(
+        name="test",
+        axes={},
+        markov=_TINY_MARKOV,
+        scale_config=ScaleOverride(total_users=5_000, window_days=30),
+    )
+    scale = config.resolved_scale()
+    assert scale.total_users == 5_000
+    assert scale.starting_rate is None
+
+
+def test_resolved_scale_falls_back_to_scale_axis():
+    config = SimulationConfig(
+        name="test",
+        axes={"scale": "tiny"},
+        markov=_TINY_MARKOV,
+    )
+    scale = config.resolved_scale()
+    from seeders.simulator.config import SCALE_PRESETS
+
+    assert scale.total_users == SCALE_PRESETS["tiny"].total_users
+    assert scale.window_days == SCALE_PRESETS["tiny"].window_days
