@@ -56,7 +56,7 @@ def test_declining_early_window_much_higher_than_late():
 def test_hockey_stick_first_half_is_roughly_flat():
     state = _state()
     GrowthAxis().apply("hockey_stick", state)
-    flat_end = int(WINDOW * 0.4) - 1
+    flat_end = int(WINDOW * 0.35) - 1
     assert math.isclose(
         state.arrival_curve(0), state.arrival_curve(flat_end), rel_tol=0.05
     )
@@ -120,13 +120,13 @@ def test_explosive_rate_override_from_growth_config():
 
 
 def test_growth_config_none_uses_defaults():
-    """No growth_config → original defaults (existing tests still pass)."""
+    """No growth_config → defaults from _hockey_stick_shape signature."""
     state = _state()
     assert state.growth_config is None
     GrowthAxis().apply("hockey_stick", state)
-    # Default split_fraction=0.4, rate=0.06 — curve at day 0 roughly equals curve
-    # at day (0.4×WINDOW − 1), matching pre-existing test assertions.
-    flat_end = int(WINDOW * 0.4) - 1
+    # Default split_fraction=0.35, rate=0.06 — curve at day 0 roughly equals curve
+    # at day (0.35×WINDOW − 1).
+    flat_end = int(WINDOW * 0.35) - 1
     assert math.isclose(
         state.arrival_curve(0), state.arrival_curve(flat_end), rel_tol=0.05
     )

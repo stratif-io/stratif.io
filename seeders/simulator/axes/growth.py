@@ -55,8 +55,6 @@ def _build_shape(
     value: str, growth_config: dict[str, Any] | None, window: int
 ) -> ShapeMultiplier:
     cfg = growth_config or {}
-    rate = float(cfg.get("rate", 0.06))
-    split = float(cfg.get("split_fraction", 0.4))
     if value == "explosive":
         return _exponential_growth_shape(r=float(cfg.get("rate", 0.08)))
     if value == "strong":
@@ -68,7 +66,11 @@ def _build_shape(
     if value == "seasonal":
         return _seasonal_shape(amplitude=float(cfg.get("amplitude", 0.3)))
     if value == "hockey_stick":
-        return _hockey_stick_shape(r=rate, split_fraction=split, window=window)
+        return _hockey_stick_shape(
+            r=float(cfg.get("rate", 0.06)),
+            split_fraction=float(cfg.get("split_fraction", 0.35)),
+            window=window,
+        )
     raise ValueError(f"unknown growth value {value!r}; valid: {_VALUE_NAMES}")
 
 
