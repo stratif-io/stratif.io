@@ -1,0 +1,72 @@
+name: casual_game_addictive
+description: Mobile casual game, whale-heavy IAP, high stickiness.
+axes:
+  growth: strong
+  stickiness: addictive
+  engagement_depth: deep
+  monetization: iap_whales
+  virality: weak
+  scale: medium
+  geography: global
+  anomalies: explicit
+anomalies:
+  - type: product_launch
+    name: feature_x_launch
+    start: -60d
+    duration: 7d
+    effect:
+      arrivals: 1.8
+markov:
+  events:
+    - name: SessionStart
+    - name: DailyBonusClaimed
+    - name: LevelStart
+    - name: LevelComplete
+    - name: LevelFail
+    - name: RewardCollected
+    - name: IAPOffer
+    - name: IAPPurchase
+    - name: AdShown
+    - name: AdClicked
+    - name: ShareAchievement
+  start:
+    SessionStart: 1.0
+  transitions:
+    SessionStart:
+      DailyBonusClaimed: 0.55
+      LevelStart: 0.20
+      "[end]": 0.25
+    DailyBonusClaimed:
+      LevelStart: 0.85
+      "[end]": 0.15
+    LevelStart:
+      LevelComplete: 0.60
+      LevelFail: 0.35
+      "[end]": 0.05
+    LevelComplete:
+      RewardCollected: 0.65
+      LevelStart: 0.20
+      IAPOffer: 0.10
+      "[end]": 0.05
+    LevelFail:
+      LevelStart: 0.50
+      AdShown: 0.20
+      "[end]": 0.30
+    RewardCollected:
+      LevelStart: 0.55
+      ShareAchievement: 0.10
+      "[end]": 0.35
+    IAPOffer:
+      IAPPurchase: 0.40
+      "[end]": 0.60
+    IAPPurchase:
+      ShareAchievement: 0.30
+      "[end]": 0.70
+    AdShown:
+      AdClicked: 0.25
+      LevelStart: 0.30
+      "[end]": 0.45
+    AdClicked:
+      "[end]": 1.0
+    ShareAchievement:
+      "[end]": 1.0
