@@ -1,4 +1,4 @@
-name: streaming_mature
+name: Streaming Mature (Netflix-Like)
 description: Flat user base, high stickiness, binge sessions.
 axes:
   growth: flat
@@ -9,6 +9,10 @@ axes:
   scale: medium
   geography: global
   anomalies: clean
+scale_config:
+  window_days: 365
+  starting_rate: 800
+
 markov:
   events:
     - name: SessionStart

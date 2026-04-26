@@ -23,7 +23,7 @@ def test_load_preset_by_name_searches_presets_dir():
     # This test uses the real presets/ dir — it exists once Task 6 ships
     # the default preset. We assert the lookup mechanism works.
     cfg = load_preset("ecommerce_steady")
-    assert cfg.name == "ecommerce_steady"
+    assert cfg.name == "E-commerce Steady Growth (Amazon-Like)"
 
 
 def test_list_presets_empty_when_dir_missing(monkeypatch, tmp_path):
@@ -39,7 +39,7 @@ def test_resolve_config_explicit_preset_beats_env(monkeypatch):
     # SEED_PRESET points at something that would fail; the explicit arg wins.
     monkeypatch.setenv("SEED_PRESET", "does_not_exist")
     cfg = resolve_config(preset_name="ecommerce_steady", axis_overrides={})
-    assert cfg.name == "ecommerce_steady"
+    assert cfg.name == "E-commerce Steady Growth (Amazon-Like)"
 
 
 def test_load_preset_missing_raises():
@@ -69,7 +69,7 @@ def test_resolve_config_env_overrides_yaml(monkeypatch):
 def test_resolve_config_default_is_ecommerce_steady(monkeypatch):
     monkeypatch.delenv("SEED_PRESET", raising=False)
     cfg = resolve_config(preset_name=None, axis_overrides={})
-    assert cfg.name == "ecommerce_steady"
+    assert cfg.name == "E-commerce Steady Growth (Amazon-Like)"
 
 
 def test_resolve_config_seed_users_legacy_override(monkeypatch):

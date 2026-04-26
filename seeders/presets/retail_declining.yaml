@@ -1,4 +1,4 @@
-name: retail_declining
+name: Retail Declining (Sears-Like)
 description: Brick-and-mortar + web retail losing market share.
 axes:
   growth: declining
@@ -22,6 +22,10 @@ anomalies:
     duration: 6h
     effect:
       all_events: 0.0
+scale_config:
+  window_days: 365
+  starting_rate: 300
+
 markov:
   events:
     - name: PageView

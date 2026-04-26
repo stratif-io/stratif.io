@@ -1,4 +1,4 @@
-name: ecommerce_explosive
+name: E-commerce Explosive Growth (Early Shopify)
 description: Viral e-commerce growing fast.
 axes:
   growth: explosive
@@ -22,6 +22,10 @@ anomalies:
     duration: 3d
     effect:
       arrivals: 3.0
+scale_config:
+  window_days: 180
+  starting_rate: 20
+
 markov:
   events:
     - name: Home

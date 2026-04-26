@@ -27,7 +27,7 @@ def test_presets_returns_list():
 def test_presets_have_valid_names():
     r = client.get("/presets")
     names = [p["name"] for p in r.json()]
-    assert "casual_game_addictive" in names
+    assert "Casual Game Addictive (Candy Crush-Like)" in names
 
 
 def test_simulate_returns_timeseries():

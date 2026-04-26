@@ -1,4 +1,4 @@
-name: saas_pmf
+name: SaaS Finding PMF (Early Slack)
 description: B2B SaaS post product-market fit, steady growth, low churn.
 axes:
   growth: strong
@@ -9,6 +9,10 @@ axes:
   scale: small
   geography: global
   anomalies: clean
+scale_config:
+  window_days: 365
+  starting_rate: 15
+
 markov:
   events:
     - name: SignUp

@@ -1,4 +1,4 @@
-name: casual_game_flash_in_the_pan
+name: Casual Game Flash in the Pan (Flappy Bird-Like)
 description: |
   Complete product lifecycle on a mobile game:
     Month 1  — soft launch, 1-3 new users / day
@@ -20,7 +20,7 @@ axes:
 
 scale_config:
   window_days: 540           # 18 months
-  total_users: 30000         # baseline * window; anomalies can push actual higher
+  starting_rate: 200
 
 # Steady baseline = 30000 / 540 ≈ 56 new users / day.
 # Each anomaly multiplies that baseline within its date window.

@@ -1,4 +1,4 @@
-name: casual_game_addictive
+name: Casual Game Addictive (Candy Crush-Like)
 description: Mobile casual game, whale-heavy IAP, high stickiness.
 axes:
   growth: strong
@@ -16,6 +16,10 @@ anomalies:
     duration: 7d
     effect:
       arrivals: 1.8
+scale_config:
+  window_days: 180
+  starting_rate: 500
+
 markov:
   events:
     - name: SessionStart

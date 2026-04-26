@@ -1,4 +1,4 @@
-name: dating_app_churn
+name: Dating App Churn (Tinder-Like)
 description: Quick activation, high churn.
 axes:
   growth: seasonal
@@ -9,6 +9,10 @@ axes:
   scale: small
   geography: global
   anomalies: clean
+scale_config:
+  window_days: 180
+  starting_rate: 250
+
 markov:
   events:
     - name: SessionStart

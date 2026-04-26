@@ -1,4 +1,4 @@
-name: casual_game_viral_blowup
+name: Casual Game Viral Blowup (Wordle-Like)
 description: |
   Mobile casual game: ~7 weeks of quiet launch, then a TikTok/influencer
   moment creates a sharp spike and kicks off sustained exponential
@@ -16,7 +16,7 @@ axes:
 
 scale_config:
   window_days: 180
-  total_users: 15000
+  starting_rate: 30
 
 growth_config:
   split_fraction: 0.28

@@ -1,4 +1,4 @@
-name: marketplace_scaling
+name: Marketplace Scaling (Early Airbnb)
 description: Two-sided marketplace with GMV growth.
 axes:
   growth: strong
@@ -9,6 +9,10 @@ axes:
   scale: medium
   geography: global
   anomalies: clean
+scale_config:
+  window_days: 365
+  starting_rate: 40
+
 markov:
   events:
     - name: PageView

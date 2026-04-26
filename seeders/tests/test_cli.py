@@ -20,7 +20,7 @@ def test_cli_list_prints_available_presets():
 def test_cli_describe_prints_resolved_config():
     result = run_cli("--describe", "ecommerce_steady")
     assert result.returncode == 0
-    assert "ecommerce_steady" in result.stdout
+    assert "E-commerce Steady Growth" in result.stdout
     assert "markov" in result.stdout.lower()
     assert "scale" in result.stdout.lower()
 
