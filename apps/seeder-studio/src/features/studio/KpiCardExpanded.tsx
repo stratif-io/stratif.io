@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import type { SimulationAnomaly } from "@/types/simulation";
 import { MathFormula } from "@/lib/math/MathFormula";
 import { FORMULA_REGISTRY } from "@/features/preview/formulaRegistry";
@@ -1233,6 +1233,45 @@ function SectionLabel({ label }: { label: string }) {
   );
 }
 
+function ParamInput({
+  externalValue,
+  onCommit,
+}: {
+  externalValue: number;
+  onCommit: (val: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(externalValue));
+
+  // Sync when external value changes (e.g. preset switch) but only when not focused
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setDraft(String(externalValue));
+    }
+  }, [externalValue]);
+
+  return (
+    <input
+      ref={inputRef}
+      type="number"
+      min={1}
+      value={draft}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        const n = parseFloat(draft);
+        if (!isNaN(n) && n > 0) onCommit(n);
+        else setDraft(String(externalValue));
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        e.stopPropagation();
+      }}
+      className="w-20 h-6 rounded border border-border bg-muted/40 px-1.5 text-right font-mono text-xs font-bold text-foreground shrink-0 focus:outline-none focus:ring-1 focus:ring-primary"
+    />
+  );
+}
+
 function PipelineFormula({
   ghostLines,
   mainColor,
@@ -1433,17 +1472,9 @@ function PipelineFormula({
                           {p.name}
                         </span>
                         {editableParams?.[p.sym] ? (
-                          <input
-                            key={p.value}
-                            type="number"
-                            min={1}
-                            defaultValue={parseFloat(p.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => {
-                              const n = parseFloat(e.target.value);
-                              if (!isNaN(n) && n > 0) editableParams[p.sym](n);
-                            }}
-                            className="w-20 h-6 rounded border border-border bg-muted/40 px-1.5 text-right font-mono text-xs font-bold text-foreground shrink-0 focus:outline-none focus:ring-1 focus:ring-primary"
+                          <ParamInput
+                            externalValue={parseFloat(p.value)}
+                            onCommit={editableParams[p.sym]}
                           />
                         ) : (
                           <span className="font-mono text-xs font-bold text-foreground shrink-0">
