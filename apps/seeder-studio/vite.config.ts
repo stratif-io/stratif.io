@@ -20,7 +20,7 @@ export default defineConfig({
       },
       {
         find: "@stratif-io/web",
-        replacement: path.resolve(__dirname, "../web/dist/index.js"),
+        replacement: path.resolve(__dirname, "../web/frontend/index.ts"),
       },
     ],
   },
