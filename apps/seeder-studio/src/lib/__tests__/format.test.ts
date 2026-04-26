@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { formatNum } from "../format";
 
 describe("formatNum", () => {
-  it("formats ratios (< 1) to 2 decimal places", () => {
-    expect(formatNum(0)).toBe("0.00");
+  it("formats ratios (< 1) to 2 decimal places, 0 as integer", () => {
+    expect(formatNum(0)).toBe("0");
     expect(formatNum(0.5)).toBe("0.50");
     expect(formatNum(0.35)).toBe("0.35");
     expect(formatNum(0.999)).toBe("1.00");

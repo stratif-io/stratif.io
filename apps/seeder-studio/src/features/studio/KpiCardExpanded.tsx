@@ -383,7 +383,9 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
       },
     ],
     footnote:
-      "DAU = daily active users (estimated from previous day's cohorts)",
+      "DAU = daily active users (estimated from previous day's cohorts). " +
+      "The preview runs on a capped sample and scales results up; on long windows or high rates, " +
+      "some days may show 0 new users because the internal Poisson draw (at the reduced preview rate) sampled zero.",
   },
 
   activeUsers: {

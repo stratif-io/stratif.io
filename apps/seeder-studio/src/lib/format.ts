@@ -2,6 +2,7 @@ export function formatNum(n: number): string {
   const abs = Math.abs(n);
   const sign = n < 0 ? "-" : "";
 
+  if (abs === 0) return "0";
   if (abs < 1) return sign + abs.toFixed(2);
 
   if (abs < 1_000) return sign + Math.round(abs).toString();
