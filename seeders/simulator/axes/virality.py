@@ -13,6 +13,7 @@ from seeders.simulator.protocols import AxisModifier, SimulationState
 _WEIGHTS: dict[str, float] = {
     "none": 0.0,
     "weak": 0.3,
+    "moderate": 0.6,
     "strong_viral": 1.0,
 }
 

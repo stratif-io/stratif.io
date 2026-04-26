@@ -1,12 +1,12 @@
-"""In-process registries for AxisModifier and DomainPack implementations.
+"""In-process registry for AxisModifier implementations.
 
-Registries are instantiated on engine startup; Phase 2 / Phase 4 modules
-register themselves via ``register_axis()`` / ``register_domain()``.
+The registry is instantiated on engine startup; axis modules register themselves
+via ``register_axis()``.
 """
 
 from __future__ import annotations
 
-from seeders.simulator.protocols import AxisModifier, DomainPack
+from seeders.simulator.protocols import AxisModifier
 
 
 class AxisRegistry:
@@ -26,24 +26,3 @@ class AxisRegistry:
 
     def all_names(self) -> list[str]:
         return list(self._axes)
-
-
-class DomainRegistry:
-    def __init__(self) -> None:
-        self._domains: dict[str, DomainPack] = {}
-
-    def register(self, domain: DomainPack) -> None:
-        if domain.name in self._domains:
-            raise ValueError(f"domain {domain.name!r} already registered")
-        self._domains[domain.name] = domain
-
-    def get(self, name: str) -> DomainPack:
-        try:
-            return self._domains[name]
-        except KeyError as exc:
-            raise KeyError(
-                f"unknown domain {name!r}; valid: {list(self._domains)}"
-            ) from exc
-
-    def all_names(self) -> list[str]:
-        return list(self._domains)

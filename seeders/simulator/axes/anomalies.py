@@ -15,7 +15,27 @@ from typing import Any
 
 from seeders.simulator.protocols import AxisModifier, SimulationState
 
-_VALUES = ("clean", "campaigns", "outages", "ab_tests", "full", "explicit")
+_VALUES = (
+    "none",
+    "clean",
+    "moderate",
+    "campaigns",
+    "outages",
+    "ab_tests",
+    "full",
+    "explicit",
+)
+
+_SIGMA: dict[str, float] = {
+    "none": 0.0,
+    "clean": 0.02,
+    "moderate": 0.05,
+    "campaigns": 0.08,
+    "outages": 0.08,
+    "ab_tests": 0.08,
+    "full": 0.10,
+    "explicit": 0.10,
+}
 
 
 class AnomaliesAxis:
@@ -27,8 +47,9 @@ class AnomaliesAxis:
             raise ValueError(
                 f"unknown anomalies value {value!r}; valid: {sorted(_VALUES)}"
             )
-        if value == "clean":
+        if value in ("none", "clean"):
             simulation.anomalies = []
+        simulation.jitter_sigma = _SIGMA[value]
 
 
 assert isinstance(AnomaliesAxis(), AxisModifier)

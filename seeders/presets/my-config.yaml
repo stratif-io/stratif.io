@@ -1,0 +1,68 @@
+name: my-config
+description: ''
+axes:
+  growth: declining
+  stickiness: sticky
+  virality: none
+markov:
+  events:
+    - name: SignUp
+      color: '#6366f1'
+    - name: EmailVerified
+      color: '#8b5cf6'
+    - name: Onboarded
+      color: '#3b82f6'
+    - name: ProjectCreated
+      color: '#0ea5e9'
+    - name: ItemCreated
+      color: '#10b981'
+    - name: InviteSent
+      color: '#f59e0b'
+    - name: InviteAccepted
+      color: '#84cc16'
+    - name: UpgradePromptShown
+      color: '#ec4899'
+    - name: PlanUpgraded
+      color: '#e11d48'
+    - name: PlanDowngraded
+      color: '#f97316'
+    - name: Cancelled
+      color: '#6b7280'
+  start:
+    SignUp: 0.6
+    ItemCreated: 0.4
+  transitions:
+    SignUp:
+      EmailVerified: 0.8
+      '[end]': 0.2
+    EmailVerified:
+      Onboarded: 0.85
+      '[end]': 0.15
+    Onboarded:
+      ProjectCreated: 0.7
+      '[end]': 0.3
+    ProjectCreated:
+      ItemCreated: 0.75
+      InviteSent: 0.1
+      '[end]': 0.15
+    ItemCreated:
+      ItemCreated: 0.28
+      InviteSent: 0.1
+      UpgradePromptShown: 0.15
+      Cancelled: 0.02
+      '[end]': 0.45
+    InviteSent:
+      InviteAccepted: 0.5
+      '[end]': 0.5
+    InviteAccepted:
+      '[end]': 1
+    UpgradePromptShown:
+      PlanUpgraded: 0.3
+      '[end]': 0.7
+    PlanUpgraded:
+      PlanDowngraded: 0.05
+      '[end]': 0.95
+    PlanDowngraded:
+      '[end]': 1
+    Cancelled:
+      '[end]': 1

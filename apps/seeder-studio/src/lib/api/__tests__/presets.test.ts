@@ -1,0 +1,59 @@
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { fetchPresets } from "../presets";
+
+describe("fetchPresets", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("GETs http://localhost:8001/presets and returns the parsed list", async () => {
+    const body = [
+      {
+        name: "a",
+        description: "Test preset",
+        config: {
+          name: "a",
+          axes: {},
+          markov: {
+            events: [{ name: "PageView" }],
+            start: { PageView: 1.0 },
+            transitions: { PageView: { "[end]": 1.0 } },
+          },
+        },
+      },
+    ];
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => body,
+    });
+    const presets = await fetchPresets();
+    expect(presets).toHaveLength(1);
+    expect(presets[0].config?.name).toBe("a");
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "http://localhost:8001/presets",
+    );
+  });
+
+  it("throws when the response is not ok", async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      statusText: "Server error",
+      json: async () => ({}),
+    });
+    await expect(fetchPresets()).rejects.toThrow(/500/);
+  });
+
+  it("throws when a preset fails schema validation", async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => [{ name: "bad" }],
+    });
+    await expect(fetchPresets()).rejects.toThrow();
+  });
+});

@@ -1,3 +1,4 @@
+# seeders/simulator/config.py
 """Configuration models for the simulation engine."""
 
 from __future__ import annotations
@@ -7,15 +8,25 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from seeders.simulator.markov import MarkovConfig
+
+_DEFAULT_WINDOW_DAYS = 90
 SCALE_PRESETS: dict[str, ScaleConfig] = {}
 
 
 @dataclass(frozen=True)
 class ScaleConfig:
-    """Named scale tier — total_users and window_days. See spec §3.1."""
+    """Named scale tier — total_users and window_days, or starting_rate-driven."""
 
-    total_users: int
     window_days: int
+    total_users: int | None = None
+    starting_rate: float | None = None
+
+    def __post_init__(self) -> None:
+        if (self.total_users is None) == (self.starting_rate is None):
+            raise ValueError(
+                "ScaleConfig requires exactly one of total_users or starting_rate"
+            )
 
     @classmethod
     def from_named(cls, name: str) -> ScaleConfig:
@@ -38,52 +49,49 @@ SCALE_PRESETS.update(
 
 
 class ScaleOverride(BaseModel):
-    """Optional override block for the ``scale`` axis."""
-
     model_config = ConfigDict(extra="forbid")
 
     total_users: int | None = None
     window_days: int | None = None
+    starting_rate: float | None = None
 
 
 class SimulationConfig(BaseModel):
-    """A resolved simulation configuration — the product of a preset YAML +
-    optional axis overrides + env vars + CLI flags.
-    """
+    """A resolved simulation configuration."""
 
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., description="Preset name")
     description: str | None = None
-    domain: str
     axes: dict[str, str]
+    markov: MarkovConfig
     random_seed: int | None = None
 
-    # Optional per-axis tuning blocks (freeform; each axis validates its own).
     growth_config: dict[str, Any] | None = None
     scale_config: ScaleOverride | None = None
-
-    # Anomalies authored in YAML (shape validated in Phase 5).
     anomalies: list[dict[str, Any]] = Field(default_factory=list)
 
     def resolved_scale(self) -> ScaleConfig:
-        """Resolve the named ``scale`` axis value + any overrides.
+        override = self.scale_config
 
-        ``None`` means "use the base tier's value"; any non-``None`` override
-        wins (including 0, though ``0`` has no meaningful use today).
-        """
+        # Rate-driven mode: starting_rate present in override
+        if override is not None and override.starting_rate is not None:
+            return ScaleConfig(
+                starting_rate=override.starting_rate,
+                window_days=override.window_days or _DEFAULT_WINDOW_DAYS,
+            )
+
+        # Goal-driven mode: total_users present in override
+        if override is not None and override.total_users is not None:
+            return ScaleConfig(
+                total_users=override.total_users,
+                window_days=override.window_days or _DEFAULT_WINDOW_DAYS,
+            )
+
+        # Legacy: scale axis shorthand → goal-driven
         base = ScaleConfig.from_named(self.axes.get("scale", "small"))
-        if self.scale_config is None:
-            return base
+        window = (override.window_days if override else None) or base.window_days
         return ScaleConfig(
-            total_users=(
-                self.scale_config.total_users
-                if self.scale_config.total_users is not None
-                else base.total_users
-            ),
-            window_days=(
-                self.scale_config.window_days
-                if self.scale_config.window_days is not None
-                else base.window_days
-            ),
+            total_users=base.total_users,
+            window_days=window,
         )
