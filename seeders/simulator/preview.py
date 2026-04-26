@@ -167,8 +167,9 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     report_scale = 1.0 / arrival_cap
 
     # ── Pass 1: preliminary arrivals → preliminary DAU ───────────────────────
+    # Use deterministic rounding (not Poisson) so DAU estimates are stable.
     rng1 = random.Random(seed + 1)
-    n0 = [_poisson(rng1, j * arrival_cap) for j in j_curve]
+    n0 = [round(j * arrival_cap) for j in j_curve]
     active_sets0, _ = _simulate_cohorts(n0, state, rng1)
     dau0 = [len(s) for s in active_sets0]
 
@@ -180,12 +181,14 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         viral = K * (dau_prev / max(expected_cap, 1)) * g_curve[d] * arrival_cap
         v_curve.append(max(0.0, j_curve[d] * arrival_cap + viral))
 
-    # ── Pass 2: final Poisson draw ────────────────────────────────────────────
-    rng_pass2 = random.Random(seed + 2)  # pass-2 Poisson draws (phase 2)
-    new_users_raw = [_poisson(rng_pass2, v) for v in v_curve]
+    # ── Pass 2: deterministic arrivals for preview ────────────────────────────
+    # The preview shows expected values, not stochastic draws. Poisson here
+    # would amplify discretization noise by report_scale (e.g. ×97), turning
+    # a ±1 draw difference into ±97 in the display — pure preview artifact.
+    new_users_raw = [round(v) for v in v_curve]
 
     # ── Final cohort simulation ───────────────────────────────────────────────
-    rng_cohort = random.Random(seed + 3)  # cohort simulation (phase 3)
+    rng_cohort = random.Random(seed + 1)
     active_sets, first_day = _simulate_cohorts(new_users_raw, state, rng_cohort)
     active_users_raw = [len(s) for s in active_sets]
 
