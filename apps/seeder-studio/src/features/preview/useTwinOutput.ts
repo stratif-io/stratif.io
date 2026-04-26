@@ -17,26 +17,45 @@ const EMPTY_OUTPUT: TwinOutput = {
   totalUsers: [],
 };
 
-export function useTwinOutput(): TwinOutput {
+export interface TwinOutputWithLoading extends TwinOutput {
+  isLoading: boolean;
+}
+
+export function useTwinOutput(): TwinOutputWithLoading {
   const config = useSeederStore((s) => s.config);
   const [output, setOutput] = useState<TwinOutput>(EMPTY_OUTPUT);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    // Resolve axis defaults before sending to the backend so the backend
-    // applies the same axes that the formula panel displays.
-    const resolvedConfig = { ...config, axes: resolveAxes(config.axes ?? {}) };
-    fetchSimulation(resolvedConfig)
-      .then((result) => {
-        if (!cancelled) setOutput(result);
-      })
-      .catch(() => {
-        // Keep previous output on error (server may be starting up)
-      });
+    // Set loading immediately when config changes (before debounce fires)
+    setIsLoading(true);
+
+    const timer = setTimeout(() => {
+      // Resolve axis defaults before sending to the backend so the backend
+      // applies the same axes that the formula panel displays.
+      const resolvedConfig = {
+        ...config,
+        axes: resolveAxes(config.axes ?? {}),
+      };
+      fetchSimulation(resolvedConfig)
+        .then((result) => {
+          if (!cancelled) {
+            setOutput(result);
+            setIsLoading(false);
+          }
+        })
+        .catch(() => {
+          // Keep previous output on error (server may be starting up)
+          if (!cancelled) setIsLoading(false);
+        });
+    }, 300);
+
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
   }, [config]);
 
-  return output;
+  return { ...output, isLoading };
 }

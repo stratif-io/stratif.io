@@ -1,8 +1,36 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TopBar } from "../TopBar";
 import { useSeederStore, blankConfig } from "@/stores/seederStore";
+
+// useTwinOutput (now used in TopBar) calls fetch; stub it globally for all TopBar tests
+beforeEach(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          days: 0,
+          new_users: [],
+          active_users: [],
+          churned: [],
+          reactivated: [],
+          events: [],
+          stickiness: [],
+          growth_curve: [],
+          anomaly_curve: [],
+          jitter_curve: [],
+          virality_curve: [],
+        }),
+    }),
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 const PRESETS = [
   {

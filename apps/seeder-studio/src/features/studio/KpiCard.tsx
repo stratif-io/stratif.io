@@ -27,6 +27,7 @@ interface Props {
   onAnomalySelect?: (index: number, x: number, y: number) => void;
   valueSuffix?: string;
   className?: string;
+  isLoading?: boolean;
 }
 
 export function KpiCard({
@@ -42,6 +43,7 @@ export function KpiCard({
   onAnomalySelect,
   valueSuffix = "",
   className,
+  isLoading = false,
 }: Props) {
   const data = useMemo(
     () => values.map((v, i) => ({ i, v: v === null ? undefined : v })),
@@ -81,13 +83,22 @@ export function KpiCard({
       aria-expanded={expanded}
       onClick={onExpand}
       className={cn(
-        "flex flex-col gap-1 p-3 rounded-lg border bg-card text-left cursor-pointer transition-colors w-full",
+        "flex flex-col gap-1 p-3 rounded-lg border bg-card text-left cursor-pointer transition-colors w-full overflow-hidden relative",
         expanded
           ? "border-primary ring-1 ring-primary/30"
           : "border-border hover:border-muted-foreground/40",
         className,
       )}
     >
+      {isLoading && (
+        <div
+          role="progressbar"
+          aria-label="Simulating…"
+          className="absolute top-0 left-0 right-0 h-0.5 bg-primary/20 overflow-hidden"
+        >
+          <div className="h-full bg-primary/60 animate-pulse w-full" />
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-foreground">{title}</span>
         <span aria-hidden="true" className="text-[10px] text-muted-foreground">

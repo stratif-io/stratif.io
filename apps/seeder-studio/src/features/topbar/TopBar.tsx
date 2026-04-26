@@ -14,6 +14,7 @@ import type { PresetEntry } from "@/lib/api/presets";
 import { cn } from "@/lib/cn";
 import { defaultAnomaly } from "@/lib/twin";
 import { resolveScale } from "@/lib/twin/utils";
+import { useTwinOutput } from "@/features/preview/useTwinOutput";
 
 interface Props {
   presets: PresetEntry[];
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
+  const { isLoading } = useTwinOutput();
   const dirty = useSeederStore((s) => s.dirty);
   const uiStartDate = useSeederStore((s) => s.uiStartDate);
   const uiEndDate = useSeederStore((s) => s.uiEndDate);
@@ -126,6 +128,12 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
         <Badge variant="outline" className="text-[10px] h-5">
           Modified
         </Badge>
+      )}
+
+      {isLoading && (
+        <span className="text-[10px] text-muted-foreground animate-pulse">
+          Simulating…
+        </span>
       )}
 
       {resolvedScale.mode === "rate" ? (

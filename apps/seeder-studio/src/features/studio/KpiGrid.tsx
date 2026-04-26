@@ -69,7 +69,7 @@ export function KpiGrid() {
     x: number;
     y: number;
   } | null>(null);
-  const out = useTwinOutput();
+  const { isLoading, ...out } = useTwinOutput();
   const config = useSeederStore((s) => s.config);
   const anomalies = useSeederStore(
     (s) => s.config.anomalies ?? EMPTY_ANOMALIES,
@@ -151,6 +151,7 @@ export function KpiGrid() {
                 onExpand={() =>
                   setExpandedKey((p) => (p === card.key ? null : card.key))
                 }
+                isLoading={isLoading}
                 className={card.colSpan === 3 ? "col-span-3" : undefined}
               />
             ))}

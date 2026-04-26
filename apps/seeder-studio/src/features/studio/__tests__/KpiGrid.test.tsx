@@ -37,6 +37,36 @@ describe("KpiCard", () => {
     expect(screen.getByText(/peak 290/)).toBeInTheDocument();
   });
 
+  it("shows a loading indicator when isLoading is true", () => {
+    render(
+      <KpiCard
+        title="New users/day"
+        values={values}
+        headline="peak 290 · avg 145 · min 0"
+        color="hsl(var(--chart-3))"
+        expanded={false}
+        onExpand={vi.fn()}
+        isLoading={true}
+      />,
+    );
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+  });
+
+  it("does not show loading indicator when isLoading is false", () => {
+    render(
+      <KpiCard
+        title="New users/day"
+        values={values}
+        headline="peak 290"
+        color="hsl(var(--chart-3))"
+        expanded={false}
+        onExpand={vi.fn()}
+        isLoading={false}
+      />,
+    );
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+
   it("calls onExpand when clicked", () => {
     const onExpand = vi.fn();
     render(
@@ -98,12 +128,14 @@ describe("KpiCardExpanded", () => {
 
   it("renders 7 day rows in breakdown table", async () => {
     render(<KpiCardExpanded metricKey="events" onClose={vi.fn()} />);
-    await waitFor(() =>
-      expect(screen.getAllByText("1").length).toBeGreaterThan(0),
+    await waitFor(
+      () => {
+        for (let d = 1; d <= 7; d++) {
+          expect(screen.getAllByText(`${d}`).length).toBeGreaterThan(0);
+        }
+      },
+      { timeout: 2000 },
     );
-    for (let d = 2; d <= 7; d++) {
-      expect(screen.getAllByText(`${d}`).length).toBeGreaterThan(0);
-    }
   });
 
   it("calls onClose when close button clicked", () => {
@@ -122,12 +154,15 @@ describe("KpiCardExpanded", () => {
     "reactivatedUsers",
   ] as const)("renders 7 rows for %s", async (key) => {
     render(<KpiCardExpanded metricKey={key} onClose={vi.fn()} />);
-    await waitFor(() =>
-      expect(screen.getAllByText("1").length).toBeGreaterThan(0),
+    // Wait for all 7 day rows (accounts for debounce + fetch)
+    await waitFor(
+      () => {
+        for (let d = 1; d <= 7; d++) {
+          expect(screen.getAllByText(`${d}`).length).toBeGreaterThan(0);
+        }
+      },
+      { timeout: 2000 },
     );
-    for (let d = 2; d <= 7; d++) {
-      expect(screen.getAllByText(`${d}`).length).toBeGreaterThan(0);
-    }
   });
 
   it('shows "Total users" label in goal-driven mode', async () => {

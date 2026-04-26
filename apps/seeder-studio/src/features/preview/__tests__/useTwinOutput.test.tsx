@@ -50,4 +50,19 @@ describe("useTwinOutput", () => {
       ),
     );
   });
+
+  it("isLoading is true immediately after config changes and false after simulation resolves", async () => {
+    useSeederStore
+      .getState()
+      .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
+    const { result } = renderHook(() => useTwinOutput());
+
+    // isLoading should be true immediately (before debounce fires)
+    expect(result.current.isLoading).toBe(true);
+
+    // Wait for debounce (300ms) + fetch to resolve
+    await waitFor(() => expect(result.current.isLoading).toBe(false), {
+      timeout: 2000,
+    });
+  });
 });
