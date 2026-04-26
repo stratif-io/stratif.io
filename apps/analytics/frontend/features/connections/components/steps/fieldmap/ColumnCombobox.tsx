@@ -1,4 +1,4 @@
-// apps/web/frontend/features/connections/components/steps/fieldmap/ColumnCombobox.tsx
+// apps/analytics/frontend/features/connections/components/steps/fieldmap/ColumnCombobox.tsx
 import { useState } from 'react'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'

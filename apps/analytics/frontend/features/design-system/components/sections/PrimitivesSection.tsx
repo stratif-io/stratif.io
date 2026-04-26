@@ -1,4 +1,4 @@
-// apps/web/frontend/features/design-system/components/sections/PrimitivesSection.tsx
+// apps/analytics/frontend/features/design-system/components/sections/PrimitivesSection.tsx
 import { useState } from 'react'
 import { ComponentSection, ComponentRow } from '../ComponentSection'
 import { Button } from '@/components/ui/button'

@@ -4,7 +4,7 @@ import path from 'path'
 
 const INDEX_HTML = path.resolve(__dirname, '..', '..', 'index.html')
 
-describe('apps/web/index.html noindex script', () => {
+describe('apps/analytics/index.html noindex script', () => {
   it('contains the conditional noindex script', () => {
     const html = fs.readFileSync(INDEX_HTML, 'utf-8')
     expect(html).toContain("window.location.pathname !== '/'")

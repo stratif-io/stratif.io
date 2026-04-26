@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 /**
- * Lightweight mock of @stratif-io/web for Vitest.
+ * Lightweight mock of @stratif-io/design-system for Vitest.
  * Replaces Radix UI-based components with simple HTML equivalents to avoid
  * the duplicate React instance issue caused by Radix's nested node_modules.
  */
@@ -294,7 +294,7 @@ export const Textarea = React.forwardRef<
   return <textarea ref={ref} {...props} />;
 });
 
-// cn util (some files may import it from @stratif-io/web)
+// cn util (some files may import it from @stratif-io/design-system)
 export function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
 }

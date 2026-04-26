@@ -1,4 +1,4 @@
-// apps/web/frontend/features/connections/components/steps/fieldmap/__tests__/ColumnCombobox.test.tsx
+// apps/analytics/frontend/features/connections/components/steps/fieldmap/__tests__/ColumnCombobox.test.tsx
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'

@@ -1,3 +1,0 @@
-{
-  "events": ["add_to_cart", "checkout", "page_view", "purchase", "signup"]
-}
