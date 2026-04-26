@@ -655,10 +655,13 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     [config.axes],
   );
 
-  const simulationMode = useMemo(() => {
-    const axes = resolveAxes(config.axes ?? {});
-    return resolveScale(axes.scale, config.scale_config).mode;
-  }, [config.axes, config.scale_config]);
+  const resolvedScaleObj = useMemo(
+    () => resolveScale(resolvedAxes.scale, config.scale_config),
+    [resolvedAxes.scale, config.scale_config],
+  );
+  const simulationMode = resolvedScaleObj.mode;
+  const startingRate =
+    simulationMode === "rate" ? resolvedScaleObj.starting_rate : null;
 
   const chartTitle = useMemo(() => {
     const base = METRIC_LABELS[metricKey];
@@ -673,24 +676,27 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
       (config.growth_config?.split_fraction as number | undefined) ?? 0.3;
     const rate = (config.growth_config?.rate as number | undefined) ?? 0.04;
     const splitPct = Math.round(split * 100);
+    const scale = simulationMode === "rate" ? "\\lambda_0" : "\\tfrac{U}{T}";
     switch (axis) {
       case "flat":
-        return "G(t) = \\dfrac{U}{T}";
+        return `G(t) = ${scale}`;
       case "weak":
-        return "G(t) = \\dfrac{U}{T}\\left(0.5 + \\dfrac{t}{T}\\right)";
+        return `G(t) = ${scale}\\left(0.5 + \\dfrac{t}{T}\\right)`;
       case "strong":
-        return `G(t) = C\\,e^{${rate}\\,t},\\quad C = \\dfrac{${rate}\\,U}{e^{${rate}T}-1}`;
+        return simulationMode === "rate"
+          ? `G(t) = \\lambda_0\\,e^{${rate}\\,t}`
+          : `G(t) = C\\,e^{${rate}\\,t},\\quad C = \\dfrac{${rate}\\,U}{e^{${rate}T}-1}`;
       case "declining":
-        return "G(t) = 0.03\\,U\\,e^{-t\\,/\\,(0.5\\,T)}";
+        return `G(t) = 0.03\\,${scale.replace("\\tfrac", "\\dfrac")}\\,e^{-t\\,/\\,(0.5\\,T)}`;
       case "hockey_stick":
         return (
-          `G(t) = \\begin{cases} \\tfrac{0.05U}{t_0} & t < t_0 \\\\ C\\,e^{${rate}(t-t_0)} & t \\ge t_0 \\end{cases}` +
+          `G(t) = \\begin{cases} \\tfrac{0.05\\cdot${scale}}{t_0} & t < t_0 \\\\ C\\,e^{${rate}(t-t_0)} & t \\ge t_0 \\end{cases}` +
           `,\\quad t_0 = ${splitPct}\\%\\,T`
         );
       default:
         return "G(t)";
     }
-  }, [resolvedAxes.growth, config.growth_config]);
+  }, [resolvedAxes.growth, config.growth_config, simulationMode]);
 
   const [floatingEditor, setFloatingEditor] = useState<{
     index: number;
@@ -825,16 +831,27 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
           },
         ];
       case "newUsers":
-        return [
-          {
-            sym: "U",
-            name: "target total users",
-            value: formatNum(totalUsers),
-          },
-          { sym: "T", name: "window", value: `${windowDays} d` },
-          { sym: "K", name: "viral K-factor", value: k.toFixed(2) },
-          { sym: "σ", name: "jitter noise", value: sigma.toFixed(2) },
-        ];
+        return simulationMode === "rate"
+          ? [
+              {
+                sym: "λ₀",
+                name: "starting arrival rate (users/day)",
+                value: `${startingRate ?? "—"} /d`,
+              },
+              { sym: "T", name: "window", value: `${windowDays} d` },
+              { sym: "K", name: "viral K-factor", value: k.toFixed(2) },
+              { sym: "σ", name: "jitter noise", value: sigma.toFixed(2) },
+            ]
+          : [
+              {
+                sym: "U",
+                name: "target total users",
+                value: formatNum(totalUsers),
+              },
+              { sym: "T", name: "window", value: `${windowDays} d` },
+              { sym: "K", name: "viral K-factor", value: k.toFixed(2) },
+              { sym: "σ", name: "jitter noise", value: sigma.toFixed(2) },
+            ];
       case "reactivatedUsers":
         return [
           { sym: "θ₀", name: "peak churn rate", value: pct(rp.peakChurnRate) },
@@ -871,6 +888,8 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     rp,
     totalUsers,
     windowDays,
+    startingRate,
+    simulationMode,
     resolvedAxes.anomalies,
     resolvedAxes.virality,
   ]);
@@ -979,7 +998,17 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                     axisMap={pipeline.axisMap}
                     footnote={pipeline.footnote}
                     latexOverrides={
-                      metricKey === "newUsers" ? { g_growth: growthLatex } : {}
+                      metricKey === "newUsers"
+                        ? {
+                            g_growth: growthLatex,
+                            ...(simulationMode === "rate"
+                              ? {
+                                  __main__:
+                                    "N(t) \\sim \\operatorname{Poisson}\\!\\left(V(t)\\right)",
+                                }
+                              : {}),
+                          }
+                        : {}
                     }
                     axes={resolvedAxes}
                     onAxisChange={setAxis}
