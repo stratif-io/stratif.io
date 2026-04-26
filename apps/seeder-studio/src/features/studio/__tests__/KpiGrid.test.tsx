@@ -125,6 +125,34 @@ describe("KpiCardExpanded", () => {
       expect(screen.getAllByText(`${d}`).length).toBeGreaterThan(0);
     }
   });
+
+  it('shows "Total users" label in goal-driven mode', async () => {
+    // goal mode: no starting_rate in scale_config
+    useSeederStore
+      .getState()
+      .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
+    render(<KpiCardExpanded metricKey="totalUsers" onClose={vi.fn()} />);
+    await waitFor(() =>
+      expect(screen.getAllByTestId("math-formula").length).toBeGreaterThan(0),
+    );
+    expect(screen.getAllByText("Total users").length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("~Total users")).toHaveLength(0);
+  });
+
+  it('shows "~Total users" label in rate-driven mode', async () => {
+    // rate mode: starting_rate is set
+    useSeederStore.getState().loadPreset({
+      ...blankConfig(),
+      axes: { scale: "small" },
+      scale_config: { starting_rate: 10, window_days: 30 },
+    });
+    render(<KpiCardExpanded metricKey="totalUsers" onClose={vi.fn()} />);
+    await waitFor(() =>
+      expect(screen.getAllByTestId("math-formula").length).toBeGreaterThan(0),
+    );
+    expect(screen.getAllByText("~Total users").length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/^Total users$/)).toHaveLength(0);
+  });
 });
 
 describe("KpiGrid", () => {

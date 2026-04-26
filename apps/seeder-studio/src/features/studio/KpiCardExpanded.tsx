@@ -11,7 +11,12 @@ import type { GhostLine } from "@/features/preview/KpiChart";
 import { AnomalyFloatingEditor } from "@/features/anomalies/AnomalyFloatingEditor";
 import { useTwinOutput } from "@/features/preview/useTwinOutput";
 import { useSeederStore } from "@/stores/seederStore";
-import { resolveSimParams, getAxisValue, resolveAxes } from "@/lib/twin";
+import {
+  resolveSimParams,
+  getAxisValue,
+  resolveAxes,
+  resolveScale,
+} from "@/lib/twin";
 import { formatNum } from "@/lib/format";
 import { AXIS_DISPLAY } from "@/features/axes/axisDisplaySpec";
 import { AxisPopover } from "@/features/studio/AxisPopover";
@@ -650,6 +655,18 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     [config.axes],
   );
 
+  const simulationMode = useMemo(() => {
+    const axes = resolveAxes(config.axes ?? {});
+    return resolveScale(axes.scale, config.scale_config).mode;
+  }, [config.axes, config.scale_config]);
+
+  const chartTitle = useMemo(() => {
+    const base = METRIC_LABELS[metricKey];
+    if (metricKey === "totalUsers" && simulationMode === "rate")
+      return `~${base}`;
+    return base;
+  }, [metricKey, simulationMode]);
+
   const growthLatex = useMemo(() => {
     const axis = resolvedAxes.growth;
     const split =
@@ -924,7 +941,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
           <section className="px-7 py-5">
             <SectionLabel label="Visualise" />
             <KpiChart
-              title={METRIC_LABELS[metricKey]}
+              title={chartTitle}
               values={valuesFor(metricKey, out)}
               color={color}
               ghostLines={ghostLines}
