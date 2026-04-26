@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Lightweight mock of @stratif-io/web for Vitest.
  * Replaces Radix UI-based components with simple HTML equivalents to avoid
