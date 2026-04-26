@@ -9,8 +9,8 @@ from seeders.simulator.protocols import SimulationState
 ShapeMultiplier = Callable[[int], float]
 
 
-def _steady_shape() -> ShapeMultiplier:
-    return lambda d: 1.0
+def _steady_shape(r: float = 0.005) -> ShapeMultiplier:
+    return lambda d: 1.0 + r * d
 
 
 def _exponential_growth_shape(r: float) -> ShapeMultiplier:
@@ -59,8 +59,10 @@ def _build_shape(
         return _exponential_growth_shape(r=float(cfg.get("rate", 0.08)))
     if value == "strong":
         return _exponential_growth_shape(r=float(cfg.get("rate", 0.02)))
-    if value in ("steady", "flat"):
-        return _steady_shape()
+    if value == "flat":
+        return _steady_shape(r=0.0)
+    if value == "steady":
+        return _steady_shape(r=float(cfg.get("rate", 0.005)))
     if value == "declining":
         return _exponential_decline_shape(r=float(cfg.get("rate", 0.015)))
     if value == "seasonal":

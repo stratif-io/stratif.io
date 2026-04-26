@@ -69,11 +69,15 @@ def test_growth_axis_unknown_value_raises():
         GrowthAxis().apply("galactic", state)
 
 
-def test_steady_is_constant():
+def test_steady_is_linearly_increasing():
     state = _state()
     GrowthAxis().apply("steady", state)
     values = [state.arrival_curve(d) for d in range(WINDOW)]
-    assert len({round(v, 6) for v in values}) == 1
+    assert values[0] == pytest.approx(1.0)
+    assert values[-1] > values[0]
+    # linearity: equal increments
+    diffs = [values[i + 1] - values[i] for i in range(len(values) - 1)]
+    assert max(diffs) == pytest.approx(min(diffs), rel=1e-6)
 
 
 def test_hockey_stick_split_fraction_from_growth_config():
@@ -135,11 +139,18 @@ def test_growth_config_none_uses_defaults():
 # Shape multiplier tests (s(0) = 1.0 always)
 
 
-def test_steady_shape_is_always_one():
+def test_steady_shape_starts_at_one_and_grows_linearly():
     s = _steady_shape()
-    assert s(0) == 1.0
-    assert s(50) == 1.0
-    assert s(179) == 1.0
+    assert s(0) == pytest.approx(1.0)
+    assert s(50) > s(0)
+    assert s(100) - s(50) == pytest.approx(s(50) - s(0), rel=1e-6)
+
+
+def test_flat_shape_is_constant():
+    state = _state()
+    GrowthAxis().apply("flat", state)
+    values = [state.arrival_curve(d) for d in range(WINDOW)]
+    assert all(v == pytest.approx(1.0) for v in values)
 
 
 def test_exponential_growth_anchored_at_zero():
