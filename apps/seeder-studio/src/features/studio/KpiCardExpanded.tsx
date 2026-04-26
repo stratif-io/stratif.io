@@ -74,7 +74,7 @@ function buildDailyRows(
         return {
           day,
           formula: `V(${day})=${fix1(rate)}`,
-          computation: `round(${fix1(rate)})`,
+          computation: `Poisson(${fix1(rate)})`,
           result: fn(out.newUsers[i]),
         };
       }
@@ -334,12 +334,12 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
       },
       {
         lineKey: "__main__",
-        label: "New users",
-        latex: "N(t) = \\operatorname{round}(V(t))",
+        label: "Poisson draw",
+        latex: "N(t) \\sim \\operatorname{Poisson}(V(t))",
         color: "",
-        tooltipVarSymbols: ["N(t)", "V(t)"],
-        tooltipParamSyms: [],
-        axisVarMap: {},
+        tooltipVarSymbols: ["N(t)", "\\lambda(t)", "U", "T"],
+        tooltipParamSyms: ["U", "T"],
+        axisVarMap: { U: "scale", T: "scale" },
       },
     ],
     axisMap: {
@@ -382,8 +382,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
       },
     ],
     footnote:
-      "DAU = daily active users (estimated from previous day's cohorts). " +
-      "N(t) = round(V(t)) — expected value, no stochastic draw in the preview.",
+      "DAU = daily active users (estimated from previous day's cohorts).",
   },
 
   activeUsers: {

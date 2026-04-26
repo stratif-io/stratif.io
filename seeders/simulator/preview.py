@@ -181,12 +181,16 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         viral = K * (dau_prev / max(expected_cap, 1)) * g_curve[d] * arrival_cap
         v_curve.append(max(0.0, j_curve[d] * arrival_cap + viral))
 
-    # ── Pass 2: deterministic arrivals ───────────────────────────────────────
-    # new_users display = round(V(t) * report_scale) — continuous scale, no
-    # intermediate integer quantization. Cohort simulation uses rounded capped
-    # values (small integers) only for DAU/churn/reactivation shape.
-    new_users_display = [round(v * report_scale) for v in v_curve]
-    new_users_raw = [round(v) for v in v_curve]  # capped ints for cohort sim
+    # ── Pass 2: Poisson draw at display scale ────────────────────────────────
+    # Draw Poisson(V(t) * report_scale) directly — λ≈200-300, sensible variance.
+    # The old approach drew Poisson(V(t) * arrival_cap) with λ≈1, then scaled
+    # by report_scale, collapsing all values to the same integer (quantization).
+    rng_pass2 = random.Random(seed + 2)
+    new_users_display = [_poisson(rng_pass2, v * report_scale) for v in v_curve]
+
+    # Convert back to capped scale for cohort simulation so active_users,
+    # churned, and reactivated stay consistent with new_users.
+    new_users_raw = [round(n / report_scale) for n in new_users_display]
 
     # ── Final cohort simulation ───────────────────────────────────────────────
     rng_cohort = random.Random(seed + 1)
