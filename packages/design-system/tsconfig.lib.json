@@ -12,6 +12,9 @@
     "index.ts",
     "components/**/*.ts",
     "components/**/*.tsx",
-    "lib/**/*.ts"
-  ]
+    "lib/**/*.ts",
+    "hooks/**/*.ts",
+    "types/**/*.ts"
+  ],
+  "exclude": ["components/**/__tests__/**"]
 }
