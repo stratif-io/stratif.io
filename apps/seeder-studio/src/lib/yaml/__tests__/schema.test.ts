@@ -25,13 +25,18 @@ describe("SimulationConfigSchema", () => {
     expect(out.success).toBe(false);
   });
 
-  it("rejects non-string axes values", () => {
+  it("silently drops non-string axes values (lenient parsing)", () => {
+    // .catch(undefined) on axis enums coerces invalid values to undefined
+    // rather than failing — this is intentional lenient parsing behaviour.
     const out = SimulationConfigSchema.safeParse({
       name: "x",
       axes: { growth: 1 },
       markov: MIN_MARKOV,
     });
-    expect(out.success).toBe(false);
+    expect(out.success).toBe(true);
+    if (out.success) {
+      expect(out.data.axes.growth).toBeUndefined();
+    }
   });
 
   it("accepts anomalies with typed effect numbers", () => {

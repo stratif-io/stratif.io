@@ -49,6 +49,7 @@ export const SimulationAnomalySchema = z
 export const SimulationScaleOverrideSchema = z.object({
   total_users: z.number().int().positive().optional(),
   window_days: z.number().int().positive().optional(),
+  starting_rate: z.number().positive().optional(),
 });
 
 export const SimulationConfigSchema = z.object({

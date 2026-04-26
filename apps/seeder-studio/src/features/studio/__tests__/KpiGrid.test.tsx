@@ -13,6 +13,10 @@ const mockPreviewResult = {
   reactivated: Array(90).fill(2),
   events: Array(90).fill(2),
   stickiness: Array(90).fill(0.5),
+  growth_curve: Array(90).fill(0),
+  anomaly_curve: Array(90).fill(0),
+  jitter_curve: Array(90).fill(0),
+  virality_curve: Array(90).fill(0),
 };
 
 const values = Array.from({ length: 30 }, (_, i) => i * 10);

@@ -127,9 +127,21 @@ class Engine:
 
         # Sample per-day arrivals (Poisson around the arrival curve).
         day_0 = state.now - timedelta(days=state.window_days)
-        arrival_curve = state.arrival_curve or (
-            lambda d: state.total_users / state.window_days
-        )
+        # Determine the per-day base rate.
+        # Goal-driven mode: total_users is set → spread evenly across window.
+        # Rate-driven mode: starting_rate is set → use it directly as day-0 rate.
+        if state.total_users is not None:
+            _base_rate: float = state.total_users / state.window_days
+        else:
+            # Rate-driven: growth axis sets arrival_curve as a shape multiplier;
+            # starting_rate is the absolute day-0 arrivals/day baseline.
+            _base_rate = float(scale.starting_rate or 1.0)
+
+        _raw_arrival_curve = state.arrival_curve
+        if _raw_arrival_curve is not None:
+            arrival_curve = lambda d, _c=_raw_arrival_curve, _b=_base_rate: _b * _c(d)  # noqa: E731
+        else:
+            arrival_curve = lambda d, _b=_base_rate: _b  # noqa: E731
 
         rng = random.Random(self.config.random_seed or 0)
 
