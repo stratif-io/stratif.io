@@ -46,6 +46,18 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
         description: "Flat then explosive — B2B/PLG",
         sparkPoints: "0,24 14,23 24,22 32,20 36,14 42,8 52,3",
       },
+      {
+        value: "explosive",
+        label: "Explosive",
+        description: "Fast exponential — viral consumer app",
+        sparkPoints: "0,26 10,22 22,16 36,8 52,2",
+      },
+      {
+        value: "seasonal",
+        label: "Seasonal",
+        description: "Sinusoidal annual cycle — e-commerce / travel",
+        sparkPoints: "0,14 10,8 26,3 36,8 46,14 52,18",
+      },
     ],
   },
   stickiness: {

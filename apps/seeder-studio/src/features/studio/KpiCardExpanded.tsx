@@ -680,18 +680,28 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     const scale = simulationMode === "rate" ? "\\lambda_0" : "\\tfrac{U}{T}";
     switch (axis) {
       case "flat":
+      case "steady":
         return `G(t) = ${scale}`;
       case "weak":
         return `G(t) = ${scale}\\left(0.5 + \\dfrac{t}{T}\\right)`;
+      case "explosive":
+        return simulationMode === "rate"
+          ? `G(t) = \\lambda_0\\,e^{0.08\\,t}`
+          : `G(t) = C\\,e^{0.08\\,t},\\quad C = \\dfrac{0.08\\,U}{e^{0.08T}-1}`;
       case "strong":
         return simulationMode === "rate"
           ? `G(t) = \\lambda_0\\,e^{${rate}\\,t}`
           : `G(t) = C\\,e^{${rate}\\,t},\\quad C = \\dfrac{${rate}\\,U}{e^{${rate}T}-1}`;
       case "declining":
-        return `G(t) = 0.03\\,${scale.replace("\\tfrac", "\\dfrac")}\\,e^{-t\\,/\\,(0.5\\,T)}`;
+        return `G(t) = ${scale.replace("\\tfrac", "\\dfrac")}\\,e^{-0.015\\,t}`;
+      case "seasonal": {
+        const amp =
+          (config.growth_config?.amplitude as number | undefined) ?? 0.3;
+        return `G(t) = ${scale}\\,\\bigl(1 + ${amp}\\sin\\tfrac{2\\pi t}{365}\\bigr)`;
+      }
       case "hockey_stick":
         return (
-          `G(t) = \\begin{cases} \\tfrac{0.05\\cdot${scale}}{t_0} & t < t_0 \\\\ C\\,e^{${rate}(t-t_0)} & t \\ge t_0 \\end{cases}` +
+          `G(t) = \\begin{cases} ${scale} & t < t_0 \\\\ ${scale}\\,e^{${rate}(t-t_0)} & t \\ge t_0 \\end{cases}` +
           `,\\quad t_0 = ${splitPct}\\%\\,T`
         );
       default:
