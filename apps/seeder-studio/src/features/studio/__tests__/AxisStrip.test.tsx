@@ -41,3 +41,33 @@ describe("AxisStrip", () => {
     expect(screen.getAllByText("Hockey stick").length).toBe(1);
   });
 });
+
+describe("AxisStrip starting_rate input", () => {
+  beforeEach(() => {
+    useSeederStore.setState(useSeederStore.getInitialState(), true);
+    useSeederStore
+      .getState()
+      .loadPreset({ ...blankConfig(), axes: { scale: "small" } });
+  });
+
+  it("does not show starting_rate input in goal mode (no starting_rate)", () => {
+    render(<AxisStrip />);
+    expect(screen.queryByLabelText(/starting rate/i)).not.toBeInTheDocument();
+  });
+
+  it("shows starting_rate input when in rate mode", () => {
+    useSeederStore.getState().setScaleConfig({ starting_rate: 100 });
+    render(<AxisStrip />);
+    expect(screen.getByLabelText(/starting rate/i)).toBeInTheDocument();
+  });
+
+  it("changing starting_rate updates the store", () => {
+    useSeederStore.getState().setScaleConfig({ starting_rate: 100 });
+    render(<AxisStrip />);
+    const input = screen.getByLabelText(/starting rate/i);
+    fireEvent.change(input, { target: { value: "250" } });
+    expect(useSeederStore.getState().config.scale_config?.starting_rate).toBe(
+      250,
+    );
+  });
+});

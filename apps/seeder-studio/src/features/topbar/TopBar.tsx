@@ -34,10 +34,11 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
   const anomalies = config.anomalies ?? [];
   const scaleAxis = config.axes.scale ?? "small";
   const scaleOverride = config.scale_config;
-  const { window_days } = useMemo(
+  const resolvedScale = useMemo(
     () => resolveScale(scaleAxis, scaleOverride),
     [scaleAxis, scaleOverride],
   );
+  const { window_days } = resolvedScale;
 
   const handleAddEvent = () => {
     const duration = Math.max(5, Math.floor(window_days * 0.1));
@@ -125,6 +126,16 @@ export function TopBar({ presets, selectedName, onSelectPreset }: Props) {
         <Badge variant="outline" className="text-[10px] h-5">
           Modified
         </Badge>
+      )}
+
+      {resolvedScale.mode === "rate" ? (
+        <span className="text-[11px] font-medium text-muted-foreground bg-muted/60 rounded px-2 py-0.5 shrink-0">
+          📈 Rate: {resolvedScale.starting_rate} users/day
+        </span>
+      ) : (
+        <span className="text-[11px] font-medium text-muted-foreground bg-muted/60 rounded px-2 py-0.5 shrink-0">
+          🎯 Goal: {resolvedScale.total_users} users
+        </span>
       )}
 
       <div className="flex items-center gap-1.5">

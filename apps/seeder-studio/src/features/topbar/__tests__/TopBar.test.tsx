@@ -187,3 +187,41 @@ describe("TopBar + Event button", () => {
     expect(useSeederStore.getState().config.anomalies?.length).toBe(1);
   });
 });
+
+describe("TopBar mode badge", () => {
+  beforeEach(() => {
+    useSeederStore.setState(useSeederStore.getInitialState(), true);
+  });
+
+  it("shows goal badge when in goal mode (no starting_rate)", () => {
+    useSeederStore.getState().loadPreset({
+      ...blankConfig(),
+      scale_config: { total_users: 5000 },
+    });
+    render(
+      <TopBar
+        presets={mockPresets}
+        selectedName={null}
+        onSelectPreset={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/🎯 Goal:/)).toBeInTheDocument();
+    expect(screen.getByText(/5000 users/)).toBeInTheDocument();
+  });
+
+  it("shows rate badge when in rate mode (starting_rate set)", () => {
+    useSeederStore.getState().loadPreset({
+      ...blankConfig(),
+      scale_config: { starting_rate: 200 },
+    });
+    render(
+      <TopBar
+        presets={mockPresets}
+        selectedName={null}
+        onSelectPreset={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/📈 Rate:/)).toBeInTheDocument();
+    expect(screen.getByText(/200 users\/day/)).toBeInTheDocument();
+  });
+});
