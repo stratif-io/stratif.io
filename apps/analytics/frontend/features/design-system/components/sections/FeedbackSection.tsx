@@ -1,0 +1,140 @@
+import { useState } from 'react'
+import { ComponentSection, ComponentRow } from '../ComponentSection'
+import { LoadingState } from '@/components/ui/loading-state'
+import { EmptyState } from '@/components/ui/empty-state'
+import { QueryError } from '@/components/ui/query-error'
+import { CardLoadingBar } from '@/components/ui/card-loading-bar'
+import { UnderConstruction } from '@/components/UnderConstruction'
+import { NoConnectionScreen } from '@/components/ui/no-connection-guard'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { NotFoundPage } from '../../NotFoundPage'
+import { Button } from '@/components/ui/button'
+import { toast } from '@/components/ui/toast-provider'
+import { MiniMetricCard } from '@/features/dashboard/components/MiniMetricCard'
+import { HeroMetricCard } from '@/features/dashboard/components/HeroMetricCard'
+
+const stubError = new Error('Failed to load data.')
+
+function ThrowOnRender(): never {
+  throw new Error('Test error from design system demo')
+}
+
+function ErrorBoundaryDemo() {
+  const [triggered, setTriggered] = useState(false)
+  return (
+    <div className="w-full max-w-lg">
+      {triggered ? (
+        <ErrorBoundary key="triggered">
+          <ThrowOnRender />
+        </ErrorBoundary>
+      ) : (
+        <Button size="sm" variant="outline" onClick={() => setTriggered(true)}>
+          Trigger error boundary
+        </Button>
+      )}
+    </div>
+  )
+}
+
+export function FeedbackSection() {
+  return (
+    <ComponentSection id="feedback" title="Feedback States">
+      <ComponentRow label="LoadingState">
+        <div className="border rounded-md w-64 h-32 relative overflow-hidden flex items-center justify-center">
+          <LoadingState message="Loading data..." size="sm" />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="EmptyState">
+        <div className="border rounded-md w-64">
+          <EmptyState title="No data" description="Nothing to display yet." />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="QueryError">
+        <div className="border rounded-md w-64">
+          <QueryError error={stubError} />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="Card error state (MiniMetricCard)">
+        <div className="w-48">
+          <MiniMetricCard
+            label="Unique Users"
+            value="—"
+            pctChange={null}
+            isError
+            onRetry={() => toast('Retrying…')}
+          />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="Card error state (HeroMetricCard)">
+        <div className="w-80 h-48">
+          <HeroMetricCard
+            label="Total Events"
+            metricKey="total_events"
+            value="—"
+            pctChange={null}
+            previousValue="—"
+            sparklineValues={[]}
+            color="hsl(var(--chart-1))"
+            isError
+            onRetry={() => toast('Retrying…')}
+            granularity="day"
+          />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="CardLoadingBar">
+        <div className="border rounded-md w-64 p-4 relative overflow-hidden">
+          <p className="text-sm">Card with loading bar</p>
+          <CardLoadingBar loading />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="UnderConstruction">
+        <div className="border rounded-md w-64 overflow-hidden">
+          <UnderConstruction title="Coming soon" description="This feature isn't ready yet." />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="NoConnectionScreen">
+        <div className="border rounded-md w-full overflow-hidden max-w-xl max-h-72 overflow-y-auto">
+          <NoConnectionScreen />
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="ErrorBoundary">
+        <ErrorBoundaryDemo />
+      </ComponentRow>
+
+      <ComponentRow label="Toast">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => toast('Event saved')}>
+            Default
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => toast.success('Connection added')}>
+            Success
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => toast.error('Failed to run query')}>
+            Error
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => toast.warning('Query took longer than expected')}
+          >
+            Warning
+          </Button>
+        </div>
+      </ComponentRow>
+
+      <ComponentRow label="NotFoundPage">
+        <div className="border rounded-md w-full overflow-hidden max-w-4xl max-h-96 overflow-y-auto">
+          <NotFoundPage />
+        </div>
+      </ComponentRow>
+    </ComponentSection>
+  )
+}

@@ -1,0 +1,97 @@
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { MiniMetricCard } from '../MiniMetricCard'
+
+const renderWithTooltip = (ui: React.ReactElement) =>
+  render(<TooltipProvider>{ui}</TooltipProvider>)
+
+const baseProps = {
+  label: 'Unique Users',
+  value: '48.2K',
+  pctChange: 8.1,
+  sparklineValues: [100, 110, 120, 130, 140],
+  color: '#10b981',
+}
+
+describe('MiniMetricCard', () => {
+  it('renders the label', () => {
+    renderWithTooltip(<MiniMetricCard {...baseProps} />)
+    expect(screen.getByText('Unique Users')).toBeInTheDocument()
+  })
+
+  it('renders the formatted value', () => {
+    renderWithTooltip(<MiniMetricCard {...baseProps} />)
+    expect(screen.getByText('48.2K')).toBeInTheDocument()
+  })
+
+  it('renders positive % change with up arrow', () => {
+    renderWithTooltip(<MiniMetricCard {...baseProps} pctChange={8.1} />)
+    expect(screen.getByText(/8\.1%/)).toBeInTheDocument()
+    expect(screen.getByText(/↑/)).toBeInTheDocument()
+  })
+
+  it('renders negative % change with down arrow', () => {
+    renderWithTooltip(<MiniMetricCard {...baseProps} pctChange={-2.3} />)
+    expect(screen.getByText(/2\.3%/)).toBeInTheDocument()
+    expect(screen.getByText(/↓/)).toBeInTheDocument()
+  })
+
+  it('renders "0.0%" with no directional arrow when pctChange is 0', () => {
+    renderWithTooltip(<MiniMetricCard {...baseProps} pctChange={0} />)
+    expect(screen.getByText('0.0%')).toBeInTheDocument()
+    expect(screen.queryByText('↑')).not.toBeInTheDocument()
+    expect(screen.queryByText('↓')).not.toBeInTheDocument()
+  })
+
+  it('renders "—" when pctChange is null', () => {
+    renderWithTooltip(<MiniMetricCard {...baseProps} pctChange={null} />)
+    expect(screen.getByText('—')).toBeInTheDocument()
+  })
+
+  it('calls onClick when clicked', () => {
+    const onClick = vi.fn()
+    renderWithTooltip(<MiniMetricCard {...baseProps} onClick={onClick} />)
+    fireEvent.click(screen.getByRole('button'))
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('applies hero border style when isHero is true', () => {
+    renderWithTooltip(<MiniMetricCard {...baseProps} isHero />)
+    const card = screen.getByRole('button')
+    expect(card.className).toMatch(/border-primary/)
+  })
+
+  it('renders loading bar when loading is true', () => {
+    renderWithTooltip(<MiniMetricCard {...baseProps} loading />)
+    // Content is opacity-0 but still in DOM; loading bar is rendered
+    expect(document.querySelector('.bg-primary\\/50')).toBeTruthy()
+  })
+
+  it('shows the error reason in parenthesis when errorMessage is provided', () => {
+    renderWithTooltip(
+      <MiniMetricCard {...baseProps} isError errorMessage="timeout after 10s" onRetry={vi.fn()} />
+    )
+    expect(screen.getByText(/\(timeout after 10s\)/)).toBeInTheDocument()
+  })
+
+  it('shows a retry button when isError is true', () => {
+    const onRetry = vi.fn()
+    renderWithTooltip(<MiniMetricCard {...baseProps} isError onRetry={onRetry} />)
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument()
+  })
+
+  it('calls onRetry when retry button is clicked', () => {
+    const onRetry = vi.fn()
+    renderWithTooltip(<MiniMetricCard {...baseProps} isError onRetry={onRetry} />)
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }))
+    expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('applies error border style when isError is true', () => {
+    const onRetry = vi.fn()
+    renderWithTooltip(<MiniMetricCard {...baseProps} isError onRetry={onRetry} />)
+    const card = screen.getByRole('button', { name: /view.*trend/i })
+    expect(card.className).toMatch(/destructive/)
+  })
+})

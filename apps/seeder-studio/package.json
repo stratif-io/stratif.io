@@ -19,7 +19,7 @@
     "@codemirror/view": "^6.40.0",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
-    "@stratif-io/web": "workspace:*",
+    "@stratif-io/analytics": "workspace:*",
     "@tanstack/react-query": "^5.60.0",
     "@uiw/react-codemirror": "^4.23.5",
     "@xyflow/react": "^12.10.2",

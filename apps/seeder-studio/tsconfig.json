@@ -18,8 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@stratif-io/web": ["../web/dist/index.d.ts"],
-      "@stratif-io/web/*": ["../web/dist/*"]
+      "@stratif-io/analytics": ["../analytics/dist/index.d.ts"],
+      "@stratif-io/analytics/*": ["../analytics/dist/*"]
     },
     "types": ["node", "vitest/globals"]
   },
