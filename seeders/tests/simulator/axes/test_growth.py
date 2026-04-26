@@ -6,7 +6,14 @@ import math
 
 import pytest
 
-from seeders.simulator.axes.growth import GrowthAxis
+from seeders.simulator.axes.growth import (
+    GrowthAxis,
+    _exponential_decline_shape,
+    _exponential_growth_shape,
+    _hockey_stick_shape,
+    _seasonal_shape,
+    _steady_shape,
+)
 from seeders.simulator.protocols import SimulationState
 
 TOTAL = 10_000
@@ -141,3 +148,50 @@ def test_growth_config_none_uses_defaults():
     assert math.isclose(
         state.arrival_curve(0), state.arrival_curve(flat_end), rel_tol=0.05
     )
+
+
+# Shape multiplier tests (s(0) = 1.0 always)
+
+
+def test_steady_shape_is_always_one():
+    s = _steady_shape()
+    assert s(0) == 1.0
+    assert s(50) == 1.0
+    assert s(179) == 1.0
+
+
+def test_exponential_growth_anchored_at_zero():
+    s = _exponential_growth_shape(r=0.05)
+    assert s(0) == pytest.approx(1.0)
+    assert s(10) > s(5) > s(0)
+
+
+def test_exponential_decline_anchored_at_zero():
+    s = _exponential_decline_shape(r=0.015)
+    assert s(0) == pytest.approx(1.0)
+    assert s(10) < s(5) < s(0)
+    for d in range(100):
+        assert s(d) > 0
+
+
+def test_hockey_stick_flat_before_split():
+    window = 180
+    s = _hockey_stick_shape(r=0.06, split_fraction=0.35, window=window)
+    split = int(window * 0.35)
+    for d in range(split):
+        assert s(d) == pytest.approx(1.0), f"day {d} should be 1.0"
+
+
+def test_hockey_stick_grows_after_split():
+    window = 180
+    s = _hockey_stick_shape(r=0.06, split_fraction=0.35, window=window)
+    split = int(window * 0.35)
+    assert s(split + 10) > s(split + 5) > s(split)
+
+
+def test_seasonal_shape_anchored_at_zero():
+    s = _seasonal_shape(amplitude=0.3)
+    assert s(0) == pytest.approx(1.0)
+    values = [s(d) for d in range(365)]
+    assert min(values) >= 0.7 - 1e-9
+    assert max(values) <= 1.3 + 1e-9
