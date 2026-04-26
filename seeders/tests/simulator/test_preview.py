@@ -127,6 +127,7 @@ def test_rate_driven_higher_starting_rate_gives_more_users():
     r1 = run_preview(base)
     r2 = run_preview(double)
     assert sum(r2.new_users) > sum(r1.new_users)
+    assert sum(r2.new_users) >= 1.5 * sum(r1.new_users)
 
 
 def test_goal_driven_mode_hits_target():
@@ -144,4 +145,4 @@ def test_goal_driven_mode_hits_target():
     )
     result = run_preview(config)
     total = sum(result.new_users)
-    assert 1_400 < total < 2_600  # within 30% of target
+    assert 1_700 < total < 2_300  # within 15% of target (seed is fixed)

@@ -62,10 +62,13 @@ def _poisson(rng: random.Random, lam: float) -> int:
             return k - 1
 
 
+_DEFAULT_AVG_EVENTS_PER_SESSION = 3.0  # fallback when Markov transitions are empty
+
+
 def _avg_events_per_session(config: SimulationConfig) -> float:
     end_probs = [t.get("[end]", 0.0) for t in config.markov.transitions.values()]
     if not end_probs:
-        return 3.0
+        return _DEFAULT_AVG_EVENTS_PER_SESSION
     avg_end = sum(end_probs) / len(end_probs)
     return min(max(1.0 / avg_end if avg_end > 0 else 5.0, 1.0), 20.0)
 
@@ -110,6 +113,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         now=datetime.now(UTC),
     )
     state.anomalies = list(config.anomalies)
+    # consumed by GrowthAxis.apply() via state.growth_config
     state.growth_config = dict(config.growth_config) if config.growth_config else None
 
     axis_reg = default_axis_registry()
@@ -123,7 +127,9 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     parsed_anomalies = parse_anomalies(state.anomalies, state.now, window)
     day_0 = state.now - timedelta(days=window)
     shape = state.arrival_curve or (lambda d: 1.0)
-    rng = random.Random(config.random_seed or 0)
+    seed = config.random_seed or 0
+    rng_jitter = random.Random(seed + 0)  # jitter draws (phase 0)
+    # rng1 uses seed+1 for pass-1 Poisson draws + cohort simulation
     dow_weights = get_dow_weights("generic")
 
     sigma = state.jitter_sigma
@@ -142,7 +148,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
 
     # ── J(t) = A(t) · (1 + σZ) ───────────────────────────────────────────────
     j_curve: list[float] = [
-        max(0.0, a * (1.0 + sigma * rng.gauss(0.0, 1.0))) for a in a_curve
+        max(0.0, a * (1.0 + sigma * rng_jitter.gauss(0.0, 1.0))) for a in a_curve
     ]
 
     # Arrival cap: keep simulation under _PREVIEW_USER_CAP for UI performance
@@ -151,7 +157,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     report_scale = 1.0 / arrival_cap
 
     # ── Pass 1: preliminary arrivals → preliminary DAU ───────────────────────
-    rng1 = random.Random((config.random_seed or 0) + 1)
+    rng1 = random.Random(seed + 1)
     n0 = [_poisson(rng1, j * arrival_cap) for j in j_curve]
     active_sets0, _ = _simulate_cohorts(n0, state, rng1)
     dau0 = [len(s) for s in active_sets0]
@@ -165,10 +171,12 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         v_curve.append(max(0.0, j_curve[d] * arrival_cap + viral))
 
     # ── Pass 2: final Poisson draw ────────────────────────────────────────────
-    new_users_raw = [_poisson(rng, v) for v in v_curve]
+    rng_pass2 = random.Random(seed + 2)  # pass-2 Poisson draws (phase 2)
+    new_users_raw = [_poisson(rng_pass2, v) for v in v_curve]
 
     # ── Final cohort simulation ───────────────────────────────────────────────
-    active_sets, first_day = _simulate_cohorts(new_users_raw, state, rng)
+    rng_cohort = random.Random(seed + 3)  # cohort simulation (phase 3)
+    active_sets, first_day = _simulate_cohorts(new_users_raw, state, rng_cohort)
     active_users_raw = [len(s) for s in active_sets]
 
     churned_raw = [0] * window
@@ -198,6 +206,8 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         new_users_total = sum(new_users_raw) * report_scale
         return [v * (new_users_total / total) for v in curve]
 
+    # virality_curve uses raw report_scale (not _norm_curve) because v_curve is already in
+    # arrival-capped units — scaling by report_scale gives the same y-axis as new_users.
     v_norm = [v * report_scale for v in v_curve]
 
     return PreviewResult(
