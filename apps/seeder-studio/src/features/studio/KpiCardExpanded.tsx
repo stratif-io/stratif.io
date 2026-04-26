@@ -1419,7 +1419,7 @@ function PipelineFormula({
                               className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border/50 bg-muted/40 hover:bg-muted transition-colors shrink-0"
                             >
                               <span className="font-mono text-[11px] font-bold text-foreground leading-none">
-                                {matchedParam?.value ?? varAxisLabel}
+                                {varAxisLabel}
                               </span>
                               <span className="text-muted-foreground/50 text-[10px] leading-none">
                                 {isAxisOpen ? "▴" : "▾"}
