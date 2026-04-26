@@ -1,0 +1,56 @@
+name: Marketplace Scaling (Early Airbnb)
+description: Two-sided marketplace with GMV growth.
+axes:
+  growth: strong
+  stickiness: normal
+  engagement_depth: medium
+  monetization: marketplace_fee
+  virality: weak
+  scale: medium
+  geography: global
+  anomalies: clean
+scale_config:
+  window_days: 365
+  starting_rate: 40
+
+markov:
+  events:
+    - name: PageView
+    - name: Search
+    - name: ListingView
+    - name: MessageToSeller
+    - name: Offer
+    - name: Purchase
+    - name: ListingCreated
+    - name: ListingSold
+  start:
+    PageView: 0.40
+    Search: 0.40
+    ListingView: 0.20
+  transitions:
+    PageView:
+      Search: 0.50
+      ListingView: 0.30
+      "[end]": 0.20
+    Search:
+      ListingView: 0.65
+      "[end]": 0.35
+    ListingView:
+      MessageToSeller: 0.20
+      Offer: 0.10
+      Search: 0.35
+      ListingCreated: 0.05
+      "[end]": 0.30
+    MessageToSeller:
+      Offer: 0.30
+      "[end]": 0.70
+    Offer:
+      Purchase: 0.40
+      "[end]": 0.60
+    Purchase:
+      ListingSold: 0.90
+      "[end]": 0.10
+    ListingCreated:
+      "[end]": 1.0
+    ListingSold:
+      "[end]": 1.0

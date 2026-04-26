@@ -1,0 +1,37 @@
+{
+  "target_event": "purchase",
+  "device_type": null,
+  "total_occurrences": 288,
+  "data": [
+    {
+      "path": "signup \u2192 add_to_cart \u2192 checkout \u2192 purchase",
+      "step_3": "signup",
+      "step_2": "add_to_cart",
+      "step_1": "checkout",
+      "target": "purchase",
+      "device_type": "Desktop",
+      "count": 72,
+      "percentage": 25.0
+    },
+    {
+      "path": "signup \u2192 add_to_cart \u2192 checkout \u2192 purchase",
+      "step_3": "signup",
+      "step_2": "add_to_cart",
+      "step_1": "checkout",
+      "target": "purchase",
+      "device_type": "Mobile",
+      "count": 144,
+      "percentage": 50.0
+    },
+    {
+      "path": "signup \u2192 add_to_cart \u2192 checkout \u2192 purchase",
+      "step_3": "signup",
+      "step_2": "add_to_cart",
+      "step_1": "checkout",
+      "target": "purchase",
+      "device_type": "Tablet",
+      "count": 72,
+      "percentage": 25.0
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "entry_event": "page_view",
+  "goal_event": "purchase",
+  "data": [
+    {
+      "total_users": 10,
+      "converted_users": 4,
+      "conversion_rate_percent": 40.0
+    }
+  ]
+}

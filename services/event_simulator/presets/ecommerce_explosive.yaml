@@ -1,0 +1,57 @@
+name: E-commerce Explosive Growth (Early Shopify)
+description: Viral e-commerce growing fast.
+axes:
+  growth: explosive
+  stickiness: sticky
+  engagement_depth: medium
+  monetization: one_off_purchase
+  virality: strong_viral
+  scale: medium
+  geography: global
+  anomalies: explicit
+anomalies:
+  - type: marketing_campaign
+    name: viral_launch
+    start: -45d
+    duration: 14d
+    effect:
+      arrivals: 2.5
+  - type: shopping_season
+    name: black_friday_2025
+    date: "2025-11-28"
+    duration: 3d
+    effect:
+      arrivals: 3.0
+scale_config:
+  window_days: 180
+  starting_rate: 20
+
+markov:
+  events:
+    - name: Home
+    - name: Search
+    - name: ProductView
+    - name: AddToCart
+    - name: Purchase
+  start:
+    Home: 0.50
+    Search: 0.30
+    ProductView: 0.20
+  transitions:
+    Home:
+      Search: 0.50
+      ProductView: 0.30
+      "[end]": 0.20
+    Search:
+      ProductView: 0.65
+      "[end]": 0.35
+    ProductView:
+      AddToCart: 0.30
+      Search: 0.20
+      "[end]": 0.50
+    AddToCart:
+      Purchase: 0.60
+      ProductView: 0.20
+      "[end]": 0.20
+    Purchase:
+      "[end]": 1.0

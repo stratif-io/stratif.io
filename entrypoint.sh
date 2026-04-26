@@ -21,7 +21,7 @@ if [ ! -f "$SAMPLE_DB" ]; then
   echo "[stratifio] Seeding complete → $SAMPLE_DB"
 fi
 
-python -m seeders.bootstrap_connection --path "$SAMPLE_DB"
+python -m services.event_simulator.bootstrap_connection --path "$SAMPLE_DB"
 
 echo "[stratifio] Open http://localhost:9999 in your browser"
-exec uvicorn backend.main:app --host 0.0.0.0 --port 8000
+exec uvicorn services.analytics.main:app --host 0.0.0.0 --port 8000

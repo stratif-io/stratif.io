@@ -1,0 +1,55 @@
+"""Anomalies axis — turns anomaly processing on or off.
+
+Phase 2b only plumbs the config's anomaly list through to state; Phase 5
+introduces the applicator that interprets each anomaly's effect.
+
+``clean`` — empties out ``state.anomalies``.
+``explicit`` / ``full`` / named category — leaves ``state.anomalies`` as-is.
+The engine populates ``state.anomalies = config.anomalies`` before axis
+application, so non-``clean`` values preserve whatever the preset declared.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from services.event_simulator.simulator.protocols import AxisModifier, SimulationState
+
+_VALUES = (
+    "none",
+    "clean",
+    "moderate",
+    "campaigns",
+    "outages",
+    "ab_tests",
+    "full",
+    "explicit",
+)
+
+_SIGMA: dict[str, float] = {
+    "none": 0.0,
+    "clean": 0.02,
+    "moderate": 0.05,
+    "campaigns": 0.08,
+    "outages": 0.08,
+    "ab_tests": 0.08,
+    "full": 0.10,
+    "explicit": 0.10,
+}
+
+
+class AnomaliesAxis:
+    name: str = "anomalies"
+    values: dict[str, Any] = dict.fromkeys(_VALUES)
+
+    def apply(self, value: str, simulation: SimulationState) -> None:
+        if value not in _VALUES:
+            raise ValueError(
+                f"unknown anomalies value {value!r}; valid: {sorted(_VALUES)}"
+            )
+        if value in ("none", "clean"):
+            simulation.anomalies = []
+        simulation.jitter_sigma = _SIGMA[value]
+
+
+assert isinstance(AnomaliesAxis(), AxisModifier)

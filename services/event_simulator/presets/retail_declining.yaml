@@ -1,0 +1,57 @@
+name: Retail Declining (Sears-Like)
+description: Brick-and-mortar + web retail losing market share.
+axes:
+  growth: declining
+  stickiness: normal
+  engagement_depth: medium
+  monetization: one_off_purchase
+  virality: none
+  scale: medium
+  geography: us_only
+  anomalies: explicit
+anomalies:
+  - type: shopping_season
+    name: black_friday_peak
+    start: -540d
+    duration: 3d
+    effect:
+      arrivals: 3.5
+  - type: outage
+    name: server_downtime
+    start: -400d
+    duration: 6h
+    effect:
+      all_events: 0.0
+scale_config:
+  window_days: 365
+  starting_rate: 300
+
+markov:
+  events:
+    - name: PageView
+    - name: Search
+    - name: ProductView
+    - name: AddToCart
+    - name: Purchase
+  start:
+    PageView: 0.50
+    Search: 0.30
+    ProductView: 0.20
+  transitions:
+    PageView:
+      Search: 0.50
+      ProductView: 0.30
+      "[end]": 0.20
+    Search:
+      ProductView: 0.65
+      "[end]": 0.35
+    ProductView:
+      AddToCart: 0.30
+      Search: 0.20
+      "[end]": 0.50
+    AddToCart:
+      Purchase: 0.60
+      ProductView: 0.20
+      "[end]": 0.20
+    Purchase:
+      "[end]": 1.0

@@ -1,0 +1,9 @@
+{
+  "data": [
+    {
+      "total_sessions": 720,
+      "avg_duration_sec": 720.0,
+      "avg_events_per_session": 3.4
+    }
+  ]
+}
