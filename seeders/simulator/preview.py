@@ -181,11 +181,12 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         viral = K * (dau_prev / max(expected_cap, 1)) * g_curve[d] * arrival_cap
         v_curve.append(max(0.0, j_curve[d] * arrival_cap + viral))
 
-    # ── Pass 2: deterministic arrivals for preview ────────────────────────────
-    # The preview shows expected values, not stochastic draws. Poisson here
-    # would amplify discretization noise by report_scale (e.g. ×97), turning
-    # a ±1 draw difference into ±97 in the display — pure preview artifact.
-    new_users_raw = [round(v) for v in v_curve]
+    # ── Pass 2: deterministic arrivals ───────────────────────────────────────
+    # new_users display = round(V(t) * report_scale) — continuous scale, no
+    # intermediate integer quantization. Cohort simulation uses rounded capped
+    # values (small integers) only for DAU/churn/reactivation shape.
+    new_users_display = [round(v * report_scale) for v in v_curve]
+    new_users_raw = [round(v) for v in v_curve]  # capped ints for cohort sim
 
     # ── Final cohort simulation ───────────────────────────────────────────────
     rng_cohort = random.Random(seed + 1)
@@ -231,7 +232,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
 
     return PreviewResult(
         days=list(range(window)),
-        new_users=[_scale(v) for v in new_users_raw],
+        new_users=new_users_display,
         active_users=[_scale(v) for v in active_users_raw],
         churned=[_scale(v) for v in churned_raw],
         reactivated=[_scale(v) for v in reactivated_raw],

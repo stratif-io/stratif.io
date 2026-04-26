@@ -73,7 +73,7 @@ function buildDailyRows(
         const rate = out.pipeline.virality[i] ?? 0;
         return {
           day,
-          formula: `λ(${day})=${fix1(rate)}`,
+          formula: `V(${day})=${fix1(rate)}`,
           computation: `round(${fix1(rate)})`,
           result: fn(out.newUsers[i]),
         };
@@ -334,13 +334,12 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
       },
       {
         lineKey: "__main__",
-        label: "Poisson draw",
-        latex:
-          "N(t) \\sim \\operatorname{Poisson}\\!\\left(\\frac{V(t)}{\\sum_s V(s)} \\cdot U\\right)",
+        label: "New users",
+        latex: "N(t) = \\operatorname{round}(V(t))",
         color: "",
-        tooltipVarSymbols: ["N(t)", "\\lambda(t)", "U", "T"],
-        tooltipParamSyms: ["U", "T"],
-        axisVarMap: { U: "scale", T: "scale" },
+        tooltipVarSymbols: ["N(t)", "V(t)"],
+        tooltipParamSyms: [],
+        axisVarMap: {},
       },
     ],
     axisMap: {
@@ -384,8 +383,7 @@ const METRIC_PIPELINES: Partial<Record<MetricKey, MetricPipelineConfig>> = {
     ],
     footnote:
       "DAU = daily active users (estimated from previous day's cohorts). " +
-      "The preview runs on a capped sample and scales results up; on long windows or high rates, " +
-      "some days may show 0 new users because the internal Poisson draw (at the reduced preview rate) sampled zero.",
+      "N(t) = round(V(t)) — expected value, no stochastic draw in the preview.",
   },
 
   activeUsers: {
