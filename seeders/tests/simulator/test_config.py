@@ -149,3 +149,13 @@ def test_resolved_scale_falls_back_to_scale_axis():
 
     assert scale.total_users == SCALE_PRESETS["tiny"].total_users
     assert scale.window_days == SCALE_PRESETS["tiny"].window_days
+
+
+def test_scale_config_rejects_both_fields():
+    with pytest.raises(ValueError, match="exactly one"):
+        ScaleConfig(window_days=90, total_users=1_000, starting_rate=50.0)
+
+
+def test_scale_config_rejects_neither_field():
+    with pytest.raises(ValueError, match="exactly one"):
+        ScaleConfig(window_days=90)

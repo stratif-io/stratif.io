@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from seeders.simulator.markov import MarkovConfig
 
+_DEFAULT_WINDOW_DAYS = 90
 SCALE_PRESETS: dict[str, ScaleConfig] = {}
 
 
@@ -20,6 +21,12 @@ class ScaleConfig:
     window_days: int
     total_users: int | None = None
     starting_rate: float | None = None
+
+    def __post_init__(self) -> None:
+        if (self.total_users is None) == (self.starting_rate is None):
+            raise ValueError(
+                "ScaleConfig requires exactly one of total_users or starting_rate"
+            )
 
     @classmethod
     def from_named(cls, name: str) -> ScaleConfig:
@@ -71,14 +78,14 @@ class SimulationConfig(BaseModel):
         if override is not None and override.starting_rate is not None:
             return ScaleConfig(
                 starting_rate=override.starting_rate,
-                window_days=override.window_days or 90,
+                window_days=override.window_days or _DEFAULT_WINDOW_DAYS,
             )
 
         # Goal-driven mode: total_users present in override
         if override is not None and override.total_users is not None:
             return ScaleConfig(
                 total_users=override.total_users,
-                window_days=override.window_days or 90,
+                window_days=override.window_days or _DEFAULT_WINDOW_DAYS,
             )
 
         # Legacy: scale axis shorthand → goal-driven
