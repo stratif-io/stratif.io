@@ -641,6 +641,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   const config = useSeederStore((s) => s.config);
   const setAnomalies = useSeederStore((s) => s.setAnomalies);
   const setAxis = useSeederStore((s) => s.setAxis);
+  const setScaleConfig = useSeederStore((s) => s.setScaleConfig);
   const {
     depth,
     retentionParams: rp,
@@ -915,21 +916,21 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   // Resolve pipeline config — fallback to undefined (triggers static formula)
   const pipeline = METRIC_PIPELINES[metricKey];
 
-  // In rate mode, rewrite newUsers pipeline steps to remove U references
+  // In rate mode, rewrite newUsers pipeline steps to remove U references.
+  // λ₀ is intentionally kept only in tooltipParamSyms (not tooltipVarSymbols)
+  // so it appears exactly once — as a param row with its editable value.
   const effectiveSteps = useMemo(() => {
     if (!pipeline || metricKey !== "newUsers" || simulationMode !== "rate")
       return pipeline?.steps;
     return pipeline.steps.map((step) => {
-      // Growth curve: swap U → λ₀ in tooltip symbols and axis map
       if (step.lineKey === "g_growth") {
         return {
           ...step,
-          tooltipVarSymbols: ["t", "G(t)", "\\lambda_0", "T"],
+          tooltipVarSymbols: ["t", "G(t)", "T"],
           tooltipParamSyms: ["λ₀", "T"],
           axisVarMap: { "G(t)": "growth" },
         };
       }
-      // Poisson draw: no U in rate mode
       if (step.lineKey === "__main__") {
         return {
           ...step,
@@ -942,13 +943,15 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     });
   }, [pipeline, metricKey, simulationMode]);
 
-  // In rate mode, surface λ₀ and hide the goal-only U variable
+  // Hide λ₀ from the variable-description list (it shows via params instead).
+  // Hide U in rate mode; hide λ₀ in goal mode.
   const effectiveVars = useMemo(() => {
     if (metricKey !== "newUsers") return entry.variables;
-    if (simulationMode === "rate")
-      return entry.variables.filter((v) => v.symbol !== "U");
-    // goal mode: hide λ₀ (not applicable)
-    return entry.variables.filter((v) => v.symbol !== "\\lambda_0");
+    return entry.variables.filter((v) =>
+      simulationMode === "rate"
+        ? v.symbol !== "U" && v.symbol !== "\\lambda_0"
+        : v.symbol !== "\\lambda_0",
+    );
   }, [entry.variables, metricKey, simulationMode]);
 
   // Intermediate cols filtered by checked steps (only when pipeline exists)
@@ -1052,6 +1055,17 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                     onToggleStep={toggleStep}
                     allVars={effectiveVars}
                     allParams={params}
+                    editableParams={
+                      simulationMode === "rate" && metricKey === "newUsers"
+                        ? {
+                            "λ₀": (val) =>
+                              setScaleConfig({
+                                ...config.scale_config,
+                                starting_rate: val,
+                              }),
+                          }
+                        : undefined
+                    }
                   />
 
                   {/* Where clause */}
@@ -1236,6 +1250,7 @@ function PipelineFormula({
   onToggleStep,
   allVars = [],
   allParams = [],
+  editableParams,
 }: {
   ghostLines: GhostLine[];
   mainColor: string;
@@ -1253,6 +1268,7 @@ function PipelineFormula({
   onToggleStep?: (key: string) => void;
   allVars?: FormulaVariable[];
   allParams?: { sym: string; name: string; value: string }[];
+  editableParams?: Record<string, (val: number) => void>;
 }) {
   const colorMap: Record<string, string> = { __main__: mainColor };
   for (const g of ghostLines) colorMap[g.key] = g.color;
@@ -1416,9 +1432,24 @@ function PipelineFormula({
                         <span className="text-xs text-muted-foreground flex-1 leading-snug">
                           {p.name}
                         </span>
-                        <span className="font-mono text-xs font-bold text-foreground shrink-0">
-                          {p.value}
-                        </span>
+                        {editableParams?.[p.sym] ? (
+                          <input
+                            key={p.value}
+                            type="number"
+                            min={1}
+                            defaultValue={parseFloat(p.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const n = parseFloat(e.target.value);
+                              if (!isNaN(n) && n > 0) editableParams[p.sym](n);
+                            }}
+                            className="w-20 h-6 rounded border border-border bg-muted/40 px-1.5 text-right font-mono text-xs font-bold text-foreground shrink-0 focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        ) : (
+                          <span className="font-mono text-xs font-bold text-foreground shrink-0">
+                            {p.value}
+                          </span>
+                        )}
                       </div>
                     ))}
                 </div>
