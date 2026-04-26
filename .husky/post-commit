@@ -2,4 +2,4 @@
 
 # Rebuild @stratif-io/web lib so seeder-studio dev server can resolve it.
 # lint-staged may reformat files in apps/web, invalidating the previous build.
-cd apps/web && bun run build:lib --silent 2>/dev/null || true
+cd apps/web && vite build --config vite.config.lib.ts --silent 2>/dev/null || true
