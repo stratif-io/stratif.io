@@ -139,20 +139,16 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     sigma = state.jitter_sigma
     K = state.virality_weight
 
-    # ── G(t) = starting_rate × s(d) ──────────────────────────────────────────
-    # Normalize shape so starting_rate is the *mean* daily rate, not day-0 rate.
-    # Without this, unbounded shapes (e.g. explosive e^{0.08d}) push expected_total
-    # into the billions, collapsing arrival_cap ≈ 0 and producing nonsense previews.
-    raw_shape_values = [shape(d) for d in range(window)]
-    shape_mean = sum(raw_shape_values) / max(len(raw_shape_values), 1)
-
+    # ── G(t) = λ₀ × shape(t) ─────────────────────────────────────────────────
+    # λ₀ = starting_rate = arrival rate on day 0. shape(0) = 1 by construction
+    # for all shape types, so G(0) = λ₀ exactly as the formula panel shows.
     g_curve: list[float] = []
     a_curve: list[float] = []
     for d in range(window):
         local_date = (day_0 + timedelta(days=d)).date()
         dow_mult = dow_weights[local_date.weekday()]
         ano_mult = arrivals_multiplier(parsed_anomalies, local_date)
-        g = starting_rate * (raw_shape_values[d] / shape_mean)
+        g = starting_rate * shape(d)
         g_curve.append(g)
         a_curve.append(g * dow_mult * ano_mult)
 

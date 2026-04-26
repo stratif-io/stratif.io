@@ -679,8 +679,9 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     const scale = simulationMode === "rate" ? "\\lambda_0" : "\\tfrac{U}{T}";
     switch (axis) {
       case "flat":
-      case "steady":
         return `G(t) = ${scale}`;
+      case "steady":
+        return `G(t) = ${scale}\\,(1 + 0.005\\,t)`;
       case "weak":
         return `G(t) = ${scale}\\left(0.5 + \\dfrac{t}{T}\\right)`;
       case "explosive":
