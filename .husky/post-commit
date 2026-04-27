@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 
-# Rebuild @stratif-io/web lib so seeder-studio dev server can resolve it.
-# lint-staged may reformat files in apps/web, invalidating the previous build.
-cd apps/web && vite build --config vite.config.lib.ts --silent 2>/dev/null || true
+# Rebuild @stratif-io/analytics lib so seeder-studio dev server can resolve it.
+# lint-staged may reformat files in apps/analytics, invalidating the previous build.
+cd apps/analytics && vite build --config vite.config.lib.ts --silent 2>/dev/null || true

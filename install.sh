@@ -200,12 +200,12 @@ if [ ! -f "\$SAMPLE_DB" ]; then
   echo "[stratifio] Seeding sample data (first run)…"
   SEED_USERS=5000 SEED_DAYS=90 "$INSTALL_DIR/.venv/bin/seed-duckdb"
 fi
-"$INSTALL_DIR/.venv/bin/python" -m seeders.bootstrap_connection --path "\$SAMPLE_DB"
+"$INSTALL_DIR/.venv/bin/python" -m services.event_simulator.bootstrap_connection --path "\$SAMPLE_DB"
 echo ""
 echo "  stratif.io is running at http://localhost:$PORT"
 echo "  Press Ctrl+C to stop."
 echo ""
-exec STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" backend.main:app --host 0.0.0.0 --port $PORT --log-level error
+exec STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" services.analytics.main:app --host 0.0.0.0 --port $PORT --log-level error
 STARTSH
 chmod +x "$INSTALL_DIR/start.sh"
 
@@ -218,10 +218,10 @@ if [ ! -f "$SAMPLE_DB" ]; then
   run_with_spinner "Seeding sample data — takes about 30 seconds" \
     sh -c "SEED_USERS=5000 SEED_DAYS=90 '$INSTALL_DIR/.venv/bin/seed-duckdb'"
 fi
-"$INSTALL_DIR/.venv/bin/python" -m seeders.bootstrap_connection --path "$SAMPLE_DB" >/dev/null 2>&1
+"$INSTALL_DIR/.venv/bin/python" -m services.event_simulator.bootstrap_connection --path "$SAMPLE_DB" >/dev/null 2>&1
 
 info "Starting server on port $PORT"
-STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" backend.main:app --host 0.0.0.0 --port "$PORT" --log-level error &
+STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" services.analytics.main:app --host 0.0.0.0 --port "$PORT" --log-level error &
 SERVER_PID=$!
 
 ATTEMPTS=0

@@ -33,24 +33,24 @@ snowflake = ["snowflake-connector-python>=3.0.0"]
 clickhouse = ["clickhouse-connect>=0.7.0"]
 
 [project.scripts]
-serve = "backend.main:main"
-seed-duckdb = "seeders.seeder_duckdb:main"
-seed-duckdb-fr = "seeders.seeder_duckdb_fr:main"
-seed-sqlite = "seeders.seeder_sqlite:main"
-seed-postgres = "seeders.seeder_postgresql:main"
-seed-clickhouse = "seeders.seeder_clickhouse:main"
-seed-snowflake = "seeders.seeder_snowflake:main"
-seed-databricks = "seeders.seeder_databricks:main"
-bootstrap-all-connections = "seeders.bootstrap_all_connections:main"
-seed = "seeders.cli:main"
-seed-serve = "seeders.server:main"
+serve = "services.analytics.main:main"
+seed-duckdb = "services.event_simulator.seeder_duckdb:main"
+seed-duckdb-fr = "services.event_simulator.seeder_duckdb_fr:main"
+seed-sqlite = "services.event_simulator.seeder_sqlite:main"
+seed-postgres = "services.event_simulator.seeder_postgresql:main"
+seed-clickhouse = "services.event_simulator.seeder_clickhouse:main"
+seed-snowflake = "services.event_simulator.seeder_snowflake:main"
+seed-databricks = "services.event_simulator.seeder_databricks:main"
+bootstrap-all-connections = "services.event_simulator.bootstrap_all_connections:main"
+seed = "services.event_simulator.cli:main"
+seed-serve = "services.event_simulator.server:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["backend", "seeders"]
+packages = ["services"]
 
 [tool.hatch.build.targets.sdist]
 exclude = ["db/"]
@@ -59,7 +59,7 @@ exclude = ["db/"]
 asyncio_mode = "auto"
 markers = [
     "integration: marks tests that require a real external database connection (deselect with '-m not integration')",
-    "e2e: marks self-bootstrapping end-to-end tests — credentials come from backend/tests/e2e/connections.yaml (deselect with '-m not e2e')",
+    "e2e: marks self-bootstrapping end-to-end tests — credentials come from services/analytics/tests/e2e/connections.yaml (deselect with '-m not e2e')",
     "deterministic: marks all deterministic golden-file tests (deselect with '-m not deterministic')",
     "deterministic_duckdb: deterministic tests for the DuckDB backend",
     "deterministic_sqlite: deterministic tests for the SQLite backend",
