@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
-import { CardLoadingBar, ChartSkeleton } from "@stratif-io/design-system";
+import { CardLoadingBar } from "@stratif-io/design-system";
 import { cn } from "@/lib/cn";
 import { formatNum } from "@/lib/format";
 import type { SimulationAnomaly } from "@/types/simulation";
@@ -105,68 +105,68 @@ export function KpiCard({
       <span className="text-[11px] text-muted-foreground font-mono">
         {headline}
       </span>
-      <div ref={containerRef} className="h-16 w-full mt-1 relative">
-        {isLoading ? (
-          <ChartSkeleton height="h-16" className="absolute inset-0" />
-        ) : (
-          <>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={CM}>
-                <Tooltip
-                  cursor={{
-                    stroke: "currentColor",
-                    strokeDasharray: "2 2",
-                    opacity: 0.4,
-                  }}
-                  contentStyle={{
-                    fontSize: 11,
-                    padding: "4px 8px",
-                    borderRadius: 5,
-                    background: "hsl(var(--popover))",
-                    color: "hsl(var(--popover-foreground))",
-                    border: "1px solid hsl(var(--border))",
-                  }}
-                  formatter={(v: number) => [
-                    `${formatNum(v)}${valueSuffix}`,
-                    title,
-                  ]}
-                  labelFormatter={() => ""}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="v"
-                  stroke={color}
-                  strokeWidth={1.5}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+      <div
+        ref={containerRef}
+        className={cn(
+          "h-16 w-full mt-1 relative transition-opacity duration-300",
+          isLoading && "opacity-40",
+        )}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={CM}>
+            <Tooltip
+              cursor={{
+                stroke: "currentColor",
+                strokeDasharray: "2 2",
+                opacity: 0.4,
+              }}
+              contentStyle={{
+                fontSize: 11,
+                padding: "4px 8px",
+                borderRadius: 5,
+                background: "hsl(var(--popover))",
+                color: "hsl(var(--popover-foreground))",
+                border: "1px solid hsl(var(--border))",
+              }}
+              formatter={(v: number) => [
+                `${formatNum(v)}${valueSuffix}`,
+                title,
+              ]}
+              labelFormatter={() => ""}
+            />
+            <Line
+              type="monotone"
+              dataKey="v"
+              stroke={color}
+              strokeWidth={1.5}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
 
-            {showOverlay && (
-              <svg
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  pointerEvents: "none",
-                }}
-                width={containerSize.w}
-                height={containerSize.h}
-              >
-                <g style={{ pointerEvents: onAnomalyChange ? "all" : "none" }}>
-                  <AnomalyChartOverlay
-                    offset={overlayOffset}
-                    anomalies={anomalies!}
-                    windowDays={windowDays!}
-                    onAnomalyChange={onAnomalyChange ?? (() => {})}
-                    onSelect={onAnomalySelect}
-                    readOnly={!onAnomalyChange}
-                  />
-                </g>
-              </svg>
-            )}
-          </>
+        {showOverlay && (
+          <svg
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              pointerEvents: "none",
+            }}
+            width={containerSize.w}
+            height={containerSize.h}
+          >
+            <g style={{ pointerEvents: onAnomalyChange ? "all" : "none" }}>
+              <AnomalyChartOverlay
+                offset={overlayOffset}
+                anomalies={anomalies!}
+                windowDays={windowDays!}
+                onAnomalyChange={onAnomalyChange ?? (() => {})}
+                onSelect={onAnomalySelect}
+                readOnly={!onAnomalyChange}
+              />
+            </g>
+          </svg>
         )}
       </div>
     </button>

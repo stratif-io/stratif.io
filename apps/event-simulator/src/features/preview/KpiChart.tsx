@@ -13,7 +13,6 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-  ChartSkeleton,
 } from "@stratif-io/design-system";
 import { formatNum } from "@/lib/format";
 import type { SimulationAnomaly } from "@/types/simulation";
@@ -273,125 +272,122 @@ export function KpiChart({
       </div>
 
       {/* position:relative wrapper so the overlay can be positioned absolutely */}
-      <div ref={containerRef} className={`${chartHeight} w-full relative`}>
-        {isLoading ? (
-          <ChartSkeleton height={chartHeight} className="absolute inset-0" />
-        ) : null}
-        {!isLoading && (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={CM} syncId="preview">
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="currentColor"
-                opacity={0.08}
-                vertical={false}
+      <div
+        ref={containerRef}
+        className={`${chartHeight} w-full relative transition-opacity duration-300 ${isLoading ? "opacity-40" : ""}`}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={CM} syncId="preview">
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="currentColor"
+              opacity={0.08}
+              vertical={false}
+            />
+            {bands?.map((b) => (
+              <ReferenceArea
+                key={`${b.start}-${b.end}-${b.color}`}
+                x1={b.start}
+                x2={b.end}
+                fill={b.color}
+                fillOpacity={b.alpha ?? 0.18}
+                stroke="none"
+                data-testid="kpi-band"
               />
-              {bands?.map((b) => (
-                <ReferenceArea
-                  key={`${b.start}-${b.end}-${b.color}`}
-                  x1={b.start}
-                  x2={b.end}
-                  fill={b.color}
-                  fillOpacity={b.alpha ?? 0.18}
-                  stroke="none"
-                  data-testid="kpi-band"
-                />
-              ))}
-              <XAxis
-                dataKey="idx"
-                type="number"
-                domain={[0, Math.max(0, values.length - 1)]}
-                ticks={ticks}
-                tickFormatter={(idx: number) =>
-                  dateFor(idx, startDate, endDate, values.length)
-                }
-                stroke="currentColor"
-                tick={{ fontSize: 11, fill: "currentColor", opacity: 0.6 }}
+            ))}
+            <XAxis
+              dataKey="idx"
+              type="number"
+              domain={[0, Math.max(0, values.length - 1)]}
+              ticks={ticks}
+              tickFormatter={(idx: number) =>
+                dateFor(idx, startDate, endDate, values.length)
+              }
+              stroke="currentColor"
+              tick={{ fontSize: 11, fill: "currentColor", opacity: 0.6 }}
+              axisLine={false}
+              tickLine={false}
+              height={X_AXIS_H}
+            />
+            {ghostLines && ghostLines.length > 0 ? (
+              <YAxis
+                domain={[0, mainMax]}
+                tickFormatter={yTickFormatter}
+                tick={{ fontSize: 10, fill: "currentColor", opacity: 0.5 }}
                 axisLine={false}
                 tickLine={false}
-                height={X_AXIS_H}
+                width={48}
+                tickCount={4}
               />
-              {ghostLines && ghostLines.length > 0 ? (
-                <YAxis
-                  domain={[0, mainMax]}
-                  tickFormatter={yTickFormatter}
-                  tick={{ fontSize: 10, fill: "currentColor", opacity: 0.5 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={48}
-                  tickCount={4}
+            ) : (
+              <YAxis hide />
+            )}
+            <Tooltip
+              cursor={{
+                stroke: "currentColor",
+                strokeDasharray: "2 2",
+                opacity: 0.4,
+              }}
+              contentStyle={{
+                fontSize: 12,
+                padding: "6px 10px",
+                borderRadius: 6,
+                background: "hsl(var(--popover))",
+                color: "hsl(var(--popover-foreground))",
+                border: "1px solid hsl(var(--border))",
+              }}
+              labelFormatter={(idx: number) =>
+                dateFor(idx, startDate, endDate, values.length) || `day ${idx}`
+              }
+              formatter={(v: number, _name: string, item) => {
+                const dk = String(item.dataKey ?? "");
+                const ghost = ghostLines?.find((g) => g.key === dk);
+                if (ghost) {
+                  const raw = (
+                    item.payload as Record<string, number | undefined>
+                  )[`${dk}_raw`];
+                  return [`${formatNum(raw ?? v)}`, ghost.label];
+                }
+                return [`${formatNum(v)}${valueSuffix}`, title];
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={
+                focusedKey !== null && focusedKey !== "__main__" ? 1 : 1.5
+              }
+              strokeOpacity={
+                focusedKey !== null && focusedKey !== "__main__" ? 0.25 : 0.4
+              }
+              dot={false}
+              isAnimationActive={false}
+            />
+            {ghostLines?.map((g) => {
+              const isFocused = focusedKey === g.key;
+              const isDimmed = focusedKey !== null && !isFocused;
+              return (
+                <Line
+                  key={g.key}
+                  type="monotone"
+                  dataKey={g.key}
+                  stroke={g.color}
+                  strokeWidth={isFocused ? 2 : 1.5}
+                  strokeDasharray={isFocused ? "none" : "6 3"}
+                  strokeOpacity={isDimmed ? 0.12 : isFocused ? 1 : 0.75}
+                  dot={false}
+                  isAnimationActive={false}
+                  legendType="none"
+                  name={g.label}
                 />
-              ) : (
-                <YAxis hide />
-              )}
-              <Tooltip
-                cursor={{
-                  stroke: "currentColor",
-                  strokeDasharray: "2 2",
-                  opacity: 0.4,
-                }}
-                contentStyle={{
-                  fontSize: 12,
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  background: "hsl(var(--popover))",
-                  color: "hsl(var(--popover-foreground))",
-                  border: "1px solid hsl(var(--border))",
-                }}
-                labelFormatter={(idx: number) =>
-                  dateFor(idx, startDate, endDate, values.length) ||
-                  `day ${idx}`
-                }
-                formatter={(v: number, _name: string, item) => {
-                  const dk = String(item.dataKey ?? "");
-                  const ghost = ghostLines?.find((g) => g.key === dk);
-                  if (ghost) {
-                    const raw = (
-                      item.payload as Record<string, number | undefined>
-                    )[`${dk}_raw`];
-                    return [`${formatNum(raw ?? v)}`, ghost.label];
-                  }
-                  return [`${formatNum(v)}${valueSuffix}`, title];
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke={color}
-                strokeWidth={
-                  focusedKey !== null && focusedKey !== "__main__" ? 1 : 1.5
-                }
-                strokeOpacity={
-                  focusedKey !== null && focusedKey !== "__main__" ? 0.25 : 0.4
-                }
-                dot={false}
-                isAnimationActive={false}
-              />
-              {ghostLines?.map((g) => {
-                const isFocused = focusedKey === g.key;
-                const isDimmed = focusedKey !== null && !isFocused;
-                return (
-                  <Line
-                    key={g.key}
-                    type="monotone"
-                    dataKey={g.key}
-                    stroke={g.color}
-                    strokeWidth={isFocused ? 2 : 1.5}
-                    strokeDasharray={isFocused ? "none" : "6 3"}
-                    strokeOpacity={isDimmed ? 0.12 : isFocused ? 1 : 0.75}
-                    dot={false}
-                    isAnimationActive={false}
-                    legendType="none"
-                    name={g.label}
-                  />
-                );
-              })}
-            </LineChart>
-          </ResponsiveContainer>
-        )}
+              );
+            })}
+          </LineChart>
+        </ResponsiveContainer>
 
         {/* Direct SVG overlay — sits on top of the chart, not inside Recharts */}
-        {!isLoading && showOverlay && (
+        {showOverlay && (
           <svg
             style={{
               position: "absolute",
