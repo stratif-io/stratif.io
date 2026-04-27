@@ -45,6 +45,7 @@ import {
   CollapsibleTrigger,
   SaveStatus,
   Segmented,
+  Textarea,
 } from "@stratif-io/design-system";
 import { ChevronDown } from "lucide-react";
 
@@ -328,6 +329,12 @@ export function PrimitivesSection() {
           value="a"
           onChange={() => {}}
         />
+      </ComponentRow>
+
+      <ComponentRow label="Textarea">
+        <Textarea placeholder="Enter text…" className="w-64" rows={3} />
+        <Textarea value="With value" readOnly className="w-64" rows={3} />
+        <Textarea disabled placeholder="Disabled" className="w-64" rows={3} />
       </ComponentRow>
     </ComponentSection>
   );
