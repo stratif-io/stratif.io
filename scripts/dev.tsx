@@ -163,8 +163,7 @@ class ProcessManager {
   async start(svc: Service): Promise<void> {
     if (this.procs.has(svc.id)) return;
     this.onState(svc.id, "starting");
-    // setsid makes the child a process group leader so kill(-pid) kills all its children too
-    const proc = Bun.spawn(["setsid", ...svc.cmd], {
+    const proc = Bun.spawn(svc.cmd, {
       stdout: "pipe",
       stderr: "pipe",
       cwd: process.cwd(),
@@ -213,16 +212,15 @@ class ProcessManager {
     const proc = this.procs.get(svc.id);
     if (!proc) return;
     const pid = proc.pid;
-    // Kill the entire process group so Vite/child processes spawned by bun don't survive
+    // Kill children first (e.g. Vite spawned by bun), then the parent
     try {
-      process.kill(-pid, "SIGTERM");
-    } catch {
-      proc.kill("SIGTERM");
-    }
+      Bun.spawnSync(["pkill", "-TERM", "-P", String(pid)]);
+    } catch {}
+    proc.kill("SIGTERM");
     // Force kill after 3s if still alive
     const forceKill = setTimeout(() => {
       try {
-        process.kill(-pid, "SIGKILL");
+        Bun.spawnSync(["pkill", "-KILL", "-P", String(pid)]);
       } catch {}
       try {
         proc.kill("SIGKILL");
