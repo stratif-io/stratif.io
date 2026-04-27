@@ -28,6 +28,9 @@ jobs:
       - name: Install JS dependencies
         run: bun install
 
+      - name: Build design system library
+        run: bun run build:lib
+
       - name: Build frontend
         run: bun run build
         working-directory: apps/analytics
