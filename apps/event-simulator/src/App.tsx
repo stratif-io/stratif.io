@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import {
   AppHeader,
   AppSidebar,
+  AxisPopover,
   Badge,
   Button,
   Dialog,
@@ -19,6 +20,7 @@ import {
   SelectValue,
   Skeleton,
 } from "@stratif-io/design-system";
+import type { AxisDisplayValue, SidebarItem } from "@stratif-io/design-system";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -27,6 +29,7 @@ import {
   Rocket,
   Target,
   Zap,
+  Activity,
   Users,
   Moon,
   Sun,
@@ -35,6 +38,7 @@ import { StudioLayout } from "./features/studio/StudioLayout";
 import { SavePanel } from "./features/save/SavePanel";
 import { usePresets } from "./features/presets/usePresets";
 import { useSeederStore, blankConfig } from "./stores/seederStore";
+import { AXIS_SPEC } from "./lib/twin/axisSpec";
 import { useTheme } from "./hooks/useTheme";
 import { cn } from "./lib/cn";
 import { defaultAnomaly } from "./lib/twin";
@@ -43,12 +47,50 @@ import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
 
 const SECTION_TITLES: Record<string, string> = {
   studio: "Studio",
-  growth: "Growth",
-  retention: "Retention",
-  engagement: "Engagement",
-  virality: "Virality",
-  scale: "Scale",
   events: "Event editor",
+};
+
+const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
+  growth: {
+    declining: "0,4 14,8 28,14 40,20 52,26",
+    flat: "0,14 14,14 28,14 40,14 52,14",
+    steady: "0,22 14,18 28,14 40,10 52,6",
+    strong: "0,26 12,22 24,16 36,9 52,4",
+    hockey_stick: "0,24 14,23 24,22 32,20 36,14 42,8 52,3",
+    explosive: "0,26 10,22 22,16 36,8 52,2",
+    seasonal: "0,14 10,8 26,3 36,8 46,14 52,18",
+  },
+  stickiness: {
+    one_shot: "0,4 13,16 26,22 39,25 52,26",
+    churn_heavy: "0,6 13,14 26,18 39,21 52,22",
+    normal: "0,8 13,12 26,16 39,18 52,20",
+    sticky: "0,10 13,11 26,12 39,13 52,14",
+    addictive: "0,12 13,12 26,12 39,11 52,11",
+    no_one_churns: "0,14 13,14 26,14 39,14 52,14",
+  },
+  engagement_depth: {
+    shallow: "0,22 26,22 52,22",
+    medium: "0,14 26,14 52,14",
+    deep: "0,6 26,6 52,6",
+  },
+  virality: {
+    none: "0,14 52,14",
+    weak: "0,18 26,14 52,10",
+    moderate: "0,22 26,14 52,4",
+    strong_viral: "0,26 20,20 36,10 52,2",
+  },
+  scale: {
+    tiny: "0,22 52,22",
+    small: "0,18 52,18",
+    medium: "0,12 52,12",
+    large: "0,6 52,6",
+  },
+  anomalies: {
+    none: "0,14 13,14 26,14 39,14 52,14",
+    clean: "0,12 10,16 20,13 30,15 40,12 52,14",
+    moderate: "0,10 8,18 16,11 24,17 32,9 40,16 52,13",
+    explicit: "0,8 7,20 14,9 21,19 28,8 35,18 42,11 52,17",
+  },
 };
 
 class ErrorBoundary extends Component<
@@ -84,6 +126,9 @@ export default function App() {
   const setSidebarCollapsed = useSeederStore((s) => s.setSidebarCollapsed);
   const activeSection = useSeederStore((s) => s.activeSection);
   const setActiveSection = useSeederStore((s) => s.setActiveSection);
+  const studioExpanded = useSeederStore((s) => s.studioExpanded);
+  const setStudioExpanded = useSeederStore((s) => s.setStudioExpanded);
+  const setAxis = useSeederStore((s) => s.setAxis);
 
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [pendingIntent, setPendingIntent] = useState<
@@ -218,67 +263,81 @@ export default function App() {
     window.history.replaceState({}, "", url.toString());
   }, [selectedName]);
 
-  const sidebarSections = [
-    {
-      label: "Simulation",
-      items: [
-        {
-          key: "studio",
-          label: "Studio",
-          icon: <LayoutDashboard size={16} />,
-          active: activeSection === "studio",
-          onClick: () => setActiveSection("studio"),
-        },
-        {
-          key: "growth",
-          label: "Growth",
-          icon: <TrendingUp size={16} />,
-          active: activeSection === "growth",
-          onClick: () => setActiveSection("growth"),
-        },
-        {
-          key: "retention",
-          label: "Retention",
-          icon: <RefreshCw size={16} />,
-          active: activeSection === "retention",
-          onClick: () => setActiveSection("retention"),
-        },
-        {
-          key: "engagement",
-          label: "Engagement",
-          icon: <MessageCircle size={16} />,
-          active: activeSection === "engagement",
-          onClick: () => setActiveSection("engagement"),
-        },
-        {
-          key: "virality",
-          label: "Virality",
-          icon: <Rocket size={16} />,
-          active: activeSection === "virality",
-          onClick: () => setActiveSection("virality"),
-        },
-        {
-          key: "scale",
-          label: "Scale",
-          icon: <Target size={16} />,
-          active: activeSection === "scale",
-          onClick: () => setActiveSection("scale"),
-        },
-      ],
-    },
-    {
-      label: "Events",
-      items: [
-        {
-          key: "events",
-          label: "Event editor",
-          icon: <Zap size={16} />,
-          active: activeSection === "events",
-          onClick: () => setActiveSection("events"),
-        },
-      ],
-    },
-  ];
+  const SIDEBAR_AXES = useMemo<
+    { id: string; label: string; icon: ReactNode }[]
+  >(
+    () => [
+      { id: "growth", label: "Growth", icon: <TrendingUp size={16} /> },
+      { id: "stickiness", label: "Retention", icon: <RefreshCw size={16} /> },
+      {
+        id: "engagement_depth",
+        label: "Engagement",
+        icon: <MessageCircle size={16} />,
+      },
+      { id: "virality", label: "Virality", icon: <Rocket size={16} /> },
+      { id: "scale", label: "Scale", icon: <Target size={16} /> },
+      { id: "anomalies", label: "Noise", icon: <Activity size={16} /> },
+    ],
+    [],
+  );
+
+  const sidebarSections = useMemo(() => {
+    const resolvedAxes = config.axes ?? {};
+
+    const axisChildren: SidebarItem[] = SIDEBAR_AXES.map(
+      ({ id, label, icon }) => {
+        const currentVal = resolvedAxes[id] ?? AXIS_SPEC[id]?.default ?? "";
+        const displayLabel =
+          AXIS_SPEC[id]?.values.find((v) => v.value === currentVal)?.label ??
+          currentVal;
+        return {
+          key: id,
+          label,
+          icon,
+          active: false,
+          onClick: () => {},
+          badge: displayLabel,
+        };
+      },
+    );
+
+    return [
+      {
+        label: "",
+        items: [
+          {
+            key: "studio",
+            label: "Studio",
+            icon: <LayoutDashboard size={16} />,
+            active: activeSection === "studio",
+            onClick: () => setActiveSection("studio"),
+            expanded: studioExpanded,
+            onToggleExpand: () => setStudioExpanded(!studioExpanded),
+            children: axisChildren,
+          },
+        ],
+      },
+      {
+        label: "",
+        items: [
+          {
+            key: "events",
+            label: "Event editor",
+            icon: <Zap size={16} />,
+            active: activeSection === "events",
+            onClick: () => setActiveSection("events"),
+          },
+        ],
+      },
+    ];
+  }, [
+    config.axes,
+    activeSection,
+    studioExpanded,
+    setActiveSection,
+    setStudioExpanded,
+    SIDEBAR_AXES,
+  ]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -286,6 +345,39 @@ export default function App() {
         sections={sidebarSections}
         collapsed={sidebarCollapsed}
         onCollapse={setSidebarCollapsed}
+        itemWrapper={(item, btn) => {
+          const axisDef = AXIS_SPEC[item.key];
+          if (!axisDef) return btn;
+          const currentVal = (config.axes ?? {})[item.key] ?? axisDef.default;
+          const popoverValues: AxisDisplayValue[] = axisDef.values.map((v) => ({
+            value: v.value,
+            label: v.label,
+            description: v.description,
+            sparklinePoints:
+              AXIS_SPARKLINES[item.key]?.[v.value] ?? "0,14 52,14",
+          }));
+          return (
+            <AxisPopover
+              axisId={item.key}
+              values={popoverValues}
+              currentValue={currentVal}
+              onSelect={(val) => {
+                setAxis(item.key, val);
+                if (item.key === "scale") {
+                  const p = axisDef.values.find((v) => v.value === val)?.params;
+                  if (p) {
+                    setScaleConfig({
+                      total_users: p.total_users as number,
+                      window_days: p.window_days as number,
+                    });
+                  }
+                }
+              }}
+            >
+              {btn}
+            </AxisPopover>
+          );
+        }}
         brand={
           !sidebarCollapsed ? (
             <span className="text-sm font-bold tracking-tight">
