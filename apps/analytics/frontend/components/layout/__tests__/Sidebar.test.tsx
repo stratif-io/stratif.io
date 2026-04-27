@@ -19,11 +19,11 @@ function AllProviders({ children }: { children: React.ReactNode }) {
 describe('Sidebar', () => {
   it('renders Funnel nav item', () => {
     render(<Sidebar />, { wrapper: AllProviders })
-    expect(screen.getByRole('link', { name: /funnel/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /funnel/i })).toBeInTheDocument()
   })
 
   it('renders SQL Studio without any dev mode condition', () => {
     render(<Sidebar />, { wrapper: AllProviders })
-    expect(screen.getByRole('link', { name: /sql studio/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sql studio/i })).toBeInTheDocument()
   })
 })
