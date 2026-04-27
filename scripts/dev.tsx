@@ -212,16 +212,24 @@ class ProcessManager {
     const proc = this.procs.get(svc.id);
     if (!proc) return;
     const pid = proc.pid;
-    // Kill children first (e.g. Vite spawned by bun), then the parent
-    try {
-      Bun.spawnSync(["pkill", "-TERM", "-P", String(pid)]);
-    } catch {}
+    // Kill the entire process group so grandchildren (e.g. uvicorn reload workers
+    // spawned by uv, or Vite workers spawned by bun) are not left orphaned.
+    // `ps -o pgid= -p <pid>` returns the group leader PID; negating it in kill
+    // sends the signal to every process in that group.
+    const killGroup = (signal: string) => {
+      try {
+        const r = Bun.spawnSync(["ps", "-o", "pgid=", "-p", String(pid)]);
+        const pgid = parseInt(r.stdout.toString().trim());
+        if (!isNaN(pgid) && pgid > 1) {
+          Bun.spawnSync(["kill", `-${signal}`, `-${pgid}`]);
+        }
+      } catch {}
+    };
+    killGroup("TERM");
     proc.kill("SIGTERM");
     // Force kill after 3s if still alive
     const forceKill = setTimeout(() => {
-      try {
-        Bun.spawnSync(["pkill", "-KILL", "-P", String(pid)]);
-      } catch {}
+      killGroup("KILL");
       try {
         proc.kill("SIGKILL");
       } catch {}
