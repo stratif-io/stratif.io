@@ -29,7 +29,7 @@ No extra infrastructure required — DuckDB runs in-process.
 
 - **File path** — absolute path to your `.duckdb` file (e.g. `/data/analytics.duckdb`)
 
-The sample data installed by default uses a DuckDB file at `data/dbs/sample.duckdb`.
+The sample data installed by default uses a DuckDB file at `~/.stratifio/data/sample.duckdb`.
 
 ---
 
