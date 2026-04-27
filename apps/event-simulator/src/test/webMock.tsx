@@ -294,6 +294,23 @@ export const Textarea = React.forwardRef<
   return <textarea ref={ref} {...props} />;
 });
 
+// ChartSkeleton
+export function ChartSkeleton({
+  className,
+  height: _height,
+}: {
+  className?: string;
+  height?: string;
+}) {
+  return (
+    <div
+      className={className}
+      aria-hidden="true"
+      data-testid="chart-skeleton"
+    />
+  );
+}
+
 // CardLoadingBar
 export function CardLoadingBar({ loading }: { loading?: boolean }) {
   if (!loading) return null;

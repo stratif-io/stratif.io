@@ -38,7 +38,7 @@ interface Props {
 }
 
 export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
-  const out = useTwinOutput();
+  const { isLoading, ...out } = useTwinOutput();
   const config = useSeederStore((s) => s.config);
   const setAnomalies = useSeederStore((s) => s.setAnomalies);
   const setAxis = useSeederStore((s) => s.setAxis);
@@ -426,6 +426,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                 setClickedLineKey(k);
                 setHoveredLineKey(null);
               }}
+              isLoading={isLoading}
             />
           </section>
 
