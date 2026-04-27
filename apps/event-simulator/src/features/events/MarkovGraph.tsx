@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import dagre from "dagre";
 import {
   ReactFlow,
   Background,
@@ -85,27 +86,47 @@ function EventNode({ data }: NodeProps) {
 
 const nodeTypes = { eventNode: EventNode };
 
-// ── Layout ───────────────────────────────────────────────────────────────────
+// ── Layout (dagre — left-to-right workflow) ───────────────────────────────────
 
 function layoutNodes(
   config: MarkovConfig,
   showEnd: boolean,
   selected: string | null,
 ): Node[] {
-  const count = config.events.length;
-  const radius = Math.max(180, count * 52);
-  const cx = radius;
-  const cy = radius;
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({
+    rankdir: "LR",
+    nodesep: 48,
+    ranksep: 96,
+    marginx: 24,
+    marginy: 24,
+  });
+  g.setDefaultEdgeLabel(() => ({}));
 
-  const nodes: Node[] = config.events.map((ev, i) => {
-    const angle = (2 * Math.PI * i) / count - Math.PI / 2;
+  config.events.forEach((ev) =>
+    g.setNode(ev.name, { width: NODE_WIDTH, height: NODE_HEIGHT }),
+  );
+  if (showEnd)
+    g.setNode(END_NODE_ID, { width: NODE_WIDTH, height: NODE_HEIGHT });
+
+  // Feed edges so dagre knows the flow direction
+  for (const [from, row] of Object.entries(config.transitions)) {
+    for (const [to, prob] of Object.entries(row)) {
+      if (prob === 0) continue;
+      const target = to === "[end]" ? END_NODE_ID : to;
+      if (!showEnd && target === END_NODE_ID) continue;
+      if (g.hasNode(from) && g.hasNode(target)) g.setEdge(from, target);
+    }
+  }
+
+  dagre.layout(g);
+
+  const nodes: Node[] = config.events.map((ev) => {
+    const { x, y } = g.node(ev.name);
     return {
       id: ev.name,
       type: "eventNode",
-      position: {
-        x: cx + radius * Math.cos(angle) - NODE_WIDTH / 2,
-        y: cy + radius * Math.sin(angle) - NODE_HEIGHT / 2,
-      },
+      position: { x: x - NODE_WIDTH / 2, y: y - NODE_HEIGHT / 2 },
       data: {
         label: ev.name,
         color: ev.color ?? "#6366f1",
@@ -114,11 +135,12 @@ function layoutNodes(
     };
   });
 
-  if (showEnd) {
+  if (showEnd && g.hasNode(END_NODE_ID)) {
+    const { x, y } = g.node(END_NODE_ID);
     nodes.push({
       id: END_NODE_ID,
       type: "eventNode",
-      position: { x: cx - NODE_WIDTH / 2, y: cy - NODE_HEIGHT / 2 },
+      position: { x: x - NODE_WIDTH / 2, y: y - NODE_HEIGHT / 2 },
       data: { label: "[end]", color: "", selected: false, isEnd: true },
     });
   }
