@@ -81,7 +81,7 @@ export {
 } from "./components/ui/command";
 export { ToastProvider, toast } from "./components/ui/toast-provider";
 export { EmptyState } from "./components/ui/empty-state";
-export { LoadingState } from "./components/ui/loading-state";
+export { LoadingState, ChartSkeleton } from "./components/ui/loading-state";
 export { PageHeader } from "./components/ui/page-header";
 export { SectionHeader } from "./components/ui/section-header";
 export { Segmented } from "./components/ui/segmented";
