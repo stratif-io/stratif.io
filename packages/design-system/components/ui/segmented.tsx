@@ -4,7 +4,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./tooltip";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils";
 
 export interface SegmentedOption {
   value: string;

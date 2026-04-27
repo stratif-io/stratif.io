@@ -11,10 +11,10 @@ import {
   MoreHorizontal,
   MousePointerClick,
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { getEventColor } from "@/lib/event-color";
-import type { Event } from "@/types";
+import { Skeleton } from "./skeleton";
+import { cn } from "../../lib/utils";
+import { getEventColor } from "../../lib/event-color";
+import type { Event } from "../../types";
 
 // ─── Property categories ─────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { SectionHeader } from "../section-header";
-import { TYPOGRAPHY } from "@/lib/constants";
+import { TYPOGRAPHY } from "../../../lib/constants";
 
 describe("SectionHeader", () => {
   it("renders an h2 element (not h1)", () => {

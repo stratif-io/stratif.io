@@ -1,8 +1,8 @@
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { cn } from "../../lib/utils";
+import { Button } from "./button";
 import { LucideIcon } from "lucide-react";
 import { ReactNode } from "react";
-import { TYPOGRAPHY } from "@/lib/constants";
+import { TYPOGRAPHY } from "../../lib/constants";
 
 interface EmptyStateProps {
   icon?: LucideIcon;

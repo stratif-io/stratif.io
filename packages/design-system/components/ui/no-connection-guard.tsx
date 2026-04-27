@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "./button";
 import { Database } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { SPACING, TYPOGRAPHY } from "@/lib/constants";
+import { cn } from "../../lib/utils";
+import { SPACING, TYPOGRAPHY } from "../../lib/constants";
 
 interface NoConnectionScreenProps {
   onAddConnection?: () => void;

@@ -1,5 +1,5 @@
-import { TYPOGRAPHY } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { TYPOGRAPHY } from "../../lib/constants";
+import { cn } from "../../lib/utils";
 
 interface SectionHeaderProps {
   title: string;

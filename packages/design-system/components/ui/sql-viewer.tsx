@@ -5,7 +5,7 @@ import { sql } from "@codemirror/lang-sql";
 import { syntaxHighlighting, HighlightStyle } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
 import { oneDark } from "@codemirror/theme-one-dark";
-import { prettySql } from "@/lib/format-sql";
+import { prettySql } from "../../lib/format-sql";
 
 const lightHighlightStyle = HighlightStyle.define([
   { tag: tags.keyword, color: "#0000ff" },
