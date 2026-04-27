@@ -18,6 +18,7 @@ export interface AxisPopoverProps {
 }
 
 export function AxisPopover({
+  axisId,
   values,
   currentValue,
   onSelect,
@@ -29,7 +30,7 @@ export function AxisPopover({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent side="right" align="start" className="w-60 p-1.5">
-        <div role="listbox" aria-label="Select value">
+        <div role="listbox" aria-label={`Select ${axisId} value`}>
           {values.map((v) => {
             const selected = v.value === currentValue;
             return (
@@ -61,7 +62,7 @@ export function AxisPopover({
                   aria-hidden="true"
                 >
                   <polyline
-                    points={v.sparklinePoints}
+                    points={v.sparklinePoints || "0,14 52,14"}
                     fill="none"
                     stroke={
                       selected
