@@ -19,7 +19,7 @@ export function AppHeader({
   return (
     <header
       className={cn(
-        "h-14 shrink-0 flex items-center gap-3 px-4 bg-background border-b border-border",
+        "h-14 shrink-0 flex items-center gap-2 px-3 bg-background border-b border-border",
         className,
       )}
     >
