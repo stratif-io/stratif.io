@@ -1,4 +1,11 @@
-import { Component, useState, useEffect, useRef, useMemo } from "react";
+import {
+  Component,
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import type { ReactNode } from "react";
 import {
   AppHeader,
@@ -92,6 +99,19 @@ const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
     explicit: "0,8 7,20 14,9 21,19 28,8 35,18 42,11 52,17",
   },
 };
+
+const SIDEBAR_AXES: { id: string; label: string; icon: ReactNode }[] = [
+  { id: "growth", label: "Growth", icon: <TrendingUp size={16} /> },
+  { id: "stickiness", label: "Retention", icon: <RefreshCw size={16} /> },
+  {
+    id: "engagement_depth",
+    label: "Engagement",
+    icon: <MessageCircle size={16} />,
+  },
+  { id: "virality", label: "Virality", icon: <Rocket size={16} /> },
+  { id: "scale", label: "Scale", icon: <Target size={16} /> },
+  { id: "anomalies", label: "Noise", icon: <Activity size={16} /> },
+];
 
 class ErrorBoundary extends Component<
   { children: ReactNode; fallback?: ReactNode },
@@ -263,24 +283,6 @@ export default function App() {
     window.history.replaceState({}, "", url.toString());
   }, [selectedName]);
 
-  const SIDEBAR_AXES = useMemo<
-    { id: string; label: string; icon: ReactNode }[]
-  >(
-    () => [
-      { id: "growth", label: "Growth", icon: <TrendingUp size={16} /> },
-      { id: "stickiness", label: "Retention", icon: <RefreshCw size={16} /> },
-      {
-        id: "engagement_depth",
-        label: "Engagement",
-        icon: <MessageCircle size={16} />,
-      },
-      { id: "virality", label: "Virality", icon: <Rocket size={16} /> },
-      { id: "scale", label: "Scale", icon: <Target size={16} /> },
-      { id: "anomalies", label: "Noise", icon: <Activity size={16} /> },
-    ],
-    [],
-  );
-
   const sidebarSections = useMemo(() => {
     const resolvedAxes = config.axes ?? {};
 
@@ -336,8 +338,43 @@ export default function App() {
     studioExpanded,
     setActiveSection,
     setStudioExpanded,
-    SIDEBAR_AXES,
   ]);
+
+  const itemWrapper = useCallback(
+    (item: SidebarItem, btn: ReactNode) => {
+      const axisDef = AXIS_SPEC[item.key];
+      if (!axisDef) return btn;
+      const currentVal = (config.axes ?? {})[item.key] ?? axisDef.default;
+      const popoverValues: AxisDisplayValue[] = axisDef.values.map((v) => ({
+        value: v.value,
+        label: v.label,
+        description: v.description,
+        sparklinePoints: AXIS_SPARKLINES[item.key]?.[v.value] ?? "0,14 52,14",
+      }));
+      return (
+        <AxisPopover
+          axisId={item.key}
+          values={popoverValues}
+          currentValue={currentVal}
+          onSelect={(val) => {
+            setAxis(item.key, val);
+            if (item.key === "scale") {
+              const p = axisDef.values.find((v) => v.value === val)?.params;
+              if (p) {
+                setScaleConfig({
+                  total_users: p.total_users,
+                  window_days: p.window_days,
+                });
+              }
+            }
+          }}
+        >
+          {btn}
+        </AxisPopover>
+      );
+    },
+    [config.axes, setAxis, setScaleConfig],
+  );
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -345,39 +382,7 @@ export default function App() {
         sections={sidebarSections}
         collapsed={sidebarCollapsed}
         onCollapse={setSidebarCollapsed}
-        itemWrapper={(item, btn) => {
-          const axisDef = AXIS_SPEC[item.key];
-          if (!axisDef) return btn;
-          const currentVal = (config.axes ?? {})[item.key] ?? axisDef.default;
-          const popoverValues: AxisDisplayValue[] = axisDef.values.map((v) => ({
-            value: v.value,
-            label: v.label,
-            description: v.description,
-            sparklinePoints:
-              AXIS_SPARKLINES[item.key]?.[v.value] ?? "0,14 52,14",
-          }));
-          return (
-            <AxisPopover
-              axisId={item.key}
-              values={popoverValues}
-              currentValue={currentVal}
-              onSelect={(val) => {
-                setAxis(item.key, val);
-                if (item.key === "scale") {
-                  const p = axisDef.values.find((v) => v.value === val)?.params;
-                  if (p) {
-                    setScaleConfig({
-                      total_users: p.total_users as number,
-                      window_days: p.window_days as number,
-                    });
-                  }
-                }
-              }}
-            >
-              {btn}
-            </AxisPopover>
-          );
-        }}
+        itemWrapper={itemWrapper}
         brand={
           !sidebarCollapsed ? (
             <span className="text-sm font-bold tracking-tight">
