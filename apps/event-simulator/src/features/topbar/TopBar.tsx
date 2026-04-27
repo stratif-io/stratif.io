@@ -8,8 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@stratif-io/design-system";
-import { Users } from "lucide-react";
+import { Users, Moon, Sun } from "lucide-react";
 import { useMemo } from "react";
+import { useTheme } from "@/hooks/useTheme";
 import { useSeederStore } from "@/stores/seederStore";
 import type { PresetEntry } from "@/lib/api/presets";
 import { cn } from "@/lib/cn";
@@ -29,6 +30,7 @@ export function TopBar({
   onSelectPreset,
   isLoading,
 }: Props) {
+  const { theme, toggleTheme } = useTheme();
   const dirty = useSeederStore((s) => s.dirty);
   const uiStartDate = useSeederStore((s) => s.uiStartDate);
   const uiEndDate = useSeederStore((s) => s.uiEndDate);
@@ -210,6 +212,17 @@ export function TopBar({
       <div className="flex-1" />
       <Button size="sm" variant="outline" onClick={handleAddEvent}>
         + Event
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        aria-label={
+          theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+        }
+        onClick={toggleTheme}
+        className="w-8 h-8 p-0"
+      >
+        {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
       </Button>
     </header>
   );
