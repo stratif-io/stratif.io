@@ -212,7 +212,14 @@ class ProcessManager {
     const proc = this.procs.get(svc.id);
     if (!proc) return;
     proc.kill("SIGTERM");
+    // Force kill after 3s — handles processes that ignore SIGTERM (e.g. bun spawning Vite as a child)
+    const forceKill = setTimeout(() => {
+      try {
+        proc.kill("SIGKILL");
+      } catch {}
+    }, 3000);
     await proc.exited;
+    clearTimeout(forceKill);
     this.procs.delete(svc.id);
     this.onState(svc.id, "stopped");
   }
