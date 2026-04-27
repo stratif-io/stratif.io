@@ -449,25 +449,35 @@ function App() {
   const [spinFrame, setSpinFrame] = React.useState(0);
   const [scrollOffset, setScrollOffset] = React.useState(0);
 
+  // Buffer for incoming log lines — flushed on interval to batch renders
+  const logBuffer = React.useRef<LogLine[]>([]);
+
   const mgr = React.useMemo(
     () =>
       new ProcessManager(
         (line) => {
-          setLogs((prev) => {
-            const next = [...prev, line];
-            return next.length > MAX_LOG_LINES
-              ? next.slice(-MAX_LOG_LINES)
-              : next;
-          });
-          setScrollOffset(0);
+          logBuffer.current.push(line);
         },
         (id, state) => setStates((prev) => new Map(prev).set(id, state)),
       ),
     [],
   );
 
+  // Single interval: flush log buffer + tick spinner (100ms = max 10 repaints/sec)
   React.useEffect(() => {
-    const t = setInterval(() => setSpinFrame((f) => f + 1), 150);
+    const t = setInterval(() => {
+      if (logBuffer.current.length > 0) {
+        const incoming = logBuffer.current.splice(0);
+        setLogs((prev) => {
+          const next = [...prev, ...incoming];
+          return next.length > MAX_LOG_LINES
+            ? next.slice(-MAX_LOG_LINES)
+            : next;
+        });
+        setScrollOffset(0);
+      }
+      setSpinFrame((f) => f + 1);
+    }, 100);
     return () => clearInterval(t);
   }, []);
 
