@@ -10,6 +10,8 @@ interface SavePanelProps {
 
 type CopyState = "idle" | "copied" | "error";
 
+const PANEL_WIDTH = 220;
+
 export function SavePanel({ yaml, defaultOpen = false }: SavePanelProps) {
   const [open, setOpen] = useState(defaultOpen);
   const name = useSeederStore((s) => s.config.name);
@@ -32,29 +34,29 @@ export function SavePanel({ yaml, defaultOpen = false }: SavePanelProps) {
   }
 
   return (
-    <aside
-      style={{
-        width: open ? "var(--sidebar-expanded, 220px)" : "auto",
-      }}
-      className="flex border-l bg-background shrink-0"
-    >
-      {/* Toggle strip */}
+    <aside className="flex shrink-0 border-l bg-background">
+      {/* Toggle strip — always visible, always clickable */}
       <button
         type="button"
         aria-label={open ? "collapse save panel" : "expand save panel"}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center justify-center w-8 border-r text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors shrink-0 self-stretch"
+        className="flex items-center justify-center w-8 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
       >
         {open ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
 
-      {open && (
-        <div className="flex flex-col gap-3 p-3 overflow-y-auto flex-1">
-          <div className="flex items-center justify-between pb-0.5">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Save
-            </span>
-          </div>
+      {/* Content panel — width-animated so toggle is never covered */}
+      <div
+        className="overflow-hidden transition-[width] duration-200"
+        style={{ width: open ? PANEL_WIDTH : 0 }}
+      >
+        <div
+          className="flex flex-col gap-3 p-3 overflow-y-auto h-full"
+          style={{ width: PANEL_WIDTH }}
+        >
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Save
+          </span>
           <div className="flex flex-col gap-1">
             <Label htmlFor="preset-name" className="text-xs">
               Name
@@ -97,7 +99,7 @@ export function SavePanel({ yaml, defaultOpen = false }: SavePanelProps) {
             </Button>
           </div>
         </div>
-      )}
+      </div>
     </aside>
   );
 }

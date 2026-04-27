@@ -439,9 +439,11 @@ export default function App() {
         )}
 
         <main className="flex-1 overflow-hidden flex min-h-0">
-          <ErrorBoundary>
-            <StudioLayout activeSection={activeSection} />
-          </ErrorBoundary>
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <ErrorBoundary>
+              <StudioLayout activeSection={activeSection} />
+            </ErrorBoundary>
+          </div>
           <SavePanel yaml={stringifyConfigYaml(config)} />
         </main>
       </div>
