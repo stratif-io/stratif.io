@@ -55,7 +55,7 @@ export function AppSidebar({
       {brand && (
         <div
           className={cn(
-            "h-14 flex items-center border-b border-border px-4 shrink-0",
+            "min-h-14 py-3 flex items-center border-b border-border px-4 shrink-0",
             collapsed && "justify-center px-0",
           )}
         >

@@ -21,7 +21,7 @@ export function Header() {
   const { pathname } = useLocation()
   const granularityDisabled = !GRANULARITY_ROUTES.has(pathname)
   return (
-    <AppHeader className="sticky top-0 z-[var(--z-header)] w-full lg:px-6">
+    <AppHeader className="sticky top-0 z-[var(--z-header)] w-full">
       {/* Connection selector */}
       <ConnectionSelector />
 
