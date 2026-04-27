@@ -294,6 +294,18 @@ export const Textarea = React.forwardRef<
   return <textarea ref={ref} {...props} />;
 });
 
+// CardLoadingBar
+export function CardLoadingBar({ loading }: { loading?: boolean }) {
+  if (!loading) return null;
+  return (
+    <div
+      role="progressbar"
+      aria-label="Simulating…"
+      className="absolute top-0 left-0 right-0 h-0.5"
+    />
+  );
+}
+
 // cn util (some files may import it from @stratif-io/design-system)
 export function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");

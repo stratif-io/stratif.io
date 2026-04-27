@@ -1,6 +1,7 @@
 import {
   Badge,
   Button,
+  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -95,9 +96,7 @@ export function TopBar({
     }
   };
 
-  const inputBase =
-    "h-8 rounded-md border bg-muted/40 px-2 text-xs text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
-  const inputInvalid = "border-destructive focus:ring-destructive";
+  const inputInvalid = "border-destructive focus-visible:ring-destructive";
   const inputNormal = "border-border";
 
   return (
@@ -154,7 +153,7 @@ export function TopBar({
         <label htmlFor="start-date" className="sr-only">
           Start date
         </label>
-        <input
+        <Input
           id="start-date"
           type="date"
           value={uiStartDate ?? ""}
@@ -164,8 +163,7 @@ export function TopBar({
             dateRangeInvalid ? "Start date must be before end date" : undefined
           }
           className={cn(
-            inputBase,
-            "w-32",
+            "h-8 w-32 bg-muted/40 text-xs",
             dateRangeInvalid ? inputInvalid : inputNormal,
           )}
         />
@@ -173,7 +171,7 @@ export function TopBar({
         <label htmlFor="end-date" className="sr-only">
           End date
         </label>
-        <input
+        <Input
           id="end-date"
           type="date"
           value={uiEndDate ?? ""}
@@ -183,8 +181,7 @@ export function TopBar({
             dateRangeInvalid ? "End date must be after start date" : undefined
           }
           className={cn(
-            inputBase,
-            "w-32",
+            "h-8 w-32 bg-muted/40 text-xs",
             dateRangeInvalid ? inputInvalid : inputNormal,
           )}
         />
@@ -199,14 +196,14 @@ export function TopBar({
         <label htmlFor="total-users" className="sr-only">
           Total users
         </label>
-        <input
+        <Input
           id="total-users"
           type="number"
           min={1}
           placeholder="users"
           value={config.scale_config?.total_users ?? ""}
           onChange={(e) => handleTotalUsers(e.target.value)}
-          className={cn(inputBase, "w-24")}
+          className="h-8 w-24 bg-muted/40 text-xs"
         />
       </div>
 

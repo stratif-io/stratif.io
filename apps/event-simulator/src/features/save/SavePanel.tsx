@@ -1,23 +1,6 @@
 import { useState } from "react";
-import type React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Input, Label } from "@stratif-io/design-system";
-import { cn } from "@/lib/cn";
-
-function Textarea({
-  className,
-  ...props
-}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <textarea
-      className={cn(
-        "flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+import { Button, Input, Label, Textarea } from "@stratif-io/design-system";
 import { useSeederStore } from "@/stores/seederStore";
 
 interface SavePanelProps {
