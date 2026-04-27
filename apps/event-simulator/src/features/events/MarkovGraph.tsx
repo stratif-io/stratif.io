@@ -198,6 +198,18 @@ function layoutNodes(
 }
 
 function buildEdges(config: MarkovConfig, showEnd: boolean): Edge[] {
+  // Pre-scan to find bidirectional pairs so we can curve them apart
+  const pairSet = new Set<string>();
+  for (const [from, row] of Object.entries(config.transitions)) {
+    for (const [to, prob] of Object.entries(row)) {
+      if (prob === 0) continue;
+      const targetId = to === "[end]" ? END_NODE_ID : to;
+      if (from !== targetId && config.transitions[targetId]?.[from]) {
+        pairSet.add([from, targetId].sort().join("||"));
+      }
+    }
+  }
+
   const edges: Edge[] = [];
   for (const [from, row] of Object.entries(config.transitions)) {
     for (const [to, prob] of Object.entries(row)) {
@@ -205,16 +217,19 @@ function buildEdges(config: MarkovConfig, showEnd: boolean): Edge[] {
       const isEnd = to === "[end]";
       if (isEnd && !showEnd) continue;
       const targetId = isEnd ? END_NODE_ID : to;
-      // thickness: 1px at 0% → 8px at 100%, so visual weight = probability
       const strokeWidth = 1 + prob * 7;
       const opacity = 0.25 + prob * 0.75;
       const arrowSize = 8 + prob * 8;
       const isSelf = from === targetId;
+      const isBidi = !isSelf && pairSet.has([from, targetId].sort().join("||"));
+      // For bidirectional pairs the "lesser" id curves upward (negative), the other downward
+      const curvature = isBidi ? (from < targetId ? -0.4 : 0.4) : 0.25;
       edges.push({
         id: `${from}->${to}`,
-        type: isSelf ? "selfloop" : undefined,
+        type: isSelf ? "selfloop" : "default",
         source: from,
         target: targetId,
+        pathOptions: isSelf ? undefined : { curvature },
         label: `${(prob * 100).toFixed(0)}%`,
         labelStyle: { fontSize: 10, fill: "#6b7280", fontWeight: 500 },
         labelBgStyle: {
