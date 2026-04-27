@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import dagre from "dagre";
 import {
   ReactFlow,
@@ -9,10 +9,13 @@ import {
   type Node,
   type Edge,
   type NodeProps,
+  type EdgeProps,
   useNodesState,
   useEdgesState,
   MarkerType,
   Panel,
+  BaseEdge,
+  EdgeLabelRenderer,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { cn } from "@stratif-io/design-system";
@@ -81,6 +84,53 @@ function EventNode({ data }: NodeProps) {
 }
 
 const nodeTypes = { eventNode: EventNode };
+
+// ── Self-loop edge ───────────────────────────────────────────────────────────
+
+function SelfLoopEdge({
+  sourceX,
+  sourceY,
+  style,
+  markerEnd,
+  label,
+  labelStyle,
+  labelBgStyle,
+  labelBgPadding,
+}: EdgeProps) {
+  const r = 28;
+  const d = `M ${sourceX} ${sourceY - 2} C ${sourceX - r} ${sourceY - r * 3} ${sourceX + r} ${sourceY - r * 3} ${sourceX} ${sourceY - 2}`;
+  const lx = sourceX;
+  const ly = sourceY - r * 3.2;
+  return (
+    <>
+      <BaseEdge path={d} style={style} markerEnd={markerEnd} />
+      {label && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: "absolute",
+              transform: `translate(-50%, -50%) translate(${lx}px,${ly}px)`,
+              fontSize: 10,
+              fontWeight: 500,
+              color: "#6b7280",
+              background: "hsl(var(--background) / 0.85)",
+              padding: `${(labelBgPadding as number[])?.[1] ?? 3}px ${(labelBgPadding as number[])?.[0] ?? 5}px`,
+              borderRadius: 3,
+              pointerEvents: "none",
+              ...(labelStyle as React.CSSProperties),
+              ...(labelBgStyle as React.CSSProperties),
+            }}
+            className="nodrag nopan"
+          >
+            {label}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+}
+
+const edgeTypes = { selfloop: SelfLoopEdge };
 
 // ── Layout (dagre — left-to-right workflow) ───────────────────────────────────
 
@@ -156,8 +206,10 @@ function buildEdges(config: MarkovConfig, showEnd: boolean): Edge[] {
       const strokeWidth = 1 + prob * 7;
       const opacity = 0.25 + prob * 0.75;
       const arrowSize = 8 + prob * 8;
+      const isSelf = from === targetId;
       edges.push({
         id: `${from}->${to}`,
+        type: isSelf ? "selfloop" : undefined,
         source: from,
         target: targetId,
         label: `${(prob * 100).toFixed(0)}%`,
@@ -241,6 +293,7 @@ function MarkovGraphInner({
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onNodeClick={handleNodeClick}
