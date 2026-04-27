@@ -10,6 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
+  CardLoadingBar,
   Popover,
   PopoverTrigger,
   PopoverContent,
@@ -204,8 +205,9 @@ export function KpiChart({
 
   return (
     <div
-      className={`rounded-lg border bg-card p-3 flex flex-col gap-2 ${className}`}
+      className={`rounded-lg border bg-card p-3 flex flex-col gap-2 overflow-hidden relative ${className}`}
     >
+      <CardLoadingBar loading={isLoading} />
       <div className="flex items-baseline justify-between">
         <div className="flex items-baseline gap-1.5">
           <span
