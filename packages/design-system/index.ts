@@ -110,3 +110,10 @@ export {
   TableCell,
   TableCaption,
 } from "./components/ui/table";
+export {
+  AppSidebar,
+  type AppSidebarProps,
+  type SidebarSection,
+  type SidebarItem,
+} from "./components/ui/app-sidebar";
+export { AppHeader, type AppHeaderProps } from "./components/ui/app-header";
