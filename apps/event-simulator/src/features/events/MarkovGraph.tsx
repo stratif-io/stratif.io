@@ -152,7 +152,10 @@ function buildEdges(config: MarkovConfig, showEnd: boolean): Edge[] {
       const isEnd = to === "[end]";
       if (isEnd && !showEnd) continue;
       const targetId = isEnd ? END_NODE_ID : to;
-      const opacity = 0.3 + prob * 0.7;
+      // thickness: 1px at 0% → 8px at 100%, so visual weight = probability
+      const strokeWidth = 1 + prob * 7;
+      const opacity = 0.25 + prob * 0.75;
+      const arrowSize = 8 + prob * 8;
       edges.push({
         id: `${from}->${to}`,
         source: from,
@@ -168,12 +171,12 @@ function buildEdges(config: MarkovConfig, showEnd: boolean): Edge[] {
         markerEnd: {
           type: MarkerType.ArrowClosed,
           color: `rgba(107,114,128,${opacity})`,
-          width: 14,
-          height: 14,
+          width: arrowSize,
+          height: arrowSize,
         },
         style: {
           stroke: `rgba(107,114,128,${opacity})`,
-          strokeWidth: prob >= 0.5 ? 2 : 1.5,
+          strokeWidth,
         },
         animated: prob >= 0.6,
       });
