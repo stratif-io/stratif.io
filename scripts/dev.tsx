@@ -273,7 +273,11 @@ interface SidebarProps {
   spinFrame: number;
 }
 
-function Sidebar({ states, cursor, spinFrame }: SidebarProps) {
+const Sidebar = React.memo(function Sidebar({
+  states,
+  cursor,
+  spinFrame,
+}: SidebarProps) {
   return (
     <Box
       flexDirection="column"
@@ -340,7 +344,7 @@ function Sidebar({ states, cursor, spinFrame }: SidebarProps) {
       })}
     </Box>
   );
-}
+});
 
 // ── Log colours ───────────────────────────────────────────────────────────────
 
@@ -369,7 +373,11 @@ function getFilterIds(cursor: number): string[] | null {
   return [item.service.id];
 }
 
-function LogPane({ logs, cursor, scrollOffset }: LogPaneProps) {
+const LogPane = React.memo(function LogPane({
+  logs,
+  cursor,
+  scrollOffset,
+}: LogPaneProps) {
   const filterIds = getFilterIds(cursor);
   const visible = filterIds
     ? logs.filter((l) => filterIds.includes(l.serviceId))
@@ -400,7 +408,7 @@ function LogPane({ logs, cursor, scrollOffset }: LogPaneProps) {
       )}
     </Box>
   );
-}
+});
 
 // ── StatusBar ─────────────────────────────────────────────────────────────────
 
@@ -459,7 +467,7 @@ function App() {
   );
 
   React.useEffect(() => {
-    const t = setInterval(() => setSpinFrame((f) => f + 1), 80);
+    const t = setInterval(() => setSpinFrame((f) => f + 1), 150);
     return () => clearInterval(t);
   }, []);
 
