@@ -1,5 +1,5 @@
 import { AppHeader } from '@stratif-io/design-system'
-import { useAppStore } from '@/stores'
+
 import { useLocation } from 'react-router-dom'
 import { ConnectionSelector } from './ConnectionSelector'
 import { Button } from '@/components/ui/button'
@@ -17,16 +17,11 @@ import { QueryStatusIndicator } from './QueryStatusIndicator'
 const GRANULARITY_ROUTES = new Set(['/trends', '/retention', '/dashboard'])
 
 export function Header() {
-  const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
-  const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const { theme, setTheme } = useTheme()
   const { pathname } = useLocation()
   const granularityDisabled = !GRANULARITY_ROUTES.has(pathname)
   return (
-    <AppHeader
-      className="sticky top-0 z-[var(--z-header)] w-full lg:px-6"
-      onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-    >
+    <AppHeader className="sticky top-0 z-[var(--z-header)] w-full lg:px-6">
       {/* Connection selector */}
       <ConnectionSelector />
 

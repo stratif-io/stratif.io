@@ -147,5 +147,13 @@ export function Sidebar() {
     })),
   }))
 
-  return <AppSidebar sections={sections} collapsed={!sidebarOpen} />
+  const setSidebarOpen = useAppStore((s) => s.setSidebarOpen)
+
+  return (
+    <AppSidebar
+      sections={sections}
+      collapsed={!sidebarOpen}
+      onCollapse={(v) => setSidebarOpen(!v)}
+    />
+  )
 }

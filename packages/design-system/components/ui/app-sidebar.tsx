@@ -23,6 +23,7 @@ export interface SidebarSection {
 export interface AppSidebarProps {
   sections: SidebarSection[];
   collapsed: boolean;
+  onCollapse: (v: boolean) => void;
   brand?: ReactNode;
   footer?: ReactNode;
   className?: string;
@@ -31,6 +32,7 @@ export interface AppSidebarProps {
 export function AppSidebar({
   sections,
   collapsed,
+  onCollapse,
   brand,
   footer,
   className,
@@ -75,6 +77,47 @@ export function AppSidebar({
           ))}
         </TooltipProvider>
       </nav>
+
+      <div
+        className={cn(
+          "py-2 border-t border-border",
+          collapsed ? "flex justify-center" : "px-3",
+        )}
+      >
+        <button
+          onClick={() => onCollapse(!collapsed)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="flex items-center gap-2 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-xs w-full"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            aria-hidden="true"
+            className="shrink-0"
+          >
+            {collapsed ? (
+              <path
+                d="M3 7h8M8 4l3 3-3 3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ) : (
+              <path
+                d="M11 7H3M6 4L3 7l3 3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
+          </svg>
+          {!collapsed && <span>Collapse</span>}
+        </button>
+      </div>
 
       {footer && !collapsed && (
         <div className="px-4 py-3 border-t border-border text-[11px] text-muted-foreground">

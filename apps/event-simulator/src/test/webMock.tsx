@@ -329,6 +329,7 @@ export function AppSidebar({
   brand,
   sections,
   collapsed: _collapsed,
+  onCollapse: _onCollapse,
 }: {
   children?: React.ReactNode;
   brand?: React.ReactNode;
@@ -343,6 +344,7 @@ export function AppSidebar({
     }[];
   }[];
   collapsed?: boolean;
+  onCollapse?: (v: boolean) => void;
 }) {
   return (
     <nav aria-label="Sidebar">

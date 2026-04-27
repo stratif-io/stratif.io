@@ -285,6 +285,7 @@ export default function App() {
       <AppSidebar
         sections={sidebarSections}
         collapsed={sidebarCollapsed}
+        onCollapse={setSidebarCollapsed}
         brand={
           !sidebarCollapsed ? (
             <span className="text-sm font-bold tracking-tight">
@@ -295,7 +296,6 @@ export default function App() {
       />
       <div className="flex flex-col flex-1 overflow-hidden">
         <AppHeader
-          onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           title={SECTION_TITLES[activeSection] ?? "Studio"}
           badge={
             dirty ? (
