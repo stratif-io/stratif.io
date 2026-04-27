@@ -1,6 +1,6 @@
-"""Seeder Studio preview server.
+"""Event Simulator preview server.
 
-Run with: uv run seed-serve
+Run with: uv run simulator-serve
 Default port: 8001
 """
 
