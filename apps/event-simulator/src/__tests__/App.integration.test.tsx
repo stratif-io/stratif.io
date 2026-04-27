@@ -48,17 +48,12 @@ describe("App integration", () => {
     renderApp();
     // The sidebar renders navigation buttons for each section
     await waitFor(() =>
-      expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(6),
+      expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(1),
     );
-    // Sidebar items are rendered as buttons with section labels
-    for (const label of [
-      "Studio",
-      "Growth",
-      "Retention",
-      "Engagement",
-      "Virality",
-      "Scale",
-    ]) {
+    // Top-level sidebar items are Studio and Event editor;
+    // axis items (Growth, Retention, etc.) are children of Studio
+    // and only visible when Studio is expanded.
+    for (const label of ["Studio", "Event editor"]) {
       expect(screen.getAllByText(label).length).toBeGreaterThanOrEqual(1);
     }
   });
