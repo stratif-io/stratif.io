@@ -30,6 +30,10 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './frontend'),
+        '@stratif-io/design-system': path.resolve(
+          __dirname,
+          '../../packages/design-system/index.ts'
+        ),
       },
     },
     define: {
