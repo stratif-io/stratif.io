@@ -23,7 +23,7 @@ Open it every morning before anything else. If something has changed significant
 
 ## Engagement
 
-**Sessions** — a session is a group of events from the same user with no gap longer than 30 minutes (configurable in [Advanced Options](/getting-started/connecting-a-warehouse/#advanced-options)). Sessions tell you how often users come back and how long they stay engaged in a single sitting. A product with high unique users but low sessions per user is being opened and immediately abandoned.
+**Sessions** — a session is a group of events from the same user with no gap longer than 30 minutes (configurable in [Advanced Options](/analytics/connecting-a-warehouse/#advanced-options)). Sessions tell you how often users come back and how long they stay engaged in a single sitting. A product with high unique users but low sessions per user is being opened and immediately abandoned.
 
 **Avg Session Duration** — the average length of a session from first event to last. Duration is a double-edged signal: long sessions are good for content products but may indicate confusion in task-completion products. Know which type yours is before interpreting this number.
 
@@ -31,7 +31,7 @@ Open it every morning before anything else. If something has changed significant
 
 **Active Days** — the average number of distinct calendar days a user was active during the period. Low average active days alongside healthy Unique Users can mean users try and then slow down — an early signal of disengagement before it shows up in churn.
 
-**Power Users** — users active on at least N distinct days per period (N is the [Power User Threshold](/getting-started/connecting-a-warehouse/#advanced-options), default 4). Power users disproportionately drive retention and word-of-mouth. A product where power users are a declining fraction of MAU is losing depth even as the headline count stays flat.
+**Power Users** — users active on at least N distinct days per period (N is the [Power User Threshold](/analytics/connecting-a-warehouse/#advanced-options), default 4). Power users disproportionately drive retention and word-of-mouth. A product where power users are a declining fraction of MAU is losing depth even as the headline count stays flat.
 
 ---
 
@@ -41,7 +41,7 @@ Open it every morning before anything else. If something has changed significant
 
 **Returning Users** — users whose first event predates the window and who were also active in the previous period. A ratio of Returning to New shifting toward returning over time means the product is building habits and loyalty.
 
-**Resurrected Users** — users who had been inactive longer than the [Resurrection Window](/getting-started/connecting-a-warehouse/#advanced-options) (default 30 days) and came back. Resurrections are a direct readout of win-back campaign effectiveness. Resurrected users often have lower long-term retention, so track whether they stick or churn again quickly.
+**Resurrected Users** — users who had been inactive longer than the [Resurrection Window](/analytics/connecting-a-warehouse/#advanced-options) (default 30 days) and came back. Resurrections are a direct readout of win-back campaign effectiveness. Resurrected users often have lower long-term retention, so track whether they stick or churn again quickly.
 
 **Churned Users** — users active in the previous equivalent period but absent in the current one. If New Users = 500 and Churned = 480, you're on a treadmill — net growth of only 20 users despite significant acquisition. When churn approaches new acquisition, growth stalls.
 
@@ -78,4 +78,4 @@ Every metric and chart on this page has a **SQL** badge. Click it to open the ex
 
 ![SQL viewer button on a chart](/screenshots/sql-viewer.png)
 
-You can copy the query into [SQL Studio](/features/sql-studio/) to modify it, run variations, or use it as a starting point for your own analysis.
+You can copy the query into [SQL Studio](/analytics/sql-studio/) to modify it, run variations, or use it as a starting point for your own analysis.

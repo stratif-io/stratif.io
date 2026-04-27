@@ -17,35 +17,40 @@ export default defineConfig({
         github: 'https://github.com/stratif-io/stratif.io',
       },
       sidebar: [
+        { label: 'Introduction', slug: '' },
         {
-          label: 'Getting Started',
+          label: 'Analytics',
           items: [
-            { label: 'Introduction', slug: '' },
-            { label: 'Installation', slug: 'getting-started/installation' },
-            { label: 'Configuration', slug: 'getting-started/configuration' },
-            { label: 'Connecting a Warehouse', slug: 'getting-started/connecting-a-warehouse' },
+            {
+              label: 'Getting Started',
+              items: [
+                { label: 'Installation', slug: 'analytics/installation' },
+                { label: 'Configuration', slug: 'analytics/configuration' },
+                { label: 'Connecting a Warehouse', slug: 'analytics/connecting-a-warehouse' },
+              ],
+            },
+            {
+              label: 'Features',
+              items: [
+                { label: 'Global Filters', slug: 'analytics/global-filters' },
+                { label: 'Mission Control', slug: 'analytics/mission-control' },
+                { label: 'Trends', slug: 'analytics/trends' },
+                { label: 'Retention', slug: 'analytics/retention' },
+                { label: 'Funnel', slug: 'analytics/funnel' },
+                { label: 'Paths (Journey)', slug: 'analytics/paths' },
+                { label: 'People', slug: 'analytics/people' },
+                { label: 'Events Explorer', slug: 'analytics/events' },
+                { label: 'Pivot', slug: 'analytics/pivot' },
+                { label: 'SQL Studio', slug: 'analytics/sql-studio' },
+              ],
+            },
           ],
         },
         {
-          label: 'Demo',
+          label: 'Event Simulator',
           items: [
-            { label: 'Sample Data', slug: 'demo/sample-data' },
-            { label: 'Generating Sample Data', slug: 'demo/seeding' },
-          ],
-        },
-        {
-          label: 'Features',
-          items: [
-            { label: 'Global Filters', slug: 'features/global-filters' },
-            { label: 'Mission Control', slug: 'features/mission-control' },
-            { label: 'Trends', slug: 'features/trends' },
-            { label: 'Retention', slug: 'features/retention' },
-            { label: 'Funnel', slug: 'features/funnel' },
-            { label: 'Paths (Journey)', slug: 'features/paths' },
-            { label: 'People', slug: 'features/people' },
-            { label: 'Events Explorer', slug: 'features/events' },
-            { label: 'Pivot', slug: 'features/pivot' },
-            { label: 'SQL Studio', slug: 'features/sql-studio' },
+            { label: 'Sample Data', slug: 'event-simulator/sample-data' },
+            { label: 'Generating Sample Data', slug: 'event-simulator/seeding' },
           ],
         },
       ],
