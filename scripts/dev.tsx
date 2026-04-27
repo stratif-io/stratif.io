@@ -265,6 +265,8 @@ function stateColor(state: ServiceState): string {
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
+const SIDEBAR_WIDTH = 28;
+
 interface SidebarProps {
   states: Map<string, ServiceState>;
   cursor: number;
@@ -274,62 +276,68 @@ const Sidebar = React.memo(function Sidebar({ states, cursor }: SidebarProps) {
   return (
     <Box
       flexDirection="column"
-      width={26}
-      borderStyle="single"
+      width={SIDEBAR_WIDTH}
+      borderRight
       borderColor="gray"
-      paddingX={1}
     >
-      <Text bold color="gray">
-        SERVICES
-      </Text>
+      <Box paddingX={1} marginBottom={1}>
+        <Text bold dimColor>
+          SERVICES
+        </Text>
+      </Box>
       {TREE.map((item, i) => {
         const isSelected = cursor === i;
-        const bg = isSelected ? "blue" : undefined;
 
         if (item.kind === "group") {
           const gs = groupState(item.group, states);
+          const label = item.group.label.padEnd(14);
           return (
-            <Box key={item.group.id}>
-              <Text backgroundColor={bg} color="white" bold>
-                {isSelected ? "▶ " : "  "}
-              </Text>
+            <Box key={item.group.id} paddingX={1}>
               <Text
-                backgroundColor={bg}
+                backgroundColor={isSelected ? "blue" : undefined}
                 color={isSelected ? "white" : "cyan"}
                 bold
               >
-                {item.group.label}
+                {`${isSelected ? "▶" : " "} ${label}`}
               </Text>
-              <Text backgroundColor={bg} color={stateColor(gs)}>
-                {" "}
+              <Text
+                backgroundColor={isSelected ? "blue" : undefined}
+                color={stateColor(gs)}
+              >
                 {stateDot(gs)}
               </Text>
             </Box>
           );
         }
 
-        // service row
         const isLast =
           item.group.children[item.group.children.length - 1]?.id ===
           item.service.id;
         const ss = states.get(item.service.id) ?? "stopped";
-        const portStr = item.service.port ? `:${item.service.port}` : "watch";
+        const portStr = item.service.port ? `:${item.service.port}` : "  watch";
         const prefix = isLast ? "  └─" : "  ├─";
+        const label = `${prefix} ${item.service.label}`.padEnd(16);
 
         return (
-          <Box key={item.service.id}>
-            <Text backgroundColor={bg} color="gray">
-              {isSelected ? "▶" : " "}
-              {prefix}{" "}
+          <Box key={item.service.id} paddingX={1}>
+            <Text
+              backgroundColor={isSelected ? "blue" : undefined}
+              color={isSelected ? "white" : "white"}
+              dimColor={!isSelected}
+            >
+              {`${isSelected ? "▶" : " "}${label}`}
             </Text>
-            <Text backgroundColor={bg} color="white">
-              {item.service.label}
-            </Text>
-            <Text backgroundColor={bg} color="gray">
-              {" "}
+            <Text
+              backgroundColor={isSelected ? "blue" : undefined}
+              color="gray"
+              dimColor
+            >
               {portStr}{" "}
             </Text>
-            <Text backgroundColor={bg} color={stateColor(ss)}>
+            <Text
+              backgroundColor={isSelected ? "blue" : undefined}
+              color={stateColor(ss)}
+            >
               {stateDot(ss)}
             </Text>
           </Box>
@@ -405,28 +413,13 @@ const LogPane = React.memo(function LogPane({
 
 // ── StatusBar ─────────────────────────────────────────────────────────────────
 
+const HINTS =
+  "↑↓ select  s start  x stop  r restart  A start-all  X stop-all  c clear  q quit";
+
 function StatusBar() {
-  const keys: [string, string][] = [
-    ["↑↓", "select"],
-    ["s", "start"],
-    ["x", "stop"],
-    ["r", "restart"],
-    ["A", "start all"],
-    ["X", "stop all"],
-    ["c", "clear"],
-    ["q", "quit"],
-  ];
   return (
-    <Box borderStyle="single" borderColor="gray" paddingX={1}>
-      {keys.map(([k, label], i) => (
-        <Text key={k}>
-          {i > 0 && <Text color="gray"> │ </Text>}
-          <Text color="cyan" bold>
-            {k}
-          </Text>
-          <Text color="gray"> {label}</Text>
-        </Text>
-      ))}
+    <Box borderTop borderColor="gray" paddingX={1}>
+      <Text dimColor>{HINTS}</Text>
     </Box>
   );
 }
