@@ -14,7 +14,6 @@ import {
   Settings,
   Table,
   Database,
-  Palette,
   Terminal,
 } from 'lucide-react'
 
@@ -129,15 +128,6 @@ const navGroups: NavGroup[] = [
       },
     ],
   },
-  ...(import.meta.env.DEV && !import.meta.env.VITE_NO_DESIGN_SYSTEM
-    ? [
-        {
-          title: 'Developer',
-          icon: Palette,
-          items: [{ title: 'Design System', href: '/design-system', icon: Palette }],
-        } satisfies NavGroup,
-      ]
-    : []),
 ]
 
 function NavLink({
