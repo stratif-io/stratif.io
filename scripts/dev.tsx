@@ -249,11 +249,9 @@ function buildTree(): TreeItem[] {
 
 const TREE = buildTree();
 
-const SPINNER_FRAMES = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
-
-function stateDot(state: ServiceState, frame: number): string {
+function stateDot(state: ServiceState): string {
   if (state === "running") return "●";
-  if (state === "starting") return SPINNER_FRAMES[frame % 10]!;
+  if (state === "starting") return "◌";
   if (state === "error") return "●";
   return "○";
 }
@@ -270,14 +268,9 @@ function stateColor(state: ServiceState): string {
 interface SidebarProps {
   states: Map<string, ServiceState>;
   cursor: number;
-  spinFrame: number;
 }
 
-const Sidebar = React.memo(function Sidebar({
-  states,
-  cursor,
-  spinFrame,
-}: SidebarProps) {
+const Sidebar = React.memo(function Sidebar({ states, cursor }: SidebarProps) {
   return (
     <Box
       flexDirection="column"
@@ -309,7 +302,7 @@ const Sidebar = React.memo(function Sidebar({
               </Text>
               <Text backgroundColor={bg} color={stateColor(gs)}>
                 {" "}
-                {stateDot(gs, spinFrame)}
+                {stateDot(gs)}
               </Text>
             </Box>
           );
@@ -337,7 +330,7 @@ const Sidebar = React.memo(function Sidebar({
               {portStr}{" "}
             </Text>
             <Text backgroundColor={bg} color={stateColor(ss)}>
-              {stateDot(ss, spinFrame)}
+              {stateDot(ss)}
             </Text>
           </Box>
         );
@@ -446,7 +439,6 @@ function App() {
   );
   const [logs, setLogs] = React.useState<LogLine[]>([]);
   const [cursor, setCursor] = React.useState(0);
-  const [spinFrame, setSpinFrame] = React.useState(0);
   const [scrollOffset, setScrollOffset] = React.useState(0);
 
   // Buffer for incoming log lines — flushed on interval to batch renders
@@ -463,7 +455,6 @@ function App() {
     [],
   );
 
-  // Single interval: flush log buffer + tick spinner (100ms = max 10 repaints/sec)
   React.useEffect(() => {
     const t = setInterval(() => {
       if (logBuffer.current.length > 0) {
@@ -476,7 +467,6 @@ function App() {
         });
         setScrollOffset(0);
       }
-      setSpinFrame((f) => f + 1);
     }, 100);
     return () => clearInterval(t);
   }, []);
@@ -528,7 +518,7 @@ function App() {
   return (
     <Box flexDirection="column" height={rows}>
       <Box flexDirection="row" flexGrow={1}>
-        <Sidebar states={states} cursor={cursor} spinFrame={spinFrame} />
+        <Sidebar states={states} cursor={cursor} />
         <LogPane logs={logs} cursor={cursor} scrollOffset={scrollOffset} />
       </Box>
       <StatusBar />
