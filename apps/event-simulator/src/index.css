@@ -2,6 +2,7 @@
 @import "@fontsource/jetbrains-mono";
 @import "@stratif-io/design-system/index.css";
 @import "tailwindcss";
+@source "../../../packages/design-system/components/**/*.{ts,tsx}";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
