@@ -133,7 +133,7 @@ async def health():
 
 
 # SPA fallback (production) — /docs/* is handled upstream by Caddy
-dist_path = Path(__file__).parent.parent / "dist"
+dist_path = Path(__file__).parent.parent.parent / "dist"
 if dist_path.exists():
     app.mount("/assets", StaticFiles(directory=dist_path / "assets"), name="assets")
 
