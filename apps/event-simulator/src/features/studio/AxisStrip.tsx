@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Input } from "@stratif-io/design-system";
 import { AXIS_DISPLAY, STRIP_AXIS_IDS } from "@/features/axes/axisDisplaySpec";
 import { resolveAxes } from "@/lib/twin";
 import { resolveScale } from "@/lib/twin/utils";
@@ -24,9 +25,6 @@ export function AxisStrip() {
     }
   };
 
-  const inputBase =
-    "h-8 rounded-md border border-border bg-muted/40 px-2 text-xs text-foreground transition-colors";
-
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b bg-background overflow-x-auto shrink-0">
       {STRIP_AXIS_IDS.map((id) => {
@@ -48,13 +46,13 @@ export function AxisStrip() {
           <label htmlFor="starting-rate" className="sr-only">
             Starting rate
           </label>
-          <input
+          <Input
             id="starting-rate"
             type="number"
             min={1}
             value={resolvedScale.starting_rate}
             onChange={(e) => handleStartingRate(e.target.value)}
-            className={inputBase + " w-20"}
+            className="h-8 w-20 bg-muted/40 text-xs"
           />
         </div>
       )}

@@ -27,6 +27,12 @@ interface SeederState {
   setAnomalies: (anomalies: SimulationConfig["anomalies"]) => void;
   setUiStartDate: (iso: string | null) => void;
   setUiEndDate: (iso: string | null) => void;
+  sidebarCollapsed: boolean;
+  activeSection: "studio" | "events";
+  setSidebarCollapsed: (v: boolean) => void;
+  setActiveSection: (v: "studio" | "events") => void;
+  studioExpanded: boolean;
+  setStudioExpanded: (v: boolean) => void;
 }
 
 export const useSeederStore = create<SeederState>((set) => ({
@@ -74,4 +80,29 @@ export const useSeederStore = create<SeederState>((set) => ({
 
   setUiStartDate: (iso) => set({ uiStartDate: iso }),
   setUiEndDate: (iso) => set({ uiEndDate: iso }),
+
+  sidebarCollapsed: (() => {
+    try {
+      return localStorage.getItem("seeder-sidebar-collapsed") === "true";
+    } catch {
+      return false;
+    }
+  })(),
+  activeSection: "studio",
+  setSidebarCollapsed: (v) => {
+    try {
+      localStorage.setItem("seeder-sidebar-collapsed", String(v));
+    } catch {
+      // storage unavailable
+    }
+    set({ sidebarCollapsed: v });
+  },
+  setActiveSection: (v) =>
+    set((s) => ({
+      activeSection: v,
+      studioExpanded:
+        v === "events" ? false : v === "studio" ? true : s.studioExpanded,
+    })),
+  studioExpanded: true,
+  setStudioExpanded: (v) => set({ studioExpanded: v }),
 }));

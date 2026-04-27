@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { act } from "@testing-library/react";
 import { useSeederStore, blankConfig } from "../seederStore";
 import type { SimulationConfig } from "@/types/simulation";
 
@@ -63,5 +64,40 @@ describe("seederStore", () => {
     const s = useSeederStore.getState();
     expect(s.uiEndDate).toBe("2026-12-31");
     expect(s.dirty).toBe(false);
+  });
+});
+
+describe("seederStore — studioExpanded", () => {
+  beforeEach(() => {
+    act(() => {
+      useSeederStore.setState({ studioExpanded: true, activeSection: "studio" });
+    });
+  });
+
+  it("studioExpanded defaults to true", () => {
+    expect(useSeederStore.getState().studioExpanded).toBe(true);
+  });
+
+  it("setActiveSection('events') sets studioExpanded=false", () => {
+    act(() => {
+      useSeederStore.getState().setActiveSection("events");
+    });
+    expect(useSeederStore.getState().studioExpanded).toBe(false);
+  });
+
+  it("setActiveSection('studio') sets studioExpanded=true", () => {
+    act(() => {
+      useSeederStore.setState({ studioExpanded: false });
+      useSeederStore.getState().setActiveSection("studio");
+    });
+    expect(useSeederStore.getState().studioExpanded).toBe(true);
+  });
+
+  it("setStudioExpanded toggles independently without changing activeSection", () => {
+    act(() => {
+      useSeederStore.getState().setStudioExpanded(false);
+    });
+    expect(useSeederStore.getState().studioExpanded).toBe(false);
+    expect(useSeederStore.getState().activeSection).toBe("studio");
   });
 });

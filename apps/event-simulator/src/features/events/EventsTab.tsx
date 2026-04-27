@@ -1,3 +1,11 @@
+import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@stratif-io/design-system";
 import { useSeederStore } from "@/stores/seederStore";
 import { MARKOV_PRESETS, MARKOV_PRESET_LABELS } from "./markovPresets";
 import { MarkovMatrix } from "./MarkovMatrix";
@@ -7,12 +15,16 @@ import { validateMarkovConfig } from "./markovValidation";
 export function EventsTab() {
   const markov = useSeederStore((s) => s.config.markov);
   const setMarkovConfig = useSeederStore((s) => s.setMarkovConfig);
+  const [presetKey, setPresetKey] = useState<string>("");
 
   const errors = validateMarkovConfig(markov);
 
-  function handlePresetChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const preset = MARKOV_PRESETS[e.target.value];
-    if (preset) setMarkovConfig(preset);
+  function handlePresetChange(value: string) {
+    const preset = MARKOV_PRESETS[value];
+    if (preset) {
+      setMarkovConfig(preset);
+      setPresetKey(value);
+    }
   }
 
   return (
@@ -22,20 +34,21 @@ export function EventsTab() {
         <label className="text-xs text-muted-foreground font-medium shrink-0">
           Preset
         </label>
-        <select
-          className="text-sm bg-background border border-border rounded px-2 py-1 text-foreground"
-          defaultValue=""
-          onChange={handlePresetChange}
+        <Select
+          value={presetKey || undefined}
+          onValueChange={handlePresetChange}
         >
-          <option value="" disabled>
-            Load a preset…
-          </option>
-          {Object.entries(MARKOV_PRESET_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-44 h-8 text-xs">
+            <SelectValue placeholder="Load a preset…" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(MARKOV_PRESET_LABELS).map(([key, label]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.length > 0 && (
           <span className="text-xs text-destructive">
             {errors.length} validation error{errors.length > 1 ? "s" : ""}

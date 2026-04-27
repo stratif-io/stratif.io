@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
+import { CardLoadingBar } from "@stratif-io/design-system";
 import { cn } from "@/lib/cn";
 import { formatNum } from "@/lib/format";
 import type { SimulationAnomaly } from "@/types/simulation";
@@ -94,15 +95,7 @@ export function KpiCard({
         className,
       )}
     >
-      {isLoading && (
-        <div
-          role="progressbar"
-          aria-label="Simulating…"
-          className="absolute top-0 left-0 right-0 h-0.5 bg-primary/20 overflow-hidden"
-        >
-          <div className="h-full bg-primary/60 animate-pulse w-full" />
-        </div>
-      )}
+      <CardLoadingBar loading={isLoading} />
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-foreground">{title}</span>
         <span aria-hidden="true" className="text-[10px] text-muted-foreground">
@@ -112,7 +105,13 @@ export function KpiCard({
       <span className="text-[11px] text-muted-foreground font-mono">
         {headline}
       </span>
-      <div ref={containerRef} className="h-16 w-full mt-1 relative">
+      <div
+        ref={containerRef}
+        className={cn(
+          "h-16 w-full mt-1 relative transition-opacity duration-300",
+          isLoading && "opacity-40",
+        )}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={CM}>
             <Tooltip

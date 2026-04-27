@@ -294,6 +294,196 @@ export const Textarea = React.forwardRef<
   return <textarea ref={ref} {...props} />;
 });
 
+// ChartSkeleton
+export function ChartSkeleton({
+  className,
+  height: _height,
+}: {
+  className?: string;
+  height?: string;
+}) {
+  return (
+    <div
+      className={className}
+      aria-hidden="true"
+      data-testid="chart-skeleton"
+    />
+  );
+}
+
+// CardLoadingBar
+export function CardLoadingBar({ loading }: { loading?: boolean }) {
+  if (!loading) return null;
+  return (
+    <div
+      role="progressbar"
+      aria-label="Simulating…"
+      className="absolute top-0 left-0 right-0 h-0.5"
+    />
+  );
+}
+
+// AppSidebar
+export function AppSidebar({
+  brand,
+  sections,
+  collapsed: _collapsed,
+  onCollapse: _onCollapse,
+  itemWrapper,
+}: {
+  brand?: React.ReactNode;
+  sections?: {
+    label: string;
+    items: {
+      key: string;
+      label: string;
+      icon?: React.ReactNode;
+      active?: boolean;
+      onClick?: () => void;
+      badge?: string;
+      expanded?: boolean;
+      onToggleExpand?: () => void;
+      children?: {
+        key: string;
+        label: string;
+        icon?: React.ReactNode;
+        active?: boolean;
+        onClick?: () => void;
+        badge?: string;
+      }[];
+    }[];
+  }[];
+  collapsed?: boolean;
+  onCollapse?: (v: boolean) => void;
+  itemWrapper?: (
+    item: { key: string; label: string },
+    btn: React.ReactNode,
+  ) => React.ReactNode;
+}) {
+  return (
+    <nav data-testid="app-sidebar">
+      {brand}
+      {sections?.map((section) =>
+        section.items.map((item) => {
+          const btn = (
+            <button
+              key={item.key}
+              onClick={item.onClick}
+              aria-current={item.active ? "page" : undefined}
+            >
+              {item.label}
+              {item.badge && (
+                <span data-testid={`badge-${item.key}`}>{item.badge}</span>
+              )}
+            </button>
+          );
+          const wrapped = itemWrapper
+            ? itemWrapper(item as { key: string; label: string }, btn)
+            : btn;
+          return (
+            <React.Fragment key={item.key}>
+              {wrapped}
+              {item.expanded &&
+                item.children?.map((child) => {
+                  const childBtn = (
+                    <button key={child.key} onClick={child.onClick}>
+                      {child.label}
+                      {child.badge && (
+                        <span data-testid={`badge-${child.key}`}>
+                          {child.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                  return itemWrapper
+                    ? itemWrapper(
+                        child as { key: string; label: string },
+                        childBtn,
+                      )
+                    : childBtn;
+                })}
+            </React.Fragment>
+          );
+        }),
+      )}
+    </nav>
+  );
+}
+
+export type AppSidebarProps = React.ComponentProps<typeof AppSidebar>;
+
+export type SidebarItem = {
+  key: string;
+  label: string;
+  icon?: React.ReactNode;
+  active?: boolean;
+  onClick: () => void;
+  badge?: string;
+  children?: SidebarItem[];
+  expanded?: boolean;
+  onToggleExpand?: () => void;
+};
+
+// AppHeader
+export function AppHeader({
+  children,
+  title,
+  badge,
+  onMenuClick: _onMenuClick,
+}: {
+  children?: React.ReactNode;
+  title?: React.ReactNode;
+  badge?: React.ReactNode;
+  onMenuClick?: () => void;
+}) {
+  return (
+    <header>
+      {title && <span>{title}</span>}
+      {badge}
+      {children}
+    </header>
+  );
+}
+
+export type AppHeaderProps = React.ComponentProps<typeof AppHeader>;
+
+// ResizablePanel
+export function ResizablePanel({
+  open,
+  children,
+}: {
+  open?: boolean;
+  defaultWidth?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  children?: React.ReactNode;
+  className?: string;
+}) {
+  if (!open) return null;
+  return <div data-testid="resizable-panel">{children}</div>;
+}
+export type ResizablePanelProps = React.ComponentProps<typeof ResizablePanel>;
+
+// AxisPopover
+export function AxisPopover({
+  children,
+}: {
+  children: React.ReactNode;
+  axisId?: string;
+  values?: unknown[];
+  currentValue?: string;
+  onSelect?: (v: string) => void;
+}) {
+  return <>{children}</>;
+}
+export type AxisDisplayValue = {
+  value: string;
+  label: string;
+  description: string;
+  sparklinePoints: string;
+};
+export type AxisPopoverProps = React.ComponentProps<typeof AxisPopover>;
+
 // cn util (some files may import it from @stratif-io/design-system)
 export function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");

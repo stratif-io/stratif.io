@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { EventsTab } from "@/features/events/EventsTab";
 import { useSeederStore, blankConfig } from "@/stores/seederStore";
 
@@ -19,10 +20,11 @@ describe("EventsTab", () => {
     expect(screen.getAllByText("SignUp").length).toBeGreaterThan(0);
   });
 
-  it("switching preset updates event names", () => {
+  it("switching preset updates event names", async () => {
+    const user = userEvent.setup();
     render(<EventsTab />);
-    const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "ecommerce" } });
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByText("E-commerce"));
     // ecommerce preset has 'SessionStarted' event
     expect(screen.getAllByText("SessionStarted").length).toBeGreaterThan(0);
   });

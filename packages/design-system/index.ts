@@ -37,6 +37,11 @@ export {
   PopoverContent,
   PopoverTrigger,
 } from "./components/ui/popover";
+export { AxisPopover } from "./components/ui/axis-popover";
+export type {
+  AxisPopoverProps,
+  AxisDisplayValue,
+} from "./components/ui/axis-popover";
 export {
   Tooltip,
   TooltipContent,
@@ -81,7 +86,7 @@ export {
 } from "./components/ui/command";
 export { ToastProvider, toast } from "./components/ui/toast-provider";
 export { EmptyState } from "./components/ui/empty-state";
-export { LoadingState } from "./components/ui/loading-state";
+export { LoadingState, ChartSkeleton } from "./components/ui/loading-state";
 export { PageHeader } from "./components/ui/page-header";
 export { SectionHeader } from "./components/ui/section-header";
 export { Segmented } from "./components/ui/segmented";
@@ -110,3 +115,14 @@ export {
   TableCell,
   TableCaption,
 } from "./components/ui/table";
+export {
+  AppSidebar,
+  type AppSidebarProps,
+  type SidebarSection,
+  type SidebarItem,
+} from "./components/ui/app-sidebar";
+export { AppHeader, type AppHeaderProps } from "./components/ui/app-header";
+export {
+  ResizablePanel,
+  type ResizablePanelProps,
+} from "./components/ui/resizable-panel";

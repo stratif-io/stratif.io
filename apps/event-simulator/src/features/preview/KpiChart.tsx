@@ -10,6 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
+  CardLoadingBar,
   Popover,
   PopoverTrigger,
   PopoverContent,
@@ -60,6 +61,7 @@ interface Props {
   /** Controlled focused line key — when provided, overrides internal state */
   focusedLineKey?: string | null;
   onFocusedLineKeyChange?: (key: string | null) => void;
+  isLoading?: boolean;
 }
 
 const fmt = (d: Date) =>
@@ -101,6 +103,7 @@ export function KpiChart({
   formulaExplanation = "",
   focusedLineKey,
   onFocusedLineKeyChange,
+  isLoading = false,
 }: Props) {
   const [internalFocusedKey, setInternalFocusedKey] = useState<string | null>(
     null,
@@ -202,8 +205,9 @@ export function KpiChart({
 
   return (
     <div
-      className={`rounded-lg border bg-card p-3 flex flex-col gap-2 ${className}`}
+      className={`rounded-lg border bg-card p-3 flex flex-col gap-2 overflow-hidden relative ${className}`}
     >
+      <CardLoadingBar loading={isLoading} />
       <div className="flex items-baseline justify-between">
         <div className="flex items-baseline gap-1.5">
           <span
@@ -270,7 +274,10 @@ export function KpiChart({
       </div>
 
       {/* position:relative wrapper so the overlay can be positioned absolutely */}
-      <div ref={containerRef} className={`${chartHeight} w-full relative`}>
+      <div
+        ref={containerRef}
+        className={`${chartHeight} w-full relative transition-opacity duration-300 ${isLoading ? "opacity-40" : ""}`}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={CM} syncId="preview">
             <CartesianGrid
