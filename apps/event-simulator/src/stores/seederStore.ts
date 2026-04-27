@@ -31,6 +31,8 @@ interface SeederState {
   activeSection: string;
   setSidebarCollapsed: (v: boolean) => void;
   setActiveSection: (v: string) => void;
+  studioExpanded: boolean;
+  setStudioExpanded: (v: boolean) => void;
 }
 
 export const useSeederStore = create<SeederState>((set) => ({
@@ -95,5 +97,12 @@ export const useSeederStore = create<SeederState>((set) => ({
     }
     set({ sidebarCollapsed: v });
   },
-  setActiveSection: (v) => set({ activeSection: v }),
+  setActiveSection: (v) =>
+    set((s) => ({
+      activeSection: v,
+      studioExpanded:
+        v === "events" ? false : v === "studio" ? true : s.studioExpanded,
+    })),
+  studioExpanded: true,
+  setStudioExpanded: (v) => set({ studioExpanded: v }),
 }));
