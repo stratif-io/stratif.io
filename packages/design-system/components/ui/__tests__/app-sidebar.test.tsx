@@ -286,4 +286,36 @@ describe("AppSidebar", () => {
       expect.anything(),
     );
   });
+
+  it("hides sub-items when sidebar is collapsed even if expanded=true", () => {
+    const sections: SidebarSection[] = [
+      {
+        label: "",
+        items: [
+          {
+            key: "studio",
+            label: "Studio",
+            icon: "📐",
+            active: true,
+            onClick: vi.fn(),
+            expanded: true,
+            onToggleExpand: vi.fn(),
+            children: [
+              {
+                key: "growth",
+                label: "Growth",
+                icon: "📈",
+                active: false,
+                onClick: vi.fn(),
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    render(
+      <AppSidebar sections={sections} collapsed={true} onCollapse={vi.fn()} />,
+    );
+    expect(screen.queryByText("Growth")).not.toBeInTheDocument();
+  });
 });

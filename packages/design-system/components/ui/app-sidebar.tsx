@@ -182,7 +182,7 @@ function SidebarNavItem({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          item.onToggleExpand!();
+          item.onToggleExpand?.();
         }}
         aria-label={
           item.expanded ? `Collapse ${item.label}` : `Expand ${item.label}`
