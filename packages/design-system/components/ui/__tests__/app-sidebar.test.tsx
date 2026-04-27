@@ -1,7 +1,8 @@
+import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { AppSidebar } from "../app-sidebar";
-import type { SidebarSection } from "../app-sidebar";
+import type { SidebarSection, SidebarItem } from "../app-sidebar";
 
 const sections: SidebarSection[] = [
   {
@@ -131,5 +132,158 @@ describe("AppSidebar", () => {
   it("renders nothing (no crash) with empty sections", () => {
     render(<AppSidebar sections={[]} collapsed={false} onCollapse={vi.fn()} />);
     expect(screen.getByTestId("app-sidebar")).toBeInTheDocument();
+  });
+
+  it("shows badge text next to item label", () => {
+    const sections: SidebarSection[] = [
+      {
+        label: "",
+        items: [
+          {
+            key: "growth",
+            label: "Growth",
+            icon: "📈",
+            active: false,
+            onClick: vi.fn(),
+            badge: "Strong",
+          },
+        ],
+      },
+    ];
+    render(
+      <AppSidebar sections={sections} collapsed={false} onCollapse={vi.fn()} />,
+    );
+    expect(screen.getByText("Strong")).toBeInTheDocument();
+  });
+
+  it("shows sub-items when expanded=true", () => {
+    const sections: SidebarSection[] = [
+      {
+        label: "",
+        items: [
+          {
+            key: "studio",
+            label: "Studio",
+            icon: "📐",
+            active: true,
+            onClick: vi.fn(),
+            expanded: true,
+            onToggleExpand: vi.fn(),
+            children: [
+              {
+                key: "growth",
+                label: "Growth",
+                icon: "📈",
+                active: false,
+                onClick: vi.fn(),
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    render(
+      <AppSidebar sections={sections} collapsed={false} onCollapse={vi.fn()} />,
+    );
+    expect(screen.getByText("Growth")).toBeInTheDocument();
+  });
+
+  it("hides sub-items when expanded=false", () => {
+    const sections: SidebarSection[] = [
+      {
+        label: "",
+        items: [
+          {
+            key: "studio",
+            label: "Studio",
+            icon: "📐",
+            active: true,
+            onClick: vi.fn(),
+            expanded: false,
+            onToggleExpand: vi.fn(),
+            children: [
+              {
+                key: "growth",
+                label: "Growth",
+                icon: "📈",
+                active: false,
+                onClick: vi.fn(),
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    render(
+      <AppSidebar sections={sections} collapsed={false} onCollapse={vi.fn()} />,
+    );
+    expect(screen.queryByText("Growth")).not.toBeInTheDocument();
+  });
+
+  it("calls onToggleExpand when chevron is clicked", () => {
+    const onToggleExpand = vi.fn();
+    const sections: SidebarSection[] = [
+      {
+        label: "",
+        items: [
+          {
+            key: "studio",
+            label: "Studio",
+            icon: "📐",
+            active: true,
+            onClick: vi.fn(),
+            expanded: true,
+            onToggleExpand,
+            children: [
+              {
+                key: "growth",
+                label: "Growth",
+                icon: "📈",
+                active: false,
+                onClick: vi.fn(),
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    render(
+      <AppSidebar sections={sections} collapsed={false} onCollapse={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /collapse studio/i }));
+    expect(onToggleExpand).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders item via itemWrapper when provided", () => {
+    const sections: SidebarSection[] = [
+      {
+        label: "",
+        items: [
+          {
+            key: "growth",
+            label: "Growth",
+            icon: "📈",
+            active: false,
+            onClick: vi.fn(),
+          },
+        ],
+      },
+    ];
+    const itemWrapper = vi.fn((_item: SidebarItem, btn: React.ReactNode) => (
+      <div data-testid="wrapped">{btn}</div>
+    ));
+    render(
+      <AppSidebar
+        sections={sections}
+        collapsed={false}
+        onCollapse={vi.fn()}
+        itemWrapper={itemWrapper}
+      />,
+    );
+    expect(screen.getByTestId("wrapped")).toBeInTheDocument();
+    expect(itemWrapper).toHaveBeenCalledWith(
+      expect.objectContaining({ key: "growth" }),
+      expect.anything(),
+    );
   });
 });
