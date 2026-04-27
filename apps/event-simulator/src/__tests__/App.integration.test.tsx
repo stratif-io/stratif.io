@@ -47,15 +47,17 @@ describe("App integration", () => {
   it("renders sidebar navigation sections", async () => {
     renderApp();
     // The sidebar renders navigation buttons for each section
-    await waitFor(() =>
-      expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(1),
-    );
     // Top-level sidebar items are Studio and Event editor;
     // axis items (Growth, Retention, etc.) are children of Studio
     // and only visible when Studio is expanded.
-    for (const label of ["Studio", "Event editor"]) {
-      expect(screen.getAllByText(label).length).toBeGreaterThanOrEqual(1);
-    }
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Studio" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Event editor" }),
+      ).toBeInTheDocument();
+    });
   });
 
   it("renders preset Select dropdown with preset options", async () => {
