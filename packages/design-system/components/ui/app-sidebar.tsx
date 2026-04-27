@@ -65,8 +65,8 @@ export function AppSidebar({
 
       <nav className="flex-1 overflow-y-auto py-2">
         <TooltipProvider delayDuration={0}>
-          {sections.map((section) => (
-            <div key={section.label || "__root__"}>
+          {sections.map((section, i) => (
+            <div key={section.label || i}>
               {!collapsed && section.label && (
                 <p className="px-4 py-2 text-[10px] font-bold tracking-widest uppercase text-muted-foreground/70">
                   {section.label}
@@ -222,6 +222,8 @@ function SidebarNavItem({
 
   const withTooltip = collapsed ? (
     <Tooltip>
+      {/* Use raw button (not wrappedButton) in collapsed mode — children are hidden,
+          and PopoverTrigger requires direct button ownership */}
       <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent side="right">{item.label}</TooltipContent>
     </Tooltip>

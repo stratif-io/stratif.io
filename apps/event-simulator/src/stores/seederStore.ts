@@ -28,9 +28,9 @@ interface SeederState {
   setUiStartDate: (iso: string | null) => void;
   setUiEndDate: (iso: string | null) => void;
   sidebarCollapsed: boolean;
-  activeSection: string;
+  activeSection: "studio" | "events";
   setSidebarCollapsed: (v: boolean) => void;
-  setActiveSection: (v: string) => void;
+  setActiveSection: (v: "studio" | "events") => void;
   studioExpanded: boolean;
   setStudioExpanded: (v: boolean) => void;
 }
