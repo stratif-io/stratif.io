@@ -8,7 +8,7 @@ interface Props {
 export function StudioLayout({ activeSection }: Props) {
   if (activeSection === "events") {
     return (
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-hidden">
         <EventsTab />
       </div>
     );
