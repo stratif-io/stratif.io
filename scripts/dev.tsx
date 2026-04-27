@@ -422,7 +422,14 @@ class Screen {
 
 // ── Drawing ───────────────────────────────────────────────────────────────────
 
-const SIDEBAR_W = 26;
+// Sidebar column layout (width = 30, separator at col 30):
+//   col 0:     left padding
+//   col 1:     cursor glyph (▶ or space)
+//   col 3-18:  label (16 chars, padded)
+//   col 19-24: port right-aligned (6 chars: " :5173" or " watch")
+//   col 26:    dot
+//   col 30:    │ separator
+const SIDEBAR_W = 30;
 
 const SVC_COLOR: Record<string, Color> = {
   "analytics-frontend": "blue",
@@ -446,11 +453,9 @@ function drawSidebar(
   states: Map<string, ServiceState>,
   cursor: number,
 ) {
-  // Header
   s.fill(0, 0, SIDEBAR_W, s.rows);
   s.put(2, 0, "SERVICES", { fg: "gray", bold: true });
 
-  // Vertical divider
   for (let y = 0; y < s.rows; y++) s.put(SIDEBAR_W, y, "│", { fg: "gray" });
 
   let row = 2;
@@ -463,36 +468,38 @@ function drawSidebar(
 
     if (item.kind === "group") {
       const gs = groupState(item.group, states);
+      // col 1: cursor  col 3-24: label (padded)  col 26: dot
       s.fill(0, row, SIDEBAR_W, 1, { bg });
       s.put(1, row, sel ? "▶" : " ", { fg: "gray", bg });
-      s.put(3, row, item.group.label, {
+      s.put(3, row, item.group.label.padEnd(22), {
         fg: sel ? "brightWhite" : "cyan",
         bg,
         bold: true,
       });
-      s.put(SIDEBAR_W - 2, row, stateDot(gs), { fg: dotColor(gs), bg });
+      s.put(26, row, stateDot(gs), { fg: dotColor(gs), bg });
       row++;
     } else {
       const isLast = item.group.children.at(-1)?.id === item.service.id;
       const ss = states.get(item.service.id) ?? "stopped";
       const prefix = isLast ? "  └─ " : "  ├─ ";
-      const portStr = item.service.port ? `:${item.service.port}` : "watch";
+      // port: always 6 chars wide, space-padded left (" :5173" / " watch")
+      const portStr = (
+        item.service.port ? `:${item.service.port}` : " watch"
+      ).padStart(6);
+      // label: fixed 16 chars so port always lands at col 19
+      const label = (prefix + item.service.label).slice(0, 16).padEnd(16);
+      // col 1: cursor  col 3-18: label  col 19-24: port  col 26: dot
       s.fill(0, row, SIDEBAR_W, 1, { bg });
       s.put(1, row, sel ? "▶" : " ", { fg: "gray", bg });
-      s.put(3, row, prefix + item.service.label, {
+      s.put(3, row, label, {
         fg: sel ? "brightWhite" : "white",
         bg,
         dim: !sel,
       });
-      s.put(SIDEBAR_W - 7, row, portStr.padStart(5), {
-        fg: "gray",
-        bg,
-        dim: true,
-      });
-      s.put(SIDEBAR_W - 2, row, stateDot(ss), { fg: dotColor(ss), bg });
+      s.put(19, row, portStr, { fg: "gray", bg, dim: true });
+      s.put(26, row, stateDot(ss), { fg: dotColor(ss), bg });
       row++;
-      // Blank spacer after last child of a group
-      if (isLast && i < TREE.length - 1) row++;
+      if (isLast && i < TREE.length - 1) row++; // blank spacer between groups
     }
   }
 }
@@ -550,8 +557,9 @@ function drawStatusBar(s: Screen) {
   const sep = s.rows - 2;
   const bar = s.rows - 1;
   s.put(0, sep, "─".repeat(s.cols), { fg: "gray", dim: true });
+  // Use plain ASCII arrows to avoid ambiguous-width Unicode rendering
   const hints =
-    " ↑↓ select   s start   x stop   r restart   A start-all   X stop-all   c clear   q quit";
+    " up/dn select   s start   x stop   r restart   A start-all   X stop-all   c clear   q quit";
   s.put(0, bar, hints.slice(0, s.cols), { fg: "gray", dim: true });
 }
 
