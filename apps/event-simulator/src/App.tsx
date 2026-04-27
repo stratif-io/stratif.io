@@ -285,7 +285,6 @@ export default function App() {
       <AppSidebar
         sections={sidebarSections}
         collapsed={sidebarCollapsed}
-        onCollapse={setSidebarCollapsed}
         brand={
           !sidebarCollapsed ? (
             <span className="text-sm font-bold tracking-tight">

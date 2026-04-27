@@ -51,32 +51,6 @@ describe("AppSidebar", () => {
     expect(studioBtn).toHaveAttribute("aria-current", "page");
   });
 
-  it("calls onCollapse when collapse button is clicked", () => {
-    const onCollapse = vi.fn();
-    render(
-      <AppSidebar
-        sections={sections}
-        collapsed={false}
-        onCollapse={onCollapse}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: /collapse sidebar/i }));
-    expect(onCollapse).toHaveBeenCalledWith(true);
-  });
-
-  it("calls onCollapse(false) when expand button is clicked while collapsed", () => {
-    const onCollapse = vi.fn();
-    render(
-      <AppSidebar
-        sections={sections}
-        collapsed={true}
-        onCollapse={onCollapse}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: /expand sidebar/i }));
-    expect(onCollapse).toHaveBeenCalledWith(false);
-  });
-
   it("calls item onClick when nav item is clicked", () => {
     const onClick = vi.fn();
     const s: SidebarSection[] = [

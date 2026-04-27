@@ -132,7 +132,6 @@ export function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
-  const setSidebarOpen = useAppStore((s) => s.setSidebarOpen)
 
   const sections: SidebarSection[] = navGroups.map((group) => ({
     label: group.title,
@@ -148,11 +147,5 @@ export function Sidebar() {
     })),
   }))
 
-  return (
-    <AppSidebar
-      sections={sections}
-      collapsed={!sidebarOpen}
-      onCollapse={(v) => setSidebarOpen(!v)}
-    />
-  )
+  return <AppSidebar sections={sections} collapsed={!sidebarOpen} />
 }
