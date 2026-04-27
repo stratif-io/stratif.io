@@ -1,6 +1,6 @@
 import { AlertCircle, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { isTimeoutError } from "@/lib/api/semaphore";
+import { cn } from "../../lib/utils";
+import { isTimeoutError } from "../../lib/api/semaphore";
 
 interface QueryErrorProps {
   error: Error | null | unknown;

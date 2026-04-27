@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { PageHeader } from "../page-header";
-import { TYPOGRAPHY } from "@/lib/constants";
+import { TYPOGRAPHY } from "../../../lib/constants";
 
 describe("PageHeader", () => {
   it("renders an h1 element", () => {
