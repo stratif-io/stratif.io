@@ -656,7 +656,7 @@ process.stdin.on("data", (key: string) => {
 // ── Init / cleanup ────────────────────────────────────────────────────────────
 
 function cleanup() {
-  process.stdout.write("\x1b[?25h\x1b[0m\n"); // show cursor, reset colors
+  process.stdout.write("\x1b[?25h\x1b[?1049l\x1b[0m"); // show cursor, leave alt screen, reset colors
 }
 
 process.on("exit", cleanup);
@@ -669,5 +669,5 @@ process.on("SIGWINCH", () => {
   redraw();
 });
 
-process.stdout.write("\x1b[2J\x1b[H\x1b[?25l"); // clear screen, home, hide cursor
+process.stdout.write("\x1b[?1049h\x1b[2J\x1b[H\x1b[?25l"); // enter alt screen, clear, home, hide cursor
 redraw();
