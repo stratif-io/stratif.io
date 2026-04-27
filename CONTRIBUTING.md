@@ -11,7 +11,7 @@ Pre-commit hooks run automatically on every commit (ruff lint/format, type-check
 bun run build && bun run test:run
 
 # Backend
-uv run pytest backend/
+uv run pytest services/
 ```
 
 All checks must pass with zero warnings.

@@ -1,6 +1,6 @@
-# Seeders
+# Event Simulator
 
-Parametrized seeder for the stratif.io analytics warehouse. Picks a preset
+Parametrized event simulator for the stratif.io analytics warehouse. Picks a preset
 (e.g. `ecommerce_steady`, `casual_game_addictive`) and produces a realistic
 events dataset for the configured connections.
 
@@ -31,7 +31,7 @@ Legacy env vars `SEED_USERS` and `SEED_DAYS` still work as overrides on the
 
 ## Authoring a custom preset
 
-Drop a YAML into `seeders/presets/`. See `seeders/presets/ecommerce_steady.yaml`.
+Drop a YAML into `services/event_simulator/presets/`. See `services/event_simulator/presets/ecommerce_steady.yaml`.
 
 ## Domain catalog (Phase 4)
 
@@ -210,9 +210,9 @@ The `anomalies` axis controls whether the list is applied:
 Inspect a preset's output shape without running the full bootstrap:
 
 ```bash
-uv run python seeders/tests/visualize_preset.py retail_declining
-uv run python seeders/tests/visualize_preset.py ecommerce_explosive --total-users 2000 --window-days 90
-uv run python seeders/tests/visualize_preset.py --list
+uv run python services/event_simulator/tests/visualize_preset.py retail_declining
+uv run python services/event_simulator/tests/visualize_preset.py ecommerce_explosive --total-users 2000 --window-days 90
+uv run python services/event_simulator/tests/visualize_preset.py --list
 ```
 
 Prints: total events, event vocabulary + counts, and a daily-arrivals histogram.

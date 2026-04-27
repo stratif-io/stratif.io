@@ -26,7 +26,7 @@ bun run dev              # Frontend dev server (port 5173)
 bun run build:lib        # Build design-system library (run before build)
 bun run build            # TypeScript type-check + production bundle
 uv run serve             # Backend server (port 8000)
-uv run seed              # Seed configured connections from a preset (see seeders/README.md)
+uv run seed              # Seed configured connections from a preset (see services/event_simulator/README.md)
 
 # Testing
 bun run test:run         # Unit tests once (Vitest)
