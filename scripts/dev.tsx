@@ -342,6 +342,66 @@ function Sidebar({ states, cursor, spinFrame }: SidebarProps) {
   );
 }
 
+// ── Log colours ───────────────────────────────────────────────────────────────
+
+const SERVICE_COLORS: Record<string, string> = {
+  "analytics-frontend": "blue",
+  "analytics-backend": "cyan",
+  "simulator-studio": "magenta",
+  "simulator-api": "yellow",
+  "design-docs-frontend": "green",
+  "design-sys-watch": "greenBright",
+  "docs-frontend": "white",
+};
+
+// ── LogPane ───────────────────────────────────────────────────────────────────
+
+interface LogPaneProps {
+  logs: LogLine[];
+  cursor: number;
+  scrollOffset: number;
+}
+
+function getFilterIds(cursor: number): string[] | null {
+  const item = TREE[cursor];
+  if (!item) return null;
+  if (item.kind === "group") return item.group.children.map((s) => s.id);
+  return [item.service.id];
+}
+
+function LogPane({ logs, cursor, scrollOffset }: LogPaneProps) {
+  const filterIds = getFilterIds(cursor);
+  const visible = filterIds
+    ? logs.filter((l) => filterIds.includes(l.serviceId))
+    : logs;
+
+  const maxVisible = 20;
+  const start = Math.max(0, visible.length - maxVisible - scrollOffset);
+  const slice = visible.slice(start, start + maxVisible);
+
+  return (
+    <Box flexDirection="column" flexGrow={1} paddingX={1}>
+      {slice.map((line, i) => (
+        <Box key={i}>
+          <Text color="gray">{line.time} </Text>
+          <Text color={SERVICE_COLORS[line.serviceId] ?? "white"} bold>
+            [{line.serviceId}]{" "}
+          </Text>
+          <Text color={line.level === "error" ? "red" : "white"}>
+            {line.text}
+          </Text>
+        </Box>
+      ))}
+      {slice.length === 0 && (
+        <Text color="gray" dimColor>
+          {" "}
+          no output yet
+        </Text>
+      )}
+    </Box>
+  );
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 
 function App() {
@@ -351,18 +411,21 @@ function App() {
   const [logs, setLogs] = React.useState<LogLine[]>([]);
   const [cursor, setCursor] = React.useState(0);
   const [spinFrame, setSpinFrame] = React.useState(0);
+  const [scrollOffset, setScrollOffset] = React.useState(0);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const mgr = React.useMemo(
     () =>
       new ProcessManager(
-        (line) =>
+        (line) => {
           setLogs((prev) => {
             const next = [...prev, line];
             return next.length > MAX_LOG_LINES
               ? next.slice(-MAX_LOG_LINES)
               : next;
-          }),
+          });
+          setScrollOffset(0);
+        },
         (id, state) => setStates((prev) => new Map(prev).set(id, state)),
       ),
     [],
@@ -374,9 +437,9 @@ function App() {
   }, []);
 
   return (
-    <Box flexDirection="row">
+    <Box flexDirection="row" height={process.stdout.rows ?? 24}>
       <Sidebar states={states} cursor={cursor} spinFrame={spinFrame} />
-      <Text> Log pane coming soon…</Text>
+      <LogPane logs={logs} cursor={cursor} scrollOffset={scrollOffset} />
     </Box>
   );
 }
