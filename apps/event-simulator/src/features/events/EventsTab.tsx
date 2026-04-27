@@ -15,7 +15,7 @@ import { Plus, Trash2, AlertCircle } from "lucide-react";
 import { useSeederStore } from "@/stores/seederStore";
 import { MARKOV_PRESETS, MARKOV_PRESET_LABELS } from "./markovPresets";
 import { MarkovGraph } from "./MarkovGraph";
-import { TransitionPanel } from "./TransitionPanel";
+import { MarkovMatrix } from "./MarkovMatrix";
 import { validateMarkovConfig } from "./markovValidation";
 import type { MarkovConfig } from "@/types/simulation";
 
@@ -230,31 +230,31 @@ export function EventsTab() {
         </div>
       </div>
 
-      {/* ── Center: graph ───────────────────────────────────── */}
-      <div className="flex-1 min-w-0 relative">
-        <MarkovGraph
-          config={markov}
-          selectedNode={selectedEvent}
-          onNodeSelect={setSelectedEvent}
-        />
-      </div>
+      {/* ── Right: graph (top) + matrix (bottom) ────────────── */}
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        {/* Graph */}
+        <div className="flex-1 min-h-0 relative">
+          <MarkovGraph
+            config={markov}
+            selectedNode={selectedEvent}
+            onNodeSelect={setSelectedEvent}
+          />
+        </div>
 
-      {/* ── Right panel: transitions ─────────────────────────── */}
-      <div className="flex flex-col w-60 shrink-0 border-l border-border bg-muted/30">
-        {errors.length > 0 && (
-          <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border text-destructive">
-            <AlertCircle size={12} className="shrink-0" />
-            <span className="text-xs">
-              {errors.length} validation error{errors.length > 1 ? "s" : ""}
-            </span>
+        {/* Matrix */}
+        <div className="shrink-0 border-t border-border bg-muted/20">
+          {errors.length > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border text-destructive">
+              <AlertCircle size={12} className="shrink-0" />
+              <span className="text-xs">
+                {errors.length} validation error{errors.length > 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+          <div className="overflow-auto max-h-52">
+            <MarkovMatrix config={markov} onChange={setMarkovConfig} />
           </div>
-        )}
-        <TransitionPanel
-          config={markov}
-          selectedEvent={selectedEvent}
-          onChange={setMarkovConfig}
-          onDeselect={() => setSelectedEvent(null)}
-        />
+        </div>
       </div>
     </div>
   );
