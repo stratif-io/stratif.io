@@ -167,6 +167,7 @@ class ProcessManager {
       stdout: "pipe",
       stderr: "pipe",
       cwd: process.cwd(),
+      detached: true, // own process group so kill(-pgid) doesn't hit the TUI
     });
     this.procs.set(svc.id, proc);
 
