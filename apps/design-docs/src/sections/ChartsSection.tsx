@@ -10,7 +10,7 @@ import {
   ComparisonChart,
   generateHeatmapData,
   transformPeriodData,
-} from "@analytics/components/charts";
+} from "@/components/charts";
 
 const timeSeriesData = [
   { date: "2024-01-01", value: 120 },

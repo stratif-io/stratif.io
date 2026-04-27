@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { ComponentSection, ComponentRow } from "../components/ComponentSection";
-import { DataTable } from "@analytics/components/data-table";
-import { EventsTable } from "@analytics/components/events-table/EventsTable";
-import { PivotTable } from "@analytics/components/pivot-table/PivotTable";
-import { VirtualList } from "@analytics/components/virtual-list/VirtualList";
-import { Pagination } from "@analytics/components/shared/Pagination";
+import { DataTable } from "@/components/data-table";
+import { EventsTable } from "@/components/events-table/EventsTable";
+import { PivotTable } from "@/components/pivot-table/PivotTable";
+import { VirtualList } from "@/components/virtual-list/VirtualList";
+import { Pagination } from "@/components/shared/Pagination";
 import type { ColumnDef } from "@tanstack/react-table";
 
 interface SampleRow {

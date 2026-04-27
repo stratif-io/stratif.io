@@ -8,9 +8,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: [
-      { find: /^@\//, replacement: path.resolve(__dirname, "src") + "/" },
       {
-        find: /^@analytics\//,
+        find: /^@\//,
         replacement: path.resolve(__dirname, "../analytics/frontend") + "/",
       },
       {
