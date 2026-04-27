@@ -28,9 +28,17 @@ export default defineConfig(({ mode }) => {
       },
     ],
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './frontend'),
-      },
+      alias: [
+        { find: '@', replacement: path.resolve(__dirname, './frontend') },
+        {
+          find: '@stratif-io/design-system/index.css',
+          replacement: path.resolve(__dirname, '../../packages/design-system/index.css'),
+        },
+        {
+          find: '@stratif-io/design-system',
+          replacement: path.resolve(__dirname, '../../packages/design-system/index.ts'),
+        },
+      ],
     },
     define: {
       'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || ''),
