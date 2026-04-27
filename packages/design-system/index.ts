@@ -117,3 +117,7 @@ export {
   type SidebarItem,
 } from "./components/ui/app-sidebar";
 export { AppHeader, type AppHeaderProps } from "./components/ui/app-header";
+export {
+  ResizablePanel,
+  type ResizablePanelProps,
+} from "./components/ui/resizable-panel";

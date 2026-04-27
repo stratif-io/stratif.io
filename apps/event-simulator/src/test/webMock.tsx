@@ -394,6 +394,23 @@ export function AppHeader({
 
 export type AppHeaderProps = React.ComponentProps<typeof AppHeader>;
 
+// ResizablePanel
+export function ResizablePanel({
+  open,
+  children,
+}: {
+  open?: boolean;
+  defaultWidth?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  children?: React.ReactNode;
+  className?: string;
+}) {
+  if (!open) return null;
+  return <div data-testid="resizable-panel">{children}</div>;
+}
+export type ResizablePanelProps = React.ComponentProps<typeof ResizablePanel>;
+
 // cn util (some files may import it from @stratif-io/design-system)
 export function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
