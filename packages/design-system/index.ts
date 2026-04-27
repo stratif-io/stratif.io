@@ -37,6 +37,11 @@ export {
   PopoverContent,
   PopoverTrigger,
 } from "./components/ui/popover";
+export { AxisPopover } from "./components/ui/axis-popover";
+export type {
+  AxisPopoverProps,
+  AxisDisplayValue,
+} from "./components/ui/axis-popover";
 export {
   Tooltip,
   TooltipContent,
