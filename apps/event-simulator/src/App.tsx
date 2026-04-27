@@ -441,7 +441,6 @@ export default function App() {
 
         <main className="flex-1 overflow-hidden flex min-h-0">
           <ErrorBoundary>
-            {/* @ts-expect-error — StudioLayout will accept activeSection in Task 8 */}
             <StudioLayout activeSection={activeSection} />
           </ErrorBoundary>
           <SavePanel yaml={stringifyConfigYaml(config)} />
