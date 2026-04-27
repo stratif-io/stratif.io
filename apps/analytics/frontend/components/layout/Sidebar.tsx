@@ -1,7 +1,8 @@
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { AppSidebar } from '@stratif-io/design-system'
 import type { SidebarSection } from '@stratif-io/design-system'
 import { useAppStore } from '@/stores'
+import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
   TrendingUp,
@@ -154,6 +155,20 @@ export function Sidebar() {
       sections={sections}
       collapsed={!sidebarOpen}
       onCollapse={(v) => setSidebarOpen(!v)}
+      brand={
+        <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
+          <img src="/favicon-color.svg" alt="stratif.io" className="h-7 w-7 shrink-0" />
+          <span
+            className={cn(
+              'transition-[opacity,max-width] duration-200 overflow-hidden',
+              sidebarOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'
+            )}
+          >
+            <img src="/text-light.svg" alt="" className="h-7 w-auto shrink-0 dark:hidden" />
+            <img src="/text-dark.svg" alt="" className="h-7 w-auto shrink-0 hidden dark:block" />
+          </span>
+        </Link>
+      }
     />
   )
 }

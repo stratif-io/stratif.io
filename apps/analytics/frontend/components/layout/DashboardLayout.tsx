@@ -20,7 +20,6 @@ function isFullBleed(pathname: string, activeConnectionId: string | null): boole
 
 export function DashboardLayout() {
   useUrlSync()
-  const sidebarOpen = useAppStore((state) => state.sidebarOpen)
   const activeConnectionId = useAppStore((state) => state.activeConnectionId)
   const { data: schemaConfig } = useSchemaConfig(activeConnectionId ?? '')
   const maxConcurrent = schemaConfig?.max_concurrent_queries ?? 5
@@ -38,12 +37,7 @@ export function DashboardLayout() {
     <TooltipProvider delayDuration={300}>
       <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar />
-        <div
-          className={cn(
-            'flex flex-col flex-1 min-w-0 transition-[padding-left] duration-300 ease-in-out',
-            sidebarOpen ? 'lg:pl-[var(--sidebar-expanded)]' : 'lg:pl-[var(--sidebar-collapsed)]'
-          )}
-        >
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <Header />
           <main
             id="main-content"
