@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import React from "react";
-import { render, Text } from "ink";
+import { render, Text, Box, useInput } from "ink";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -230,6 +230,118 @@ class ProcessManager {
   }
 }
 
+// ── Tree navigation helpers ───────────────────────────────────────────────────
+
+type TreeItem =
+  | { kind: "group"; group: Group }
+  | { kind: "service"; group: Group; service: Service };
+
+function buildTree(): TreeItem[] {
+  const items: TreeItem[] = [];
+  for (const group of SERVICES) {
+    items.push({ kind: "group", group });
+    for (const service of group.children) {
+      items.push({ kind: "service", group, service });
+    }
+  }
+  return items;
+}
+
+const TREE = buildTree();
+
+const SPINNER_FRAMES = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+
+function stateDot(state: ServiceState, frame: number): string {
+  if (state === "running") return "●";
+  if (state === "starting") return SPINNER_FRAMES[frame % 10]!;
+  if (state === "error") return "●";
+  return "○";
+}
+
+function stateColor(state: ServiceState): string {
+  if (state === "running") return "green";
+  if (state === "starting") return "yellow";
+  if (state === "error") return "red";
+  return "gray";
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+
+interface SidebarProps {
+  states: Map<string, ServiceState>;
+  cursor: number;
+  spinFrame: number;
+}
+
+function Sidebar({ states, cursor, spinFrame }: SidebarProps) {
+  return (
+    <Box
+      flexDirection="column"
+      width={26}
+      borderStyle="single"
+      borderColor="gray"
+      paddingX={1}
+    >
+      <Text bold color="gray">
+        SERVICES
+      </Text>
+      {TREE.map((item, i) => {
+        const isSelected = cursor === i;
+        const bg = isSelected ? "blue" : undefined;
+
+        if (item.kind === "group") {
+          const gs = groupState(item.group, states);
+          return (
+            <Box key={item.group.id}>
+              <Text backgroundColor={bg} color="white" bold>
+                {isSelected ? "▶ " : "  "}
+              </Text>
+              <Text
+                backgroundColor={bg}
+                color={isSelected ? "white" : "cyan"}
+                bold
+              >
+                {item.group.label}
+              </Text>
+              <Text backgroundColor={bg} color={stateColor(gs)}>
+                {" "}
+                {stateDot(gs, spinFrame)}
+              </Text>
+            </Box>
+          );
+        }
+
+        // service row
+        const isLast =
+          item.group.children[item.group.children.length - 1]?.id ===
+          item.service.id;
+        const ss = states.get(item.service.id) ?? "stopped";
+        const portStr = item.service.port ? `:${item.service.port}` : "watch";
+        const prefix = isLast ? "  └─" : "  ├─";
+
+        return (
+          <Box key={item.service.id}>
+            <Text backgroundColor={bg} color="gray">
+              {isSelected ? "▶" : " "}
+              {prefix}{" "}
+            </Text>
+            <Text backgroundColor={bg} color="white">
+              {item.service.label}
+            </Text>
+            <Text backgroundColor={bg} color="gray">
+              {" "}
+              {portStr}{" "}
+            </Text>
+            <Text backgroundColor={bg} color={stateColor(ss)}>
+              {stateDot(ss, spinFrame)}
+            </Text>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 
 function App() {
@@ -237,6 +349,8 @@ function App() {
     () => new Map(allServices().map((s) => [s.id, "stopped"])),
   );
   const [logs, setLogs] = React.useState<LogLine[]>([]);
+  const [cursor, setCursor] = React.useState(0);
+  const [spinFrame, setSpinFrame] = React.useState(0);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const mgr = React.useMemo(
@@ -254,12 +368,17 @@ function App() {
     [],
   );
 
+  React.useEffect(() => {
+    const t = setInterval(() => setSpinFrame((f) => f + 1), 80);
+    return () => clearInterval(t);
+  }, []);
+
   return (
-    <Text color="green">
-      ProcessManager ready — {allServices().length} services, {logs.length} log
-      lines
-    </Text>
+    <Box flexDirection="row">
+      <Sidebar states={states} cursor={cursor} spinFrame={spinFrame} />
+      <Text> Log pane coming soon…</Text>
+    </Box>
   );
 }
 
-render(<App />);
+render(<App />, { exitOnCtrlC: true });
