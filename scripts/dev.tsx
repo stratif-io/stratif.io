@@ -402,6 +402,34 @@ function LogPane({ logs, cursor, scrollOffset }: LogPaneProps) {
   );
 }
 
+// ── StatusBar ─────────────────────────────────────────────────────────────────
+
+function StatusBar() {
+  const keys: [string, string][] = [
+    ["↑↓", "select"],
+    ["s", "start"],
+    ["x", "stop"],
+    ["r", "restart"],
+    ["A", "start all"],
+    ["X", "stop all"],
+    ["c", "clear"],
+    ["q", "quit"],
+  ];
+  return (
+    <Box borderStyle="single" borderColor="gray" paddingX={1}>
+      {keys.map(([k, label], i) => (
+        <Text key={k}>
+          {i > 0 && <Text color="gray"> │ </Text>}
+          <Text color="cyan" bold>
+            {k}
+          </Text>
+          <Text color="gray"> {label}</Text>
+        </Text>
+      ))}
+    </Box>
+  );
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 
 function App() {
@@ -413,7 +441,6 @@ function App() {
   const [spinFrame, setSpinFrame] = React.useState(0);
   const [scrollOffset, setScrollOffset] = React.useState(0);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const mgr = React.useMemo(
     () =>
       new ProcessManager(
@@ -436,10 +463,57 @@ function App() {
     return () => clearInterval(t);
   }, []);
 
+  useInput((input, key) => {
+    if (key.upArrow && key.shift) {
+      setScrollOffset((o) => o + 1);
+      return;
+    }
+    if (key.downArrow && key.shift) {
+      setScrollOffset((o) => Math.max(0, o - 1));
+      return;
+    }
+    if (key.upArrow) {
+      setCursor((c) => Math.max(0, c - 1));
+      return;
+    }
+    if (key.downArrow) {
+      setCursor((c) => Math.min(TREE.length - 1, c + 1));
+      return;
+    }
+
+    const item = TREE[cursor];
+    if (!item) return;
+
+    if (input === "s") {
+      if (item.kind === "group") mgr.startGroup(item.group);
+      else mgr.start(item.service);
+    }
+    if (input === "x") {
+      if (item.kind === "group") mgr.stopGroup(item.group);
+      else mgr.stop(item.service);
+    }
+    if (input === "r") {
+      if (item.kind === "group") {
+        mgr.stopGroup(item.group).then(() => mgr.startGroup(item.group));
+      } else {
+        mgr.stop(item.service).then(() => mgr.start(item.service));
+      }
+    }
+    if (input === "A") mgr.startAll();
+    if (input === "X") mgr.stopAll();
+    if (input === "c") setLogs([]);
+    if (input === "q") mgr.quit();
+  });
+
+  const rows = process.stdout.rows ?? 24;
+
   return (
-    <Box flexDirection="row" height={process.stdout.rows ?? 24}>
-      <Sidebar states={states} cursor={cursor} spinFrame={spinFrame} />
-      <LogPane logs={logs} cursor={cursor} scrollOffset={scrollOffset} />
+    <Box flexDirection="column" height={rows}>
+      <Box flexDirection="row" flexGrow={1}>
+        <Sidebar states={states} cursor={cursor} spinFrame={spinFrame} />
+        <LogPane logs={logs} cursor={cursor} scrollOffset={scrollOffset} />
+      </Box>
+      <StatusBar />
     </Box>
   );
 }
