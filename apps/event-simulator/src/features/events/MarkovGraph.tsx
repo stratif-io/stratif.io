@@ -133,7 +133,65 @@ function SelfLoopEdge({
   );
 }
 
-const edgeTypes = { selfloop: SelfLoopEdge };
+// ── Bidirectional edge (explicit perpendicular offset) ───────────────────────
+
+function BiEdge({
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  style,
+  markerEnd,
+  label,
+  data,
+}: EdgeProps) {
+  // Perpendicular offset direction — sign comes from edge data
+  const sign = (data as { sign?: number })?.sign ?? 1;
+  const OFFSET = 48;
+
+  const mx = (sourceX + targetX) / 2;
+  const my = (sourceY + targetY) / 2;
+  const dx = targetX - sourceX;
+  const dy = targetY - sourceY;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  // Unit perpendicular
+  const px = (-dy / len) * OFFSET * sign;
+  const py = (dx / len) * OFFSET * sign;
+
+  const cx = mx + px;
+  const cy = my + py;
+  const d = `M ${sourceX} ${sourceY} Q ${cx} ${cy} ${targetX} ${targetY}`;
+  const lx = cx;
+  const ly = cy;
+
+  return (
+    <>
+      <BaseEdge path={d} style={style} markerEnd={markerEnd} />
+      {label && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: "absolute",
+              transform: `translate(-50%, -50%) translate(${lx}px,${ly}px)`,
+              fontSize: 10,
+              fontWeight: 500,
+              color: "#6b7280",
+              background: "hsl(var(--background) / 0.85)",
+              padding: "2px 5px",
+              borderRadius: 3,
+              pointerEvents: "none",
+            }}
+            className="nodrag nopan"
+          >
+            {label}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+}
+
+const edgeTypes = { selfloop: SelfLoopEdge, biedge: BiEdge };
 
 // ── Layout (dagre — left-to-right workflow) ───────────────────────────────────
 
@@ -222,21 +280,16 @@ function buildEdges(config: MarkovConfig, showEnd: boolean): Edge[] {
       const arrowSize = 8 + prob * 8;
       const isSelf = from === targetId;
       const isBidi = !isSelf && pairSet.has([from, targetId].sort().join("||"));
-      // For bidirectional pairs the "lesser" id curves upward (negative), the other downward
-      const curvature = isBidi ? (from < targetId ? -0.4 : 0.4) : 0.25;
+      // sign: +1 or -1 so both arcs go on opposite sides of the straight line
+      const sign = isBidi ? (from < targetId ? 1 : -1) : 0;
       edges.push({
         id: `${from}->${to}`,
-        type: isSelf ? "selfloop" : "default",
+        type: isSelf ? "selfloop" : isBidi ? "biedge" : "default",
         source: from,
         target: targetId,
-        pathOptions: isSelf ? undefined : { curvature },
+        data: { sign },
         label: `${(prob * 100).toFixed(0)}%`,
         labelStyle: { fontSize: 10, fill: "#6b7280", fontWeight: 500 },
-        labelBgStyle: {
-          fill: "hsl(var(--background))",
-          fillOpacity: 0.85,
-          rx: 3,
-        },
         labelBgPadding: [3, 5] as [number, number],
         markerEnd: {
           type: MarkerType.ArrowClosed,
