@@ -48,13 +48,9 @@ function EventNode({ data }: NodeProps) {
         )}
         style={{ width: NODE_WIDTH, height: NODE_HEIGHT }}
       >
-        <Handle type="target" position={Position.Top} className="opacity-0" />
+        <Handle type="target" position={Position.Left} className="opacity-0" />
         [end]
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          className="opacity-0"
-        />
+        <Handle type="source" position={Position.Right} className="opacity-0" />
       </div>
     );
   }
@@ -76,10 +72,10 @@ function EventNode({ data }: NodeProps) {
           : undefined,
       }}
     >
-      <Handle type="target" position={Position.Top} className="opacity-0" />
+      <Handle type="target" position={Position.Left} className="opacity-0" />
       <span className="size-2 rounded-full bg-white/30 shrink-0" aria-hidden />
       <span className="truncate">{d.label}</span>
-      <Handle type="source" position={Position.Bottom} className="opacity-0" />
+      <Handle type="source" position={Position.Right} className="opacity-0" />
     </div>
   );
 }
