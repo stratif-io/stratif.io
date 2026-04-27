@@ -1,26 +1,24 @@
 #!/usr/bin/env bun
-import React from "react";
-import { render, Text, Box, useInput } from "ink";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type ServiceState = "stopped" | "starting" | "running" | "error";
+type ServiceState = "stopped" | "starting" | "running" | "error";
 
-export interface Service {
+interface Service {
   id: string;
   label: string;
   port: number | null;
   cmd: string[];
 }
 
-export interface Group {
+interface Group {
   id: string;
   label: string;
   children: Service[];
 }
 
-export interface LogLine {
-  time: string; // "HH:MM:SS"
+interface LogLine {
+  time: string;
   serviceId: string;
   text: string;
   level: "info" | "error";
@@ -100,7 +98,7 @@ const SERVICES: Group[] = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function timestamp(): string {
-  return new Date().toTimeString().slice(0, 8); // "HH:MM:SS"
+  return new Date().toTimeString().slice(0, 8);
 }
 
 function allServices(): Service[] {
@@ -111,126 +109,18 @@ function groupState(
   group: Group,
   states: Map<string, ServiceState>,
 ): ServiceState {
-  const priority: ServiceState[] = ["error", "stopped", "starting", "running"];
-  for (const p of priority) {
+  for (const p of [
+    "error",
+    "stopped",
+    "starting",
+    "running",
+  ] as ServiceState[]) {
     if (group.children.some((s) => states.get(s.id) === p)) return p;
   }
   return "stopped";
 }
 
-// ── Process manager ───────────────────────────────────────────────────────────
-
-const MAX_LOG_LINES = 500;
-
-type OnLogLine = (line: LogLine) => void;
-type OnStateChange = (serviceId: string, state: ServiceState) => void;
-
-class ProcessManager {
-  private procs = new Map<string, ReturnType<typeof Bun.spawn>>();
-  private onLog: OnLogLine;
-  private onState: OnStateChange;
-
-  constructor(onLog: OnLogLine, onState: OnStateChange) {
-    this.onLog = onLog;
-    this.onState = onState;
-  }
-
-  async start(service: Service): Promise<void> {
-    if (this.procs.has(service.id)) return;
-    this.onState(service.id, "starting");
-
-    const proc = Bun.spawn(service.cmd, {
-      stdout: "pipe",
-      stderr: "pipe",
-      cwd: process.cwd(),
-    });
-
-    this.procs.set(service.id, proc);
-
-    const stream = (
-      reader: ReadableStream<Uint8Array>,
-      level: "info" | "error",
-    ) => {
-      const decoder = new TextDecoder();
-      const r = reader.getReader();
-      let buf = "";
-      const pump = async () => {
-        while (true) {
-          const { done, value } = await r.read();
-          if (done) break;
-          buf += decoder.decode(value);
-          const lines = buf.split("\n");
-          buf = lines.pop() ?? "";
-          for (const line of lines) {
-            if (line.trim()) {
-              this.onLog({
-                time: timestamp(),
-                serviceId: service.id,
-                text: line,
-                level,
-              });
-            }
-          }
-        }
-      };
-      pump().catch(() => {});
-    };
-
-    stream(proc.stdout, "info");
-    stream(proc.stderr, "error");
-
-    proc.exited.then((code) => {
-      this.procs.delete(service.id);
-      this.onState(service.id, code === 0 ? "stopped" : "error");
-    });
-
-    setTimeout(() => {
-      if (this.procs.has(service.id)) {
-        this.onState(service.id, "running");
-      }
-    }, 800);
-  }
-
-  async stop(service: Service): Promise<void> {
-    const proc = this.procs.get(service.id);
-    if (!proc) return;
-    proc.kill("SIGTERM");
-    await proc.exited;
-    this.procs.delete(service.id);
-    this.onState(service.id, "stopped");
-  }
-
-  async startGroup(group: Group): Promise<void> {
-    for (const svc of group.children) {
-      await this.start(svc);
-    }
-  }
-
-  async stopGroup(group: Group): Promise<void> {
-    for (const svc of [...group.children].reverse()) {
-      await this.stop(svc);
-    }
-  }
-
-  async startAll(): Promise<void> {
-    for (const group of SERVICES) {
-      await this.startGroup(group);
-    }
-  }
-
-  async stopAll(): Promise<void> {
-    for (const group of [...SERVICES].reverse()) {
-      await this.stopGroup(group);
-    }
-  }
-
-  async quit(): Promise<void> {
-    await this.stopAll();
-    process.exit(0);
-  }
-}
-
-// ── Tree navigation helpers ───────────────────────────────────────────────────
+// ── Tree ──────────────────────────────────────────────────────────────────────
 
 type TreeItem =
   | { kind: "group"; group: Group }
@@ -240,9 +130,8 @@ function buildTree(): TreeItem[] {
   const items: TreeItem[] = [];
   for (const group of SERVICES) {
     items.push({ kind: "group", group });
-    for (const service of group.children) {
-      items.push({ kind: "service", group, service });
-    }
+    for (const svc of group.children)
+      items.push({ kind: "service", group, service: svc });
   }
   return items;
 }
@@ -256,267 +145,521 @@ function stateDot(state: ServiceState): string {
   return "○";
 }
 
-function stateColor(state: ServiceState): string {
+// ── Process manager ───────────────────────────────────────────────────────────
+
+const MAX_LOG_LINES = 2000;
+
+type OnLog = (line: LogLine) => void;
+type OnState = (id: string, state: ServiceState) => void;
+
+class ProcessManager {
+  private procs = new Map<string, ReturnType<typeof Bun.spawn>>();
+
+  constructor(
+    private onLog: OnLog,
+    private onState: OnState,
+  ) {}
+
+  async start(svc: Service): Promise<void> {
+    if (this.procs.has(svc.id)) return;
+    this.onState(svc.id, "starting");
+    const proc = Bun.spawn(svc.cmd, {
+      stdout: "pipe",
+      stderr: "pipe",
+      cwd: process.cwd(),
+    });
+    this.procs.set(svc.id, proc);
+
+    const stream = (
+      reader: ReadableStream<Uint8Array>,
+      level: "info" | "error",
+    ) => {
+      const dec = new TextDecoder();
+      const r = reader.getReader();
+      let buf = "";
+      const pump = async () => {
+        while (true) {
+          const { done, value } = await r.read();
+          if (done) break;
+          buf += dec.decode(value);
+          const lines = buf.split("\n");
+          buf = lines.pop() ?? "";
+          for (const line of lines)
+            if (line.trim())
+              this.onLog({
+                time: timestamp(),
+                serviceId: svc.id,
+                text: line,
+                level,
+              });
+        }
+      };
+      pump().catch(() => {});
+    };
+
+    stream(proc.stdout, "info");
+    stream(proc.stderr, "error");
+    proc.exited.then((code) => {
+      this.procs.delete(svc.id);
+      this.onState(svc.id, code === 0 ? "stopped" : "error");
+    });
+    setTimeout(() => {
+      if (this.procs.has(svc.id)) this.onState(svc.id, "running");
+    }, 800);
+  }
+
+  async stop(svc: Service): Promise<void> {
+    const proc = this.procs.get(svc.id);
+    if (!proc) return;
+    proc.kill("SIGTERM");
+    await proc.exited;
+    this.procs.delete(svc.id);
+    this.onState(svc.id, "stopped");
+  }
+
+  async startGroup(g: Group) {
+    for (const svc of g.children) await this.start(svc);
+  }
+  async stopGroup(g: Group) {
+    for (const svc of [...g.children].reverse()) await this.stop(svc);
+  }
+  async startAll() {
+    for (const g of SERVICES) await this.startGroup(g);
+  }
+  async stopAll() {
+    for (const g of [...SERVICES].reverse()) await this.stopGroup(g);
+  }
+  async quit() {
+    cleanup();
+    await this.stopAll();
+    process.exit(0);
+  }
+}
+
+// ── Double-buffer screen renderer ─────────────────────────────────────────────
+
+type Color =
+  | "default"
+  | "black"
+  | "red"
+  | "green"
+  | "yellow"
+  | "blue"
+  | "magenta"
+  | "cyan"
+  | "white"
+  | "gray"
+  | "brightRed"
+  | "brightGreen"
+  | "brightYellow"
+  | "brightBlue"
+  | "brightMagenta"
+  | "brightCyan"
+  | "brightWhite";
+
+interface Cell {
+  ch: string;
+  fg: Color;
+  bg: Color;
+  bold: boolean;
+  dim: boolean;
+}
+
+const FG: Record<Color, number> = {
+  default: 39,
+  black: 30,
+  red: 31,
+  green: 32,
+  yellow: 33,
+  blue: 34,
+  magenta: 35,
+  cyan: 36,
+  white: 37,
+  gray: 90,
+  brightRed: 91,
+  brightGreen: 92,
+  brightYellow: 93,
+  brightBlue: 94,
+  brightMagenta: 95,
+  brightCyan: 96,
+  brightWhite: 97,
+};
+const BG: Record<Color, number> = {
+  default: 49,
+  black: 40,
+  red: 41,
+  green: 42,
+  yellow: 43,
+  blue: 44,
+  magenta: 45,
+  cyan: 46,
+  white: 47,
+  gray: 100,
+  brightRed: 101,
+  brightGreen: 102,
+  brightYellow: 103,
+  brightBlue: 104,
+  brightMagenta: 105,
+  brightCyan: 106,
+  brightWhite: 107,
+};
+
+const BLANK: Cell = {
+  ch: " ",
+  fg: "default",
+  bg: "default",
+  bold: false,
+  dim: false,
+};
+
+class Screen {
+  cols = process.stdout.columns ?? 80;
+  rows = process.stdout.rows ?? 24;
+  private next: Cell[][];
+  private curr: Cell[][];
+
+  constructor() {
+    this.next = this.alloc();
+    this.curr = this.alloc();
+  }
+
+  private alloc() {
+    return Array.from({ length: this.rows }, () =>
+      Array.from({ length: this.cols }, () => ({ ...BLANK })),
+    );
+  }
+
+  clear() {
+    for (let y = 0; y < this.rows; y++)
+      for (let x = 0; x < this.cols; x++) this.next[y]![x] = { ...BLANK };
+  }
+
+  put(x: number, y: number, text: string, style: Partial<Cell> = {}) {
+    if (y < 0 || y >= this.rows) return;
+    const fg = style.fg ?? "default";
+    const bg = style.bg ?? "default";
+    const bold = style.bold ?? false;
+    const dim = style.dim ?? false;
+    for (let i = 0; i < text.length; i++) {
+      const cx = x + i;
+      if (cx < 0 || cx >= this.cols) continue;
+      this.next[y]![cx] = { ch: text[i]!, fg, bg, bold, dim };
+    }
+  }
+
+  fill(x: number, y: number, w: number, h: number, style: Partial<Cell> = {}) {
+    for (let row = y; row < y + h; row++)
+      this.put(
+        x,
+        row,
+        " ".repeat(Math.max(0, Math.min(w, this.cols - x))),
+        style,
+      );
+  }
+
+  flush() {
+    let out = "";
+    let cFg: Color = "default",
+      cBg: Color = "default",
+      cBold = false,
+      cDim = false;
+
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        const n = this.next[y]![x]!;
+        const c = this.curr[y]![x]!;
+        if (
+          n.ch === c.ch &&
+          n.fg === c.fg &&
+          n.bg === c.bg &&
+          n.bold === c.bold &&
+          n.dim === c.dim
+        )
+          continue;
+
+        out += `\x1b[${y + 1};${x + 1}H`;
+
+        const needReset = (cBold && !n.bold) || (cDim && !n.dim);
+        if (needReset) {
+          out += "\x1b[0m";
+          cFg = "default";
+          cBg = "default";
+          cBold = false;
+          cDim = false;
+        }
+        if (n.bold && !cBold) {
+          out += "\x1b[1m";
+          cBold = true;
+        }
+        if (n.dim && !cDim) {
+          out += "\x1b[2m";
+          cDim = true;
+        }
+        if (n.fg !== cFg) {
+          out += `\x1b[${FG[n.fg]}m`;
+          cFg = n.fg;
+        }
+        if (n.bg !== cBg) {
+          out += `\x1b[${BG[n.bg]}m`;
+          cBg = n.bg;
+        }
+
+        out += n.ch;
+        this.curr[y]![x] = { ...n };
+      }
+    }
+
+    if (out) process.stdout.write(out + "\x1b[0m");
+  }
+
+  resize() {
+    this.cols = process.stdout.columns ?? 80;
+    this.rows = process.stdout.rows ?? 24;
+    this.next = this.alloc();
+    this.curr = this.alloc();
+  }
+}
+
+// ── Drawing ───────────────────────────────────────────────────────────────────
+
+const SIDEBAR_W = 26;
+
+const SVC_COLOR: Record<string, Color> = {
+  "analytics-frontend": "blue",
+  "analytics-backend": "cyan",
+  "simulator-studio": "magenta",
+  "simulator-api": "yellow",
+  "design-docs-frontend": "green",
+  "design-sys-watch": "brightGreen",
+  "docs-frontend": "brightWhite",
+};
+
+function dotColor(state: ServiceState): Color {
   if (state === "running") return "green";
   if (state === "starting") return "yellow";
   if (state === "error") return "red";
   return "gray";
 }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
+function drawSidebar(
+  s: Screen,
+  states: Map<string, ServiceState>,
+  cursor: number,
+) {
+  // Header
+  s.fill(0, 0, SIDEBAR_W, s.rows);
+  s.put(2, 0, "SERVICES", { fg: "gray", bold: true });
 
-const SIDEBAR_WIDTH = 28;
+  // Vertical divider
+  for (let y = 0; y < s.rows; y++) s.put(SIDEBAR_W, y, "│", { fg: "gray" });
 
-interface SidebarProps {
-  states: Map<string, ServiceState>;
-  cursor: number;
+  let row = 2;
+  for (let i = 0; i < TREE.length; i++) {
+    const item = TREE[i]!;
+    const sel = cursor === i;
+    const bg: Color = sel ? "blue" : "default";
+
+    if (row >= s.rows - 2) break;
+
+    if (item.kind === "group") {
+      const gs = groupState(item.group, states);
+      s.fill(0, row, SIDEBAR_W, 1, { bg });
+      s.put(1, row, sel ? "▶" : " ", { fg: "gray", bg });
+      s.put(3, row, item.group.label, {
+        fg: sel ? "brightWhite" : "cyan",
+        bg,
+        bold: true,
+      });
+      s.put(SIDEBAR_W - 2, row, stateDot(gs), { fg: dotColor(gs), bg });
+      row++;
+    } else {
+      const isLast = item.group.children.at(-1)?.id === item.service.id;
+      const ss = states.get(item.service.id) ?? "stopped";
+      const prefix = isLast ? "  └─ " : "  ├─ ";
+      const portStr = item.service.port ? `:${item.service.port}` : "watch";
+      s.fill(0, row, SIDEBAR_W, 1, { bg });
+      s.put(1, row, sel ? "▶" : " ", { fg: "gray", bg });
+      s.put(3, row, prefix + item.service.label, {
+        fg: sel ? "brightWhite" : "white",
+        bg,
+        dim: !sel,
+      });
+      s.put(SIDEBAR_W - 7, row, portStr.padStart(5), {
+        fg: "gray",
+        bg,
+        dim: true,
+      });
+      s.put(SIDEBAR_W - 2, row, stateDot(ss), { fg: dotColor(ss), bg });
+      row++;
+      // Blank spacer after last child of a group
+      if (isLast && i < TREE.length - 1) row++;
+    }
+  }
 }
 
-const Sidebar = React.memo(function Sidebar({ states, cursor }: SidebarProps) {
-  return (
-    <Box
-      flexDirection="column"
-      width={SIDEBAR_WIDTH}
-      borderRight
-      borderColor="gray"
-    >
-      <Box paddingX={1} marginBottom={1}>
-        <Text bold dimColor>
-          SERVICES
-        </Text>
-      </Box>
-      {TREE.map((item, i) => {
-        const isSelected = cursor === i;
+function drawLogPane(
+  s: Screen,
+  logs: LogLine[],
+  cursor: number,
+  scrollOffset: number,
+) {
+  const x0 = SIDEBAR_W + 1;
+  const w = s.cols - x0 - 1;
+  const h = s.rows - 2; // exclude separator + status bar
 
-        if (item.kind === "group") {
-          const gs = groupState(item.group, states);
-          const label = item.group.label.padEnd(14);
-          return (
-            <Box key={item.group.id} paddingX={1}>
-              <Text
-                backgroundColor={isSelected ? "blue" : undefined}
-                color={isSelected ? "white" : "cyan"}
-                bold
-              >
-                {`${isSelected ? "▶" : " "} ${label}`}
-              </Text>
-              <Text
-                backgroundColor={isSelected ? "blue" : undefined}
-                color={stateColor(gs)}
-              >
-                {stateDot(gs)}
-              </Text>
-            </Box>
-          );
-        }
-
-        const isLast =
-          item.group.children[item.group.children.length - 1]?.id ===
-          item.service.id;
-        const ss = states.get(item.service.id) ?? "stopped";
-        const portStr = item.service.port ? `:${item.service.port}` : "  watch";
-        const prefix = isLast ? "  └─" : "  ├─";
-        const label = `${prefix} ${item.service.label}`.padEnd(16);
-
-        return (
-          <Box key={item.service.id} paddingX={1}>
-            <Text
-              backgroundColor={isSelected ? "blue" : undefined}
-              color={isSelected ? "white" : "white"}
-              dimColor={!isSelected}
-            >
-              {`${isSelected ? "▶" : " "}${label}`}
-            </Text>
-            <Text
-              backgroundColor={isSelected ? "blue" : undefined}
-              color="gray"
-              dimColor
-            >
-              {portStr}{" "}
-            </Text>
-            <Text
-              backgroundColor={isSelected ? "blue" : undefined}
-              color={stateColor(ss)}
-            >
-              {stateDot(ss)}
-            </Text>
-          </Box>
-        );
-      })}
-    </Box>
-  );
-});
-
-// ── Log colours ───────────────────────────────────────────────────────────────
-
-const SERVICE_COLORS: Record<string, string> = {
-  "analytics-frontend": "blue",
-  "analytics-backend": "cyan",
-  "simulator-studio": "magenta",
-  "simulator-api": "yellow",
-  "design-docs-frontend": "green",
-  "design-sys-watch": "greenBright",
-  "docs-frontend": "white",
-};
-
-// ── LogPane ───────────────────────────────────────────────────────────────────
-
-interface LogPaneProps {
-  logs: LogLine[];
-  cursor: number;
-  scrollOffset: number;
-}
-
-function getFilterIds(cursor: number): string[] | null {
   const item = TREE[cursor];
-  if (!item) return null;
-  if (item.kind === "group") return item.group.children.map((s) => s.id);
-  return [item.service.id];
+  let visible = logs;
+  if (item) {
+    const ids =
+      item.kind === "group"
+        ? item.group.children.map((c) => c.id)
+        : [item.service.id];
+    visible = logs.filter((l) => ids.includes(l.serviceId));
+  }
+
+  if (visible.length === 0) {
+    s.put(x0 + 2, 1, "no output yet", { fg: "gray", dim: true });
+    return;
+  }
+
+  const start = Math.max(0, visible.length - h - scrollOffset);
+  const slice = visible.slice(start, start + h);
+
+  for (let i = 0; i < slice.length; i++) {
+    const line = slice[i]!;
+    const y = 1 + i;
+    const timeTag = `${line.time} `;
+    const svcTag = `[${line.serviceId}] `;
+    const maxText = w - timeTag.length - svcTag.length;
+
+    // Strip ANSI escape codes from piped process output so they don't corrupt our renderer
+    const rawText = line.text.replace(/\x1b\[[0-9;]*m/g, "").slice(0, maxText);
+
+    s.put(x0 + 1, y, timeTag, { fg: "gray", dim: true });
+    s.put(x0 + 1 + timeTag.length, y, svcTag, {
+      fg: SVC_COLOR[line.serviceId] ?? "white",
+      bold: true,
+    });
+    s.put(x0 + 1 + timeTag.length + svcTag.length, y, rawText, {
+      fg: line.level === "error" ? "red" : "white",
+    });
+  }
 }
 
-const LogPane = React.memo(function LogPane({
-  logs,
-  cursor,
-  scrollOffset,
-}: LogPaneProps) {
-  const filterIds = getFilterIds(cursor);
-  const visible = filterIds
-    ? logs.filter((l) => filterIds.includes(l.serviceId))
-    : logs;
+function drawStatusBar(s: Screen) {
+  const sep = s.rows - 2;
+  const bar = s.rows - 1;
+  s.put(0, sep, "─".repeat(s.cols), { fg: "gray", dim: true });
+  const hints =
+    " ↑↓ select   s start   x stop   r restart   A start-all   X stop-all   c clear   q quit";
+  s.put(0, bar, hints.slice(0, s.cols), { fg: "gray", dim: true });
+}
 
-  const maxVisible = 20;
-  const start = Math.max(0, visible.length - maxVisible - scrollOffset);
-  const slice = visible.slice(start, start + maxVisible);
+// ── App state ─────────────────────────────────────────────────────────────────
 
-  return (
-    <Box flexDirection="column" flexGrow={1} paddingX={1}>
-      {slice.map((line, i) => (
-        <Box key={i}>
-          <Text color="gray">{line.time} </Text>
-          <Text color={SERVICE_COLORS[line.serviceId] ?? "white"} bold>
-            [{line.serviceId}]{" "}
-          </Text>
-          <Text color={line.level === "error" ? "red" : "white"}>
-            {line.text}
-          </Text>
-        </Box>
-      ))}
-      {slice.length === 0 && (
-        <Text color="gray" dimColor>
-          {" "}
-          no output yet
-        </Text>
-      )}
-    </Box>
-  );
+const screen = new Screen();
+const states = new Map<string, ServiceState>(
+  allServices().map((s) => [s.id, "stopped"]),
+);
+let logs: LogLine[] = [];
+let cursor = 0;
+let scrollOffset = 0;
+const logBuffer: LogLine[] = [];
+
+function redraw() {
+  screen.clear();
+  drawSidebar(screen, states, cursor);
+  drawLogPane(screen, logs, cursor, scrollOffset);
+  drawStatusBar(screen);
+  screen.flush();
+}
+
+const mgr = new ProcessManager(
+  (line) => logBuffer.push(line),
+  (id, state) => {
+    states.set(id, state);
+    redraw();
+  },
+);
+
+// Flush log buffer — only source of timer-driven redraws
+setInterval(() => {
+  if (logBuffer.length === 0) return;
+  const incoming = logBuffer.splice(0);
+  logs = [...logs, ...incoming];
+  if (logs.length > MAX_LOG_LINES) logs = logs.slice(-MAX_LOG_LINES);
+  scrollOffset = 0;
+  redraw();
+}, 100);
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+
+process.stdin.setRawMode(true);
+process.stdin.resume();
+process.stdin.setEncoding("utf8");
+
+process.stdin.on("data", (key: string) => {
+  if (key === "\x03") {
+    mgr.quit();
+    return;
+  } // Ctrl+C
+  if (key === "\x1b[A") {
+    cursor = Math.max(0, cursor - 1);
+    redraw();
+    return;
+  }
+  if (key === "\x1b[B") {
+    cursor = Math.min(TREE.length - 1, cursor + 1);
+    redraw();
+    return;
+  }
+  if (key === "\x1b[1;2A") {
+    scrollOffset++;
+    redraw();
+    return;
+  }
+  if (key === "\x1b[1;2B") {
+    scrollOffset = Math.max(0, scrollOffset - 1);
+    redraw();
+    return;
+  }
+
+  const item = TREE[cursor];
+  if (!item) return;
+
+  if (key === "s") {
+    item.kind === "group"
+      ? mgr.startGroup(item.group)
+      : mgr.start(item.service);
+  } else if (key === "x") {
+    item.kind === "group" ? mgr.stopGroup(item.group) : mgr.stop(item.service);
+  } else if (key === "r") {
+    if (item.kind === "group")
+      mgr.stopGroup(item.group).then(() => mgr.startGroup(item.group));
+    else mgr.stop(item.service).then(() => mgr.start(item.service));
+  } else if (key === "A") mgr.startAll();
+  else if (key === "X") mgr.stopAll();
+  else if (key === "c") {
+    logs = [];
+    redraw();
+  } else if (key === "q") mgr.quit();
 });
 
-// ── StatusBar ─────────────────────────────────────────────────────────────────
+// ── Init / cleanup ────────────────────────────────────────────────────────────
 
-const HINTS =
-  "↑↓ select  s start  x stop  r restart  A start-all  X stop-all  c clear  q quit";
-
-function StatusBar() {
-  return (
-    <Box borderTop borderColor="gray" paddingX={1}>
-      <Text dimColor>{HINTS}</Text>
-    </Box>
-  );
+function cleanup() {
+  process.stdout.write("\x1b[?25h\x1b[0m\n"); // show cursor, reset colors
 }
 
-// ── App ───────────────────────────────────────────────────────────────────────
+process.on("exit", cleanup);
+process.on("SIGTERM", () => {
+  cleanup();
+  process.exit(0);
+});
+process.on("SIGWINCH", () => {
+  screen.resize();
+  redraw();
+});
 
-function App() {
-  const [states, setStates] = React.useState<Map<string, ServiceState>>(
-    () => new Map(allServices().map((s) => [s.id, "stopped"])),
-  );
-  const [logs, setLogs] = React.useState<LogLine[]>([]);
-  const [cursor, setCursor] = React.useState(0);
-  const [scrollOffset, setScrollOffset] = React.useState(0);
-
-  // Buffer for incoming log lines — flushed on interval to batch renders
-  const logBuffer = React.useRef<LogLine[]>([]);
-
-  const mgr = React.useMemo(
-    () =>
-      new ProcessManager(
-        (line) => {
-          logBuffer.current.push(line);
-        },
-        (id, state) => setStates((prev) => new Map(prev).set(id, state)),
-      ),
-    [],
-  );
-
-  React.useEffect(() => {
-    const t = setInterval(() => {
-      if (logBuffer.current.length > 0) {
-        const incoming = logBuffer.current.splice(0);
-        setLogs((prev) => {
-          const next = [...prev, ...incoming];
-          return next.length > MAX_LOG_LINES
-            ? next.slice(-MAX_LOG_LINES)
-            : next;
-        });
-        setScrollOffset(0);
-      }
-    }, 100);
-    return () => clearInterval(t);
-  }, []);
-
-  useInput((input, key) => {
-    if (key.upArrow && key.shift) {
-      setScrollOffset((o) => o + 1);
-      return;
-    }
-    if (key.downArrow && key.shift) {
-      setScrollOffset((o) => Math.max(0, o - 1));
-      return;
-    }
-    if (key.upArrow) {
-      setCursor((c) => Math.max(0, c - 1));
-      return;
-    }
-    if (key.downArrow) {
-      setCursor((c) => Math.min(TREE.length - 1, c + 1));
-      return;
-    }
-
-    const item = TREE[cursor];
-    if (!item) return;
-
-    if (input === "s") {
-      if (item.kind === "group") mgr.startGroup(item.group);
-      else mgr.start(item.service);
-    }
-    if (input === "x") {
-      if (item.kind === "group") mgr.stopGroup(item.group);
-      else mgr.stop(item.service);
-    }
-    if (input === "r") {
-      if (item.kind === "group") {
-        mgr.stopGroup(item.group).then(() => mgr.startGroup(item.group));
-      } else {
-        mgr.stop(item.service).then(() => mgr.start(item.service));
-      }
-    }
-    if (input === "A") mgr.startAll();
-    if (input === "X") mgr.stopAll();
-    if (input === "c") setLogs([]);
-    if (input === "q") mgr.quit();
-  });
-
-  const rows = process.stdout.rows ?? 24;
-
-  return (
-    <Box flexDirection="column" height={rows}>
-      <Box flexDirection="row" flexGrow={1}>
-        <Sidebar states={states} cursor={cursor} />
-        <LogPane logs={logs} cursor={cursor} scrollOffset={scrollOffset} />
-      </Box>
-      <StatusBar />
-    </Box>
-  );
-}
-
-render(<App />, { exitOnCtrlC: true });
+process.stdout.write("\x1b[2J\x1b[H\x1b[?25l"); // clear screen, home, hide cursor
+redraw();
