@@ -29,7 +29,7 @@ No extra infrastructure required — DuckDB runs in-process.
 
 - **File path** — absolute path to your `.duckdb` file (e.g. `/data/analytics.duckdb`)
 
-The sample data installed by default uses a DuckDB file at `data/dbs/sample.duckdb`.
+The sample data installed by default uses a DuckDB file at `~/.stratifio/data/sample.duckdb`.
 
 ---
 
@@ -104,7 +104,7 @@ These three must be mapped before you can save the connection:
 
 ### User identity fields
 
-Optional columns that enrich the [People](/features/people/) view with a human-readable profile for each user:
+Optional columns that enrich the [People](/analytics/people/) view with a human-readable profile for each user:
 
 | Field             | Description               |
 | ----------------- | ------------------------- |
@@ -139,6 +139,6 @@ The **Advanced Options** step controls session computation and query execution b
 | -------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Session Timeout**        | 30 min  | Gap between events from the same user that splits them into separate sessions. Increase for long-running or desktop applications; decrease for high-frequency mobile apps.         |
 | **Resurrection Window**    | 30 days | A user inactive for longer than this window is considered churned. If they return, they are counted as **Resurrected** rather than **Returning**.                                  |
-| **Power User Threshold**   | 4 days  | Users active on at least this many distinct days per period are flagged as [Power Users](/features/mission-control/#engagement) in Mission Control.                                |
+| **Power User Threshold**   | 4 days  | Users active on at least this many distinct days per period are flagged as [Power Users](/analytics/mission-control/#engagement) in Mission Control.                                |
 | **Query Timeout**          | 10 s    | Cancels any warehouse query that exceeds this duration. Increase for large datasets or complex SQL; decrease on shared warehouses where long queries block others. Range: 1–600 s. |
 | **Max Concurrent Queries** | 5       | Limits how many queries stratif.io issues simultaneously. Lower this if your warehouse has strict concurrency limits or you share it with other workloads. Range: 1–50.            |

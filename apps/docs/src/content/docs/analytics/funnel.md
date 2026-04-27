@@ -37,4 +37,4 @@ Every metric and chart on this page has a **SQL** badge. Click it to open the ex
 
 ![SQL viewer button on a chart](/screenshots/sql-viewer.png)
 
-You can copy the query into [SQL Studio](/features/sql-studio/) to modify it, run variations, or use it as a starting point for your own analysis. This makes stratif.io a learning tool as much as an analytics tool: you can see how product metrics are actually computed in SQL, not just consume the results.
+You can copy the query into [SQL Studio](/analytics/sql-studio/) to modify it, run variations, or use it as a starting point for your own analysis. This makes stratif.io a learning tool as much as an analytics tool: you can see how product metrics are actually computed in SQL, not just consume the results.

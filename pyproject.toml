@@ -43,7 +43,7 @@ seed-snowflake = "services.event_simulator.seeder_snowflake:main"
 seed-databricks = "services.event_simulator.seeder_databricks:main"
 bootstrap-all-connections = "services.event_simulator.bootstrap_all_connections:main"
 seed = "services.event_simulator.cli:main"
-seed-serve = "services.event_simulator.server:main"
+simulator-serve = "services.event_simulator.server:main"
 
 [build-system]
 requires = ["hatchling"]

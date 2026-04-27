@@ -135,7 +135,7 @@ uv run seed --only databricks
 ## Authoring a custom scenario
 
 For use cases not covered by the built-in presets, drop a YAML file into
-`seeders/presets/`:
+`services/event_simulator/presets/`:
 
 ```yaml
 name: my_scenario
@@ -162,15 +162,15 @@ uv run seed --preset my_scenario
 To preview what the dataset will look like before seeding:
 
 ```bash
-uv run python seeders/tests/visualize_preset.py my_scenario
+uv run python services/event_simulator/tests/visualize_preset.py my_scenario
 ```
 
 This prints total event counts, the event vocabulary, and a daily-arrivals
 histogram — useful for checking that the growth curve looks right.
 
-## Seeder Studio
+## Event Simulator Studio
 
-Seeder Studio is a browser-based editor that lets you build and preview a
+Event Simulator Studio is a browser-based editor that lets you build and preview a
 scenario visually before running the seeder.
 
 ```bash
@@ -187,4 +187,4 @@ The Studio lets you:
 - Copy the generated YAML for use as a custom preset
 
 The Studio never writes to disk — copy the YAML from the right-rail panel into
-`seeders/presets/<name>.yaml`, then run `uv run seed --preset <name>`.
+`services/event_simulator/presets/<name>.yaml`, then run `uv run seed --preset <name>`.

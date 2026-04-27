@@ -36,4 +36,4 @@ To replace the sample data:
 3. In the **Schema** tab, map your columns to `user_id`, `event_name`, and `timestamp`
 4. Save the connection and set it as active
 
-The sample DuckDB file is at `data/dbs/sample.duckdb` and can be deleted once you've connected your own warehouse.
+The sample DuckDB file is at `~/.stratifio/data/sample.duckdb` (or `$STRATIFIO_DATA_DIR/sample.duckdb` if you customised the install path) and can be deleted once you've connected your own warehouse.
