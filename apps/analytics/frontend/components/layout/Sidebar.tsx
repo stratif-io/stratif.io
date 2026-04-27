@@ -156,16 +156,16 @@ export function Sidebar() {
       collapsed={!sidebarOpen}
       onCollapse={(v) => setSidebarOpen(!v)}
       brand={
-        <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
-          <img src="/favicon-color.svg" alt="stratif.io" className="h-7 w-7 shrink-0" />
+        <Link to="/dashboard" className="flex items-center gap-2.5 min-w-0">
+          <img src="/favicon-color.svg" alt="stratif.io" className="h-8 w-8 shrink-0" />
           <span
             className={cn(
               'transition-[opacity,max-width] duration-200 overflow-hidden',
               sidebarOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'
             )}
           >
-            <img src="/text-light.svg" alt="" className="h-7 w-auto shrink-0 dark:hidden" />
-            <img src="/text-dark.svg" alt="" className="h-7 w-auto shrink-0 hidden dark:block" />
+            <img src="/text-light.svg" alt="" className="h-5 w-auto shrink-0 dark:hidden" />
+            <img src="/text-dark.svg" alt="" className="h-5 w-auto shrink-0 hidden dark:block" />
           </span>
         </Link>
       }

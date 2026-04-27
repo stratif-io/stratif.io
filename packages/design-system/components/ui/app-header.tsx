@@ -67,7 +67,7 @@ export function AppHeader({
         <span className="text-sm font-semibold tracking-tight">{title}</span>
       )}
       {badge}
-      <div className="flex-1" />
+      {(onMenuClick || title || badge) && <div className="flex-1" />}
       {children}
     </header>
   );
