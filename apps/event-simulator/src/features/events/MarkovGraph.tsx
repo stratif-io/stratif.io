@@ -97,10 +97,13 @@ function SelfLoopEdge({
   labelBgStyle,
   labelBgPadding,
 }: EdgeProps) {
-  const r = 28;
-  const d = `M ${sourceX} ${sourceY - 2} C ${sourceX - r} ${sourceY - r * 3} ${sourceX + r} ${sourceY - r * 3} ${sourceX} ${sourceY - 2}`;
-  const lx = sourceX;
-  const ly = sourceY - r * 3.2;
+  // sourceX/Y is the right-side handle; derive node top-center
+  const cx = sourceX - NODE_WIDTH / 2;
+  const cy = sourceY - NODE_HEIGHT / 2; // top edge
+  const r = 32;
+  const d = `M ${cx - r * 0.6} ${cy} C ${cx - r} ${cy - r * 2.5} ${cx + r} ${cy - r * 2.5} ${cx + r * 0.6} ${cy}`;
+  const lx = cx;
+  const ly = cy - r * 2.6;
   return (
     <>
       <BaseEdge path={d} style={style} markerEnd={markerEnd} />
