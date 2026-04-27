@@ -12,6 +12,15 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: [{ find: "@", replacement: path.resolve(__dirname, "./src") }],
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      {
+        find: "@stratif-io/design-system",
+        replacement: path.resolve(
+          __dirname,
+          "../../packages/design-system/index.ts",
+        ),
+      },
+    ],
   },
 });
