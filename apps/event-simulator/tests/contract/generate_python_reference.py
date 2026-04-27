@@ -15,10 +15,10 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
-from seeders.seeder import BaseSeeder, SeedConfig
-from seeders.simulator import Engine
-from seeders.simulator.config import ScaleOverride
-from seeders.simulator.preset import list_presets, load_preset
+from services.event_simulator.seeder import BaseSeeder, SeedConfig
+from services.event_simulator.simulator import Engine
+from services.event_simulator.simulator.config import ScaleOverride
+from services.event_simulator.simulator.preset import list_presets, load_preset
 
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
 REFERENCE_USERS = 2000

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-_DEFAULT_PATH = Path(__file__).parent.parent / "connections.yaml"
+_DEFAULT_PATH = Path(__file__).parent.parent.parent / "connections.yaml"
 
 
 def apply_seed_overrides(backend: str, creds: dict) -> dict:

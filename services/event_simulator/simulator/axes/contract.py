@@ -78,12 +78,12 @@ GeographyValue = Literal[
 
 # All valid values per axis — used for validation and documentation.
 AXIS_VALUES: dict[str, tuple[str, ...]] = {
-    "growth": GrowthValue.__args__,  # type: ignore[attr-defined]
-    "stickiness": StickinessValue.__args__,  # type: ignore[attr-defined]
-    "engagement_depth": EngagementDepthValue.__args__,  # type: ignore[attr-defined]
-    "virality": ViralityValue.__args__,  # type: ignore[attr-defined]
-    "scale": ScaleValue.__args__,  # type: ignore[attr-defined]
-    "anomalies": AnomaliesValue.__args__,  # type: ignore[attr-defined]
-    "monetization": MonetizationValue.__args__,  # type: ignore[attr-defined]
-    "geography": GeographyValue.__args__,  # type: ignore[attr-defined]
+    "growth": GrowthValue.__args__,
+    "stickiness": StickinessValue.__args__,
+    "engagement_depth": EngagementDepthValue.__args__,
+    "virality": ViralityValue.__args__,
+    "scale": ScaleValue.__args__,
+    "anomalies": AnomaliesValue.__args__,
+    "monetization": MonetizationValue.__args__,
+    "geography": GeographyValue.__args__,
 }
