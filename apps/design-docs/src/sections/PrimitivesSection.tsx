@@ -1,50 +1,55 @@
-// apps/analytics/frontend/features/design-system/components/sections/PrimitivesSection.tsx
-import { useState } from 'react'
-import { ComponentSection, ComponentRow } from '../ComponentSection'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState } from "react";
+import { ComponentSection, ComponentRow } from "../components/ComponentSection";
 import {
+  Button,
+  Badge,
+  Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Switch } from '@/components/ui/switch'
-import { Slider } from '@/components/ui/slider'
-import { Progress } from '@/components/ui/progress'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Spinner } from '@/components/ui/spinner'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import {
+  Checkbox,
+  Switch,
+  Slider,
+  Progress,
+  Skeleton,
+  Spinner,
+  Avatar,
+  AvatarFallback,
+  Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Calendar } from '@/components/ui/calendar'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { SaveStatus } from '@/components/ui/save-status'
-import { Segmented } from '@/components/ui/segmented'
-import { ChevronDown } from 'lucide-react'
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+  Calendar,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  SaveStatus,
+  Segmented,
+} from "@stratif-io/design-system";
+import { ChevronDown } from "lucide-react";
 
 export function PrimitivesSection() {
-  const [sliderValue, setSliderValue] = useState([40])
+  const [sliderValue, setSliderValue] = useState([40]);
 
   return (
     <ComponentSection id="primitives" title="UI Primitives">
@@ -192,7 +197,9 @@ export function PrimitivesSection() {
             <DialogHeader>
               <DialogTitle>Dialog title</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-muted-foreground">Dialog body content.</p>
+            <p className="text-sm text-muted-foreground">
+              Dialog body content.
+            </p>
           </DialogContent>
         </Dialog>
       </ComponentRow>
@@ -207,14 +214,16 @@ export function PrimitivesSection() {
           <DropdownMenuContent>
             <DropdownMenuItem>Action one</DropdownMenuItem>
             <DropdownMenuItem>Action two</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive">
+              Delete
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </ComponentRow>
 
       <ComponentRow label="Card — elevation">
         <div className="flex items-start gap-3 flex-wrap">
-          {(['none', 'subtle', 'medium', 'prominent'] as const).map((e) => (
+          {(["none", "subtle", "medium", "prominent"] as const).map((e) => (
             <Card key={e} elevation={e} className="w-36">
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">
@@ -231,7 +240,7 @@ export function PrimitivesSection() {
 
       <ComponentRow label="Card — hover">
         <div className="flex items-start gap-3 flex-wrap">
-          {(['none', 'lift', 'glow'] as const).map((h) => (
+          {(["none", "lift", "glow"] as const).map((h) => (
             <Card key={h} hover={h} className="w-36">
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs text-muted-foreground uppercase tracking-wider">
@@ -268,8 +277,9 @@ export function PrimitivesSection() {
             </span>
           </div>
           <p className="text-xs text-muted-foreground max-w-[160px] pt-1">
-            Used for mission control metric cards. Same border-radius and bg as{' '}
-            <code className="font-mono">Card</code>, but compact padding and button semantics.
+            Used for mission control metric cards. Same border-radius and bg as{" "}
+            <code className="font-mono">Card</code>, but compact padding and
+            button semantics.
           </p>
         </div>
       </ComponentRow>
@@ -311,14 +321,14 @@ export function PrimitivesSection() {
       <ComponentRow label="Segmented">
         <Segmented
           options={[
-            { value: 'a', label: 'A' },
-            { value: 'b', label: 'B' },
-            { value: 'c', label: 'C' },
+            { value: "a", label: "A" },
+            { value: "b", label: "B" },
+            { value: "c", label: "C" },
           ]}
           value="a"
           onChange={() => {}}
         />
       </ComponentRow>
     </ComponentSection>
-  )
+  );
 }
