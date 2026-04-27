@@ -44,24 +44,22 @@ describe("App integration", () => {
     );
   });
 
-  it("renders axis chips in the AxisStrip", async () => {
+  it("renders sidebar navigation sections", async () => {
     renderApp();
+    // The sidebar renders navigation buttons for each section
     await waitFor(() =>
       expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(6),
     );
-    for (const axis of [
-      "growth",
-      "retention",
-      "engagement",
-      "virality",
-      "scale",
-      "noise",
+    // Sidebar items are rendered as buttons with section labels
+    for (const label of [
+      "Studio",
+      "Growth",
+      "Retention",
+      "Engagement",
+      "Virality",
+      "Scale",
     ]) {
-      // AxisChip aria-label is "axis: value" format
-      const chip = screen
-        .getAllByRole("button")
-        .find((b) => b.getAttribute("aria-label")?.startsWith(`${axis}:`));
-      expect(chip).toBeDefined();
+      expect(screen.getAllByText(label).length).toBeGreaterThanOrEqual(1);
     }
   });
 
@@ -103,10 +101,10 @@ describe("App integration", () => {
     await user.click(screen.getByRole("combobox"));
     await waitFor(() => screen.getByText("saas_growth"));
     await user.click(screen.getByText("saas_growth"));
-    // Change an axis to mark dirty (AxisChip button contains "growth" text)
-    await user.click(screen.getByText("growth"));
-    await user.click(await screen.findByText("Hockey stick"));
-    // Now try to switch to New blank
+    // Click "+ Event" button to add an anomaly and mark the store as dirty
+    await waitFor(() => screen.getByText("+ Event"));
+    await user.click(screen.getByText("+ Event"));
+    // Now try to switch to New blank — should show discard dialog
     await user.click(screen.getByRole("combobox"));
     await waitFor(() => screen.getAllByText("New blank"));
     await user.click(screen.getAllByText("New blank")[0]);

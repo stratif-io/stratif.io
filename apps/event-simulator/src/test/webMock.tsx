@@ -323,6 +323,77 @@ export function CardLoadingBar({ loading }: { loading?: boolean }) {
   );
 }
 
+// AppSidebar
+export function AppSidebar({
+  children,
+  brand,
+  sections,
+  collapsed: _collapsed,
+  onCollapse: _onCollapse,
+}: {
+  children?: React.ReactNode;
+  brand?: React.ReactNode;
+  sections?: {
+    label: string;
+    items: {
+      key: string;
+      label: string;
+      icon?: React.ReactNode;
+      active?: boolean;
+      onClick?: () => void;
+    }[];
+  }[];
+  collapsed?: boolean;
+  onCollapse?: (collapsed: boolean) => void;
+}) {
+  return (
+    <nav aria-label="Sidebar">
+      {brand}
+      {sections?.map((section) => (
+        <div key={section.label}>
+          <span>{section.label}</span>
+          {section.items.map((item) => (
+            <button
+              key={item.key}
+              onClick={item.onClick}
+              aria-current={item.active ? "page" : undefined}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </div>
+      ))}
+      {children}
+    </nav>
+  );
+}
+
+export type AppSidebarProps = React.ComponentProps<typeof AppSidebar>;
+
+// AppHeader
+export function AppHeader({
+  children,
+  title,
+  badge,
+  onMenuClick: _onMenuClick,
+}: {
+  children?: React.ReactNode;
+  title?: React.ReactNode;
+  badge?: React.ReactNode;
+  onMenuClick?: () => void;
+}) {
+  return (
+    <header>
+      {title && <span>{title}</span>}
+      {badge}
+      {children}
+    </header>
+  );
+}
+
+export type AppHeaderProps = React.ComponentProps<typeof AppHeader>;
+
 // cn util (some files may import it from @stratif-io/design-system)
 export function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
