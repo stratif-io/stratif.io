@@ -179,6 +179,7 @@ export function KpiCard({
                 offset={overlayOffset}
                 anomalies={anomalies!}
                 windowDays={windowDays!}
+                windowStart={startDate}
                 onAnomalyChange={onAnomalyChange ?? (() => {})}
                 onSelect={onAnomalySelect}
                 readOnly={!onAnomalyChange}

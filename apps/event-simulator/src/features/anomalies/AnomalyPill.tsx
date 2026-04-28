@@ -3,10 +3,13 @@ import type { SimulationAnomaly } from "@/types/simulation";
 import { anomalyTypeColor } from "@/lib/twin";
 import { parseDays } from "@/lib/twin/utils";
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 interface Props {
   anomaly: SimulationAnomaly;
   windowDays: number;
   trackWidth: number;
+  windowStart?: Date;
   onChange: (next: SimulationAnomaly) => void;
   onSelect: () => void;
 }
@@ -19,14 +22,19 @@ export function AnomalyPill({
   anomaly,
   windowDays,
   trackWidth,
+  windowStart,
   onChange,
   onSelect,
 }: Props) {
-  const parsedStart = parseDays(anomaly.start ?? "0d") ?? 0;
-  const startDay = Math.max(
-    0,
-    parsedStart < 0 ? windowDays + parsedStart : parsedStart,
-  );
+  const startDay = (() => {
+    const s = anomaly.start ?? "0d";
+    if (ISO_DATE_RE.test(s) && windowStart) {
+      const ms = new Date(s + "T00:00:00").getTime() - windowStart.getTime();
+      return Math.max(0, Math.round(ms / 86_400_000));
+    }
+    const parsed = parseDays(s) ?? 0;
+    return Math.max(0, parsed < 0 ? windowDays + parsed : parsed);
+  })();
   const durationDays = Math.max(1, parseDays(anomaly.duration ?? "1d") ?? 1);
   const pxPerDay = trackWidth / Math.max(1, windowDays);
   const x = startDay * pxPerDay;

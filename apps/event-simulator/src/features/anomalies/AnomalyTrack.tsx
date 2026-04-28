@@ -8,10 +8,15 @@ const TRACK_HEIGHT = 32;
 export function AnomalyTrack() {
   const config = useSeederStore((s) => s.config);
   const setAnomalies = useSeederStore((s) => s.setAnomalies);
+  const uiStartDate = useSeederStore((s) => s.uiStartDate);
   const anomalies = config.anomalies ?? [];
   const { window_days } = useMemo(
     () => resolveScale(config.axes.scale ?? "small", config.scale_config),
     [config.axes.scale, config.scale_config],
+  );
+  const windowStart = useMemo(
+    () => (uiStartDate ? new Date(uiStartDate + "T00:00:00") : undefined),
+    [uiStartDate],
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,6 +63,7 @@ export function AnomalyTrack() {
               anomaly={a}
               windowDays={window_days}
               trackWidth={trackWidth}
+              windowStart={windowStart}
               onChange={(next) => updateAnomaly(i, next)}
               onSelect={() => {}}
             />
