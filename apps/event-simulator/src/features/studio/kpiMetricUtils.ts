@@ -1,6 +1,6 @@
 import type { MetricKey } from "@/features/preview/formulaRegistry";
 import type { GhostLine } from "@/features/preview/KpiChart";
-import type { useTwinOutput } from "@/features/preview/useTwinOutput";
+import type { TwinOutput } from "@/lib/api/simulation";
 import { formatNum } from "@/lib/format";
 
 const fn = (v: number) => formatNum(Math.round(v));
@@ -16,7 +16,7 @@ export interface DailyRow {
 
 export function buildDailyRows(
   metricKey: MetricKey,
-  out: ReturnType<typeof useTwinOutput>,
+  out: TwinOutput,
   depth: number,
 ): DailyRow[] {
   const n = out.activeUsers.length;
@@ -98,7 +98,7 @@ export function buildDailyRows(
 
 export function valuesFor(
   metricKey: MetricKey,
-  out: ReturnType<typeof useTwinOutput>,
+  out: TwinOutput,
 ): (number | null)[] {
   switch (metricKey) {
     case "events":
@@ -120,7 +120,7 @@ export function valuesFor(
 
 export function ghostLinesFor(
   metricKey: MetricKey,
-  out: ReturnType<typeof useTwinOutput>,
+  out: TwinOutput,
 ): GhostLine[] {
   switch (metricKey) {
     case "activeUsers":

@@ -21,6 +21,8 @@ export interface TwinOutput {
   arrivalCap: number;
   /** Multiplier applied after the Poisson draw. Displayed result = k × reportScale */
   reportScale: number;
+  /** ISO date string for day 0 of the simulation (e.g. "2009-11-01") */
+  startDate?: string;
 }
 
 const SEED_SERVER_URL =
@@ -41,6 +43,7 @@ export interface PreviewResult {
   virality_curve: number[];
   arrival_cap: number;
   report_scale: number;
+  start_date?: string | null;
 }
 
 export function mapToTwinOutput(result: PreviewResult): TwinOutput {
@@ -70,6 +73,7 @@ export function mapToTwinOutput(result: PreviewResult): TwinOutput {
     totalUsers,
     arrivalCap: result.arrival_cap,
     reportScale: result.report_scale,
+    startDate: result.start_date ?? undefined,
   };
 }
 

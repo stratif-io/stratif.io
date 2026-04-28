@@ -52,6 +52,14 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
 
   const anomalies = useMemo(() => config.anomalies ?? [], [config.anomalies]);
 
+  const { startDate, endDate } = useMemo(() => {
+    if (!out.startDate) return { startDate: undefined, endDate: undefined };
+    const s = new Date(out.startDate);
+    const e = new Date(s);
+    e.setDate(e.getDate() + (windowDays - 1));
+    return { startDate: s, endDate: e };
+  }, [out.startDate, windowDays]);
+
   const resolvedAxes = useMemo(
     () => resolveAxes(config.axes ?? {}),
     [config.axes],
@@ -418,6 +426,8 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
               windowDays={windowDays}
               onAnomalyChange={handleAnomalyChange}
               onAnomalySelect={handleAnomalySelect}
+              startDate={startDate}
+              endDate={endDate}
               chartHeight="h-56"
               className="border-0 p-0 bg-transparent mt-3"
               valueSuffix={metricKey === "stickiness" ? "%" : ""}

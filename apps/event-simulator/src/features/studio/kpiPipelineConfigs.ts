@@ -1,5 +1,5 @@
 import type { MetricKey } from "@/features/preview/formulaRegistry";
-import type { useTwinOutput } from "@/features/preview/useTwinOutput";
+import type { TwinOutput } from "@/lib/api/simulation";
 import { formatNum } from "@/lib/format";
 
 const fn = (v: number) => formatNum(Math.round(v));
@@ -21,7 +21,7 @@ export interface IntermediateCol {
   stepKey: string;
   label: string;
   color: string;
-  getValue: (out: ReturnType<typeof useTwinOutput>, i: number) => string;
+  getValue: (out: TwinOutput, i: number) => string;
 }
 
 export interface MetricPipelineConfig {

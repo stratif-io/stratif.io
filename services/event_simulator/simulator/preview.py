@@ -54,6 +54,7 @@ class PreviewResult:
     report_scale: (
         float  # multiplier applied after Poisson draw; result = k * report_scale
     )
+    start_date: str | None = None  # ISO date of day 0 (e.g. "2009-11-01")
 
 
 def _poisson(rng: random.Random, lam: float) -> int:
@@ -262,6 +263,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         virality_curve=v_curve,  # V(t) already at full scale
         arrival_cap=cohort_cap,
         report_scale=report_scale,
+        start_date=day_0.date().isoformat(),
     )
 
 
