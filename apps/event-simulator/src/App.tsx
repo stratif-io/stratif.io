@@ -75,11 +75,6 @@ function presetLabel(name: string): string {
   return emoji ? `${emoji} ${name}` : name;
 }
 
-const SECTION_TITLES: Record<string, string> = {
-  studio: "Studio",
-  events: "Event simulator",
-};
-
 const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
   growth: {
     declining: "0,4 14,8 28,14 40,20 52,26",
@@ -520,16 +515,14 @@ export default function App() {
       />
       <div className="flex flex-col flex-1 overflow-hidden">
         <AppHeader>
-          <span className="text-sm font-semibold tracking-tight shrink-0">
-            {SECTION_TITLES[activeSection] ?? "Studio"}
-          </span>
+          {/* ── Scenario selector ─────────────────────────────── */}
           {loading ? (
             <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-8 w-52" />
+              <Skeleton className="h-5 w-40" />
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <>
               <Select
                 value={
                   presets.length === 0
@@ -558,79 +551,107 @@ export default function App() {
                 </SelectContent>
               </Select>
 
-              <span className="text-[11px] font-medium text-muted-foreground bg-muted/60 rounded-full px-2.5 py-0.5 shrink-0 whitespace-nowrap tabular-nums">
+              {/* ── Divider ───────────────────────────────────── */}
+              <div className="h-5 w-px bg-border shrink-0 mx-1" aria-hidden />
+
+              {/* ── Simulation params cluster ─────────────────── */}
+              <div className="flex items-center gap-2">
+                {/* Date range */}
+                <div className="flex items-center gap-1">
+                  <label htmlFor="start-date" className="sr-only">
+                    Start date
+                  </label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={uiStartDate ?? ""}
+                    onChange={(e) => handleStartDate(e.target.value)}
+                    aria-invalid={dateRangeInvalid}
+                    title={
+                      dateRangeInvalid
+                        ? "Start date must be before end date"
+                        : undefined
+                    }
+                    className={cn(
+                      "h-8 w-32 bg-muted/40 text-xs",
+                      dateRangeInvalid ? inputInvalid : inputNormal,
+                    )}
+                  />
+                  <span className="text-muted-foreground/60 text-xs px-0.5">
+                    →
+                  </span>
+                  <label htmlFor="end-date" className="sr-only">
+                    End date
+                  </label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={uiEndDate ?? ""}
+                    onChange={(e) => handleEndDate(e.target.value)}
+                    aria-invalid={dateRangeInvalid}
+                    title={
+                      dateRangeInvalid
+                        ? "End date must be after start date"
+                        : undefined
+                    }
+                    className={cn(
+                      "h-8 w-32 bg-muted/40 text-xs",
+                      dateRangeInvalid ? inputInvalid : inputNormal,
+                    )}
+                  />
+                </div>
+
+                {/* Dot separator */}
+                <span className="text-border text-xs select-none">·</span>
+
+                {/* Users */}
+                <div className="flex items-center gap-1.5">
+                  <Users
+                    size={12}
+                    className="text-muted-foreground/70 shrink-0"
+                    aria-hidden
+                  />
+                  <label htmlFor="total-users" className="sr-only">
+                    Total users
+                  </label>
+                  <Input
+                    id="total-users"
+                    type="number"
+                    min={1}
+                    placeholder="users"
+                    value={
+                      resolvedScale.mode === "goal"
+                        ? resolvedScale.total_users
+                        : (config.scale_config?.total_users ?? "")
+                    }
+                    onChange={(e) => handleTotalUsers(e.target.value)}
+                    className="h-8 w-24 bg-muted/40 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* ── Derived summary pill ──────────────────────── */}
+              <span className="text-[11px] font-medium text-muted-foreground bg-muted/50 rounded-full px-2.5 py-0.5 shrink-0 whitespace-nowrap tabular-nums border border-border/50">
                 {derivedSummary}
               </span>
 
-              <div className="flex items-center gap-1.5">
-                <label htmlFor="start-date" className="sr-only">
-                  Start date
-                </label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={uiStartDate ?? ""}
-                  onChange={(e) => handleStartDate(e.target.value)}
-                  aria-invalid={dateRangeInvalid}
-                  title={
-                    dateRangeInvalid
-                      ? "Start date must be before end date"
-                      : undefined
-                  }
-                  className={cn(
-                    "h-8 w-32 bg-muted/40 text-xs",
-                    dateRangeInvalid ? inputInvalid : inputNormal,
-                  )}
-                />
-                <span className="text-muted-foreground text-xs">→</span>
-                <label htmlFor="end-date" className="sr-only">
-                  End date
-                </label>
-                <Input
-                  id="end-date"
-                  type="date"
-                  value={uiEndDate ?? ""}
-                  onChange={(e) => handleEndDate(e.target.value)}
-                  aria-invalid={dateRangeInvalid}
-                  title={
-                    dateRangeInvalid
-                      ? "End date must be after start date"
-                      : undefined
-                  }
-                  className={cn(
-                    "h-8 w-32 bg-muted/40 text-xs",
-                    dateRangeInvalid ? inputInvalid : inputNormal,
-                  )}
-                />
-              </div>
+              {/* ── Spacer pushes utilities right ─────────────── */}
+              <div className="flex-1" />
 
-              <div className="flex items-center gap-1.5">
-                <Users
-                  size={13}
-                  className="text-muted-foreground shrink-0"
-                  aria-hidden="true"
-                />
-                <label htmlFor="total-users" className="sr-only">
-                  Total users
-                </label>
-                <Input
-                  id="total-users"
-                  type="number"
-                  min={1}
-                  placeholder="users"
-                  value={
-                    resolvedScale.mode === "goal"
-                      ? resolvedScale.total_users
-                      : (config.scale_config?.total_users ?? "")
-                  }
-                  onChange={(e) => handleTotalUsers(e.target.value)}
-                  className="h-8 w-24 bg-muted/40 text-xs"
-                />
-              </div>
-
-              <Button size="sm" variant="outline" onClick={handleAddEvent}>
+              {/* ── + Event ───────────────────────────────────── */}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleAddEvent}
+                className="h-8 text-xs"
+              >
                 + Event
               </Button>
+
+              {/* ── Divider ───────────────────────────────────── */}
+              <div className="h-5 w-px bg-border shrink-0 mx-1" aria-hidden />
+
+              {/* ── Theme toggle — anchored far right ─────────── */}
               <Button
                 size="sm"
                 variant="ghost"
@@ -640,11 +661,11 @@ export default function App() {
                     : "Switch to dark mode"
                 }
                 onClick={toggleTheme}
-                className="w-8 h-8 p-0"
+                className="w-8 h-8 p-0 shrink-0"
               >
                 {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
               </Button>
-            </div>
+            </>
           )}
         </AppHeader>
 
