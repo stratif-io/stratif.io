@@ -45,7 +45,7 @@ function nextColor(events: { color?: string | null }[]): string {
 export function EventsTab() {
   const markov = useSeederStore((s) => s.config.markov);
   const setMarkovConfig = useSeederStore((s) => s.setMarkovConfig);
-  const [presetKey, setPresetKey] = useState<string>("dating");
+  const [presetKey, setPresetKey] = useState<string>("");
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);

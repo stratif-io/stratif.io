@@ -15,9 +15,18 @@ describe("EventsTab", () => {
   });
 
   it("renders event names from store markov config", () => {
+    useSeederStore.setState({
+      config: {
+        ...useSeederStore.getState().config,
+        markov: {
+          events: [{ name: "TestEvent", color: "#6366f1" }],
+          start: {},
+          transitions: {},
+        },
+      },
+    });
     render(<EventsTab />);
-    // dating preset has 'ProfileViewed' event
-    expect(screen.getAllByText("ProfileViewed").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("TestEvent").length).toBeGreaterThan(0);
   });
 
   it("switching preset updates event names", async () => {
