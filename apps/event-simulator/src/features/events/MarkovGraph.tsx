@@ -16,6 +16,7 @@ import {
   Panel,
   BaseEdge,
   EdgeLabelRenderer,
+  getStraightPath,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { cn } from "@stratif-io/design-system";
@@ -141,7 +142,7 @@ function SelfLoopEdge({
               fontSize: 10,
               fontWeight: 500,
               color: "#6b7280",
-              background: "hsl(var(--background) / 0.85)",
+              background: "hsl(var(--background))",
               padding: `${(labelBgPadding as number[])?.[1] ?? 3}px ${(labelBgPadding as number[])?.[0] ?? 5}px`,
               borderRadius: 3,
               pointerEvents: "none",
@@ -200,8 +201,9 @@ function BiEdge({
   const cx = mx + px;
   const cy = my + py;
   const d = `M ${sx} ${sourceY} Q ${cx} ${cy} ${tx} ${targetY}`;
-  const lx = cx;
-  const ly = cy;
+  // Actual midpoint on the bezier curve at t=0.5 (not the control point)
+  const lx = 0.25 * sx + 0.5 * cx + 0.25 * tx;
+  const ly = 0.25 * sourceY + 0.5 * cy + 0.25 * targetY;
 
   return (
     <>
@@ -215,7 +217,7 @@ function BiEdge({
               fontSize: 10,
               fontWeight: 500,
               color: "#6b7280",
-              background: "hsl(var(--background) / 0.85)",
+              background: "hsl(var(--background))",
               padding: "2px 5px",
               borderRadius: 3,
               pointerEvents: "none",
@@ -230,7 +232,55 @@ function BiEdge({
   );
 }
 
-const edgeTypes = { selfloop: SelfLoopEdge, biedge: BiEdge };
+// ── Straight (one-way) edge with opaque label background ────────────────────
+
+function StraightEdge({
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  style,
+  markerEnd,
+  label,
+}: EdgeProps) {
+  const [edgePath, labelX, labelY] = getStraightPath({
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+  });
+  return (
+    <>
+      <BaseEdge path={edgePath} style={style} markerEnd={markerEnd} />
+      {label && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: "absolute",
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              fontSize: 10,
+              fontWeight: 500,
+              color: "#6b7280",
+              background: "hsl(var(--background))",
+              padding: "2px 5px",
+              borderRadius: 3,
+              pointerEvents: "none",
+            }}
+            className="nodrag nopan"
+          >
+            {label}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+}
+
+const edgeTypes = {
+  selfloop: SelfLoopEdge,
+  biedge: BiEdge,
+  straight: StraightEdge,
+};
 
 // ── Layout (dagre — left-to-right workflow) ───────────────────────────────────
 
@@ -336,7 +386,7 @@ function buildEdges(config: MarkovConfig, showEnd: boolean): Edge[] {
       const sign = isBidi ? (from < targetId ? 1 : -1) : 0;
       edges.push({
         id: `${from}->${to}`,
-        type: isSelf ? "selfloop" : isBidi ? "biedge" : "default",
+        type: isSelf ? "selfloop" : isBidi ? "biedge" : "straight",
         source: from,
         target: targetId,
         data: { sign },
