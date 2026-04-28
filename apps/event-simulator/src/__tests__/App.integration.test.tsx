@@ -66,7 +66,7 @@ describe("App integration", () => {
     await waitFor(() => screen.getByRole("combobox"));
     await user.click(screen.getByRole("combobox"));
     await waitFor(() =>
-      expect(screen.getByText("saas_growth")).toBeInTheDocument(),
+      expect(screen.getByText("Saas Growth")).toBeInTheDocument(),
     );
   });
 
@@ -82,8 +82,8 @@ describe("App integration", () => {
     renderApp();
     await waitFor(() => screen.getByRole("combobox"));
     await user.click(screen.getByRole("combobox"));
-    await waitFor(() => screen.getByText("saas_growth"));
-    await user.click(screen.getByText("saas_growth"));
+    await waitFor(() => screen.getByText("Saas Growth"));
+    await user.click(screen.getByText("Saas Growth"));
     // Verify preset loaded by checking the store config name via axis chips still present
     await waitFor(() =>
       expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(6),
@@ -96,15 +96,15 @@ describe("App integration", () => {
     // Load a preset first
     await waitFor(() => screen.getByRole("combobox"));
     await user.click(screen.getByRole("combobox"));
-    await waitFor(() => screen.getByText("saas_growth"));
-    await user.click(screen.getByText("saas_growth"));
+    await waitFor(() => screen.getByText("Saas Growth"));
+    await user.click(screen.getByText("Saas Growth"));
     // Click "+ Event" button to add an anomaly and mark the store as dirty
     await waitFor(() => screen.getByText("+ Event"));
     await user.click(screen.getByText("+ Event"));
     // Now try to switch to New blank — should show discard dialog
     await user.click(screen.getByRole("combobox"));
-    await waitFor(() => screen.getAllByText("New blank"));
-    await user.click(screen.getAllByText("New blank")[0]);
+    await waitFor(() => screen.getAllByText("✨ New blank"));
+    await user.click(screen.getAllByText("✨ New blank")[0]);
     expect(screen.getByText(/discard unsaved changes/i)).toBeInTheDocument();
   });
 });

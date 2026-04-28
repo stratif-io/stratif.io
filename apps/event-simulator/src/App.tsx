@@ -51,6 +51,26 @@ import { defaultAnomaly } from "./lib/twin";
 import { resolveScale } from "./lib/twin/utils";
 import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
 
+const PRESET_LABELS: Record<string, string> = {
+  dating_app_churn: "💘 Dating App — Churn",
+  casual_game_addictive: "🎮 Casual Game — Addictive",
+  casual_game_flash_in_the_pan: "🎮 Casual Game — Flash in the Pan",
+  casual_game_viral_blowup: "🎮 Casual Game — Viral Blowup",
+  ecommerce_explosive: "🛒 E-commerce — Explosive",
+  ecommerce_steady: "🛒 E-commerce — Steady",
+  marketplace_scaling: "🤝 Marketplace — Scaling",
+  retail_declining: "🏪 Retail — Declining",
+  saas_pmf: "🚀 SaaS — PMF",
+  streaming_mature: "🎬 Streaming — Mature",
+};
+
+function presetLabel(name: string): string {
+  return (
+    PRESET_LABELS[name] ??
+    name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  );
+}
+
 const SECTION_TITLES: Record<string, string> = {
   studio: "Studio",
   events: "Event simulator",
@@ -417,18 +437,18 @@ export default function App() {
                 }
                 disabled={presets.length === 0}
               >
-                <SelectTrigger className="w-40 h-8 text-xs">
+                <SelectTrigger className="w-52 h-8 text-xs">
                   <SelectValue
                     placeholder={
-                      presets.length === 0 ? "Loading…" : "Select preset…"
+                      presets.length === 0 ? "Loading…" : "Select scenario…"
                     }
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__blank__">New blank</SelectItem>
+                  <SelectItem value="__blank__">✨ New blank</SelectItem>
                   {presets.map((p) => (
                     <SelectItem key={p.name} value={p.name}>
-                      {p.name}
+                      {presetLabel(p.name)}
                     </SelectItem>
                   ))}
                 </SelectContent>
