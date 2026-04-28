@@ -556,8 +556,8 @@ export function KpiChart({
                 left: Math.min(dragState.startPx, dragState.currentPx),
                 width: Math.abs(dragState.currentPx - dragState.startPx),
                 background: `${color}40`,
-                borderLeft: `2px solid ${color}`,
-                borderRight: `2px solid ${color}`,
+                borderLeft: `1px solid ${color}`,
+                borderRight: `1px solid ${color}`,
               }}
             />
           )}
@@ -580,6 +580,7 @@ export function KpiChart({
                 anomalies={anomalies!}
                 windowDays={visibleWindowDays ?? windowDays!}
                 windowStart={visibleWindowStart ?? startDate}
+                dayOffset={internalBrushRange ? internalBrushRange[0] : 0}
                 onAnomalyChange={onAnomalyChange ?? (() => {})}
                 onSelect={onAnomalySelect}
                 readOnly={!onAnomalyChange}

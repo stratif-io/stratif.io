@@ -32,6 +32,8 @@ interface Props {
   anomalies: SimEvent[];
   windowDays: number;
   windowStart?: Date;
+  /** Day index of the zoom start; bands subtract this so they align correctly */
+  dayOffset?: number;
   onAnomalyChange: (index: number, next: SimEvent) => void;
   onSelect?: (index: number, x: number, y: number) => void;
   readOnly?: boolean;
@@ -45,27 +47,42 @@ export function AnomalyChartOverlay({
   anomalies,
   windowDays,
   windowStart,
+  dayOffset = 0,
   onAnomalyChange,
   onSelect,
   readOnly = false,
 }: Props) {
   const pxPerDay = offset.width / Math.max(1, windowDays);
+  const clipId = `anomaly-clip-${offset.left}-${offset.top}`;
   return (
     <g>
-      {anomalies.map((a, i) => (
-        <ChartBand
-          key={i}
-          index={i}
-          anomaly={a}
-          offset={offset}
-          pxPerDay={pxPerDay}
-          windowDays={windowDays}
-          windowStart={windowStart}
-          onChange={(next) => onAnomalyChange(i, next)}
-          onSelect={onSelect}
-          readOnly={readOnly}
-        />
-      ))}
+      <defs>
+        <clipPath id={clipId}>
+          <rect
+            x={offset.left}
+            y={offset.top}
+            width={offset.width}
+            height={offset.height}
+          />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>
+        {anomalies.map((a, i) => (
+          <ChartBand
+            key={i}
+            index={i}
+            anomaly={a}
+            offset={offset}
+            pxPerDay={pxPerDay}
+            windowDays={windowDays}
+            windowStart={windowStart}
+            dayOffset={dayOffset}
+            onChange={(next) => onAnomalyChange(i, next)}
+            onSelect={onSelect}
+            readOnly={readOnly}
+          />
+        ))}
+      </g>
     </g>
   );
 }
@@ -77,6 +94,7 @@ interface BandProps {
   pxPerDay: number;
   windowDays: number;
   windowStart?: Date;
+  dayOffset?: number;
   onChange: (next: SimEvent) => void;
   onSelect?: (index: number, x: number, y: number) => void;
   readOnly?: boolean;
@@ -93,11 +111,13 @@ function ChartBand({
   pxPerDay,
   windowDays,
   windowStart,
+  dayOffset = 0,
   onChange,
   onSelect,
   readOnly = false,
 }: BandProps) {
-  const startDay = parseStartDay(anomaly.start, windowDays, windowStart);
+  const startDay =
+    parseStartDay(anomaly.start, windowDays, windowStart) - dayOffset;
   const durationDays = Math.max(1, parseDays(anomaly.duration ?? "1d") ?? 1);
 
   const x = offset.left + startDay * pxPerDay;
