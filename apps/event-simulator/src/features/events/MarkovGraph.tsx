@@ -12,11 +12,8 @@ import {
   type EdgeProps,
   useNodesState,
   useEdgesState,
-  MarkerType,
   Panel,
-  BaseEdge,
   EdgeLabelRenderer,
-  getStraightPath,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { cn } from "@stratif-io/design-system";
@@ -111,43 +108,115 @@ function EventNode({ data }: NodeProps) {
 
 const nodeTypes = { eventNode: EventNode };
 
+// ── Shared arrowhead (SVG polygon, avoids React Flow marker scaling issues) ──
+
+function Arrowhead({
+  x,
+  y,
+  dx,
+  dy,
+  size,
+  color,
+}: {
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  size: number;
+  color: string;
+}) {
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const halfW = size * 0.42;
+  const tip = `${x},${y}`;
+  const bl = `${x - ux * size - uy * halfW},${y - uy * size + ux * halfW}`;
+  const br = `${x - ux * size + uy * halfW},${y - uy * size - ux * halfW}`;
+  return <polygon points={`${tip} ${bl} ${br}`} fill={color} />;
+}
+
+function EdgeLabel({
+  x,
+  y,
+  label,
+}: {
+  x: number;
+  y: number;
+  label: React.ReactNode;
+}) {
+  return (
+    <EdgeLabelRenderer>
+      <div
+        style={{
+          position: "absolute",
+          transform: `translate(-50%, -50%) translate(${x}px,${y}px)`,
+          fontSize: 10,
+          fontWeight: 500,
+          color: "#6b7280",
+          background: "hsl(var(--background))",
+          padding: "2px 5px",
+          borderRadius: 3,
+          pointerEvents: "none",
+        }}
+        className="nodrag nopan"
+      >
+        {label}
+      </div>
+    </EdgeLabelRenderer>
+  );
+}
+
 // ── Self-loop edge ───────────────────────────────────────────────────────────
 
 function SelfLoopEdge({
   sourceX,
   sourceY,
   style,
-  markerEnd,
   label,
-  labelStyle,
-  labelBgStyle,
   labelBgPadding,
 }: EdgeProps) {
-  // sourceX/Y is the right-side handle; derive node top-center
-  const cx = sourceX - NODE_WIDTH / 2;
-  const cy = sourceY - NODE_HEIGHT / 2; // top edge
+  const ncx = sourceX - NODE_WIDTH / 2;
+  const ncy = sourceY - NODE_HEIGHT / 2;
   const r = 32;
-  const d = `M ${cx - r * 0.6} ${cy} C ${cx - r} ${cy - r * 2.5} ${cx + r} ${cy - r * 2.5} ${cx + r * 0.6} ${cy}`;
-  const lx = cx;
-  const ly = cy - r * 2.6;
+  const p0x = ncx - r * 0.6;
+  const p0y = ncy;
+  const p3x = ncx + r * 0.6;
+  const p3y = ncy;
+  const c1x = ncx - r;
+  const c1y = ncy - r * 2.5;
+  const c2x = ncx + r;
+  const c2y = ncy - r * 2.5;
+  const d = `M ${p0x} ${p0y} C ${c1x} ${c1y} ${c2x} ${c2y} ${p3x} ${p3y}`;
+  // Tangent at t=1 for cubic bezier: 3*(P3 - C2)
+  const arrowDx = p3x - c2x;
+  const arrowDy = p3y - c2y;
+  const stroke =
+    (style as React.CSSProperties)?.stroke ?? "rgba(107,114,128,0.8)";
+  const lpad = (labelBgPadding as number[] | undefined) ?? [5, 3];
   return (
     <>
-      <BaseEdge path={d} style={style} markerEnd={markerEnd} />
+      <path d={d} style={{ ...style, fill: "none" } as React.CSSProperties} />
+      <Arrowhead
+        x={p3x}
+        y={p3y}
+        dx={arrowDx}
+        dy={arrowDy}
+        size={6}
+        color={stroke as string}
+      />
       {label && (
         <EdgeLabelRenderer>
           <div
             style={{
               position: "absolute",
-              transform: `translate(-50%, -50%) translate(${lx}px,${ly}px)`,
+              transform: `translate(-50%, -50%) translate(${ncx}px,${ncy - r * 2.6}px)`,
               fontSize: 10,
               fontWeight: 500,
               color: "#6b7280",
               background: "hsl(var(--background))",
-              padding: `${(labelBgPadding as number[])?.[1] ?? 3}px ${(labelBgPadding as number[])?.[0] ?? 5}px`,
+              padding: `${lpad[1]}px ${lpad[0]}px`,
               borderRadius: 3,
               pointerEvents: "none",
-              ...(labelStyle as React.CSSProperties),
-              ...(labelBgStyle as React.CSSProperties),
             }}
             className="nodrag nopan"
           >
@@ -167,16 +236,11 @@ function BiEdge({
   targetX,
   targetY,
   style,
-  markerEnd,
   label,
   data,
 }: EdgeProps) {
-  // Perpendicular offset direction — sign comes from edge data
   const sign = (data as { sign?: number })?.sign ?? 1;
 
-  // For backward edges (target is left of source), use the left handle of the
-  // source node and the right handle of the target node so the arc doesn't
-  // exit from the wrong side.
   const isBackward = sourceX > targetX;
   const sx = isBackward ? sourceX - NODE_WIDTH : sourceX;
   const tx = isBackward ? targetX + NODE_WIDTH : targetX;
@@ -187,13 +251,9 @@ function BiEdge({
   const dy = targetY - sourceY;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
 
-  // Adaptive offset: near-vertical pairs (same dagre rank, stacked nodes) need
-  // a much larger perpendicular push so the two arcs don't cross each other.
   const isNearVertical = Math.abs(dy) > Math.abs(dx) * 0.5;
   const OFFSET = isNearVertical ? 96 : 52;
 
-  // Flipping connection points for backward edges also flips the perpendicular
-  // direction, so negate sign to keep the two arcs on opposite sides.
   const effectiveSign = isBackward ? -sign : sign;
   const px = (-dy / len) * OFFSET * effectiveSign;
   const py = (dx / len) * OFFSET * effectiveSign;
@@ -201,38 +261,31 @@ function BiEdge({
   const cx = mx + px;
   const cy = my + py;
   const d = `M ${sx} ${sourceY} Q ${cx} ${cy} ${tx} ${targetY}`;
-  // Actual midpoint on the bezier curve at t=0.5 (not the control point)
   const lx = 0.25 * sx + 0.5 * cx + 0.25 * tx;
   const ly = 0.25 * sourceY + 0.5 * cy + 0.25 * targetY;
+  // Tangent at t=1 for quadratic bezier: 2*(endpoint - control)
+  const arrowDx = tx - cx;
+  const arrowDy = targetY - cy;
+  const stroke =
+    (style as React.CSSProperties)?.stroke ?? "rgba(107,114,128,0.8)";
 
   return (
     <>
-      <BaseEdge path={d} style={style} markerEnd={markerEnd} />
-      {label && (
-        <EdgeLabelRenderer>
-          <div
-            style={{
-              position: "absolute",
-              transform: `translate(-50%, -50%) translate(${lx}px,${ly}px)`,
-              fontSize: 10,
-              fontWeight: 500,
-              color: "#6b7280",
-              background: "hsl(var(--background))",
-              padding: "2px 5px",
-              borderRadius: 3,
-              pointerEvents: "none",
-            }}
-            className="nodrag nopan"
-          >
-            {label}
-          </div>
-        </EdgeLabelRenderer>
-      )}
+      <path d={d} style={{ ...style, fill: "none" } as React.CSSProperties} />
+      <Arrowhead
+        x={tx}
+        y={targetY}
+        dx={arrowDx}
+        dy={arrowDy}
+        size={6}
+        color={stroke as string}
+      />
+      {label && <EdgeLabel x={lx} y={ly} label={label} />}
     </>
   );
 }
 
-// ── Straight (one-way) edge with opaque label background ────────────────────
+// ── Straight (one-way) edge ──────────────────────────────────────────────────
 
 function StraightEdge({
   sourceX,
@@ -240,38 +293,28 @@ function StraightEdge({
   targetX,
   targetY,
   style,
-  markerEnd,
   label,
 }: EdgeProps) {
-  const [edgePath, labelX, labelY] = getStraightPath({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-  });
+  const d = `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
+  const lx = (sourceX + targetX) / 2;
+  const ly = (sourceY + targetY) / 2;
+  const arrowDx = targetX - sourceX;
+  const arrowDy = targetY - sourceY;
+  const stroke =
+    (style as React.CSSProperties)?.stroke ?? "rgba(107,114,128,0.8)";
+
   return (
     <>
-      <BaseEdge path={edgePath} style={style} markerEnd={markerEnd} />
-      {label && (
-        <EdgeLabelRenderer>
-          <div
-            style={{
-              position: "absolute",
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              fontSize: 10,
-              fontWeight: 500,
-              color: "#6b7280",
-              background: "hsl(var(--background))",
-              padding: "2px 5px",
-              borderRadius: 3,
-              pointerEvents: "none",
-            }}
-            className="nodrag nopan"
-          >
-            {label}
-          </div>
-        </EdgeLabelRenderer>
-      )}
+      <path d={d} style={{ ...style, fill: "none" } as React.CSSProperties} />
+      <Arrowhead
+        x={targetX}
+        y={targetY}
+        dx={arrowDx}
+        dy={arrowDy}
+        size={6}
+        color={stroke as string}
+      />
+      {label && <EdgeLabel x={lx} y={ly} label={label} />}
     </>
   );
 }
@@ -377,12 +420,10 @@ function buildEdges(config: MarkovConfig, showEnd: boolean): Edge[] {
       const isEnd = to === "[end]";
       if (isEnd && !showEnd) continue;
       const targetId = isEnd ? END_NODE_ID : to;
-      const strokeWidth = 1 + prob * 7;
-      const opacity = 0.25 + prob * 0.75;
-      const arrowSize = 5 + prob * 3;
+      const strokeWidth = 1 + prob * 6;
+      const opacity = 0.3 + prob * 0.6;
       const isSelf = from === targetId;
       const isBidi = !isSelf && pairSet.has([from, targetId].sort().join("||"));
-      // sign: +1 or -1 so both arcs go on opposite sides of the straight line
       const sign = isBidi ? (from < targetId ? 1 : -1) : 0;
       edges.push({
         id: `${from}->${to}`,
@@ -391,14 +432,7 @@ function buildEdges(config: MarkovConfig, showEnd: boolean): Edge[] {
         target: targetId,
         data: { sign },
         label: `${(prob * 100).toFixed(0)}%`,
-        labelStyle: { fontSize: 10, fill: "#6b7280", fontWeight: 500 },
         labelBgPadding: [3, 5] as [number, number],
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: `rgba(107,114,128,${opacity})`,
-          width: arrowSize,
-          height: arrowSize,
-        },
         style: {
           stroke: `rgba(107,114,128,${opacity})`,
           strokeWidth,
