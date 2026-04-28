@@ -8,13 +8,13 @@ import {
   Tooltip,
   ReferenceArea,
   CartesianGrid,
-  Brush,
 } from "recharts";
 import {
   CardLoadingBar,
   Popover,
   PopoverTrigger,
   PopoverContent,
+  RangeBrush,
 } from "@stratif-io/design-system";
 import { formatNum } from "@/lib/format";
 import type { SimEvent } from "@/types/simulation";
@@ -295,11 +295,7 @@ export function KpiChart({
         className={`${chartHeight} w-full relative transition-opacity duration-300 ${isLoading ? "opacity-40" : ""}`}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            margin={CM}
-            syncId={showBrush ? undefined : "preview"}
-          >
+          <LineChart data={data} margin={CM} syncId="preview">
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="currentColor"
@@ -407,40 +403,18 @@ export function KpiChart({
                 />
               );
             })}
-            {showBrush && (
-              <Brush
-                dataKey="idx"
-                height={28}
-                onChange={(b) => {
-                  const si = b.startIndex ?? 0;
-                  const ei = b.endIndex ?? Math.max(0, data.length - 1);
-                  if (si === 0 && ei === data.length - 1) {
-                    onBrushChange?.(null);
-                  } else {
-                    onBrushChange?.([si, ei]);
-                  }
-                }}
-                stroke="hsl(var(--border))"
-                fill="hsl(var(--muted))"
-                travellerWidth={10}
-                tickFormatter={(idx: number) => {
-                  const d = dateFor(idx, startDate, endDate, values.length);
-                  return d ? fmtTick(d) : "";
-                }}
-              >
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke={color}
-                  strokeWidth={1}
-                  strokeOpacity={0.5}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              </Brush>
-            )}
           </LineChart>
         </ResponsiveContainer>
+
+        {showBrush && (
+          <div className="mt-1.5">
+            <RangeBrush
+              count={values.length}
+              color={color}
+              onChange={onBrushChange}
+            />
+          </div>
+        )}
 
         {/* Direct SVG overlay — sits on top of the chart, not inside Recharts */}
         {showOverlay && (

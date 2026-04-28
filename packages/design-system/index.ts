@@ -126,3 +126,5 @@ export {
   ResizablePanel,
   type ResizablePanelProps,
 } from "./components/ui/resizable-panel";
+export { RangeBrush } from "./components/charts/RangeBrush";
+export { pixelToIndex } from "./components/charts/rangeBrushMath";
