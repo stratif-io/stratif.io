@@ -40,7 +40,9 @@ describe("App integration", () => {
   it("renders stratif.io brand", async () => {
     renderApp();
     await waitFor(() =>
-      expect(screen.getByText("stratif.io")).toBeInTheDocument(),
+      expect(
+        screen.getByRole("img", { name: "stratif.io" }),
+      ).toBeInTheDocument(),
     );
   });
 

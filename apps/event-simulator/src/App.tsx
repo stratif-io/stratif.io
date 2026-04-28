@@ -413,12 +413,16 @@ export default function App() {
         itemWrapper={itemWrapper}
         brand={
           !sidebarCollapsed ? (
-            <span className="text-sm font-bold tracking-tight">
-              stratif.io
-              <span className="ml-1.5 font-normal text-muted-foreground">
+            <div className="flex flex-col gap-0.5">
+              <img
+                src={theme === "dark" ? "/logo-dark.svg" : "/logo-light.svg"}
+                alt="stratif.io"
+                className="h-5 w-auto"
+              />
+              <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
                 Event Simulator
               </span>
-            </span>
+            </div>
           ) : undefined
         }
       />
