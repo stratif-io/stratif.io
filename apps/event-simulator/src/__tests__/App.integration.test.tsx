@@ -66,7 +66,7 @@ describe("App integration", () => {
     await waitFor(() => screen.getByRole("combobox"));
     await user.click(screen.getByRole("combobox"));
     await waitFor(() =>
-      expect(screen.getByText("Saas Growth")).toBeInTheDocument(),
+      expect(screen.getByText("🚀 saas_growth")).toBeInTheDocument(),
     );
   });
 
@@ -82,8 +82,8 @@ describe("App integration", () => {
     renderApp();
     await waitFor(() => screen.getByRole("combobox"));
     await user.click(screen.getByRole("combobox"));
-    await waitFor(() => screen.getByText("Saas Growth"));
-    await user.click(screen.getByText("Saas Growth"));
+    await waitFor(() => screen.getByText("🚀 saas_growth"));
+    await user.click(screen.getByText("🚀 saas_growth"));
     // Verify preset loaded by checking the store config name via axis chips still present
     await waitFor(() =>
       expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(6),
@@ -96,8 +96,8 @@ describe("App integration", () => {
     // Load a preset first
     await waitFor(() => screen.getByRole("combobox"));
     await user.click(screen.getByRole("combobox"));
-    await waitFor(() => screen.getByText("Saas Growth"));
-    await user.click(screen.getByText("Saas Growth"));
+    await waitFor(() => screen.getByText("🚀 saas_growth"));
+    await user.click(screen.getByText("🚀 saas_growth"));
     // Click "+ Event" button to add an anomaly and mark the store as dirty
     await waitFor(() => screen.getByText("+ Event"));
     await user.click(screen.getByText("+ Event"));

@@ -51,24 +51,28 @@ import { defaultAnomaly } from "./lib/twin";
 import { resolveScale } from "./lib/twin/utils";
 import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
 
-const PRESET_LABELS: Record<string, string> = {
-  dating_app_churn: "💘 Dating App — Churn",
-  casual_game_addictive: "🎮 Casual Game — Addictive",
-  casual_game_flash_in_the_pan: "🎮 Casual Game — Flash in the Pan",
-  casual_game_viral_blowup: "🎮 Casual Game — Viral Blowup",
-  ecommerce_explosive: "🛒 E-commerce — Explosive",
-  ecommerce_steady: "🛒 E-commerce — Steady",
-  marketplace_scaling: "🤝 Marketplace — Scaling",
-  retail_declining: "🏪 Retail — Declining",
-  saas_pmf: "🚀 SaaS — PMF",
-  streaming_mature: "🎬 Streaming — Mature",
-};
-
 function presetLabel(name: string): string {
-  return (
-    PRESET_LABELS[name] ??
-    name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-  );
+  const n = name.toLowerCase();
+  const emoji = n.includes("dating")
+    ? "💘"
+    : n.includes("game") || n.includes("casual")
+      ? "🎮"
+      : n.includes("saas")
+        ? "🚀"
+        : n.includes("commerce") || n.includes("shopify")
+          ? "🛒"
+          : n.includes("retail") || n.includes("sears")
+            ? "🏪"
+            : n.includes("marketplace") || n.includes("airbnb")
+              ? "🤝"
+              : n.includes("streaming") || n.includes("netflix")
+                ? "🎬"
+                : n.includes("social")
+                  ? "📱"
+                  : n.includes("fintech")
+                    ? "💳"
+                    : "";
+  return emoji ? `${emoji} ${name}` : name;
 }
 
 const SECTION_TITLES: Record<string, string> = {
@@ -286,7 +290,8 @@ export default function App() {
     const targetName =
       urlName && presets.some((p) => p.name === urlName)
         ? urlName
-        : (presets.find((p) => p.name.startsWith("dating"))?.name ?? null);
+        : (presets.find((p) => p.name.toLowerCase().includes("dating"))?.name ??
+          null);
     if (targetName) {
       const preset = presets.find((p) => p.name === targetName);
       if (preset?.config) {
