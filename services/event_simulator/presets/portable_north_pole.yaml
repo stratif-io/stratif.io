@@ -19,9 +19,9 @@ axes:
   monthly_seasonality: nov_dec_peak
 
 scale_config:
-  window_days: 425  # Nov 2009 – Dec 2010 (two holiday seasons)
   total_users: 30000
-  starting_rate: 20
+  start_date: "2009-11-01"
+  end_date: "2026-04-28"
 
 anomalies:
   - type: product_launch

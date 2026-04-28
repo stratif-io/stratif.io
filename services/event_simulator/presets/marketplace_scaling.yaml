@@ -18,9 +18,9 @@ axes:
   monthly_seasonality: flat
 
 scale_config:
-  window_days: 365
   total_users: 15000
-  starting_rate: 30
+  start_date: "2010-01-01"
+  end_date: "2026-04-28"
 
 anomalies:
   - type: marketing_campaign

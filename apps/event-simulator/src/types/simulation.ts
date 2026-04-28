@@ -23,6 +23,8 @@ export interface SimulationScaleOverride {
   total_users?: number | null;
   starting_rate?: number | null;
   window_days?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
 }
 
 export interface SimulationConfig {

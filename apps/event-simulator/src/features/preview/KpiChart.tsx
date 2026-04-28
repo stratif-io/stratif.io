@@ -64,22 +64,29 @@ interface Props {
   isLoading?: boolean;
 }
 
-const fmt = (d: Date) =>
-  new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(
+const fmtTick = (d: Date) =>
+  new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(
     d,
   );
+
+const fmtTooltip = (d: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(d);
 
 function dateFor(
   idx: number,
   startDate?: Date,
   endDate?: Date,
   total?: number,
-) {
-  if (!startDate || !endDate || !total || total < 2) return "";
+): Date | null {
+  if (!startDate || !endDate || !total || total < 2) return null;
   const rel = idx / (total - 1);
   const ms =
     startDate.getTime() + rel * (endDate.getTime() - startDate.getTime());
-  return fmt(new Date(ms));
+  return new Date(ms);
 }
 
 export function KpiChart({
@@ -170,7 +177,10 @@ export function KpiChart({
 
   const ticks = useMemo(() => {
     if (values.length === 0) return [];
-    return [0, Math.floor((values.length - 1) / 2), values.length - 1];
+    const n = Math.min(6, values.length);
+    return Array.from({ length: n }, (_, i) =>
+      Math.round((i / (n - 1)) * (values.length - 1)),
+    );
   }, [values.length]);
 
   // Track chart container pixel size for the overlay.
@@ -302,9 +312,10 @@ export function KpiChart({
               type="number"
               domain={[0, Math.max(0, values.length - 1)]}
               ticks={ticks}
-              tickFormatter={(idx: number) =>
-                dateFor(idx, startDate, endDate, values.length)
-              }
+              tickFormatter={(idx: number) => {
+                const d = dateFor(idx, startDate, endDate, values.length);
+                return d ? fmtTick(d) : "";
+              }}
               stroke="currentColor"
               tick={{ fontSize: 11, fill: "currentColor", opacity: 0.6 }}
               axisLine={false}
@@ -338,9 +349,10 @@ export function KpiChart({
                 color: "hsl(var(--popover-foreground))",
                 border: "1px solid hsl(var(--border))",
               }}
-              labelFormatter={(idx: number) =>
-                dateFor(idx, startDate, endDate, values.length) || `day ${idx}`
-              }
+              labelFormatter={(idx: number) => {
+                const d = dateFor(idx, startDate, endDate, values.length);
+                return d ? fmtTooltip(d) : `day ${idx}`;
+              }}
               formatter={(v: number, _name: string, item) => {
                 const dk = String(item.dataKey ?? "");
                 const ghost = ghostLines?.find((g) => g.key === dk);

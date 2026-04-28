@@ -17,9 +17,9 @@ axes:
   monthly_seasonality: flat
 
 scale_config:
-  window_days: 180
   total_users: 200000
-  starting_rate: 200
+  start_date: "2012-11-14"
+  end_date: "2026-04-28"
 
 anomalies:
   - type: product_launch

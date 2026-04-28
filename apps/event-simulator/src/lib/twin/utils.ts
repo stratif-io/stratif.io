@@ -31,7 +31,16 @@ export function resolveScale(
     axis?.params ??
     AXIS_SPEC.scale.values.find((v) => v.value === "small")!.params;
 
+  const computed_window =
+    override?.start_date && override?.end_date
+      ? Math.round(
+          (new Date(override.end_date).getTime() -
+            new Date(override.start_date).getTime()) /
+            86_400_000,
+        ) + 1
+      : undefined;
   const window_days =
+    computed_window ??
     (override?.window_days as number | undefined) ??
     (base.window_days as number);
 

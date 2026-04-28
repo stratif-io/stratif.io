@@ -1374,7 +1374,7 @@ class BaseSeeder(ABC):
             )
             cfg = cfg.model_copy(
                 update={
-                    "scale_config": ScaleOverride(**{**existing, **legacy_override})
+                    "scale_config": ScaleOverride(**{**existing, **legacy_override})  # type: ignore[arg-type]
                 }
             )
         return cfg

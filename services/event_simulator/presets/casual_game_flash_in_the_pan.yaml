@@ -19,9 +19,9 @@ axes:
   monthly_seasonality: flat
 
 scale_config:
-  window_days: 540           # 18 months
   total_users: 80000
-  starting_rate: 200
+  start_date: "2013-05-24"
+  end_date: "2026-04-28"
 
 # Steady baseline = 30000 / 540 ≈ 56 new users / day.
 # Each anomaly multiplies that baseline within its date window.

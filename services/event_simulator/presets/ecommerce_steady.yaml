@@ -22,9 +22,9 @@ axes:
   monthly_seasonality: q4_heavy
 
 scale_config:
-  window_days: 365
   total_users: 150000
-  starting_rate: 350
+  start_date: "2010-07-01"
+  end_date: "2026-04-28"
 
 anomalies:
   - type: shopping_season

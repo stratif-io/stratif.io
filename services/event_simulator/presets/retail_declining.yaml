@@ -18,9 +18,9 @@ axes:
   monthly_seasonality: q4_heavy
 
 scale_config:
-  window_days: 365
   total_users: 300000
-  starting_rate: 1200
+  start_date: "2017-02-15"
+  end_date: "2026-04-28"
 
 anomalies:
   - type: feature_regression

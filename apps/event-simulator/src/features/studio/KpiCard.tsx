@@ -30,7 +30,16 @@ interface Props {
   className?: string;
   isLoading?: boolean;
   isPrimary?: boolean;
+  startDate?: Date;
+  endDate?: Date;
 }
+
+const fmtTooltipDate = (d: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(d);
 
 export function KpiCard({
   title,
@@ -47,6 +56,8 @@ export function KpiCard({
   className,
   isLoading = false,
   isPrimary = false,
+  startDate,
+  endDate,
 }: Props) {
   const data = useMemo(
     () => values.map((v, i) => ({ i, v: v === null ? undefined : v })),
@@ -132,7 +143,14 @@ export function KpiCard({
                 `${formatNum(v)}${valueSuffix}`,
                 title,
               ]}
-              labelFormatter={() => ""}
+              labelFormatter={(i: number) => {
+                if (!startDate || !endDate || values.length < 2) return "";
+                const rel = i / (values.length - 1);
+                const ms =
+                  startDate.getTime() +
+                  rel * (endDate.getTime() - startDate.getTime());
+                return fmtTooltipDate(new Date(ms));
+              }}
             />
             <Line
               type="monotone"

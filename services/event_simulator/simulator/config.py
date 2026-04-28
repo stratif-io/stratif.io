@@ -54,6 +54,8 @@ class ScaleOverride(BaseModel):
     total_users: int | None = None
     window_days: int | None = None
     starting_rate: float | None = None
+    start_date: str | None = None  # ISO date, e.g. "2012-11-14"
+    end_date: str | None = None  # ISO date, e.g. "2026-04-28"
 
 
 class SimulationConfig(BaseModel):
@@ -74,23 +76,37 @@ class SimulationConfig(BaseModel):
     def resolved_scale(self) -> ScaleConfig:
         override = self.scale_config
 
+        # Compute window_days from start/end dates if provided
+        computed_window: int | None = None
+        if override is not None and override.start_date and override.end_date:
+            from datetime import date as _date
+
+            computed_window = (
+                _date.fromisoformat(override.end_date)
+                - _date.fromisoformat(override.start_date)
+            ).days + 1
+
+        effective_window = computed_window or (
+            override.window_days if override else None
+        )
+
         # Rate-driven mode: starting_rate present in override
         if override is not None and override.starting_rate is not None:
             return ScaleConfig(
                 starting_rate=override.starting_rate,
-                window_days=override.window_days or _DEFAULT_WINDOW_DAYS,
+                window_days=effective_window or _DEFAULT_WINDOW_DAYS,
             )
 
         # Goal-driven mode: total_users present in override
         if override is not None and override.total_users is not None:
             return ScaleConfig(
                 total_users=override.total_users,
-                window_days=override.window_days or _DEFAULT_WINDOW_DAYS,
+                window_days=effective_window or _DEFAULT_WINDOW_DAYS,
             )
 
         # Legacy: scale axis shorthand → goal-driven
         base = ScaleConfig.from_named(self.axes.get("scale", "small"))
-        window = (override.window_days if override else None) or base.window_days
+        window = effective_window or base.window_days
         return ScaleConfig(
             total_users=base.total_users,
             window_days=window,

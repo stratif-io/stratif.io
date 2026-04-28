@@ -77,6 +77,14 @@ export function KpiGrid() {
   const setAnomalies = useSeederStore((s) => s.setAnomalies);
   const { windowDays } = useMemo(() => resolveSimParams(config), [config]);
 
+  const { startDate, endDate } = useMemo(() => {
+    if (!out.startDate) return { startDate: undefined, endDate: undefined };
+    const s = new Date(out.startDate);
+    const e = new Date(out.startDate);
+    e.setDate(e.getDate() + (windowDays - 1));
+    return { startDate: s, endDate: e };
+  }, [out.startDate, windowDays]);
+
   // Close floating editor on outside click (composedPath handles portals)
   useEffect(() => {
     if (!floatingEditor) return;
@@ -147,6 +155,8 @@ export function KpiGrid() {
                   setAnomalies(anomalies.map((a, j) => (j === i ? next : a)))
                 }
                 onAnomalySelect={handleBandClick}
+                startDate={startDate}
+                endDate={endDate}
                 expanded={expandedKey === card.key}
                 onExpand={() =>
                   setExpandedKey((p) => (p === card.key ? null : card.key))

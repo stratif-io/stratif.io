@@ -135,8 +135,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
 
     parsed_anomalies = parse_anomalies(state.anomalies, state.now, window)
 
-    # Anchor day_0 to the earliest ISO-dated anomaly when available so that
-    # monthly seasonality multipliers apply to the correct historical months.
+    # Anchor day_0: explicit start_date in scale_config > earliest ISO anomaly > now - window
     _iso_starts = [
         a["start"]
         for a in (config.anomalies or [])
@@ -144,7 +143,12 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         and len(a["start"]) == 10
         and a["start"][4] == "-"
     ]
-    if _iso_starts:
+    if config.scale_config is not None and config.scale_config.start_date:
+        from datetime import date as _date
+
+        _sd = _date.fromisoformat(config.scale_config.start_date)
+        day_0 = datetime(_sd.year, _sd.month, _sd.day, tzinfo=UTC)
+    elif _iso_starts:
         from datetime import date as _date
 
         _earliest = min(_date.fromisoformat(s) for s in _iso_starts)
