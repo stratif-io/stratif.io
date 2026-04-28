@@ -134,9 +134,46 @@ export function KpiChart({
     [focusedKey, onFocusedLineKeyChange],
   );
 
+  const [internalBrushRange, setInternalBrushRange] = useState<
+    [number, number] | null
+  >(null);
+
+  const handleBrushChange = useCallback(
+    (range: [number, number] | null) => {
+      setInternalBrushRange(range);
+      onBrushChange?.(range);
+    },
+    [onBrushChange],
+  );
+
+  // Slice values to the brush selection for the chart display
+  const displayValues = useMemo(() => {
+    if (!showBrush || !internalBrushRange) return values;
+    return values.slice(internalBrushRange[0], internalBrushRange[1] + 1);
+  }, [values, showBrush, internalBrushRange]);
+
+  // Adjust dates for the sliced window so x-axis labels are accurate
+  const displayStartDate = useMemo(() => {
+    if (!showBrush || !internalBrushRange || !startDate || !endDate)
+      return startDate;
+    return (
+      dateFor(internalBrushRange[0], startDate, endDate, values.length) ??
+      startDate
+    );
+  }, [showBrush, internalBrushRange, startDate, endDate, values.length]);
+
+  const displayEndDate = useMemo(() => {
+    if (!showBrush || !internalBrushRange || !startDate || !endDate)
+      return endDate;
+    return (
+      dateFor(internalBrushRange[1], startDate, endDate, values.length) ??
+      endDate
+    );
+  }, [showBrush, internalBrushRange, startDate, endDate, values.length]);
+
   const mainMax = useMemo(
-    () => Math.max(...values.filter((v): v is number => v !== null), 1),
-    [values],
+    () => Math.max(...displayValues.filter((v): v is number => v !== null), 1),
+    [displayValues],
   );
 
   // Per-ghost max, used for normalization and Y-axis remapping
@@ -152,14 +189,15 @@ export function KpiChart({
   }, [ghostLines]);
 
   const data = useMemo(() => {
-    return values.map((v, i) => {
+    const offset = showBrush && internalBrushRange ? internalBrushRange[0] : 0;
+    return displayValues.map((v, i) => {
       const row: Record<string, number | undefined> = {
         idx: i,
         value: v ?? undefined,
       };
       for (const g of ghostLines ?? []) {
         const gMax = ghostMaxMap[g.key] ?? 1;
-        const raw = g.values[i];
+        const raw = g.values[offset + i];
         const normalized =
           raw !== null && raw !== undefined
             ? (raw / gMax) * mainMax
@@ -170,7 +208,14 @@ export function KpiChart({
       }
       return row;
     });
-  }, [values, ghostLines, mainMax, ghostMaxMap]);
+  }, [
+    displayValues,
+    ghostLines,
+    mainMax,
+    ghostMaxMap,
+    showBrush,
+    internalBrushRange,
+  ]);
 
   // Y-axis tick formatter: when a ghost is focused, remap normalized→raw scale
   const yTickFormatter = useMemo(() => {
@@ -182,12 +227,12 @@ export function KpiChart({
   }, [focusedKey, ghostMaxMap, mainMax]);
 
   const ticks = useMemo(() => {
-    if (values.length === 0) return [];
-    const n = Math.min(6, values.length);
+    if (displayValues.length === 0) return [];
+    const n = Math.min(6, displayValues.length);
     return Array.from({ length: n }, (_, i) =>
-      Math.round((i / (n - 1)) * (values.length - 1)),
+      Math.round((i / (n - 1)) * (displayValues.length - 1)),
     );
-  }, [values.length]);
+  }, [displayValues.length]);
 
   // Track chart container pixel size for the overlay.
   const containerRef = useRef<HTMLDivElement>(null);
@@ -316,10 +361,15 @@ export function KpiChart({
             <XAxis
               dataKey="idx"
               type="number"
-              domain={[0, Math.max(0, values.length - 1)]}
+              domain={[0, Math.max(0, displayValues.length - 1)]}
               ticks={ticks}
               tickFormatter={(idx: number) => {
-                const d = dateFor(idx, startDate, endDate, values.length);
+                const d = dateFor(
+                  idx,
+                  displayStartDate,
+                  displayEndDate,
+                  displayValues.length,
+                );
                 return d ? fmtTick(d) : "";
               }}
               stroke="currentColor"
@@ -356,7 +406,12 @@ export function KpiChart({
                 border: "1px solid hsl(var(--border))",
               }}
               labelFormatter={(idx: number) => {
-                const d = dateFor(idx, startDate, endDate, values.length);
+                const d = dateFor(
+                  idx,
+                  displayStartDate,
+                  displayEndDate,
+                  displayValues.length,
+                );
                 return d ? fmtTooltip(d) : `day ${idx}`;
               }}
               formatter={(v: number, _name: string, item) => {
@@ -406,16 +461,6 @@ export function KpiChart({
           </LineChart>
         </ResponsiveContainer>
 
-        {showBrush && (
-          <div className="mt-1.5">
-            <RangeBrush
-              count={values.length}
-              color={color}
-              onChange={onBrushChange}
-            />
-          </div>
-        )}
-
         {/* Direct SVG overlay — sits on top of the chart, not inside Recharts */}
         {showOverlay && (
           <svg
@@ -442,6 +487,14 @@ export function KpiChart({
           </svg>
         )}
       </div>
+
+      {showBrush && (
+        <RangeBrush
+          count={values.length}
+          color={color}
+          onChange={handleBrushChange}
+        />
+      )}
 
       {ghostLines && ghostLines.length > 0 && (
         <div className="flex flex-wrap gap-x-3 gap-y-1">

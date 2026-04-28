@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { pixelToIndex } from "./rangeBrushMath";
 
 interface Props {
@@ -9,7 +9,17 @@ interface Props {
 
 export function RangeBrush({ count, color = "#2563eb", onChange }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const [range, setRange] = useState<[number, number]>([0, count - 1]);
+  const [range, setRange] = useState<[number, number]>([
+    0,
+    Math.max(0, count - 1),
+  ]);
+
+  // Reset when data length changes (e.g., after async load)
+  useEffect(() => {
+    setRange([0, Math.max(0, count - 1)]);
+    onChange?.(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count]);
 
   const indexToPercent = (i: number) =>
     count <= 1 ? 0 : (i / (count - 1)) * 100;
@@ -27,13 +37,17 @@ export function RangeBrush({ count, color = "#2563eb", onChange }: Props) {
         const idx = pixelToIndex(px, rect.width, count);
         setRange((prev) => {
           const [s, end] = prev;
-          if (which === "start") {
-            const next: [number, number] = [Math.min(idx, end), end];
-            return next;
+          const next: [number, number] =
+            which === "start"
+              ? [Math.min(idx, end), end]
+              : [s, Math.max(idx, s)];
+          // Fire onChange on every move so the chart updates in real-time
+          if (next[0] === 0 && next[1] === count - 1) {
+            onChange?.(null);
           } else {
-            const next: [number, number] = [s, Math.max(idx, s)];
-            return next;
+            onChange?.(next);
           }
+          return next;
         });
       };
 
@@ -44,15 +58,6 @@ export function RangeBrush({ count, color = "#2563eb", onChange }: Props) {
           onMove,
         );
         (ev.target as HTMLDivElement).removeEventListener("pointerup", onUp);
-        setRange((prev) => {
-          const [s, end] = prev;
-          if (s === 0 && end === count - 1) {
-            onChange?.(null);
-          } else {
-            onChange?.([s, end]);
-          }
-          return prev;
-        });
       };
 
       (e.currentTarget as HTMLDivElement).addEventListener(
