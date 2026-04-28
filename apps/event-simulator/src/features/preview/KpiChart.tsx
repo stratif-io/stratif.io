@@ -264,6 +264,17 @@ export function KpiChart({
     height: containerSize.h - CM.top - CM.bottom - X_AXIS_H,
   };
 
+  // When zoomed, the overlay must use the visible day span + adjusted start date
+  const visibleWindowDays = useMemo(() => {
+    if (!showBrush || !internalBrushRange || !windowDays) return windowDays;
+    return internalBrushRange[1] - internalBrushRange[0] + 1;
+  }, [showBrush, internalBrushRange, windowDays]);
+
+  const visibleWindowStart = useMemo(() => {
+    if (!showBrush || !internalBrushRange || !startDate) return startDate;
+    return new Date(startDate.getTime() + internalBrushRange[0] * 86_400_000);
+  }, [showBrush, internalBrushRange, startDate]);
+
   return (
     <div
       className={`rounded-lg border bg-card p-3 flex flex-col gap-2 overflow-hidden relative ${className}`}
@@ -477,8 +488,8 @@ export function KpiChart({
               <AnomalyChartOverlay
                 offset={overlayOffset}
                 anomalies={anomalies!}
-                windowDays={windowDays!}
-                windowStart={startDate}
+                windowDays={visibleWindowDays ?? windowDays!}
+                windowStart={visibleWindowStart ?? startDate}
                 onAnomalyChange={onAnomalyChange ?? (() => {})}
                 onSelect={onAnomalySelect}
                 readOnly={!onAnomalyChange}
