@@ -7,7 +7,7 @@ export function blankConfig(): SimulationConfig {
     name: "new_preset",
     description: "",
     axes: {},
-    markov: MARKOV_PRESETS["saas"],
+    markov: MARKOV_PRESETS["dating"],
   };
 }
 

@@ -330,14 +330,14 @@ export const MARKOV_PRESETS: Record<string, MarkovConfig> = {
 };
 
 export const MARKOV_PRESET_LABELS: Record<string, string> = {
-  casual_game: "Casual Game",
-  gaming_hardcore: "Hardcore Game",
-  saas: "SaaS",
-  ecommerce: "E-commerce",
-  retail: "Retail",
-  marketplace: "Marketplace",
-  dating: "Dating App",
-  streaming: "Streaming",
-  social: "Social",
-  fintech: "Fintech",
+  casual_game: "🎮 Casual Game",
+  gaming_hardcore: "🏆 Hardcore Game",
+  saas: "🚀 SaaS",
+  ecommerce: "🛒 E-commerce",
+  retail: "🏪 Retail",
+  marketplace: "🤝 Marketplace",
+  dating: "💘 Dating App",
+  streaming: "🎬 Streaming",
+  social: "📱 Social",
+  fintech: "💳 Fintech",
 };

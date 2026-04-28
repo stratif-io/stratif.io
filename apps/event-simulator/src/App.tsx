@@ -11,7 +11,6 @@ import {
   AppHeader,
   AppSidebar,
   AxisPopover,
-  Badge,
   Button,
   Dialog,
   DialogContent,
@@ -54,7 +53,7 @@ import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
 
 const SECTION_TITLES: Record<string, string> = {
   studio: "Studio",
-  events: "Event editor",
+  events: "Event simulator",
 };
 
 const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
@@ -264,11 +263,15 @@ export default function App() {
     urlSyncedRef.current = true;
     const params = new URLSearchParams(window.location.search);
     const urlName = params.get("preset");
-    if (urlName && presets.some((p) => p.name === urlName)) {
-      const preset = presets.find((p) => p.name === urlName);
-      if (preset && preset.config) {
+    const targetName =
+      urlName && presets.some((p) => p.name === urlName)
+        ? urlName
+        : (presets.find((p) => p.name.startsWith("dating"))?.name ?? null);
+    if (targetName) {
+      const preset = presets.find((p) => p.name === targetName);
+      if (preset?.config) {
         loadPreset(preset.config);
-        setSelectedName(urlName);
+        setSelectedName(targetName);
       }
     }
   }, [loading, presets, loadPreset]);
@@ -324,7 +327,7 @@ export default function App() {
         items: [
           {
             key: "events",
-            label: "Event editor",
+            label: "Event simulator",
             icon: <Zap size={16} />,
             active: activeSection === "events",
             onClick: () => setActiveSection("events"),
@@ -396,11 +399,6 @@ export default function App() {
           <span className="text-sm font-semibold tracking-tight shrink-0">
             {SECTION_TITLES[activeSection] ?? "Studio"}
           </span>
-          {dirty && (
-            <Badge variant="outline" className="text-[10px] h-5">
-              Modified
-            </Badge>
-          )}
           {loading ? (
             <div className="flex items-center gap-2">
               <Skeleton className="h-5 w-32" />

@@ -47,7 +47,7 @@ describe("App integration", () => {
   it("renders sidebar navigation sections", async () => {
     renderApp();
     // The sidebar renders navigation buttons for each section
-    // Top-level sidebar items are Studio and Event editor;
+    // Top-level sidebar items are Studio and Event simulator;
     // axis items (Growth, Retention, etc.) are children of Studio
     // and only visible when Studio is expanded.
     await waitFor(() => {
@@ -55,7 +55,7 @@ describe("App integration", () => {
         screen.getByRole("button", { name: "Studio" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Event editor" }),
+        screen.getByRole("button", { name: "Event simulator" }),
       ).toBeInTheDocument();
     });
   });

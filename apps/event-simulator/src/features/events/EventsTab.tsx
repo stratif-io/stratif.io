@@ -45,7 +45,7 @@ function nextColor(events: { color?: string | null }[]): string {
 export function EventsTab() {
   const markov = useSeederStore((s) => s.config.markov);
   const setMarkovConfig = useSeederStore((s) => s.setMarkovConfig);
-  const [presetKey, setPresetKey] = useState<string>("");
+  const [presetKey, setPresetKey] = useState<string>("dating");
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -106,14 +106,14 @@ export function EventsTab() {
         {/* Preset */}
         <div className="px-3 pt-3 pb-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-            Preset
+            Flow template
           </p>
           <Select
             value={presetKey || undefined}
             onValueChange={handlePresetChange}
           >
             <SelectTrigger className="h-7 text-xs w-full">
-              <SelectValue placeholder="Load a preset…" />
+              <SelectValue placeholder="Load a template…" />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(MARKOV_PRESET_LABELS).map(([key, label]) => (
