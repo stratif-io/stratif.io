@@ -13,7 +13,6 @@ export const GROWTH_VALUES = [
   "steady",
   "flat",
   "declining",
-  "seasonal",
   "hockey_stick",
 ] as const;
 

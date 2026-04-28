@@ -17,7 +17,6 @@ GrowthValue = Literal[
     "steady",
     "flat",
     "declining",
-    "seasonal",
     "hockey_stick",
 ]
 

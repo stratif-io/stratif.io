@@ -10,10 +10,28 @@ export interface ChartOffset {
   height: number;
 }
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseStartDay(
+  start: string | undefined,
+  windowDays: number,
+  windowStart?: Date,
+): number {
+  if (!start) return 0;
+  if (ISO_DATE_RE.test(start)) {
+    if (!windowStart) return 0;
+    const ms = new Date(start + "T00:00:00").getTime() - windowStart.getTime();
+    return Math.max(0, Math.round(ms / 86_400_000));
+  }
+  const days = parseDays(start) ?? 0;
+  return Math.max(0, days < 0 ? windowDays + days : days);
+}
+
 interface Props {
   offset: ChartOffset;
   anomalies: SimulationAnomaly[];
   windowDays: number;
+  windowStart?: Date;
   onAnomalyChange: (index: number, next: SimulationAnomaly) => void;
   onSelect?: (index: number, x: number, y: number) => void;
   readOnly?: boolean;
@@ -26,6 +44,7 @@ export function AnomalyChartOverlay({
   offset,
   anomalies,
   windowDays,
+  windowStart,
   onAnomalyChange,
   onSelect,
   readOnly = false,
@@ -41,6 +60,7 @@ export function AnomalyChartOverlay({
           offset={offset}
           pxPerDay={pxPerDay}
           windowDays={windowDays}
+          windowStart={windowStart}
           onChange={(next) => onAnomalyChange(i, next)}
           onSelect={onSelect}
           readOnly={readOnly}
@@ -56,6 +76,7 @@ interface BandProps {
   offset: ChartOffset;
   pxPerDay: number;
   windowDays: number;
+  windowStart?: Date;
   onChange: (next: SimulationAnomaly) => void;
   onSelect?: (index: number, x: number, y: number) => void;
   readOnly?: boolean;
@@ -71,15 +92,12 @@ function ChartBand({
   offset,
   pxPerDay,
   windowDays,
+  windowStart,
   onChange,
   onSelect,
   readOnly = false,
 }: BandProps) {
-  const parsedStart = parseDays(anomaly.start ?? "0d") ?? 0;
-  const startDay = Math.max(
-    0,
-    parsedStart < 0 ? windowDays + parsedStart : parsedStart,
-  );
+  const startDay = parseStartDay(anomaly.start, windowDays, windowStart);
   const durationDays = Math.max(1, parseDays(anomaly.duration ?? "1d") ?? 1);
 
   const x = offset.left + startDay * pxPerDay;
@@ -234,6 +252,9 @@ function ChartBand({
       {hovered && !dragMode && (
         <AnomalyTooltip
           anomaly={anomaly}
+          startDay={startDay}
+          durationDays={durationDays}
+          windowStart={windowStart}
           color={color}
           x={x + w / 2}
           y={y}
@@ -248,24 +269,52 @@ const TOOLTIP_PAD = 5;
 const TOOLTIP_LINE_H = 12;
 const TOOLTIP_FONT = 9;
 
+function formatDateRange(
+  startDay: number,
+  durationDays: number,
+  windowStart?: Date,
+): string | null {
+  if (!windowStart) return null;
+  const start = new Date(windowStart.getTime() + startDay * 86_400_000);
+  const end = new Date(start.getTime() + (durationDays - 1) * 86_400_000);
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  return durationDays <= 1 ? fmt(start) : `${fmt(start)} – ${fmt(end)}`;
+}
+
 function AnomalyTooltip({
   anomaly,
+  startDay,
+  durationDays,
+  windowStart,
   color,
   x,
   y,
   height,
 }: {
   anomaly: SimulationAnomaly;
+  startDay: number;
+  durationDays: number;
+  windowStart?: Date;
   color: string;
   x: number;
   y: number;
   height: number;
 }) {
-  const lines = [anomaly.name, anomaly.type.replace(/_/g, " ")];
+  const dateRange = formatDateRange(startDay, durationDays, windowStart);
+  const lines = [
+    anomaly.name,
+    ...(dateRange ? [dateRange] : []),
+    anomaly.type.replace(/_/g, " "),
+  ];
   if (anomaly.effect) {
     for (const [k, v] of Object.entries(anomaly.effect)) {
       if (v !== undefined && v !== null)
-        lines.push(`${k.replace(/_/g, " ")}: ${v}`);
+        lines.push(`${k.replace(/_/g, " ")}: ×${v}`);
     }
   }
 

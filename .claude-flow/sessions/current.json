@@ -1,0 +1,12 @@
+{
+  "id": "session-1777364581249",
+  "startedAt": "2026-04-28T08:23:01.249Z",
+  "cwd": "/Users/carlo/my_work/stratifio/stratifio-oss/.worktrees/simulator-design-system",
+  "context": {},
+  "metrics": {
+    "edits": 83,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  }
+}

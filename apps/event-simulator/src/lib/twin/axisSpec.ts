@@ -56,12 +56,6 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
         description: "Fast exponential growth — viral consumer app.",
         params: { shape: 2, rate: 0.08 },
       },
-      {
-        value: "seasonal",
-        label: "seasonal",
-        description: "Sinusoidal annual cycle: shape(t) = 1 + A·sin(2πt/365).",
-        params: { shape: 4, amplitude: 0.3 },
-      },
     ],
     default: "strong",
   },

@@ -21,10 +21,6 @@ def _exponential_decline_shape(r: float) -> ShapeMultiplier:
     return lambda d: math.exp(-r * d)
 
 
-def _seasonal_shape(amplitude: float = 0.3) -> ShapeMultiplier:
-    return lambda d: 1.0 + amplitude * math.sin(2 * math.pi * d / 365)
-
-
 def _hockey_stick_shape(
     r: float = 0.06,
     split_fraction: float = 0.35,
@@ -46,7 +42,6 @@ _VALUE_NAMES = (
     "steady",
     "flat",
     "declining",
-    "seasonal",
     "hockey_stick",
 )
 
@@ -65,8 +60,6 @@ def _build_shape(
         return _steady_shape(r=float(cfg.get("rate", 0.005)))
     if value == "declining":
         return _exponential_decline_shape(r=float(cfg.get("rate", 0.015)))
-    if value == "seasonal":
-        return _seasonal_shape(amplitude=float(cfg.get("amplitude", 0.3)))
     if value == "hockey_stick":
         return _hockey_stick_shape(
             r=float(cfg.get("rate", 0.06)),

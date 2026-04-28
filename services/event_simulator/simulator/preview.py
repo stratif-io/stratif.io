@@ -132,12 +132,34 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         axis.apply(value, state)
 
     parsed_anomalies = parse_anomalies(state.anomalies, state.now, window)
-    day_0 = state.now - timedelta(days=window)
+
+    # Anchor day_0 to the earliest ISO-dated anomaly when available so that
+    # monthly seasonality multipliers apply to the correct historical months.
+    _iso_starts = [
+        a["start"]
+        for a in (config.anomalies or [])
+        if isinstance(a.get("start"), str)
+        and len(a["start"]) == 10
+        and a["start"][4] == "-"
+    ]
+    if _iso_starts:
+        from datetime import date as _date
+
+        _earliest = min(_date.fromisoformat(s) for s in _iso_starts)
+        day_0 = datetime(_earliest.year, _earliest.month, _earliest.day, tzinfo=UTC)
+    else:
+        day_0 = state.now - timedelta(days=window)
+
     shape = state.arrival_curve or (lambda d: 1.0)
     seed = config.random_seed or 0
     rng_jitter = random.Random(seed + 0)  # jitter draws (phase 0)
     # rng1 uses seed+1 for pass-1 Poisson draws + cohort simulation
-    dow_weights = get_dow_weights("generic")
+    dow_weights = (
+        state.dow_weights
+        if state.dow_weights is not None
+        else get_dow_weights("generic")
+    )
+    cal_fn = state.calendar_multiplier  # None → cal_mult = 1.0
 
     sigma = state.jitter_sigma
     K = state.virality_weight
@@ -150,10 +172,11 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     for d in range(window):
         local_date = (day_0 + timedelta(days=d)).date()
         dow_mult = dow_weights[local_date.weekday()]
+        cal_mult = cal_fn(local_date) if cal_fn is not None else 1.0
         ano_mult = arrivals_multiplier(parsed_anomalies, local_date)
         g = starting_rate * shape(d)
         g_curve.append(g)
-        a_curve.append(g * dow_mult * ano_mult)
+        a_curve.append(g * dow_mult * cal_mult * ano_mult)
 
     # ── J(t) = A(t) · (1 + σZ) ───────────────────────────────────────────────
     j_curve: list[float] = [
