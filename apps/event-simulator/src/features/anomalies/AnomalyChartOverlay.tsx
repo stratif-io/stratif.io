@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { SimEvent } from "@/types/simulation";
 import { anomalyTypeColor } from "@/lib/twin";
 import { parseDays } from "@/lib/twin/utils";
@@ -53,7 +53,8 @@ export function AnomalyChartOverlay({
   readOnly = false,
 }: Props) {
   const pxPerDay = offset.width / Math.max(1, windowDays);
-  const clipId = `anomaly-clip-${offset.left}-${offset.top}`;
+  const uid = useId();
+  const clipId = `anomaly-clip-${uid.replace(/:/g, "")}`;
   return (
     <g>
       <defs>

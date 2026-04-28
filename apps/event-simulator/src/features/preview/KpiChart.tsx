@@ -338,11 +338,6 @@ export function KpiChart({
     return internalBrushRange[1] - internalBrushRange[0] + 1;
   }, [showBrush, internalBrushRange, windowDays]);
 
-  const visibleWindowStart = useMemo(() => {
-    if (!showBrush || !internalBrushRange || !startDate) return startDate;
-    return new Date(startDate.getTime() + internalBrushRange[0] * 86_400_000);
-  }, [showBrush, internalBrushRange, startDate]);
-
   return (
     <div
       className={`rounded-lg border bg-card p-3 flex flex-col gap-2 overflow-hidden relative ${className}`}
@@ -579,7 +574,7 @@ export function KpiChart({
                 offset={overlayOffset}
                 anomalies={anomalies!}
                 windowDays={visibleWindowDays ?? windowDays!}
-                windowStart={visibleWindowStart ?? startDate}
+                windowStart={startDate}
                 dayOffset={internalBrushRange ? internalBrushRange[0] : 0}
                 onAnomalyChange={onAnomalyChange ?? (() => {})}
                 onSelect={onAnomalySelect}
