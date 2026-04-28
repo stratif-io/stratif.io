@@ -171,32 +171,28 @@ function SidebarNavItem({
       {!collapsed && (
         <span className="flex-1 min-w-0 text-left">
           <span className="block truncate">{item.label}</span>
-          {indent && (item.sparkline || item.badge) && (
-            <span className="flex items-center gap-1.5 mt-0.5">
-              {item.sparkline && (
-                <svg
-                  viewBox="0 0 52 28"
-                  width={28}
-                  height={11}
-                  aria-hidden="true"
-                  className="shrink-0 text-primary"
-                >
-                  <polyline
-                    points={item.sparkline}
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    fill="none"
-                  />
-                </svg>
-              )}
-              {item.badge && (
-                <span className="truncate text-[10px] text-muted-foreground font-normal">
-                  {item.badge}
-                </span>
-              )}
+          {indent && item.badge && (
+            <span className="block truncate text-[10px] text-muted-foreground font-normal mt-0.5">
+              {item.badge}
             </span>
           )}
         </span>
+      )}
+      {!collapsed && indent && item.sparkline && (
+        <svg
+          viewBox="0 0 52 28"
+          width={28}
+          height={28}
+          aria-hidden="true"
+          className="shrink-0 text-primary"
+        >
+          <polyline
+            points={item.sparkline}
+            stroke="currentColor"
+            strokeWidth={1.5}
+            fill="none"
+          />
+        </svg>
       )}
       {!collapsed && item.badge && !indent && (
         <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-medium shrink-0">
