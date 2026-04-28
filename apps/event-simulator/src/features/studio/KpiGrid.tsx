@@ -177,7 +177,6 @@ export function KpiGrid() {
                 metricKey={expandedKey!}
                 color={section.cards.find((c) => c.key === expandedKey)!.color}
                 onClose={() => setExpandedKey(null)}
-                brushRange={zoomRange}
                 onBrushChange={setZoomRange}
               />
             )}

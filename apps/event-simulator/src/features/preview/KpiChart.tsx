@@ -65,8 +65,6 @@ interface Props {
   isLoading?: boolean;
   /** Show a resizable brush range selector below the x-axis */
   showBrush?: boolean;
-  /** Controlled brush range [startIndex, endIndex]; null = full range */
-  brushRange?: [number, number] | null;
   onBrushChange?: (range: [number, number] | null) => void;
 }
 
@@ -118,7 +116,6 @@ export function KpiChart({
   onFocusedLineKeyChange,
   isLoading = false,
   showBrush = false,
-  brushRange,
   onBrushChange,
 }: Props) {
   const [internalFocusedKey, setInternalFocusedKey] = useState<string | null>(
@@ -298,7 +295,11 @@ export function KpiChart({
         className={`${chartHeight} w-full relative transition-opacity duration-300 ${isLoading ? "opacity-40" : ""}`}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={CM} syncId="preview">
+          <LineChart
+            data={data}
+            margin={CM}
+            syncId={showBrush ? undefined : "preview"}
+          >
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="currentColor"
@@ -410,8 +411,6 @@ export function KpiChart({
               <Brush
                 dataKey="idx"
                 height={28}
-                startIndex={brushRange?.[0] ?? 0}
-                endIndex={brushRange?.[1] ?? Math.max(0, data.length - 1)}
                 onChange={(b) => {
                   const si = b.startIndex ?? 0;
                   const ei = b.endIndex ?? Math.max(0, data.length - 1);
@@ -423,7 +422,7 @@ export function KpiChart({
                 }}
                 stroke="hsl(var(--border))"
                 fill="hsl(var(--muted))"
-                travellerWidth={7}
+                travellerWidth={10}
                 tickFormatter={(idx: number) => {
                   const d = dateFor(idx, startDate, endDate, values.length);
                   return d ? fmtTick(d) : "";

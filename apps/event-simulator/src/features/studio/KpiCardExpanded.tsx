@@ -35,7 +35,6 @@ interface Props {
   metricKey: MetricKey;
   color?: string;
   onClose: () => void;
-  brushRange?: [number, number] | null;
   onBrushChange?: (range: [number, number] | null) => void;
 }
 
@@ -43,7 +42,6 @@ export function KpiCardExpanded({
   metricKey,
   color,
   onClose,
-  brushRange,
   onBrushChange,
 }: Props) {
   const { isLoading, ...out } = useTwinOutput();
@@ -446,7 +444,6 @@ export function KpiCardExpanded({
               }}
               isLoading={isLoading}
               showBrush
-              brushRange={brushRange}
               onBrushChange={onBrushChange}
             />
           </section>
