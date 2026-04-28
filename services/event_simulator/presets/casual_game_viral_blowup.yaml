@@ -16,6 +16,7 @@ axes:
 
 scale_config:
   window_days: 180
+  total_users: 500000
   starting_rate: 30
 
 growth_config:

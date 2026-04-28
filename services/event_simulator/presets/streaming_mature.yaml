@@ -11,6 +11,7 @@ axes:
   anomalies: clean
 scale_config:
   window_days: 365
+  total_users: 1000000
   starting_rate: 800
 
 markov:

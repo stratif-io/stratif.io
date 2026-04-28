@@ -18,6 +18,7 @@ anomalies:
       arrivals: 1.8
 scale_config:
   window_days: 180
+  total_users: 200000
   starting_rate: 500
 
 markov:

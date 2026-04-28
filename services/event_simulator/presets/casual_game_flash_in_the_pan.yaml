@@ -20,6 +20,7 @@ axes:
 
 scale_config:
   window_days: 540           # 18 months
+  total_users: 80000
   starting_rate: 200
 
 # Steady baseline = 30000 / 540 ≈ 56 new users / day.

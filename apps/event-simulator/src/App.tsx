@@ -275,6 +275,19 @@ export default function App() {
   const inputInvalid = "border-destructive focus-visible:ring-destructive";
   const inputNormal = "border-border";
 
+  const syncDatesFromConfig = useCallback(
+    (cfg: { scale_config?: { window_days?: number | null } | null }) => {
+      const days = (cfg.scale_config?.window_days as number | undefined) ?? 90;
+      const end = new Date();
+      const start = new Date(end);
+      start.setDate(start.getDate() - days);
+      const fmt = (d: Date) => d.toISOString().split("T")[0];
+      setUiEndDate(fmt(end));
+      setUiStartDate(fmt(start));
+    },
+    [setUiStartDate, setUiEndDate],
+  );
+
   const confirmAndRun = (
     intent: { kind: "load"; name: string } | { kind: "blank" },
   ) => {
@@ -282,9 +295,12 @@ export default function App() {
       const preset = presets.find((p) => p.name === intent.name);
       if (!preset || !preset.config) return;
       loadPreset(preset.config);
+      syncDatesFromConfig(preset.config);
       setSelectedName(intent.name);
     } else {
-      loadPreset(blankConfig());
+      const blank = blankConfig();
+      loadPreset(blank);
+      syncDatesFromConfig(blank);
       setSelectedName(null);
     }
   };
@@ -323,10 +339,11 @@ export default function App() {
       const preset = presets.find((p) => p.name === targetName);
       if (preset?.config) {
         loadPreset(preset.config);
+        syncDatesFromConfig(preset.config);
         setSelectedName(targetName);
       }
     }
-  }, [loading, presets, loadPreset]);
+  }, [loading, presets, loadPreset, syncDatesFromConfig]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
