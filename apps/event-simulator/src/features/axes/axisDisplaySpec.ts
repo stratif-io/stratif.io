@@ -311,4 +311,6 @@ export const STRIP_AXIS_IDS = [
   "virality",
   "scale",
   "noise",
+  "weekly_pattern",
+  "monthly_seasonality",
 ] as const;

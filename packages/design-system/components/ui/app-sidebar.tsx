@@ -168,9 +168,16 @@ function SidebarNavItem({
         {item.icon}
       </span>
       {!collapsed && (
-        <span className="flex-1 truncate text-left">{item.label}</span>
+        <span className="flex-1 min-w-0 text-left">
+          <span className="block truncate">{item.label}</span>
+          {item.badge && indent && (
+            <span className="block truncate text-[10px] text-muted-foreground font-normal mt-0.5">
+              {item.badge}
+            </span>
+          )}
+        </span>
       )}
-      {!collapsed && item.badge && (
+      {!collapsed && item.badge && !indent && (
         <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-medium shrink-0">
           {item.badge}
         </span>
