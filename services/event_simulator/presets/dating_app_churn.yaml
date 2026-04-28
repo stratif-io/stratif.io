@@ -1,7 +1,7 @@
 name: Dating App Churn (Tinder-Like)
 description: Quick activation, high churn.
 axes:
-  growth: seasonal
+  growth: strong
   stickiness: churn_heavy
   engagement_depth: shallow
   monetization: subscription
