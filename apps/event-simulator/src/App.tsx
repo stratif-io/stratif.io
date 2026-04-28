@@ -90,6 +90,7 @@ const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
     strong: "0,26 12,22 24,16 36,9 52,4",
     hockey_stick: "0,24 14,23 24,22 32,20 36,14 42,8 52,3",
     explosive: "0,26 10,22 22,16 36,8 52,2",
+    seasonal: "0,14 10,8 26,3 36,8 46,14 52,18",
   },
   stickiness: {
     one_shot: "0,4 13,16 26,22 39,25 52,26",
@@ -116,7 +117,7 @@ const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
     medium: "0,12 52,12",
     large: "0,6 52,6",
   },
-  anomalies: {
+  noise: {
     none: "0,14 13,14 26,14 39,14 52,14",
     clean: "0,12 10,16 20,13 30,15 40,12 52,14",
     moderate: "0,10 8,18 16,11 24,17 32,9 40,16 52,13",

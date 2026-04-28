@@ -43,7 +43,7 @@ export function AxisPopover({
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-left transition-colors",
+                  "grid grid-cols-[40px_1fr] items-center gap-2 w-full px-2 py-1.5 rounded-md text-left transition-colors",
                   selected
                     ? "bg-primary/10 text-primary"
                     : "hover:bg-muted/50 text-foreground",
@@ -54,7 +54,7 @@ export function AxisPopover({
                   width="40"
                   height="22"
                   className={cn(
-                    "shrink-0 rounded-sm border",
+                    "rounded-sm border",
                     selected
                       ? "border-primary/40 bg-primary/5"
                       : "border-border bg-muted/30",
