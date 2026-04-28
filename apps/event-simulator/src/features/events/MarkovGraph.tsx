@@ -379,7 +379,7 @@ function buildEdges(config: MarkovConfig, showEnd: boolean): Edge[] {
       const targetId = isEnd ? END_NODE_ID : to;
       const strokeWidth = 1 + prob * 7;
       const opacity = 0.25 + prob * 0.75;
-      const arrowSize = 8 + prob * 8;
+      const arrowSize = 5 + prob * 3;
       const isSelf = from === targetId;
       const isBidi = !isSelf && pairSet.has([from, targetId].sort().join("||"));
       // sign: +1 or -1 so both arcs go on opposite sides of the straight line
