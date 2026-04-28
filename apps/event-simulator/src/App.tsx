@@ -534,7 +534,7 @@ export default function App() {
                 }
                 disabled={presets.length === 0}
               >
-                <SelectTrigger className="w-52 h-8 text-xs">
+                <SelectTrigger className="w-64 h-9 text-sm">
                   <SelectValue
                     placeholder={
                       presets.length === 0 ? "Loading…" : "Select scenario…"
