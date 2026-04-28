@@ -4,10 +4,18 @@ import { pixelToIndex } from "./rangeBrushMath";
 interface Props {
   count: number;
   color?: string;
+  /** Fired on pointerup — commits the final zoomed range */
   onChange?: (range: [number, number] | null) => void;
+  /** Fired on pointermove — preview only, no re-render of chart data */
+  onPreview?: (range: [number, number] | null) => void;
 }
 
-export function RangeBrush({ count, color = "#2563eb", onChange }: Props) {
+export function RangeBrush({
+  count,
+  color = "#2563eb",
+  onChange,
+  onPreview,
+}: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [range, setRange] = useState<[number, number]>([
     0,
@@ -18,6 +26,7 @@ export function RangeBrush({ count, color = "#2563eb", onChange }: Props) {
   useEffect(() => {
     setRange([0, Math.max(0, count - 1)]);
     onChange?.(null);
+    onPreview?.(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [count]);
 
@@ -41,12 +50,7 @@ export function RangeBrush({ count, color = "#2563eb", onChange }: Props) {
             which === "start"
               ? [Math.min(idx, end), end]
               : [s, Math.max(idx, s)];
-          // Fire onChange on every move so the chart updates in real-time
-          if (next[0] === 0 && next[1] === count - 1) {
-            onChange?.(null);
-          } else {
-            onChange?.(next);
-          }
+          onPreview?.(next[0] === 0 && next[1] === count - 1 ? null : next);
           return next;
         });
       };
@@ -58,6 +62,17 @@ export function RangeBrush({ count, color = "#2563eb", onChange }: Props) {
           onMove,
         );
         (ev.target as HTMLDivElement).removeEventListener("pointerup", onUp);
+        // Commit on release
+        setRange((prev) => {
+          const [s, end] = prev;
+          const committed =
+            s === 0 && end === count - 1
+              ? null
+              : ([s, end] as [number, number]);
+          onChange?.(committed);
+          onPreview?.(null);
+          return prev;
+        });
       };
 
       (e.currentTarget as HTMLDivElement).addEventListener(

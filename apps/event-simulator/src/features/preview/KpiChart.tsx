@@ -7,6 +7,7 @@ import {
   YAxis,
   Tooltip,
   ReferenceArea,
+  ReferenceLine,
   CartesianGrid,
 } from "recharts";
 import {
@@ -137,10 +138,14 @@ export function KpiChart({
   const [internalBrushRange, setInternalBrushRange] = useState<
     [number, number] | null
   >(null);
+  const [previewRange, setPreviewRange] = useState<[number, number] | null>(
+    null,
+  );
 
   const handleBrushChange = useCallback(
     (range: [number, number] | null) => {
       setInternalBrushRange(range);
+      setPreviewRange(null);
       onBrushChange?.(range);
     },
     [onBrushChange],
@@ -469,6 +474,24 @@ export function KpiChart({
                 />
               );
             })}
+            {previewRange && (
+              <>
+                <ReferenceLine
+                  x={previewRange[0]}
+                  stroke={color}
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  strokeOpacity={0.7}
+                />
+                <ReferenceLine
+                  x={previewRange[1]}
+                  stroke={color}
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  strokeOpacity={0.7}
+                />
+              </>
+            )}
           </LineChart>
         </ResponsiveContainer>
 
@@ -504,6 +527,7 @@ export function KpiChart({
           count={values.length}
           color={color}
           onChange={handleBrushChange}
+          onPreview={setPreviewRange}
         />
       )}
 
