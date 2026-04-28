@@ -309,6 +309,96 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
     ],
     default: "moderate",
   },
+  daily_pattern: {
+    id: "daily_pattern",
+    label: "Daily Pattern",
+    description: "Hour-of-day activity distribution.",
+    values: [
+      {
+        value: "business_hours",
+        label: "business_hours",
+        description: "Peak 09:00–18:00, low at night.",
+        params: {},
+      },
+      {
+        value: "evening_peak",
+        label: "evening_peak",
+        description: "Peak 18:00–23:00.",
+        params: {},
+      },
+      {
+        value: "always_on",
+        label: "always_on",
+        description: "Flat 24h — no time-of-day preference.",
+        params: {},
+      },
+      {
+        value: "night_owl",
+        label: "night_owl",
+        description: "Peak 22:00–03:00.",
+        params: {},
+      },
+    ],
+    default: "evening_peak",
+  },
+  weekly_pattern: {
+    id: "weekly_pattern",
+    label: "Weekly Pattern",
+    description: "Day-of-week activity distribution.",
+    values: [
+      {
+        value: "weekdays_only",
+        label: "weekdays_only",
+        description: "Mon–Fri heavy, weekends near-zero.",
+        params: {},
+      },
+      {
+        value: "weekends_heavy",
+        label: "weekends_heavy",
+        description: "Saturday and Sunday heaviest.",
+        params: {},
+      },
+      {
+        value: "flat",
+        label: "flat",
+        description: "Uniform across all days.",
+        params: {},
+      },
+    ],
+    default: "flat",
+  },
+  monthly_seasonality: {
+    id: "monthly_seasonality",
+    label: "Seasonality",
+    description: "Month-of-year multiplier applied to arrivals.",
+    values: [
+      {
+        value: "nov_dec_peak",
+        label: "nov_dec_peak",
+        description: "Christmas / holiday apps — Nov–Dec spike.",
+        params: {},
+      },
+      {
+        value: "q4_heavy",
+        label: "q4_heavy",
+        description: "Retail / ecommerce — Q4 growth ramp.",
+        params: {},
+      },
+      {
+        value: "summer_peak",
+        label: "summer_peak",
+        description: "Travel / outdoor — Jun–Aug peak.",
+        params: {},
+      },
+      {
+        value: "flat",
+        label: "flat",
+        description: "No monthly variation.",
+        params: {},
+      },
+    ],
+    default: "flat",
+  },
 };
 
 export function getAxis(id: string): AxisDefinition | undefined {

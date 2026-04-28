@@ -13,6 +13,9 @@ axes:
   scale: small
   geography: global
   anomalies: explicit
+  daily_pattern: evening_peak
+  weekly_pattern: weekends_heavy
+  monthly_seasonality: flat
 
 scale_config:
   window_days: 180
@@ -22,28 +25,28 @@ scale_config:
 anomalies:
   - type: marketing_campaign
     name: twitter_share_grid_viral
-    start: -120d  # 2021-12-01 approx — day 60, share grid goes viral on Twitter
+    start: "2021-12-01"
     duration: 10d
     effect:
       arrivals: 12.0
 
   - type: marketing_campaign
     name: nyt_article_coverage
-    start: -105d  # 2022-01-05 approx — day 75, NYT article "Wordle Is a Love Story"
+    start: "2022-01-05"
     duration: 5d
     effect:
       arrivals: 8.0
 
   - type: product_launch
     name: nyt_acquisition_announcement
-    start: -90d   # 2022-01-31 approx — day 90, NYT acquisition announced
+    start: "2022-01-31"
     duration: 3d
     effect:
       arrivals: 15.0
 
   - type: feature_regression
     name: post_acquisition_traffic_drop
-    start: -80d   # 2022-02-10 approx — day 100, users fear paywall, traffic softens
+    start: "2022-02-10"
     duration: 30d
     effect:
       arrivals: 0.6

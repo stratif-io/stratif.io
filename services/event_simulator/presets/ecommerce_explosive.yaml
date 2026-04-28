@@ -13,6 +13,9 @@ axes:
   scale: small
   geography: global
   anomalies: explicit
+  daily_pattern: evening_peak
+  weekly_pattern: weekends_heavy
+  monthly_seasonality: q4_heavy
 
 scale_config:
   window_days: 180
@@ -22,21 +25,21 @@ scale_config:
 anomalies:
   - type: marketing_campaign
     name: techcrunch50_feature
-    start: -150d  # 2009-02-01 approx — day 30, TechCrunch50 feature coverage
+    start: "2009-02-01"
     duration: 7d
     effect:
       arrivals: 3.0
 
   - type: product_launch
     name: shopify_app_store_launch
-    start: -120d  # 2009-03-03 approx — day 60, Shopify App Store opens
+    start: "2009-03-03"
     duration: 5d
     effect:
       arrivals: 2.5
 
   - type: shopping_season
     name: holiday_merchant_signup_surge
-    start: -30d   # 2009-05-31 approx — day 150, merchants sign up ahead of holiday season
+    start: "2009-05-31"
     duration: 14d
     effect:
       arrivals: 2.0

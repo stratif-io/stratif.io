@@ -17,6 +17,9 @@ axes:
   scale: medium
   geography: global
   anomalies: explicit
+  daily_pattern: evening_peak
+  weekly_pattern: weekends_heavy
+  monthly_seasonality: q4_heavy
 
 scale_config:
   window_days: 365
@@ -26,28 +29,28 @@ scale_config:
 anomalies:
   - type: shopping_season
     name: summer_sale_event
-    start: -185d  # 2010-07-01 approx — day 180, summer promotion event
+    start: "2010-07-01"
     duration: 7d
     effect:
       arrivals: 2.5
 
   - type: shopping_season
     name: black_friday
-    start: -65d   # 2010-10-27 approx — day 300, Black Friday
+    start: "2010-10-27"
     duration: 4d
     effect:
       arrivals: 4.0
 
   - type: shopping_season
     name: cyber_monday
-    start: -61d   # 2010-10-31 approx — day 304, Cyber Monday
+    start: "2010-10-31"
     duration: 3d
     effect:
       arrivals: 3.5
 
   - type: shopping_season
     name: christmas_week
-    start: -10d   # 2010-12-21 approx — day 355, Christmas week
+    start: "2010-12-21"
     duration: 7d
     effect:
       arrivals: 2.5

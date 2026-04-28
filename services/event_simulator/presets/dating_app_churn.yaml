@@ -12,6 +12,9 @@ axes:
   scale: small
   geography: us_only
   anomalies: explicit
+  daily_pattern: evening_peak
+  weekly_pattern: weekends_heavy
+  monthly_seasonality: flat
 
 scale_config:
   window_days: 180
@@ -21,28 +24,28 @@ scale_config:
 anomalies:
   - type: product_launch
     name: usc_campus_launch
-    start: -180d  # 2012-09-12 approx — day 0, USC launch party
+    start: "2012-09-12"
     duration: 14d
     effect:
       arrivals: 3.0
 
   - type: marketing_campaign
     name: ucla_viral_spread
-    start: -150d  # 2012-10-12 approx — day 30, spreads to UCLA
+    start: "2012-10-12"
     duration: 7d
     effect:
       arrivals: 4.0
 
   - type: product_launch
     name: app_store_featuring
-    start: -120d  # 2012-11-12 approx — day 60, App Store editorial feature
+    start: "2012-11-12"
     duration: 5d
     effect:
       arrivals: 6.0
 
   - type: marketing_campaign
     name: valentines_day_surge
-    start: -25d   # 2013-02-14 approx — Valentine's Day surge
+    start: "2013-02-14"
     duration: 3d
     effect:
       arrivals: 8.0

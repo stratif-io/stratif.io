@@ -1,0 +1,87 @@
+name: Holiday Seasonal App (Portable North Pole)
+# Real company: Portable North Pole — Nov 2009 – Dec 2010 (first full holiday cycle)
+description: >
+  Portable North Pole launched in 2009 and became a runaway Christmas hit — almost zero
+  traffic outside November and December, then explosive annual surges as kids discover
+  personalized Santa video messages. Perfectly illustrates nov_dec_peak monthly seasonality
+  with strong viral word-of-mouth among parents.
+axes:
+  growth: strong
+  stickiness: one_shot
+  engagement_depth: shallow
+  monetization: iap_whales
+  virality: strong_viral
+  scale: small
+  geography: global
+  anomalies: explicit
+  daily_pattern: evening_peak
+  weekly_pattern: weekends_heavy
+  monthly_seasonality: nov_dec_peak
+
+scale_config:
+  window_days: 425  # Nov 2009 – Dec 2010 (two holiday seasons)
+  total_users: 30000
+  starting_rate: 20
+
+anomalies:
+  - type: product_launch
+    name: initial_launch_nov_2009
+    start: "2009-11-01"
+    duration: 7d
+    effect:
+      arrivals: 5.0
+
+  - type: marketing_campaign
+    name: christmas_peak_2009
+    start: "2009-12-15"
+    duration: 14d
+    effect:
+      arrivals: 12.0
+
+  - type: marketing_campaign
+    name: app_store_featuring_dec_2009
+    start: "2009-12-20"
+    duration: 5d
+    effect:
+      arrivals: 8.0
+
+  - type: marketing_campaign
+    name: christmas_peak_2010
+    start: "2010-12-10"
+    duration: 20d
+    effect:
+      arrivals: 15.0
+
+markov:
+  events:
+    - name: AppOpen
+    - name: VideoPersonalized
+    - name: VideoPlayed
+    - name: VideoShared
+    - name: PurchaseStarted
+    - name: PurchaseCompleted
+    - name: AppRated
+  start:
+    AppOpen: 1.0
+  transitions:
+    AppOpen:
+      VideoPersonalized: 0.70
+      "[end]": 0.30
+    VideoPersonalized:
+      VideoPlayed: 0.90
+      "[end]": 0.10
+    VideoPlayed:
+      VideoShared: 0.45
+      PurchaseStarted: 0.20
+      "[end]": 0.35
+    VideoShared:
+      AppRated: 0.15
+      "[end]": 0.85
+    PurchaseStarted:
+      PurchaseCompleted: 0.65
+      "[end]": 0.35
+    PurchaseCompleted:
+      AppRated: 0.30
+      "[end]": 0.70
+    AppRated:
+      "[end]": 1.0

@@ -13,6 +13,9 @@ axes:
   scale: medium
   geography: us_only
   anomalies: explicit
+  daily_pattern: business_hours
+  weekly_pattern: weekends_heavy
+  monthly_seasonality: q4_heavy
 
 scale_config:
   window_days: 365
@@ -22,28 +25,28 @@ scale_config:
 anomalies:
   - type: feature_regression
     name: q1_earnings_miss_store_closures
-    start: -320d  # 2017-02-15 approx — day 45, Q1 earnings miss + store closure announcement
+    start: "2017-02-15"
     duration: 7d
     effect:
       arrivals: 0.5
 
   - type: shopping_season
     name: black_friday_last_decent
-    start: -65d   # 2017-10-27 approx — day 300, Black Friday, still pulls some traffic
+    start: "2017-10-27"
     duration: 4d
     effect:
       arrivals: 2.0
 
   - type: feature_regression
     name: holiday_declining_vs_prior_year
-    start: -25d   # 2017-12-06 approx — day 340, holiday season weaker than 2016
+    start: "2017-12-06"
     duration: 21d
     effect:
       arrivals: 0.7
 
   - type: feature_regression
     name: bankruptcy_rumor_leak
-    start: -10d   # 2017-12-21 approx — day 355, bankruptcy rumor leaks to press
+    start: "2017-12-21"
     duration: 5d
     effect:
       arrivals: 0.3

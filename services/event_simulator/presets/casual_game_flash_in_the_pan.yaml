@@ -14,6 +14,9 @@ axes:
   scale: small
   geography: global
   anomalies: explicit
+  daily_pattern: evening_peak
+  weekly_pattern: flat
+  monthly_seasonality: flat
 
 scale_config:
   window_days: 540           # 18 months
@@ -27,7 +30,7 @@ anomalies:
   # ─── Month 1: soft launch (~2-3/day) ──────────────────────────────
   - type: marketing_campaign
     name: soft_launch
-    start: -540d             # 2013-05-24 approx — day 0 of the window
+    start: "2013-05-24"
     duration: 30d
     effect:
       arrivals: 0.05         # 0.05 × 56 ≈ 2.8/day → Poisson range ~1-5
@@ -35,7 +38,7 @@ anomalies:
   # ─── Month 2 first 2 weeks: marketing push, explosion ─────────────
   - type: marketing_campaign
     name: paid_launch
-    start: -510d             # 2013-06-24 approx — day 30
+    start: "2013-06-24"
     duration: 14d
     effect:
       arrivals: 20.0         # 20 × 56 ≈ 1100/day → huge visible spike
@@ -47,7 +50,7 @@ anomalies:
   # ─── Month 13-14: decline begins ──────────────────────────────────
   - type: feature_regression
     name: decline_early
-    start: -180d             # 2014-06-24 approx — day 360 (month 13 of the lifecycle)
+    start: "2014-06-24"
     duration: 60d
     effect:
       arrivals: 0.3          # ≈17/day → a visible but not dramatic drop
@@ -55,7 +58,7 @@ anomalies:
   # ─── Month 15-16: sharper drop ────────────────────────────────────
   - type: feature_regression
     name: decline_mid
-    start: -120d             # 2014-08-23 approx — day 420
+    start: "2014-08-23"
     duration: 60d
     effect:
       arrivals: 0.1          # ≈6/day
@@ -63,7 +66,7 @@ anomalies:
   # ─── Month 17-18: end-of-life, near zero ──────────────────────────
   - type: feature_regression
     name: decline_late
-    start: -60d              # 2014-10-22 approx — day 480
+    start: "2014-10-22"
     duration: 60d
     effect:
       arrivals: 0.02         # ≈1/day ⇒ most days 0, occasional 1-2

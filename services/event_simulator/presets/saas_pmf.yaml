@@ -13,6 +13,9 @@ axes:
   scale: small
   geography: global
   anomalies: explicit
+  daily_pattern: business_hours
+  weekly_pattern: weekdays_only
+  monthly_seasonality: flat
 
 scale_config:
   window_days: 365
@@ -22,35 +25,35 @@ scale_config:
 anomalies:
   - type: product_launch
     name: public_beta_techcrunch_launch
-    start: -365d  # 2013-08-01 approx — day 0, public beta + TechCrunch article
+    start: "2013-08-01"
     duration: 7d
     effect:
       arrivals: 4.0
 
   - type: product_launch
     name: invite_only_waitlist_opens
-    start: -335d  # 2013-09-01 approx — day 30, invite-only waitlist opens wider
+    start: "2013-09-01"
     duration: 5d
     effect:
       arrivals: 3.0
 
   - type: marketing_campaign
     name: forbes_fastest_growing_saas
-    start: -245d  # 2013-12-01 approx — day 120, Forbes "fastest growing SaaS" mention
+    start: "2013-12-01"
     duration: 5d
     effect:
       arrivals: 2.5
 
   - type: product_launch
     name: series_b_announcement
-    start: -95d   # 2014-04-01 approx — day 270, $43M Series B announcement
+    start: "2014-04-01"
     duration: 7d
     effect:
       arrivals: 3.5
 
   - type: product_launch
     name: open_to_all_teams
-    start: -65d   # 2014-05-01 approx — day 300, Slack opens to all teams, no invite needed
+    start: "2014-05-01"
     duration: 14d
     effect:
       arrivals: 5.0

@@ -13,6 +13,9 @@ axes:
   scale: small
   geography: global
   anomalies: explicit
+  daily_pattern: always_on
+  weekly_pattern: flat
+  monthly_seasonality: flat
 
 scale_config:
   window_days: 365
@@ -22,28 +25,28 @@ scale_config:
 anomalies:
   - type: marketing_campaign
     name: yc_demo_day_press
-    start: -365d  # 2010-01-01 approx — day 0, YC Demo Day press wave, Winter 2010
+    start: "2010-01-01"
     duration: 10d
     effect:
       arrivals: 2.5
 
   - type: marketing_campaign
     name: techcrunch_disrupt_coverage
-    start: -245d  # 2010-05-01 approx — day 120, TechCrunch Disrupt coverage
+    start: "2010-05-01"
     duration: 5d
     effect:
       arrivals: 3.0
 
   - type: shopping_season
     name: summer_travel_peak
-    start: -215d  # 2010-06-01 approx — day 150, summer travel season begins
+    start: "2010-06-01"
     duration: 60d
     effect:
       arrivals: 1.8
 
   - type: marketing_campaign
     name: new_york_city_adoption_surge
-    start: -155d  # 2010-08-01 approx — day 210, NYC becomes top market
+    start: "2010-08-01"
     duration: 14d
     effect:
       arrivals: 2.0

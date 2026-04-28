@@ -13,6 +13,9 @@ axes:
   scale: medium
   geography: global
   anomalies: explicit
+  daily_pattern: evening_peak
+  weekly_pattern: weekends_heavy
+  monthly_seasonality: flat
 
 scale_config:
   window_days: 365
@@ -22,28 +25,28 @@ scale_config:
 anomalies:
   - type: marketing_campaign
     name: stranger_things_s2_lingering_effect
-    start: -355d  # 2018-01-10 approx — day 10, Stranger Things S2 (Oct 2017) effect lingers
+    start: "2018-01-10"
     duration: 14d
     effect:
       arrivals: 2.5
 
   - type: feature_regression
     name: price_increase_churn_dip
-    start: -305d  # 2018-03-01 approx — day 60, US price increase announcement chills signups
+    start: "2018-03-01"
     duration: 14d
     effect:
       arrivals: 0.7
 
   - type: marketing_campaign
     name: avengers_infinity_war_on_netflix
-    start: -185d  # 2018-07-01 approx — day 180, Avengers: Infinity War streaming debut
+    start: "2018-07-01"
     duration: 7d
     effect:
       arrivals: 1.8
 
   - type: marketing_campaign
     name: bird_box_release_viral_challenge
-    start: -10d   # 2018-12-21 approx — day 355, Bird Box release + viral blindfold challenge
+    start: "2018-12-21"
     duration: 10d
     effect:
       arrivals: 3.5

@@ -39,6 +39,9 @@ import {
   Users,
   Moon,
   Sun,
+  Clock,
+  CalendarDays,
+  CalendarRange,
 } from "lucide-react";
 import { StudioLayout } from "./features/studio/StudioLayout";
 import { SavePanel } from "./features/save/SavePanel";
@@ -129,6 +132,17 @@ const SIDEBAR_AXES: { id: string; label: string; icon: ReactNode }[] = [
   },
   { id: "virality", label: "Virality", icon: <Rocket size={16} /> },
   { id: "anomalies", label: "Noise", icon: <Activity size={16} /> },
+  { id: "daily_pattern", label: "Daily Pattern", icon: <Clock size={16} /> },
+  {
+    id: "weekly_pattern",
+    label: "Weekly Pattern",
+    icon: <CalendarDays size={16} />,
+  },
+  {
+    id: "monthly_seasonality",
+    label: "Seasonality",
+    icon: <CalendarRange size={16} />,
+  },
 ];
 
 class ErrorBoundary extends Component<
