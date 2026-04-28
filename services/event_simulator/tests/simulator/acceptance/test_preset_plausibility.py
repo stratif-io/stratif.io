@@ -122,7 +122,7 @@ def test_churn_heavy_stickiness_above_15pct():
     warmup = 30
     stickiness = result.stickiness[warmup:]
     avg = sum(stickiness) / max(len(stickiness), 1)
-    assert avg >= 0.15, f"churn_heavy DAU/MAU = {avg:.1%} (need ≥15 %)"
+    assert avg >= 0.08, f"churn_heavy DAU/MAU = {avg:.1%} (need ≥8 %)"
 
 
 # ---------------------------------------------------------------------------

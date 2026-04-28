@@ -53,6 +53,7 @@ class PreviewResult:
     reactivated: list[int]
     events: list[int]
     stickiness: list[float]
+    mau: list[int]
     growth_curve: list[float]
     seasonality_curve: list[float]  # S(t) = G(t) · dow(t) · cal(t), normalized
     anomaly_curve: list[float]
@@ -330,34 +331,69 @@ def _run_with_rate(
         reactivated_full = [round(v * report_scale) for v in reactivated_raw]
 
     # ── Stickiness (DAU/MAU) ──────────────────────────────────────────────────
-    # Cohort simulation at capped scale is still used for stickiness because it
-    # needs the set of distinct users over a rolling 30-day window.
+    # Compute MAU from the same active_sets used for DAU so that DAU ≤ MAU
+    # by construction and the ratio never exceeds 1.
     # Skipped during binary search (_count_only=True) since only sum(new_users) matters.
     avg_eps = _avg_events_per_session(config)
     session_mult = state.session_freq_multiplier
 
     if _count_only:
         stickiness = [0.0] * window
+        mau_scaled = [0] * window
     else:
-        rng_cohort_draw = random.Random(seed + 3)
-        new_users_capped = [
-            _poisson(rng_cohort_draw, n * cohort_cap) for n in new_users
-        ]
-        rng_cohort = random.Random(seed + 1)
-        active_sets_stk, _ = _simulate_cohorts(new_users_capped, state, rng_cohort)
-        active_users_stk = [len(s) for s in active_sets_stk]
+        # Derive the source of per-user activation sets for the MAU window.
+        # When the cohort simulation ran (else-branch above), reuse active_sets so
+        # DAU and MAU share the same sample (ratio always ≤ 1).
+        # When analytical DAU was used, run a lightweight separate cohort pass.
+        if state.retention_params is None:
+            # Cohort path: walk the same active_sets from the main simulation to
+            # build the 30-day rolling MAU window.  DAU and MAU share the same
+            # sample so the ratio is structurally ≤ 1.
+            raw_mau_cohort: list[int] = []
+            last_active_mau: dict[int, int] = {}
+            mau_set_cohort: set[int] = set()
+            for d in range(window):
+                for uid in active_sets[d]:
+                    last_active_mau[uid] = d
+                    mau_set_cohort.add(uid)
+                to_evict = [
+                    uid for uid in mau_set_cohort if last_active_mau[uid] < d - 29
+                ]
+                for uid in to_evict:
+                    mau_set_cohort.discard(uid)
+                raw_mau_cohort.append(len(mau_set_cohort))
 
-        stickiness = []
-        last_active: dict[int, int] = {}
-        mau_set: set[int] = set()
-        for d in range(window):
-            for uid in active_sets_stk[d]:
-                last_active[uid] = d
-                mau_set.add(uid)
-            to_evict = [uid for uid in mau_set if last_active[uid] < d - 29]
-            for uid in to_evict:
-                mau_set.discard(uid)
-            stickiness.append(active_users_stk[d] / max(len(mau_set), 1))
+            half = 15
+            mau_smooth_cohort: list[float] = [
+                sum(raw_mau_cohort[max(0, d - half) : d + half + 1])
+                / len(raw_mau_cohort[max(0, d - half) : d + half + 1])
+                for d in range(window)
+            ]
+            mau_scaled = [round(v * report_scale) for v in mau_smooth_cohort]
+            stickiness = [
+                min(1.0, active_users_raw[d] / max(mau_smooth_cohort[d], 1))
+                for d in range(window)
+            ]
+        else:
+            # Analytical path: DAU is already smooth full-scale.  Compute MAU
+            # analytically: every user is active on their join day, so the 30-day
+            # rolling sum of new_users is a tight upper bound on unique monthly users.
+            # Smooth it with a 30-day rolling average and derive stickiness from
+            # full-scale active_users_full / full-scale MAU.
+            half = 15
+            raw_mau_analytical: list[float] = [
+                float(sum(new_users[max(0, d - 29) : d + 1])) for d in range(window)
+            ]
+            mau_smooth_analytical: list[float] = [
+                sum(raw_mau_analytical[max(0, d - half) : d + half + 1])
+                / len(raw_mau_analytical[max(0, d - half) : d + half + 1])
+                for d in range(window)
+            ]
+            mau_scaled = [round(v) for v in mau_smooth_analytical]
+            stickiness = [
+                min(1.0, active_users_full[d] / max(mau_smooth_analytical[d], 1))
+                for d in range(window)
+            ]
 
     def _norm_curve(curve: list[float]) -> list[float]:
         """Scale a pipeline curve to the same y-axis as new_users for chart overlay."""
@@ -377,6 +413,7 @@ def _run_with_rate(
             round(active_users_full[d] * session_mult * avg_eps) for d in range(window)
         ],
         stickiness=stickiness,
+        mau=mau_scaled,
         growth_curve=_norm_curve(g_curve),
         seasonality_curve=_norm_curve(s_curve),
         anomaly_curve=_norm_curve(a_curve),
