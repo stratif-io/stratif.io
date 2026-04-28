@@ -173,9 +173,16 @@ function BiEdge({
   // Perpendicular offset direction — sign comes from edge data
   const sign = (data as { sign?: number })?.sign ?? 1;
 
-  const mx = (sourceX + targetX) / 2;
+  // For backward edges (target is left of source), use the left handle of the
+  // source node and the right handle of the target node so the arc doesn't
+  // exit from the wrong side.
+  const isBackward = sourceX > targetX;
+  const sx = isBackward ? sourceX - NODE_WIDTH : sourceX;
+  const tx = isBackward ? targetX + NODE_WIDTH : targetX;
+
+  const mx = (sx + tx) / 2;
   const my = (sourceY + targetY) / 2;
-  const dx = targetX - sourceX;
+  const dx = tx - sx;
   const dy = targetY - sourceY;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
 
@@ -190,7 +197,7 @@ function BiEdge({
 
   const cx = mx + px;
   const cy = my + py;
-  const d = `M ${sourceX} ${sourceY} Q ${cx} ${cy} ${targetX} ${targetY}`;
+  const d = `M ${sx} ${sourceY} Q ${cx} ${cy} ${tx} ${targetY}`;
   const lx = cx;
   const ly = cy;
 
