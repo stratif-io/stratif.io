@@ -14,7 +14,7 @@ axes:
   noise: moderate
   daily_pattern: evening_peak
   weekly_pattern: flat
-  monthly_seasonality: nov_dec_peak
+  monthly_seasonality: flat
 
 scale_config:
   total_users: 3000000000

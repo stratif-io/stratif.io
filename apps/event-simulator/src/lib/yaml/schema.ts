@@ -8,6 +8,8 @@ import {
   NOISE_VALUES,
   MONETIZATION_VALUES,
   GEOGRAPHY_VALUES,
+  WEEKLY_PATTERN_VALUES,
+  MONTHLY_SEASONALITY_VALUES,
 } from "./axisContract";
 
 export const AxesSchema = z.object({
@@ -19,6 +21,11 @@ export const AxesSchema = z.object({
   noise: z.enum(NOISE_VALUES).optional().catch(undefined),
   monetization: z.enum(MONETIZATION_VALUES).optional().catch(undefined),
   geography: z.enum(GEOGRAPHY_VALUES).optional().catch(undefined),
+  weekly_pattern: z.enum(WEEKLY_PATTERN_VALUES).optional().catch(undefined),
+  monthly_seasonality: z
+    .enum(MONTHLY_SEASONALITY_VALUES)
+    .optional()
+    .catch(undefined),
 });
 
 export const MarkovEventSchema = z.object({

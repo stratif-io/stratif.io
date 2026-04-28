@@ -15,7 +15,7 @@ axes:
   noise: moderate
   daily_pattern: always_on
   weekly_pattern: flat
-  monthly_seasonality: q4_heavy
+  monthly_seasonality: flat
 
 scale_config:
   total_users: 285000000
