@@ -418,18 +418,21 @@ export default function App() {
               alt="stratif.io"
               className="h-8 w-8 shrink-0"
             />
-            {!sidebarCollapsed && (
-              <div className="flex flex-col min-w-0">
-                <img
-                  src={theme === "dark" ? "/text-dark.svg" : "/text-light.svg"}
-                  alt=""
-                  className="h-5 w-auto shrink-0"
-                />
-                <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
-                  Event Simulator
-                </span>
-              </div>
-            )}
+            <div
+              className={cn(
+                "flex flex-col min-w-0 transition-[opacity,max-width] duration-200 overflow-hidden",
+                sidebarCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-xs",
+              )}
+            >
+              <img
+                src={theme === "dark" ? "/text-dark.svg" : "/text-light.svg"}
+                alt=""
+                className="h-5 w-auto shrink-0"
+              />
+              <span className="text-[10px] font-medium text-muted-foreground tracking-wide whitespace-nowrap">
+                Event Simulator
+              </span>
+            </div>
           </div>
         }
       />

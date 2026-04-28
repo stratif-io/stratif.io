@@ -55,8 +55,8 @@ export function AppSidebar({
       {brand && (
         <div
           className={cn(
-            "min-h-14 py-3 flex items-center border-b border-border px-4 shrink-0",
-            collapsed && "justify-center px-0",
+            "min-h-14 py-3 flex items-center border-b border-border shrink-0 overflow-hidden",
+            collapsed ? "justify-center px-0" : "px-4",
           )}
         >
           {brand}
@@ -94,7 +94,10 @@ export function AppSidebar({
         <button
           onClick={() => onCollapse(!collapsed)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-xs w-full"
+          className={cn(
+            "flex items-center gap-2 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-xs",
+            collapsed ? "w-9 justify-center" : "w-full",
+          )}
         >
           <svg
             width="14"
