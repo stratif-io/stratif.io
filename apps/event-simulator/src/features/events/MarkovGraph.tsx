@@ -243,8 +243,13 @@ function layoutNodes(
   const g = new dagre.graphlib.Graph();
   g.setGraph({
     rankdir: "LR",
-    nodesep: 48,
-    ranksep: 96,
+    // network-simplex produces tighter, better-ordered ranks than the default
+    ranker: "network-simplex",
+    // greedy acyclicer reverses the minimum set of back-edges before ranking,
+    // which reduces crossings in cyclic Markov graphs
+    acyclicer: "greedy",
+    nodesep: 52,
+    ranksep: 112,
     marginx: 24,
     marginy: 24,
   });
@@ -256,13 +261,17 @@ function layoutNodes(
   if (showEnd)
     g.setNode(END_NODE_ID, { width: NODE_WIDTH, height: NODE_HEIGHT });
 
-  // Feed edges so dagre knows the flow direction
+  // Feed edges with probability-based weights so high-traffic transitions pull
+  // connected nodes into adjacent ranks, reducing long-range crossings.
   for (const [from, row] of Object.entries(config.transitions)) {
     for (const [to, prob] of Object.entries(row)) {
       if (prob === 0) continue;
       const target = to === "[end]" ? END_NODE_ID : to;
       if (!showEnd && target === END_NODE_ID) continue;
-      if (g.hasNode(from) && g.hasNode(target)) g.setEdge(from, target);
+      if (g.hasNode(from) && g.hasNode(target)) {
+        // weight nudges dagre to keep high-probability edges short (same rank)
+        g.setEdge(from, target, { weight: Math.round(1 + prob * 9) });
+      }
     }
   }
 
