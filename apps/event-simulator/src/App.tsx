@@ -440,6 +440,7 @@ export default function App() {
           active: false,
           onClick: () => {},
           badge: displayLabel,
+          sparkline: AXIS_SPARKLINES[id]?.[currentVal] ?? "0,14 52,14",
         };
       },
     );

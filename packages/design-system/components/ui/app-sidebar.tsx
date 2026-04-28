@@ -14,6 +14,7 @@ export interface SidebarItem {
   active?: boolean;
   onClick: () => void;
   badge?: string;
+  sparkline?: string;
   children?: SidebarItem[];
   expanded?: boolean;
   onToggleExpand?: () => void;
@@ -170,9 +171,29 @@ function SidebarNavItem({
       {!collapsed && (
         <span className="flex-1 min-w-0 text-left">
           <span className="block truncate">{item.label}</span>
-          {item.badge && indent && (
-            <span className="block truncate text-[10px] text-muted-foreground font-normal mt-0.5">
-              {item.badge}
+          {indent && (item.sparkline || item.badge) && (
+            <span className="flex items-center gap-1.5 mt-0.5">
+              {item.sparkline && (
+                <svg
+                  viewBox="0 0 52 28"
+                  width={28}
+                  height={11}
+                  aria-hidden="true"
+                  className="shrink-0 text-primary"
+                >
+                  <polyline
+                    points={item.sparkline}
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    fill="none"
+                  />
+                </svg>
+              )}
+              {item.badge && (
+                <span className="truncate text-[10px] text-muted-foreground font-normal">
+                  {item.badge}
+                </span>
+              )}
             </span>
           )}
         </span>
