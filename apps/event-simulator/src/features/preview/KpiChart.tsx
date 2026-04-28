@@ -544,19 +544,20 @@ export function KpiChart({
           </LineChart>
         </ResponsiveContainer>
 
-        {/* Drag-selection highlight */}
+        {/* Drag-selection highlight — z-index above Recharts SVG */}
         {dragState &&
           Math.abs(dragState.currentPx - dragState.startPx) >= 3 && (
             <div
               className="absolute pointer-events-none"
               style={{
+                zIndex: 10,
                 top: CM.top,
                 bottom: CM.bottom + X_AXIS_H,
                 left: Math.min(dragState.startPx, dragState.currentPx),
                 width: Math.abs(dragState.currentPx - dragState.startPx),
-                background: `${color}25`,
-                borderLeft: `1.5px solid ${color}90`,
-                borderRight: `1.5px solid ${color}90`,
+                background: `${color}40`,
+                borderLeft: `2px solid ${color}`,
+                borderRight: `2px solid ${color}`,
               }}
             />
           )}
