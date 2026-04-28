@@ -191,9 +191,11 @@ function BiEdge({
   const isNearVertical = Math.abs(dy) > Math.abs(dx) * 0.5;
   const OFFSET = isNearVertical ? 96 : 52;
 
-  // Unit perpendicular
-  const px = (-dy / len) * OFFSET * sign;
-  const py = (dx / len) * OFFSET * sign;
+  // Flipping connection points for backward edges also flips the perpendicular
+  // direction, so negate sign to keep the two arcs on opposite sides.
+  const effectiveSign = isBackward ? -sign : sign;
+  const px = (-dy / len) * OFFSET * effectiveSign;
+  const py = (dx / len) * OFFSET * effectiveSign;
 
   const cx = mx + px;
   const cy = my + py;
