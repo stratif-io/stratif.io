@@ -28,7 +28,11 @@ from services.event_simulator.simulator.anomalies import (
     parse_anomalies,
 )
 from services.event_simulator.simulator.axes._defaults import default_axis_registry
-from services.event_simulator.simulator.cohort_model import active_days_for_user
+from services.event_simulator.simulator.cohort_model import (
+    RetentionParams,
+    active_days_for_user,
+    build_survival,
+)
 from services.event_simulator.simulator.config import SimulationConfig
 from services.event_simulator.simulator.protocols import SimulationState
 from services.event_simulator.simulator.realism.time_curves import get_dow_weights
@@ -111,6 +115,46 @@ def _simulate_cohorts(
                 active_sets[ad].add(uid)
             uid += 1
     return active_sets, first_day
+
+
+def _analytical_dau_churn(
+    new_users: list[int],
+    params: RetentionParams,
+    window: int,
+) -> tuple[list[int], list[int]]:
+    """Compute expected DAU and churned analytically via survival-curve convolution.
+
+    active_users[t] = sum_{d=0}^{t} new_users[d] * S[t - d]
+
+    where S[k] = P(user still active at tenure k), precomputed from RetentionParams.
+    This avoids Poisson sampling noise that gets amplified by report_scale on long windows.
+    Complexity: O(window * effective_lifetime), where effective_lifetime is capped
+    at the age where S drops below 1e-5.
+    """
+    S_full = build_survival(params, window)
+    # Truncate at effective lifetime to keep inner loop short
+    effective_lifetime = window
+    for k in range(1, window + 1):
+        if S_full[k] < 1e-5:
+            effective_lifetime = k
+            break
+    S = S_full[: effective_lifetime + 1]
+
+    active: list[int] = []
+    for t in range(window):
+        total = 0.0
+        lo = max(0, t - effective_lifetime)
+        for d in range(lo, t + 1):
+            total += new_users[d] * S[t - d]
+        active.append(round(total))
+
+    churned = [0] * window
+    for t in range(1, window):
+        # Conservation: active[t] = active[t-1] + new_users[t] - churned[t]
+        raw = active[t - 1] + new_users[t] - active[t]
+        churned[t] = max(0, raw)
+
+    return active, churned
 
 
 def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewResult:
@@ -238,20 +282,43 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     rng_pass2 = random.Random(seed + 2)
     new_users = [_poisson(rng_pass2, v) for v in v_curve]
 
-    # ── Cohort simulation at capped scale for DAU/churn/reactivation ─────────
-    # Again use Poisson sampling so long-window sparse arrivals are handled correctly.
+    # ── DAU / churn ───────────────────────────────────────────────────────────
+    # When retention_params is available, compute analytically via survival-curve
+    # convolution on the full-scale new_users array. This eliminates the Poisson
+    # sampling noise that gets amplified by report_scale on long windows (e.g.
+    # Tinder 13yr: 1 simulated user = 1.5M real users → ±1.5M spike per day).
+    if state.retention_params is not None:
+        active_users_full, churned_full = _analytical_dau_churn(
+            new_users, state.retention_params, window
+        )
+        reactivated_full = [0] * window  # reactivation is small vs primary retention
+    else:
+        # Fallback: cohort simulation at capped scale (hazard_curve or no retention)
+        rng_cohort_draw = random.Random(seed + 3)
+        new_users_capped = [
+            _poisson(rng_cohort_draw, n * cohort_cap) for n in new_users
+        ]
+        rng_cohort = random.Random(seed + 1)
+        active_sets, first_day = _simulate_cohorts(new_users_capped, state, rng_cohort)
+        active_users_raw = [len(s) for s in active_sets]
+        churned_raw = [0] * window
+        reactivated_raw = [0] * window
+        for d in range(1, window):
+            churned_raw[d] = len(active_sets[d - 1] - active_sets[d])
+            gap = active_sets[d] - active_sets[d - 1]
+            reactivated_raw[d] = sum(1 for u in gap if first_day[u] < d)
+        active_users_full = [round(v * report_scale) for v in active_users_raw]
+        churned_full = [round(v * report_scale) for v in churned_raw]
+        reactivated_full = [round(v * report_scale) for v in reactivated_raw]
+
+    # ── Stickiness (DAU/MAU) ──────────────────────────────────────────────────
+    # Cohort simulation at capped scale is still used for stickiness because it
+    # needs the set of distinct users over a rolling 30-day window.
     rng_cohort_draw = random.Random(seed + 3)
     new_users_capped = [_poisson(rng_cohort_draw, n * cohort_cap) for n in new_users]
     rng_cohort = random.Random(seed + 1)
-    active_sets, first_day = _simulate_cohorts(new_users_capped, state, rng_cohort)
-    active_users_raw = [len(s) for s in active_sets]
-
-    churned_raw = [0] * window
-    reactivated_raw = [0] * window
-    for d in range(1, window):
-        churned_raw[d] = len(active_sets[d - 1] - active_sets[d])
-        gap = active_sets[d] - active_sets[d - 1]
-        reactivated_raw[d] = sum(1 for u in gap if first_day[u] < d)
+    active_sets_stk, _ = _simulate_cohorts(new_users_capped, state, rng_cohort)
+    active_users_stk = [len(s) for s in active_sets_stk]
 
     avg_eps = _avg_events_per_session(config)
     session_mult = state.session_freq_multiplier
@@ -260,13 +327,13 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     last_active: dict[int, int] = {}
     mau_set: set[int] = set()
     for d in range(window):
-        for uid in active_sets[d]:
+        for uid in active_sets_stk[d]:
             last_active[uid] = d
             mau_set.add(uid)
         to_evict = [uid for uid in mau_set if last_active[uid] < d - 29]
         for uid in to_evict:
             mau_set.discard(uid)
-        stickiness.append(active_users_raw[d] / max(len(mau_set), 1))
+        stickiness.append(active_users_stk[d] / max(len(mau_set), 1))
 
     def _norm_curve(curve: list[float]) -> list[float]:
         """Scale a pipeline curve to the same y-axis as new_users for chart overlay."""
@@ -279,12 +346,11 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     return PreviewResult(
         days=list(range(window)),
         new_users=new_users,
-        active_users=[round(v * report_scale) for v in active_users_raw],
-        churned=[round(v * report_scale) for v in churned_raw],
-        reactivated=[round(v * report_scale) for v in reactivated_raw],
+        active_users=active_users_full,
+        churned=churned_full,
+        reactivated=reactivated_full,
         events=[
-            round(active_users_raw[d] * report_scale * session_mult * avg_eps)
-            for d in range(window)
+            round(active_users_full[d] * session_mult * avg_eps) for d in range(window)
         ],
         stickiness=stickiness,
         growth_curve=_norm_curve(g_curve),

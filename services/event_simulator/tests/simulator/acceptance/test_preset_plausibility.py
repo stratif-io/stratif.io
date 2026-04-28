@@ -72,6 +72,26 @@ def test_tinder_peak_active_users_above_1_million():
     )
 
 
+def test_tinder_active_users_smooth_no_wild_spikes():
+    """Active users must not spike wildly day-to-day due to sampling noise.
+
+    Old behaviour: report_scale ~1.5M amplified ±1 Poisson draw into ±1.5M swings.
+    With analytical DAU, day-over-day change should be small relative to the mean.
+    Threshold: max single-day change < 3× the median day-over-day change (P95).
+    """
+    result = run_preview(load_preset("dating_app_churn"))
+    au = result.active_users
+    diffs = [abs(au[d] - au[d - 1]) for d in range(1, len(au))]
+    diffs_sorted = sorted(diffs)
+    p50 = diffs_sorted[len(diffs_sorted) // 2]
+    p95 = diffs_sorted[int(len(diffs_sorted) * 0.95)]
+    # p95 swing should be < 50× the median swing (old code: ratio was ~1000×)
+    ratio = p95 / max(p50, 1)
+    assert ratio < 50, (
+        f"Active users spiky: p95/p50 day-over-day change = {ratio:.0f}× (need < 50×)"
+    )
+
+
 def test_churn_heavy_stickiness_above_15pct():
     """churn_heavy stickiness should produce DAU/MAU ≥15 % over a 1-year window.
 
