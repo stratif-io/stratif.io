@@ -21,7 +21,7 @@ scale_config:
   start_date: "2013-05-24"
   end_date: "2014-02-10"
 
-anomalies:
+events:
   - type: product_launch
     name: soft_launch_ios_may_2013
     start: "2013-05-24"

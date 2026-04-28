@@ -1,4 +1,4 @@
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 
 export interface AnomalyEffectField {
   key: string;
@@ -97,7 +97,7 @@ export function defaultAnomaly(
   type: string,
   startDay: number,
   duration: number,
-): SimulationAnomaly {
+): SimEvent {
   const spec = ANOMALY_SPEC[type] ?? ANOMALY_SPEC.marketing_campaign;
   const effect: Record<string, number> = {};
   for (const f of spec.effectFields) effect[f.key] = f.default;

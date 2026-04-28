@@ -22,7 +22,7 @@ scale_config:
   start_date: "2021-11-01"
   end_date: "2026-04-28"
 
-anomalies:
+events:
   - type: viral_event
     name: twitter_share_grid_goes_viral
     start: "2021-12-31"

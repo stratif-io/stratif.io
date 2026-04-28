@@ -9,7 +9,7 @@ export interface MarkovConfig {
   transitions: Record<string, Record<string, number>>;
 }
 
-export interface SimulationAnomaly {
+export interface SimEvent {
   type: string;
   name?: string;
   // Python loader accepts either `start` (relative like "-45d" or ISO date) or `date` (ISO date)
@@ -35,5 +35,5 @@ export interface SimulationConfig {
   random_seed?: number | null;
   growth_config?: Record<string, unknown> | null;
   scale_config?: SimulationScaleOverride | null;
-  anomalies?: SimulationAnomaly[];
+  events?: SimEvent[];
 }

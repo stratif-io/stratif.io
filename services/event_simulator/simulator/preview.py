@@ -124,7 +124,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         window_days=window,
         now=datetime.now(UTC),
     )
-    state.anomalies = list(config.anomalies)
+    state.anomalies = list(config.events)
     # consumed by GrowthAxis.apply() via state.growth_config
     state.growth_config = dict(config.growth_config) if config.growth_config else None
 
@@ -141,7 +141,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     # Anchor day_0: explicit start_date in scale_config > earliest ISO anomaly > now - window
     _iso_starts = [
         a["start"]
-        for a in (config.anomalies or [])
+        for a in (config.events or [])
         if isinstance(a.get("start"), str)
         and len(a["start"]) == 10
         and a["start"][4] == "-"

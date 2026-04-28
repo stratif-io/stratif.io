@@ -71,7 +71,7 @@ class SimulationConfig(BaseModel):
 
     growth_config: dict[str, Any] | None = None
     scale_config: ScaleOverride | None = None
-    anomalies: list[dict[str, Any]] = Field(default_factory=list)
+    events: list[dict[str, Any]] = Field(default_factory=list)
 
     def resolved_scale(self) -> ScaleConfig:
         override = self.scale_config

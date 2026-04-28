@@ -22,7 +22,7 @@ scale_config:
   start_date: "2009-11-01"
   end_date: "2026-04-28"
 
-anomalies:
+events:
   - type: product_launch
     name: initial_launch_app_store_featured
     start: "2009-11-01"

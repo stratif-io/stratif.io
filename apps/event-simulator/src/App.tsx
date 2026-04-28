@@ -214,9 +214,9 @@ export default function App() {
   const setUiStartDate = useSeederStore((s) => s.setUiStartDate);
   const setUiEndDate = useSeederStore((s) => s.setUiEndDate);
   const setScaleConfig = useSeederStore((s) => s.setScaleConfig);
-  const setAnomalies = useSeederStore((s) => s.setAnomalies);
+  const setSimEvents = useSeederStore((s) => s.setSimEvents);
 
-  const anomalies = config.anomalies ?? [];
+  const anomalies = config.events ?? [];
   const scaleAxis = config.axes.scale ?? "small";
   const scaleOverride = config.scale_config;
   const resolvedScale = useMemo(
@@ -256,7 +256,7 @@ export default function App() {
     const duration = Math.max(5, Math.floor(window_days * 0.1));
     const maxStart = Math.max(0, window_days - duration - 1);
     const start = Math.floor(Math.random() * maxStart);
-    setAnomalies([
+    setSimEvents([
       ...anomalies,
       defaultAnomaly("product_launch", start, duration),
     ]);
@@ -317,7 +317,7 @@ export default function App() {
         start_date?: string | null;
         end_date?: string | null;
       } | null;
-      anomalies?: { start?: string; date?: string }[];
+      events?: { start?: string; date?: string }[];
     }) => {
       const fmt = (d: Date) => d.toISOString().split("T")[0];
 
@@ -331,7 +331,7 @@ export default function App() {
       const days = (cfg.scale_config?.window_days as number | undefined) ?? 90;
 
       // If anomalies have absolute ISO dates, anchor the window to the earliest one.
-      const isoDates = (cfg.anomalies ?? [])
+      const isoDates = (cfg.events ?? [])
         .map((a) => a.start ?? a.date ?? "")
         .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
         .map((s) => new Date(s + "T00:00:00"));

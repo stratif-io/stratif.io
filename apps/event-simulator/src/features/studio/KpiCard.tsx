@@ -3,7 +3,7 @@ import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
 import { CardLoadingBar } from "@stratif-io/design-system";
 import { cn } from "@/lib/cn";
 import { formatNum } from "@/lib/format";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { AnomalyChartOverlay } from "@/features/anomalies/AnomalyChartOverlay";
 
 export interface Band {
@@ -22,9 +22,9 @@ interface Props {
   color: string;
   expanded: boolean;
   onExpand: () => void;
-  anomalies?: SimulationAnomaly[];
+  anomalies?: SimEvent[];
   windowDays?: number;
-  onAnomalyChange?: (index: number, next: SimulationAnomaly) => void;
+  onAnomalyChange?: (index: number, next: SimEvent) => void;
   onAnomalySelect?: (index: number, x: number, y: number) => void;
   valueSuffix?: string;
   className?: string;

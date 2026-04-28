@@ -23,7 +23,7 @@ scale_config:
   start_date: "2018-01-10"
   end_date: "2026-04-28"
 
-anomalies:
+events:
   - type: marketing_campaign
     name: bird_box_most_viewed_original_4_weeks
     start: "2018-12-21"

@@ -10,7 +10,7 @@ import { KpiCard } from "./KpiCard";
 import { KpiCardExpanded } from "./KpiCardExpanded";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
 
-const EMPTY_ANOMALIES: NonNullable<SimulationConfig["anomalies"]> = [];
+const EMPTY_EVENTS: NonNullable<SimulationConfig["events"]> = [];
 
 interface CardDef {
   key: MetricKey;
@@ -71,10 +71,8 @@ export function KpiGrid() {
   } | null>(null);
   const { isLoading, ...out } = useTwinOutput();
   const config = useSeederStore((s) => s.config);
-  const anomalies = useSeederStore(
-    (s) => s.config.anomalies ?? EMPTY_ANOMALIES,
-  );
-  const setAnomalies = useSeederStore((s) => s.setAnomalies);
+  const anomalies = useSeederStore((s) => s.config.events ?? EMPTY_EVENTS);
+  const setSimEvents = useSeederStore((s) => s.setSimEvents);
   const { windowDays } = useMemo(() => resolveSimParams(config), [config]);
 
   const { startDate, endDate } = useMemo(() => {
@@ -152,7 +150,7 @@ export function KpiGrid() {
                 anomalies={anomalies}
                 windowDays={windowDays}
                 onAnomalyChange={(i, next) =>
-                  setAnomalies(anomalies.map((a, j) => (j === i ? next : a)))
+                  setSimEvents(anomalies.map((a, j) => (j === i ? next : a)))
                 }
                 onAnomalySelect={handleBandClick}
                 startDate={startDate}
@@ -189,12 +187,12 @@ export function KpiGrid() {
           x={floatingEditor.x}
           y={floatingEditor.y}
           onChange={(next) => {
-            setAnomalies(
+            setSimEvents(
               anomalies.map((a, i) => (i === floatingEditor.index ? next : a)),
             );
           }}
           onDelete={() => {
-            setAnomalies(
+            setSimEvents(
               anomalies.filter((_, i) => i !== floatingEditor.index),
             );
             setFloatingEditor(null);

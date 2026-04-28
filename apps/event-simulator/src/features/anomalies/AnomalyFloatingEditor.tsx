@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import {
   Input,
   Label,
@@ -12,10 +12,10 @@ import {
 import { ANOMALY_SPEC, anomalyTypeColor } from "@/lib/twin";
 
 interface Props {
-  anomaly: SimulationAnomaly;
+  anomaly: SimEvent;
   x: number;
   y: number;
-  onChange: (next: SimulationAnomaly) => void;
+  onChange: (next: SimEvent) => void;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -28,13 +28,13 @@ export function AnomalyFloatingEditor({
   onDelete,
   onClose,
 }: Props) {
-  const [local, setLocal] = useState<SimulationAnomaly>(anomaly);
+  const [local, setLocal] = useState<SimEvent>(anomaly);
 
   useEffect(() => {
     setLocal(anomaly);
   }, [anomaly]);
 
-  const emit = (next: SimulationAnomaly) => {
+  const emit = (next: SimEvent) => {
     setLocal(next);
     onChange(next);
   };

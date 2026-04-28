@@ -21,7 +21,7 @@ scale_config:
   start_date: "2009-01-01"
   end_date: "2026-04-28"
 
-anomalies:
+events:
   - type: product_launch
     name: app_store_ecosystem_launch
     start: "2009-06-02"

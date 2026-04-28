@@ -9,7 +9,7 @@ describe("AnomaliesPane", () => {
     useSeederStore.getState().loadPreset({
       ...blankConfig(),
       axes: { scale: "small" },
-      anomalies: [
+      events: [
         {
           type: "marketing_campaign",
           name: "viral",

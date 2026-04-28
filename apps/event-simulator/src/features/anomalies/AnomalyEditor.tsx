@@ -11,21 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@stratif-io/design-system";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { ANOMALY_SPEC } from "@/lib/twin";
 
 interface Props {
-  anomaly: SimulationAnomaly;
-  onChange: (next: SimulationAnomaly) => void;
+  anomaly: SimEvent;
+  onChange: (next: SimEvent) => void;
   onDelete: () => void;
   onClose: () => void;
 }
 
 export function AnomalyEditor({ anomaly, onChange, onDelete, onClose }: Props) {
-  const [local, setLocal] = useState<SimulationAnomaly>(anomaly);
+  const [local, setLocal] = useState<SimEvent>(anomaly);
   useEffect(() => setLocal(anomaly), [anomaly]);
 
-  const emit = (next: SimulationAnomaly) => {
+  const emit = (next: SimEvent) => {
     setLocal(next);
     onChange(next);
   };

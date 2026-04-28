@@ -16,7 +16,7 @@ import {
   PopoverContent,
 } from "@stratif-io/design-system";
 import { formatNum } from "@/lib/format";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { AnomalyChartOverlay } from "@/features/anomalies/AnomalyChartOverlay";
 import { MathFormula } from "@/lib/math/MathFormula";
 
@@ -46,9 +46,9 @@ interface Props {
   color?: string;
   bands?: KpiBand[];
   ghostLines?: GhostLine[];
-  anomalies?: SimulationAnomaly[];
+  anomalies?: SimEvent[];
   windowDays?: number;
-  onAnomalyChange?: (index: number, next: SimulationAnomaly) => void;
+  onAnomalyChange?: (index: number, next: SimEvent) => void;
   onAnomalySelect?: (index: number, x: number, y: number) => void;
   startDate?: Date;
   endDate?: Date;

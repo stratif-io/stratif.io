@@ -32,7 +32,7 @@ export const MarkovConfigSchema = z.object({
   transitions: z.record(z.record(z.number())),
 });
 
-export const SimulationAnomalySchema = z
+export const SimEventSchema = z
   .object({
     type: z.string().min(1),
     name: z.string().min(1).optional(),
@@ -62,7 +62,7 @@ export const SimulationConfigSchema = z.object({
   random_seed: z.number().int().nullable().optional(),
   growth_config: z.record(z.unknown()).nullable().optional(),
   scale_config: SimulationScaleOverrideSchema.nullable().optional(),
-  anomalies: z.array(SimulationAnomalySchema).optional(),
+  events: z.array(SimEventSchema).optional(),
 });
 
 export type SimulationConfigInput = z.input<typeof SimulationConfigSchema>;

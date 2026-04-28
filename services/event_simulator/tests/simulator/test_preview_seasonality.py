@@ -57,7 +57,7 @@ def test_nov_dec_peak_higher_than_summer():
         },
         markov=_MARKOV,
         scale_config=ScaleOverride(total_users=1000, window_days=365),
-        anomalies=[
+        events=[
             {
                 "type": "product_launch",
                 "name": "anchor",

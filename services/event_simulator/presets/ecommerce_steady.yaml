@@ -22,7 +22,7 @@ scale_config:
   start_date: "2010-01-01"
   end_date: "2015-12-31"
 
-anomalies:
+events:
   - type: product_launch
     name: prime_instant_video_launch
     start: "2011-02-22"

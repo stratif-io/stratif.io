@@ -44,7 +44,7 @@ describe("YAML round-trip", () => {
       random_seed: 7,
       scale_config: { total_users: 1000 },
       growth_config: { rate: 0.1 },
-      anomalies: [],
+      events: [],
     });
     const lines = yaml.split("\n").filter((l) => /^[a-z_]+:/.test(l));
     const topKeys = lines.map((l) => l.split(":")[0]);
@@ -56,7 +56,7 @@ describe("YAML round-trip", () => {
       "random_seed",
       "scale_config",
       "growth_config",
-      "anomalies",
+      "events",
     ]);
   });
 

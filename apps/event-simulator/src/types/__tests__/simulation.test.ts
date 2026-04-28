@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type {
   SimulationConfig,
-  SimulationAnomaly,
+  SimEvent,
   SimulationScaleOverride,
 } from "../simulation";
 
@@ -36,7 +36,7 @@ describe("SimulationConfig shape", () => {
   });
 
   it("accepts an anomaly object", () => {
-    const a: SimulationAnomaly = {
+    const a: SimEvent = {
       type: "marketing_campaign",
       name: "viral",
       start: "-130d",

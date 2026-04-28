@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { anomalyTypeColor } from "@/lib/twin";
 import { parseDays } from "@/lib/twin/utils";
 
@@ -29,10 +29,10 @@ function parseStartDay(
 
 interface Props {
   offset: ChartOffset;
-  anomalies: SimulationAnomaly[];
+  anomalies: SimEvent[];
   windowDays: number;
   windowStart?: Date;
-  onAnomalyChange: (index: number, next: SimulationAnomaly) => void;
+  onAnomalyChange: (index: number, next: SimEvent) => void;
   onSelect?: (index: number, x: number, y: number) => void;
   readOnly?: boolean;
 }
@@ -72,12 +72,12 @@ export function AnomalyChartOverlay({
 
 interface BandProps {
   index: number;
-  anomaly: SimulationAnomaly;
+  anomaly: SimEvent;
   offset: ChartOffset;
   pxPerDay: number;
   windowDays: number;
   windowStart?: Date;
-  onChange: (next: SimulationAnomaly) => void;
+  onChange: (next: SimEvent) => void;
   onSelect?: (index: number, x: number, y: number) => void;
   readOnly?: boolean;
 }
@@ -296,7 +296,7 @@ function AnomalyTooltip({
   y,
   height,
 }: {
-  anomaly: SimulationAnomaly;
+  anomaly: SimEvent;
   startDay: number;
   durationDays: number;
   windowStart?: Date;

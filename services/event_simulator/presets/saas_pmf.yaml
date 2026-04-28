@@ -22,7 +22,7 @@ scale_config:
   start_date: "2013-08-14"
   end_date: "2026-04-28"
 
-anomalies:
+events:
   - type: product_launch
     name: public_beta_launch_8k_day1
     start: "2013-08-14"

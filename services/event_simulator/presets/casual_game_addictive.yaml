@@ -21,7 +21,7 @@ scale_config:
   start_date: "2012-11-14"
   end_date: "2026-04-28"
 
-anomalies:
+events:
   - type: product_launch
     name: ios_app_store_debut
     start: "2012-11-14"

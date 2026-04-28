@@ -9,16 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@stratif-io/design-system";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { ANOMALY_SPEC } from "@/lib/twin";
 import { anomalyTypeColor } from "@/lib/twin";
 import { cn } from "@/lib/cn";
 
 interface Props {
-  anomaly: SimulationAnomaly;
+  anomaly: SimEvent;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onChange: (next: SimulationAnomaly) => void;
+  onChange: (next: SimEvent) => void;
   onDelete: () => void;
 }
 
@@ -29,10 +29,10 @@ export function AnomalySidebarItem({
   onChange,
   onDelete,
 }: Props) {
-  const [local, setLocal] = useState<SimulationAnomaly>(anomaly);
+  const [local, setLocal] = useState<SimEvent>(anomaly);
   useEffect(() => setLocal(anomaly), [anomaly]);
 
-  const emit = (next: SimulationAnomaly) => {
+  const emit = (next: SimEvent) => {
     setLocal(next);
     onChange(next);
   };

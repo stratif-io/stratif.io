@@ -22,7 +22,7 @@ scale_config:
   start_date: "2017-01-01"
   end_date: "2019-12-31"
 
-anomalies:
+events:
   - type: external_shock
     name: q1_earnings_miss_store_closure_announcements
     start: "2017-02-15"

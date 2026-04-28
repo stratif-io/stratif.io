@@ -24,7 +24,7 @@ interface SeederState {
   setMarkovConfig: (markov: MarkovConfig) => void;
   setScaleConfig: (scaleConfig: SimulationConfig["scale_config"]) => void;
   setGrowthConfig: (growthConfig: SimulationConfig["growth_config"]) => void;
-  setAnomalies: (anomalies: SimulationConfig["anomalies"]) => void;
+  setSimEvents: (anomalies: SimulationConfig["events"]) => void;
   setUiStartDate: (iso: string | null) => void;
   setUiEndDate: (iso: string | null) => void;
   sidebarCollapsed: boolean;
@@ -79,9 +79,9 @@ export const useSeederStore = create<SeederState>((set) => ({
       dirty: true,
     })),
 
-  setAnomalies: (anomalies) =>
+  setSimEvents: (anomalies) =>
     set((s) => ({
-      config: { ...s.config, anomalies },
+      config: { ...s.config, events: anomalies },
       dirty: true,
     })),
 

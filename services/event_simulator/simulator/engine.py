@@ -110,7 +110,7 @@ class Engine:
 
         # Plumb anomalies + per-axis tuning blocks from config to state so
         # axes (inside the loop below) can read them.
-        state.anomalies = list(self.config.anomalies)
+        state.anomalies = list(self.config.events)
         state.growth_config = (
             dict(self.config.growth_config) if self.config.growth_config else None
         )

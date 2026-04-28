@@ -1,16 +1,16 @@
 import { useRef, useState } from "react";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { anomalyTypeColor } from "@/lib/twin";
 import { parseDays } from "@/lib/twin/utils";
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 interface Props {
-  anomaly: SimulationAnomaly;
+  anomaly: SimEvent;
   windowDays: number;
   trackWidth: number;
   windowStart?: Date;
-  onChange: (next: SimulationAnomaly) => void;
+  onChange: (next: SimEvent) => void;
   onSelect: () => void;
 }
 

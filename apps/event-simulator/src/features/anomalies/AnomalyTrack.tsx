@@ -7,9 +7,9 @@ const TRACK_HEIGHT = 32;
 
 export function AnomalyTrack() {
   const config = useSeederStore((s) => s.config);
-  const setAnomalies = useSeederStore((s) => s.setAnomalies);
+  const setSimEvents = useSeederStore((s) => s.setSimEvents);
   const uiStartDate = useSeederStore((s) => s.uiStartDate);
-  const anomalies = config.anomalies ?? [];
+  const anomalies = config.events ?? [];
   const { window_days } = useMemo(
     () => resolveScale(config.axes.scale ?? "small", config.scale_config),
     [config.axes.scale, config.scale_config],
@@ -35,7 +35,7 @@ export function AnomalyTrack() {
   const updateAnomaly = (idx: number, next: (typeof anomalies)[number]) => {
     const copy = anomalies.slice();
     copy[idx] = next;
-    setAnomalies(copy);
+    setSimEvents(copy);
   };
 
   return (
