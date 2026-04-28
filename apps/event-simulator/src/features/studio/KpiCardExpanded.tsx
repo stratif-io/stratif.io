@@ -35,9 +35,17 @@ interface Props {
   metricKey: MetricKey;
   color?: string;
   onClose: () => void;
+  brushRange?: [number, number] | null;
+  onBrushChange?: (range: [number, number] | null) => void;
 }
 
-export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
+export function KpiCardExpanded({
+  metricKey,
+  color,
+  onClose,
+  brushRange,
+  onBrushChange,
+}: Props) {
   const { isLoading, ...out } = useTwinOutput();
   const config = useSeederStore((s) => s.config);
   const setSimEvents = useSeederStore((s) => s.setSimEvents);
@@ -437,6 +445,9 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                 setHoveredLineKey(null);
               }}
               isLoading={isLoading}
+              showBrush
+              brushRange={brushRange}
+              onBrushChange={onBrushChange}
             />
           </section>
 

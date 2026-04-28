@@ -8,6 +8,7 @@ import {
   Tooltip,
   ReferenceArea,
   CartesianGrid,
+  Brush,
 } from "recharts";
 import {
   CardLoadingBar,
@@ -62,6 +63,11 @@ interface Props {
   focusedLineKey?: string | null;
   onFocusedLineKeyChange?: (key: string | null) => void;
   isLoading?: boolean;
+  /** Show a resizable brush range selector below the x-axis */
+  showBrush?: boolean;
+  /** Controlled brush range [startIndex, endIndex]; null = full range */
+  brushRange?: [number, number] | null;
+  onBrushChange?: (range: [number, number] | null) => void;
 }
 
 const fmtTick = (d: Date) =>
@@ -111,6 +117,9 @@ export function KpiChart({
   focusedLineKey,
   onFocusedLineKeyChange,
   isLoading = false,
+  showBrush = false,
+  brushRange,
+  onBrushChange,
 }: Props) {
   const [internalFocusedKey, setInternalFocusedKey] = useState<string | null>(
     null,
@@ -397,6 +406,42 @@ export function KpiChart({
                 />
               );
             })}
+            {showBrush && (
+              <Brush
+                dataKey="idx"
+                height={28}
+                startIndex={brushRange?.[0] ?? 0}
+                endIndex={brushRange?.[1] ?? Math.max(0, data.length - 1)}
+                onChange={(b) => {
+                  const si = b.startIndex ?? 0;
+                  const ei = b.endIndex ?? Math.max(0, data.length - 1);
+                  if (si === 0 && ei === data.length - 1) {
+                    onBrushChange?.(null);
+                  } else {
+                    onBrushChange?.([si, ei]);
+                  }
+                }}
+                stroke="hsl(var(--border))"
+                fill="hsl(var(--muted))"
+                travellerWidth={7}
+                tickFormatter={(idx: number) => {
+                  const d = dateFor(idx, startDate, endDate, values.length);
+                  return d ? fmtTick(d) : "";
+                }}
+              >
+                <LineChart>
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke={color}
+                    strokeWidth={1}
+                    strokeOpacity={0.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </Brush>
+            )}
           </LineChart>
         </ResponsiveContainer>
 

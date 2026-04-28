@@ -32,6 +32,7 @@ interface Props {
   isPrimary?: boolean;
   startDate?: Date;
   endDate?: Date;
+  zoomRange?: [number, number] | null;
 }
 
 const fmtTooltipDate = (d: Date) =>
@@ -58,11 +59,13 @@ export function KpiCard({
   isPrimary = false,
   startDate,
   endDate,
+  zoomRange,
 }: Props) {
-  const data = useMemo(
-    () => values.map((v, i) => ({ i, v: v === null ? undefined : v })),
-    [values],
-  );
+  const data = useMemo(() => {
+    const slice =
+      zoomRange != null ? values.slice(zoomRange[0], zoomRange[1] + 1) : values;
+    return slice.map((v, i) => ({ i, v: v === null ? undefined : v }));
+  }, [values, zoomRange]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });

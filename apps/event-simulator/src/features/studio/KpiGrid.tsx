@@ -64,6 +64,7 @@ const SECTIONS: { label: string; cards: CardDef[] }[] = [
 
 export function KpiGrid() {
   const [expandedKey, setExpandedKey] = useState<MetricKey | null>(null);
+  const [zoomRange, setZoomRange] = useState<[number, number] | null>(null);
   const [floatingEditor, setFloatingEditor] = useState<{
     index: number;
     x: number;
@@ -161,6 +162,7 @@ export function KpiGrid() {
                 }
                 isLoading={isLoading}
                 isPrimary={card.key === "newUsers"}
+                zoomRange={zoomRange}
                 className={
                   card.colSpan === 3
                     ? "col-span-3"
@@ -175,6 +177,8 @@ export function KpiGrid() {
                 metricKey={expandedKey!}
                 color={section.cards.find((c) => c.key === expandedKey)!.color}
                 onClose={() => setExpandedKey(null)}
+                brushRange={zoomRange}
+                onBrushChange={setZoomRange}
               />
             )}
           </div>
