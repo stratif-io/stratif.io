@@ -37,10 +37,10 @@ describe("App integration", () => {
     vi.mocked(presetsApi.fetchPresets).mockResolvedValue(mockPresets as never);
   });
 
-  it("renders Seeder Studio title", async () => {
+  it("renders stratif.io brand", async () => {
     renderApp();
     await waitFor(() =>
-      expect(screen.getByText("Seeder Studio")).toBeInTheDocument(),
+      expect(screen.getByText("stratif.io")).toBeInTheDocument(),
     );
   });
 

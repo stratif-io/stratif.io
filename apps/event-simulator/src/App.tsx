@@ -414,7 +414,10 @@ export default function App() {
         brand={
           !sidebarCollapsed ? (
             <span className="text-sm font-bold tracking-tight">
-              Seeder Studio
+              stratif.io
+              <span className="ml-1.5 font-normal text-muted-foreground">
+                Event Simulator
+              </span>
             </span>
           ) : undefined
         }
