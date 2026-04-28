@@ -58,6 +58,12 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
         description: "Sinusoidal annual cycle — e-commerce / travel",
         sparkPoints: "0,14 10,8 26,3 36,8 46,14 52,18",
       },
+      {
+        value: "s_curve",
+        label: "S-curve",
+        description: "Bell-curve growth — rises to a peak then plateaus",
+        sparkPoints: "0,24 13,18 26,5 39,18 52,24",
+      },
     ],
   },
   stickiness: {
@@ -276,6 +282,13 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
     id: "monthly_seasonality",
     label: "seasonality",
     values: [
+      {
+        value: "nov_dec_extreme",
+        label: "Holiday only",
+        description:
+          "Single-purpose holiday app — virtually all activity in Nov–Dec",
+        sparkPoints: "0,26 39,26 43,20 47,4 52,28",
+      },
       {
         value: "nov_dec_peak",
         label: "Holiday peak",

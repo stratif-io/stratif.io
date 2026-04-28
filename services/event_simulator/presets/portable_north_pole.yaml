@@ -15,7 +15,12 @@ axes:
   noise: explicit
   daily_pattern: evening_peak
   weekly_pattern: flat
-  monthly_seasonality: nov_dec_peak
+  monthly_seasonality: nov_dec_extreme
+
+# Gentle annual growth (~15% YoY) — the app grows its user base year-over-year
+# but all activity concentrates in the Nov-Dec window via nov_dec_extreme seasonality.
+growth_config:
+  annual_rate: 1.15
 
 scale_config:
   total_users: 35000000

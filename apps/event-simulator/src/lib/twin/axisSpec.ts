@@ -62,6 +62,13 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
         description: "Sinusoidal annual cycle — e-commerce / travel.",
         params: { shape: 4, rate: 0.01 },
       },
+      {
+        value: "s_curve",
+        label: "s_curve",
+        description:
+          "Bell-curve acquisition: rises to a peak then declines — mature consumer app.",
+        params: { shape: 5, s_mid: 0.4, s_sigma: 0.3, total_log: 3.0 },
+      },
     ],
     default: "strong",
   },
@@ -372,6 +379,13 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
     label: "Seasonality",
     description: "Month-of-year multiplier applied to arrivals.",
     values: [
+      {
+        value: "nov_dec_extreme",
+        label: "nov_dec_extreme",
+        description:
+          "Single-purpose holiday app — virtually all activity in Nov–Dec (50× spike).",
+        params: {},
+      },
       {
         value: "nov_dec_peak",
         label: "nov_dec_peak",

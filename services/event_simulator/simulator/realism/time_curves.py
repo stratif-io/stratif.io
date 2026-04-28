@@ -257,7 +257,42 @@ _DOW_WEIGHTS: dict[str, list[float]] = {
 
 _MONTHLY_MULTIPLIERS: dict[str, list[float]] = {
     # index 0 = January, ..., 11 = December
-    "nov_dec_peak": [0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.25, 0.3, 0.5, 1.8, 2.5],
+    #
+    # nov_dec_peak: strong holiday apps (travel, gifts, e-commerce).
+    # Dec = 10×, Nov = 5×, summer = ~0.2× — ratio Dec/Jun ≈ 50×.
+    "nov_dec_peak": [
+        0.15,
+        0.10,
+        0.10,
+        0.12,
+        0.15,
+        0.18,
+        0.18,
+        0.20,
+        0.25,
+        0.40,
+        5.0,
+        10.0,
+    ],
+    #
+    # nov_dec_extreme: single-purpose holiday apps (e.g. Portable North Pole).
+    # Virtually all usage is in the 6-week Nov15–Dec25 window.
+    # Dec = 50×, Nov = 20×, rest of year ≈ 0.02×.
+    "nov_dec_extreme": [
+        0.02,
+        0.01,
+        0.01,
+        0.01,
+        0.01,
+        0.01,
+        0.01,
+        0.01,
+        0.02,
+        0.04,
+        20.0,
+        50.0,
+    ],
+    #
     "q4_heavy": [0.7, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8, 0.9, 1.0, 1.2, 1.4, 1.8],
     "summer_peak": [0.6, 0.6, 0.7, 0.9, 1.1, 1.3, 1.5, 1.5, 1.2, 0.9, 0.7, 0.6],
     # flat → not in dict (returns 1.0)

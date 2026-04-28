@@ -219,8 +219,11 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     report_scale = 1.0 / cohort_cap
 
     # ── Pass 1: preliminary capped arrivals → preliminary DAU (for virality) ──
+    # Use Poisson sampling (not deterministic rounding) so that sparse arrivals
+    # on long windows (cohort_cap ≪ 1, expected arrivals ≪ 1 per day) still
+    # produce individual simulated users instead of always rounding to 0.
     rng1 = random.Random(seed + 1)
-    n0_capped = [round(j * cohort_cap) for j in j_curve]
+    n0_capped = [_poisson(rng1, j * cohort_cap) for j in j_curve]
     active_sets0, _ = _simulate_cohorts(n0_capped, state, rng1)
     dau0_capped = [len(s) for s in active_sets0]
 
@@ -236,7 +239,9 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     new_users = [_poisson(rng_pass2, v) for v in v_curve]
 
     # ── Cohort simulation at capped scale for DAU/churn/reactivation ─────────
-    new_users_capped = [round(n * cohort_cap) for n in new_users]
+    # Again use Poisson sampling so long-window sparse arrivals are handled correctly.
+    rng_cohort_draw = random.Random(seed + 3)
+    new_users_capped = [_poisson(rng_cohort_draw, n * cohort_cap) for n in new_users]
     rng_cohort = random.Random(seed + 1)
     active_sets, first_day = _simulate_cohorts(new_users_capped, state, rng_cohort)
     active_users_raw = [len(s) for s in active_sets]

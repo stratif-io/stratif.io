@@ -91,6 +91,7 @@ const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
     hockey_stick: "0,24 14,23 24,22 32,20 36,14 42,8 52,3",
     explosive: "0,26 10,22 22,16 36,8 52,2",
     seasonal: "0,14 10,8 26,3 36,8 46,14 52,18",
+    s_curve: "0,24 13,18 26,5 39,18 52,24",
   },
   stickiness: {
     one_shot: "0,4 13,16 26,22 39,25 52,26",
@@ -135,6 +136,7 @@ const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
     flat: "0,14 52,14",
   },
   monthly_seasonality: {
+    nov_dec_extreme: "0,26 39,26 43,20 47,4 52,28",
     nov_dec_peak: "0,22 39,22 43,16 47,6 52,4",
     q4_heavy: "0,20 26,18 39,14 43,10 47,6 52,4",
     summer_peak: "0,22 13,22 22,10 26,5 30,5 35,10 43,18 52,22",

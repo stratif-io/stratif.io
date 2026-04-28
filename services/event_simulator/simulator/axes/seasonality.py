@@ -69,6 +69,7 @@ class MonthlySeasonalityAxis:
     name: str = "monthly_seasonality"
     values: dict[str, Any] = {
         "nov_dec_peak": None,
+        "nov_dec_extreme": None,
         "q4_heavy": None,
         "summer_peak": None,
         "flat": None,

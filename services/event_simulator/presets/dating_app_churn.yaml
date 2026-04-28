@@ -7,7 +7,7 @@ description: >
   ("New Year, New Me"), September brings "cuffing season" as people seek winter partners.
   Now 530M registered users and 26M daily active users.
 axes:
-  growth: hockey_stick
+  growth: s_curve
   stickiness: churn_heavy
   engagement_depth: deep
   virality: moderate
@@ -16,6 +16,15 @@ axes:
   daily_pattern: evening_peak
   weekly_pattern: weekends_heavy
   monthly_seasonality: flat
+
+# S-curve calibration for Tinder:
+# - s_mid=0.30: peak acquisition around 2016 (day ~1500 of 4977)
+# - s_sigma=0.12: narrow bell — shape ≈1× at launch, peaks 2016, fades by 2022
+# - total_log=3.5: ~33× peak/baseline ratio (launch era vs growth era)
+growth_config:
+  s_mid: 0.30
+  s_sigma: 0.12
+  total_log: 3.5
 
 scale_config:
   total_users: 530000000
@@ -50,6 +59,13 @@ events:
     duration: 14d
     effect:
       arrivals: 1.8
+
+  - type: marketing_campaign
+    name: tinder_gold_subscription
+    start: "2017-08-01"
+    duration: 30d
+    effect:
+      arrivals: 1.4
 
 markov:
   events:
