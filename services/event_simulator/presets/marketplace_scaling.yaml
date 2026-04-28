@@ -1,18 +1,52 @@
 name: Marketplace Scaling (Early Airbnb)
-description: Two-sided marketplace with GMV growth.
+# Real company: Airbnb — Jan 2010 – Dec 2010 (first real growth year post-Y Combinator)
+description: >
+  Airbnb graduated Y Combinator in early 2010 and spent the year growing from a scrappy
+  air-mattress startup to a recognized travel platform, with summer travel season and
+  TechCrunch Disrupt coverage driving key growth inflections.
 axes:
   growth: strong
   stickiness: normal
   engagement_depth: medium
   monetization: marketplace_fee
-  virality: weak
-  scale: medium
+  virality: moderate
+  scale: small
   geography: global
-  anomalies: clean
+  anomalies: explicit
+
 scale_config:
   window_days: 365
   total_users: 15000
-  starting_rate: 40
+  starting_rate: 30
+
+anomalies:
+  - type: marketing_campaign
+    name: yc_demo_day_press
+    start: -365d  # 2010-01-01 approx — day 0, YC Demo Day press wave, Winter 2010
+    duration: 10d
+    effect:
+      arrivals: 2.5
+
+  - type: marketing_campaign
+    name: techcrunch_disrupt_coverage
+    start: -245d  # 2010-05-01 approx — day 120, TechCrunch Disrupt coverage
+    duration: 5d
+    effect:
+      arrivals: 3.0
+
+  - type: shopping_season
+    name: summer_travel_peak
+    start: -215d  # 2010-06-01 approx — day 150, summer travel season begins
+    duration: 60d
+    effect:
+      arrivals: 1.8
+
+  - type: marketing_campaign
+    name: new_york_city_adoption_surge
+    start: -155d  # 2010-08-01 approx — day 210, NYC becomes top market
+    duration: 14d
+    effect:
+      arrivals: 2.0
 
 markov:
   events:

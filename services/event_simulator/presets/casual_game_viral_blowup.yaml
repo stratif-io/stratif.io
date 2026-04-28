@@ -1,13 +1,13 @@
 name: Casual Game Viral Blowup (Wordle-Like)
-description: |
-  Mobile casual game: ~7 weeks of quiet launch, then a TikTok/influencer
-  moment creates a sharp spike and kicks off sustained exponential
-  growth. Window is 6 months total so the whole arc (flat → spike →
-  blade) fits inside a default 6-month dashboard chart.
+# Real company: Wordle (Josh Wardle) — Oct 2021 – Mar 2022 (launch to NYT acquisition)
+description: >
+  Wordle launched in October 2021 by software engineer Josh Wardle as a gift for his partner,
+  then exploded virally in December 2021 when Twitter's shareable grid feature drove explosive
+  word-of-mouth, culminating in the New York Times acquiring it in January 2022.
 axes:
-  growth: hockey_stick
-  stickiness: addictive
-  engagement_depth: deep
+  growth: explosive
+  stickiness: sticky
+  engagement_depth: medium
   monetization: iap_whales
   virality: strong_viral
   scale: small
@@ -17,25 +17,36 @@ axes:
 scale_config:
   window_days: 180
   total_users: 500000
-  starting_rate: 30
-
-growth_config:
-  split_fraction: 0.28
-  rate: 0.04
+  starting_rate: 100
 
 anomalies:
   - type: marketing_campaign
-    name: viral_moment
-    start: -130d
+    name: twitter_share_grid_viral
+    start: -120d  # 2021-12-01 approx — day 60, share grid goes viral on Twitter
     duration: 10d
     effect:
-      arrivals: 8.0
-  - type: product_launch
-    name: sustained_virality
-    start: -120d
-    duration: 120d
+      arrivals: 12.0
+
+  - type: marketing_campaign
+    name: nyt_article_coverage
+    start: -105d  # 2022-01-05 approx — day 75, NYT article "Wordle Is a Love Story"
+    duration: 5d
     effect:
-      arrivals: 2.5
+      arrivals: 8.0
+
+  - type: product_launch
+    name: nyt_acquisition_announcement
+    start: -90d   # 2022-01-31 approx — day 90, NYT acquisition announced
+    duration: 3d
+    effect:
+      arrivals: 15.0
+
+  - type: feature_regression
+    name: post_acquisition_traffic_drop
+    start: -80d   # 2022-02-10 approx — day 100, users fear paywall, traffic softens
+    duration: 30d
+    effect:
+      arrivals: 0.6
 
 markov:
   events:

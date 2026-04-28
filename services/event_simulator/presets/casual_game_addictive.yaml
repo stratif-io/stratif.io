@@ -1,25 +1,51 @@
 name: Casual Game Addictive (Candy Crush-Like)
-description: Mobile casual game, whale-heavy IAP, high stickiness.
+# Real company: Candy Crush Saga (King) — Nov 2012 – Apr 2013 (mobile launch to App Store #1)
+description: >
+  Candy Crush Saga launched on iOS in November 2012 after Facebook success, reaching #1 on
+  the US App Store in March 2013 with 45M daily active users driven by Facebook social hooks.
 axes:
-  growth: strong
+  growth: hockey_stick
   stickiness: addictive
   engagement_depth: deep
   monetization: iap_whales
-  virality: weak
+  virality: moderate
   scale: medium
   geography: global
   anomalies: explicit
-anomalies:
-  - type: product_launch
-    name: feature_x_launch
-    start: -60d
-    duration: 7d
-    effect:
-      arrivals: 1.8
+
 scale_config:
   window_days: 180
   total_users: 200000
-  starting_rate: 500
+  starting_rate: 200
+
+anomalies:
+  - type: product_launch
+    name: ios_mobile_launch
+    start: -180d  # 2012-11-14 approx — day 0, iOS App Store launch
+    duration: 7d
+    effect:
+      arrivals: 2.0
+
+  - type: marketing_campaign
+    name: christmas_holiday_spike
+    start: -135d  # 2012-12-25 approx — day 45, Christmas holiday
+    duration: 10d
+    effect:
+      arrivals: 3.0
+
+  - type: product_launch
+    name: app_store_number_one_us
+    start: -60d   # 2013-03-14 approx — day 120, hits #1 US App Store
+    duration: 21d
+    effect:
+      arrivals: 5.0
+
+  - type: marketing_campaign
+    name: king_ipo_announcement
+    start: -20d   # 2013-04-23 approx — day 160, King announces IPO plans
+    duration: 5d
+    effect:
+      arrivals: 1.5
 
 markov:
   events:

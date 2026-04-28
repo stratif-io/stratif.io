@@ -1,5 +1,9 @@
 name: Retail Declining (Sears-Like)
-description: Brick-and-mortar + web retail losing market share.
+# Real company: Sears Holdings — Jan 2017 – Dec 2017 (accelerating decline, 150+ store closures)
+description: >
+  Sears in 2017 was in accelerating decline, closing over 150 stores and posting repeated
+  earnings misses; online traffic continued to erode as shoppers defected to Amazon and
+  Target, with bankruptcy rumors circulating by year-end.
 axes:
   growth: declining
   stickiness: normal
@@ -9,23 +13,40 @@ axes:
   scale: medium
   geography: us_only
   anomalies: explicit
-anomalies:
-  - type: shopping_season
-    name: black_friday_peak
-    start: -540d
-    duration: 3d
-    effect:
-      arrivals: 3.5
-  - type: outage
-    name: server_downtime
-    start: -400d
-    duration: 6h
-    effect:
-      all_events: 0.0
+
 scale_config:
   window_days: 365
   total_users: 300000
-  starting_rate: 300
+  starting_rate: 1200
+
+anomalies:
+  - type: feature_regression
+    name: q1_earnings_miss_store_closures
+    start: -320d  # 2017-02-15 approx — day 45, Q1 earnings miss + store closure announcement
+    duration: 7d
+    effect:
+      arrivals: 0.5
+
+  - type: shopping_season
+    name: black_friday_last_decent
+    start: -65d   # 2017-10-27 approx — day 300, Black Friday, still pulls some traffic
+    duration: 4d
+    effect:
+      arrivals: 2.0
+
+  - type: feature_regression
+    name: holiday_declining_vs_prior_year
+    start: -25d   # 2017-12-06 approx — day 340, holiday season weaker than 2016
+    duration: 21d
+    effect:
+      arrivals: 0.7
+
+  - type: feature_regression
+    name: bankruptcy_rumor_leak
+    start: -10d   # 2017-12-21 approx — day 355, bankruptcy rumor leaks to press
+    duration: 5d
+    effect:
+      arrivals: 0.3
 
 markov:
   events:

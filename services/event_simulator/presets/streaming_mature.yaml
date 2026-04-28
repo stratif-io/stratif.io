@@ -1,18 +1,52 @@
 name: Streaming Mature (Netflix-Like)
-description: Flat user base, high stickiness, binge sessions.
+# Real company: Netflix — Jan 2018 – Dec 2018 (mature content-driven growth year)
+description: >
+  Netflix in 2018 was a mature streaming platform adding 29M subscribers globally for the
+  year; growth was content-driven with viral hits like Bird Box (Dec 2018) and Stranger
+  Things S2 lingering effect, punctuated by a price increase churn dip in January.
 axes:
-  growth: flat
+  growth: steady
   stickiness: sticky
   engagement_depth: deep
   monetization: subscription
-  virality: none
+  virality: weak
   scale: medium
   geography: global
-  anomalies: clean
+  anomalies: explicit
+
 scale_config:
   window_days: 365
   total_users: 1000000
-  starting_rate: 800
+  starting_rate: 2500
+
+anomalies:
+  - type: marketing_campaign
+    name: stranger_things_s2_lingering_effect
+    start: -355d  # 2018-01-10 approx — day 10, Stranger Things S2 (Oct 2017) effect lingers
+    duration: 14d
+    effect:
+      arrivals: 2.5
+
+  - type: feature_regression
+    name: price_increase_churn_dip
+    start: -305d  # 2018-03-01 approx — day 60, US price increase announcement chills signups
+    duration: 14d
+    effect:
+      arrivals: 0.7
+
+  - type: marketing_campaign
+    name: avengers_infinity_war_on_netflix
+    start: -185d  # 2018-07-01 approx — day 180, Avengers: Infinity War streaming debut
+    duration: 7d
+    effect:
+      arrivals: 1.8
+
+  - type: marketing_campaign
+    name: bird_box_release_viral_challenge
+    start: -10d   # 2018-12-21 approx — day 355, Bird Box release + viral blindfold challenge
+    duration: 10d
+    effect:
+      arrivals: 3.5
 
 markov:
   events:

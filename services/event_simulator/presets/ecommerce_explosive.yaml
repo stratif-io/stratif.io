@@ -1,31 +1,45 @@
 name: E-commerce Explosive Growth (Early Shopify)
-description: Viral e-commerce growing fast.
+# Real company: Shopify — Jan 2009 – Jun 2009 (first hyper-growth phase)
+description: >
+  Shopify launched in 2006 but hit its first significant growth wave in 2009 following
+  a TechCrunch50 spotlight, attracting merchants looking for a simpler alternative to Magento
+  and custom storefronts during the post-recession e-commerce boom.
 axes:
   growth: explosive
   stickiness: sticky
   engagement_depth: medium
-  monetization: one_off_purchase
-  virality: strong_viral
-  scale: medium
+  monetization: subscription
+  virality: moderate
+  scale: small
   geography: global
   anomalies: explicit
-anomalies:
-  - type: marketing_campaign
-    name: viral_launch
-    start: -45d
-    duration: 14d
-    effect:
-      arrivals: 2.5
-  - type: shopping_season
-    name: black_friday_2025
-    date: "2025-11-28"
-    duration: 3d
-    effect:
-      arrivals: 3.0
+
 scale_config:
   window_days: 180
   total_users: 40000
   starting_rate: 20
+
+anomalies:
+  - type: marketing_campaign
+    name: techcrunch50_feature
+    start: -150d  # 2009-02-01 approx — day 30, TechCrunch50 feature coverage
+    duration: 7d
+    effect:
+      arrivals: 3.0
+
+  - type: product_launch
+    name: shopify_app_store_launch
+    start: -120d  # 2009-03-03 approx — day 60, Shopify App Store opens
+    duration: 5d
+    effect:
+      arrivals: 2.5
+
+  - type: shopping_season
+    name: holiday_merchant_signup_surge
+    start: -30d   # 2009-05-31 approx — day 150, merchants sign up ahead of holiday season
+    duration: 14d
+    effect:
+      arrivals: 2.0
 
 markov:
   events:

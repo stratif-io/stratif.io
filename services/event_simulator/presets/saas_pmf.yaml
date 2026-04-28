@@ -1,18 +1,59 @@
 name: SaaS Finding PMF (Early Slack)
-description: B2B SaaS post product-market fit, steady growth, low churn.
+# Real company: Slack — Aug 2013 – Jul 2014 (public beta launch to open availability)
+description: >
+  Slack launched in public beta in August 2013, initially growing slowly through invite-only
+  access before accelerating through Forbes coverage, a $43M Series B in April 2014, and
+  opening to all teams in May 2014 — reaching 285,000 daily active users by year-end.
 axes:
-  growth: strong
-  stickiness: sticky
+  growth: hockey_stick
+  stickiness: addictive
   engagement_depth: deep
   monetization: subscription
-  virality: weak
+  virality: moderate
   scale: small
   geography: global
-  anomalies: clean
+  anomalies: explicit
+
 scale_config:
   window_days: 365
   total_users: 8000
   starting_rate: 15
+
+anomalies:
+  - type: product_launch
+    name: public_beta_techcrunch_launch
+    start: -365d  # 2013-08-01 approx — day 0, public beta + TechCrunch article
+    duration: 7d
+    effect:
+      arrivals: 4.0
+
+  - type: product_launch
+    name: invite_only_waitlist_opens
+    start: -335d  # 2013-09-01 approx — day 30, invite-only waitlist opens wider
+    duration: 5d
+    effect:
+      arrivals: 3.0
+
+  - type: marketing_campaign
+    name: forbes_fastest_growing_saas
+    start: -245d  # 2013-12-01 approx — day 120, Forbes "fastest growing SaaS" mention
+    duration: 5d
+    effect:
+      arrivals: 2.5
+
+  - type: product_launch
+    name: series_b_announcement
+    start: -95d   # 2014-04-01 approx — day 270, $43M Series B announcement
+    duration: 7d
+    effect:
+      arrivals: 3.5
+
+  - type: product_launch
+    name: open_to_all_teams
+    start: -65d   # 2014-05-01 approx — day 300, Slack opens to all teams, no invite needed
+    duration: 14d
+    effect:
+      arrivals: 5.0
 
 markov:
   events:

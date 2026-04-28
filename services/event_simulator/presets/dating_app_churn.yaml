@@ -1,18 +1,51 @@
 name: Dating App Churn (Tinder-Like)
-description: Quick activation, high churn.
+# Real company: Tinder — Sep 2012 – Mar 2013 (first 6 months, USC launch to national spread)
+description: >
+  Tinder launched at USC in September 2012 and spread explosively campus by campus via
+  word-of-mouth, with high churn as users matched (or gave up) and left.
 axes:
-  growth: strong
+  growth: explosive
   stickiness: churn_heavy
   engagement_depth: shallow
   monetization: subscription
-  virality: weak
+  virality: moderate
   scale: small
-  geography: global
-  anomalies: clean
+  geography: us_only
+  anomalies: explicit
+
 scale_config:
   window_days: 180
   total_users: 25000
-  starting_rate: 250
+  starting_rate: 50
+
+anomalies:
+  - type: product_launch
+    name: usc_campus_launch
+    start: -180d  # 2012-09-12 approx — day 0, USC launch party
+    duration: 14d
+    effect:
+      arrivals: 3.0
+
+  - type: marketing_campaign
+    name: ucla_viral_spread
+    start: -150d  # 2012-10-12 approx — day 30, spreads to UCLA
+    duration: 7d
+    effect:
+      arrivals: 4.0
+
+  - type: product_launch
+    name: app_store_featuring
+    start: -120d  # 2012-11-12 approx — day 60, App Store editorial feature
+    duration: 5d
+    effect:
+      arrivals: 6.0
+
+  - type: marketing_campaign
+    name: valentines_day_surge
+    start: -25d   # 2013-02-14 approx — Valentine's Day surge
+    duration: 3d
+    effect:
+      arrivals: 8.0
 
 markov:
   events:
