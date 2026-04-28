@@ -209,6 +209,12 @@ export function ghostLinesFor(
           color: "hsl(var(--chart-2))",
         },
         {
+          key: "g_season",
+          label: "S(t) — after seasonality",
+          values: out.pipeline.seasonality,
+          color: "hsl(var(--chart-7))",
+        },
+        {
           key: "g_anom",
           label: "A — after anomalies",
           values: out.pipeline.anomalies,
@@ -225,6 +231,12 @@ export function ghostLinesFor(
           label: "V — after virality",
           values: out.pipeline.virality,
           color: "hsl(var(--chart-4))",
+        },
+        {
+          key: "g_active",
+          label: "Active users",
+          values: out.activeUsers,
+          color: "hsl(var(--chart-3))",
         },
       ];
   }

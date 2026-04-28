@@ -46,11 +46,22 @@ export const METRIC_PIPELINES: Partial<
         axisVarMap: { "G(t)": "growth", U: "scale", T: "scale" },
       },
       {
+        lineKey: "g_season",
+        label: "Seasonality",
+        latex: "S(t) = G(t) \\cdot \\mathrm{dow}(t) \\cdot \\mathrm{cal}(t)",
+        color: "hsl(var(--chart-7))",
+        tooltipVarSymbols: ["G(t)", "S(t)"],
+        axisVarMap: {
+          "\\mathrm{dow}": "weekly_pattern",
+          "\\mathrm{cal}": "monthly_seasonality",
+        },
+      },
+      {
         lineKey: "g_anom",
         label: "Anomaly multipliers",
-        latex: "A(t) = G(t) \\cdot \\prod_k m_k(t)",
+        latex: "A(t) = S(t) \\cdot \\prod_k m_k(t)",
         color: "hsl(var(--chart-5))",
-        tooltipVarSymbols: ["t", "G(t)", "A(t)"],
+        tooltipVarSymbols: ["t", "S(t)", "A(t)"],
       },
       {
         lineKey: "g_jitter",
@@ -82,6 +93,7 @@ export const METRIC_PIPELINES: Partial<
     ],
     axisMap: {
       g_growth: "growth",
+      g_season: "monthly_seasonality",
       g_jitter: "anomalies",
       g_viral: "virality",
       __main__: "scale",
@@ -92,6 +104,12 @@ export const METRIC_PIPELINES: Partial<
         label: "G(t)",
         color: "hsl(var(--chart-2))",
         getValue: (out, i) => out.pipeline.growth[i]?.toFixed(1) ?? "—",
+      },
+      {
+        stepKey: "g_season",
+        label: "S(t)",
+        color: "hsl(var(--chart-7))",
+        getValue: (out, i) => out.pipeline.seasonality[i]?.toFixed(1) ?? "—",
       },
       {
         stepKey: "g_anom",

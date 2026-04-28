@@ -7,7 +7,13 @@ import { resolveAxes } from "@/lib/twin";
 const EMPTY_OUTPUT: TwinOutput = {
   days: 0,
   arrivals: [],
-  pipeline: { growth: [], anomalies: [], jitter: [], virality: [] },
+  pipeline: {
+    growth: [],
+    seasonality: [],
+    anomalies: [],
+    jitter: [],
+    virality: [],
+  },
   events: [],
   activeUsers: [],
   newUsers: [],

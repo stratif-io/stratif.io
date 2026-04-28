@@ -46,6 +46,7 @@ class PreviewResult:
     events: list[int]
     stickiness: list[float]
     growth_curve: list[float]
+    seasonality_curve: list[float]  # S(t) = G(t) · dow(t) · cal(t), normalized
     anomaly_curve: list[float]
     jitter_curve: list[float]
     virality_curve: list[float]
@@ -168,6 +169,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     # λ₀ = starting_rate = arrival rate on day 0. shape(0) = 1 by construction
     # for all shape types, so G(0) = λ₀ exactly as the formula panel shows.
     g_curve: list[float] = []
+    s_curve: list[float] = []
     a_curve: list[float] = []
     for d in range(window):
         local_date = (day_0 + timedelta(days=d)).date()
@@ -176,6 +178,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         ano_mult = arrivals_multiplier(parsed_anomalies, local_date)
         g = starting_rate * shape(d)
         g_curve.append(g)
+        s_curve.append(g * dow_mult * cal_mult)  # seasonality layer (before anomalies)
         a_curve.append(g * dow_mult * cal_mult * ano_mult)
 
     # ── J(t) = A(t) · (1 + σZ) ───────────────────────────────────────────────
@@ -253,6 +256,7 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
         ],
         stickiness=stickiness,
         growth_curve=_norm_curve(g_curve),
+        seasonality_curve=_norm_curve(s_curve),
         anomaly_curve=_norm_curve(a_curve),
         jitter_curve=_norm_curve(j_curve),
         virality_curve=v_curve,  # V(t) already at full scale
