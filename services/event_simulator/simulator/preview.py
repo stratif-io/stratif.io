@@ -34,6 +34,9 @@ from services.event_simulator.simulator.protocols import SimulationState
 from services.event_simulator.simulator.realism.time_curves import get_dow_weights
 
 _PREVIEW_USER_CAP = 5_000
+# For long windows the cohort model is expensive; scale the cap down so
+# total simulated-user × simulated-day stays bounded at ~1.8M unit operations.
+_PREVIEW_USER_DAY_BUDGET = 1_800_000
 
 
 @dataclass
@@ -192,8 +195,12 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     ]
 
     # Cap for cohort simulation performance only (never affects displayed values).
+    # Scale the user cap down for long windows to keep computation bounded.
+    window_adjusted_cap = max(
+        50, min(_PREVIEW_USER_CAP, _PREVIEW_USER_DAY_BUDGET // window)
+    )
     expected_total = max(sum(j_curve), 1.0)
-    cohort_cap = min(1.0, _PREVIEW_USER_CAP / expected_total)
+    cohort_cap = min(1.0, window_adjusted_cap / expected_total)
     report_scale = 1.0 / cohort_cap
 
     # ── Pass 1: preliminary capped arrivals → preliminary DAU (for virality) ──
@@ -273,15 +280,18 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
 
 def _solve_starting_rate(config: SimulationConfig, target_total: int) -> float:
     """Binary search for starting_rate that produces ~target_total new users."""
+    scale = config.resolved_scale()
+    # Fewer iterations for long windows — 5% precision is fine for preview.
+    max_iters = 8 if scale.window_days > 730 else 20
     lo, hi = 0.1, float(target_total) * 10.0
-    for _ in range(20):
+    for _ in range(max_iters):
         mid = (lo + hi) / 2.0
         result = _run_with_rate(config, mid)
         if sum(result.new_users) < target_total:
             lo = mid
         else:
             hi = mid
-        if (hi - lo) / max(target_total, 1) < 1e-4:  # converged to <0.01%
+        if (hi - lo) / max(target_total, 1) < 5e-3:  # converged to <0.5%
             break
     return (lo + hi) / 2.0
 
