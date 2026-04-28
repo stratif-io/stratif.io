@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
 import type { SimEvent } from "@/types/simulation";
 import { anomalyTypeColor } from "@/lib/twin";
-import { parseDays } from "@/lib/twin/utils";
 
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/** Parse an ISO date string (YYYY-MM-DD) as UTC midnight. */
+const parseISO = (s: string) => new Date(s + "T00:00:00Z");
+
+const toISO = (d: Date) => d.toISOString().slice(0, 10);
 
 interface Props {
   anomaly: SimEvent;
@@ -26,16 +28,21 @@ export function AnomalyPill({
   onChange,
   onSelect,
 }: Props) {
-  const startDay = (() => {
-    const s = anomaly.start ?? "0d";
-    if (ISO_DATE_RE.test(s) && windowStart) {
-      const ms = new Date(s + "T00:00:00").getTime() - windowStart.getTime();
-      return Math.max(0, Math.round(ms / 86_400_000));
-    }
-    const parsed = parseDays(s) ?? 0;
-    return Math.max(0, parsed < 0 ? windowDays + parsed : parsed);
-  })();
-  const durationDays = Math.max(1, parseDays(anomaly.duration ?? "1d") ?? 1);
+  const ws = windowStart ?? new Date();
+  const startDay = Math.max(
+    0,
+    Math.round(
+      (parseISO(anomaly.start_date).getTime() - ws.getTime()) / 86_400_000,
+    ),
+  );
+  const durationDays = Math.max(
+    1,
+    Math.round(
+      (parseISO(anomaly.end_date).getTime() -
+        parseISO(anomaly.start_date).getTime()) /
+        86_400_000,
+    ),
+  );
   const pxPerDay = trackWidth / Math.max(1, windowDays);
   const x = startDay * pxPerDay;
   const width = Math.max(4, durationDays * pxPerDay);
@@ -77,14 +84,29 @@ export function AnomalyPill({
         0,
         Math.min(windowDays - origDuration, origStart + deltaDays),
       );
-      onChange({ ...anomaly, start: `${s}d` });
+      const newStart = new Date(ws.getTime() + s * 86_400_000);
+      const newEnd = new Date(newStart.getTime() + origDuration * 86_400_000);
+      onChange({
+        ...anomaly,
+        start_date: toISO(newStart),
+        end_date: toISO(newEnd),
+      });
     } else if (mode === "right") {
       const d = Math.max(1, origDuration + deltaDays);
-      onChange({ ...anomaly, duration: `${d}d` });
+      const newEnd = new Date(
+        parseISO(anomaly.start_date).getTime() + d * 86_400_000,
+      );
+      onChange({ ...anomaly, end_date: toISO(newEnd) });
     } else if (mode === "left") {
       const s = Math.max(0, origStart + deltaDays);
       const d = Math.max(1, origDuration - deltaDays);
-      onChange({ ...anomaly, start: `${s}d`, duration: `${d}d` });
+      const newStart = new Date(ws.getTime() + s * 86_400_000);
+      const newEnd = new Date(newStart.getTime() + d * 86_400_000);
+      onChange({
+        ...anomaly,
+        start_date: toISO(newStart),
+        end_date: toISO(newEnd),
+      });
     }
   };
 

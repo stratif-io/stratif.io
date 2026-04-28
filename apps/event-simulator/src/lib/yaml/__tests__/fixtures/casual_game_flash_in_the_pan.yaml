@@ -19,26 +19,27 @@ axes:
   anomalies: explicit
 
 scale_config:
-  window_days: 540           # 18 months
+  start_date: "2024-01-01"
+  end_date: "2025-07-25"
   total_users: 30000         # baseline * window; anomalies can push actual higher
 
 # Steady baseline = 30000 / 540 ≈ 56 new users / day.
 # Each anomaly multiplies that baseline within its date window.
-anomalies:
+events:
 
   # ─── Month 1: soft launch (~2-3/day) ──────────────────────────────
   - type: marketing_campaign
     name: soft_launch
-    start: -540d             # day 0 of the window
-    duration: 30d
+    start_date: "2024-01-01"  # day 0 of the window
+    end_date: "2024-01-31"
     effect:
       arrivals: 0.05         # 0.05 × 56 ≈ 2.8/day → Poisson range ~1-5
 
   # ─── Month 2 first 2 weeks: marketing push, explosion ─────────────
   - type: marketing_campaign
     name: paid_launch
-    start: -510d             # day 30
-    duration: 14d
+    start_date: "2024-01-31"  # day 30
+    end_date: "2024-02-14"
     effect:
       arrivals: 20.0         # 20 × 56 ≈ 1100/day → huge visible spike
 
@@ -49,24 +50,24 @@ anomalies:
   # ─── Month 13-14: decline begins ──────────────────────────────────
   - type: feature_regression
     name: decline_early
-    start: -180d             # day 360 (month 13 of the lifecycle)
-    duration: 60d
+    start_date: "2024-12-26"  # day 360 (month 13 of the lifecycle)
+    end_date: "2025-02-24"
     effect:
       arrivals: 0.3          # ≈17/day → a visible but not dramatic drop
 
   # ─── Month 15-16: sharper drop ────────────────────────────────────
   - type: feature_regression
     name: decline_mid
-    start: -120d             # day 420
-    duration: 60d
+    start_date: "2025-02-24"  # day 420
+    end_date: "2025-04-25"
     effect:
       arrivals: 0.1          # ≈6/day
 
   # ─── Month 17-18: end-of-life, near zero ──────────────────────────
   - type: feature_regression
     name: decline_late
-    start: -60d              # day 480
-    duration: 60d
+    start_date: "2025-04-25"  # day 480
+    end_date: "2025-06-24"
     effect:
       arrivals: 0.02         # ≈1/day ⇒ most days 0, occasional 1-2
 markov:

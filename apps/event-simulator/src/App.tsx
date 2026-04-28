@@ -256,12 +256,23 @@ export default function App() {
   }, [scaleAxis, scaleOverride]);
 
   const handleAddEvent = () => {
+    const windowEnd = uiEndDate
+      ? new Date(uiEndDate + "T00:00:00Z")
+      : new Date();
+    const windowStart = uiStartDate
+      ? new Date(uiStartDate + "T00:00:00Z")
+      : new Date(windowEnd.getTime() - window_days * 86_400_000);
     const duration = Math.max(5, Math.floor(window_days * 0.1));
     const maxStart = Math.max(0, window_days - duration - 1);
-    const start = Math.floor(Math.random() * maxStart);
+    const startOffset = Math.floor(Math.random() * maxStart);
+    const startDate = new Date(
+      windowStart.getTime() + startOffset * 86_400_000,
+    );
+    const endDate = new Date(startDate.getTime() + duration * 86_400_000);
+    const toISO = (d: Date) => d.toISOString().slice(0, 10);
     setSimEvents([
       ...anomalies,
-      defaultAnomaly("product_launch", start, duration),
+      defaultAnomaly("product_launch", toISO(startDate), toISO(endDate)),
     ]);
   };
 
@@ -320,7 +331,7 @@ export default function App() {
         start_date?: string | null;
         end_date?: string | null;
       } | null;
-      events?: { start?: string; date?: string }[];
+      events?: { start_date?: string; end_date?: string }[];
     }) => {
       const fmt = (d: Date) => d.toISOString().split("T")[0];
 
@@ -333,9 +344,9 @@ export default function App() {
 
       const days = (cfg.scale_config?.window_days as number | undefined) ?? 90;
 
-      // If anomalies have absolute ISO dates, anchor the window to the earliest one.
+      // If events have start_date, anchor the window to the earliest one.
       const isoDates = (cfg.events ?? [])
-        .map((a) => a.start ?? a.date ?? "")
+        .map((a) => a.start_date ?? "")
         .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
         .map((s) => new Date(s + "T00:00:00"));
 

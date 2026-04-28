@@ -26,6 +26,8 @@ export interface TwinOutput {
   churnedUsers: number[];
   reactivatedUsers: number[];
   stickiness: (number | null)[];
+  /** Monthly active users — 30-day rolling unique users, smoothed */
+  mau: number[];
   totalUsers: number[];
 }
 

@@ -12,10 +12,8 @@ export interface MarkovConfig {
 export interface SimEvent {
   type: string;
   name?: string;
-  // Python loader accepts either `start` (relative like "-45d" or ISO date) or `date` (ISO date)
-  start?: string;
-  date?: string;
-  duration?: string;
+  start_date: string; // ISO date e.g. "2025-01-15"
+  end_date: string; // ISO date e.g. "2025-01-22"
   effect: Record<string, number>;
 }
 

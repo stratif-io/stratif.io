@@ -25,43 +25,43 @@ scale_config:
 events:
   - type: product_launch
     name: public_beta_launch_8k_day1
-    start: "2013-08-14"
-    duration: 7d
+    start_date: "2013-08-14"
+    end_date: "2013-08-21"
     effect:
       arrivals: 20.0
 
   - type: marketing_campaign
     name: 15k_teams_techcrunch_coverage
-    start: "2013-08-28"
-    duration: 7d
+    start_date: "2013-08-28"
+    end_date: "2013-09-04"
     effect:
       arrivals: 8.0
 
   - type: marketing_campaign
     name: 500k_dau_milestone_press
-    start: "2015-02-01"
-    duration: 14d
+    start_date: "2015-02-01"
+    end_date: "2015-02-15"
     effect:
       arrivals: 2.0
 
   - type: marketing_campaign
     name: 750k_dau_1b_valuation_series_e
-    start: "2015-04-01"
-    duration: 14d
+    start_date: "2015-04-01"
+    end_date: "2015-04-15"
     effect:
       arrivals: 1.6
 
   - type: external_shock
     name: covid19_remote_work_surge
-    start: "2020-03-16"
-    duration: 30d
+    start_date: "2020-03-16"
+    end_date: "2020-04-15"
     effect:
       arrivals: 4.0
 
   - type: marketing_campaign
     name: salesforce_acquisition_announced
-    start: "2020-12-01"
-    duration: 14d
+    start_date: "2020-12-01"
+    end_date: "2020-12-15"
     effect:
       arrivals: 1.5
 

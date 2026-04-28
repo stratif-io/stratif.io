@@ -30,29 +30,29 @@ scale_config:
 events:
   - type: product_launch
     name: initial_launch_app_store_featured
-    start: "2009-11-01"
-    duration: 60d
+    start_date: "2009-11-01"
+    end_date: "2009-12-31"
     effect:
       arrivals: 5.0
 
   - type: marketing_campaign
     name: five_million_downloads_milestone
-    start: "2013-12-01"
-    duration: 30d
+    start_date: "2013-12-01"
+    end_date: "2013-12-31"
     effect:
       arrivals: 2.0
 
   - type: marketing_campaign
     name: nativescript_rebuild_250k_peak_day
-    start: "2018-11-15"
-    duration: 45d
+    start_date: "2018-11-15"
+    end_date: "2018-12-30"
     effect:
       arrivals: 1.5
 
   - type: marketing_campaign
     name: unicef_partnership_launch
-    start: "2020-11-01"
-    duration: 30d
+    start_date: "2020-11-01"
+    end_date: "2020-12-01"
     effect:
       arrivals: 1.4
 

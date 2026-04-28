@@ -8,18 +8,20 @@ axes:
   virality: none
   scale: medium
   geography: us_only
-  anomalies: explicit
-anomalies:
+scale_config:
+  start_date: "2023-01-01"
+  end_date: "2024-07-25"
+events:
   - type: shopping_season
     name: black_friday_peak
-    start: -540d
-    duration: 3d
+    start_date: "2023-01-01"
+    end_date: "2023-01-04"
     effect:
       arrivals: 3.5
   - type: outage
     name: server_downtime
-    start: -400d
-    duration: 6h
+    start_date: "2023-05-21"
+    end_date: "2023-05-22"
     effect:
       all_events: 0.0
 markov:

@@ -8,12 +8,14 @@ axes:
   virality: weak
   scale: medium
   geography: global
-  anomalies: explicit
-anomalies:
+scale_config:
+  start_date: "2025-01-01"
+  end_date: "2025-04-01"
+events:
   - type: product_launch
     name: feature_x_launch
-    start: -60d
-    duration: 7d
+    start_date: "2025-01-31"
+    end_date: "2025-02-07"
     effect:
       arrivals: 1.8
 markov:

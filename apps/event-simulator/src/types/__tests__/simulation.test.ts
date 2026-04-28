@@ -39,8 +39,8 @@ describe("SimulationConfig shape", () => {
     const a: SimEvent = {
       type: "marketing_campaign",
       name: "viral",
-      start: "-130d",
-      duration: "10d",
+      start_date: "2025-01-01",
+      end_date: "2025-01-11",
       effect: { arrivals: 8.0 },
     };
     expect(a.effect.arrivals).toBe(8.0);

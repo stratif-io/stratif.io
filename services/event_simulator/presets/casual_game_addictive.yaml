@@ -24,36 +24,36 @@ scale_config:
 events:
   - type: product_launch
     name: ios_app_store_debut
-    start: "2012-11-14"
-    duration: 60d
+    start_date: "2012-11-14"
+    end_date: "2013-01-13"
     effect:
       arrivals: 8.0
 
   - type: product_launch
     name: android_launch
-    start: "2012-12-14"
-    duration: 45d
+    start_date: "2012-12-14"
+    end_date: "2013-01-28"
     effect:
       arrivals: 5.0
 
   - type: marketing_campaign
     name: facebook_45m_users_milestone_press
-    start: "2013-02-01"
-    duration: 30d
+    start_date: "2013-02-01"
+    end_date: "2013-03-03"
     effect:
       arrivals: 2.5
 
   - type: marketing_campaign
     name: tv_advertising_us_primetime
-    start: "2014-03-01"
-    duration: 60d
+    start_date: "2014-03-01"
+    end_date: "2014-04-30"
     effect:
       arrivals: 1.8
 
   - type: marketing_campaign
     name: king_ipo_press_spike
-    start: "2014-03-26"
-    duration: 14d
+    start_date: "2014-03-26"
+    end_date: "2014-04-09"
     effect:
       arrivals: 1.5
 

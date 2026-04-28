@@ -569,7 +569,7 @@ export function KpiChart({
             width={containerSize.w}
             height={containerSize.h}
           >
-            <g style={{ pointerEvents: onAnomalyChange ? "all" : "none" }}>
+            <g style={{ pointerEvents: "all" }}>
               <AnomalyChartOverlay
                 offset={overlayOffset}
                 anomalies={anomalies!}
@@ -579,6 +579,13 @@ export function KpiChart({
                 onAnomalyChange={onAnomalyChange ?? (() => {})}
                 onSelect={onAnomalySelect}
                 readOnly={!onAnomalyChange}
+                getValueAtDay={(day) => {
+                  const idx =
+                    day - (internalBrushRange ? internalBrushRange[0] : 0);
+                  const v = displayValues[idx];
+                  return v !== undefined && v !== null ? v : null;
+                }}
+                valueSuffix={valueSuffix}
               />
             </g>
           </svg>

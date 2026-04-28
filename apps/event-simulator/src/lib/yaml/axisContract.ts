@@ -76,6 +76,7 @@ export const WEEKLY_PATTERN_VALUES = [
 ] as const;
 
 export const MONTHLY_SEASONALITY_VALUES = [
+  "nov_dec_extreme",
   "nov_dec_peak",
   "q4_heavy",
   "summer_peak",

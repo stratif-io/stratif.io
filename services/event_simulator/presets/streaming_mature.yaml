@@ -26,29 +26,29 @@ scale_config:
 events:
   - type: marketing_campaign
     name: bird_box_most_viewed_original_4_weeks
-    start: "2018-12-21"
-    duration: 30d
+    start_date: "2018-12-21"
+    end_date: "2019-01-20"
     effect:
       arrivals: 1.4
 
   - type: external_shock
     name: first_subscriber_loss_in_a_decade
-    start: "2022-04-19"
-    duration: 30d
+    start_date: "2022-04-19"
+    end_date: "2022-05-19"
     effect:
       arrivals: 0.85
 
   - type: product_launch
     name: password_sharing_crackdown_us_rollout
-    start: "2023-05-23"
-    duration: 60d
+    start_date: "2023-05-23"
+    end_date: "2023-07-22"
     effect:
       arrivals: 2.2
 
   - type: marketing_campaign
     name: squid_game_season_2_record_viewership
-    start: "2024-12-26"
-    duration: 30d
+    start_date: "2024-12-26"
+    end_date: "2025-01-25"
     effect:
       arrivals: 1.4
 

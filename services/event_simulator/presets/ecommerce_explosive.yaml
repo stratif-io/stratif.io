@@ -24,29 +24,29 @@ scale_config:
 events:
   - type: product_launch
     name: app_store_ecosystem_launch
-    start: "2009-06-02"
-    duration: 30d
+    start_date: "2009-06-02"
+    end_date: "2009-07-02"
     effect:
       arrivals: 2.0
 
   - type: marketing_campaign
     name: series_a_7m_press_coverage
-    start: "2010-12-01"
-    duration: 14d
+    start_date: "2010-12-01"
+    end_date: "2010-12-15"
     effect:
       arrivals: 1.5
 
   - type: marketing_campaign
     name: series_b_15m_growth_phase
-    start: "2011-10-01"
-    duration: 14d
+    start_date: "2011-10-01"
+    end_date: "2011-10-15"
     effect:
       arrivals: 1.4
 
   - type: product_launch
     name: shopify_ipo_mainstream_awareness
-    start: "2015-05-21"
-    duration: 30d
+    start_date: "2015-05-21"
+    end_date: "2015-06-20"
     effect:
       arrivals: 2.5
 

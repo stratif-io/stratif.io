@@ -39,19 +39,15 @@ export const MarkovConfigSchema = z.object({
   transitions: z.record(z.record(z.number())),
 });
 
-export const SimEventSchema = z
-  .object({
-    type: z.string().min(1),
-    name: z.string().min(1).optional(),
-    // Python loader accepts either `start` (relative like "-45d" or ISO date) or `date` (ISO date)
-    start: z.string().min(1).optional(),
-    date: z.string().min(1).optional(),
-    duration: z.string().min(1).optional(),
-    effect: z.record(z.number()),
-  })
-  .refine((v) => v.start !== undefined || v.date !== undefined, {
-    message: "anomaly must have either start or date",
-  });
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export const SimEventSchema = z.object({
+  type: z.string().min(1),
+  name: z.string().min(1).optional(),
+  start_date: z.string().regex(ISO_DATE, "start_date must be YYYY-MM-DD"),
+  end_date: z.string().regex(ISO_DATE, "end_date must be YYYY-MM-DD"),
+  effect: z.record(z.number()),
+});
 
 export const SimulationScaleOverrideSchema = z.object({
   total_users: z.number().int().positive().nullish(),

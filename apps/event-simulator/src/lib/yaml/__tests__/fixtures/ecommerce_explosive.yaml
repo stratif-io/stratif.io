@@ -8,18 +8,20 @@ axes:
   virality: strong_viral
   scale: medium
   geography: global
-  anomalies: explicit
-anomalies:
+scale_config:
+  start_date: "2025-09-01"
+  end_date: "2025-12-31"
+events:
   - type: marketing_campaign
     name: viral_launch
-    start: -45d
-    duration: 14d
+    start_date: "2025-11-17"
+    end_date: "2025-12-01"
     effect:
       arrivals: 2.5
   - type: shopping_season
     name: black_friday_2025
-    date: "2025-11-28"
-    duration: 3d
+    start_date: "2025-11-28"
+    end_date: "2025-12-01"
     effect:
       arrivals: 3.0
 markov:

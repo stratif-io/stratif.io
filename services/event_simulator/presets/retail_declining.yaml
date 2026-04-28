@@ -25,29 +25,29 @@ scale_config:
 events:
   - type: external_shock
     name: q1_earnings_miss_store_closure_announcements
-    start: "2017-02-15"
-    duration: 14d
+    start_date: "2017-02-15"
+    end_date: "2017-03-01"
     effect:
       arrivals: 0.6
 
   - type: external_shock
     name: chapter_11_bankruptcy_filing
-    start: "2018-10-15"
-    duration: 7d
+    start_date: "2018-10-15"
+    end_date: "2018-10-22"
     effect:
       arrivals: 0.4
 
   - type: external_shock
     name: store_closure_announcements_customer_exodus
-    start: "2018-10-25"
-    duration: 30d
+    start_date: "2018-10-25"
+    end_date: "2018-11-24"
     effect:
       arrivals: 0.6
 
   - type: marketing_campaign
     name: emerge_from_bankruptcy_eddie_lampert
-    start: "2019-02-11"
-    duration: 14d
+    start_date: "2019-02-11"
+    end_date: "2019-02-25"
     effect:
       arrivals: 0.8
 

@@ -34,36 +34,36 @@ scale_config:
 events:
   - type: product_launch
     name: usc_campus_launch
-    start: "2012-09-12"
-    duration: 14d
+    start_date: "2012-09-12"
+    end_date: "2012-09-26"
     effect:
       arrivals: 5.0
 
   - type: product_launch
     name: app_store_public_launch
-    start: "2012-10-01"
-    duration: 30d
+    start_date: "2012-10-01"
+    end_date: "2012-10-31"
     effect:
       arrivals: 4.0
 
   - type: product_launch
     name: android_launch_doubles_market
-    start: "2013-07-01"
-    duration: 30d
+    start_date: "2013-07-01"
+    end_date: "2013-07-31"
     effect:
       arrivals: 2.5
 
   - type: marketing_campaign
     name: tinder_plus_paid_tier_launch
-    start: "2015-03-02"
-    duration: 14d
+    start_date: "2015-03-02"
+    end_date: "2015-03-16"
     effect:
       arrivals: 1.8
 
   - type: marketing_campaign
     name: tinder_gold_subscription
-    start: "2017-08-01"
-    duration: 30d
+    start_date: "2017-08-01"
+    end_date: "2017-08-31"
     effect:
       arrivals: 1.4
 

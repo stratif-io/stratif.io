@@ -20,6 +20,7 @@ const EMPTY_OUTPUT: TwinOutput = {
   churnedUsers: [],
   reactivatedUsers: [],
   stickiness: [],
+  mau: [],
   totalUsers: [],
   arrivalCap: 1,
   reportScale: 1,

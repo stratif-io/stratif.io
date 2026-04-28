@@ -16,6 +16,7 @@ export interface TwinOutput {
   churnedUsers: number[];
   reactivatedUsers: number[];
   stickiness: (number | null)[];
+  mau: number[];
   totalUsers: number[];
   /** Fraction applied before each Poisson draw. Real λ(t) = pipeline.virality[t] × arrivalCap */
   arrivalCap: number;
@@ -36,6 +37,7 @@ export interface PreviewResult {
   reactivated: number[];
   events: number[];
   stickiness: number[];
+  mau: number[];
   growth_curve: number[];
   seasonality_curve: number[];
   anomaly_curve: number[];
@@ -70,6 +72,7 @@ export function mapToTwinOutput(result: PreviewResult): TwinOutput {
     churnedUsers: result.churned,
     reactivatedUsers: result.reactivated,
     stickiness: result.stickiness,
+    mau: result.mau ?? [],
     totalUsers,
     arrivalCap: result.arrival_cap,
     reportScale: result.report_scale,

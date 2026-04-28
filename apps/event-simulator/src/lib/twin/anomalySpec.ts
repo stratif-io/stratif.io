@@ -95,8 +95,8 @@ export function anomalyTypeColor(type: string): string {
 
 export function defaultAnomaly(
   type: string,
-  startDay: number,
-  duration: number,
+  startDate: string,
+  endDate: string,
 ): SimEvent {
   const spec = ANOMALY_SPEC[type] ?? ANOMALY_SPEC.marketing_campaign;
   const effect: Record<string, number> = {};
@@ -104,9 +104,9 @@ export function defaultAnomaly(
   if (spec.fixedEffect) Object.assign(effect, spec.fixedEffect);
   return {
     type,
-    name: `${type}_${startDay}`,
-    start: `${startDay}d`,
-    duration: `${duration}d`,
+    name: `${type}_${startDate}`,
+    start_date: startDate,
+    end_date: endDate,
     effect,
   };
 }

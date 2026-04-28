@@ -163,10 +163,13 @@ export function ghostLinesFor(
         },
       ];
     case "stickiness": {
-      const mauValues = out.activeUsers.map((dau, i) => {
-        const s = out.stickiness[i];
-        return s !== null && s > 0 ? dau / s : null;
-      });
+      const mauValues =
+        out.mau.length > 0
+          ? out.mau.map((v) => (v > 0 ? v : null))
+          : out.activeUsers.map((dau, i) => {
+              const s = out.stickiness[i];
+              return s !== null && s > 0 ? dau / s : null;
+            });
       return [
         {
           key: "g_dau",

@@ -24,29 +24,29 @@ scale_config:
 events:
   - type: product_launch
     name: soft_launch_ios_may_2013
-    start: "2013-05-24"
-    duration: 7d
+    start_date: "2013-05-24"
+    end_date: "2013-05-31"
     effect:
       arrivals: 1.0
 
   - type: viral_event
     name: twitter_reddit_viral_discovery
-    start: "2014-01-09"
-    duration: 7d
+    start_date: "2014-01-09"
+    end_date: "2014-01-16"
     effect:
       arrivals: 50.0
 
   - type: viral_event
     name: number_one_globally_media_frenzy
-    start: "2014-01-26"
-    duration: 14d
+    start_date: "2014-01-26"
+    end_date: "2014-02-09"
     effect:
       arrivals: 30.0
 
   - type: marketing_campaign
     name: removal_announcement_final_rush
-    start: "2014-02-08"
-    duration: 2d
+    start_date: "2014-02-08"
+    end_date: "2014-02-10"
     effect:
       arrivals: 10.0
 

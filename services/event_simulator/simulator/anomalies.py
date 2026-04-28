@@ -20,40 +20,51 @@ class AnomalyRecord:
     type: str
     name: str | None
     start: date
-    duration_days: float
+    end: date
     effects: dict[str, float]
 
 
-def _parse_duration(value: str | None) -> float:
-    if value is None:
-        return 1.0
-    match = _DURATION_RE.match(value)
-    if not match:
-        raise ValueError(f"unparseable duration {value!r}")
-    quantity = float(match.group(1))
-    unit = match.group(2)
-    if unit == "d":
-        return quantity
-    return quantity / 24.0
+def _parse_event(raw: dict, now: datetime, window_days: int) -> tuple[date, date]:
+    """Return (start_date, end_date) for an event dict.
 
+    New format: start_date + end_date (ISO dates).
+    Legacy format (still accepted): start/date + duration strings.
+    """
+    if "start_date" in raw and "end_date" in raw:
+        return date.fromisoformat(raw["start_date"]), date.fromisoformat(
+            raw["end_date"]
+        )
 
-def _parse_start(raw: dict, now: datetime, window_days: int) -> date:
+    # Legacy: resolve start date
     if "date" in raw:
-        return date.fromisoformat(raw["date"])
-    if "start" in raw:
-        start = raw["start"]
-        if isinstance(start, str) and start.lstrip("-").endswith("d"):
-            days = int(start.rstrip("d"))
+        start = date.fromisoformat(raw["date"])
+    elif "start" in raw:
+        s = raw["start"]
+        if isinstance(s, str) and s.lstrip("-").endswith("d"):
+            days = int(s.rstrip("d"))
             if days < 0:
-                # negative: relative to now (e.g. "-60d" = 60 days ago)
-                return (now + timedelta(days=days)).date()
+                start = (now + timedelta(days=days)).date()
             else:
-                # positive: day N from window start (e.g. "71d" = day 71)
                 day_0 = now - timedelta(days=window_days)
-                return (day_0 + timedelta(days=days)).date()
-        if isinstance(start, str):
-            return date.fromisoformat(start)
-    raise ValueError(f"anomaly missing date/start: {raw!r}")
+                start = (day_0 + timedelta(days=days)).date()
+        else:
+            start = date.fromisoformat(s)
+    else:
+        raise ValueError(f"anomaly missing start_date/start/date: {raw!r}")
+
+    # Legacy: resolve duration
+    dur_str = raw.get("duration")
+    if dur_str is None:
+        duration_days = 1.0
+    else:
+        m = _DURATION_RE.match(dur_str)
+        if not m:
+            raise ValueError(f"unparseable duration {dur_str!r}")
+        q = float(m.group(1))
+        duration_days = q if m.group(2) == "d" else q / 24.0
+
+    end = start + timedelta(days=duration_days)
+    return start, end
 
 
 def parse_anomalies(
@@ -61,16 +72,19 @@ def parse_anomalies(
     now: datetime,
     window_days: int = 90,
 ) -> list[AnomalyRecord]:
-    return [
-        AnomalyRecord(
-            type=raw["type"],
-            name=raw.get("name"),
-            start=_parse_start(raw, now, window_days),
-            duration_days=_parse_duration(raw.get("duration")),
-            effects=dict(raw.get("effect", {})),
+    records = []
+    for raw in raw_list:
+        start, end = _parse_event(raw, now, window_days)
+        records.append(
+            AnomalyRecord(
+                type=raw["type"],
+                name=raw.get("name"),
+                start=start,
+                end=end,
+                effects=dict(raw.get("effect", {})),
+            )
         )
-        for raw in raw_list
-    ]
+    return records
 
 
 def arrivals_multiplier(
@@ -79,8 +93,7 @@ def arrivals_multiplier(
 ) -> float:
     mult = 1.0
     for rec in anomalies:
-        end = rec.start + timedelta(days=rec.duration_days)
-        if rec.start <= d <= end:
+        if rec.start <= d <= rec.end:
             a = rec.effects.get("arrivals")
             if a is not None:
                 mult *= a
