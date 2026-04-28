@@ -5,7 +5,7 @@ import {
   ENGAGEMENT_DEPTH_VALUES,
   VIRALITY_VALUES,
   SCALE_VALUES,
-  ANOMALIES_VALUES,
+  NOISE_VALUES,
   MONETIZATION_VALUES,
   GEOGRAPHY_VALUES,
 } from "./axisContract";
@@ -16,7 +16,7 @@ export const AxesSchema = z.object({
   engagement_depth: z.enum(ENGAGEMENT_DEPTH_VALUES).optional().catch(undefined),
   virality: z.enum(VIRALITY_VALUES).optional().catch(undefined),
   scale: z.enum(SCALE_VALUES).optional().catch(undefined),
-  anomalies: z.enum(ANOMALIES_VALUES).optional().catch(undefined),
+  noise: z.enum(NOISE_VALUES).optional().catch(undefined),
   monetization: z.enum(MONETIZATION_VALUES).optional().catch(undefined),
   geography: z.enum(GEOGRAPHY_VALUES).optional().catch(undefined),
 });

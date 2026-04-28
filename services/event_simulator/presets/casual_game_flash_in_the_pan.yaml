@@ -11,7 +11,7 @@ axes:
   engagement_depth: shallow
   virality: strong_viral
   scale: large
-  anomalies: explicit
+  noise: explicit
   daily_pattern: always_on
   weekly_pattern: flat
   monthly_seasonality: flat

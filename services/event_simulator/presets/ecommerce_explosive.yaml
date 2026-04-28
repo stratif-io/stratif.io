@@ -11,7 +11,7 @@ axes:
   engagement_depth: medium
   virality: weak
   scale: large
-  anomalies: moderate
+  noise: moderate
   daily_pattern: business_hours
   weekly_pattern: weekdays_only
   monthly_seasonality: q4_heavy

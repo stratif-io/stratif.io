@@ -35,7 +35,7 @@ export const VIRALITY_VALUES = [
 
 export const SCALE_VALUES = ["tiny", "small", "medium", "large"] as const;
 
-export const ANOMALIES_VALUES = [
+export const NOISE_VALUES = [
   "none",
   "clean",
   "moderate",
@@ -87,7 +87,7 @@ export type StickinessValue = (typeof STICKINESS_VALUES)[number];
 export type EngagementDepthValue = (typeof ENGAGEMENT_DEPTH_VALUES)[number];
 export type ViralityValue = (typeof VIRALITY_VALUES)[number];
 export type ScaleValue = (typeof SCALE_VALUES)[number];
-export type AnomaliesValue = (typeof ANOMALIES_VALUES)[number];
+export type NoiseValue = (typeof NOISE_VALUES)[number];
 export type MonetizationValue = (typeof MONETIZATION_VALUES)[number];
 export type GeographyValue = (typeof GEOGRAPHY_VALUES)[number];
 export type DailyPatternValue = (typeof DAILY_PATTERN_VALUES)[number];
@@ -101,7 +101,7 @@ export const AXIS_VALUES = {
   engagement_depth: ENGAGEMENT_DEPTH_VALUES,
   virality: VIRALITY_VALUES,
   scale: SCALE_VALUES,
-  anomalies: ANOMALIES_VALUES,
+  noise: NOISE_VALUES,
   monetization: MONETIZATION_VALUES,
   geography: GEOGRAPHY_VALUES,
   daily_pattern: DAILY_PATTERN_VALUES,

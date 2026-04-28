@@ -11,7 +11,7 @@ describe("AXIS_SPEC", () => {
       "virality",
       "scale",
       "geography",
-      "anomalies",
+      "noise",
     ];
     for (const id of required) {
       expect(AXIS_SPEC[id]).toBeDefined();

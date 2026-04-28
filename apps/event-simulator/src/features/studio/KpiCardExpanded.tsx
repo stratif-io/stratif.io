@@ -203,7 +203,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
         | number
         | undefined) ?? 0;
     const sigma =
-      (getAxisValue("anomalies", resolvedAxes.anomalies)?.params.sigma as
+      (getAxisValue("noise", resolvedAxes.noise)?.params.sigma as
         | number
         | undefined) ?? 0;
     switch (metricKey) {
@@ -311,7 +311,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     windowDays,
     startingRate,
     simulationMode,
-    resolvedAxes.anomalies,
+    resolvedAxes.noise,
     resolvedAxes.virality,
   ]);
 

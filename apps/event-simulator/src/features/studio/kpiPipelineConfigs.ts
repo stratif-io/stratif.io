@@ -76,7 +76,7 @@ export const METRIC_PIPELINES: Partial<
         color: "hsl(var(--chart-6))",
         tooltipVarSymbols: ["A(t)", "J(t)", "\\sigma", "Z"],
         tooltipParamSyms: ["σ"],
-        axisVarMap: { "\\sigma": "anomalies" },
+        axisVarMap: { "\\sigma": "noise" },
       },
       {
         lineKey: "g_viral",
@@ -100,7 +100,7 @@ export const METRIC_PIPELINES: Partial<
     axisMap: {
       g_growth: "growth",
       g_season: "monthly_seasonality",
-      g_jitter: "anomalies",
+      g_jitter: "noise",
       g_viral: "virality",
       __main__: "scale",
     },

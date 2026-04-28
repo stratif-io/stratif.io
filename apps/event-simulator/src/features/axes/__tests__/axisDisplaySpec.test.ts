@@ -10,7 +10,7 @@ describe("AXIS_DISPLAY", () => {
       "engagement_depth",
       "virality",
       "scale",
-      "anomalies",
+      "noise",
     ]);
   });
 

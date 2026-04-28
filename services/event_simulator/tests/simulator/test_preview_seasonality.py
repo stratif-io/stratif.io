@@ -21,7 +21,7 @@ def _config(
 ) -> SimulationConfig:
     return SimulationConfig(
         name="test",
-        axes={"growth": "flat", "stickiness": "normal", "anomalies": "none", **axes},
+        axes={"growth": "flat", "stickiness": "normal", "noise": "none", **axes},
         markov=_MARKOV,
         scale_config=ScaleOverride(total_users=total_users, window_days=window_days),
     )
@@ -52,7 +52,7 @@ def test_nov_dec_peak_higher_than_summer():
         axes={
             "growth": "flat",
             "stickiness": "normal",
-            "anomalies": "explicit",
+            "noise": "explicit",
             "monthly_seasonality": "nov_dec_peak",
         },
         markov=_MARKOV,

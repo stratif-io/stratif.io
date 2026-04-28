@@ -48,7 +48,7 @@ ScaleValue = Literal[
     "large",
 ]
 
-AnomaliesValue = Literal[
+NoiseValue = Literal[
     "none",
     "clean",
     "moderate",
@@ -102,7 +102,7 @@ AXIS_VALUES: dict[str, tuple[str, ...]] = {
     "engagement_depth": EngagementDepthValue.__args__,
     "virality": ViralityValue.__args__,
     "scale": ScaleValue.__args__,
-    "anomalies": AnomaliesValue.__args__,
+    "noise": NoiseValue.__args__,
     "monetization": MonetizationValue.__args__,
     "geography": GeographyValue.__args__,
     "daily_pattern": DailyPatternValue.__args__,

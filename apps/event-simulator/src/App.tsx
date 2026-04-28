@@ -151,7 +151,7 @@ const SIDEBAR_AXES: { id: string; label: string; icon: ReactNode }[] = [
     icon: <MessageCircle size={16} />,
   },
   { id: "virality", label: "Virality", icon: <Rocket size={16} /> },
-  { id: "anomalies", label: "Noise", icon: <Activity size={16} /> },
+  { id: "noise", label: "Noise", icon: <Activity size={16} /> },
   { id: "daily_pattern", label: "Daily Pattern", icon: <Clock size={16} /> },
   {
     id: "weekly_pattern",

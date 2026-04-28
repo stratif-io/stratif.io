@@ -12,7 +12,7 @@ axes:
   engagement_depth: deep
   virality: moderate
   scale: large
-  anomalies: explicit
+  noise: explicit
   daily_pattern: business_hours
   weekly_pattern: weekdays_only
   monthly_seasonality: flat

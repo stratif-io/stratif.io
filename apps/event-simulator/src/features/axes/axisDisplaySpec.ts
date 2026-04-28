@@ -187,7 +187,7 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
     ],
   },
   anomalies: {
-    id: "anomalies",
+    id: "noise",
     label: "noise",
     values: [
       {
@@ -310,5 +310,5 @@ export const STRIP_AXIS_IDS = [
   "engagement_depth",
   "virality",
   "scale",
-  "anomalies",
+  "noise",
 ] as const;

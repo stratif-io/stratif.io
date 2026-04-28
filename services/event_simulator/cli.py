@@ -34,7 +34,7 @@ _AXIS_NAMES: tuple[str, ...] = (
     "virality",
     "scale",
     "geography",
-    "anomalies",
+    "noise",
 )
 
 
