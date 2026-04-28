@@ -274,10 +274,13 @@ export default function App() {
       const start = new Date(value + "T00:00:00");
       const end = new Date(uiEndDate + "T00:00:00");
       if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
-      const delta = end.getTime() - start.getTime();
-      if (delta <= 0) return;
-      const days = Math.max(1, Math.round(delta / 86_400_000));
-      setScaleConfig({ ...config.scale_config, window_days: days });
+      if (end.getTime() <= start.getTime()) return;
+      setScaleConfig({
+        ...config.scale_config,
+        start_date: value,
+        end_date: uiEndDate,
+        window_days: null,
+      });
     }
   };
 
@@ -287,10 +290,13 @@ export default function App() {
       const start = new Date(uiStartDate + "T00:00:00");
       const end = new Date(value + "T00:00:00");
       if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
-      const delta = end.getTime() - start.getTime();
-      if (delta <= 0) return;
-      const days = Math.max(1, Math.round(delta / 86_400_000));
-      setScaleConfig({ ...config.scale_config, window_days: days });
+      if (end.getTime() <= start.getTime()) return;
+      setScaleConfig({
+        ...config.scale_config,
+        start_date: uiStartDate,
+        end_date: value,
+        window_days: null,
+      });
     }
   };
 
@@ -306,11 +312,23 @@ export default function App() {
 
   const syncDatesFromConfig = useCallback(
     (cfg: {
-      scale_config?: { window_days?: number | null } | null;
+      scale_config?: {
+        window_days?: number | null;
+        start_date?: string | null;
+        end_date?: string | null;
+      } | null;
       anomalies?: { start?: string; date?: string }[];
     }) => {
-      const days = (cfg.scale_config?.window_days as number | undefined) ?? 90;
       const fmt = (d: Date) => d.toISOString().split("T")[0];
+
+      // Explicit start_date/end_date from scale_config takes highest priority.
+      if (cfg.scale_config?.start_date && cfg.scale_config?.end_date) {
+        setUiStartDate(cfg.scale_config.start_date);
+        setUiEndDate(cfg.scale_config.end_date);
+        return;
+      }
+
+      const days = (cfg.scale_config?.window_days as number | undefined) ?? 90;
 
       // If anomalies have absolute ISO dates, anchor the window to the earliest one.
       const isoDates = (cfg.anomalies ?? [])
