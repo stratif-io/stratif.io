@@ -7,7 +7,6 @@ import {
   YAxis,
   Tooltip,
   ReferenceArea,
-  ReferenceLine,
   CartesianGrid,
 } from "recharts";
 import {
@@ -15,7 +14,7 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-  RangeBrush,
+  pixelToIndex,
 } from "@stratif-io/design-system";
 import { formatNum } from "@/lib/format";
 import type { SimEvent } from "@/types/simulation";
@@ -135,27 +134,108 @@ export function KpiChart({
     [focusedKey, onFocusedLineKeyChange],
   );
 
+  // Track chart container pixel size — must be declared before brush callbacks
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setContainerSize({ w: width, h: height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const hasYAxis = !!ghostLines && ghostLines.length > 0;
+  const yAxisW = hasYAxis ? Y_AXIS_W : 0;
+
   const [internalBrushRange, setInternalBrushRange] = useState<
     [number, number] | null
   >(null);
-  const [previewRange, setPreviewRange] = useState<[number, number] | null>(
-    null,
-  );
-
-  const handleBrushChange = useCallback(
-    (range: [number, number] | null) => {
-      setInternalBrushRange(range);
-      setPreviewRange(null);
-      onBrushChange?.(range);
-    },
-    [onBrushChange],
-  );
+  const [dragState, setDragState] = useState<{
+    startPx: number;
+    currentPx: number;
+  } | null>(null);
 
   // Slice values to the brush selection for the chart display
   const displayValues = useMemo(() => {
     if (!showBrush || !internalBrushRange) return values;
     return values.slice(internalBrushRange[0], internalBrushRange[1] + 1);
   }, [values, showBrush, internalBrushRange]);
+
+  const commitRange = useCallback(
+    (range: [number, number] | null) => {
+      setInternalBrushRange(range);
+      onBrushChange?.(range);
+    },
+    [onBrushChange],
+  );
+
+  const resetZoom = useCallback(() => {
+    commitRange(null);
+  }, [commitRange]);
+
+  // Convert a pixel x (relative to containerRef) to a full-data index
+  const pxToFullIndex = useCallback(
+    (px: number) => {
+      const plotLeft = CM.left + yAxisW;
+      const plotW = containerSize.w - CM.left - CM.right - yAxisW;
+      const dispIdx = pixelToIndex(
+        Math.max(0, px - plotLeft),
+        plotW,
+        displayValues.length,
+      );
+      const offset = internalBrushRange ? internalBrushRange[0] : 0;
+      return offset + dispIdx;
+    },
+    [yAxisW, containerSize.w, displayValues.length, internalBrushRange],
+  );
+
+  const handleChartPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!showBrush) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const plotLeft = CM.left + yAxisW;
+      const plotRight = containerSize.w - CM.right;
+      if (px < plotLeft || px > plotRight) return;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setDragState({ startPx: px, currentPx: px });
+    },
+    [showBrush, yAxisW, containerSize.w],
+  );
+
+  const handleChartPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragState || !showBrush) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const plotLeft = CM.left + yAxisW;
+      const plotRight = containerSize.w - CM.right;
+      const px = Math.max(plotLeft, Math.min(plotRight, e.clientX - rect.left));
+      setDragState((prev) => (prev ? { ...prev, currentPx: px } : null));
+    },
+    [dragState, showBrush, yAxisW, containerSize.w],
+  );
+
+  const handleChartPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragState || !showBrush) return;
+      e.currentTarget.releasePointerCapture(e.pointerId);
+      const rect = e.currentTarget.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const DRAG_THRESHOLD = 8;
+      if (Math.abs(px - dragState.startPx) >= DRAG_THRESHOLD) {
+        const a = pxToFullIndex(Math.min(dragState.startPx, px));
+        const b = pxToFullIndex(Math.max(dragState.startPx, px));
+        if (a !== b) commitRange([a, b]);
+      }
+      setDragState(null);
+    },
+    [dragState, showBrush, pxToFullIndex, commitRange],
+  );
 
   // Adjust dates for the sliced window so x-axis labels are accurate
   const displayStartDate = useMemo(() => {
@@ -239,29 +319,12 @@ export function KpiChart({
     );
   }, [displayValues.length]);
 
-  // Track chart container pixel size for the overlay.
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setContainerSize({ w: width, h: height });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
   const showOverlay =
     !!anomalies?.length &&
     !!windowDays &&
     containerSize.w > 0 &&
     containerSize.h > 0;
 
-  const hasYAxis = !!ghostLines && ghostLines.length > 0;
-  const yAxisW = hasYAxis ? Y_AXIS_W : 0;
   const overlayOffset = {
     left: CM.left + yAxisW,
     top: CM.top,
@@ -353,7 +416,11 @@ export function KpiChart({
       {/* position:relative wrapper so the overlay can be positioned absolutely */}
       <div
         ref={containerRef}
-        className={`${chartHeight} w-full relative transition-opacity duration-300 ${isLoading ? "opacity-40" : ""}`}
+        className={`${chartHeight} w-full relative transition-opacity duration-300 ${isLoading ? "opacity-40" : ""}${showBrush ? " cursor-crosshair" : ""}`}
+        onPointerDown={handleChartPointerDown}
+        onPointerMove={handleChartPointerMove}
+        onPointerUp={handleChartPointerUp}
+        onPointerCancel={() => setDragState(null)}
       >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={CM} syncId="preview">
@@ -474,26 +541,25 @@ export function KpiChart({
                 />
               );
             })}
-            {previewRange && (
-              <>
-                <ReferenceLine
-                  x={previewRange[0]}
-                  stroke={color}
-                  strokeWidth={1.5}
-                  strokeDasharray="4 3"
-                  strokeOpacity={0.7}
-                />
-                <ReferenceLine
-                  x={previewRange[1]}
-                  stroke={color}
-                  strokeWidth={1.5}
-                  strokeDasharray="4 3"
-                  strokeOpacity={0.7}
-                />
-              </>
-            )}
           </LineChart>
         </ResponsiveContainer>
+
+        {/* Drag-selection highlight */}
+        {dragState &&
+          Math.abs(dragState.currentPx - dragState.startPx) >= 3 && (
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                top: CM.top,
+                bottom: CM.bottom + X_AXIS_H,
+                left: Math.min(dragState.startPx, dragState.currentPx),
+                width: Math.abs(dragState.currentPx - dragState.startPx),
+                background: `${color}25`,
+                borderLeft: `1.5px solid ${color}90`,
+                borderRight: `1.5px solid ${color}90`,
+              }}
+            />
+          )}
 
         {/* Direct SVG overlay — sits on top of the chart, not inside Recharts */}
         {showOverlay && (
@@ -522,15 +588,16 @@ export function KpiChart({
         )}
       </div>
 
-      {showBrush && (
-        <RangeBrush
-          count={values.length}
-          color={color}
-          paddingLeft={CM.left + yAxisW}
-          paddingRight={CM.right}
-          onChange={handleBrushChange}
-          onPreview={setPreviewRange}
-        />
+      {showBrush && internalBrushRange && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={resetZoom}
+            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded border border-border/50 hover:border-border"
+          >
+            Reset zoom
+          </button>
+        </div>
       )}
 
       {ghostLines && ghostLines.length > 0 && (
