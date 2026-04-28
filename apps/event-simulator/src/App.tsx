@@ -124,6 +124,7 @@ const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
 };
 
 const SIDEBAR_AXES: { id: string; label: string; icon: ReactNode }[] = [
+  { id: "scale", label: "Scale", icon: <Target size={16} /> },
   { id: "growth", label: "Growth", icon: <TrendingUp size={16} /> },
   { id: "stickiness", label: "Retention", icon: <RefreshCw size={16} /> },
   {
@@ -132,7 +133,6 @@ const SIDEBAR_AXES: { id: string; label: string; icon: ReactNode }[] = [
     icon: <MessageCircle size={16} />,
   },
   { id: "virality", label: "Virality", icon: <Rocket size={16} /> },
-  { id: "scale", label: "Scale", icon: <Target size={16} /> },
   { id: "anomalies", label: "Noise", icon: <Activity size={16} /> },
 ];
 
@@ -195,6 +195,23 @@ export default function App() {
     [scaleAxis, scaleOverride],
   );
   const { window_days } = resolvedScale;
+  const derivedSummary = useMemo(() => {
+    const users =
+      resolvedScale.mode === "goal"
+        ? resolvedScale.total_users
+        : resolvedScale.starting_rate * resolvedScale.window_days;
+    const perDay =
+      resolvedScale.mode === "rate"
+        ? resolvedScale.starting_rate
+        : Math.round(users / Math.max(1, resolvedScale.window_days));
+    const fmt = (n: number) =>
+      n >= 1_000_000
+        ? `${(n / 1_000_000).toFixed(1)}M`
+        : n >= 1_000
+          ? `${(n / 1_000).toFixed(0)}k`
+          : String(n);
+    return `~${fmt(users)} users · ${resolvedScale.window_days}d · ~${fmt(perDay)}/day`;
+  }, [resolvedScale]);
 
   const isScaleCustom = useMemo(() => {
     const preset = AXIS_SPEC.scale.values.find((v) => v.value === scaleAxis);
@@ -509,15 +526,9 @@ export default function App() {
                 </SelectContent>
               </Select>
 
-              {resolvedScale.mode === "rate" ? (
-                <span className="text-[11px] font-medium text-muted-foreground bg-muted/60 rounded px-2 py-0.5 shrink-0">
-                  📈 Rate: {resolvedScale.starting_rate} users/day
-                </span>
-              ) : (
-                <span className="text-[11px] font-medium text-muted-foreground bg-muted/60 rounded px-2 py-0.5 shrink-0">
-                  🎯 Goal: {resolvedScale.total_users} users
-                </span>
-              )}
+              <span className="text-[11px] font-medium text-muted-foreground bg-muted/60 rounded-full px-2.5 py-0.5 shrink-0 whitespace-nowrap tabular-nums">
+                {derivedSummary}
+              </span>
 
               <div className="flex items-center gap-1.5">
                 <label htmlFor="start-date" className="sr-only">
