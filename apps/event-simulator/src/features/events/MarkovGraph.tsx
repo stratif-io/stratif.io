@@ -201,7 +201,7 @@ function SelfLoopEdge({
         y={p3y}
         dx={arrowDx}
         dy={arrowDy}
-        size={6}
+        size={10}
         color={stroke as string}
       />
       {label && (
@@ -277,7 +277,7 @@ function BiEdge({
         y={targetY}
         dx={arrowDx}
         dy={arrowDy}
-        size={6}
+        size={10}
         color={stroke as string}
       />
       {label && <EdgeLabel x={lx} y={ly} label={label} />}
@@ -311,7 +311,7 @@ function StraightEdge({
         y={targetY}
         dx={arrowDx}
         dy={arrowDy}
-        size={6}
+        size={10}
         color={stroke as string}
       />
       {label && <EdgeLabel x={lx} y={ly} label={label} />}
