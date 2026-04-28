@@ -176,18 +176,33 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     # ── G(t) = λ₀ × shape(t) ─────────────────────────────────────────────────
     # λ₀ = starting_rate = arrival rate on day 0. shape(0) = 1 by construction
     # for all shape types, so G(0) = λ₀ exactly as the formula panel shows.
+
+    # Pre-compute raw seasonal weights and normalise them so their mean = 1.
+    # This makes seasonality *spread* the growth curve (same total users,
+    # redistributed across days) rather than inflate or deflate it.
+    raw_season: list[float] = []
+    local_dates: list = []
+    for d in range(window):
+        local_date = (day_0 + timedelta(days=d)).date()
+        local_dates.append(local_date)
+        dow_mult = dow_weights[local_date.weekday()]
+        cal_mult = cal_fn(local_date) if cal_fn is not None else 1.0
+        raw_season.append(dow_mult * cal_mult)
+
+    mean_season = sum(raw_season) / max(len(raw_season), 1)
+    norm_factor = 1.0 / max(mean_season, 1e-9)
+
     g_curve: list[float] = []
     s_curve: list[float] = []
     a_curve: list[float] = []
     for d in range(window):
-        local_date = (day_0 + timedelta(days=d)).date()
-        dow_mult = dow_weights[local_date.weekday()]
-        cal_mult = cal_fn(local_date) if cal_fn is not None else 1.0
+        local_date = local_dates[d]
         ano_mult = arrivals_multiplier(parsed_anomalies, local_date)
         g = starting_rate * shape(d)
+        season_norm = raw_season[d] * norm_factor
         g_curve.append(g)
-        s_curve.append(g * dow_mult * cal_mult)  # seasonality layer (before anomalies)
-        a_curve.append(g * dow_mult * cal_mult * ano_mult)
+        s_curve.append(g * season_norm)  # seasonality spreads, does not scale
+        a_curve.append(g * season_norm * ano_mult)
 
     # ── J(t) = A(t) · (1 + σZ) ───────────────────────────────────────────────
     j_curve: list[float] = [

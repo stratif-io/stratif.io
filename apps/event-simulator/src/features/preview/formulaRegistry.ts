@@ -116,7 +116,7 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
       {
         symbol: "S(t)",
         meaning:
-          "growth after seasonality: G(t) · dow(t) · cal(t) — shape multiplied by day-of-week and month-of-year weights",
+          "growth after seasonality: G(t) · dow(t) · cal(t) / w̄ — seasonality redistributes the growth curve (same total, concentrated into peaks). w̄ = mean(dow·cal) over the window",
       },
       {
         symbol: "\\mathrm{dow}(t)",

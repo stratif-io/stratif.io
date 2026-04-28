@@ -48,7 +48,8 @@ export const METRIC_PIPELINES: Partial<
       {
         lineKey: "g_season",
         label: "Seasonality",
-        latex: "S(t) = G(t) \\cdot \\mathrm{dow}(t) \\cdot \\mathrm{cal}(t)",
+        latex:
+          "S(t) = G(t) \\cdot \\dfrac{\\mathrm{dow}(t)\\cdot\\mathrm{cal}(t)}{\\bar{w}},\\quad \\bar{w}=\\tfrac{1}{T}\\sum_d \\mathrm{dow}(d)\\cdot\\mathrm{cal}(d)",
         color: "hsl(var(--chart-7))",
         tooltipVarSymbols: [
           "G(t)",
