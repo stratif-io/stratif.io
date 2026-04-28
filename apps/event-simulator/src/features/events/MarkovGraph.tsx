@@ -38,6 +38,8 @@ type EventNodeData = {
   color: string;
   selected: boolean;
   isEnd?: boolean;
+  isStart?: boolean;
+  startWeight?: number;
 };
 
 function EventNode({ data }: NodeProps) {
@@ -60,7 +62,7 @@ function EventNode({ data }: NodeProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-md px-3 text-xs font-semibold transition-all shadow-sm",
+        "flex items-center gap-2 rounded-md px-3 text-xs font-semibold transition-all shadow-sm relative",
         d.selected
           ? "ring-2 ring-offset-1 ring-white/80 shadow-md"
           : "hover:shadow-md",
@@ -72,12 +74,35 @@ function EventNode({ data }: NodeProps) {
         color: "#fff",
         boxShadow: d.selected
           ? `0 0 0 3px ${d.color}66, 0 4px 12px ${d.color}44`
-          : undefined,
+          : d.isStart
+            ? `0 0 0 2px ${d.color}, 0 0 0 4px ${d.color}66, 0 4px 16px ${d.color}55`
+            : undefined,
       }}
     >
       <Handle type="target" position={Position.Left} className="opacity-0" />
-      <span className="size-2 rounded-full bg-white/30 shrink-0" aria-hidden />
+      {d.isStart ? (
+        // Filled play triangle — session entry point indicator
+        <svg
+          width="8"
+          height="10"
+          viewBox="0 0 8 10"
+          className="shrink-0"
+          aria-hidden
+        >
+          <polygon points="0,0 8,5 0,10" fill="rgba(255,255,255,0.9)" />
+        </svg>
+      ) : (
+        <span
+          className="size-2 rounded-full bg-white/30 shrink-0"
+          aria-hidden
+        />
+      )}
       <span className="truncate">{d.label}</span>
+      {d.isStart && d.startWeight != null && d.startWeight < 1 && (
+        <span className="ml-auto text-[9px] font-bold text-white/70 shrink-0">
+          {Math.round(d.startWeight * 100)}%
+        </span>
+      )}
       <Handle type="source" position={Position.Right} className="opacity-0" />
     </div>
   );
@@ -147,13 +172,18 @@ function BiEdge({
 }: EdgeProps) {
   // Perpendicular offset direction — sign comes from edge data
   const sign = (data as { sign?: number })?.sign ?? 1;
-  const OFFSET = 48;
 
   const mx = (sourceX + targetX) / 2;
   const my = (sourceY + targetY) / 2;
   const dx = targetX - sourceX;
   const dy = targetY - sourceY;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
+
+  // Adaptive offset: near-vertical pairs (same dagre rank, stacked nodes) need
+  // a much larger perpendicular push so the two arcs don't cross each other.
+  const isNearVertical = Math.abs(dy) > Math.abs(dx) * 0.5;
+  const OFFSET = isNearVertical ? 96 : 52;
+
   // Unit perpendicular
   const px = (-dy / len) * OFFSET * sign;
   const py = (dx / len) * OFFSET * sign;
@@ -199,6 +229,7 @@ function layoutNodes(
   config: MarkovConfig,
   showEnd: boolean,
   selected: string | null,
+  startMap: Record<string, number>,
 ): Node[] {
   const g = new dagre.graphlib.Graph();
   g.setGraph({
@@ -230,6 +261,7 @@ function layoutNodes(
 
   const nodes: Node[] = config.events.map((ev) => {
     const { x, y } = g.node(ev.name);
+    const startWeight = startMap[ev.name];
     return {
       id: ev.name,
       type: "eventNode",
@@ -238,6 +270,8 @@ function layoutNodes(
         label: ev.name,
         color: ev.color ?? "#6366f1",
         selected: ev.name === selected,
+        isStart: startWeight != null && startWeight > 0,
+        startWeight: startWeight ?? 0,
       },
     };
   });
@@ -322,8 +356,13 @@ function MarkovGraphInner({
   showEnd,
   onToggleEnd,
 }: InnerProps) {
+  const startMap = useMemo(
+    () => config.start ?? {},
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   const initialNodes = useMemo(
-    () => layoutNodes(config, showEnd, selectedNode ?? null),
+    () => layoutNodes(config, showEnd, selectedNode ?? null, startMap),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );

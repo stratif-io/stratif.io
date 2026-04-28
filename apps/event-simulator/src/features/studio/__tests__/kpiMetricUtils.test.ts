@@ -24,6 +24,7 @@ function makeOut(
     churnedUsers: zeros,
     reactivatedUsers: zeros,
     stickiness: zeros,
+    mau: zeros,
     totalUsers: zeros,
     arrivalCap: 1,
     reportScale: 1,
