@@ -285,14 +285,34 @@ export default function App() {
   const inputNormal = "border-border";
 
   const syncDatesFromConfig = useCallback(
-    (cfg: { scale_config?: { window_days?: number | null } | null }) => {
+    (cfg: {
+      scale_config?: { window_days?: number | null } | null;
+      anomalies?: { start?: string; date?: string }[];
+    }) => {
       const days = (cfg.scale_config?.window_days as number | undefined) ?? 90;
-      const end = new Date();
-      const start = new Date(end);
-      start.setDate(start.getDate() - days);
       const fmt = (d: Date) => d.toISOString().split("T")[0];
-      setUiEndDate(fmt(end));
-      setUiStartDate(fmt(start));
+
+      // If anomalies have absolute ISO dates, anchor the window to the earliest one.
+      const isoDates = (cfg.anomalies ?? [])
+        .map((a) => a.start ?? a.date ?? "")
+        .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
+        .map((s) => new Date(s + "T00:00:00"));
+
+      if (isoDates.length > 0) {
+        const earliest = new Date(
+          Math.min(...isoDates.map((d) => d.getTime())),
+        );
+        const end = new Date(earliest);
+        end.setDate(end.getDate() + days);
+        setUiStartDate(fmt(earliest));
+        setUiEndDate(fmt(end));
+      } else {
+        const end = new Date();
+        const start = new Date(end);
+        start.setDate(start.getDate() - days);
+        setUiEndDate(fmt(end));
+        setUiStartDate(fmt(start));
+      }
     },
     [setUiStartDate, setUiEndDate],
   );
