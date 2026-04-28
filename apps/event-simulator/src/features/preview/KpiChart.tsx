@@ -526,6 +526,8 @@ export function KpiChart({
         <RangeBrush
           count={values.length}
           color={color}
+          paddingLeft={CM.left + yAxisW}
+          paddingRight={CM.right}
           onChange={handleBrushChange}
           onPreview={setPreviewRange}
         />
