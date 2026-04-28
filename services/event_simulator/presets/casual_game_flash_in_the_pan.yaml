@@ -1,126 +1,71 @@
-name: Casual Game Flash in the Pan (Flappy Bird-Like)
-# Real company: Flappy Bird (Dong Nguyen / .GEARS Studios) — May 2013 – Nov 2014 (full lifecycle)
+name: Casual Game Flash in the Pan (Flappy Bird)
 description: >
-  Flappy Bird by Vietnamese developer Dong Nguyen launched quietly in May 2013, exploded
-  virally in January 2014 to #1 globally, then was abruptly pulled by its creator in February
-  2014, leading to a rapid decline to near-zero installs.
-
+  Flappy Bird launched silently in May 2013 and languished unnoticed for 7 months.
+  Then a viral Twitter storm in January 2014 made it the #1 downloaded app globally overnight —
+  50M daily active users in 3 weeks. Dong Nguyen deleted it on February 10, 2014,
+  overwhelmed by the attention. The shortest possible product lifecycle: 9 months dormant,
+  3 weeks explosive, then gone. A perfect flash-in-the-pan.
 axes:
-  growth: steady             # baseline is flat; anomalies do all the shaping
-  stickiness: normal         # users try it, some stick, many leave
-  engagement_depth: medium
-  monetization: iap_whales
-  virality: weak
-  scale: small
-  geography: global
+  growth: explosive
+  stickiness: one_shot
+  engagement_depth: shallow
+  virality: strong_viral
+  scale: large
   anomalies: explicit
-  daily_pattern: evening_peak
+  daily_pattern: always_on
   weekly_pattern: flat
   monthly_seasonality: flat
 
 scale_config:
-  total_users: 80000
+  total_users: 90000000
   start_date: "2013-05-24"
-  end_date: "2026-04-28"
+  end_date: "2014-02-10"
 
-# Steady baseline = 30000 / 540 ≈ 56 new users / day.
-# Each anomaly multiplies that baseline within its date window.
 anomalies:
-
-  # ─── Month 1: soft launch (~2-3/day) ──────────────────────────────
-  - type: marketing_campaign
-    name: soft_launch
+  - type: product_launch
+    name: soft_launch_ios_may_2013
     start: "2013-05-24"
-    duration: 30d
+    duration: 7d
     effect:
-      arrivals: 0.05         # 0.05 × 56 ≈ 2.8/day → Poisson range ~1-5
+      arrivals: 1.0
 
-  # ─── Month 2 first 2 weeks: marketing push, explosion ─────────────
-  - type: marketing_campaign
-    name: paid_launch
-    start: "2013-06-24"
+  - type: viral_event
+    name: twitter_reddit_viral_discovery
+    start: "2014-01-09"
+    duration: 7d
+    effect:
+      arrivals: 50.0
+
+  - type: viral_event
+    name: number_one_globally_media_frenzy
+    start: "2014-01-26"
     duration: 14d
     effect:
-      arrivals: 20.0         # 20 × 56 ≈ 1100/day → huge visible spike
+      arrivals: 30.0
 
-  # (Day 45 → day 360: baseline only, no anomaly. ≈56/day ⇒ plateau in
-  #  the 10–100 range your spec asked for. Poisson noise gives natural
-  #  day-to-day variance.)
-
-  # ─── Month 13-14: decline begins ──────────────────────────────────
-  - type: feature_regression
-    name: decline_early
-    start: "2014-06-24"
-    duration: 60d
+  - type: marketing_campaign
+    name: removal_announcement_final_rush
+    start: "2014-02-08"
+    duration: 2d
     effect:
-      arrivals: 0.3          # ≈17/day → a visible but not dramatic drop
+      arrivals: 10.0
 
-  # ─── Month 15-16: sharper drop ────────────────────────────────────
-  - type: feature_regression
-    name: decline_mid
-    start: "2014-08-23"
-    duration: 60d
-    effect:
-      arrivals: 0.1          # ≈6/day
-
-  # ─── Month 17-18: end-of-life, near zero ──────────────────────────
-  - type: feature_regression
-    name: decline_late
-    start: "2014-10-22"
-    duration: 60d
-    effect:
-      arrivals: 0.02         # ≈1/day ⇒ most days 0, occasional 1-2
 markov:
   events:
-    - name: SessionStart
-    - name: DailyBonusClaimed
-    - name: LevelStart
-    - name: LevelComplete
-    - name: LevelFail
-    - name: RewardCollected
-    - name: IAPOffer
-    - name: IAPPurchase
-    - name: AdShown
-    - name: AdClicked
-    - name: ShareAchievement
+    - name: AppOpen
+    - name: ContentViewed
+    - name: ActionTaken
+    - name: SessionEnd
   start:
-    SessionStart: 1.0
+    AppOpen: 1.0
   transitions:
-    SessionStart:
-      DailyBonusClaimed: 0.55
-      LevelStart: 0.20
-      "[end]": 0.25
-    DailyBonusClaimed:
-      LevelStart: 0.85
+    AppOpen:
+      ContentViewed: 0.85
       "[end]": 0.15
-    LevelStart:
-      LevelComplete: 0.60
-      LevelFail: 0.35
-      "[end]": 0.05
-    LevelComplete:
-      RewardCollected: 0.65
-      LevelStart: 0.20
-      IAPOffer: 0.10
-      "[end]": 0.05
-    LevelFail:
-      LevelStart: 0.50
-      AdShown: 0.20
+    ContentViewed:
+      ActionTaken: 0.40
+      ContentViewed: 0.30
       "[end]": 0.30
-    RewardCollected:
-      LevelStart: 0.55
-      ShareAchievement: 0.10
-      "[end]": 0.35
-    IAPOffer:
-      IAPPurchase: 0.40
-      "[end]": 0.60
-    IAPPurchase:
-      ShareAchievement: 0.30
-      "[end]": 0.70
-    AdShown:
-      AdClicked: 0.25
-      LevelStart: 0.30
-      "[end]": 0.45
-    AdClicked:
-      "[end]": 1.0
-    ShareAchievement:
-      "[end]": 1.0
+    ActionTaken:
+      ContentViewed: 0.50
+      "[end]": 0.50

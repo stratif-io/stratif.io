@@ -1,94 +1,92 @@
-name: Marketplace Scaling (Early Airbnb)
-# Real company: Airbnb — Jan 2010 – Dec 2010 (first real growth year post-Y Combinator)
+name: Marketplace Scaling (Airbnb)
 description: >
-  Airbnb graduated Y Combinator in early 2010 and spent the year growing from a scrappy
-  air-mattress startup to a recognized travel platform, with summer travel season and
-  TechCrunch Disrupt coverage driving key growth inflections.
+  Airbnb's growth from a scrappy YC startup (2010) to a travel marketplace
+  hosting over 1 billion guest arrivals lifetime. The growth arc: 700K nights booked
+  in mid-2010, 1M by February 2011, unicorn status ($1B valuation) in July 2011.
+  Strong summer travel seasonality (June–August dominates) with a secondary December
+  holiday travel peak. COVID wiped bookings to near-zero in March 2020, then the IPO
+  in December 2020 marked a historic recovery.
 axes:
-  growth: strong
+  growth: hockey_stick
   stickiness: normal
-  engagement_depth: medium
-  monetization: marketplace_fee
+  engagement_depth: shallow
   virality: moderate
-  scale: small
-  geography: global
+  scale: large
   anomalies: explicit
   daily_pattern: always_on
-  weekly_pattern: flat
-  monthly_seasonality: flat
+  weekly_pattern: weekends_heavy
+  monthly_seasonality: summer_peak
 
 scale_config:
-  total_users: 15000
+  total_users: 1500000000
   start_date: "2010-01-01"
   end_date: "2026-04-28"
 
 anomalies:
-  - type: marketing_campaign
-    name: yc_demo_day_press
-    start: "2010-01-01"
-    duration: 10d
-    effect:
-      arrivals: 2.5
-
-  - type: marketing_campaign
-    name: techcrunch_disrupt_coverage
-    start: "2010-05-01"
-    duration: 5d
-    effect:
-      arrivals: 3.0
-
-  - type: shopping_season
-    name: summer_travel_peak
-    start: "2010-06-01"
-    duration: 60d
-    effect:
-      arrivals: 1.8
-
-  - type: marketing_campaign
-    name: new_york_city_adoption_surge
-    start: "2010-08-01"
+  - type: product_launch
+    name: series_a_72m_greylock_sequoia
+    start: "2010-11-01"
     duration: 14d
     effect:
       arrivals: 2.0
 
+  - type: marketing_campaign
+    name: one_million_nights_booked
+    start: "2011-02-01"
+    duration: 7d
+    effect:
+      arrivals: 1.5
+
+  - type: marketing_campaign
+    name: series_b_1b_valuation_unicorn
+    start: "2011-07-25"
+    duration: 30d
+    effect:
+      arrivals: 3.0
+
+  - type: marketing_campaign
+    name: ten_million_nights_milestone
+    start: "2012-06-01"
+    duration: 14d
+    effect:
+      arrivals: 1.3
+
+  - type: external_shock
+    name: covid19_bookings_collapse
+    start: "2020-03-15"
+    duration: 90d
+    effect:
+      arrivals: 0.1
+
+  - type: product_launch
+    name: ipo_nasdaq_record_consumer_interest
+    start: "2020-12-10"
+    duration: 30d
+    effect:
+      arrivals: 2.5
+
 markov:
   events:
     - name: PageView
-    - name: Search
-    - name: ListingView
-    - name: MessageToSeller
-    - name: Offer
-    - name: Purchase
-    - name: ListingCreated
-    - name: ListingSold
+    - name: ProductViewed
+    - name: AddToCart
+    - name: CheckoutStarted
+    - name: PurchaseCompleted
   start:
-    PageView: 0.40
-    Search: 0.40
-    ListingView: 0.20
+    PageView: 1.0
   transitions:
     PageView:
-      Search: 0.50
-      ListingView: 0.30
-      "[end]": 0.20
-    Search:
-      ListingView: 0.65
+      ProductViewed: 0.60
+      "[end]": 0.40
+    ProductViewed:
+      AddToCart: 0.25
+      ProductViewed: 0.35
+      "[end]": 0.40
+    AddToCart:
+      CheckoutStarted: 0.65
       "[end]": 0.35
-    ListingView:
-      MessageToSeller: 0.20
-      Offer: 0.10
-      Search: 0.35
-      ListingCreated: 0.05
-      "[end]": 0.30
-    MessageToSeller:
-      Offer: 0.30
-      "[end]": 0.70
-    Offer:
-      Purchase: 0.40
-      "[end]": 0.60
-    Purchase:
-      ListingSold: 0.90
-      "[end]": 0.10
-    ListingCreated:
-      "[end]": 1.0
-    ListingSold:
+    CheckoutStarted:
+      PurchaseCompleted: 0.80
+      "[end]": 0.20
+    PurchaseCompleted:
       "[end]": 1.0

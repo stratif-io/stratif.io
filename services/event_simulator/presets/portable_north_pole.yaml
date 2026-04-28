@@ -1,56 +1,55 @@
 name: Holiday Seasonal App (Portable North Pole)
-# Real company: Portable North Pole — Nov 2009 – Dec 2010 (first full holiday cycle)
 description: >
-  Portable North Pole launched in 2009 and became a runaway Christmas hit — almost zero
-  traffic outside November and December, then explosive annual surges as kids discover
-  personalized Santa video messages. Perfectly illustrates nov_dec_peak monthly seasonality
-  with strong viral word-of-mouth among parents.
+  Portable North Pole launched in November 2009 — the world's most seasonally extreme app.
+  Parents use it to create personalized Santa video messages for their children, so virtually
+  100% of usage falls in a 6-week window from mid-November to December 25. January through
+  October is near-zero. Built by Francois Dorion in Montreal, it reached 5M+ downloads
+  by 2013 and 250,000 unique sessions per day at its December 2018 peak. Classic one-shot
+  usage: parents come back each year but don't engage outside the holiday window.
 axes:
   growth: strong
   stickiness: one_shot
   engagement_depth: shallow
-  monetization: iap_whales
   virality: strong_viral
   scale: small
-  geography: global
   anomalies: explicit
   daily_pattern: evening_peak
-  weekly_pattern: weekends_heavy
+  weekly_pattern: flat
   monthly_seasonality: nov_dec_peak
 
 scale_config:
-  total_users: 30000
+  total_users: 35000000
   start_date: "2009-11-01"
   end_date: "2026-04-28"
 
 anomalies:
   - type: product_launch
-    name: initial_launch_nov_2009
+    name: initial_launch_app_store_featured
     start: "2009-11-01"
-    duration: 7d
+    duration: 60d
     effect:
       arrivals: 5.0
 
   - type: marketing_campaign
-    name: christmas_peak_2009
-    start: "2009-12-15"
-    duration: 14d
+    name: five_million_downloads_milestone
+    start: "2013-12-01"
+    duration: 30d
     effect:
-      arrivals: 12.0
+      arrivals: 2.0
 
   - type: marketing_campaign
-    name: app_store_featuring_dec_2009
-    start: "2009-12-20"
-    duration: 5d
+    name: nativescript_rebuild_250k_peak_day
+    start: "2018-11-15"
+    duration: 45d
     effect:
-      arrivals: 8.0
+      arrivals: 1.5
 
   - type: marketing_campaign
-    name: christmas_peak_2010
-    start: "2010-12-10"
-    duration: 20d
+    name: unicef_partnership_launch
+    start: "2020-11-01"
+    duration: 30d
     effect:
-      arrivals: 15.0
+      arrivals: 1.4
 
 markov:
   events:

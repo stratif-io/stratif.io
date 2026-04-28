@@ -1,104 +1,81 @@
-name: Streaming Mature (Netflix-Like)
-# Real company: Netflix — Jan 2018 – Dec 2018 (mature content-driven growth year)
+name: Streaming Mature (Netflix)
 description: >
-  Netflix in 2018 was a mature streaming platform adding 29M subscribers globally for the
-  year; growth was content-driven with viral hits like Bird Box (Dec 2018) and Stranger
-  Things S2 lingering effect, punctuated by a price increase churn dip in January.
+  Netflix's subscriber journey from 117M in January 2018 to 325M by early 2026.
+  The defining events: Bird Box (Dec 2018) became the most-viewed original in 4 weeks,
+  Q1 2022 saw the first subscriber loss in a decade (-200K), and the password sharing
+  crackdown (May 2023) paradoxically drove +23M new subscribers in 12 months.
+  Relatively flat seasonality compared to consumer apps — Q1 is strongest (winter binge),
+  Q3 is weakest (outdoor summer). Weekend-heavy streaming sessions.
+  Essentially zero churn: once subscribed, people stay for years.
 axes:
-  growth: steady
-  stickiness: sticky
+  growth: strong
+  stickiness: no_one_churns
   engagement_depth: deep
-  monetization: subscription
   virality: weak
-  scale: medium
-  geography: global
+  scale: large
   anomalies: explicit
   daily_pattern: evening_peak
   weekly_pattern: weekends_heavy
-  monthly_seasonality: flat
+  monthly_seasonality: nov_dec_peak
 
 scale_config:
-  total_users: 1000000
+  total_users: 325000000
   start_date: "2018-01-10"
   end_date: "2026-04-28"
 
 anomalies:
   - type: marketing_campaign
-    name: stranger_things_s2_lingering_effect
-    start: "2018-01-10"
-    duration: 14d
-    effect:
-      arrivals: 2.5
-
-  - type: feature_regression
-    name: price_increase_churn_dip
-    start: "2018-03-01"
-    duration: 14d
-    effect:
-      arrivals: 0.7
-
-  - type: marketing_campaign
-    name: avengers_infinity_war_on_netflix
-    start: "2018-07-01"
-    duration: 7d
-    effect:
-      arrivals: 1.8
-
-  - type: marketing_campaign
-    name: bird_box_release_viral_challenge
+    name: bird_box_most_viewed_original_4_weeks
     start: "2018-12-21"
-    duration: 10d
+    duration: 30d
     effect:
-      arrivals: 3.5
+      arrivals: 1.4
+
+  - type: external_shock
+    name: first_subscriber_loss_in_a_decade
+    start: "2022-04-19"
+    duration: 30d
+    effect:
+      arrivals: 0.85
+
+  - type: product_launch
+    name: password_sharing_crackdown_us_rollout
+    start: "2023-05-23"
+    duration: 60d
+    effect:
+      arrivals: 2.2
+
+  - type: marketing_campaign
+    name: squid_game_season_2_record_viewership
+    start: "2024-12-26"
+    duration: 30d
+    effect:
+      arrivals: 1.4
 
 markov:
   events:
-    - name: SessionStart
-    - name: Browse
-    - name: TitlePageView
-    - name: PlayStarted
-    - name: PlayPaused
-    - name: PlayCompleted
-    - name: Rated
-    - name: AddedToList
-    - name: PlanUpgraded
-    - name: Cancelled
+    - name: AppOpen
+    - name: ContentBrowsed
+    - name: PlaybackStarted
+    - name: PlaybackCompleted
+    - name: EpisodeContinued
   start:
-    SessionStart: 1.0
+    AppOpen: 1.0
   transitions:
-    SessionStart:
-      Browse: 0.70
-      Cancelled: 0.01
-      "[end]": 0.29
-    Browse:
-      TitlePageView: 0.64
-      Browse: 0.15
-      PlanUpgraded: 0.01
-      "[end]": 0.20
-    TitlePageView:
-      PlayStarted: 0.60
-      AddedToList: 0.15
-      Browse: 0.15
-      "[end]": 0.10
-    PlayStarted:
-      PlayCompleted: 0.55
-      PlayPaused: 0.30
+    AppOpen:
+      ContentBrowsed: 0.85
       "[end]": 0.15
-    PlayPaused:
-      PlayStarted: 0.60
-      "[end]": 0.40
-    PlayCompleted:
-      Rated: 0.30
-      AddedToList: 0.10
-      Browse: 0.40
+    ContentBrowsed:
+      PlaybackStarted: 0.70
+      ContentBrowsed: 0.20
+      "[end]": 0.10
+    PlaybackStarted:
+      PlaybackCompleted: 0.75
+      "[end]": 0.25
+    PlaybackCompleted:
+      EpisodeContinued: 0.65
+      ContentBrowsed: 0.25
+      "[end]": 0.10
+    EpisodeContinued:
+      PlaybackCompleted: 0.80
       "[end]": 0.20
-    Rated:
-      Browse: 0.50
-      "[end]": 0.50
-    AddedToList:
-      Browse: 0.50
-      "[end]": 0.50
-    PlanUpgraded:
-      "[end]": 1.0
-    Cancelled:
-      "[end]": 1.0

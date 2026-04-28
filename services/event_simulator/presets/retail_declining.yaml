@@ -1,82 +1,78 @@
-name: Retail Declining (Sears-Like)
-# Real company: Sears Holdings — Jan 2017 – Dec 2017 (accelerating decline, 150+ store closures)
+name: Retail Declining (Sears)
 description: >
-  Sears in 2017 was in accelerating decline, closing over 150 stores and posting repeated
-  earnings misses; online traffic continued to erode as shoppers defected to Amazon and
-  Target, with bankruptcy rumors circulating by year-end.
+  Sears.com traffic declined ~60% from 2016 to 2018, mirroring the physical store collapse.
+  Once America's largest retailer (ranked #5 online in 2014), Sears fell to #24 by 2018.
+  Chapter 11 bankruptcy filed October 15, 2018. The digital pattern: declining baseline
+  with seasonal Q4 bumps that fail to recover to prior-year levels. Each Black Friday
+  brings a relative spike, but absolute numbers keep falling. Classic "declining seasonal"
+  — the worst of both worlds.
 axes:
   growth: declining
-  stickiness: normal
-  engagement_depth: medium
-  monetization: one_off_purchase
+  stickiness: churn_heavy
+  engagement_depth: shallow
   virality: none
   scale: medium
-  geography: us_only
   anomalies: explicit
-  daily_pattern: business_hours
-  weekly_pattern: weekends_heavy
+  daily_pattern: always_on
+  weekly_pattern: flat
   monthly_seasonality: q4_heavy
 
 scale_config:
-  total_users: 300000
-  start_date: "2017-02-15"
-  end_date: "2026-04-28"
+  total_users: 50000000
+  start_date: "2017-01-01"
+  end_date: "2019-12-31"
 
 anomalies:
-  - type: feature_regression
-    name: q1_earnings_miss_store_closures
+  - type: external_shock
+    name: q1_earnings_miss_store_closure_announcements
     start: "2017-02-15"
+    duration: 14d
+    effect:
+      arrivals: 0.6
+
+  - type: external_shock
+    name: chapter_11_bankruptcy_filing
+    start: "2018-10-15"
     duration: 7d
     effect:
-      arrivals: 0.5
+      arrivals: 0.4
 
-  - type: shopping_season
-    name: black_friday_last_decent
-    start: "2017-10-27"
-    duration: 4d
+  - type: external_shock
+    name: store_closure_announcements_customer_exodus
+    start: "2018-10-25"
+    duration: 30d
     effect:
-      arrivals: 2.0
+      arrivals: 0.6
 
-  - type: feature_regression
-    name: holiday_declining_vs_prior_year
-    start: "2017-12-06"
-    duration: 21d
+  - type: marketing_campaign
+    name: emerge_from_bankruptcy_eddie_lampert
+    start: "2019-02-11"
+    duration: 14d
     effect:
-      arrivals: 0.7
-
-  - type: feature_regression
-    name: bankruptcy_rumor_leak
-    start: "2017-12-21"
-    duration: 5d
-    effect:
-      arrivals: 0.3
+      arrivals: 0.8
 
 markov:
   events:
     - name: PageView
-    - name: Search
-    - name: ProductView
+    - name: ProductViewed
     - name: AddToCart
-    - name: Purchase
+    - name: CheckoutStarted
+    - name: PurchaseCompleted
   start:
-    PageView: 0.50
-    Search: 0.30
-    ProductView: 0.20
+    PageView: 1.0
   transitions:
     PageView:
-      Search: 0.50
-      ProductView: 0.30
-      "[end]": 0.20
-    Search:
-      ProductView: 0.65
-      "[end]": 0.35
-    ProductView:
-      AddToCart: 0.30
-      Search: 0.20
-      "[end]": 0.50
+      ProductViewed: 0.60
+      "[end]": 0.40
+    ProductViewed:
+      AddToCart: 0.25
+      ProductViewed: 0.35
+      "[end]": 0.40
     AddToCart:
-      Purchase: 0.60
-      ProductView: 0.20
+      CheckoutStarted: 0.65
+      "[end]": 0.35
+    CheckoutStarted:
+      PurchaseCompleted: 0.80
       "[end]": 0.20
-    Purchase:
+    PurchaseCompleted:
       "[end]": 1.0
