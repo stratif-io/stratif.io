@@ -10,7 +10,7 @@ import { KpiCard } from "./KpiCard";
 import { KpiCardExpanded } from "./KpiCardExpanded";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
 
-const EMPTY_ANOMALIES: NonNullable<SimulationConfig["anomalies"]> = [];
+const EMPTY_EVENTS: NonNullable<SimulationConfig["events"]> = [];
 
 interface CardDef {
   key: MetricKey;
@@ -64,6 +64,7 @@ const SECTIONS: { label: string; cards: CardDef[] }[] = [
 
 export function KpiGrid() {
   const [expandedKey, setExpandedKey] = useState<MetricKey | null>(null);
+  const [zoomRange, setZoomRange] = useState<[number, number] | null>(null);
   const [floatingEditor, setFloatingEditor] = useState<{
     index: number;
     x: number;
@@ -71,11 +72,17 @@ export function KpiGrid() {
   } | null>(null);
   const { isLoading, ...out } = useTwinOutput();
   const config = useSeederStore((s) => s.config);
-  const anomalies = useSeederStore(
-    (s) => s.config.anomalies ?? EMPTY_ANOMALIES,
-  );
-  const setAnomalies = useSeederStore((s) => s.setAnomalies);
+  const anomalies = useSeederStore((s) => s.config.events ?? EMPTY_EVENTS);
+  const setSimEvents = useSeederStore((s) => s.setSimEvents);
   const { windowDays } = useMemo(() => resolveSimParams(config), [config]);
+
+  const { startDate, endDate } = useMemo(() => {
+    if (!out.startDate) return { startDate: undefined, endDate: undefined };
+    const s = new Date(out.startDate);
+    const e = new Date(out.startDate);
+    e.setDate(e.getDate() + (windowDays - 1));
+    return { startDate: s, endDate: e };
+  }, [out.startDate, windowDays]);
 
   // Close floating editor on outside click (composedPath handles portals)
   useEffect(() => {
@@ -144,15 +151,18 @@ export function KpiGrid() {
                 anomalies={anomalies}
                 windowDays={windowDays}
                 onAnomalyChange={(i, next) =>
-                  setAnomalies(anomalies.map((a, j) => (j === i ? next : a)))
+                  setSimEvents(anomalies.map((a, j) => (j === i ? next : a)))
                 }
                 onAnomalySelect={handleBandClick}
+                startDate={startDate}
+                endDate={endDate}
                 expanded={expandedKey === card.key}
                 onExpand={() =>
                   setExpandedKey((p) => (p === card.key ? null : card.key))
                 }
                 isLoading={isLoading}
                 isPrimary={card.key === "newUsers"}
+                zoomRange={zoomRange}
                 className={
                   card.colSpan === 3
                     ? "col-span-3"
@@ -167,6 +177,7 @@ export function KpiGrid() {
                 metricKey={expandedKey!}
                 color={section.cards.find((c) => c.key === expandedKey)!.color}
                 onClose={() => setExpandedKey(null)}
+                onBrushChange={setZoomRange}
               />
             )}
           </div>
@@ -179,12 +190,12 @@ export function KpiGrid() {
           x={floatingEditor.x}
           y={floatingEditor.y}
           onChange={(next) => {
-            setAnomalies(
+            setSimEvents(
               anomalies.map((a, i) => (i === floatingEditor.index ? next : a)),
             );
           }}
           onDelete={() => {
-            setAnomalies(
+            setSimEvents(
               anomalies.filter((_, i) => i !== floatingEditor.index),
             );
             setFloatingEditor(null);

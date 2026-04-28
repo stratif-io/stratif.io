@@ -39,21 +39,54 @@ describe("SimulationConfigSchema", () => {
     }
   });
 
-  it("accepts anomalies with typed effect numbers", () => {
+  it("accepts anomalies with start_date and end_date", () => {
     const out = SimulationConfigSchema.safeParse({
       name: "x",
       axes: { growth: "strong" },
       markov: MIN_MARKOV,
-      anomalies: [
+      events: [
         {
           type: "marketing_campaign",
           name: "v",
-          start: "-30d",
-          duration: "10d",
+          start_date: "2025-01-01",
+          end_date: "2025-01-11",
           effect: { arrivals: 2 },
         },
       ],
     });
     expect(out.success).toBe(true);
+  });
+
+  it("rejects anomalies missing start_date or end_date", () => {
+    const out = SimulationConfigSchema.safeParse({
+      name: "x",
+      axes: { growth: "strong" },
+      markov: MIN_MARKOV,
+      events: [
+        {
+          type: "marketing_campaign",
+          name: "v",
+          effect: { arrivals: 2 },
+        },
+      ],
+    });
+    expect(out.success).toBe(false);
+  });
+
+  it("rejects anomalies with non-ISO start_date", () => {
+    const out = SimulationConfigSchema.safeParse({
+      name: "x",
+      axes: { growth: "strong" },
+      markov: MIN_MARKOV,
+      events: [
+        {
+          type: "marketing_campaign",
+          start_date: "not-a-date",
+          end_date: "2025-01-11",
+          effect: { arrivals: 2 },
+        },
+      ],
+    });
+    expect(out.success).toBe(false);
   });
 });

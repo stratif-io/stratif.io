@@ -24,6 +24,11 @@ def default_axis_registry() -> AxisRegistry:
     from services.event_simulator.simulator.axes.monetization import (
         MonetizationAxis,
     )
+    from services.event_simulator.simulator.axes.seasonality import (
+        DailyPatternAxis,
+        MonthlySeasonalityAxis,
+        WeeklyPatternAxis,
+    )
     from services.event_simulator.simulator.axes.stickiness import StickinessAxis
     from services.event_simulator.simulator.axes.virality import (
         ViralityAxis,
@@ -36,4 +41,7 @@ def default_axis_registry() -> AxisRegistry:
     reg.register(MonetizationAxis())
     reg.register(ViralityAxis())
     reg.register(AnomaliesAxis())
+    reg.register(DailyPatternAxis())
+    reg.register(WeeklyPatternAxis())
+    reg.register(MonthlySeasonalityAxis())
     return reg

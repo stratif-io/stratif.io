@@ -12,11 +12,11 @@ def test_list_presets_returns_every_shipped_yaml():
     body = response.json()
     assert "presets" in body
     names = [p["name"] for p in body["presets"]]
-    # 10 shipped presets as of 2026-04-26 (my-* user configs excluded).
+    # 11 shipped presets as of 2026-04-28 (my-* user configs excluded).
     assert "saas_pmf" in names
     assert "ecommerce_steady" in names
     assert "ecommerce_explosive" in names
-    assert len(names) == 10
+    assert len(names) == 11
 
 
 def test_each_preset_has_core_fields():

@@ -9,16 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@stratif-io/design-system";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { ANOMALY_SPEC } from "@/lib/twin";
 import { anomalyTypeColor } from "@/lib/twin";
 import { cn } from "@/lib/cn";
 
 interface Props {
-  anomaly: SimulationAnomaly;
+  anomaly: SimEvent;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onChange: (next: SimulationAnomaly) => void;
+  onChange: (next: SimEvent) => void;
   onDelete: () => void;
 }
 
@@ -29,10 +29,10 @@ export function AnomalySidebarItem({
   onChange,
   onDelete,
 }: Props) {
-  const [local, setLocal] = useState<SimulationAnomaly>(anomaly);
+  const [local, setLocal] = useState<SimEvent>(anomaly);
   useEffect(() => setLocal(anomaly), [anomaly]);
 
-  const emit = (next: SimulationAnomaly) => {
+  const emit = (next: SimEvent) => {
     setLocal(next);
     onChange(next);
   };
@@ -122,31 +122,33 @@ export function AnomalySidebarItem({
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-0.5">
               <Label
-                htmlFor={`a-start-${local.name}`}
+                htmlFor={`a-start-date-${local.name}`}
                 className="text-[10px] text-muted-foreground"
               >
-                Start
+                Start date
               </Label>
               <Input
-                id={`a-start-${local.name}`}
-                aria-label="start"
-                value={local.start ?? ""}
-                onChange={(e) => emit({ ...local, start: e.target.value })}
+                id={`a-start-date-${local.name}`}
+                aria-label="start date"
+                type="date"
+                value={local.start_date ?? ""}
+                onChange={(e) => emit({ ...local, start_date: e.target.value })}
                 className="h-8 text-[11px]"
               />
             </div>
             <div className="flex flex-col gap-0.5">
               <Label
-                htmlFor={`a-dur-${local.name}`}
+                htmlFor={`a-end-date-${local.name}`}
                 className="text-[10px] text-muted-foreground"
               >
-                Duration
+                End date
               </Label>
               <Input
-                id={`a-dur-${local.name}`}
-                aria-label="duration"
-                value={local.duration ?? ""}
-                onChange={(e) => emit({ ...local, duration: e.target.value })}
+                id={`a-end-date-${local.name}`}
+                aria-label="end date"
+                type="date"
+                value={local.end_date ?? ""}
+                onChange={(e) => emit({ ...local, end_date: e.target.value })}
                 className="h-8 text-[11px]"
               />
             </div>

@@ -58,6 +58,12 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
         description: "Sinusoidal annual cycle — e-commerce / travel",
         sparkPoints: "0,14 10,8 26,3 36,8 46,14 52,18",
       },
+      {
+        value: "s_curve",
+        label: "S-curve",
+        description: "Bell-curve growth — rises to a peak then plateaus",
+        sparkPoints: "0,24 13,18 26,5 39,18 52,24",
+      },
     ],
   },
   stickiness: {
@@ -186,8 +192,8 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
       },
     ],
   },
-  anomalies: {
-    id: "anomalies",
+  noise: {
+    id: "noise",
     label: "noise",
     values: [
       {
@@ -218,6 +224,97 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
       },
     ],
   },
+  daily_pattern: {
+    id: "daily_pattern",
+    label: "daily pattern",
+    values: [
+      {
+        value: "business_hours",
+        label: "Business hours",
+        description: "Peak 09:00–18:00, low at night",
+        sparkPoints: "0,26 19,26 19,5 39,5 39,20 52,24",
+      },
+      {
+        value: "evening_peak",
+        label: "Evening peak",
+        description: "Peak 18:00–23:00",
+        sparkPoints: "0,22 8,26 19,24 36,18 39,6 47,5 52,20",
+      },
+      {
+        value: "always_on",
+        label: "Always on",
+        description: "Flat 24 h — no time-of-day preference",
+        sparkPoints: "0,14 52,14",
+      },
+      {
+        value: "night_owl",
+        label: "Night owl",
+        description: "Peak 22:00–03:00",
+        sparkPoints: "0,8 6,14 8,26 19,26 36,24 47,18 48,6 52,8",
+      },
+    ],
+  },
+  weekly_pattern: {
+    id: "weekly_pattern",
+    label: "weekly pattern",
+    values: [
+      {
+        value: "weekdays_only",
+        label: "Weekdays only",
+        description: "Mon–Fri heavy, weekends near-zero",
+        sparkPoints: "0,5 37,5 37,24 52,24",
+      },
+      {
+        value: "weekends_heavy",
+        label: "Weekend heavy",
+        description: "Saturday and Sunday heaviest",
+        sparkPoints: "0,20 37,20 37,5 52,5",
+      },
+      {
+        value: "flat",
+        label: "Flat",
+        description: "Uniform across all days",
+        sparkPoints: "0,14 52,14",
+      },
+    ],
+  },
+  monthly_seasonality: {
+    id: "monthly_seasonality",
+    label: "seasonality",
+    values: [
+      {
+        value: "nov_dec_extreme",
+        label: "Holiday only",
+        description:
+          "Single-purpose holiday app — virtually all activity in Nov–Dec",
+        sparkPoints: "0,26 39,26 43,20 47,4 52,28",
+      },
+      {
+        value: "nov_dec_peak",
+        label: "Holiday peak",
+        description: "Christmas / holiday apps — Nov–Dec spike",
+        sparkPoints: "0,22 39,22 43,16 47,6 52,4",
+      },
+      {
+        value: "q4_heavy",
+        label: "Q4 ramp",
+        description: "Retail / e-commerce — gradual Q4 build",
+        sparkPoints: "0,20 26,18 39,14 43,10 47,6 52,4",
+      },
+      {
+        value: "summer_peak",
+        label: "Summer peak",
+        description: "Travel / outdoor — Jun–Aug peak",
+        sparkPoints: "0,22 13,22 22,10 26,5 30,5 35,10 43,18 52,22",
+      },
+      {
+        value: "flat",
+        label: "Flat",
+        description: "No monthly variation",
+        sparkPoints: "0,14 52,14",
+      },
+    ],
+  },
 };
 
 export const STRIP_AXIS_IDS = [
@@ -226,5 +323,7 @@ export const STRIP_AXIS_IDS = [
   "engagement_depth",
   "virality",
   "scale",
-  "anomalies",
+  "noise",
+  "weekly_pattern",
+  "monthly_seasonality",
 ] as const;

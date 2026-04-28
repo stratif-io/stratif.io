@@ -5,8 +5,8 @@ import { AnomalyFloatingEditor } from "../AnomalyFloatingEditor";
 const anomaly = {
   type: "marketing_campaign",
   name: "viral",
-  start: "10d",
-  duration: "5d",
+  start_date: "2025-01-11",
+  end_date: "2025-01-16",
   effect: { arrivals: 4 },
 };
 

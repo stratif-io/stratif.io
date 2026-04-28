@@ -1,13 +1,18 @@
 import { useRef, useState } from "react";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { anomalyTypeColor } from "@/lib/twin";
-import { parseDays } from "@/lib/twin/utils";
+
+/** Parse an ISO date string (YYYY-MM-DD) as UTC midnight. */
+const parseISO = (s: string) => new Date(s + "T00:00:00Z");
+
+const toISO = (d: Date) => d.toISOString().slice(0, 10);
 
 interface Props {
-  anomaly: SimulationAnomaly;
+  anomaly: SimEvent;
   windowDays: number;
   trackWidth: number;
-  onChange: (next: SimulationAnomaly) => void;
+  windowStart?: Date;
+  onChange: (next: SimEvent) => void;
   onSelect: () => void;
 }
 
@@ -19,15 +24,25 @@ export function AnomalyPill({
   anomaly,
   windowDays,
   trackWidth,
+  windowStart,
   onChange,
   onSelect,
 }: Props) {
-  const parsedStart = parseDays(anomaly.start ?? "0d") ?? 0;
+  const ws = windowStart ?? new Date();
   const startDay = Math.max(
     0,
-    parsedStart < 0 ? windowDays + parsedStart : parsedStart,
+    Math.round(
+      (parseISO(anomaly.start_date).getTime() - ws.getTime()) / 86_400_000,
+    ),
   );
-  const durationDays = Math.max(1, parseDays(anomaly.duration ?? "1d") ?? 1);
+  const durationDays = Math.max(
+    1,
+    Math.round(
+      (parseISO(anomaly.end_date).getTime() -
+        parseISO(anomaly.start_date).getTime()) /
+        86_400_000,
+    ),
+  );
   const pxPerDay = trackWidth / Math.max(1, windowDays);
   const x = startDay * pxPerDay;
   const width = Math.max(4, durationDays * pxPerDay);
@@ -69,14 +84,29 @@ export function AnomalyPill({
         0,
         Math.min(windowDays - origDuration, origStart + deltaDays),
       );
-      onChange({ ...anomaly, start: `${s}d` });
+      const newStart = new Date(ws.getTime() + s * 86_400_000);
+      const newEnd = new Date(newStart.getTime() + origDuration * 86_400_000);
+      onChange({
+        ...anomaly,
+        start_date: toISO(newStart),
+        end_date: toISO(newEnd),
+      });
     } else if (mode === "right") {
       const d = Math.max(1, origDuration + deltaDays);
-      onChange({ ...anomaly, duration: `${d}d` });
+      const newEnd = new Date(
+        parseISO(anomaly.start_date).getTime() + d * 86_400_000,
+      );
+      onChange({ ...anomaly, end_date: toISO(newEnd) });
     } else if (mode === "left") {
       const s = Math.max(0, origStart + deltaDays);
       const d = Math.max(1, origDuration - deltaDays);
-      onChange({ ...anomaly, start: `${s}d`, duration: `${d}d` });
+      const newStart = new Date(ws.getTime() + s * 86_400_000);
+      const newEnd = new Date(newStart.getTime() + d * 86_400_000);
+      onChange({
+        ...anomaly,
+        start_date: toISO(newStart),
+        end_date: toISO(newEnd),
+      });
     }
   };
 

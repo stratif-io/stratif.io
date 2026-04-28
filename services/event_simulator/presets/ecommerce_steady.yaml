@@ -1,52 +1,85 @@
-# Default preset — produces data qualitatively matching the pre-parametrized
-# seeder. Behavior change is zero; this is the backward-compat path.
-
-name: E-commerce Steady Growth (Amazon-Like)
-description: |
-  Stable e-commerce site, no growth trend, normal stickiness.
-  This is the default preset; running the seeder with no env vars / no CLI
-  flags produces data indistinguishable from the seeder prior to Phase 1.
-
+name: E-commerce Steady Growth (Amazon Prime, 2010-2015)
+description: >
+  Amazon's growth from 88 million active customers in 2010 to 285 million by 2015,
+  driven by Prime expansion, Kindle Fire hardware, and Prime Instant Video. This period
+  saw Amazon transition from a retailer to a platform. Extreme Q4 seasonality —
+  approximately 35% of annual GMV comes in Q4. Prime members essentially never churn
+  (retention >90% annually). The Prime Day launch in July 2015 created a new
+  artificial summer peak.
 axes:
-  growth: steady
-  stickiness: normal
+  growth: strong
+  stickiness: no_one_churns
   engagement_depth: medium
-  monetization: one_off_purchase
   virality: weak
-  scale: small           # 10 000 users × 90 days — may be overridden by SEED_USERS/SEED_DAYS
-  geography: global
-  anomalies: clean
+  scale: large
+  noise: moderate
+  daily_pattern: always_on
+  weekly_pattern: flat
+  monthly_seasonality: flat
 
 scale_config:
-  window_days: 180
-  starting_rate: 100
+  total_users: 285000000
+  start_date: "2010-01-01"
+  end_date: "2015-12-31"
+
+events:
+  - type: product_launch
+    name: prime_instant_video_launch
+    start_date: "2011-02-22"
+    end_date: "2011-03-24"
+    effect:
+      arrivals: 1.6
+
+  - type: product_launch
+    name: kindle_fire_launch_drives_prime
+    start_date: "2011-11-15"
+    end_date: "2011-12-15"
+    effect:
+      arrivals: 1.8
+
+  - type: marketing_campaign
+    name: prime_10m_members_milestone
+    start_date: "2013-01-01"
+    end_date: "2013-01-31"
+    effect:
+      arrivals: 1.3
+
+  - type: marketing_campaign
+    name: prime_53pct_yoy_growth_disclosed
+    start_date: "2014-04-10"
+    end_date: "2014-04-24"
+    effect:
+      arrivals: 1.4
+
+  - type: product_launch
+    name: first_prime_day_new_summer_holiday
+    start_date: "2015-07-15"
+    end_date: "2015-07-17"
+    effect:
+      arrivals: 3.0
 
 markov:
   events:
-    - name: Home
-    - name: Search
-    - name: ProductView
+    - name: PageView
+    - name: ProductViewed
     - name: AddToCart
-    - name: Purchase
+    - name: CheckoutStarted
+    - name: PurchaseCompleted
   start:
-    Home: 0.50
-    Search: 0.30
-    ProductView: 0.20
+    PageView: 1.0
   transitions:
-    Home:
-      Search: 0.50
-      ProductView: 0.30
-      "[end]": 0.20
-    Search:
-      ProductView: 0.65
-      "[end]": 0.35
-    ProductView:
-      AddToCart: 0.30
-      Search: 0.20
-      "[end]": 0.50
+    PageView:
+      ProductViewed: 0.60
+      "[end]": 0.40
+    ProductViewed:
+      AddToCart: 0.25
+      ProductViewed: 0.35
+      "[end]": 0.40
     AddToCart:
-      Purchase: 0.60
-      ProductView: 0.20
+      CheckoutStarted: 0.65
+      "[end]": 0.35
+    CheckoutStarted:
+      PurchaseCompleted: 0.80
       "[end]": 0.20
-    Purchase:
+    PurchaseCompleted:
       "[end]": 1.0

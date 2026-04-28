@@ -1,0 +1,91 @@
+name: Holiday Seasonal App (Portable North Pole)
+description: >
+  Portable North Pole launched in November 2009 — the world's most seasonally extreme app.
+  Parents use it to create personalized Santa video messages for their children, so virtually
+  100% of usage falls in a 6-week window from mid-November to December 25. January through
+  October is near-zero. Built by Francois Dorion in Montreal, it reached 5M+ downloads
+  by 2013 and 250,000 unique sessions per day at its December 2018 peak. Classic one-shot
+  usage: parents come back each year but don't engage outside the holiday window.
+axes:
+  growth: strong
+  stickiness: one_shot
+  engagement_depth: shallow
+  virality: strong_viral
+  scale: small
+  noise: explicit
+  daily_pattern: evening_peak
+  weekly_pattern: flat
+  monthly_seasonality: nov_dec_extreme
+
+# Gentle annual growth (~15% YoY) — the app grows its user base year-over-year
+# but all activity concentrates in the Nov-Dec window via nov_dec_extreme seasonality.
+growth_config:
+  annual_rate: 1.15
+
+scale_config:
+  total_users: 35000000
+  start_date: "2009-11-01"
+  end_date: "2026-04-28"
+
+events:
+  - type: product_launch
+    name: initial_launch_app_store_featured
+    start_date: "2009-11-01"
+    end_date: "2009-12-31"
+    effect:
+      arrivals: 5.0
+
+  - type: marketing_campaign
+    name: five_million_downloads_milestone
+    start_date: "2013-12-01"
+    end_date: "2013-12-31"
+    effect:
+      arrivals: 2.0
+
+  - type: marketing_campaign
+    name: nativescript_rebuild_250k_peak_day
+    start_date: "2018-11-15"
+    end_date: "2018-12-30"
+    effect:
+      arrivals: 1.5
+
+  - type: marketing_campaign
+    name: unicef_partnership_launch
+    start_date: "2020-11-01"
+    end_date: "2020-12-01"
+    effect:
+      arrivals: 1.4
+
+markov:
+  events:
+    - name: AppOpen
+    - name: VideoPersonalized
+    - name: VideoPlayed
+    - name: VideoShared
+    - name: PurchaseStarted
+    - name: PurchaseCompleted
+    - name: AppRated
+  start:
+    AppOpen: 1.0
+  transitions:
+    AppOpen:
+      VideoPersonalized: 0.70
+      "[end]": 0.30
+    VideoPersonalized:
+      VideoPlayed: 0.90
+      "[end]": 0.10
+    VideoPlayed:
+      VideoShared: 0.45
+      PurchaseStarted: 0.20
+      "[end]": 0.35
+    VideoShared:
+      AppRated: 0.15
+      "[end]": 0.85
+    PurchaseStarted:
+      PurchaseCompleted: 0.65
+      "[end]": 0.35
+    PurchaseCompleted:
+      AppRated: 0.30
+      "[end]": 0.70
+    AppRated:
+      "[end]": 1.0

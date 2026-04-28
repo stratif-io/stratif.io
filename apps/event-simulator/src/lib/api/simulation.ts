@@ -5,6 +5,7 @@ export interface TwinOutput {
   arrivals: number[];
   pipeline: {
     growth: number[];
+    seasonality: number[];
     anomalies: number[];
     jitter: number[];
     virality: number[];
@@ -15,11 +16,14 @@ export interface TwinOutput {
   churnedUsers: number[];
   reactivatedUsers: number[];
   stickiness: (number | null)[];
+  mau: number[];
   totalUsers: number[];
   /** Fraction applied before each Poisson draw. Real λ(t) = pipeline.virality[t] × arrivalCap */
   arrivalCap: number;
   /** Multiplier applied after the Poisson draw. Displayed result = k × reportScale */
   reportScale: number;
+  /** ISO date string for day 0 of the simulation (e.g. "2009-11-01") */
+  startDate?: string;
 }
 
 const SEED_SERVER_URL =
@@ -33,12 +37,15 @@ export interface PreviewResult {
   reactivated: number[];
   events: number[];
   stickiness: number[];
+  mau: number[];
   growth_curve: number[];
+  seasonality_curve: number[];
   anomaly_curve: number[];
   jitter_curve: number[];
   virality_curve: number[];
   arrival_cap: number;
   report_scale: number;
+  start_date?: string | null;
 }
 
 export function mapToTwinOutput(result: PreviewResult): TwinOutput {
@@ -54,6 +61,7 @@ export function mapToTwinOutput(result: PreviewResult): TwinOutput {
     arrivals: result.new_users,
     pipeline: {
       growth: result.growth_curve,
+      seasonality: result.seasonality_curve ?? [],
       anomalies: result.anomaly_curve,
       jitter: result.jitter_curve,
       virality: result.virality_curve,
@@ -64,9 +72,11 @@ export function mapToTwinOutput(result: PreviewResult): TwinOutput {
     churnedUsers: result.churned,
     reactivatedUsers: result.reactivated,
     stickiness: result.stickiness,
+    mau: result.mau ?? [],
     totalUsers,
     arrivalCap: result.arrival_cap,
     reportScale: result.report_scale,
+    startDate: result.start_date ?? undefined,
   };
 }
 

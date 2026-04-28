@@ -8,7 +8,7 @@ const SAMPLE: SimulationConfig = {
   description: "test",
   axes: { growth: "strong" },
   markov: {
-    events: [{ name: "PageView" }],
+    events: [{ name: "PageView", color: "#6366f1" }],
     start: { PageView: 1.0 },
     transitions: { PageView: { "[end]": 1.0 } },
   },
@@ -70,7 +70,10 @@ describe("seederStore", () => {
 describe("seederStore — studioExpanded", () => {
   beforeEach(() => {
     act(() => {
-      useSeederStore.setState({ studioExpanded: true, activeSection: "studio" });
+      useSeederStore.setState({
+        studioExpanded: true,
+        activeSection: "studio",
+      });
     });
   });
 

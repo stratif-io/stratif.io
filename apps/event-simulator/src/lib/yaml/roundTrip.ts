@@ -10,7 +10,7 @@ const KEY_ORDER: (keyof SimulationConfig)[] = [
   "random_seed",
   "scale_config",
   "growth_config",
-  "anomalies",
+  "events",
 ];
 
 export type ParseResult =

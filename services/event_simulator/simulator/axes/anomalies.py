@@ -39,7 +39,7 @@ _SIGMA: dict[str, float] = {
 
 
 class AnomaliesAxis:
-    name: str = "anomalies"
+    name: str = "noise"
     values: dict[str, Any] = dict.fromkeys(_VALUES)
 
     def apply(self, value: str, simulation: SimulationState) -> None:

@@ -37,17 +37,19 @@ describe("App integration", () => {
     vi.mocked(presetsApi.fetchPresets).mockResolvedValue(mockPresets as never);
   });
 
-  it("renders Seeder Studio title", async () => {
+  it("renders stratif.io brand", async () => {
     renderApp();
     await waitFor(() =>
-      expect(screen.getByText("Seeder Studio")).toBeInTheDocument(),
+      expect(
+        screen.getByRole("img", { name: "stratif.io" }),
+      ).toBeInTheDocument(),
     );
   });
 
   it("renders sidebar navigation sections", async () => {
     renderApp();
     // The sidebar renders navigation buttons for each section
-    // Top-level sidebar items are Studio and Event editor;
+    // Top-level sidebar items are Studio and Event simulator;
     // axis items (Growth, Retention, etc.) are children of Studio
     // and only visible when Studio is expanded.
     await waitFor(() => {
@@ -55,7 +57,7 @@ describe("App integration", () => {
         screen.getByRole("button", { name: "Studio" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Event editor" }),
+        screen.getByRole("button", { name: "Event simulator" }),
       ).toBeInTheDocument();
     });
   });
@@ -66,7 +68,7 @@ describe("App integration", () => {
     await waitFor(() => screen.getByRole("combobox"));
     await user.click(screen.getByRole("combobox"));
     await waitFor(() =>
-      expect(screen.getByText("saas_growth")).toBeInTheDocument(),
+      expect(screen.getByText("🚀 saas_growth")).toBeInTheDocument(),
     );
   });
 
@@ -82,8 +84,8 @@ describe("App integration", () => {
     renderApp();
     await waitFor(() => screen.getByRole("combobox"));
     await user.click(screen.getByRole("combobox"));
-    await waitFor(() => screen.getByText("saas_growth"));
-    await user.click(screen.getByText("saas_growth"));
+    await waitFor(() => screen.getByText("🚀 saas_growth"));
+    await user.click(screen.getByText("🚀 saas_growth"));
     // Verify preset loaded by checking the store config name via axis chips still present
     await waitFor(() =>
       expect(screen.getAllByRole("button").length).toBeGreaterThanOrEqual(6),
@@ -96,15 +98,15 @@ describe("App integration", () => {
     // Load a preset first
     await waitFor(() => screen.getByRole("combobox"));
     await user.click(screen.getByRole("combobox"));
-    await waitFor(() => screen.getByText("saas_growth"));
-    await user.click(screen.getByText("saas_growth"));
+    await waitFor(() => screen.getByText("🚀 saas_growth"));
+    await user.click(screen.getByText("🚀 saas_growth"));
     // Click "+ Event" button to add an anomaly and mark the store as dirty
     await waitFor(() => screen.getByText("+ Event"));
     await user.click(screen.getByText("+ Event"));
     // Now try to switch to New blank — should show discard dialog
     await user.click(screen.getByRole("combobox"));
-    await waitFor(() => screen.getAllByText("New blank"));
-    await user.click(screen.getAllByText("New blank")[0]);
+    await waitFor(() => screen.getAllByText("✨ New blank"));
+    await user.click(screen.getAllByText("✨ New blank")[0]);
     expect(screen.getByText(/discard unsaved changes/i)).toBeInTheDocument();
   });
 });

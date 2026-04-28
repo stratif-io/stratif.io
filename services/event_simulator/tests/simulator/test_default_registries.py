@@ -15,7 +15,7 @@ def test_default_axis_registry_has_all_axes():
         "geography",
         "monetization",
         "virality",
-        "anomalies",
+        "noise",
     ]:
         assert axis in names, axis
 

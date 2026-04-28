@@ -14,6 +14,7 @@ export interface SidebarItem {
   active?: boolean;
   onClick: () => void;
   badge?: string;
+  sparkline?: string;
   children?: SidebarItem[];
   expanded?: boolean;
   onToggleExpand?: () => void;
@@ -55,8 +56,8 @@ export function AppSidebar({
       {brand && (
         <div
           className={cn(
-            "min-h-14 py-3 flex items-center border-b border-border px-4 shrink-0",
-            collapsed && "justify-center px-0",
+            "min-h-14 py-3 flex items-center border-b border-border shrink-0 overflow-hidden",
+            collapsed ? "justify-center px-0" : "px-4",
           )}
         >
           {brand}
@@ -94,7 +95,10 @@ export function AppSidebar({
         <button
           onClick={() => onCollapse(!collapsed)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-xs w-full"
+          className={cn(
+            "flex items-center gap-2 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-xs",
+            collapsed ? "w-9 justify-center" : "w-full",
+          )}
         >
           <svg
             width="14"
@@ -165,9 +169,32 @@ function SidebarNavItem({
         {item.icon}
       </span>
       {!collapsed && (
-        <span className="flex-1 truncate text-left">{item.label}</span>
+        <span className="flex-1 min-w-0 text-left">
+          <span className="block truncate">{item.label}</span>
+          {indent && item.badge && (
+            <span className="block truncate text-[10px] text-muted-foreground font-normal mt-0.5">
+              {item.badge}
+            </span>
+          )}
+        </span>
       )}
-      {!collapsed && item.badge && (
+      {!collapsed && indent && item.sparkline && (
+        <svg
+          viewBox="0 0 52 28"
+          width={28}
+          height={28}
+          aria-hidden="true"
+          className="shrink-0 text-primary"
+        >
+          <polyline
+            points={item.sparkline}
+            stroke="currentColor"
+            strokeWidth={1.5}
+            fill="none"
+          />
+        </svg>
+      )}
+      {!collapsed && item.badge && !indent && (
         <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-medium shrink-0">
           {item.badge}
         </span>
