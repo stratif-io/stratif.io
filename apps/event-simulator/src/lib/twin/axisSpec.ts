@@ -271,7 +271,7 @@ export const AXIS_SPEC: Record<string, AxisDefinition> = {
     ],
     default: "global",
   },
-  anomalies: {
+  noise: {
     id: "noise",
     label: "Anomalies",
     description: "Noise level applied to all four KPI curves.",

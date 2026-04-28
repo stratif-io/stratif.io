@@ -186,7 +186,7 @@ export const AXIS_DISPLAY: Record<string, AxisDisplay> = {
       },
     ],
   },
-  anomalies: {
+  noise: {
     id: "noise",
     label: "noise",
     values: [
