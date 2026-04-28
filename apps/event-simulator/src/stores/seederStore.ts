@@ -35,11 +35,18 @@ interface SeederState {
   setStudioExpanded: (v: boolean) => void;
 }
 
+function defaultDates(): { uiStartDate: string; uiEndDate: string } {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(start.getDate() - 90); // matches default scale "small" = 90d
+  const fmt = (d: Date) => d.toISOString().split("T")[0];
+  return { uiStartDate: fmt(start), uiEndDate: fmt(end) };
+}
+
 export const useSeederStore = create<SeederState>((set) => ({
   config: blankConfig(),
   dirty: false,
-  uiStartDate: null,
-  uiEndDate: null,
+  ...defaultDates(),
 
   loadPreset: (config) => set({ config, dirty: false }),
 

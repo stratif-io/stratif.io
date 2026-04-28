@@ -438,6 +438,13 @@ export default function App() {
                   total_users: p.total_users,
                   window_days: p.window_days,
                 });
+                const days = p.window_days as number;
+                const end = new Date();
+                const start = new Date(end);
+                start.setDate(start.getDate() - days);
+                const fmt = (d: Date) => d.toISOString().split("T")[0];
+                setUiEndDate(fmt(end));
+                setUiStartDate(fmt(start));
               }
             }
           }}
@@ -446,7 +453,15 @@ export default function App() {
         </AxisPopover>
       );
     },
-    [config.axes, setAxis, setScaleConfig, isScaleCustom, resolvedScale],
+    [
+      config.axes,
+      setAxis,
+      setScaleConfig,
+      setUiStartDate,
+      setUiEndDate,
+      isScaleCustom,
+      resolvedScale,
+    ],
   );
 
   return (
