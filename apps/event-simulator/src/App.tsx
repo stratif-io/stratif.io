@@ -196,6 +196,16 @@ export default function App() {
   );
   const { window_days } = resolvedScale;
 
+  const isScaleCustom = useMemo(() => {
+    const preset = AXIS_SPEC.scale.values.find((v) => v.value === scaleAxis);
+    if (!preset || !scaleOverride) return false;
+    const pu = preset.params.total_users as number;
+    const pw = preset.params.window_days as number;
+    const ou = scaleOverride.total_users;
+    const ow = scaleOverride.window_days;
+    return (ou != null && ou !== pu) || (ow != null && ow !== pw);
+  }, [scaleAxis, scaleOverride]);
+
   const handleAddEvent = () => {
     const duration = Math.max(5, Math.floor(window_days * 0.1));
     const maxStart = Math.max(0, window_days - duration - 1);
@@ -318,8 +328,10 @@ export default function App() {
       ({ id, label, icon }) => {
         const currentVal = resolvedAxes[id] ?? AXIS_SPEC[id]?.default ?? "";
         const displayLabel =
-          AXIS_SPEC[id]?.values.find((v) => v.value === currentVal)?.label ??
-          currentVal;
+          id === "scale" && isScaleCustom
+            ? "custom"
+            : (AXIS_SPEC[id]?.values.find((v) => v.value === currentVal)
+                ?.label ?? currentVal);
         return {
           key: id,
           label,
@@ -366,6 +378,7 @@ export default function App() {
     studioExpanded,
     setActiveSection,
     setStudioExpanded,
+    isScaleCustom,
   ]);
 
   const itemWrapper = useCallback(
@@ -373,18 +386,33 @@ export default function App() {
       const axisDef = AXIS_SPEC[item.key];
       if (!axisDef) return btn;
       const currentVal = (config.axes ?? {})[item.key] ?? axisDef.default;
-      const popoverValues: AxisDisplayValue[] = axisDef.values.map((v) => ({
+      const baseValues: AxisDisplayValue[] = axisDef.values.map((v) => ({
         value: v.value,
         label: v.label,
         description: v.description,
         sparklinePoints: AXIS_SPARKLINES[item.key]?.[v.value] ?? "0,14 52,14",
       }));
+      const popoverValues: AxisDisplayValue[] =
+        item.key === "scale" && isScaleCustom
+          ? [
+              ...baseValues,
+              {
+                value: "custom",
+                label: "custom",
+                description: `${resolvedScale.mode === "goal" ? resolvedScale.total_users.toLocaleString() + " users" : resolvedScale.starting_rate + "/day"} · ${resolvedScale.window_days}d`,
+                sparklinePoints: "0,14 52,14",
+              },
+            ]
+          : baseValues;
+      const effectiveCurrentVal =
+        item.key === "scale" && isScaleCustom ? "custom" : currentVal;
       return (
         <AxisPopover
           axisId={item.key}
           values={popoverValues}
-          currentValue={currentVal}
+          currentValue={effectiveCurrentVal}
           onSelect={(val) => {
+            if (val === "custom") return;
             setAxis(item.key, val);
             if (item.key === "scale") {
               const p = axisDef.values.find((v) => v.value === val)?.params;
@@ -401,7 +429,7 @@ export default function App() {
         </AxisPopover>
       );
     },
-    [config.axes, setAxis, setScaleConfig],
+    [config.axes, setAxis, setScaleConfig, isScaleCustom, resolvedScale],
   );
 
   return (
