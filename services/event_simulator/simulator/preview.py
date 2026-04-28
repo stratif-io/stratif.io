@@ -31,6 +31,7 @@ from services.event_simulator.simulator.axes._defaults import default_axis_regis
 from services.event_simulator.simulator.cohort_model import (
     RetentionParams,
     active_days_for_user,
+    build_reactivation_kernel,
     build_survival,
 )
 from services.event_simulator.simulator.config import SimulationConfig
@@ -98,13 +99,24 @@ def _simulate_cohorts(
     window = len(arrivals)
     active_sets: list[set[int]] = [set() for _ in range(window)]
     first_day: dict[int, int] = {}
+    # Precompute survival curve and reactivation kernel once for the whole batch.
+    precomp_S: list[float] | None = None
+    precomp_R: list[float] | None = None
+    if state.retention_params is not None:
+        precomp_S = build_survival(state.retention_params, window)
+        precomp_R = build_reactivation_kernel(state.retention_params)
     uid = 0
     for d, n in enumerate(arrivals):
         for _ in range(n):
             first_day[uid] = d
             if state.retention_params is not None:
                 days_active = active_days_for_user(
-                    rng, state.retention_params, d, window
+                    rng,
+                    state.retention_params,
+                    d,
+                    window,
+                    S=precomp_S,
+                    R=precomp_R,
                 )
             elif state.hazard_curve is not None:
                 lifetime = state.hazard_curve(rng)
@@ -157,8 +169,14 @@ def _analytical_dau_churn(
     return active, churned
 
 
-def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewResult:
-    """Core rate-driven engine. Total users emerges naturally from starting_rate."""
+def _run_with_rate(
+    config: SimulationConfig, starting_rate: float, *, _count_only: bool = False
+) -> PreviewResult:
+    """Core rate-driven engine. Total users emerges naturally from starting_rate.
+
+    Pass ``_count_only=True`` during binary search to skip the stickiness cohort
+    simulation (saves ~50% of compute when searching for the right starting_rate).
+    """
     scale = config.resolved_scale()
     window = scale.window_days
 
@@ -314,26 +332,32 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
     # ── Stickiness (DAU/MAU) ──────────────────────────────────────────────────
     # Cohort simulation at capped scale is still used for stickiness because it
     # needs the set of distinct users over a rolling 30-day window.
-    rng_cohort_draw = random.Random(seed + 3)
-    new_users_capped = [_poisson(rng_cohort_draw, n * cohort_cap) for n in new_users]
-    rng_cohort = random.Random(seed + 1)
-    active_sets_stk, _ = _simulate_cohorts(new_users_capped, state, rng_cohort)
-    active_users_stk = [len(s) for s in active_sets_stk]
-
+    # Skipped during binary search (_count_only=True) since only sum(new_users) matters.
     avg_eps = _avg_events_per_session(config)
     session_mult = state.session_freq_multiplier
 
-    stickiness: list[float] = []
-    last_active: dict[int, int] = {}
-    mau_set: set[int] = set()
-    for d in range(window):
-        for uid in active_sets_stk[d]:
-            last_active[uid] = d
-            mau_set.add(uid)
-        to_evict = [uid for uid in mau_set if last_active[uid] < d - 29]
-        for uid in to_evict:
-            mau_set.discard(uid)
-        stickiness.append(active_users_stk[d] / max(len(mau_set), 1))
+    if _count_only:
+        stickiness = [0.0] * window
+    else:
+        rng_cohort_draw = random.Random(seed + 3)
+        new_users_capped = [
+            _poisson(rng_cohort_draw, n * cohort_cap) for n in new_users
+        ]
+        rng_cohort = random.Random(seed + 1)
+        active_sets_stk, _ = _simulate_cohorts(new_users_capped, state, rng_cohort)
+        active_users_stk = [len(s) for s in active_sets_stk]
+
+        stickiness = []
+        last_active: dict[int, int] = {}
+        mau_set: set[int] = set()
+        for d in range(window):
+            for uid in active_sets_stk[d]:
+                last_active[uid] = d
+                mau_set.add(uid)
+            to_evict = [uid for uid in mau_set if last_active[uid] < d - 29]
+            for uid in to_evict:
+                mau_set.discard(uid)
+            stickiness.append(active_users_stk[d] / max(len(mau_set), 1))
 
     def _norm_curve(curve: list[float]) -> list[float]:
         """Scale a pipeline curve to the same y-axis as new_users for chart overlay."""
@@ -377,7 +401,7 @@ def _solve_starting_rate(config: SimulationConfig, target_total: int) -> float:
     for _ in range(50):
         mid_log = (lo_log + hi_log) / 2.0
         mid = math.exp(mid_log)
-        result = _run_with_rate(config, mid)
+        result = _run_with_rate(config, mid, _count_only=True)
         total = sum(result.new_users)
         if total < target_total:
             lo_log = mid_log

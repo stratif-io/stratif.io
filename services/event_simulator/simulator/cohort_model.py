@@ -75,10 +75,18 @@ def active_days_for_user(
     params: RetentionParams,
     join_day: int,
     window_days: int,
+    *,
+    S: list[float] | None = None,
+    R: list[float] | None = None,
 ) -> list[int]:
-    """Return the list of days (absolute) on which this user is active."""
-    S = build_survival(params, window_days)
-    R = build_reactivation_kernel(params)
+    """Return the list of days (absolute) on which this user is active.
+
+    Pass precomputed S and R to avoid rebuilding them for every user in a batch.
+    """
+    if S is None:
+        S = build_survival(params, window_days)
+    if R is None:
+        R = build_reactivation_kernel(params)
 
     active: list[int] = []
     current_day = join_day
