@@ -50,10 +50,15 @@ export const METRIC_PIPELINES: Partial<
         label: "Seasonality",
         latex: "S(t) = G(t) \\cdot \\mathrm{dow}(t) \\cdot \\mathrm{cal}(t)",
         color: "hsl(var(--chart-7))",
-        tooltipVarSymbols: ["G(t)", "S(t)"],
+        tooltipVarSymbols: [
+          "G(t)",
+          "S(t)",
+          "\\mathrm{dow}(t)",
+          "\\mathrm{cal}(t)",
+        ],
         axisVarMap: {
-          "\\mathrm{dow}": "weekly_pattern",
-          "\\mathrm{cal}": "monthly_seasonality",
+          "\\mathrm{dow}(t)": "weekly_pattern",
+          "\\mathrm{cal}(t)": "monthly_seasonality",
         },
       },
       {

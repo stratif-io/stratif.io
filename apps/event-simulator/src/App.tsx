@@ -122,6 +122,23 @@ const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
     moderate: "0,10 8,18 16,11 24,17 32,9 40,16 52,13",
     explicit: "0,8 7,20 14,9 21,19 28,8 35,18 42,11 52,17",
   },
+  daily_pattern: {
+    business_hours: "0,26 19,26 19,5 39,5 39,20 52,24",
+    evening_peak: "0,22 8,26 19,24 36,18 39,6 47,5 52,20",
+    always_on: "0,14 52,14",
+    night_owl: "0,8 6,14 8,26 19,26 36,24 47,18 48,6 52,8",
+  },
+  weekly_pattern: {
+    weekdays_only: "0,5 37,5 37,24 52,24",
+    weekends_heavy: "0,20 37,20 37,5 52,5",
+    flat: "0,14 52,14",
+  },
+  monthly_seasonality: {
+    nov_dec_peak: "0,22 39,22 43,16 47,6 52,4",
+    q4_heavy: "0,20 26,18 39,14 43,10 47,6 52,4",
+    summer_peak: "0,22 13,22 22,10 26,5 30,5 35,10 43,18 52,22",
+    flat: "0,14 52,14",
+  },
 };
 
 const SIDEBAR_AXES: { id: string; label: string; icon: ReactNode }[] = [
