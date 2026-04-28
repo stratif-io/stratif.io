@@ -412,7 +412,12 @@ export default function App() {
         onCollapse={setSidebarCollapsed}
         itemWrapper={itemWrapper}
         brand={
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div
+            className={cn(
+              "flex items-center min-w-0 w-full",
+              sidebarCollapsed ? "justify-center gap-0" : "gap-2.5",
+            )}
+          >
             <img
               src="/favicon-color.svg"
               alt="stratif.io"
