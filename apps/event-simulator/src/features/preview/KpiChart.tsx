@@ -429,17 +429,15 @@ export function KpiChart({
                   return d ? fmtTick(d) : "";
                 }}
               >
-                <LineChart>
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={color}
-                    strokeWidth={1}
-                    strokeOpacity={0.5}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={color}
+                  strokeWidth={1}
+                  strokeOpacity={0.5}
+                  dot={false}
+                  isAnimationActive={false}
+                />
               </Brush>
             )}
           </LineChart>
