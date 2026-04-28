@@ -412,18 +412,25 @@ export default function App() {
         onCollapse={setSidebarCollapsed}
         itemWrapper={itemWrapper}
         brand={
-          !sidebarCollapsed ? (
-            <div className="flex flex-col gap-0.5">
-              <img
-                src={theme === "dark" ? "/logo-dark.svg" : "/logo-light.svg"}
-                alt="stratif.io"
-                className="h-5 w-auto"
-              />
-              <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
-                Event Simulator
-              </span>
-            </div>
-          ) : undefined
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img
+              src="/favicon-color.svg"
+              alt="stratif.io"
+              className="h-8 w-8 shrink-0"
+            />
+            {!sidebarCollapsed && (
+              <div className="flex flex-col min-w-0">
+                <img
+                  src={theme === "dark" ? "/text-dark.svg" : "/text-light.svg"}
+                  alt=""
+                  className="h-5 w-auto shrink-0"
+                />
+                <span className="text-[10px] font-medium text-muted-foreground tracking-wide">
+                  Event Simulator
+                </span>
+              </div>
+            )}
+          </div>
         }
       />
       <div className="flex flex-col flex-1 overflow-hidden">
