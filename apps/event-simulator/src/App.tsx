@@ -601,7 +601,11 @@ export default function App() {
                   type="number"
                   min={1}
                   placeholder="users"
-                  value={config.scale_config?.total_users ?? ""}
+                  value={
+                    resolvedScale.mode === "goal"
+                      ? resolvedScale.total_users
+                      : (config.scale_config?.total_users ?? "")
+                  }
                   onChange={(e) => handleTotalUsers(e.target.value)}
                   className="h-8 w-24 bg-muted/40 text-xs"
                 />
