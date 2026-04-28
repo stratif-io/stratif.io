@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Input,
@@ -42,13 +42,43 @@ function nextColor(events: { color?: string | null }[]): string {
   );
 }
 
+function inferMarkovKey(configName: string): string {
+  const n = configName.toLowerCase();
+  if (n.includes("dating")) return "dating";
+  if (n.includes("casual") || (n.includes("game") && !n.includes("hardcore")))
+    return "casual_game";
+  if (n.includes("hardcore") || n.includes("gaming")) return "gaming_hardcore";
+  if (n.includes("saas")) return "saas";
+  if (
+    n.includes("ecommerce") ||
+    n.includes("e-commerce") ||
+    n.includes("commerce")
+  )
+    return "ecommerce";
+  if (n.includes("retail")) return "retail";
+  if (n.includes("marketplace")) return "marketplace";
+  if (n.includes("streaming")) return "streaming";
+  if (n.includes("social")) return "social";
+  if (n.includes("fintech")) return "fintech";
+  return "";
+}
+
 export function EventsTab() {
   const markov = useSeederStore((s) => s.config.markov);
+  const configName = useSeederStore((s) => s.config.name);
   const setMarkovConfig = useSeederStore((s) => s.setMarkovConfig);
-  const [presetKey, setPresetKey] = useState<string>("");
+  const [presetKey, setPresetKey] = useState<string>(() =>
+    inferMarkovKey(configName),
+  );
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync flow template selector when header preset changes
+  useEffect(() => {
+    const key = inferMarkovKey(configName);
+    setPresetKey(key);
+  }, [configName]);
 
   const errors = validateMarkovConfig(markov);
 
