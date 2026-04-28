@@ -294,21 +294,27 @@ def _run_with_rate(config: SimulationConfig, starting_rate: float) -> PreviewRes
 
 
 def _solve_starting_rate(config: SimulationConfig, target_total: int) -> float:
-    """Binary search for starting_rate that produces ~target_total new users."""
-    scale = config.resolved_scale()
-    # Fewer iterations for long windows — 5% precision is fine for preview.
-    max_iters = 8 if scale.window_days > 730 else 20
-    lo, hi = 0.1, float(target_total) * 10.0
-    for _ in range(max_iters):
-        mid = (lo + hi) / 2.0
+    """Binary search in log-space for starting_rate that produces ~target_total new users.
+
+    Linear search fails for explosive growth over long windows: the correct
+    starting_rate can be as small as 1e-200 (to compensate for exp(0.08 * 6000)),
+    which linear bisection from [0.1, target*10] can never reach in finite steps.
+    Log-space search covers the full range in ~50 iterations regardless of window.
+    """
+    lo_log = math.log(1e-250)  # covers even exp(0.08 * 6000) growth
+    hi_log = math.log(max(float(target_total) * 100.0, 1.0))
+    for _ in range(50):
+        mid_log = (lo_log + hi_log) / 2.0
+        mid = math.exp(mid_log)
         result = _run_with_rate(config, mid)
-        if sum(result.new_users) < target_total:
-            lo = mid
+        total = sum(result.new_users)
+        if total < target_total:
+            lo_log = mid_log
         else:
-            hi = mid
-        if (hi - lo) / max(target_total, 1) < 5e-3:  # converged to <0.5%
+            hi_log = mid_log
+        if (hi_log - lo_log) < 0.02:  # converged to ~2% in log-space
             break
-    return (lo + hi) / 2.0
+    return math.exp((lo_log + hi_log) / 2.0)
 
 
 def run_preview(config: SimulationConfig) -> PreviewResult:
