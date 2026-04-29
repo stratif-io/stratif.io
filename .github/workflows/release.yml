@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.STRATIFIO_OSS_TOKEN }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -76,14 +76,13 @@ jobs:
           fi
 
           # Wait for GitHub to compute mergeability after the push, then merge.
-          # NOTE: gh pr merge with GITHUB_TOKEN does NOT trigger a new push event
-          # (GitHub suppresses all workflow triggers from GITHUB_TOKEN to prevent
-          # infinite loops). We fire workflow_dispatch explicitly instead.
+          # STRATIFIO_OSS_TOKEN (admin PAT) is required here — GITHUB_TOKEN cannot
+          # bypass branch protection rules that require approving reviews.
           sleep 10
           gh pr merge "$PR_NUMBER" --merge --admin
           gh workflow run release.yml --ref main
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
 
   build-frontend:
     needs: release-please
