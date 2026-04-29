@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.40.2](https://github.com/stratif-io/stratif.io/compare/v0.40.1...v0.40.2) (2026-04-29)
+
+
+### Bug Fixes
+
+* exec start.sh so server survives curl | sh pipe ([2353c12](https://github.com/stratif-io/stratif.io/commit/2353c12807d7eb489917543851044b2c0cf7bff7))
+* exec start.sh so server survives curl | sh pipe ([7c67538](https://github.com/stratif-io/stratif.io/commit/7c67538fd6869981af5cb60a8c9ef7af9664ee12))
+* use export instead of inline env for exec in start.sh ([86288c8](https://github.com/stratif-io/stratif.io/commit/86288c8f8d0773868022a738b177f181c8ed7f80))
+
 ## [0.40.1](https://github.com/stratif-io/stratif.io/compare/v0.40.0...v0.40.1) (2026-04-29)
 
 
