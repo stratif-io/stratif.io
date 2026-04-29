@@ -21,12 +21,16 @@ _PARAMS: dict[str, RetentionParams] = {
         max_dormant_days=7,
     ),
     "churn_heavy": RetentionParams(
-        peak_churn_rate=0.75,
-        base_churn_rate=0.20,
-        churn_decay_days=4,
-        reactivation_rate=0.02,
-        reactivation_decay=0.7,
-        max_dormant_days=20,
+        # High D1 churn (50%): many trial users leave after first session.
+        # But base long-term churn is moderate (1.5%/day ≈ 50-day avg lifetime),
+        # so engaged users stay weeks. Reactivation is meaningful (8%) — people
+        # come back after a break. Models dating apps, casual social, content apps.
+        peak_churn_rate=0.50,
+        base_churn_rate=0.015,
+        churn_decay_days=5,
+        reactivation_rate=0.08,
+        reactivation_decay=0.80,
+        max_dormant_days=45,
     ),
     "normal": RetentionParams(
         peak_churn_rate=0.50,

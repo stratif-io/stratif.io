@@ -15,16 +15,25 @@ describe("EventsTab", () => {
   });
 
   it("renders event names from store markov config", () => {
+    useSeederStore.setState({
+      config: {
+        ...useSeederStore.getState().config,
+        markov: {
+          events: [{ name: "TestEvent", color: "#6366f1" }],
+          start: {},
+          transitions: {},
+        },
+      },
+    });
     render(<EventsTab />);
-    // saas preset has 'SignUp' event
-    expect(screen.getAllByText("SignUp").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("TestEvent").length).toBeGreaterThan(0);
   });
 
   it("switching preset updates event names", async () => {
     const user = userEvent.setup();
     render(<EventsTab />);
     await user.click(screen.getByRole("combobox"));
-    await user.click(screen.getByText("E-commerce"));
+    await user.click(screen.getByText("🛒 E-commerce"));
     // ecommerce preset has 'SessionStarted' event
     expect(screen.getAllByText("SessionStarted").length).toBeGreaterThan(0);
   });

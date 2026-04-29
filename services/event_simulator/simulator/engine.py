@@ -110,7 +110,7 @@ class Engine:
 
         # Plumb anomalies + per-axis tuning blocks from config to state so
         # axes (inside the loop below) can read them.
-        state.anomalies = list(self.config.anomalies)
+        state.anomalies = list(self.config.events)
         state.growth_config = (
             dict(self.config.growth_config) if self.config.growth_config else None
         )
@@ -151,12 +151,19 @@ class Engine:
 
         rng = random.Random(self.config.random_seed or 0)
 
-        dow_weights = get_dow_weights("generic")
+        dow_weights = (
+            state.dow_weights
+            if state.dow_weights is not None
+            else get_dow_weights("generic")
+        )
         users_by_day: dict[int, list[dict]] = {}
         for d in range(state.window_days):
             local_date_d = (day_0 + timedelta(days=d)).date()
             dow_mult = dow_weights[local_date_d.weekday()]
-            cal_mult = 1.0  # calendar effects disabled until calendar axis is designed
+            if state.calendar_multiplier is not None:
+                cal_mult = state.calendar_multiplier(local_date_d)
+            else:
+                cal_mult = 1.0
             anomaly_mult = arrivals_multiplier(parsed_anomalies, local_date_d)
             lam = arrival_curve(d) * dow_mult * cal_mult * anomaly_mult
             n = _poisson(rng, lam)
@@ -211,9 +218,19 @@ class Engine:
                     for _ in range(session_count):
                         local_date = (day_0 + timedelta(days=active_d)).date()
                         is_weekend = local_date.weekday() >= 5
-                        hour_weights = get_hour_weights(
-                            "generic", is_weekend=is_weekend
-                        )
+                        if (
+                            state.hour_weights_weekday is not None
+                            and state.hour_weights_weekend is not None
+                        ):
+                            hour_weights = (
+                                state.hour_weights_weekend
+                                if is_weekend
+                                else state.hour_weights_weekday
+                            )
+                        else:
+                            hour_weights = get_hour_weights(
+                                "generic", is_weekend=is_weekend
+                            )
                         session_start = build_session_start(
                             rng, local_date, hour_weights, user["timezone"]
                         )

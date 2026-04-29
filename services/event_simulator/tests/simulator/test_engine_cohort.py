@@ -188,9 +188,9 @@ def test_engine_plumbs_anomalies_list_to_state():
 
     cfg = SimulationConfig(
         name="test_steady",
-        axes={"scale": "tiny", "anomalies": "explicit"},
+        axes={"scale": "tiny", "noise": "explicit"},
         markov=_MINIMAL_MARKOV,
-        anomalies=[
+        events=[
             {"type": "marketing_campaign", "start": "-10d", "effect": {"arrivals": 2.0}}
         ],
         scale_config=ScaleOverride(total_users=10, window_days=5),
@@ -211,9 +211,9 @@ def test_engine_applies_marketing_campaign_anomaly_to_arrivals():
     # Same config but with a 3x-arrivals campaign over the full window.
     cfg = SimulationConfig(
         name="test_steady",
-        axes={"scale": "tiny", "anomalies": "explicit"},
+        axes={"scale": "tiny", "noise": "explicit"},
         markov=_MINIMAL_MARKOV,
-        anomalies=[
+        events=[
             {
                 "type": "marketing_campaign",
                 "start": "-30d",

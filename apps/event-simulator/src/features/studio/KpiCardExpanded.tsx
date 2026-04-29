@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { MathFormula } from "@/lib/math/MathFormula";
 import { FORMULA_REGISTRY } from "@/features/preview/formulaRegistry";
 import type { MetricKey } from "@/features/preview/formulaRegistry";
@@ -35,12 +35,18 @@ interface Props {
   metricKey: MetricKey;
   color?: string;
   onClose: () => void;
+  onBrushChange?: (range: [number, number] | null) => void;
 }
 
-export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
+export function KpiCardExpanded({
+  metricKey,
+  color,
+  onClose,
+  onBrushChange,
+}: Props) {
   const { isLoading, ...out } = useTwinOutput();
   const config = useSeederStore((s) => s.config);
-  const setAnomalies = useSeederStore((s) => s.setAnomalies);
+  const setSimEvents = useSeederStore((s) => s.setSimEvents);
   const setAxis = useSeederStore((s) => s.setAxis);
   const setScaleConfig = useSeederStore((s) => s.setScaleConfig);
   const {
@@ -50,7 +56,15 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     windowDays,
   } = useMemo(() => resolveSimParams(config), [config]);
 
-  const anomalies = useMemo(() => config.anomalies ?? [], [config.anomalies]);
+  const anomalies = useMemo(() => config.events ?? [], [config.events]);
+
+  const { startDate, endDate } = useMemo(() => {
+    if (!out.startDate) return { startDate: undefined, endDate: undefined };
+    const s = new Date(out.startDate);
+    const e = new Date(s);
+    e.setDate(e.getDate() + (windowDays - 1));
+    return { startDate: s, endDate: e };
+  }, [out.startDate, windowDays]);
 
   const resolvedAxes = useMemo(
     () => resolveAxes(config.axes ?? {}),
@@ -173,11 +187,11 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
   const entry = FORMULA_REGISTRY[metricKey];
 
   const handleAnomalyChange = useCallback(
-    (index: number, next: SimulationAnomaly) => {
+    (index: number, next: SimEvent) => {
       const updated = anomalies.map((a, i) => (i === index ? next : a));
-      setAnomalies(updated);
+      setSimEvents(updated);
     },
-    [anomalies, setAnomalies],
+    [anomalies, setSimEvents],
   );
 
   const handleAnomalySelect = useCallback(
@@ -195,7 +209,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
         | number
         | undefined) ?? 0;
     const sigma =
-      (getAxisValue("anomalies", resolvedAxes.anomalies)?.params.sigma as
+      (getAxisValue("noise", resolvedAxes.noise)?.params.sigma as
         | number
         | undefined) ?? 0;
     switch (metricKey) {
@@ -303,7 +317,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
     windowDays,
     startingRate,
     simulationMode,
-    resolvedAxes.anomalies,
+    resolvedAxes.noise,
     resolvedAxes.virality,
   ]);
 
@@ -418,6 +432,8 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
               windowDays={windowDays}
               onAnomalyChange={handleAnomalyChange}
               onAnomalySelect={handleAnomalySelect}
+              startDate={startDate}
+              endDate={endDate}
               chartHeight="h-56"
               className="border-0 p-0 bg-transparent mt-3"
               valueSuffix={metricKey === "stickiness" ? "%" : ""}
@@ -427,6 +443,8 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
                 setHoveredLineKey(null);
               }}
               isLoading={isLoading}
+              showBrush
+              onBrushChange={onBrushChange}
             />
           </section>
 
@@ -611,7 +629,7 @@ export function KpiCardExpanded({ metricKey, color, onClose }: Props) {
           y={floatingEditor.y}
           onChange={(next) => handleAnomalyChange(floatingEditor.index, next)}
           onDelete={() => {
-            setAnomalies(
+            setSimEvents(
               anomalies.filter((_, i) => i !== floatingEditor.index),
             );
             setFloatingEditor(null);

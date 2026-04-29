@@ -1,5 +1,5 @@
 import type { MetricKey } from "@/features/preview/formulaRegistry";
-import type { useTwinOutput } from "@/features/preview/useTwinOutput";
+import type { TwinOutput } from "@/lib/api/simulation";
 import { formatNum } from "@/lib/format";
 
 const fn = (v: number) => formatNum(Math.round(v));
@@ -21,7 +21,7 @@ export interface IntermediateCol {
   stepKey: string;
   label: string;
   color: string;
-  getValue: (out: ReturnType<typeof useTwinOutput>, i: number) => string;
+  getValue: (out: TwinOutput, i: number) => string;
 }
 
 export interface MetricPipelineConfig {
@@ -46,11 +46,28 @@ export const METRIC_PIPELINES: Partial<
         axisVarMap: { "G(t)": "growth", U: "scale", T: "scale" },
       },
       {
+        lineKey: "g_season",
+        label: "Seasonality",
+        latex:
+          "S(t) = G(t) \\cdot \\dfrac{\\mathrm{dow}(t)\\cdot\\mathrm{cal}(t)}{\\bar{w}},\\quad \\bar{w}=\\tfrac{1}{T}\\sum_d \\mathrm{dow}(d)\\cdot\\mathrm{cal}(d)",
+        color: "hsl(var(--chart-7))",
+        tooltipVarSymbols: [
+          "G(t)",
+          "S(t)",
+          "\\mathrm{dow}(t)",
+          "\\mathrm{cal}(t)",
+        ],
+        axisVarMap: {
+          "\\mathrm{dow}(t)": "weekly_pattern",
+          "\\mathrm{cal}(t)": "monthly_seasonality",
+        },
+      },
+      {
         lineKey: "g_anom",
         label: "Anomaly multipliers",
-        latex: "A(t) = G(t) \\cdot \\prod_k m_k(t)",
+        latex: "A(t) = S(t) \\cdot \\prod_k m_k(t)",
         color: "hsl(var(--chart-5))",
-        tooltipVarSymbols: ["t", "G(t)", "A(t)"],
+        tooltipVarSymbols: ["t", "S(t)", "A(t)"],
       },
       {
         lineKey: "g_jitter",
@@ -59,7 +76,7 @@ export const METRIC_PIPELINES: Partial<
         color: "hsl(var(--chart-6))",
         tooltipVarSymbols: ["A(t)", "J(t)", "\\sigma", "Z"],
         tooltipParamSyms: ["σ"],
-        axisVarMap: { "\\sigma": "anomalies" },
+        axisVarMap: { "\\sigma": "noise" },
       },
       {
         lineKey: "g_viral",
@@ -82,7 +99,8 @@ export const METRIC_PIPELINES: Partial<
     ],
     axisMap: {
       g_growth: "growth",
-      g_jitter: "anomalies",
+      g_season: "monthly_seasonality",
+      g_jitter: "noise",
       g_viral: "virality",
       __main__: "scale",
     },
@@ -92,6 +110,12 @@ export const METRIC_PIPELINES: Partial<
         label: "G(t)",
         color: "hsl(var(--chart-2))",
         getValue: (out, i) => out.pipeline.growth[i]?.toFixed(1) ?? "—",
+      },
+      {
+        stepKey: "g_season",
+        label: "S(t)",
+        color: "hsl(var(--chart-7))",
+        getValue: (out, i) => out.pipeline.seasonality[i]?.toFixed(1) ?? "—",
       },
       {
         stepKey: "g_anom",

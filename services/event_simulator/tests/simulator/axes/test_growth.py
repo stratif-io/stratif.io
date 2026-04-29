@@ -1,4 +1,4 @@
-"""Growth axis — 7 curve shapes."""
+"""Growth axis — 6 curve shapes."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from services.event_simulator.simulator.axes.growth import (
     _exponential_decline_shape,
     _exponential_growth_shape,
     _hockey_stick_shape,
-    _seasonal_shape,
     _steady_shape,
 )
 from services.event_simulator.simulator.protocols import SimulationState
@@ -30,7 +29,7 @@ def _cumulative(curve, window: int) -> float:
 
 @pytest.mark.parametrize(
     "value",
-    ["explosive", "strong", "steady", "flat", "declining", "seasonal", "hockey_stick"],
+    ["explosive", "strong", "steady", "flat", "declining", "hockey_stick"],
 )
 def test_growth_axis_values_register(value):
     ax = GrowthAxis()
@@ -180,11 +179,3 @@ def test_hockey_stick_grows_after_split():
     s = _hockey_stick_shape(r=0.06, split_fraction=0.35, window=window)
     split = int(window * 0.35)
     assert s(split + 10) > s(split + 5) > s(split)
-
-
-def test_seasonal_shape_anchored_at_zero():
-    s = _seasonal_shape(amplitude=0.3)
-    assert s(0) == pytest.approx(1.0)
-    values = [s(d) for d in range(365)]
-    assert min(values) >= 0.7 - 1e-9
-    assert max(values) <= 1.3 + 1e-9

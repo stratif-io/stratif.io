@@ -1,76 +1,78 @@
-name: Casual Game Addictive (Candy Crush-Like)
-description: Mobile casual game, whale-heavy IAP, high stickiness.
+name: Casual Game Addictive (Candy Crush Saga)
+description: >
+  Candy Crush launched on Facebook in April 2012, then exploded on mobile with its November 2012
+  iOS launch. It became the most-downloaded app in history, with 93M daily active users at peak.
+  A textbook "hockey stick" — slow start on Facebook, then explosive mobile growth, eventually
+  plateauing at a massive loyal base. Driven by extreme addictiveness (lives mechanic, social
+  comparison) and near-zero off-peak churn.
 axes:
-  growth: strong
+  growth: hockey_stick
   stickiness: addictive
-  engagement_depth: deep
-  monetization: iap_whales
-  virality: weak
-  scale: medium
-  geography: global
-  anomalies: explicit
-anomalies:
+  engagement_depth: medium
+  virality: moderate
+  scale: large
+  noise: moderate
+  daily_pattern: evening_peak
+  weekly_pattern: flat
+  monthly_seasonality: flat
+
+scale_config:
+  total_users: 3000000000
+  start_date: "2012-11-14"
+  end_date: "2026-04-28"
+
+events:
   - type: product_launch
-    name: feature_x_launch
-    start: -60d
-    duration: 7d
+    name: ios_app_store_debut
+    start_date: "2012-11-14"
+    end_date: "2013-01-13"
+    effect:
+      arrivals: 8.0
+
+  - type: product_launch
+    name: android_launch
+    start_date: "2012-12-14"
+    end_date: "2013-01-28"
+    effect:
+      arrivals: 5.0
+
+  - type: marketing_campaign
+    name: facebook_45m_users_milestone_press
+    start_date: "2013-02-01"
+    end_date: "2013-03-03"
+    effect:
+      arrivals: 2.5
+
+  - type: marketing_campaign
+    name: tv_advertising_us_primetime
+    start_date: "2014-03-01"
+    end_date: "2014-04-30"
     effect:
       arrivals: 1.8
-scale_config:
-  window_days: 180
-  starting_rate: 500
+
+  - type: marketing_campaign
+    name: king_ipo_press_spike
+    start_date: "2014-03-26"
+    end_date: "2014-04-09"
+    effect:
+      arrivals: 1.5
 
 markov:
   events:
-    - name: SessionStart
-    - name: DailyBonusClaimed
-    - name: LevelStart
-    - name: LevelComplete
-    - name: LevelFail
-    - name: RewardCollected
-    - name: IAPOffer
-    - name: IAPPurchase
-    - name: AdShown
-    - name: AdClicked
-    - name: ShareAchievement
+    - name: AppOpen
+    - name: ContentViewed
+    - name: ActionTaken
+    - name: SessionEnd
   start:
-    SessionStart: 1.0
+    AppOpen: 1.0
   transitions:
-    SessionStart:
-      DailyBonusClaimed: 0.55
-      LevelStart: 0.20
-      "[end]": 0.25
-    DailyBonusClaimed:
-      LevelStart: 0.85
+    AppOpen:
+      ContentViewed: 0.85
       "[end]": 0.15
-    LevelStart:
-      LevelComplete: 0.60
-      LevelFail: 0.35
-      "[end]": 0.05
-    LevelComplete:
-      RewardCollected: 0.65
-      LevelStart: 0.20
-      IAPOffer: 0.10
-      "[end]": 0.05
-    LevelFail:
-      LevelStart: 0.50
-      AdShown: 0.20
+    ContentViewed:
+      ActionTaken: 0.40
+      ContentViewed: 0.30
       "[end]": 0.30
-    RewardCollected:
-      LevelStart: 0.55
-      ShareAchievement: 0.10
-      "[end]": 0.35
-    IAPOffer:
-      IAPPurchase: 0.40
-      "[end]": 0.60
-    IAPPurchase:
-      ShareAchievement: 0.30
-      "[end]": 0.70
-    AdShown:
-      AdClicked: 0.25
-      LevelStart: 0.30
-      "[end]": 0.45
-    AdClicked:
-      "[end]": 1.0
-    ShareAchievement:
-      "[end]": 1.0
+    ActionTaken:
+      ContentViewed: 0.50
+      "[end]": 0.50

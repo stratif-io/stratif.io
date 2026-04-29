@@ -112,7 +112,7 @@ def main() -> None:
             if cfg.scale_config
             else None,
             "growth_config": cfg.growth_config,
-            "anomalies": cfg.anomalies,
+            "anomalies": cfg.events,
             "kpi": agg,
             "reference_users": REFERENCE_USERS,
             "reference_days": REFERENCE_DAYS,

@@ -24,8 +24,10 @@ describe("ANOMALY_SPEC", () => {
   });
 
   it("defaultAnomaly returns a valid anomaly for a type", () => {
-    const a = defaultAnomaly("marketing_campaign", 0, 10);
+    const a = defaultAnomaly("marketing_campaign", "2025-01-01", "2025-01-11");
     expect(a.type).toBe("marketing_campaign");
+    expect(a.start_date).toBe("2025-01-01");
+    expect(a.end_date).toBe("2025-01-11");
     expect(a.effect.arrivals).toBeDefined();
   });
 
@@ -45,7 +47,7 @@ describe("ANOMALY_SPEC", () => {
   });
 
   it("defaultAnomaly for total_outage has arrivals=0 in effect", () => {
-    const a = defaultAnomaly("total_outage", 5, 3);
+    const a = defaultAnomaly("total_outage", "2025-01-06", "2025-01-09");
     expect(a.effect.arrivals).toBe(0);
     expect(a.effect.total_outage).toBeUndefined();
   });

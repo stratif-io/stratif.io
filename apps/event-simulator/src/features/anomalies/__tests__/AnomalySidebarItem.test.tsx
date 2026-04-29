@@ -5,8 +5,8 @@ import { AnomalySidebarItem } from "../AnomalySidebarItem";
 const anomaly = {
   type: "marketing_campaign",
   name: "viral",
-  start: "10d",
-  duration: "5d",
+  start_date: "2025-01-11",
+  end_date: "2025-01-16",
   effect: { arrivals: 4 },
 };
 
@@ -48,8 +48,8 @@ describe("AnomalySidebarItem", () => {
       />,
     );
     expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^start/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^duration/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^start date$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^end date$/i)).toBeInTheDocument();
   });
 
   it("clicking header calls onOpenChange", () => {

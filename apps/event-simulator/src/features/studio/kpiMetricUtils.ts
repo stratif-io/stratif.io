@@ -1,6 +1,6 @@
 import type { MetricKey } from "@/features/preview/formulaRegistry";
 import type { GhostLine } from "@/features/preview/KpiChart";
-import type { useTwinOutput } from "@/features/preview/useTwinOutput";
+import type { TwinOutput } from "@/lib/api/simulation";
 import { formatNum } from "@/lib/format";
 
 const fn = (v: number) => formatNum(Math.round(v));
@@ -16,7 +16,7 @@ export interface DailyRow {
 
 export function buildDailyRows(
   metricKey: MetricKey,
-  out: ReturnType<typeof useTwinOutput>,
+  out: TwinOutput,
   depth: number,
 ): DailyRow[] {
   const n = out.activeUsers.length;
@@ -98,7 +98,7 @@ export function buildDailyRows(
 
 export function valuesFor(
   metricKey: MetricKey,
-  out: ReturnType<typeof useTwinOutput>,
+  out: TwinOutput,
 ): (number | null)[] {
   switch (metricKey) {
     case "events":
@@ -120,7 +120,7 @@ export function valuesFor(
 
 export function ghostLinesFor(
   metricKey: MetricKey,
-  out: ReturnType<typeof useTwinOutput>,
+  out: TwinOutput,
 ): GhostLine[] {
   switch (metricKey) {
     case "activeUsers":
@@ -163,10 +163,13 @@ export function ghostLinesFor(
         },
       ];
     case "stickiness": {
-      const mauValues = out.activeUsers.map((dau, i) => {
-        const s = out.stickiness[i];
-        return s !== null && s > 0 ? dau / s : null;
-      });
+      const mauValues =
+        out.mau.length > 0
+          ? out.mau.map((v) => (v > 0 ? v : null))
+          : out.activeUsers.map((dau, i) => {
+              const s = out.stickiness[i];
+              return s !== null && s > 0 ? dau / s : null;
+            });
       return [
         {
           key: "g_dau",
@@ -209,6 +212,12 @@ export function ghostLinesFor(
           color: "hsl(var(--chart-2))",
         },
         {
+          key: "g_season",
+          label: "S(t) — after seasonality",
+          values: out.pipeline.seasonality,
+          color: "hsl(var(--chart-7))",
+        },
+        {
           key: "g_anom",
           label: "A — after anomalies",
           values: out.pipeline.anomalies,
@@ -225,6 +234,12 @@ export function ghostLinesFor(
           label: "V — after virality",
           values: out.pipeline.virality,
           color: "hsl(var(--chart-4))",
+        },
+        {
+          key: "g_active",
+          label: "Active users",
+          values: out.activeUsers,
+          color: "hsl(var(--chart-3))",
         },
       ];
   }

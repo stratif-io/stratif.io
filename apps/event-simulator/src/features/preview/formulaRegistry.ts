@@ -113,6 +113,21 @@ export const FORMULA_REGISTRY: Record<MetricKey, FormulaEntry> = {
           "jitter amplitude — standard deviation of the day-level noise (Noise axis)",
       },
       { symbol: "Z", meaning: "standard normal draw — Z ∼ 𝒩(0,1)" },
+      {
+        symbol: "S(t)",
+        meaning:
+          "growth after seasonality: G(t) · dow(t) · cal(t) / w̄ — seasonality redistributes the growth curve (same total, concentrated into peaks). w̄ = mean(dow·cal) over the window",
+      },
+      {
+        symbol: "\\mathrm{dow}(t)",
+        meaning:
+          "day-of-week multiplier on day t — set by the Weekly Pattern axis (e.g. weekdays_only drops weekends to ~5%)",
+      },
+      {
+        symbol: "\\mathrm{cal}(t)",
+        meaning:
+          "month-of-year multiplier on day t — set by the Seasonality axis (e.g. nov_dec_peak spikes Nov–Dec to 2.5×)",
+      },
     ],
   },
   stickiness: {

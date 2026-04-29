@@ -3,14 +3,16 @@ import { AXIS_DISPLAY, STRIP_AXIS_IDS } from "../axisDisplaySpec";
 import { AXIS_SPEC } from "@/lib/twin";
 
 describe("AXIS_DISPLAY", () => {
-  it("covers exactly the 6 strip axes", () => {
+  it("covers all strip axes", () => {
     expect(STRIP_AXIS_IDS).toEqual([
       "growth",
       "stickiness",
       "engagement_depth",
       "virality",
       "scale",
-      "anomalies",
+      "noise",
+      "weekly_pattern",
+      "monthly_seasonality",
     ]);
   });
 

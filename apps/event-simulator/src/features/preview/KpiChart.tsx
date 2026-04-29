@@ -14,9 +14,10 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
+  pixelToIndex,
 } from "@stratif-io/design-system";
 import { formatNum } from "@/lib/format";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { AnomalyChartOverlay } from "@/features/anomalies/AnomalyChartOverlay";
 import { MathFormula } from "@/lib/math/MathFormula";
 
@@ -46,9 +47,9 @@ interface Props {
   color?: string;
   bands?: KpiBand[];
   ghostLines?: GhostLine[];
-  anomalies?: SimulationAnomaly[];
+  anomalies?: SimEvent[];
   windowDays?: number;
-  onAnomalyChange?: (index: number, next: SimulationAnomaly) => void;
+  onAnomalyChange?: (index: number, next: SimEvent) => void;
   onAnomalySelect?: (index: number, x: number, y: number) => void;
   startDate?: Date;
   endDate?: Date;
@@ -62,24 +63,34 @@ interface Props {
   focusedLineKey?: string | null;
   onFocusedLineKeyChange?: (key: string | null) => void;
   isLoading?: boolean;
+  /** Show a resizable brush range selector below the x-axis */
+  showBrush?: boolean;
+  onBrushChange?: (range: [number, number] | null) => void;
 }
 
-const fmt = (d: Date) =>
-  new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(
+const fmtTick = (d: Date) =>
+  new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(
     d,
   );
+
+const fmtTooltip = (d: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(d);
 
 function dateFor(
   idx: number,
   startDate?: Date,
   endDate?: Date,
   total?: number,
-) {
-  if (!startDate || !endDate || !total || total < 2) return "";
+): Date | null {
+  if (!startDate || !endDate || !total || total < 2) return null;
   const rel = idx / (total - 1);
   const ms =
     startDate.getTime() + rel * (endDate.getTime() - startDate.getTime());
-  return fmt(new Date(ms));
+  return new Date(ms);
 }
 
 export function KpiChart({
@@ -104,6 +115,8 @@ export function KpiChart({
   focusedLineKey,
   onFocusedLineKeyChange,
   isLoading = false,
+  showBrush = false,
+  onBrushChange,
 }: Props) {
   const [internalFocusedKey, setInternalFocusedKey] = useState<string | null>(
     null,
@@ -121,9 +134,131 @@ export function KpiChart({
     [focusedKey, onFocusedLineKeyChange],
   );
 
+  // Track chart container pixel size — must be declared before brush callbacks
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setContainerSize({ w: width, h: height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const hasYAxis = !!ghostLines && ghostLines.length > 0;
+  const yAxisW = hasYAxis ? Y_AXIS_W : 0;
+
+  const [internalBrushRange, setInternalBrushRange] = useState<
+    [number, number] | null
+  >(null);
+  const [dragState, setDragState] = useState<{
+    startPx: number;
+    currentPx: number;
+  } | null>(null);
+
+  // Slice values to the brush selection for the chart display
+  const displayValues = useMemo(() => {
+    if (!showBrush || !internalBrushRange) return values;
+    return values.slice(internalBrushRange[0], internalBrushRange[1] + 1);
+  }, [values, showBrush, internalBrushRange]);
+
+  const commitRange = useCallback(
+    (range: [number, number] | null) => {
+      setInternalBrushRange(range);
+      onBrushChange?.(range);
+    },
+    [onBrushChange],
+  );
+
+  const resetZoom = useCallback(() => {
+    commitRange(null);
+  }, [commitRange]);
+
+  // Convert a pixel x (relative to containerRef) to a full-data index
+  const pxToFullIndex = useCallback(
+    (px: number) => {
+      const plotLeft = CM.left + yAxisW;
+      const plotW = containerSize.w - CM.left - CM.right - yAxisW;
+      const dispIdx = pixelToIndex(
+        Math.max(0, px - plotLeft),
+        plotW,
+        displayValues.length,
+      );
+      const offset = internalBrushRange ? internalBrushRange[0] : 0;
+      return offset + dispIdx;
+    },
+    [yAxisW, containerSize.w, displayValues.length, internalBrushRange],
+  );
+
+  const handleChartPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!showBrush) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const plotLeft = CM.left + yAxisW;
+      const plotRight = containerSize.w - CM.right;
+      if (px < plotLeft || px > plotRight) return;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setDragState({ startPx: px, currentPx: px });
+    },
+    [showBrush, yAxisW, containerSize.w],
+  );
+
+  const handleChartPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragState || !showBrush) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const plotLeft = CM.left + yAxisW;
+      const plotRight = containerSize.w - CM.right;
+      const px = Math.max(plotLeft, Math.min(plotRight, e.clientX - rect.left));
+      setDragState((prev) => (prev ? { ...prev, currentPx: px } : null));
+    },
+    [dragState, showBrush, yAxisW, containerSize.w],
+  );
+
+  const handleChartPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragState || !showBrush) return;
+      e.currentTarget.releasePointerCapture(e.pointerId);
+      const rect = e.currentTarget.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const DRAG_THRESHOLD = 8;
+      if (Math.abs(px - dragState.startPx) >= DRAG_THRESHOLD) {
+        const a = pxToFullIndex(Math.min(dragState.startPx, px));
+        const b = pxToFullIndex(Math.max(dragState.startPx, px));
+        if (a !== b) commitRange([a, b]);
+      }
+      setDragState(null);
+    },
+    [dragState, showBrush, pxToFullIndex, commitRange],
+  );
+
+  // Adjust dates for the sliced window so x-axis labels are accurate
+  const displayStartDate = useMemo(() => {
+    if (!showBrush || !internalBrushRange || !startDate || !endDate)
+      return startDate;
+    return (
+      dateFor(internalBrushRange[0], startDate, endDate, values.length) ??
+      startDate
+    );
+  }, [showBrush, internalBrushRange, startDate, endDate, values.length]);
+
+  const displayEndDate = useMemo(() => {
+    if (!showBrush || !internalBrushRange || !startDate || !endDate)
+      return endDate;
+    return (
+      dateFor(internalBrushRange[1], startDate, endDate, values.length) ??
+      endDate
+    );
+  }, [showBrush, internalBrushRange, startDate, endDate, values.length]);
+
   const mainMax = useMemo(
-    () => Math.max(...values.filter((v): v is number => v !== null), 1),
-    [values],
+    () => Math.max(...displayValues.filter((v): v is number => v !== null), 1),
+    [displayValues],
   );
 
   // Per-ghost max, used for normalization and Y-axis remapping
@@ -139,14 +274,15 @@ export function KpiChart({
   }, [ghostLines]);
 
   const data = useMemo(() => {
-    return values.map((v, i) => {
+    const offset = showBrush && internalBrushRange ? internalBrushRange[0] : 0;
+    return displayValues.map((v, i) => {
       const row: Record<string, number | undefined> = {
         idx: i,
         value: v ?? undefined,
       };
       for (const g of ghostLines ?? []) {
         const gMax = ghostMaxMap[g.key] ?? 1;
-        const raw = g.values[i];
+        const raw = g.values[offset + i];
         const normalized =
           raw !== null && raw !== undefined
             ? (raw / gMax) * mainMax
@@ -157,7 +293,14 @@ export function KpiChart({
       }
       return row;
     });
-  }, [values, ghostLines, mainMax, ghostMaxMap]);
+  }, [
+    displayValues,
+    ghostLines,
+    mainMax,
+    ghostMaxMap,
+    showBrush,
+    internalBrushRange,
+  ]);
 
   // Y-axis tick formatter: when a ghost is focused, remap normalized→raw scale
   const yTickFormatter = useMemo(() => {
@@ -169,24 +312,12 @@ export function KpiChart({
   }, [focusedKey, ghostMaxMap, mainMax]);
 
   const ticks = useMemo(() => {
-    if (values.length === 0) return [];
-    return [0, Math.floor((values.length - 1) / 2), values.length - 1];
-  }, [values.length]);
-
-  // Track chart container pixel size for the overlay.
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setContainerSize({ w: width, h: height });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+    if (displayValues.length === 0) return [];
+    const n = Math.min(6, displayValues.length);
+    return Array.from({ length: n }, (_, i) =>
+      Math.round((i / (n - 1)) * (displayValues.length - 1)),
+    );
+  }, [displayValues.length]);
 
   const showOverlay =
     !!anomalies?.length &&
@@ -194,14 +325,18 @@ export function KpiChart({
     containerSize.w > 0 &&
     containerSize.h > 0;
 
-  const hasYAxis = !!ghostLines && ghostLines.length > 0;
-  const yAxisW = hasYAxis ? Y_AXIS_W : 0;
   const overlayOffset = {
     left: CM.left + yAxisW,
     top: CM.top,
     width: containerSize.w - CM.left - CM.right - yAxisW,
     height: containerSize.h - CM.top - CM.bottom - X_AXIS_H,
   };
+
+  // When zoomed, the overlay must use the visible day span + adjusted start date
+  const visibleWindowDays = useMemo(() => {
+    if (!showBrush || !internalBrushRange || !windowDays) return windowDays;
+    return internalBrushRange[1] - internalBrushRange[0] + 1;
+  }, [showBrush, internalBrushRange, windowDays]);
 
   return (
     <div
@@ -276,7 +411,11 @@ export function KpiChart({
       {/* position:relative wrapper so the overlay can be positioned absolutely */}
       <div
         ref={containerRef}
-        className={`${chartHeight} w-full relative transition-opacity duration-300 ${isLoading ? "opacity-40" : ""}`}
+        className={`${chartHeight} w-full relative transition-opacity duration-300 ${isLoading ? "opacity-40" : ""}${showBrush ? " cursor-crosshair" : ""}`}
+        onPointerDown={handleChartPointerDown}
+        onPointerMove={handleChartPointerMove}
+        onPointerUp={handleChartPointerUp}
+        onPointerCancel={() => setDragState(null)}
       >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={CM} syncId="preview">
@@ -300,11 +439,17 @@ export function KpiChart({
             <XAxis
               dataKey="idx"
               type="number"
-              domain={[0, Math.max(0, values.length - 1)]}
+              domain={[0, Math.max(0, displayValues.length - 1)]}
               ticks={ticks}
-              tickFormatter={(idx: number) =>
-                dateFor(idx, startDate, endDate, values.length)
-              }
+              tickFormatter={(idx: number) => {
+                const d = dateFor(
+                  idx,
+                  displayStartDate,
+                  displayEndDate,
+                  displayValues.length,
+                );
+                return d ? fmtTick(d) : "";
+              }}
               stroke="currentColor"
               tick={{ fontSize: 11, fill: "currentColor", opacity: 0.6 }}
               axisLine={false}
@@ -338,9 +483,15 @@ export function KpiChart({
                 color: "hsl(var(--popover-foreground))",
                 border: "1px solid hsl(var(--border))",
               }}
-              labelFormatter={(idx: number) =>
-                dateFor(idx, startDate, endDate, values.length) || `day ${idx}`
-              }
+              labelFormatter={(idx: number) => {
+                const d = dateFor(
+                  idx,
+                  displayStartDate,
+                  displayEndDate,
+                  displayValues.length,
+                );
+                return d ? fmtTooltip(d) : `day ${idx}`;
+              }}
               formatter={(v: number, _name: string, item) => {
                 const dk = String(item.dataKey ?? "");
                 const ghost = ghostLines?.find((g) => g.key === dk);
@@ -388,6 +539,24 @@ export function KpiChart({
           </LineChart>
         </ResponsiveContainer>
 
+        {/* Drag-selection highlight — z-index above Recharts SVG */}
+        {dragState &&
+          Math.abs(dragState.currentPx - dragState.startPx) >= 3 && (
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                zIndex: 10,
+                top: CM.top,
+                bottom: CM.bottom + X_AXIS_H,
+                left: Math.min(dragState.startPx, dragState.currentPx),
+                width: Math.abs(dragState.currentPx - dragState.startPx),
+                background: `${color}40`,
+                borderLeft: `1px solid ${color}`,
+                borderRight: `1px solid ${color}`,
+              }}
+            />
+          )}
+
         {/* Direct SVG overlay — sits on top of the chart, not inside Recharts */}
         {showOverlay && (
           <svg
@@ -400,19 +569,40 @@ export function KpiChart({
             width={containerSize.w}
             height={containerSize.h}
           >
-            <g style={{ pointerEvents: onAnomalyChange ? "all" : "none" }}>
+            <g style={{ pointerEvents: "all" }}>
               <AnomalyChartOverlay
                 offset={overlayOffset}
                 anomalies={anomalies!}
-                windowDays={windowDays!}
+                windowDays={visibleWindowDays ?? windowDays!}
+                windowStart={startDate}
+                dayOffset={internalBrushRange ? internalBrushRange[0] : 0}
                 onAnomalyChange={onAnomalyChange ?? (() => {})}
                 onSelect={onAnomalySelect}
                 readOnly={!onAnomalyChange}
+                getValueAtDay={(day) => {
+                  const idx =
+                    day - (internalBrushRange ? internalBrushRange[0] : 0);
+                  const v = displayValues[idx];
+                  return v !== undefined && v !== null ? v : null;
+                }}
+                valueSuffix={valueSuffix}
               />
             </g>
           </svg>
         )}
       </div>
+
+      {showBrush && internalBrushRange && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={resetZoom}
+            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded border border-border/50 hover:border-border"
+          >
+            Reset zoom
+          </button>
+        </div>
+      )}
 
       {ghostLines && ghostLines.length > 0 && (
         <div className="flex flex-wrap gap-x-3 gap-y-1">

@@ -156,7 +156,13 @@ export function Sidebar() {
       collapsed={!sidebarOpen}
       onCollapse={(v) => setSidebarOpen(!v)}
       brand={
-        <Link to="/dashboard" className="flex items-center gap-2.5 min-w-0">
+        <Link
+          to="/dashboard"
+          className={cn(
+            'flex items-center min-w-0 w-full',
+            sidebarOpen ? 'gap-2.5' : 'justify-center gap-0'
+          )}
+        >
           <img src="/favicon-color.svg" alt="stratif.io" className="h-8 w-8 shrink-0" />
           <span
             className={cn(

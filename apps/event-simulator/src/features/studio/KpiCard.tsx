@@ -3,7 +3,7 @@ import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
 import { CardLoadingBar } from "@stratif-io/design-system";
 import { cn } from "@/lib/cn";
 import { formatNum } from "@/lib/format";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { AnomalyChartOverlay } from "@/features/anomalies/AnomalyChartOverlay";
 
 export interface Band {
@@ -22,15 +22,25 @@ interface Props {
   color: string;
   expanded: boolean;
   onExpand: () => void;
-  anomalies?: SimulationAnomaly[];
+  anomalies?: SimEvent[];
   windowDays?: number;
-  onAnomalyChange?: (index: number, next: SimulationAnomaly) => void;
+  onAnomalyChange?: (index: number, next: SimEvent) => void;
   onAnomalySelect?: (index: number, x: number, y: number) => void;
   valueSuffix?: string;
   className?: string;
   isLoading?: boolean;
   isPrimary?: boolean;
+  startDate?: Date;
+  endDate?: Date;
+  zoomRange?: [number, number] | null;
 }
+
+const fmtTooltipDate = (d: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(d);
 
 export function KpiCard({
   title,
@@ -47,11 +57,15 @@ export function KpiCard({
   className,
   isLoading = false,
   isPrimary = false,
+  startDate,
+  endDate,
+  zoomRange,
 }: Props) {
-  const data = useMemo(
-    () => values.map((v, i) => ({ i, v: v === null ? undefined : v })),
-    [values],
-  );
+  const data = useMemo(() => {
+    const slice =
+      zoomRange != null ? values.slice(zoomRange[0], zoomRange[1] + 1) : values;
+    return slice.map((v, i) => ({ i, v: v === null ? undefined : v }));
+  }, [values, zoomRange]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
@@ -132,7 +146,14 @@ export function KpiCard({
                 `${formatNum(v)}${valueSuffix}`,
                 title,
               ]}
-              labelFormatter={() => ""}
+              labelFormatter={(i: number) => {
+                if (!startDate || !endDate || values.length < 2) return "";
+                const rel = i / (values.length - 1);
+                const ms =
+                  startDate.getTime() +
+                  rel * (endDate.getTime() - startDate.getTime());
+                return fmtTooltipDate(new Date(ms));
+              }}
             />
             <Line
               type="monotone"
@@ -161,6 +182,7 @@ export function KpiCard({
                 offset={overlayOffset}
                 anomalies={anomalies!}
                 windowDays={windowDays!}
+                windowStart={startDate}
                 onAnomalyChange={onAnomalyChange ?? (() => {})}
                 onSelect={onAnomalySelect}
                 readOnly={!onAnomalyChange}

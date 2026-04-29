@@ -1,92 +1,72 @@
-name: Casual Game Viral Blowup (Wordle-Like)
-description: |
-  Mobile casual game: ~7 weeks of quiet launch, then a TikTok/influencer
-  moment creates a sharp spike and kicks off sustained exponential
-  growth. Window is 6 months total so the whole arc (flat → spike →
-  blade) fits inside a default 6-month dashboard chart.
+name: Casual Game Viral Blowup (Wordle / NYT)
+description: >
+  Josh Wardle launched Wordle for 90 players on November 1, 2021. The shareable
+  colored grid exploded on Twitter on December 31 — 300K players by January 2, 2M by
+  January 9, ~10M by early February. The NYT acquired it for low seven figures on
+  January 31, 2022. Now embedded in NYT Games with 2-3M daily players as a
+  permanent franchise. The textbook viral blowup: tiny origin, instant global spread,
+  stable loyal core.
 axes:
-  growth: hockey_stick
-  stickiness: addictive
-  engagement_depth: deep
-  monetization: iap_whales
+  growth: explosive
+  stickiness: sticky
+  engagement_depth: shallow
   virality: strong_viral
-  scale: small
-  geography: global
-  anomalies: explicit
+  scale: large
+  noise: explicit
+  daily_pattern: always_on
+  weekly_pattern: flat
+  monthly_seasonality: flat
 
 scale_config:
-  window_days: 180
-  starting_rate: 30
+  total_users: 3500000000
+  start_date: "2021-11-01"
+  end_date: "2026-04-28"
 
-growth_config:
-  split_fraction: 0.28
-  rate: 0.04
-
-anomalies:
-  - type: marketing_campaign
-    name: viral_moment
-    start: -130d
-    duration: 10d
+events:
+  - type: viral_event
+    name: twitter_share_grid_goes_viral
+    start_date: "2021-12-31"
+    end_date: "2022-01-14"
     effect:
-      arrivals: 8.0
+      arrivals: 50.0
+
   - type: product_launch
-    name: sustained_virality
-    start: -120d
-    duration: 120d
+    name: nyt_acquisition_announced
+    start_date: "2022-01-31"
+    end_date: "2022-02-07"
     effect:
-      arrivals: 2.5
+      arrivals: 3.0
+
+  - type: product_launch
+    name: migration_to_nyt_site_url_change
+    start_date: "2022-02-10"
+    end_date: "2022-02-24"
+    effect:
+      arrivals: 0.7
+
+  - type: marketing_campaign
+    name: nyt_paywall_fears_press_coverage
+    start_date: "2022-03-01"
+    end_date: "2022-03-08"
+    effect:
+      arrivals: 1.4
 
 markov:
   events:
-    - name: SessionStart
-    - name: DailyBonusClaimed
-    - name: LevelStart
-    - name: LevelComplete
-    - name: LevelFail
-    - name: RewardCollected
-    - name: IAPOffer
-    - name: IAPPurchase
-    - name: AdShown
-    - name: AdClicked
-    - name: ShareAchievement
+    - name: AppOpen
+    - name: ContentViewed
+    - name: ActionTaken
+    - name: SessionEnd
   start:
-    SessionStart: 1.0
+    AppOpen: 1.0
   transitions:
-    SessionStart:
-      DailyBonusClaimed: 0.55
-      LevelStart: 0.20
-      "[end]": 0.25
-    DailyBonusClaimed:
-      LevelStart: 0.85
+    AppOpen:
+      ContentViewed: 0.85
       "[end]": 0.15
-    LevelStart:
-      LevelComplete: 0.60
-      LevelFail: 0.35
-      "[end]": 0.05
-    LevelComplete:
-      RewardCollected: 0.65
-      LevelStart: 0.20
-      IAPOffer: 0.10
-      "[end]": 0.05
-    LevelFail:
-      LevelStart: 0.50
-      AdShown: 0.20
+    ContentViewed:
+      ActionTaken: 0.40
+      ContentViewed: 0.30
       "[end]": 0.30
-    RewardCollected:
-      LevelStart: 0.55
-      ShareAchievement: 0.10
-      "[end]": 0.35
-    IAPOffer:
-      IAPPurchase: 0.40
-      "[end]": 0.60
-    IAPPurchase:
-      ShareAchievement: 0.30
-      "[end]": 0.70
-    AdShown:
-      AdClicked: 0.25
-      LevelStart: 0.30
-      "[end]": 0.45
-    AdClicked:
-      "[end]": 1.0
-    ShareAchievement:
-      "[end]": 1.0
+    ActionTaken:
+      ContentViewed: 0.50
+      "[end]": 0.50

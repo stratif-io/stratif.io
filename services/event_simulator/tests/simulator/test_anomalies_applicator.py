@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
@@ -17,7 +17,26 @@ def _now() -> datetime:
     return datetime(2026, 4, 20, tzinfo=UTC)
 
 
-def test_parse_relative_start_and_duration():
+def test_parse_new_format_start_date_end_date():
+    recs = parse_anomalies(
+        [
+            {
+                "type": "marketing_campaign",
+                "start_date": "2026-04-10",
+                "end_date": "2026-04-13",
+                "effect": {"arrivals": 2.5},
+            }
+        ],
+        now=_now(),
+    )
+    assert len(recs) == 1
+    r = recs[0]
+    assert r.start == date(2026, 4, 10)
+    assert r.end == date(2026, 4, 13)
+    assert r.effects == {"arrivals": 2.5}
+
+
+def test_parse_legacy_relative_start_and_duration():
     recs = parse_anomalies(
         [
             {
@@ -33,11 +52,11 @@ def test_parse_relative_start_and_duration():
     r = recs[0]
     assert r.type == "marketing_campaign"
     assert r.start == date(2026, 4, 10)
-    assert abs(r.duration_days - 3.0) < 1e-6
+    assert r.end == date(2026, 4, 10) + timedelta(days=3)
     assert r.effects == {"arrivals": 2.5}
 
 
-def test_parse_absolute_date():
+def test_parse_legacy_absolute_date():
     recs = parse_anomalies(
         [
             {
@@ -50,9 +69,10 @@ def test_parse_absolute_date():
         now=_now(),
     )
     assert recs[0].start == date(2024, 11, 29)
+    assert recs[0].end == date(2024, 11, 29) + timedelta(days=4)
 
 
-def test_parse_hours_duration():
+def test_parse_legacy_hours_duration():
     recs = parse_anomalies(
         [
             {
@@ -64,7 +84,7 @@ def test_parse_hours_duration():
         ],
         now=_now(),
     )
-    assert abs(recs[0].duration_days - 0.25) < 1e-6
+    assert recs[0].end == recs[0].start + timedelta(hours=6)
 
 
 def test_arrivals_multiplier_composes_active_anomalies():
@@ -73,14 +93,14 @@ def test_arrivals_multiplier_composes_active_anomalies():
             type="marketing_campaign",
             name=None,
             start=date(2026, 4, 10),
-            duration_days=7,
+            end=date(2026, 4, 17),
             effects={"arrivals": 2.5},
         ),
         AnomalyRecord(
             type="shopping_season",
             name="black_friday",
             start=date(2026, 4, 10),
-            duration_days=3,
+            end=date(2026, 4, 13),
             effects={"arrivals": 3.0},
         ),
     ]
@@ -96,7 +116,7 @@ def test_arrivals_multiplier_no_arrivals_effect_has_no_impact():
             type="outage",
             name=None,
             start=date(2026, 4, 10),
-            duration_days=1,
+            end=date(2026, 4, 11),
             effects={"all_events": 0.0},
         ),
     ]

@@ -484,6 +484,35 @@ export type AxisDisplayValue = {
 };
 export type AxisPopoverProps = React.ComponentProps<typeof AxisPopover>;
 
+// Separator
+export function Separator({
+  className,
+}: {
+  className?: string;
+  orientation?: string;
+  decorative?: boolean;
+}) {
+  return <hr className={className} aria-hidden="true" />;
+}
+
+// ScrollArea
+export function ScrollArea({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={className} style={{ overflow: "auto" }}>
+      {children}
+    </div>
+  );
+}
+export function ScrollBar(_props: object) {
+  return null;
+}
+
 // cn util (some files may import it from @stratif-io/design-system)
 export function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");

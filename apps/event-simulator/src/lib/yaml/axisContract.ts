@@ -13,7 +13,6 @@ export const GROWTH_VALUES = [
   "steady",
   "flat",
   "declining",
-  "seasonal",
   "hockey_stick",
 ] as const;
 
@@ -36,7 +35,7 @@ export const VIRALITY_VALUES = [
 
 export const SCALE_VALUES = ["tiny", "small", "medium", "large"] as const;
 
-export const ANOMALIES_VALUES = [
+export const NOISE_VALUES = [
   "none",
   "clean",
   "moderate",
@@ -63,14 +62,39 @@ export const GEOGRAPHY_VALUES = [
   "apac_only",
 ] as const;
 
+export const DAILY_PATTERN_VALUES = [
+  "business_hours",
+  "evening_peak",
+  "always_on",
+  "night_owl",
+] as const;
+
+export const WEEKLY_PATTERN_VALUES = [
+  "weekdays_only",
+  "weekends_heavy",
+  "flat",
+] as const;
+
+export const MONTHLY_SEASONALITY_VALUES = [
+  "nov_dec_extreme",
+  "nov_dec_peak",
+  "q4_heavy",
+  "summer_peak",
+  "flat",
+] as const;
+
 export type GrowthValue = (typeof GROWTH_VALUES)[number];
 export type StickinessValue = (typeof STICKINESS_VALUES)[number];
 export type EngagementDepthValue = (typeof ENGAGEMENT_DEPTH_VALUES)[number];
 export type ViralityValue = (typeof VIRALITY_VALUES)[number];
 export type ScaleValue = (typeof SCALE_VALUES)[number];
-export type AnomaliesValue = (typeof ANOMALIES_VALUES)[number];
+export type NoiseValue = (typeof NOISE_VALUES)[number];
 export type MonetizationValue = (typeof MONETIZATION_VALUES)[number];
 export type GeographyValue = (typeof GEOGRAPHY_VALUES)[number];
+export type DailyPatternValue = (typeof DAILY_PATTERN_VALUES)[number];
+export type WeeklyPatternValue = (typeof WEEKLY_PATTERN_VALUES)[number];
+export type MonthlySeasonalityValue =
+  (typeof MONTHLY_SEASONALITY_VALUES)[number];
 
 export const AXIS_VALUES = {
   growth: GROWTH_VALUES,
@@ -78,7 +102,10 @@ export const AXIS_VALUES = {
   engagement_depth: ENGAGEMENT_DEPTH_VALUES,
   virality: VIRALITY_VALUES,
   scale: SCALE_VALUES,
-  anomalies: ANOMALIES_VALUES,
+  noise: NOISE_VALUES,
   monetization: MONETIZATION_VALUES,
   geography: GEOGRAPHY_VALUES,
+  daily_pattern: DAILY_PATTERN_VALUES,
+  weekly_pattern: WEEKLY_PATTERN_VALUES,
+  monthly_seasonality: MONTHLY_SEASONALITY_VALUES,
 } as const;

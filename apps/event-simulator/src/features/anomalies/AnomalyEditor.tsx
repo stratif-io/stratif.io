@@ -11,21 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@stratif-io/design-system";
-import type { SimulationAnomaly } from "@/types/simulation";
+import type { SimEvent } from "@/types/simulation";
 import { ANOMALY_SPEC } from "@/lib/twin";
 
 interface Props {
-  anomaly: SimulationAnomaly;
-  onChange: (next: SimulationAnomaly) => void;
+  anomaly: SimEvent;
+  onChange: (next: SimEvent) => void;
   onDelete: () => void;
   onClose: () => void;
 }
 
 export function AnomalyEditor({ anomaly, onChange, onDelete, onClose }: Props) {
-  const [local, setLocal] = useState<SimulationAnomaly>(anomaly);
+  const [local, setLocal] = useState<SimEvent>(anomaly);
   useEffect(() => setLocal(anomaly), [anomaly]);
 
-  const emit = (next: SimulationAnomaly) => {
+  const emit = (next: SimEvent) => {
     setLocal(next);
     onChange(next);
   };
@@ -92,26 +92,28 @@ export function AnomalyEditor({ anomaly, onChange, onDelete, onClose }: Props) {
 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="anomaly-start" className="text-xs">
-              Start (e.g. 10d, -30d)
+            <Label htmlFor="anomaly-start-date" className="text-xs">
+              Start date
             </Label>
             <Input
-              id="anomaly-start"
-              aria-label="start"
-              value={local.start ?? ""}
-              onChange={(e) => emit({ ...local, start: e.target.value })}
+              id="anomaly-start-date"
+              aria-label="start date"
+              type="date"
+              value={local.start_date ?? ""}
+              onChange={(e) => emit({ ...local, start_date: e.target.value })}
               className="h-8 text-xs"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="anomaly-duration" className="text-xs">
-              Duration (e.g. 5d)
+            <Label htmlFor="anomaly-end-date" className="text-xs">
+              End date
             </Label>
             <Input
-              id="anomaly-duration"
-              aria-label="duration"
-              value={local.duration ?? ""}
-              onChange={(e) => emit({ ...local, duration: e.target.value })}
+              id="anomaly-end-date"
+              aria-label="end date"
+              type="date"
+              value={local.end_date ?? ""}
+              onChange={(e) => emit({ ...local, end_date: e.target.value })}
               className="h-8 text-xs"
             />
           </div>

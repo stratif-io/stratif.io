@@ -23,7 +23,9 @@ describe("App", () => {
       </QueryClientProvider>,
     );
     await waitFor(() =>
-      expect(screen.getByText(/seeder studio/i)).toBeInTheDocument(),
+      expect(
+        screen.getByRole("img", { name: "stratif.io" }),
+      ).toBeInTheDocument(),
     );
   });
 });

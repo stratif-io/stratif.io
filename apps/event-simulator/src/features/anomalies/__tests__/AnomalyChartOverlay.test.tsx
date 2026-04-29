@@ -4,11 +4,13 @@ import { AnomalyChartOverlay } from "../AnomalyChartOverlay";
 
 const mockOffset = { left: 10, top: 4, width: 300, height: 120 };
 
+// windowStart = "2025-01-01", startDay=10 → start_date="2025-01-11", durationDays=5 → end_date="2025-01-16"
+const WINDOW_START = new Date("2025-01-01");
 const anomaly = {
   type: "marketing_campaign",
   name: "viral",
-  start: "10d",
-  duration: "5d",
+  start_date: "2025-01-11",
+  end_date: "2025-01-16",
   effect: { arrivals: 4 },
 };
 
@@ -43,8 +45,9 @@ describe("AnomalyChartOverlay", () => {
     ).toBe(0);
   });
 
-  it("drag body calls onAnomalyChange with updated start", () => {
-    // pxPerDay = 300/90 ≈ 3.33; +33px ≈ +10 days → new start = 20d
+  it("drag body calls onAnomalyChange with updated start_date/end_date", () => {
+    // pxPerDay = 300/90 ≈ 3.33; +33px ≈ +10 days → startDay goes from 10 to 20
+    // new start_date = 2025-01-01 + 20d = 2025-01-21, end_date = 2025-01-21 + 5d = 2025-01-26
     const onChange = vi.fn();
     render(
       <svg>
@@ -52,6 +55,7 @@ describe("AnomalyChartOverlay", () => {
           offset={mockOffset}
           anomalies={[anomaly]}
           windowDays={90}
+          windowStart={WINDOW_START}
           onAnomalyChange={onChange}
         />
       </svg>,
@@ -63,7 +67,8 @@ describe("AnomalyChartOverlay", () => {
     expect(onChange).toHaveBeenCalled();
     const [idx, next] = onChange.mock.calls.at(-1)!;
     expect(idx).toBe(0);
-    expect(next.start).toBe("20d");
+    expect(next.start_date).toBe("2025-01-21");
+    expect(next.end_date).toBe("2025-01-26");
   });
 
   it("click without drag calls onSelect with index and coordinates", () => {
@@ -105,7 +110,9 @@ describe("AnomalyChartOverlay", () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it("drag right handle resizes duration", () => {
+  it("drag right handle resizes end_date", () => {
+    // pxPerDay = 300/90 ≈ 3.33; +33px ≈ +10 days → duration goes from 5 to 15
+    // end_date = start_date(2025-01-11) + 15d = 2025-01-26
     const onChange = vi.fn();
     render(
       <svg>
@@ -113,6 +120,7 @@ describe("AnomalyChartOverlay", () => {
           offset={mockOffset}
           anomalies={[anomaly]}
           windowDays={90}
+          windowStart={WINDOW_START}
           onAnomalyChange={onChange}
         />
       </svg>,
@@ -122,6 +130,6 @@ describe("AnomalyChartOverlay", () => {
     fireEvent.pointerMove(right, { clientX: 113, pointerId: 1 }); // +33px ≈ +10 days
     fireEvent.pointerUp(right, { clientX: 113, pointerId: 1 });
     const [, next] = onChange.mock.calls.at(-1)!;
-    expect(next.duration).toBe("15d");
+    expect(next.end_date).toBe("2025-01-26");
   });
 });
