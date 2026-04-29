@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.40.3](https://github.com/stratif-io/stratif.io/compare/v0.40.2...v0.40.3) (2026-04-29)
+
+
+### Bug Fixes
+
+* move @stratif-io/design-system to devDependencies in analytics package ([2be1ffe](https://github.com/stratif-io/stratif.io/commit/2be1ffe3b269ed5a6930a81576fc4daab0f96fac))
+* move @stratif-io/design-system to devDependencies so it's not in published package ([9421513](https://github.com/stratif-io/stratif.io/commit/94215135aef14cd706b01212c89b4471a392bdd7))
+
 ## [0.40.2](https://github.com/stratif-io/stratif.io/compare/v0.40.1...v0.40.2) (2026-04-29)
 
 
