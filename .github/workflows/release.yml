@@ -96,6 +96,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Build design system
+        run: bun run build:lib
+
       - name: Build frontend
         run: bun run build
         working-directory: apps/analytics
