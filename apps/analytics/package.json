@@ -1,6 +1,6 @@
 {
   "name": "@stratif-io/analytics",
-  "version": "0.40.1",
+  "version": "0.40.2",
   "description": "stratif.io Analytics — open source analytics dashboard",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
