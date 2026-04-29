@@ -205,7 +205,8 @@ echo ""
 echo "  stratif.io is running at http://localhost:$PORT"
 echo "  Press Ctrl+C to stop."
 echo ""
-exec STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" services.analytics.main:app --host 0.0.0.0 --port $PORT --log-level error
+export STRATIFIO_LOG_LEVEL=error
+exec "$INSTALL_DIR/.venv/bin/uvicorn" services.analytics.main:app --host 0.0.0.0 --port $PORT --log-level error
 STARTSH
 chmod +x "$INSTALL_DIR/start.sh"
 
@@ -220,21 +221,7 @@ if [ ! -f "$SAMPLE_DB" ]; then
 fi
 "$INSTALL_DIR/.venv/bin/python" -m services.event_simulator.bootstrap_connection --path "$SAMPLE_DB" >/dev/null 2>&1
 
-info "Starting server on port $PORT"
-STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" services.analytics.main:app --host 0.0.0.0 --port "$PORT" --log-level error &
-SERVER_PID=$!
-
-ATTEMPTS=0
-while ! curl -sf "http://localhost:${PORT}/" >/dev/null 2>&1; do
-  ATTEMPTS=$((ATTEMPTS + 1))
-  if [ "$ATTEMPTS" -ge 30 ]; then
-    kill "$SERVER_PID" 2>/dev/null || true
-    die "Server did not start. Run '$INSTALL_DIR/start.sh' to try again."
-  fi
-  sleep 2
-done
-
-printf "\n${GREEN}${BOLD}  ✓  stratif.io is running → http://localhost:${PORT}${NC}\n\n"
+printf "\n${GREEN}${BOLD}  ✓  Installation complete${NC}\n\n"
 printf "  Open: http://localhost:${PORT}\n"
 printf "  Sample data: Connections → DuckDB → $DATA_DIR/sample.duckdb\n"
 printf "\n"
@@ -243,4 +230,6 @@ printf "  To restart: $INSTALL_DIR/start.sh\n"
 printf "  To update:  curl -fsSL https://stratif.io/install.sh | sh\n"
 printf "\n"
 
-wait "$SERVER_PID"
+# exec replaces this installer shell with the server process so it stays
+# running when the script was piped via "curl | sh".
+exec "$INSTALL_DIR/start.sh"
