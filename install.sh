@@ -205,7 +205,8 @@ echo ""
 echo "  stratif.io is running at http://localhost:$PORT"
 echo "  Press Ctrl+C to stop."
 echo ""
-exec STRATIFIO_LOG_LEVEL=error "$INSTALL_DIR/.venv/bin/uvicorn" services.analytics.main:app --host 0.0.0.0 --port $PORT --log-level error
+export STRATIFIO_LOG_LEVEL=error
+exec "$INSTALL_DIR/.venv/bin/uvicorn" services.analytics.main:app --host 0.0.0.0 --port $PORT --log-level error
 STARTSH
 chmod +x "$INSTALL_DIR/start.sh"
 
