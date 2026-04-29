@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.40.1](https://github.com/stratif-io/stratif.io/compare/v0.40.0...v0.40.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* build design system before frontend in release workflow ([8891f7a](https://github.com/stratif-io/stratif.io/commit/8891f7adccd507a93df44746b9a169a98184fc45))
+* build design system before frontend in release workflow ([a092f99](https://github.com/stratif-io/stratif.io/commit/a092f992179d570b27d4a294fbd24d2006ecfdc8))
+
 ## [0.40.0](https://github.com/stratif-io/stratif.io/compare/v0.39.0...v0.40.0) (2026-04-29)
 
 
