@@ -2,7 +2,8 @@
 FROM oven/bun:1 AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
-COPY apps/web/package.json ./apps/web/package.json
+COPY apps/analytics/package.json ./apps/analytics/package.json
+COPY packages/design-system/package.json ./packages/design-system/package.json
 RUN bun install
 
 # ── Stage 2: Build frontend ───────────────────────────────────────────────────
@@ -19,10 +20,12 @@ RUN ARCH=$(uname -m) && \
         lightningcss-linux-x64-gnu \
         "@tailwindcss/oxide-linux-x64-gnu"; \
     fi
-COPY apps/web/index.html apps/web/tsconfig.json apps/web/tsconfig.node.json \
-     apps/web/vite.config.ts apps/web/postcss.config.js ./apps/web/
-COPY apps/web/public ./apps/web/public
-COPY apps/web/frontend ./apps/web/frontend
+COPY apps/analytics/index.html apps/analytics/tsconfig.json apps/analytics/tsconfig.node.json \
+     apps/analytics/vite.config.ts apps/analytics/postcss.config.js ./apps/analytics/
+COPY apps/analytics/public ./apps/analytics/public
+COPY apps/analytics/frontend ./apps/analytics/frontend
+COPY packages/design-system ./packages/design-system
+RUN bun run build:lib
 RUN bun run build
 
 # ── Stage 3: Install Python dependencies ──────────────────────────────────────
@@ -41,11 +44,12 @@ WORKDIR /app
 COPY --from=python-deps /app/.venv ./.venv
 
 # Copy built frontend
-COPY --from=frontend /app/apps/web/dist ./dist
+COPY --from=frontend /app/apps/analytics/dist ./dist
 
 # Copy application code
-COPY backend ./backend
-COPY seeders ./seeders
+COPY services/analytics ./services/analytics
+COPY services/event_simulator ./services/event_simulator
+COPY services/__init__.py ./services/__init__.py
 COPY pyproject.toml uv.lock ./
 COPY entrypoint.sh ./entrypoint.sh
 

@@ -1,0 +1,459 @@
+"""Preview engine — runs simulation in-memory and returns daily timeseries.
+
+Formula (matches the UI formula panel):
+  G(t) = starting_rate × s(t)                       # rate × shape multiplier
+  A(t) = G(t) · dow(t) · cal(t) · Πk mk(t)         # anomaly multipliers
+  J(t) = A(t) · (1 + σZ),  Z ~ N(0,1)              # stochastic jitter
+  V(t) = J(t) + K · (DAU(t-1) / cap) · G(t)        # viral amplification
+  N(t) ~ Poisson(V(t) · arrival_cap)               # Poisson draw (capped)
+
+Two modes:
+  Rate-driven: starting_rate is given directly; total users emerges naturally.
+  Goal-driven: binary search finds starting_rate that produces ≈ total_users.
+
+Two-pass approach:
+  Pass 1: compute J → draw N₀ → simulate cohorts → get DAU₀(t) for virality
+  Pass 2: add viral term → draw final N(t) → final cohort simulation
+"""
+
+from __future__ import annotations
+
+import math
+import random
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+
+from services.event_simulator.simulator.anomalies import (
+    arrivals_multiplier,
+    parse_anomalies,
+)
+from services.event_simulator.simulator.axes._defaults import default_axis_registry
+from services.event_simulator.simulator.cohort_model import (
+    RetentionParams,
+    active_days_for_user,
+    build_reactivation_kernel,
+    build_survival,
+)
+from services.event_simulator.simulator.config import SimulationConfig
+from services.event_simulator.simulator.protocols import SimulationState
+from services.event_simulator.simulator.realism.time_curves import get_dow_weights
+
+_PREVIEW_USER_CAP = 5_000
+# For long windows the cohort model is expensive; scale the cap down so
+# total simulated-user × simulated-day stays bounded at ~1.8M unit operations.
+_PREVIEW_USER_DAY_BUDGET = 1_800_000
+
+
+@dataclass
+class PreviewResult:
+    days: list[int]
+    new_users: list[int]
+    active_users: list[int]
+    churned: list[int]
+    reactivated: list[int]
+    events: list[int]
+    stickiness: list[float]
+    mau: list[int]
+    growth_curve: list[float]
+    seasonality_curve: list[float]  # S(t) = G(t) · dow(t) · cal(t), normalized
+    anomaly_curve: list[float]
+    jitter_curve: list[float]
+    virality_curve: list[float]
+    arrival_cap: float  # fraction applied before each Poisson draw; real λ = virality_curve[d] * arrival_cap
+    report_scale: (
+        float  # multiplier applied after Poisson draw; result = k * report_scale
+    )
+    start_date: str | None = None  # ISO date of day 0 (e.g. "2009-11-01")
+
+
+def _poisson(rng: random.Random, lam: float) -> int:
+    if lam <= 0:
+        return 0
+    if lam > 30:
+        return max(0, int(rng.gauss(lam, math.sqrt(lam)) + 0.5))
+    limit = math.exp(-lam)
+    k, p = 0, 1.0
+    while True:
+        k += 1
+        p *= rng.random()
+        if p < limit:
+            return k - 1
+
+
+_DEFAULT_AVG_EVENTS_PER_SESSION = 3.0  # fallback when Markov transitions are empty
+
+
+def _avg_events_per_session(config: SimulationConfig) -> float:
+    end_probs = [t.get("[end]", 0.0) for t in config.markov.transitions.values()]
+    if not end_probs:
+        return _DEFAULT_AVG_EVENTS_PER_SESSION
+    avg_end = sum(end_probs) / len(end_probs)
+    return min(max(1.0 / avg_end if avg_end > 0 else 5.0, 1.0), 20.0)
+
+
+def _simulate_cohorts(
+    arrivals: list[int],
+    state: SimulationState,
+    rng: random.Random,
+) -> tuple[list[set[int]], dict[int, int]]:
+    """Simulate user cohorts, returning (active_sets, first_day)."""
+    window = len(arrivals)
+    active_sets: list[set[int]] = [set() for _ in range(window)]
+    first_day: dict[int, int] = {}
+    # Precompute survival curve and reactivation kernel once for the whole batch.
+    precomp_S: list[float] | None = None
+    precomp_R: list[float] | None = None
+    if state.retention_params is not None:
+        precomp_S = build_survival(state.retention_params, window)
+        precomp_R = build_reactivation_kernel(state.retention_params)
+    uid = 0
+    for d, n in enumerate(arrivals):
+        for _ in range(n):
+            first_day[uid] = d
+            if state.retention_params is not None:
+                days_active = active_days_for_user(
+                    rng,
+                    state.retention_params,
+                    d,
+                    window,
+                    S=precomp_S,
+                    R=precomp_R,
+                )
+            elif state.hazard_curve is not None:
+                lifetime = state.hazard_curve(rng)
+                days_active = list(range(d, min(d + lifetime + 1, window)))
+            else:
+                days_active = list(range(d, window))
+            for ad in days_active:
+                active_sets[ad].add(uid)
+            uid += 1
+    return active_sets, first_day
+
+
+def _analytical_dau_churn(
+    new_users: list[int],
+    params: RetentionParams,
+    window: int,
+) -> tuple[list[int], list[int]]:
+    """Compute expected DAU and churned analytically via survival-curve convolution.
+
+    active_users[t] = sum_{d=0}^{t} new_users[d] * S[t - d]
+
+    where S[k] = P(user still active at tenure k), precomputed from RetentionParams.
+    This avoids Poisson sampling noise that gets amplified by report_scale on long windows.
+    Complexity: O(window * effective_lifetime), where effective_lifetime is capped
+    at the age where S drops below 1e-5.
+    """
+    S_full = build_survival(params, window)
+    # Truncate at effective lifetime to keep inner loop short
+    effective_lifetime = window
+    for k in range(1, window + 1):
+        if S_full[k] < 1e-5:
+            effective_lifetime = k
+            break
+    S = S_full[: effective_lifetime + 1]
+
+    active: list[int] = []
+    for t in range(window):
+        total = 0.0
+        lo = max(0, t - effective_lifetime)
+        for d in range(lo, t + 1):
+            total += new_users[d] * S[t - d]
+        active.append(round(total))
+
+    churned = [0] * window
+    for t in range(1, window):
+        # Conservation: active[t] = active[t-1] + new_users[t] - churned[t]
+        raw = active[t - 1] + new_users[t] - active[t]
+        churned[t] = max(0, raw)
+
+    return active, churned
+
+
+def _run_with_rate(
+    config: SimulationConfig, starting_rate: float, *, _count_only: bool = False
+) -> PreviewResult:
+    """Core rate-driven engine. Total users emerges naturally from starting_rate.
+
+    Pass ``_count_only=True`` during binary search to skip the stickiness cohort
+    simulation (saves ~50% of compute when searching for the right starting_rate).
+    """
+    scale = config.resolved_scale()
+    window = scale.window_days
+
+    state = SimulationState(
+        random_seed=config.random_seed or 0,
+        total_users=0,  # unused in rate-driven path
+        window_days=window,
+        now=datetime.now(UTC),
+    )
+    state.anomalies = list(config.events)
+    # consumed by GrowthAxis.apply() via state.growth_config
+    state.growth_config = dict(config.growth_config) if config.growth_config else None
+
+    axis_reg = default_axis_registry()
+    for name, value in config.axes.items():
+        try:
+            axis = axis_reg.get(name)
+        except KeyError:
+            continue
+        axis.apply(value, state)
+
+    parsed_anomalies = parse_anomalies(state.anomalies, state.now, window)
+
+    # Anchor day_0: explicit start_date in scale_config > earliest ISO anomaly > now - window
+    _iso_starts = [
+        a["start"]
+        for a in (config.events or [])
+        if isinstance(a.get("start"), str)
+        and len(a["start"]) == 10
+        and a["start"][4] == "-"
+    ]
+    if config.scale_config is not None and config.scale_config.start_date:
+        from datetime import date as _date
+
+        _sd = _date.fromisoformat(config.scale_config.start_date)
+        day_0 = datetime(_sd.year, _sd.month, _sd.day, tzinfo=UTC)
+    elif _iso_starts:
+        from datetime import date as _date
+
+        _earliest = min(_date.fromisoformat(s) for s in _iso_starts)
+        day_0 = datetime(_earliest.year, _earliest.month, _earliest.day, tzinfo=UTC)
+    else:
+        day_0 = state.now - timedelta(days=window)
+
+    shape = state.arrival_curve or (lambda d: 1.0)
+    seed = config.random_seed or 0
+    rng_jitter = random.Random(seed + 0)  # jitter draws (phase 0)
+    # rng1 uses seed+1 for pass-1 Poisson draws + cohort simulation
+    dow_weights = (
+        state.dow_weights
+        if state.dow_weights is not None
+        else get_dow_weights("generic")
+    )
+    cal_fn = state.calendar_multiplier  # None → cal_mult = 1.0
+
+    sigma = state.jitter_sigma
+    K = state.virality_weight
+
+    # ── G(t) = λ₀ × shape(t) ─────────────────────────────────────────────────
+    # λ₀ = starting_rate = arrival rate on day 0. shape(0) = 1 by construction
+    # for all shape types, so G(0) = λ₀ exactly as the formula panel shows.
+
+    # Pre-compute raw seasonal weights and normalise them so their mean = 1.
+    # This makes seasonality *spread* the growth curve (same total users,
+    # redistributed across days) rather than inflate or deflate it.
+    raw_season: list[float] = []
+    local_dates: list = []
+    for d in range(window):
+        local_date = (day_0 + timedelta(days=d)).date()
+        local_dates.append(local_date)
+        dow_mult = dow_weights[local_date.weekday()]
+        cal_mult = cal_fn(local_date) if cal_fn is not None else 1.0
+        raw_season.append(dow_mult * cal_mult)
+
+    mean_season = sum(raw_season) / max(len(raw_season), 1)
+    norm_factor = 1.0 / max(mean_season, 1e-9)
+
+    g_curve: list[float] = []
+    s_curve: list[float] = []
+    a_curve: list[float] = []
+    for d in range(window):
+        local_date = local_dates[d]
+        ano_mult = arrivals_multiplier(parsed_anomalies, local_date)
+        g = starting_rate * shape(d)
+        season_norm = raw_season[d] * norm_factor
+        g_curve.append(g)
+        s_curve.append(g * season_norm)  # seasonality spreads, does not scale
+        a_curve.append(g * season_norm * ano_mult)
+
+    # ── J(t) = A(t) · (1 + σZ) ───────────────────────────────────────────────
+    j_curve: list[float] = [
+        max(0.0, a * (1.0 + sigma * rng_jitter.gauss(0.0, 1.0))) for a in a_curve
+    ]
+
+    # Cap for cohort simulation performance only (never affects displayed values).
+    # Scale the user cap down for long windows to keep computation bounded.
+    window_adjusted_cap = max(
+        50, min(_PREVIEW_USER_CAP, _PREVIEW_USER_DAY_BUDGET // window)
+    )
+    expected_total = max(sum(j_curve), 1.0)
+    cohort_cap = min(1.0, window_adjusted_cap / expected_total)
+    report_scale = 1.0 / cohort_cap
+
+    # ── Pass 1: preliminary capped arrivals → preliminary DAU (for virality) ──
+    # Use Poisson sampling (not deterministic rounding) so that sparse arrivals
+    # on long windows (cohort_cap ≪ 1, expected arrivals ≪ 1 per day) still
+    # produce individual simulated users instead of always rounding to 0.
+    rng1 = random.Random(seed + 1)
+    n0_capped = [_poisson(rng1, j * cohort_cap) for j in j_curve]
+    active_sets0, _ = _simulate_cohorts(n0_capped, state, rng1)
+    dau0_capped = [len(s) for s in active_sets0]
+
+    # ── V(t) = J(t) + K · DAU(t-1) / E[J] · G(t)  (full scale) ─────────────
+    v_curve: list[float] = []
+    for d in range(window):
+        dau_prev = dau0_capped[d - 1] * report_scale if d > 0 else 0.0
+        viral = K * (dau_prev / max(expected_total, 1)) * g_curve[d]
+        v_curve.append(max(0.0, j_curve[d] + viral))
+
+    # ── N(t) ~ Poisson(V(t))  (full scale, as the formula says) ─────────────
+    rng_pass2 = random.Random(seed + 2)
+    new_users = [_poisson(rng_pass2, v) for v in v_curve]
+
+    # ── DAU / churn ───────────────────────────────────────────────────────────
+    # When retention_params is available, compute analytically via survival-curve
+    # convolution on the full-scale new_users array. This eliminates the Poisson
+    # sampling noise that gets amplified by report_scale on long windows (e.g.
+    # Tinder 13yr: 1 simulated user = 1.5M real users → ±1.5M spike per day).
+    if state.retention_params is not None:
+        active_users_full, churned_full = _analytical_dau_churn(
+            new_users, state.retention_params, window
+        )
+        reactivated_full = [0] * window  # reactivation is small vs primary retention
+    else:
+        # Fallback: cohort simulation at capped scale (hazard_curve or no retention)
+        rng_cohort_draw = random.Random(seed + 3)
+        new_users_capped = [
+            _poisson(rng_cohort_draw, n * cohort_cap) for n in new_users
+        ]
+        rng_cohort = random.Random(seed + 1)
+        active_sets, first_day = _simulate_cohorts(new_users_capped, state, rng_cohort)
+        active_users_raw = [len(s) for s in active_sets]
+        churned_raw = [0] * window
+        reactivated_raw = [0] * window
+        for d in range(1, window):
+            churned_raw[d] = len(active_sets[d - 1] - active_sets[d])
+            gap = active_sets[d] - active_sets[d - 1]
+            reactivated_raw[d] = sum(1 for u in gap if first_day[u] < d)
+        active_users_full = [round(v * report_scale) for v in active_users_raw]
+        churned_full = [round(v * report_scale) for v in churned_raw]
+        reactivated_full = [round(v * report_scale) for v in reactivated_raw]
+
+    # ── Stickiness (DAU/MAU) ──────────────────────────────────────────────────
+    # Compute MAU from the same active_sets used for DAU so that DAU ≤ MAU
+    # by construction and the ratio never exceeds 1.
+    # Skipped during binary search (_count_only=True) since only sum(new_users) matters.
+    avg_eps = _avg_events_per_session(config)
+    session_mult = state.session_freq_multiplier
+
+    if _count_only:
+        stickiness = [0.0] * window
+        mau_scaled = [0] * window
+    else:
+        # Derive the source of per-user activation sets for the MAU window.
+        # When the cohort simulation ran (else-branch above), reuse active_sets so
+        # DAU and MAU share the same sample (ratio always ≤ 1).
+        # When analytical DAU was used, run a lightweight separate cohort pass.
+        if state.retention_params is None:
+            # Cohort path: walk the same active_sets from the main simulation to
+            # build the 30-day rolling MAU window.  DAU and MAU share the same
+            # sample so the ratio is structurally ≤ 1.
+            raw_mau_cohort: list[int] = []
+            last_active_mau: dict[int, int] = {}
+            mau_set_cohort: set[int] = set()
+            for d in range(window):
+                for uid in active_sets[d]:
+                    last_active_mau[uid] = d
+                    mau_set_cohort.add(uid)
+                to_evict = [
+                    uid for uid in mau_set_cohort if last_active_mau[uid] < d - 29
+                ]
+                for uid in to_evict:
+                    mau_set_cohort.discard(uid)
+                raw_mau_cohort.append(len(mau_set_cohort))
+
+            half = 15
+            mau_smooth_cohort: list[float] = [
+                sum(raw_mau_cohort[max(0, d - half) : d + half + 1])
+                / len(raw_mau_cohort[max(0, d - half) : d + half + 1])
+                for d in range(window)
+            ]
+            mau_scaled = [round(v * report_scale) for v in mau_smooth_cohort]
+            stickiness = [
+                min(1.0, active_users_raw[d] / max(mau_smooth_cohort[d], 1))
+                for d in range(window)
+            ]
+        else:
+            # Analytical path: DAU is already smooth full-scale.  Compute MAU
+            # analytically: every user is active on their join day, so the 30-day
+            # rolling sum of new_users is a tight upper bound on unique monthly users.
+            # Smooth it with a 30-day rolling average and derive stickiness from
+            # full-scale active_users_full / full-scale MAU.
+            half = 15
+            raw_mau_analytical: list[float] = [
+                float(sum(new_users[max(0, d - 29) : d + 1])) for d in range(window)
+            ]
+            mau_smooth_analytical: list[float] = [
+                sum(raw_mau_analytical[max(0, d - half) : d + half + 1])
+                / len(raw_mau_analytical[max(0, d - half) : d + half + 1])
+                for d in range(window)
+            ]
+            mau_scaled = [round(v) for v in mau_smooth_analytical]
+            stickiness = [
+                min(1.0, active_users_full[d] / max(mau_smooth_analytical[d], 1))
+                for d in range(window)
+            ]
+
+    def _norm_curve(curve: list[float]) -> list[float]:
+        """Scale a pipeline curve to the same y-axis as new_users for chart overlay."""
+        total = sum(curve)
+        if total <= 0:
+            return [0.0] * len(curve)
+        new_users_total = float(sum(new_users))
+        return [v * (new_users_total / total) for v in curve]
+
+    return PreviewResult(
+        days=list(range(window)),
+        new_users=new_users,
+        active_users=active_users_full,
+        churned=churned_full,
+        reactivated=reactivated_full,
+        events=[
+            round(active_users_full[d] * session_mult * avg_eps) for d in range(window)
+        ],
+        stickiness=stickiness,
+        mau=mau_scaled,
+        growth_curve=_norm_curve(g_curve),
+        seasonality_curve=_norm_curve(s_curve),
+        anomaly_curve=_norm_curve(a_curve),
+        jitter_curve=_norm_curve(j_curve),
+        virality_curve=v_curve,  # V(t) already at full scale
+        arrival_cap=cohort_cap,
+        report_scale=report_scale,
+        start_date=day_0.date().isoformat(),
+    )
+
+
+def _solve_starting_rate(config: SimulationConfig, target_total: int) -> float:
+    """Binary search in log-space for starting_rate that produces ~target_total new users.
+
+    Linear search fails for explosive growth over long windows: the correct
+    starting_rate can be as small as 1e-200 (to compensate for exp(0.08 * 6000)),
+    which linear bisection from [0.1, target*10] can never reach in finite steps.
+    Log-space search covers the full range in ~50 iterations regardless of window.
+    """
+    lo_log = math.log(1e-250)  # covers even exp(0.08 * 6000) growth
+    hi_log = math.log(max(float(target_total) * 100.0, 1.0))
+    for _ in range(50):
+        mid_log = (lo_log + hi_log) / 2.0
+        mid = math.exp(mid_log)
+        result = _run_with_rate(config, mid, _count_only=True)
+        total = sum(result.new_users)
+        if total < target_total:
+            lo_log = mid_log
+        else:
+            hi_log = mid_log
+        if (hi_log - lo_log) < 0.02:  # converged to ~2% in log-space
+            break
+    return math.exp((lo_log + hi_log) / 2.0)
+
+
+def run_preview(config: SimulationConfig) -> PreviewResult:
+    """Dispatch to rate-driven or goal-driven mode based on config."""
+    scale = config.resolved_scale()
+    if scale.total_users is not None:
+        starting_rate = _solve_starting_rate(config, scale.total_users)
+        return _run_with_rate(config, starting_rate)
+    starting_rate = scale.starting_rate or 100.0
+    return _run_with_rate(config, starting_rate)

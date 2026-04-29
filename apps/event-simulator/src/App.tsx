@@ -1,0 +1,800 @@
+import {
+  Component,
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
+import type { ReactNode } from "react";
+import {
+  AppHeader,
+  AppSidebar,
+  AxisPopover,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+} from "@stratif-io/design-system";
+import type { AxisDisplayValue, SidebarItem } from "@stratif-io/design-system";
+import {
+  LayoutDashboard,
+  TrendingUp,
+  RefreshCw,
+  MessageCircle,
+  Rocket,
+  Target,
+  Zap,
+  Activity,
+  Users,
+  Moon,
+  Sun,
+  Clock,
+  CalendarDays,
+  CalendarRange,
+} from "lucide-react";
+import { StudioLayout } from "./features/studio/StudioLayout";
+import { SavePanel } from "./features/save/SavePanel";
+import { usePresets } from "./features/presets/usePresets";
+import { useSeederStore, blankConfig } from "./stores/seederStore";
+import { AXIS_SPEC } from "./lib/twin/axisSpec";
+import { useTheme } from "./hooks/useTheme";
+import { cn } from "./lib/cn";
+import { defaultAnomaly } from "./lib/twin";
+import { resolveScale } from "./lib/twin/utils";
+import { stringifyConfigYaml } from "./lib/yaml/roundTrip";
+
+function presetLabel(name: string): string {
+  const n = name.toLowerCase();
+  const emoji = n.includes("dating")
+    ? "💘"
+    : n.includes("game") || n.includes("casual")
+      ? "🎮"
+      : n.includes("saas")
+        ? "🚀"
+        : n.includes("commerce") || n.includes("shopify")
+          ? "🛒"
+          : n.includes("retail") || n.includes("sears")
+            ? "🏪"
+            : n.includes("marketplace") || n.includes("airbnb")
+              ? "🤝"
+              : n.includes("streaming") || n.includes("netflix")
+                ? "🎬"
+                : n.includes("social")
+                  ? "📱"
+                  : n.includes("fintech")
+                    ? "💳"
+                    : n.includes("portable") ||
+                        n.includes("north pole") ||
+                        n.includes("santa")
+                      ? "🎅"
+                      : "";
+  return emoji ? `${emoji} ${name}` : name;
+}
+
+const AXIS_SPARKLINES: Record<string, Record<string, string>> = {
+  growth: {
+    declining: "0,4 14,8 28,14 40,20 52,26",
+    flat: "0,14 14,14 28,14 40,14 52,14",
+    steady: "0,22 14,18 28,14 40,10 52,6",
+    strong: "0,26 12,22 24,16 36,9 52,4",
+    hockey_stick: "0,24 14,23 24,22 32,20 36,14 42,8 52,3",
+    explosive: "0,26 10,22 22,16 36,8 52,2",
+    seasonal: "0,14 10,8 26,3 36,8 46,14 52,18",
+    s_curve: "0,24 13,18 26,5 39,18 52,24",
+  },
+  stickiness: {
+    one_shot: "0,4 13,16 26,22 39,25 52,26",
+    churn_heavy: "0,6 13,14 26,18 39,21 52,22",
+    normal: "0,8 13,12 26,16 39,18 52,20",
+    sticky: "0,10 13,11 26,12 39,13 52,14",
+    addictive: "0,12 13,12 26,12 39,11 52,11",
+    no_one_churns: "0,14 13,14 26,14 39,14 52,14",
+  },
+  engagement_depth: {
+    shallow: "0,22 26,22 52,22",
+    medium: "0,14 26,14 52,14",
+    deep: "0,6 26,6 52,6",
+  },
+  virality: {
+    none: "0,14 52,14",
+    weak: "0,18 26,14 52,10",
+    moderate: "0,22 26,14 52,4",
+    strong_viral: "0,26 20,20 36,10 52,2",
+  },
+  scale: {
+    tiny: "0,22 52,22",
+    small: "0,18 52,18",
+    medium: "0,12 52,12",
+    large: "0,6 52,6",
+  },
+  noise: {
+    none: "0,14 13,14 26,14 39,14 52,14",
+    clean: "0,12 10,16 20,13 30,15 40,12 52,14",
+    moderate: "0,10 8,18 16,11 24,17 32,9 40,16 52,13",
+    explicit: "0,8 7,20 14,9 21,19 28,8 35,18 42,11 52,17",
+  },
+  daily_pattern: {
+    business_hours: "0,26 19,26 19,5 39,5 39,20 52,24",
+    evening_peak: "0,22 8,26 19,24 36,18 39,6 47,5 52,20",
+    always_on: "0,14 52,14",
+    night_owl: "0,8 6,14 8,26 19,26 36,24 47,18 48,6 52,8",
+  },
+  weekly_pattern: {
+    weekdays_only: "0,5 37,5 37,24 52,24",
+    weekends_heavy: "0,20 37,20 37,5 52,5",
+    flat: "0,14 52,14",
+  },
+  monthly_seasonality: {
+    nov_dec_extreme: "0,26 39,26 43,20 47,4 52,28",
+    nov_dec_peak: "0,22 39,22 43,16 47,6 52,4",
+    q4_heavy: "0,20 26,18 39,14 43,10 47,6 52,4",
+    summer_peak: "0,22 13,22 22,10 26,5 30,5 35,10 43,18 52,22",
+    flat: "0,14 52,14",
+  },
+};
+
+const SIDEBAR_AXES: { id: string; label: string; icon: ReactNode }[] = [
+  { id: "scale", label: "Scale", icon: <Target size={16} /> },
+  { id: "growth", label: "Growth", icon: <TrendingUp size={16} /> },
+  { id: "stickiness", label: "Retention", icon: <RefreshCw size={16} /> },
+  {
+    id: "engagement_depth",
+    label: "Engagement",
+    icon: <MessageCircle size={16} />,
+  },
+  { id: "virality", label: "Virality", icon: <Rocket size={16} /> },
+  { id: "noise", label: "Noise", icon: <Activity size={16} /> },
+  { id: "daily_pattern", label: "Daily Pattern", icon: <Clock size={16} /> },
+  {
+    id: "weekly_pattern",
+    label: "Weekly Pattern",
+    icon: <CalendarDays size={16} />,
+  },
+  {
+    id: "monthly_seasonality",
+    label: "Seasonality",
+    icon: <CalendarRange size={16} />,
+  },
+];
+
+class ErrorBoundary extends Component<
+  { children: ReactNode; fallback?: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        this.props.fallback ?? (
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-6 text-center">
+            Something went wrong. Reload the page or pick a different preset.
+          </div>
+        )
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function App() {
+  const { presets, loading, error } = usePresets();
+  const config = useSeederStore((s) => s.config);
+  const dirty = useSeederStore((s) => s.dirty);
+  const loadPreset = useSeederStore((s) => s.loadPreset);
+  const sidebarCollapsed = useSeederStore((s) => s.sidebarCollapsed);
+  const setSidebarCollapsed = useSeederStore((s) => s.setSidebarCollapsed);
+  const activeSection = useSeederStore((s) => s.activeSection);
+  const setActiveSection = useSeederStore((s) => s.setActiveSection);
+  const studioExpanded = useSeederStore((s) => s.studioExpanded);
+  const setStudioExpanded = useSeederStore((s) => s.setStudioExpanded);
+  const setAxis = useSeederStore((s) => s.setAxis);
+
+  const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [pendingIntent, setPendingIntent] = useState<
+    { kind: "load"; name: string } | { kind: "blank" } | null
+  >(null);
+
+  // TopBar state
+  const { theme, toggleTheme } = useTheme();
+  const uiStartDate = useSeederStore((s) => s.uiStartDate);
+  const uiEndDate = useSeederStore((s) => s.uiEndDate);
+  const setUiStartDate = useSeederStore((s) => s.setUiStartDate);
+  const setUiEndDate = useSeederStore((s) => s.setUiEndDate);
+  const setScaleConfig = useSeederStore((s) => s.setScaleConfig);
+  const setSimEvents = useSeederStore((s) => s.setSimEvents);
+
+  const anomalies = config.events ?? [];
+  const scaleAxis = config.axes.scale ?? "small";
+  const scaleOverride = config.scale_config;
+  const resolvedScale = useMemo(
+    () => resolveScale(scaleAxis, scaleOverride),
+    [scaleAxis, scaleOverride],
+  );
+  const { window_days } = resolvedScale;
+  const derivedSummary = useMemo(() => {
+    const users =
+      resolvedScale.mode === "goal"
+        ? resolvedScale.total_users
+        : resolvedScale.starting_rate * resolvedScale.window_days;
+    const perDay =
+      resolvedScale.mode === "rate"
+        ? resolvedScale.starting_rate
+        : Math.round(users / Math.max(1, resolvedScale.window_days));
+    const fmt = (n: number) =>
+      n >= 1_000_000
+        ? `${(n / 1_000_000).toFixed(1)}M`
+        : n >= 1_000
+          ? `${(n / 1_000).toFixed(0)}k`
+          : String(n);
+    return `~${fmt(users)} users · ${resolvedScale.window_days}d · ~${fmt(perDay)}/day`;
+  }, [resolvedScale]);
+
+  const isScaleCustom = useMemo(() => {
+    const preset = AXIS_SPEC.scale.values.find((v) => v.value === scaleAxis);
+    if (!preset || !scaleOverride) return false;
+    const pu = preset.params.total_users as number;
+    const pw = preset.params.window_days as number;
+    const ou = scaleOverride.total_users;
+    const ow = scaleOverride.window_days;
+    return (ou != null && ou !== pu) || (ow != null && ow !== pw);
+  }, [scaleAxis, scaleOverride]);
+
+  const handleAddEvent = () => {
+    const windowEnd = uiEndDate
+      ? new Date(uiEndDate + "T00:00:00Z")
+      : new Date();
+    const windowStart = uiStartDate
+      ? new Date(uiStartDate + "T00:00:00Z")
+      : new Date(windowEnd.getTime() - window_days * 86_400_000);
+    const duration = Math.max(5, Math.floor(window_days * 0.1));
+    const maxStart = Math.max(0, window_days - duration - 1);
+    const startOffset = Math.floor(Math.random() * maxStart);
+    const startDate = new Date(
+      windowStart.getTime() + startOffset * 86_400_000,
+    );
+    const endDate = new Date(startDate.getTime() + duration * 86_400_000);
+    const toISO = (d: Date) => d.toISOString().slice(0, 10);
+    setSimEvents([
+      ...anomalies,
+      defaultAnomaly("product_launch", toISO(startDate), toISO(endDate)),
+    ]);
+  };
+
+  const dateRangeInvalid = !!(
+    uiStartDate &&
+    uiEndDate &&
+    new Date(uiStartDate + "T00:00:00") >= new Date(uiEndDate + "T00:00:00")
+  );
+
+  const handleStartDate = (value: string) => {
+    setUiStartDate(value);
+    if (value && uiEndDate) {
+      const start = new Date(value + "T00:00:00");
+      const end = new Date(uiEndDate + "T00:00:00");
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
+      if (end.getTime() <= start.getTime()) return;
+      setScaleConfig({
+        ...config.scale_config,
+        start_date: value,
+        end_date: uiEndDate,
+        window_days: null,
+      });
+    }
+  };
+
+  const handleEndDate = (value: string) => {
+    setUiEndDate(value);
+    if (uiStartDate && value) {
+      const start = new Date(uiStartDate + "T00:00:00");
+      const end = new Date(value + "T00:00:00");
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
+      if (end.getTime() <= start.getTime()) return;
+      setScaleConfig({
+        ...config.scale_config,
+        start_date: uiStartDate,
+        end_date: value,
+        window_days: null,
+      });
+    }
+  };
+
+  const handleTotalUsers = (value: string) => {
+    const n = parseInt(value, 10);
+    if (!isNaN(n) && n > 0) {
+      setScaleConfig({ ...config.scale_config, total_users: n });
+    }
+  };
+
+  const inputInvalid = "border-destructive focus-visible:ring-destructive";
+  const inputNormal = "border-border";
+
+  const syncDatesFromConfig = useCallback(
+    (cfg: {
+      scale_config?: {
+        window_days?: number | null;
+        start_date?: string | null;
+        end_date?: string | null;
+      } | null;
+      events?: { start_date?: string; end_date?: string }[];
+    }) => {
+      const fmt = (d: Date) => d.toISOString().split("T")[0];
+
+      // Explicit start_date/end_date from scale_config takes highest priority.
+      if (cfg.scale_config?.start_date && cfg.scale_config?.end_date) {
+        setUiStartDate(cfg.scale_config.start_date);
+        setUiEndDate(cfg.scale_config.end_date);
+        return;
+      }
+
+      const days = (cfg.scale_config?.window_days as number | undefined) ?? 90;
+
+      // If events have start_date, anchor the window to the earliest one.
+      const isoDates = (cfg.events ?? [])
+        .map((a) => a.start_date ?? "")
+        .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
+        .map((s) => new Date(s + "T00:00:00"));
+
+      if (isoDates.length > 0) {
+        const earliest = new Date(
+          Math.min(...isoDates.map((d) => d.getTime())),
+        );
+        const end = new Date(earliest);
+        end.setDate(end.getDate() + days);
+        setUiStartDate(fmt(earliest));
+        setUiEndDate(fmt(end));
+      } else {
+        const end = new Date();
+        const start = new Date(end);
+        start.setDate(start.getDate() - days);
+        setUiEndDate(fmt(end));
+        setUiStartDate(fmt(start));
+      }
+    },
+    [setUiStartDate, setUiEndDate],
+  );
+
+  const confirmAndRun = (
+    intent: { kind: "load"; name: string } | { kind: "blank" },
+  ) => {
+    if (intent.kind === "load") {
+      const preset = presets.find((p) => p.name === intent.name);
+      if (!preset || !preset.config) return;
+      loadPreset(preset.config);
+      syncDatesFromConfig(preset.config);
+      setSelectedName(intent.name);
+    } else {
+      const blank = blankConfig();
+      loadPreset(blank);
+      syncDatesFromConfig(blank);
+      setSelectedName(null);
+    }
+  };
+
+  const handleSelectPreset = (name: string | null) => {
+    const intent =
+      name === null
+        ? { kind: "blank" as const }
+        : { kind: "load" as const, name };
+    if (dirty) {
+      setPendingIntent(intent);
+      return;
+    }
+    confirmAndRun(intent);
+  };
+
+  const handleConfirmDiscard = () => {
+    if (!pendingIntent) return;
+    confirmAndRun(pendingIntent);
+    setPendingIntent(null);
+  };
+
+  const urlSyncedRef = useRef(false);
+
+  useEffect(() => {
+    if (loading || presets.length === 0 || urlSyncedRef.current) return;
+    urlSyncedRef.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const urlName = params.get("preset");
+    const targetName =
+      urlName && presets.some((p) => p.name === urlName)
+        ? urlName
+        : (presets.find((p) => p.name.toLowerCase().includes("dating"))?.name ??
+          null);
+    if (targetName) {
+      const preset = presets.find((p) => p.name === targetName);
+      if (preset?.config) {
+        loadPreset(preset.config);
+        syncDatesFromConfig(preset.config);
+        setSelectedName(targetName);
+      }
+    }
+  }, [loading, presets, loadPreset, syncDatesFromConfig]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (selectedName) {
+      url.searchParams.set("preset", selectedName);
+    } else {
+      url.searchParams.delete("preset");
+    }
+    window.history.replaceState({}, "", url.toString());
+  }, [selectedName]);
+
+  const sidebarSections = useMemo(() => {
+    const resolvedAxes = config.axes ?? {};
+
+    const axisChildren: SidebarItem[] = SIDEBAR_AXES.map(
+      ({ id, label, icon }) => {
+        const currentVal = resolvedAxes[id] ?? AXIS_SPEC[id]?.default ?? "";
+        const displayLabel =
+          id === "scale" && isScaleCustom
+            ? "custom"
+            : (AXIS_SPEC[id]?.values.find((v) => v.value === currentVal)
+                ?.label ?? currentVal);
+        return {
+          key: id,
+          label,
+          icon,
+          active: false,
+          onClick: () => {},
+          badge: displayLabel,
+          sparkline: AXIS_SPARKLINES[id]?.[currentVal] ?? "0,14 52,14",
+        };
+      },
+    );
+
+    return [
+      {
+        label: "",
+        items: [
+          {
+            key: "studio",
+            label: "Studio",
+            icon: <LayoutDashboard size={16} />,
+            active: activeSection === "studio",
+            onClick: () => setActiveSection("studio"),
+            expanded: studioExpanded,
+            onToggleExpand: () => setStudioExpanded(!studioExpanded),
+            children: axisChildren,
+          },
+        ],
+      },
+      {
+        label: "",
+        items: [
+          {
+            key: "events",
+            label: "Event simulator",
+            icon: <Zap size={16} />,
+            active: activeSection === "events",
+            onClick: () => setActiveSection("events"),
+          },
+        ],
+      },
+    ];
+  }, [
+    config.axes,
+    activeSection,
+    studioExpanded,
+    setActiveSection,
+    setStudioExpanded,
+    isScaleCustom,
+  ]);
+
+  const itemWrapper = useCallback(
+    (item: SidebarItem, btn: ReactNode) => {
+      const axisDef = AXIS_SPEC[item.key];
+      if (!axisDef) return btn;
+      const currentVal = (config.axes ?? {})[item.key] ?? axisDef.default;
+      const baseValues: AxisDisplayValue[] = axisDef.values.map((v) => ({
+        value: v.value,
+        label: v.label,
+        description: v.description,
+        sparklinePoints: AXIS_SPARKLINES[item.key]?.[v.value] ?? "0,14 52,14",
+      }));
+      const popoverValues: AxisDisplayValue[] =
+        item.key === "scale" && isScaleCustom
+          ? [
+              ...baseValues,
+              {
+                value: "custom",
+                label: "custom",
+                description: `${resolvedScale.mode === "goal" ? resolvedScale.total_users.toLocaleString() + " users" : resolvedScale.starting_rate + "/day"} · ${resolvedScale.window_days}d`,
+                sparklinePoints: "0,14 52,14",
+              },
+            ]
+          : baseValues;
+      const effectiveCurrentVal =
+        item.key === "scale" && isScaleCustom ? "custom" : currentVal;
+      return (
+        <AxisPopover
+          axisId={item.key}
+          values={popoverValues}
+          currentValue={effectiveCurrentVal}
+          onSelect={(val) => {
+            if (val === "custom") return;
+            setAxis(item.key, val);
+            if (item.key === "scale") {
+              const p = axisDef.values.find((v) => v.value === val)?.params;
+              if (p) {
+                setScaleConfig({
+                  total_users: p.total_users,
+                  window_days: p.window_days,
+                });
+                const days = p.window_days as number;
+                const end = new Date();
+                const start = new Date(end);
+                start.setDate(start.getDate() - days);
+                const fmt = (d: Date) => d.toISOString().split("T")[0];
+                setUiEndDate(fmt(end));
+                setUiStartDate(fmt(start));
+              }
+            }
+          }}
+        >
+          {btn}
+        </AxisPopover>
+      );
+    },
+    [
+      config.axes,
+      setAxis,
+      setScaleConfig,
+      setUiStartDate,
+      setUiEndDate,
+      isScaleCustom,
+      resolvedScale,
+    ],
+  );
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      <AppSidebar
+        sections={sidebarSections}
+        collapsed={sidebarCollapsed}
+        onCollapse={setSidebarCollapsed}
+        itemWrapper={itemWrapper}
+        brand={
+          <div
+            className={cn(
+              "flex items-center min-w-0 w-full",
+              sidebarCollapsed ? "justify-center gap-0" : "gap-2.5",
+            )}
+          >
+            <img
+              src="/favicon-color.svg"
+              alt="stratif.io"
+              className="h-8 w-8 shrink-0"
+            />
+            <div
+              className={cn(
+                "flex flex-col min-w-0 transition-[opacity,max-width] duration-200 overflow-hidden",
+                sidebarCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-xs",
+              )}
+            >
+              <img
+                src={theme === "dark" ? "/text-dark.svg" : "/text-light.svg"}
+                alt=""
+                className="h-5 w-auto shrink-0"
+              />
+              <span className="text-[10px] font-medium text-muted-foreground tracking-wide whitespace-nowrap">
+                Event Simulator
+              </span>
+            </div>
+          </div>
+        }
+      />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <AppHeader>
+          {/* ── Scenario selector ─────────────────────────────── */}
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-52" />
+              <Skeleton className="h-5 w-40" />
+            </div>
+          ) : (
+            <>
+              <Select
+                value={
+                  presets.length === 0
+                    ? undefined
+                    : (selectedName ?? "__blank__")
+                }
+                onValueChange={(val) =>
+                  handleSelectPreset(val === "__blank__" ? null : val)
+                }
+                disabled={presets.length === 0}
+              >
+                <SelectTrigger className="w-80 h-9 text-sm">
+                  <SelectValue
+                    placeholder={
+                      presets.length === 0 ? "Loading…" : "Select scenario…"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__blank__">✨ New blank</SelectItem>
+                  {presets.map((p) => (
+                    <SelectItem key={p.name} value={p.name}>
+                      {presetLabel(p.name)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* ── Divider ───────────────────────────────────── */}
+              <div className="h-5 w-px bg-border shrink-0 mx-1" aria-hidden />
+
+              {/* ── Simulation params cluster ─────────────────── */}
+              <div className="flex items-center gap-2">
+                {/* Date range */}
+                <div className="flex items-center gap-1">
+                  <label htmlFor="start-date" className="sr-only">
+                    Start date
+                  </label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={uiStartDate ?? ""}
+                    onChange={(e) => handleStartDate(e.target.value)}
+                    aria-invalid={dateRangeInvalid}
+                    title={
+                      dateRangeInvalid
+                        ? "Start date must be before end date"
+                        : undefined
+                    }
+                    className={cn(
+                      "h-8 w-32 bg-muted/40 text-xs",
+                      dateRangeInvalid ? inputInvalid : inputNormal,
+                    )}
+                  />
+                  <span className="text-muted-foreground/60 text-xs px-0.5">
+                    →
+                  </span>
+                  <label htmlFor="end-date" className="sr-only">
+                    End date
+                  </label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={uiEndDate ?? ""}
+                    onChange={(e) => handleEndDate(e.target.value)}
+                    aria-invalid={dateRangeInvalid}
+                    title={
+                      dateRangeInvalid
+                        ? "End date must be after start date"
+                        : undefined
+                    }
+                    className={cn(
+                      "h-8 w-32 bg-muted/40 text-xs",
+                      dateRangeInvalid ? inputInvalid : inputNormal,
+                    )}
+                  />
+                </div>
+
+                {/* Dot separator */}
+                <span className="text-border text-xs select-none">·</span>
+
+                {/* Users */}
+                <div className="flex items-center gap-1.5">
+                  <Users
+                    size={12}
+                    className="text-muted-foreground/70 shrink-0"
+                    aria-hidden
+                  />
+                  <label htmlFor="total-users" className="sr-only">
+                    Total users
+                  </label>
+                  <Input
+                    id="total-users"
+                    type="number"
+                    min={1}
+                    placeholder="users"
+                    value={
+                      resolvedScale.mode === "goal"
+                        ? resolvedScale.total_users
+                        : (config.scale_config?.total_users ?? "")
+                    }
+                    onChange={(e) => handleTotalUsers(e.target.value)}
+                    className="h-8 w-24 bg-muted/40 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* ── Derived summary pill ──────────────────────── */}
+              <span className="text-[11px] font-medium text-muted-foreground bg-muted/50 rounded-full px-2.5 py-0.5 shrink-0 whitespace-nowrap tabular-nums border border-border/50">
+                {derivedSummary}
+              </span>
+
+              {/* ── Spacer pushes utilities right ─────────────── */}
+              <div className="flex-1" />
+
+              {/* ── + Event ───────────────────────────────────── */}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleAddEvent}
+                className="h-8 text-xs"
+              >
+                + Event
+              </Button>
+
+              {/* ── Divider ───────────────────────────────────── */}
+              <div className="h-5 w-px bg-border shrink-0 mx-1" aria-hidden />
+
+              {/* ── Theme toggle — anchored far right ─────────── */}
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label={
+                  theme === "dark"
+                    ? "Switch to light mode"
+                    : "Switch to dark mode"
+                }
+                onClick={toggleTheme}
+                className="w-8 h-8 p-0 shrink-0"
+              >
+                {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+              </Button>
+            </>
+          )}
+        </AppHeader>
+
+        {error && (
+          <div className="px-4 py-2 text-sm text-destructive border-b">
+            Error loading presets: {error.message}
+          </div>
+        )}
+
+        <main className="flex-1 overflow-hidden flex min-h-0">
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <ErrorBoundary>
+              <StudioLayout activeSection={activeSection} />
+            </ErrorBoundary>
+          </div>
+          <SavePanel yaml={stringifyConfigYaml(config)} />
+        </main>
+      </div>
+
+      <Dialog
+        open={pendingIntent !== null}
+        onOpenChange={(open) => !open && setPendingIntent(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Discard unsaved changes?</DialogTitle>
+            <DialogDescription>
+              You&apos;ve made changes to{" "}
+              <span className="font-mono">{config.name}</span>. These changes
+              will be lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingIntent(null)}>
+              Keep editing
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDiscard}>
+              Discard
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

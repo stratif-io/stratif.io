@@ -47,29 +47,30 @@ stratif.io runs as a lightweight server alongside your warehouse. You configure 
 
 Every metric ships with a **SQL viewer** so you can inspect the exact query behind any chart, adapt it, or run it yourself.
 
-## Features
-
-<CardGrid>
-  <LinkCard title="Mission Control" href="/features/mission-control/" description="Your daily analytics home — active users, top events, session summary, and device breakdown." />
-  <LinkCard title="Trends" href="/features/trends/" description="Track how event counts change over time with daily, weekly, or monthly granularity." />
-  <LinkCard title="Retention" href="/features/retention/" description="Measure how many users return after performing a first action." />
-  <LinkCard title="Funnel" href="/features/funnel/" description="Quantify conversion rates between sequential steps in a user journey." />
-  <LinkCard title="Paths (Journey)" href="/features/paths/" description="Explore the routes users take through your product, forward and backward." />
-  <LinkCard title="People" href="/features/people/" description="Browse individual user profiles, properties, and full event history." />
-  <LinkCard title="Events Explorer" href="/features/events/" description="Inspect raw events, filter by property, and audit your instrumentation." />
-  <LinkCard title="Pivot" href="/features/pivot/" description="Cross-tabulate any two dimensions against a metric for ad-hoc breakdowns." />
-  <LinkCard title="SQL Studio" href="/features/sql-studio/" description="Write and run raw SQL directly against your warehouse from the dashboard." />
-  <LinkCard title="Global Filters" href="/features/global-filters/" description="Apply date range, device, and custom filters across every view simultaneously." />
-</CardGrid>
-
 ## Supported warehouses
 
 DuckDB · PostgreSQL · ClickHouse · Snowflake · Databricks
 
-## Get started
+## Analytics
 
 <CardGrid>
-  <LinkCard title="Installation" href="/getting-started/installation/" description="Install stratif.io on your server or laptop in under 5 minutes." />
-  <LinkCard title="Configuration" href="/getting-started/configuration/" description="Environment variable reference for ports, auth, and encryption." />
-  <LinkCard title="Try the demo" href="https://demo.stratif.io" description="Explore live with a sample e-commerce dataset — no install required." />
+  <LinkCard title="Installation" href="/analytics/installation/" description="Install stratif.io on your server or laptop in under 5 minutes." />
+  <LinkCard title="Configuration" href="/analytics/configuration/" description="Environment variable reference for ports, auth, and encryption." />
+  <LinkCard title="Mission Control" href="/analytics/mission-control/" description="Your daily analytics home — active users, top events, session summary, and device breakdown." />
+  <LinkCard title="Trends" href="/analytics/trends/" description="Track how event counts change over time with daily, weekly, or monthly granularity." />
+  <LinkCard title="Retention" href="/analytics/retention/" description="Measure how many users return after performing a first action." />
+  <LinkCard title="Funnel" href="/analytics/funnel/" description="Quantify conversion rates between sequential steps in a user journey." />
+  <LinkCard title="Paths (Journey)" href="/analytics/paths/" description="Explore the routes users take through your product, forward and backward." />
+  <LinkCard title="People" href="/analytics/people/" description="Browse individual user profiles, properties, and full event history." />
+  <LinkCard title="Events Explorer" href="/analytics/events/" description="Inspect raw events, filter by property, and audit your instrumentation." />
+  <LinkCard title="Pivot" href="/analytics/pivot/" description="Cross-tabulate any two dimensions against a metric for ad-hoc breakdowns." />
+  <LinkCard title="SQL Studio" href="/analytics/sql-studio/" description="Write and run raw SQL directly against your warehouse from the dashboard." />
+  <LinkCard title="Global Filters" href="/analytics/global-filters/" description="Apply date range, device, and custom filters across every view simultaneously." />
+</CardGrid>
+
+## Event Simulator
+
+<CardGrid>
+  <LinkCard title="Sample Data" href="/event-simulator/sample-data/" description="Explore with a pre-loaded e-commerce dataset — no warehouse required." />
+  <LinkCard title="Generating Sample Data" href="/event-simulator/seeding/" description="Generate realistic synthetic events for any scenario using preset configurations." />
 </CardGrid>

@@ -1,0 +1,2 @@
+@import '@stratif-io/design-system/index.css';
+@source "../../../packages/design-system/components/**/*.{ts,tsx}";

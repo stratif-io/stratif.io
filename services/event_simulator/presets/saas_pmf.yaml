@@ -1,0 +1,92 @@
+name: SaaS Finding PMF (Slack)
+description: >
+  Slack launched its public beta on August 14, 2013 — 8,000 sign-ups on day 1,
+  15,000 teams in the first 2 weeks. Usage grew from 16K DAU in February 2014
+  to 500K DAU in February 2015, representing the fastest enterprise software adoption
+  in history at the time. COVID-19 in March 2020 sent DAU from 12M to 32M overnight.
+  Now 38M daily active users under Salesforce. Classic B2B SaaS: weekday-only,
+  business-hours usage, insane retention once teams are onboarded.
+axes:
+  growth: hockey_stick
+  stickiness: addictive
+  engagement_depth: deep
+  virality: moderate
+  scale: large
+  noise: explicit
+  daily_pattern: business_hours
+  weekly_pattern: weekdays_only
+  monthly_seasonality: flat
+
+scale_config:
+  total_users: 65000000
+  start_date: "2013-08-14"
+  end_date: "2026-04-28"
+
+events:
+  - type: product_launch
+    name: public_beta_launch_8k_day1
+    start_date: "2013-08-14"
+    end_date: "2013-08-21"
+    effect:
+      arrivals: 20.0
+
+  - type: marketing_campaign
+    name: 15k_teams_techcrunch_coverage
+    start_date: "2013-08-28"
+    end_date: "2013-09-04"
+    effect:
+      arrivals: 8.0
+
+  - type: marketing_campaign
+    name: 500k_dau_milestone_press
+    start_date: "2015-02-01"
+    end_date: "2015-02-15"
+    effect:
+      arrivals: 2.0
+
+  - type: marketing_campaign
+    name: 750k_dau_1b_valuation_series_e
+    start_date: "2015-04-01"
+    end_date: "2015-04-15"
+    effect:
+      arrivals: 1.6
+
+  - type: external_shock
+    name: covid19_remote_work_surge
+    start_date: "2020-03-16"
+    end_date: "2020-04-15"
+    effect:
+      arrivals: 4.0
+
+  - type: marketing_campaign
+    name: salesforce_acquisition_announced
+    start_date: "2020-12-01"
+    end_date: "2020-12-15"
+    effect:
+      arrivals: 1.5
+
+markov:
+  events:
+    - name: Login
+    - name: MessageSent
+    - name: ChannelViewed
+    - name: FileSent
+    - name: Logout
+  start:
+    Login: 1.0
+  transitions:
+    Login:
+      ChannelViewed: 0.90
+      "[end]": 0.10
+    ChannelViewed:
+      MessageSent: 0.60
+      FileSent: 0.10
+      ChannelViewed: 0.20
+      "[end]": 0.10
+    MessageSent:
+      ChannelViewed: 0.70
+      MessageSent: 0.20
+      "[end]": 0.10
+    FileSent:
+      ChannelViewed: 0.80
+      "[end]": 0.20

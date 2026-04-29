@@ -2,7 +2,7 @@
 
 import os
 
-# Ensure crypto has a valid test key before any test imports backend.services.crypto.
+# Ensure crypto has a valid test key before any test imports services.analytics.services.crypto.
 os.environ.setdefault(
     "STRATIFIO_ENCRYPTION_KEY", "test-encryption-key-for-unit-tests-only-xxx"
 )

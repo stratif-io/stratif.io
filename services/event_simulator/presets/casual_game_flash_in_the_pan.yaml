@@ -1,0 +1,71 @@
+name: Casual Game Flash in the Pan (Flappy Bird)
+description: >
+  Flappy Bird launched silently in May 2013 and languished unnoticed for 7 months.
+  Then a viral Twitter storm in January 2014 made it the #1 downloaded app globally overnight —
+  50M daily active users in 3 weeks. Dong Nguyen deleted it on February 10, 2014,
+  overwhelmed by the attention. The shortest possible product lifecycle: 9 months dormant,
+  3 weeks explosive, then gone. A perfect flash-in-the-pan.
+axes:
+  growth: explosive
+  stickiness: one_shot
+  engagement_depth: shallow
+  virality: strong_viral
+  scale: large
+  noise: explicit
+  daily_pattern: always_on
+  weekly_pattern: flat
+  monthly_seasonality: flat
+
+scale_config:
+  total_users: 90000000
+  start_date: "2013-05-24"
+  end_date: "2014-02-10"
+
+events:
+  - type: product_launch
+    name: soft_launch_ios_may_2013
+    start_date: "2013-05-24"
+    end_date: "2013-05-31"
+    effect:
+      arrivals: 1.0
+
+  - type: viral_event
+    name: twitter_reddit_viral_discovery
+    start_date: "2014-01-09"
+    end_date: "2014-01-16"
+    effect:
+      arrivals: 50.0
+
+  - type: viral_event
+    name: number_one_globally_media_frenzy
+    start_date: "2014-01-26"
+    end_date: "2014-02-09"
+    effect:
+      arrivals: 30.0
+
+  - type: marketing_campaign
+    name: removal_announcement_final_rush
+    start_date: "2014-02-08"
+    end_date: "2014-02-10"
+    effect:
+      arrivals: 10.0
+
+markov:
+  events:
+    - name: AppOpen
+    - name: ContentViewed
+    - name: ActionTaken
+    - name: SessionEnd
+  start:
+    AppOpen: 1.0
+  transitions:
+    AppOpen:
+      ContentViewed: 0.85
+      "[end]": 0.15
+    ContentViewed:
+      ActionTaken: 0.40
+      ContentViewed: 0.30
+      "[end]": 0.30
+    ActionTaken:
+      ContentViewed: 0.50
+      "[end]": 0.50

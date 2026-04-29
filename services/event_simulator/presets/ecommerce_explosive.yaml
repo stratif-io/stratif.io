@@ -1,0 +1,77 @@
+name: E-commerce Platform Growth (Shopify)
+description: >
+  Shopify opened its merchant platform in 2006 but the high-growth era began around 2009.
+  From 11,000 merchants in 2011 to 41,000 in 2012, driven by the "anyone can have an online
+  store" wave. Today ~4.7 million merchants. Business metrics: extreme Q4 seasonality
+  (Shopify sets all-time GMV records every Black Friday), weekday-heavy merchant activity.
+  A textbook strong-growth B2B platform — merchants are sticky once their store is built.
+axes:
+  growth: strong
+  stickiness: sticky
+  engagement_depth: medium
+  virality: weak
+  scale: large
+  noise: moderate
+  daily_pattern: business_hours
+  weekly_pattern: weekdays_only
+  monthly_seasonality: flat
+
+scale_config:
+  total_users: 4700000
+  start_date: "2009-01-01"
+  end_date: "2026-04-28"
+
+events:
+  - type: product_launch
+    name: app_store_ecosystem_launch
+    start_date: "2009-06-02"
+    end_date: "2009-07-02"
+    effect:
+      arrivals: 2.0
+
+  - type: marketing_campaign
+    name: series_a_7m_press_coverage
+    start_date: "2010-12-01"
+    end_date: "2010-12-15"
+    effect:
+      arrivals: 1.5
+
+  - type: marketing_campaign
+    name: series_b_15m_growth_phase
+    start_date: "2011-10-01"
+    end_date: "2011-10-15"
+    effect:
+      arrivals: 1.4
+
+  - type: product_launch
+    name: shopify_ipo_mainstream_awareness
+    start_date: "2015-05-21"
+    end_date: "2015-06-20"
+    effect:
+      arrivals: 2.5
+
+markov:
+  events:
+    - name: PageView
+    - name: ProductViewed
+    - name: AddToCart
+    - name: CheckoutStarted
+    - name: PurchaseCompleted
+  start:
+    PageView: 1.0
+  transitions:
+    PageView:
+      ProductViewed: 0.60
+      "[end]": 0.40
+    ProductViewed:
+      AddToCart: 0.25
+      ProductViewed: 0.35
+      "[end]": 0.40
+    AddToCart:
+      CheckoutStarted: 0.65
+      "[end]": 0.35
+    CheckoutStarted:
+      PurchaseCompleted: 0.80
+      "[end]": 0.20
+    PurchaseCompleted:
+      "[end]": 1.0

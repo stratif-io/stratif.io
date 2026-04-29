@@ -1,0 +1,5 @@
+@import "@stratif-io/design-system/index.css";
+
+/* Scan design system component sources so Tailwind generates all utility classes */
+@source "../../../packages/design-system/**/*.{tsx,ts}";
+@source "../../analytics/frontend/**/*.{tsx,ts}";

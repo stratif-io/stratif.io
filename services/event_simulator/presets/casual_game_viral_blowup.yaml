@@ -1,0 +1,72 @@
+name: Casual Game Viral Blowup (Wordle / NYT)
+description: >
+  Josh Wardle launched Wordle for 90 players on November 1, 2021. The shareable
+  colored grid exploded on Twitter on December 31 — 300K players by January 2, 2M by
+  January 9, ~10M by early February. The NYT acquired it for low seven figures on
+  January 31, 2022. Now embedded in NYT Games with 2-3M daily players as a
+  permanent franchise. The textbook viral blowup: tiny origin, instant global spread,
+  stable loyal core.
+axes:
+  growth: explosive
+  stickiness: sticky
+  engagement_depth: shallow
+  virality: strong_viral
+  scale: large
+  noise: explicit
+  daily_pattern: always_on
+  weekly_pattern: flat
+  monthly_seasonality: flat
+
+scale_config:
+  total_users: 3500000000
+  start_date: "2021-11-01"
+  end_date: "2026-04-28"
+
+events:
+  - type: viral_event
+    name: twitter_share_grid_goes_viral
+    start_date: "2021-12-31"
+    end_date: "2022-01-14"
+    effect:
+      arrivals: 50.0
+
+  - type: product_launch
+    name: nyt_acquisition_announced
+    start_date: "2022-01-31"
+    end_date: "2022-02-07"
+    effect:
+      arrivals: 3.0
+
+  - type: product_launch
+    name: migration_to_nyt_site_url_change
+    start_date: "2022-02-10"
+    end_date: "2022-02-24"
+    effect:
+      arrivals: 0.7
+
+  - type: marketing_campaign
+    name: nyt_paywall_fears_press_coverage
+    start_date: "2022-03-01"
+    end_date: "2022-03-08"
+    effect:
+      arrivals: 1.4
+
+markov:
+  events:
+    - name: AppOpen
+    - name: ContentViewed
+    - name: ActionTaken
+    - name: SessionEnd
+  start:
+    AppOpen: 1.0
+  transitions:
+    AppOpen:
+      ContentViewed: 0.85
+      "[end]": 0.15
+    ContentViewed:
+      ActionTaken: 0.40
+      ContentViewed: 0.30
+      "[end]": 0.30
+    ActionTaken:
+      ContentViewed: 0.50
+      "[end]": 0.50

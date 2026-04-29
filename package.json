@@ -2,39 +2,47 @@
   "name": "stratifio-oss",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
-    "dev": "bun run --filter @stratif-io/web dev",
-    "build": "bun run --filter @stratif-io/web build",
-    "preview": "bun run --filter @stratif-io/web preview",
-    "lint": "bun run --filter @stratif-io/web lint",
-    "format": "bun run --filter @stratif-io/web format",
-    "format:check": "bun run --filter @stratif-io/web format:check",
-    "test": "bun run --filter @stratif-io/web test",
-    "test:run": "bun run --filter @stratif-io/web test:run",
-    "test:coverage": "bun run --filter @stratif-io/web test:coverage",
-    "build:lib": "bun run --filter @stratif-io/web build:lib",
-    "build:lib:watch": "bun run --filter @stratif-io/web build:lib:watch",
-    "prepare": "husky"
+    "dev": "bun run --filter @stratif-io/analytics dev",
+    "dev:simulator": "bun run --filter @stratif-io/event-simulator dev",
+    "build": "bun run --filter @stratif-io/analytics build",
+    "build:simulator": "bun run --filter @stratif-io/event-simulator build",
+    "preview": "bun run --filter @stratif-io/analytics preview",
+    "lint": "bun run --filter '*' lint",
+    "format": "bun run --filter @stratif-io/analytics format",
+    "format:check": "bun run --filter @stratif-io/analytics format:check",
+    "test": "bun run --filter @stratif-io/analytics test",
+    "test:run": "bun run --filter '*' test:run",
+    "test:coverage": "bun run --filter @stratif-io/analytics test:coverage",
+    "build:lib": "bun run --filter @stratif-io/design-system build:lib",
+    "build:lib:watch": "bun run --filter @stratif-io/design-system build:lib:watch",
+    "prepare": "husky",
+    "dev:tui": "bun run scripts/dev.tsx"
   },
   "devDependencies": {
+    "@types/react": "18",
     "eslint": "^9.15.0",
     "husky": "^9.1.0",
+    "ink": "5",
     "lint-staged": "^15.2.0",
-    "prettier": "^3.4.0"
+    "prettier": "^3.4.0",
+    "react": "18"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --fix --flag unstable_config_lookup_from_file",
+      "eslint --fix --flag v10_config_lookup_from_file",
       "prettier --write"
     ],
     "*.{css,json,md}": [
       "prettier --write"
     ]
   },
-  "prepare": "husky",
   "dependencies": {
-    "cmdk": "^1.1.1"
+    "@types/dagre": "^0.7.54",
+    "cmdk": "^1.1.1",
+    "dagre": "^0.8.5"
   }
 }
