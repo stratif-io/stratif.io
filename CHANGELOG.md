@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.41.0](https://github.com/stratif-io/stratif.io/compare/v0.40.3...v0.41.0) (2026-04-30)
+
+
+### Features
+
+* **design-system:** add footerSections prop to AppSidebar ([88a343f](https://github.com/stratif-io/stratif.io/commit/88a343f23c0e3d973c1c55a95829228121274b7d))
+* **design-system:** add footerSections prop to AppSidebar ([4777933](https://github.com/stratif-io/stratif.io/commit/4777933a37c9662c3e651239192d926bda9df627))
+* publish @stratif-io/design-system to GitHub Packages ([d5af30a](https://github.com/stratif-io/stratif.io/commit/d5af30a11b77142b63e239ddb38c28610824c485))
+* publish @stratif-io/design-system to GitHub Packages ([5e574b6](https://github.com/stratif-io/stratif.io/commit/5e574b67e363a46d7bcfa2eca09f12376bbd13d1))
+
 ## [0.40.3](https://github.com/stratif-io/stratif.io/compare/v0.40.2...v0.40.3) (2026-04-29)
 
 
