@@ -159,6 +159,32 @@ jobs:
         env:
           STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
 
+  publish-design-system:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build design system
+        run: bun run build:lib
+        working-directory: packages/design-system
+
+      # npm ignores packages/design-system/.npmrc in workspace mode. Write auth
+      # to the user-level npmrc instead — that always takes precedence.
+      - name: Publish to GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${STRATIFIO_OSS_TOKEN}" >> ~/.npmrc
+          npm publish --access public
+        working-directory: packages/design-system
+        env:
+          STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
+
   # After a release, open a PR to sync the version bump and uv.lock back into
   # develop so it stays up to date with main.
   sync-develop:
