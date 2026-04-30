@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.41.1](https://github.com/stratif-io/stratif.io/compare/v0.41.0...v0.41.1) (2026-04-30)
+
+
+### Bug Fixes
+
+* **install:** skip design-system tags when resolving latest version ([adb82ac](https://github.com/stratif-io/stratif.io/commit/adb82ac056b2e8f035ef635b3e03c8c7cbb6c297))
+* **install:** skip design-system tags when resolving latest version ([2979d5b](https://github.com/stratif-io/stratif.io/commit/2979d5b6856e8bb83c78df52b174aca6a940f047))
+
 ## [0.41.0](https://github.com/stratif-io/stratif.io/compare/v0.40.3...v0.41.0) (2026-04-30)
 
 
