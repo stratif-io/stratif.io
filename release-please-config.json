@@ -18,6 +18,16 @@
           "jsonpath": "$.version"
         }
       ]
+    },
+    "packages/design-system": {
+      "release-type": "node",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "packages/design-system/package.json",
+          "jsonpath": "$.version"
+        }
+      ]
     }
   }
 }
