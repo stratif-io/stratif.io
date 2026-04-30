@@ -94,9 +94,10 @@ if [ -n "${STRATIFIO_VERSION:-}" ]; then
   LATEST="$STRATIFIO_VERSION"
 else
   info "Fetching latest version"
-  LATEST=$(gh_curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-    | grep '"tag_name"' | head -1 \
-    | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+  LATEST=$(gh_curl -fsSL "https://api.github.com/repos/${REPO}/releases?per_page=20" \
+    | grep '"tag_name"' \
+    | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/' \
+    | grep '^v[0-9]' | head -1)
   [ -n "$LATEST" ] || die "Could not fetch latest release. Check your internet connection."
 fi
 success "Version: $LATEST"
