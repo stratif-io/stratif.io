@@ -30,6 +30,8 @@ export interface AppSidebarProps {
   collapsed: boolean;
   onCollapse: (v: boolean) => void;
   brand?: ReactNode;
+  /** Nav items pinned to the bottom of the sidebar, above the collapse button. Supports tooltips when collapsed. */
+  footerSections?: SidebarSection[];
   footer?: ReactNode;
   className?: string;
   itemWrapper?: (item: SidebarItem, button: ReactNode) => ReactNode;
@@ -40,6 +42,7 @@ export function AppSidebar({
   collapsed,
   onCollapse,
   brand,
+  footerSections,
   footer,
   className,
   itemWrapper,
@@ -85,6 +88,30 @@ export function AppSidebar({
           ))}
         </TooltipProvider>
       </nav>
+
+      {footerSections && footerSections.length > 0 && (
+        <div className="shrink-0 border-t border-border py-2">
+          <TooltipProvider delayDuration={0}>
+            {footerSections.map((section, i) => (
+              <div key={section.label || i}>
+                {!collapsed && section.label && (
+                  <p className="px-4 py-2 text-[10px] font-bold tracking-widest uppercase text-muted-foreground/70">
+                    {section.label}
+                  </p>
+                )}
+                {section.items.map((item) => (
+                  <SidebarNavItem
+                    key={item.key}
+                    item={item}
+                    collapsed={collapsed}
+                    itemWrapper={itemWrapper}
+                  />
+                ))}
+              </div>
+            ))}
+          </TooltipProvider>
+        </div>
+      )}
 
       <div
         className={cn(
