@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.41.2](https://github.com/stratif-io/stratif.io/compare/v0.41.1...v0.41.2) (2026-04-30)
+
+
+### Bug Fixes
+
+* **release:** make publish and upload steps idempotent on re-runs ([0a88258](https://github.com/stratif-io/stratif.io/commit/0a882582f76d932e2c6b94e5aed9e32455ee08be))
+* **release:** make publish and upload steps idempotent on re-runs ([a09af16](https://github.com/stratif-io/stratif.io/commit/a09af167e887747df0f826ad5d2a432dc17b72fd))
+
 ## [0.41.1](https://github.com/stratif-io/stratif.io/compare/v0.41.0...v0.41.1) (2026-04-30)
 
 
