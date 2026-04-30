@@ -111,6 +111,7 @@ jobs:
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: frontend.tar.gz
+          overwrite_files: true
 
   build-docker:
     needs: release-please
@@ -154,7 +155,13 @@ jobs:
       - name: Publish to GitHub Packages
         run: |
           echo "//npm.pkg.github.com/:_authToken=${STRATIFIO_OSS_TOKEN}" >> ~/.npmrc
-          npm publish --access public
+          PKG=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          if npm view "${PKG}@${VER}" --registry https://npm.pkg.github.com version 2>/dev/null | grep -qF "$VER"; then
+            echo "✓ ${PKG}@${VER} already published — skipping"
+          else
+            npm publish --access public
+          fi
         working-directory: apps/analytics
         env:
           STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
@@ -180,7 +187,13 @@ jobs:
       - name: Publish to GitHub Packages
         run: |
           echo "//npm.pkg.github.com/:_authToken=${STRATIFIO_OSS_TOKEN}" >> ~/.npmrc
-          npm publish --access public
+          PKG=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          if npm view "${PKG}@${VER}" --registry https://npm.pkg.github.com version 2>/dev/null | grep -qF "$VER"; then
+            echo "✓ ${PKG}@${VER} already published — skipping"
+          else
+            npm publish --access public
+          fi
         working-directory: packages/design-system
         env:
           STRATIFIO_OSS_TOKEN: ${{ secrets.STRATIFIO_OSS_TOKEN }}
